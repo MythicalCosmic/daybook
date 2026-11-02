@@ -3,7 +3,7 @@
  * serializers. Days are company-local "YYYY-MM-DD"; files come as short-lived signed links.
  * ID numbers (PINFL, passport, card) arrive masked ("AA•••••67") except from `people/{mid}/sensitive/`.
  */
-import type { PersonRef, Summary } from "@/api/types";
+import type { BranchRef, PersonRef } from "@/api/types";
 
 // ─── Profile ───────────────────────────────────────────────────────────────
 
@@ -20,10 +20,22 @@ export interface EmergencyContact {
 
 export type EmergencyContactInput = Omit<EmergencyContact, "id">;
 
-/** `GET people/{mid}/profile/`: IDs masked. */
+export interface Named {
+  id: number;
+  name: string;
+}
+
+/** `GET people/{mid}/profile/` (apps.hr.serializers.ProfileSerializer): IDs masked. */
 export interface HrProfile {
   member: PersonRef;
-  position: string | null;
+  first_name: string;
+  last_name: string;
+  status: string;
+  position: Named | null;
+  department: Named | null;
+  /** Their head: whom they report to. */
+  manager: PersonRef | null;
+  home_branch: BranchRef | null;
   employee_number: string;
   middle_name: string;
   birth_date: string | null;
@@ -35,17 +47,23 @@ export interface HrProfile {
   email: string;
   address: string;
   city: string;
-  /** Masked, or "" when not recorded. */
+  /** Masked ("••••••••••0045", "AA•••••67"), or "" when not recorded. */
   pinfl: string;
   passport: string;
+  /** Someone else in the company has the same passport number on file. */
+  passport_shared: boolean;
+  /** The taxpayer number is not secret: it comes in full. */
   tin: string;
   payout_method: PayoutMethod;
   payout_card: string;
   terminated_on: string | null;
   termination_reason: string;
-  /** HR's own note; only for hr.manage. */
-  notes?: string;
+  termination_note: string;
+  /** HR's own note; null without hr.manage. */
+  notes: string | null;
   emergency_contacts: EmergencyContact[];
+  can_edit: boolean;
+  can_reveal: boolean;
 }
 
 /** What PATCH profile/ accepts. The ID fields are written in full (the server stores them encrypted). */
@@ -71,12 +89,14 @@ export interface ProfileInput {
 
 /** `GET people/{mid}/sensitive/` (hr.sensitive, audited every time). */
 export interface HrSensitive {
+  member?: PersonRef;
   pinfl: string;
   passport: string;
   payout_card: string;
+  tin?: string;
 }
 
-export type SensitiveField = keyof HrSensitive;
+export type SensitiveField = "pinfl" | "passport" | "payout_card";
 
 // ─── Documents ─────────────────────────────────────────────────────────────
 
@@ -105,37 +125,50 @@ export const ID_KINDS: readonly DocumentKind[] = ["passport", "id_card", "milita
 
 export type DocumentState = "valid" | "expiring" | "expired" | "no_expiry";
 
-/** One row of `GET documents/`. */
+/** One row of `GET documents/` (apps.hr.serializers.DocumentSerializer). */
 export interface HrDocument {
   id: number;
   member: PersonRef;
   position: string | null;
+  home_branch: BranchRef | null;
   kind: DocumentKind;
   title: string;
-  /** Masked unless the viewer holds hr.sensitive; "" when there is none. */
+  /** An ID's number is masked unless the viewer holds hr.sensitive; "" when there is none. */
   number: string;
   issued_on: string | null;
   expires_on: string | null;
-  level?: string;
-  specialty?: string;
-  issuer?: string;
-  /** A signed link (minutes), or null when there is no file or the viewer may not open it. */
+  level: string;
+  specialty: string;
+  issuer: string;
+  /** A signed link (minutes; every opening is audited), or null: no file, or not for this viewer. */
   file: string | null;
-  file_name?: string;
+  has_file: boolean;
+  /** There is a file this viewer may not open (an ID scan without hr.sensitive). */
+  file_hidden: boolean;
+  is_id: boolean;
   visible_to_employee: boolean;
-  verified_at: string | null;
-  verified_by: string | null;
   uploaded_by: string | null;
+  verified: boolean;
+  verified_by: string | null;
+  verified_at: string | null;
+  state: DocumentState;
+  /** Days until it expires (negative once expired); null without an expiry. */
+  days_left: number | null;
   created_at: string;
+  can_edit: boolean;
 }
 
 export interface DocumentParams {
   member?: number;
   kind?: string[];
+  state?: DocumentState;
   expiring_within?: number;
-  expired?: boolean;
   verified?: boolean;
+  /** Only each person's newest document per kind. */
+  current?: boolean;
+  branch?: number[];
   q?: string;
+  /** expires_on, -expires_on, created_at or -created_at. */
   ordering?: string;
   page?: number;
   page_size?: number;
@@ -156,31 +189,39 @@ export interface DocumentInput {
 export interface RequiredDocument {
   id: number;
   kind: DocumentKind;
-  position: { id: number; name: string } | null;
-  level?: string;
-  alternatives?: DocumentKind[];
+  position: Named | null;
+  /** The level asked for ("higher", "college"…); "" for any. */
+  level: string;
+  /** Other kinds that satisfy it. */
+  alternatives: DocumentKind[];
 }
 
 export type ComplianceStatus = "ok" | "expiring" | "expired" | "missing" | "unverified";
 
-export interface ComplianceCell {
+export interface ComplianceItem {
   kind: DocumentKind;
   status: ComplianceStatus;
-  document_id?: number | null;
-  expires_on?: string | null;
+  document_id: number | null;
+  expires_on: string | null;
+  level: string;
 }
 
 export interface ComplianceRow {
   member: PersonRef;
-  position: { id: number; name: string } | null;
+  position: Named | null;
+  home_branch?: BranchRef | null;
   /** Only the kinds this person's position requires. */
-  cells: ComplianceCell[];
+  items: ComplianceItem[];
+  /** Required documents missing or expired. */
+  missing?: number;
+  complete?: boolean;
 }
 
 /** `GET documents/compliance/`: the people × required kinds matrix. */
 export interface Compliance {
   kinds: DocumentKind[];
   rows: ComplianceRow[];
+  totals?: { people: number; complete: number; missing: number; expired: number; expiring: number; unverified: number };
 }
 
 // ─── Contracts ─────────────────────────────────────────────────────────────
@@ -279,33 +320,43 @@ export interface ExpiringDocument {
   kind: DocumentKind;
   title: string;
   expires_on: string;
+  /** Negative once expired. */
   days_left: number;
 }
 
-export interface EndingContract {
+/** A contract's date on the overview: its end, or the end of its probation. */
+export interface ContractDate {
   id: number;
   member: PersonRef;
-  kind: ContractKind;
-  ends_on: string;
+  number: string;
+  date: string;
+  /** Negative once past. */
   days_left: number;
 }
 
-export interface ProbationEnding {
-  id: number;
+export interface UpcomingBirthday {
   member: PersonRef;
-  probation_until: string;
-  days_left: number;
+  date: string;
+  days_until: number;
 }
 
-/** `GET overview/` */
+export interface UpcomingAnniversary extends UpcomingBirthday {
+  years: number;
+}
+
+/** `GET overview/` (apps.hr.overview.OverviewSerializer). */
 export interface HrOverview {
-  today: string;
-  headcount: Summary<"headcount">;
-  documents: { expiring: number; expired: number; items: ExpiringDocument[] };
-  contracts: { ending: number; items: EndingContract[] };
-  probation: { ending: number; items: ProbationEnding[] };
-  birthdays: Celebration[];
-  warn_days: { documents: number; contracts: number; probation: number };
+  as_of: string;
+  headcount: { current: number; active: number; suspended: number; joined_30d: number; left_30d: number };
+  /** Headcount at the end of each of the last 12 months (today for this one). */
+  trend: Array<{ month: string; headcount: number; hired: number; left: number }>;
+  documents: { expired: number; expiring: number; missing: number; unverified: number };
+  expiring_documents: ExpiringDocument[];
+  contracts: { active: number; drafts: number; ending: number; on_probation: number; without_contract: number };
+  ending_contracts: ContractDate[];
+  probation_endings: ContractDate[];
+  birthdays: UpcomingBirthday[];
+  anniversaries: UpcomingAnniversary[];
 }
 
 // ─── Settings ──────────────────────────────────────────────────────────────

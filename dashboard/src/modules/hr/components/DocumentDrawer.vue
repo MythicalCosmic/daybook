@@ -4,8 +4,8 @@
  * file itself (an image inline, a PDF in the viewer; an ID scan stays locked without hr.sensitive),
  * and, for hr.manage, verify, change or delete it.
  */
-import { CircleCheck, EllipsisVertical, ExternalLink, FileText, LockKeyhole, Pencil, ShieldCheck, Trash2 } from "@lucide/vue";
-import { computed } from "vue";
+import { CircleCheck, EllipsisVertical, Eye, ExternalLink, FileText, LockKeyhole, Pencil, ShieldCheck, Trash2 } from "@lucide/vue";
+import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 
@@ -27,7 +27,7 @@ import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore, useCompanyToday } from "@/stores/company";
 
 import { hrApi, useDocument, useHrMutation } from "../api";
-import { DOCUMENT_STATE_TONES, documentState, fileKind, hrAccess, needsSensitive } from "../lib";
+import { DOCUMENT_STATE_TONES, documentState, hrAccess, needsSensitive } from "../lib";
 import type { HrDocument } from "../types";
 import DaysChip from "./DaysChip.vue";
 
@@ -50,9 +50,12 @@ const id = computed(() => {
 });
 const query = useDocument(id);
 const doc = computed(() => query.data.value ?? null);
-const state = computed(() => (doc.value ? documentState(doc.value.expires_on, today.value, props.warnDays) : null));
-const kind = computed(() => (doc.value ? fileKind(doc.value.file_name || doc.value.file) : "other"));
-const locked = computed(() => !!doc.value && !doc.value.file && needsSensitive(doc.value.kind) && !access.value.sensitive);
+const state = computed(() => (doc.value ? (doc.value.state ?? documentState(doc.value.expires_on, today.value, props.warnDays)) : null));
+const locked = computed(() => !!doc.value && (doc.value.file_hidden || (!doc.value.file && needsSensitive(doc.value.kind) && !access.value.sensitive)));
+// The file opens only when asked: every opening is audited on the server, so the drawer never
+// fetches it by itself.
+const showFile = ref(false);
+watch(id, () => (showFile.value = false));
 
 const items = computed<DescriptionItem[]>(() => {
   const d = doc.value;
@@ -134,14 +137,14 @@ const menu = computed<MenuEntry[]>(() => {
             <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
               <StatusPill v-if="state && state !== 'no_expiry'" :tone="DOCUMENT_STATE_TONES[state]" size="sm" :label="t(`hr.documentState.${state}`)" />
               <DaysChip v-if="doc.expires_on" :day="doc.expires_on" :warn-days="warnDays" prefix="expires" />
-              <StatusPill v-if="doc.verified_at" tone="success" size="sm" :icon="CircleCheck" :dot="false" :label="t('hr.document.verified')" />
+              <StatusPill v-if="doc.verified" tone="success" size="sm" :icon="CircleCheck" :dot="false" :label="t('hr.document.verified')" />
               <StatusPill v-else tone="neutral" size="sm" :label="t('hr.document.notVerified')" />
             </div>
           </div>
         </header>
 
         <InlineAlert
-          v-if="!doc.verified_at && access.manage"
+          v-if="!doc.verified && access.manage && !locked"
           tone="info"
           size="sm"
           :icon="ShieldCheck"
@@ -152,7 +155,7 @@ const menu = computed<MenuEntry[]>(() => {
             <UiButton size="sm" variant="primary" :icon="ShieldCheck" :loading="verify.isPending.value" @click="runVerify">{{ t("hr.document.verify") }}</UiButton>
           </template>
         </InlineAlert>
-        <p v-else-if="doc.verified_at" class="text-sm text-muted">
+        <p v-else-if="doc.verified && doc.verified_at" class="text-sm text-muted">
           {{ doc.verified_by ? t("hr.document.verifiedBy", { name: doc.verified_by, date: fmt.day(doc.verified_at.slice(0, 10), "medium") }) : t("hr.document.verifiedOn", { date: fmt.day(doc.verified_at.slice(0, 10), "medium") }) }}
         </p>
 
@@ -160,18 +163,22 @@ const menu = computed<MenuEntry[]>(() => {
 
         <section class="flex flex-col gap-2">
           <h3 class="text-sm font-semibold text-fg">{{ t("hr.field.file") }}</h3>
-          <div v-if="locked" class="flex items-center gap-3 rounded-card border border-dashed border-line-strong px-4 py-5 text-sm text-muted">
+          <div v-if="locked" class="flex items-center gap-3 rounded-card border border-dashed border-line-strong px-4 py-5 text-sm text-muted" data-file-locked>
             <LockKeyhole :size="18" class="shrink-0 text-subtle" aria-hidden="true" />{{ t("hr.document.fileHidden") }}
           </div>
           <p v-else-if="!doc.file" class="rounded-card border border-dashed border-line-strong px-4 py-5 text-sm text-muted">{{ t("hr.document.noFile") }}</p>
-          <a v-else-if="kind === 'image'" :href="doc.file" target="_blank" rel="noopener" class="group relative block overflow-hidden rounded-card border border-line bg-surface-2">
-            <img :src="doc.file" :alt="doc.title || t(`hr.kind.${doc.kind}`)" class="max-h-[60vh] w-full object-contain" />
-            <span class="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-surface/90 px-2 py-1 text-xs font-semibold text-fg opacity-0 shadow-sm transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100">
-              <ExternalLink :size="12" />{{ t("common.pdf.open") }}
-            </span>
-          </a>
-          <PdfPreview v-else-if="kind === 'pdf'" :src="doc.file" :filename="doc.file_name" height="min(60vh, 720px)" />
-          <UiButton v-else :href="doc.file" target="_blank" :icon="FileText" class="w-fit">{{ t("hr.document.openFile") }}</UiButton>
+          <PdfPreview v-else-if="showFile" :src="doc.file" :title="doc.title || t(`hr.kind.${doc.kind}`)" height="min(60vh, 720px)" />
+          <div v-else class="flex flex-wrap items-center gap-3 rounded-card border border-line px-4 py-3" data-file-card>
+            <span class="grid size-10 shrink-0 place-items-center rounded-[10px] bg-surface-2 text-muted" aria-hidden="true"><FileText :size="19" /></span>
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-sm font-semibold text-fg">{{ doc.title || t(`hr.kind.${doc.kind}`) }}</p>
+              <p class="text-xs text-muted">{{ t("hr.document.openAudited") }}</p>
+            </div>
+            <div class="flex shrink-0 items-center gap-1.5">
+              <UiButton :href="doc.file" target="_blank" variant="ghost" :icon="ExternalLink">{{ t("common.pdf.open") }}</UiButton>
+              <UiButton :icon="Eye" @click="showFile = true">{{ t("hr.document.showHere") }}</UiButton>
+            </div>
+          </div>
         </section>
       </div>
     </div>

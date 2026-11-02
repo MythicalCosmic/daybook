@@ -1,16 +1,15 @@
 <script setup lang="ts">
 /**
- * HR overview (the module's first page): the numbers that need attention (people, documents
- * expiring or expired, contracts ending, probation ending, birthdays this week) and, under them,
- * the lists behind those numbers with a one-tap action each: upload the new document, renew the
- * contract, pass or extend probation. Without hr.manage the same page reads only.
+ * HR overview (the module's first page): the numbers that need attention (people and their trend,
+ * documents expiring or expired, contracts ending, probation ending, birthdays this week) and,
+ * under them, the lists behind those numbers with a one-tap action each: upload the new document,
+ * renew the contract, pass or extend probation. Without hr.manage the same page reads only.
  */
-import { ArrowRight, BadgeCheck, CalendarPlus, Cake, CircleCheck, Clock4, FilePlus2, FileSignature, FileWarning, Upload, Users } from "@lucide/vue";
+import { ArrowRight, Award, BadgeCheck, CalendarPlus, Cake, CircleCheck, Clock4, FilePlus2, FileSignature, FileWarning, Upload, Users } from "@lucide/vue";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink } from "vue-router";
 
-import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import KpiStrip from "@/components/KpiStrip.vue";
 import PageHeader from "@/components/PageHeader.vue";
@@ -19,37 +18,29 @@ import UiButton from "@/components/UiButton.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
-import { useCompanyStore, useCompanyToday } from "@/stores/company";
+import { useCompanyStore } from "@/stores/company";
 
-import { useOverview } from "../api";
+import { useOverview, useWarnDays } from "../api";
 import ContractActionDialog from "../components/ContractActionDialog.vue";
 import DaysChip from "../components/DaysChip.vue";
 import DocumentFormDrawer from "../components/DocumentFormDrawer.vue";
-import { daysUntil, hrAccess } from "../lib";
-import type { ExpiringDocument } from "../types";
+import QuietEmpty from "../components/QuietEmpty.vue";
+import { headcountKpi, hrAccess, weekCelebrations } from "../lib";
+import type { ContractDate, ExpiringDocument } from "../types";
 import { useContractActions } from "../useContractActions";
 
 const { t } = useI18n();
 const fmt = useFormat();
 const company = useCompanyStore();
-const today = useCompanyToday();
 const access = computed(() => hrAccess((perm) => company.can(perm)));
 
 const overview = useOverview();
 const data = computed(() => overview.data.value ?? null);
 const skeleton = useDelayedPending(computed(() => overview.isPending.value));
 const base = computed(() => `/c/${company.currentId}`);
-const warn = computed(() => data.value?.warn_days ?? { documents: 30, contracts: 30, probation: 7 });
-
-const headcount = computed(() => {
-  const summary = data.value?.headcount;
-  if (!summary) return { value: null, previous: null, spark: [] as number[] };
-  return {
-    value: Number(summary.totals.headcount ?? 0),
-    previous: summary.previous ? Number(summary.previous.headcount ?? 0) : null,
-    spark: summary.series.map((point) => Number(point.headcount ?? 0)),
-  };
-});
+const warn = useWarnDays();
+const people = computed(() => (data.value ? headcountKpi(data.value) : null));
+const week = computed(() => (data.value ? weekCelebrations(data.value) : []));
 
 const kpis = computed(() => {
   const d = data.value;
@@ -57,10 +48,10 @@ const kpis = computed(() => {
     {
       id: "headcount",
       label: t("hr.overview.kpi.headcount"),
-      value: headcount.value.value,
-      previous: headcount.value.previous,
+      value: people.value?.value ?? null,
+      previous: people.value?.previous ?? null,
       deltaLabel: t("hr.overview.kpi.vs30"),
-      spark: headcount.value.spark,
+      spark: people.value?.spark,
       icon: Users,
       to: `${base.value}/people`,
     },
@@ -83,7 +74,7 @@ const kpis = computed(() => {
     {
       id: "probation",
       label: t("hr.overview.kpi.probation"),
-      value: d?.probation.ending ?? null,
+      value: d?.probation_endings.length ?? null,
       hint: t("hr.overview.kpi.within", { n: warn.value.probation }, warn.value.probation),
       icon: Clock4,
       to: { path: `${base.value}/hr/contracts`, query: { probation: "true" } },
@@ -108,11 +99,12 @@ function upload(row: ExpiringDocument | null): void {
 }
 
 const { request: actionRequest, run: runAction, perform } = useContractActions();
+const ending = (row: ContractDate) => ({ id: row.id, member: row.member, ends_on: row.date });
+const probation = (row: ContractDate) => ({ id: row.id, member: row.member, probation_until: row.date });
 
-function birthdayLabel(day: string): string {
-  const left = daysUntil(day, today.value);
-  if (left === 0) return t("hr.overview.today");
-  if (left === 1) return t("hr.overview.tomorrow");
+function whenLabel(daysUntil: number, day: string): string {
+  if (daysUntil === 0) return t("hr.overview.today");
+  if (daysUntil === 1) return t("hr.overview.tomorrow");
   return fmt.day(day, "weekday");
 }
 </script>
@@ -129,11 +121,11 @@ function birthdayLabel(day: string): string {
     <ErrorState v-if="overview.isError.value" class="ui-card" :error="overview.error.value" :retry="() => overview.refetch()" />
 
     <div v-else class="flex flex-col gap-4">
-      <KpiStrip :items="kpis" :loading="overview.isPending.value" :columns="5" phone="grid" />
+      <KpiStrip :items="kpis" :loading="overview.isPending.value" :columns="5" phone="compact" />
 
       <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <!-- Documents to renew -->
-        <section class="ui-card flex flex-col p-4" :aria-label="t('hr.overview.documents')">
+        <section class="ui-card flex flex-col p-4" :aria-label="t('hr.overview.documents')" data-overview-documents>
           <header class="mb-2 flex items-center gap-2">
             <FileWarning :size="16" class="text-subtle" aria-hidden="true" />
             <h2 class="flex-1 text-sm font-semibold text-fg">{{ t("hr.overview.documents") }}</h2>
@@ -142,26 +134,30 @@ function birthdayLabel(day: string): string {
             </RouterLink>
           </header>
           <div v-if="skeleton" class="flex flex-col gap-2"><SkeletonBlock v-for="n in 3" :key="n" height="48px" /></div>
-          <EmptyState v-else-if="data && !data.documents.items.length" size="sm" tone="success" :icon="CircleCheck" :title="t('hr.overview.documentsEmpty')" :description="t('hr.overview.documentsEmptyBody', { n: warn.documents }, warn.documents)" />
+          <QuietEmpty v-else-if="data && !data.expiring_documents.length" :icon="CircleCheck" :title="t('hr.overview.documentsEmpty')" :description="t('hr.overview.documentsEmptyBody', { n: warn.documents }, warn.documents)" />
           <ul v-else-if="data" class="-mx-2 flex flex-col">
-            <li v-for="row in data.documents.items" :key="row.id" class="flex items-center gap-1 rounded-[10px] pr-1 hover:bg-highlight">
+            <li v-for="row in data.expiring_documents" :key="row.id" class="flex items-center gap-1 rounded-[10px] pr-1 hover:bg-highlight">
               <RouterLink :to="{ path: `${base}/hr/documents`, query: { document: String(row.id) } }" class="flex min-h-12 min-w-0 flex-1 items-center gap-3 px-2 py-1.5">
                 <UserAvatar :name="row.member.name" :src="row.member.photo_url" :size="32" />
                 <div class="min-w-0 flex-1">
                   <p class="truncate text-sm font-semibold text-fg">{{ row.member.name }}</p>
                   <p class="truncate text-xs text-muted">{{ row.title || t(`hr.kind.${row.kind}`) }} · {{ fmt.day(row.expires_on, "short") }}</p>
+                  <DaysChip :day="row.expires_on" :warn-days="warn.documents" prefix="expires" always class="mt-1 sm:hidden" />
                 </div>
-                <DaysChip :day="row.expires_on" :warn-days="warn.documents" prefix="expires" always />
+                <DaysChip :day="row.expires_on" :warn-days="warn.documents" prefix="expires" always class="max-sm:hidden" />
               </RouterLink>
-              <UiButton v-if="access.manage" size="md" variant="ghost" class="max-sm:h-10" :icon="Upload" :aria-label="t('hr.overview.uploadNew')" @click="upload(row)">
+              <UiButton v-if="access.manage" size="md" variant="ghost" class="shrink-0 max-sm:h-10" :icon="Upload" :aria-label="t('hr.overview.uploadNew')" @click="upload(row)">
                 <span class="max-sm:sr-only">{{ t("hr.overview.uploadNew") }}</span>
               </UiButton>
             </li>
           </ul>
+          <p v-if="data && (data.documents.missing || data.documents.unverified)" class="mt-2 border-t border-line pt-2.5 text-xs text-muted">
+            <RouterLink :to="{ path: `${base}/hr/documents`, query: { view: 'compliance' } }" class="font-semibold text-accent-fg hover:underline">{{ t("hr.overview.gaps", { missing: data.documents.missing, unverified: data.documents.unverified }) }}</RouterLink>
+          </p>
         </section>
 
         <!-- Contracts ending -->
-        <section class="ui-card flex flex-col p-4" :aria-label="t('hr.overview.contracts')">
+        <section class="ui-card flex flex-col p-4" :aria-label="t('hr.overview.contracts')" data-overview-contracts>
           <header class="mb-2 flex items-center gap-2">
             <FileSignature :size="16" class="text-subtle" aria-hidden="true" />
             <h2 class="flex-1 text-sm font-semibold text-fg">{{ t("hr.overview.contracts") }}</h2>
@@ -170,18 +166,19 @@ function birthdayLabel(day: string): string {
             </RouterLink>
           </header>
           <div v-if="skeleton" class="flex flex-col gap-2"><SkeletonBlock v-for="n in 2" :key="n" height="48px" /></div>
-          <EmptyState v-else-if="data && !data.contracts.items.length" size="sm" tone="success" :icon="CircleCheck" :title="t('hr.overview.contractsEmpty')" :description="t('hr.overview.contractsEmptyBody', { n: warn.contracts }, warn.contracts)" />
+          <QuietEmpty v-else-if="data && !data.ending_contracts.length" :icon="CircleCheck" :title="t('hr.overview.contractsEmpty')" :description="t('hr.overview.contractsEmptyBody', { n: warn.contracts }, warn.contracts)" />
           <ul v-else-if="data" class="-mx-2 flex flex-col">
-            <li v-for="row in data.contracts.items" :key="row.id" class="flex items-center gap-1 rounded-[10px] pr-1 hover:bg-highlight">
+            <li v-for="row in data.ending_contracts" :key="row.id" class="flex items-center gap-1 rounded-[10px] pr-1 hover:bg-highlight">
               <RouterLink :to="{ path: `${base}/hr/contracts`, query: { contract: String(row.id) } }" class="flex min-h-12 min-w-0 flex-1 items-center gap-3 px-2 py-1.5">
                 <UserAvatar :name="row.member.name" :src="row.member.photo_url" :size="32" />
                 <div class="min-w-0 flex-1">
                   <p class="truncate text-sm font-semibold text-fg">{{ row.member.name }}</p>
-                  <p class="truncate text-xs text-muted">{{ t(`hr.contractKind.${row.kind}`) }} · {{ fmt.day(row.ends_on, "short") }}</p>
+                  <p class="truncate text-xs text-muted">{{ row.number ? `№ ${row.number} · ` : "" }}{{ fmt.day(row.date, "short") }}</p>
+                  <DaysChip :day="row.date" :warn-days="warn.contracts" prefix="ends" always class="mt-1 sm:hidden" />
                 </div>
-                <DaysChip :day="row.ends_on" :warn-days="warn.contracts" prefix="ends" always />
+                <DaysChip :day="row.date" :warn-days="warn.contracts" prefix="ends" always class="max-sm:hidden" />
               </RouterLink>
-              <UiButton v-if="access.manage" size="md" variant="ghost" class="max-sm:h-10" :icon="CalendarPlus" :aria-label="t('hr.contract.action.renew')" @click="runAction(row, 'renew')">
+              <UiButton v-if="access.manage" size="md" variant="ghost" class="shrink-0 max-sm:h-10" :icon="CalendarPlus" :aria-label="t('hr.contract.action.renew')" @click="runAction(ending(row), 'renew')">
                 <span class="max-sm:sr-only">{{ t("hr.contract.action.renew") }}</span>
               </UiButton>
             </li>
@@ -189,7 +186,7 @@ function birthdayLabel(day: string): string {
         </section>
 
         <!-- Probation ending -->
-        <section class="ui-card flex flex-col p-4" :aria-label="t('hr.overview.probation')">
+        <section class="ui-card flex flex-col p-4" :aria-label="t('hr.overview.probation')" data-overview-probation>
           <header class="mb-2 flex items-center gap-2">
             <Clock4 :size="16" class="text-subtle" aria-hidden="true" />
             <h2 class="flex-1 text-sm font-semibold text-fg">{{ t("hr.overview.probation") }}</h2>
@@ -198,27 +195,28 @@ function birthdayLabel(day: string): string {
             </RouterLink>
           </header>
           <div v-if="skeleton" class="flex flex-col gap-2"><SkeletonBlock v-for="n in 2" :key="n" height="48px" /></div>
-          <EmptyState v-else-if="data && !data.probation.items.length" size="sm" tone="success" :icon="CircleCheck" :title="t('hr.overview.probationEmpty')" :description="t('hr.overview.probationEmptyBody')" />
+          <QuietEmpty v-else-if="data && !data.probation_endings.length" :icon="CircleCheck" :title="t('hr.overview.probationEmpty')" :description="t('hr.overview.probationEmptyBody')" />
           <ul v-else-if="data" class="-mx-2 flex flex-col">
-            <li v-for="row in data.probation.items" :key="row.id" class="flex flex-wrap items-center gap-1 rounded-[10px] pr-1 hover:bg-highlight">
+            <li v-for="row in data.probation_endings" :key="row.id" class="flex flex-wrap items-center gap-1 rounded-[10px] pr-1 hover:bg-highlight">
               <RouterLink :to="{ path: `${base}/hr/contracts`, query: { contract: String(row.id) } }" class="flex min-h-12 min-w-[200px] flex-1 items-center gap-3 px-2 py-1.5">
                 <UserAvatar :name="row.member.name" :src="row.member.photo_url" :size="32" />
                 <div class="min-w-0 flex-1">
                   <p class="truncate text-sm font-semibold text-fg">{{ row.member.name }}</p>
-                  <p class="truncate text-xs text-muted">{{ t("hr.overview.probationUntil", { date: fmt.day(row.probation_until, "short") }) }}</p>
+                  <p class="truncate text-xs text-muted">{{ t("hr.overview.probationUntil", { date: fmt.day(row.date, "short") }) }}</p>
+                  <DaysChip :day="row.date" :warn-days="warn.probation" prefix="probation" always class="mt-1 sm:hidden" />
                 </div>
-                <DaysChip :day="row.probation_until" :warn-days="warn.probation" prefix="probation" always />
+                <DaysChip :day="row.date" :warn-days="warn.probation" prefix="probation" always class="max-sm:hidden" />
               </RouterLink>
               <div v-if="access.manage" class="flex shrink-0 items-center gap-1 max-sm:w-full max-sm:justify-end max-sm:pb-1.5">
-                <UiButton size="md" variant="ghost" class="max-sm:h-10" :icon="Clock4" @click="runAction(row, 'extend-probation')">{{ t("hr.contract.action.extend-probation") }}</UiButton>
-                <UiButton size="md" variant="soft" class="max-sm:h-10" :icon="BadgeCheck" @click="runAction(row, 'pass-probation')">{{ t("hr.contract.action.pass-probation") }}</UiButton>
+                <UiButton size="md" variant="ghost" class="max-sm:h-10" :icon="Clock4" @click="runAction(probation(row), 'extend-probation')">{{ t("hr.contract.action.extend-probation") }}</UiButton>
+                <UiButton size="md" variant="soft" class="max-sm:h-10" :icon="BadgeCheck" @click="runAction(probation(row), 'pass-probation')">{{ t("hr.contract.action.pass-probation") }}</UiButton>
               </div>
             </li>
           </ul>
         </section>
 
-        <!-- Birthdays -->
-        <section class="ui-card flex flex-col p-4" :aria-label="t('hr.overview.birthdays')">
+        <!-- Birthdays and anniversaries this week -->
+        <section class="ui-card flex flex-col p-4" :aria-label="t('hr.overview.birthdays')" data-overview-celebrations>
           <header class="mb-2 flex items-center gap-2">
             <Cake :size="16" class="text-subtle" aria-hidden="true" />
             <h2 class="flex-1 text-sm font-semibold text-fg">{{ t("hr.overview.birthdays") }}</h2>
@@ -227,16 +225,19 @@ function birthdayLabel(day: string): string {
             </RouterLink>
           </header>
           <div v-if="skeleton" class="flex flex-col gap-2"><SkeletonBlock v-for="n in 2" :key="n" height="48px" /></div>
-          <EmptyState v-else-if="data && !data.birthdays.length" size="sm" tone="neutral" :icon="Cake" :title="t('hr.overview.birthdaysEmpty')" :description="t('hr.overview.birthdaysEmptyBody')" />
+          <QuietEmpty v-else-if="data && !week.length" tone="neutral" :icon="Cake" :title="t('hr.overview.birthdaysEmpty')" :description="t('hr.overview.birthdaysEmptyBody')" />
           <ul v-else-if="data" class="-mx-2 flex flex-col">
-            <li v-for="row in data.birthdays" :key="`${row.member.id}-${row.day}`">
+            <li v-for="row in week" :key="`${row.kind}-${row.member.id}`">
               <RouterLink :to="`${base}/people/${row.member.id}`" class="flex min-h-12 items-center gap-3 rounded-[10px] px-2 py-1.5 hover:bg-highlight">
                 <UserAvatar :name="row.member.name" :src="row.member.photo_url" :size="32" />
                 <div class="min-w-0 flex-1">
                   <p class="truncate text-sm font-semibold text-fg">{{ row.member.name }}</p>
-                  <p v-if="row.position" class="truncate text-xs text-muted">{{ row.position }}</p>
+                  <p class="flex items-center gap-1 truncate text-xs text-muted">
+                    <component :is="row.kind === 'birthday' ? Cake : Award" :size="12" aria-hidden="true" />
+                    {{ row.kind === "birthday" ? t("hr.celebrations.birthday") : t("hr.celebrations.years", { n: row.years }, row.years ?? 0) }}
+                  </p>
                 </div>
-                <span :class="['shrink-0 text-sm', daysUntil(row.day, today) === 0 ? 'font-semibold text-primary' : 'text-muted']">{{ birthdayLabel(row.day) }}</span>
+                <span :class="['shrink-0 text-sm', row.days_until === 0 ? 'font-semibold text-primary' : 'text-muted']">{{ whenLabel(row.days_until, row.date) }}</span>
               </RouterLink>
             </li>
           </ul>

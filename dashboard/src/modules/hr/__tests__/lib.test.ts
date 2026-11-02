@@ -7,7 +7,7 @@ import {
   contractParams,
   documentParams,
   documentState,
-  fileKind,
+  headcountKpi,
   groupDigits,
   hrAccess,
   idDisplay,
@@ -19,6 +19,7 @@ import {
   placeholdersIn,
   shapeCompliance,
   unknownPlaceholders,
+  weekCelebrations,
 } from "../lib";
 import type { Compliance, Contract } from "../types";
 
@@ -91,24 +92,38 @@ describe("expiry", () => {
     expect(documentState(null, "2026-11-02", 30)).toBe("no_expiry");
   });
 
-  it("tells images, PDFs and other files apart by name or link", () => {
-    expect(fileKind("medkitob.JPG")).toBe("image");
-    expect(fileKind("/api/v1/files/abc/scan.pdf?sig=1")).toBe("pdf");
-    expect(fileKind("archive.zip")).toBe("other");
-    expect(fileKind(null)).toBe("other");
+});
+
+describe("overview", () => {
+  it("works out the headcount 30 days ago from who joined and who left since", () => {
+    const trend = [40, 41, 43, 44].map((headcount, index) => ({ month: `2026-0${index + 7}`, headcount, hired: 0, left: 0 }));
+    expect(headcountKpi({ headcount: { current: 45, active: 44, suspended: 1, joined_30d: 3, left_30d: 1 }, trend })).toEqual({ value: 45, previous: 43, spark: [40, 41, 43, 44] });
+  });
+
+  it("puts the week's birthdays and anniversaries in one list, soonest first", () => {
+    const member = (id: number, name: string) => ({ id, name, photo_url: null });
+    const week = weekCelebrations({
+      birthdays: [
+        { member: member(1, "Madina"), date: "2026-11-05", days_until: 3 },
+        { member: member(2, "Alisher"), date: "2026-11-02", days_until: 0 },
+      ],
+      anniversaries: [{ member: member(3, "Bekzod"), date: "2026-11-03", days_until: 1, years: 4 }],
+    });
+    expect(week.map((row) => `${row.kind}:${row.member.name}:${row.years ?? "-"}`)).toEqual(["birthday:Alisher:-", "anniversary:Bekzod:4", "birthday:Madina:-"]);
   });
 });
 
 describe("filters → query", () => {
-  it("turns the Documents chips into the API's params", () => {
-    expect(documentParams({ state: "expiring", kind: ["medical_book", "pharmacist_certificate"], verified: false }, "  Alisher ", 30)).toEqual({
-      expiring_within: 30,
+  it("turns the Documents chips into the API's params (the server knows the warning window)", () => {
+    expect(documentParams({ state: "expiring", kind: ["medical_book", "pharmacist_certificate"], verified: false }, "  Alisher ")).toEqual({
+      state: "expiring",
       kind: ["medical_book", "pharmacist_certificate"],
       verified: false,
       q: "Alisher",
     });
-    expect(documentParams({ state: "expired", verified: "true", member: "42" }, "", 14)).toEqual({ expired: true, verified: true, member: 42 });
-    expect(documentParams({}, "", 30)).toEqual({});
+    expect(documentParams({ state: "expired", verified: "true", member: "42" }, "")).toEqual({ state: "expired", verified: true, member: 42 });
+    expect(documentParams({ state: "soon" }, "")).toEqual({});
+    expect(documentParams({}, "")).toEqual({});
   });
 
   it("turns the Contracts tab and chips into the API's params", () => {
@@ -125,21 +140,21 @@ describe("compliance matrix", () => {
       {
         member: { id: 1, name: "Alisher Valiyev" },
         position: { id: 7, name: "Farmatsevt" },
-        cells: [
-          { kind: "medical_book", status: "expiring", document_id: 11, expires_on: "2026-11-20" },
-          { kind: "pharmacist_certificate", status: "missing" },
+        items: [
+          { kind: "medical_book", status: "expiring", document_id: 11, expires_on: "2026-11-20", level: "" },
+          { kind: "pharmacist_certificate", status: "missing", document_id: null, expires_on: null, level: "" },
         ],
       },
       {
         member: { id: 2, name: "Bekzod Mirzayev" },
         position: { id: 7, name: "Farmatsevt" },
-        cells: [
-          { kind: "medical_book", status: "ok", document_id: 12 },
-          { kind: "pharmacist_certificate", status: "ok", document_id: 13 },
+        items: [
+          { kind: "medical_book", status: "ok", document_id: 12, expires_on: "2027-04-01", level: "" },
+          { kind: "pharmacist_certificate", status: "ok", document_id: 13, expires_on: null, level: "" },
         ],
       },
-      { member: { id: 3, name: "Kamola Yusupova" }, position: { id: 9, name: "Kuryer" }, cells: [{ kind: "medical_book", status: "expired", document_id: 14 }] },
-      { member: { id: 4, name: "Zafar Islomov" }, position: null, cells: [{ kind: "medical_book", status: "unverified", document_id: 15 }] },
+      { member: { id: 3, name: "Kamola Yusupova" }, position: { id: 9, name: "Kuryer" }, items: [{ kind: "medical_book", status: "expired", document_id: 14, expires_on: "2026-10-01", level: "" }] },
+      { member: { id: 4, name: "Zafar Islomov" }, position: null, items: [{ kind: "medical_book", status: "unverified", document_id: 15, expires_on: null, level: "" }] },
     ],
   };
 

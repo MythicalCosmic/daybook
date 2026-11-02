@@ -243,6 +243,15 @@ export function useHrSettings(enabled: MaybeRefOrGetter<boolean> = true) {
   return useQuery({ queryKey: computed(() => hrKeys.settings(cid.value)), queryFn: ({ signal }) => hrApi.settings(cid.value, signal), enabled: enabledFor(cid, enabled), staleTime: 60_000 });
 }
 
+/** The company's warning windows (Settings › HR), the defaults until they load. */
+export function useWarnDays() {
+  const settings = useHrSettings();
+  return computed(() => {
+    const row = settings.data.value;
+    return { documents: row?.document_warn_days ?? 30, contracts: row?.contract_warn_days ?? 30, probation: row?.probation_warn_days ?? 7 };
+  });
+}
+
 // ─── Mutations ─────────────────────────────────────────────────────────────
 
 /** Everything HR shows again, plus the people pages (a profile feeds Person 360) and the shell's pulse. */

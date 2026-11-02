@@ -125,9 +125,16 @@ describe("DaysChip", () => {
 });
 
 describe("Person 360 › HR", () => {
-  const profile: HrProfile = {
+  /** The profile as the server shapes it for a viewer holding `perms`. */
+  const profileFor = (perms: Perm[]): HrProfile => ({
     member: { id: 9, name: "Alisher Valiyev" },
-    position: "Farmatsevt",
+    first_name: "Alisher",
+    last_name: "Valiyev",
+    status: "approved",
+    position: { id: 7, name: "Farmatsevt" },
+    department: null,
+    manager: null,
+    home_branch: { id: 1, name: "Chilonzor", code: "CHL" },
     employee_number: "CHL-014",
     middle_name: "Rustamovich",
     birth_date: "1996-03-14",
@@ -139,26 +146,31 @@ describe("Person 360 › HR", () => {
     email: "",
     address: "Bunyodkor 12",
     city: "Toshkent",
-    pinfl: "3120•••••••045",
+    pinfl: "••••••••••0045",
     passport: "AA•••••67",
-    tin: "",
+    passport_shared: false,
+    tin: "301234567",
     payout_method: "card",
-    payout_card: "8600••••••••9012",
+    payout_card: "••••••••••••9012",
     terminated_on: null,
     termination_reason: "",
+    termination_note: "",
+    notes: perms.includes("hr.manage") ? "Kechki smenaga o‘tishni so‘ragan." : null,
     emergency_contacts: [{ id: 1, name: "Gulnora Valiyeva", relation: "Onasi", phone: "+998907776655" }],
-  };
-  const routes = {
-    "hr/people/9/profile/": profile,
-    "hr/people/9/sensitive/": { pinfl: "31204567890045", passport: "AA1234567", payout_card: "8600123456789012" },
+    can_edit: perms.includes("hr.manage"),
+    can_reveal: perms.includes("hr.sensitive"),
+  });
+  const routes = (perms: Perm[]) => ({
+    "hr/people/9/profile/": profileFor(perms),
+    "hr/people/9/sensitive/": { member: { id: 9, name: "Alisher Valiyev", photo_url: null }, pinfl: "31204567890045", passport: "AA1234567", payout_card: "8600123456789012", tin: "301234567" },
     "hr/documents/": { count: 0, next: null, previous: null, results: [] },
     "hr/contracts/": { count: 0, next: null, previous: null, results: [] },
-    "hr/overview/": { warn_days: { documents: 30, contracts: 30, probation: 7 } },
-  };
+    "hr/settings/": { document_warn_days: 30, contract_warn_days: 30, probation_warn_days: 7, celebrations_enabled: true, celebrate_anniversaries: true },
+  });
 
-  async function mountAs(perms: Perm[] | "owner") {
+  async function mountAs(perms: Perm[]) {
     const app = await testApp("/c/1/people/9/hr");
-    if (perms !== "owner") useSessionStore().me = me([company({ is_owner: false, role: { id: 3, name: "Manager" }, permissions: perms })]);
+    useSessionStore().me = me([company({ is_owner: false, role: { id: 3, name: "Manager" }, permissions: perms })]);
     const { wrapper } = mountWithProviders(PersonHrTab, { plugins: app.plugins, props: { memberId: 9 } });
     await flushPromises();
     await flushPromises();
@@ -166,11 +178,14 @@ describe("Person 360 › HR", () => {
   }
 
   it("shows the IDs masked and reveals them through the audited read for hr.sensitive", async () => {
-    const calls = stub(routes);
-    const wrapper = await mountAs(["hr.view", "hr.manage", "hr.sensitive"]);
+    const perms: Perm[] = ["hr.view", "hr.manage", "hr.sensitive"];
+    const calls = stub(routes(perms));
+    const wrapper = await mountAs(perms);
     expect(wrapper.find("[data-id-field='passport']").text()).toContain("AA•••••67");
-    expect(wrapper.find("[data-id-field='pinfl']").text()).toContain("3120•••••••045");
+    expect(wrapper.find("[data-id-field='pinfl']").text()).toContain("••••••••••0045");
     expect(calls.some((c) => c.url.includes("sensitive"))).toBe(false);
+    // HR's note, which the server sends to hr.manage only.
+    expect(wrapper.find("[data-hr-notes]").text()).toContain("Kechki smenaga");
 
     await wrapper.find("[data-reveal]").trigger("click");
     await flushPromises();
@@ -185,9 +200,10 @@ describe("Person 360 › HR", () => {
   });
 
   it("reads only, with no reveal and no edit, for hr.view", async () => {
-    stub(routes);
+    stub(routes(["hr.view"]));
     const wrapper = await mountAs(["hr.view"]);
     expect(wrapper.find("[data-reveal]").exists()).toBe(false);
+    expect(wrapper.find("[data-hr-notes]").exists()).toBe(false);
     expect(wrapper.find("[data-hr-ids]").text()).toContain(en["hr.profile.maskedHint"]);
     expect(wrapper.find("[data-hr-profile] button").exists()).toBe(false);
     expect(wrapper.find("[data-hr-documents] button").exists()).toBe(false);

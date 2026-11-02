@@ -6,7 +6,7 @@
  * it is missing, the upload prefilled with the person and the kind. Phones get one card per person
  * with the gaps as chips.
  */
-import { CircleCheck, CircleDashed, CircleX, Clock4, ListChecks, ShieldQuestion, Upload } from "@lucide/vue";
+import { CircleCheck, CircleDashed, CircleX, Clock4, ListChecks, ShieldQuestion } from "@lucide/vue";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
@@ -21,7 +21,7 @@ import UserAvatar from "@/components/UserAvatar.vue";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 
 import { useCompliance } from "../api";
-import { COMPLIANCE_TONES, shapeCompliance } from "../lib";
+import { shapeCompliance } from "../lib";
 import type { ComplianceStatus, DocumentKind } from "../types";
 
 const props = defineProps<{ canManage: boolean }>();
@@ -40,6 +40,7 @@ const noRules = computed(() => !!query.data.value && !query.data.value.kinds.len
 
 const icons: Record<ComplianceStatus, typeof CircleCheck> = { ok: CircleCheck, expiring: Clock4, expired: CircleX, missing: CircleDashed, unverified: ShieldQuestion };
 const colors: Record<ComplianceStatus, string> = { ok: "text-success", expiring: "text-warning", expired: "text-danger", missing: "text-danger", unverified: "text-info" };
+const LEGEND: readonly ComplianceStatus[] = ["ok", "expiring", "expired", "missing", "unverified"];
 
 function openCell(member: { id: number; name: string }, kind: DocumentKind, status: ComplianceStatus | null, documentId?: number | null): void {
   if (status === null) return;
@@ -87,7 +88,7 @@ function openCell(member: { id: number; name: string }, kind: DocumentKind, stat
         <div class="overflow-x-auto">
           <table class="w-full border-collapse text-sm">
             <thead>
-              <tr class="bg-surface-2/70">
+              <tr class="bg-surface-2">
                 <th scope="col" class="sticky left-0 z-[1] min-w-[220px] bg-surface-2 px-4 py-2.5 text-left text-xs font-semibold text-muted">{{ t("hr.field.person") }}</th>
                 <th v-for="kind in matrix.kinds" :key="kind" scope="col" class="min-w-[112px] px-2 py-2.5 text-center align-bottom text-xs font-semibold text-muted">
                   <span class="block leading-tight">{{ t(`hr.kind.${kind}`) }}</span>
@@ -102,7 +103,7 @@ function openCell(member: { id: number; name: string }, kind: DocumentKind, stat
                     {{ group.position ?? t("hr.compliance.noPosition") }} · {{ group.rows.length }}
                   </th>
                 </tr>
-                <tr v-for="row in group.rows" :key="row.member.id" class="border-t border-line first:border-t-0 hover:bg-highlight/60">
+                <tr v-for="row in group.rows" :key="row.member.id" class="border-t border-line first:border-t-0">
                   <th scope="row" class="sticky left-0 z-[1] bg-surface px-4 py-2 text-left font-normal">
                     <div class="flex min-w-0 items-center gap-2.5">
                       <UserAvatar :name="row.member.name" :src="row.member.photo_url" :size="26" />
@@ -117,11 +118,11 @@ function openCell(member: { id: number; name: string }, kind: DocumentKind, stat
                       :class="[
                         'pressable inline-flex size-9 items-center justify-center rounded-[9px] transition-colors hover:bg-surface-2',
                         colors[row.byKind[kind]!],
-                        !row.cells.find((c) => c.kind === kind)?.document_id && !canManage && 'cursor-default hover:bg-transparent',
+                        !row.documents[kind] && !canManage && 'cursor-default hover:bg-transparent',
                       ]"
                       :aria-label="`${t(`hr.kind.${kind}`)}: ${t(`hr.compliance.status.${row.byKind[kind]}`)}`"
                       :title="t(`hr.compliance.status.${row.byKind[kind]}`)"
-                      @click="openCell(row.member, kind, row.byKind[kind], row.cells.find((c) => c.kind === kind)?.document_id)"
+                      @click="openCell(row.member, kind, row.byKind[kind], row.documents[kind])"
                     >
                       <component :is="icons[row.byKind[kind]!]" :size="18" />
                     </button>
@@ -132,14 +133,19 @@ function openCell(member: { id: number; name: string }, kind: DocumentKind, stat
           </table>
         </div>
         <footer class="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-line px-4 py-2.5 text-xs text-muted">
-          <span v-for="status in (['ok', 'expiring', 'expired', 'missing', 'unverified'] as const)" :key="status" class="inline-flex items-center gap-1.5">
+          <span v-for="status in LEGEND" :key="status" class="inline-flex items-center gap-1.5">
             <component :is="icons[status]" :size="14" :class="colors[status]" aria-hidden="true" />{{ t(`hr.compliance.status.${status}`) }}
           </span>
         </footer>
       </div>
 
-      <!-- Phones: one card per person with what they lack -->
+      <!-- Phones: one card per person, what they lack as chips (the icon's colour says how) -->
       <div class="flex flex-col gap-4 md:hidden">
+        <p class="flex flex-wrap items-center gap-x-3 gap-y-1 px-1 text-xs text-muted" data-compliance-legend>
+          <span v-for="status in LEGEND.filter((s) => s !== 'ok')" :key="status" class="inline-flex items-center gap-1">
+            <component :is="icons[status]" :size="13" :class="colors[status]" aria-hidden="true" />{{ t(`hr.compliance.status.${status}`) }}
+          </span>
+        </p>
         <section v-for="group in matrix.groups" :key="group.key" class="flex flex-col gap-2">
           <h3 class="px-1 text-xs font-semibold uppercase tracking-[0.04em] text-subtle">{{ group.position ?? t("hr.compliance.noPosition") }} · {{ group.rows.length }}</h3>
           <article v-for="row in group.rows" :key="row.member.id" class="ui-card p-3.5">
@@ -148,17 +154,16 @@ function openCell(member: { id: number; name: string }, kind: DocumentKind, stat
               <p class="min-w-0 flex-1 truncate text-base font-semibold text-fg">{{ row.member.name }}</p>
               <StatusPill v-if="!row.gaps.length" tone="success" size="sm" :label="t('hr.compliance.complete')" />
             </div>
-            <ul v-if="row.gaps.length" class="mt-2.5 flex flex-col gap-1.5">
-              <li v-for="gap in row.gaps" :key="gap.kind">
+            <ul v-if="row.gaps.length" class="mt-2.5 flex flex-wrap gap-1.5">
+              <li v-for="gap in row.gaps" :key="gap.kind" class="min-w-0 max-w-full">
                 <button
                   type="button"
-                  class="pressable flex min-h-11 w-full items-center gap-2.5 rounded-[10px] border border-line px-3 py-2 text-left hover:bg-highlight"
+                  class="pressable inline-flex min-h-10 max-w-full items-center gap-1.5 rounded-full border border-line bg-surface px-3 text-sm text-fg hover:bg-highlight"
+                  :aria-label="`${t(`hr.kind.${gap.kind}`)}: ${t(`hr.compliance.status.${gap.status}`)}`"
                   @click="openCell(row.member, gap.kind, gap.status, gap.document_id)"
                 >
-                  <component :is="icons[gap.status]" :size="17" :class="['shrink-0', colors[gap.status]]" aria-hidden="true" />
-                  <span class="min-w-0 flex-1 truncate text-sm text-fg">{{ t(`hr.kind.${gap.kind}`) }}</span>
-                  <StatusPill :tone="COMPLIANCE_TONES[gap.status]" size="sm" :label="t(`hr.compliance.status.${gap.status}`)" />
-                  <Upload v-if="!gap.document_id && canManage" :size="15" class="shrink-0 text-subtle" aria-hidden="true" />
+                  <component :is="icons[gap.status]" :size="16" :class="['shrink-0', colors[gap.status]]" aria-hidden="true" />
+                  <span class="truncate">{{ t(`hr.kind.${gap.kind}`) }}</span>
                 </button>
               </li>
             </ul>

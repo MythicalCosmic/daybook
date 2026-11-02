@@ -85,8 +85,12 @@ async function drop(contact: EmergencyContact): Promise<void> {
         <div class="min-w-0 flex-1">
           <p class="truncate text-sm font-semibold text-fg">{{ contact.name }}</p>
           <p class="truncate text-xs text-muted">{{ contact.relation || t("hr.contacts.noRelation") }}</p>
+          <!-- On a phone the number goes under the name, which keeps its room; a tap rings it. -->
+          <a :href="`tel:${contact.phone}`" class="mt-0.5 inline-flex min-h-8 items-center gap-1.5 text-sm font-medium tabular-nums text-accent-fg sm:hidden">
+            <Phone :size="13" aria-hidden="true" />{{ formatPhone(contact.phone) }}
+          </a>
         </div>
-        <a :href="`tel:${contact.phone}`" class="pressable inline-flex h-10 items-center gap-1.5 rounded-button px-2.5 text-sm font-medium tabular-nums text-fg hover:bg-highlight sm:h-8">
+        <a :href="`tel:${contact.phone}`" class="pressable inline-flex h-8 items-center gap-1.5 rounded-button px-2.5 text-sm font-medium tabular-nums text-fg hover:bg-highlight max-sm:hidden">
           <Phone :size="14" class="text-subtle" aria-hidden="true" />{{ formatPhone(contact.phone) }}
         </a>
         <template v-if="canManage">

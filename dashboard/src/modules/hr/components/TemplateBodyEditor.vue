@@ -7,6 +7,7 @@
  * `v-model` is the HTML; the server sanitizes it again.
  */
 import { Extension } from "@tiptap/core";
+import { Placeholder } from "@tiptap/extensions";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
 import StarterKit from "@tiptap/starter-kit";
@@ -63,6 +64,7 @@ const editor = useEditor({
   extensions: [
     StarterKit.configure({ heading: { levels: [1, 2, 3] }, codeBlock: false, code: false, blockquote: false, link: false }),
     PlaceholderTint,
+    Placeholder.configure({ placeholder: t("hr.template.bodyPlaceholder") }),
   ],
   editorProps: { attributes: { class: "hr-paper hr-paper-edit", role: "textbox", "aria-multiline": "true", "aria-label": t("hr.template.body") } },
   onUpdate: ({ editor: current }) => {

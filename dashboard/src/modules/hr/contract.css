@@ -37,6 +37,15 @@
   }
 }
 
+/* The empty editor says what goes in it. */
+.hr-paper-edit p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: var(--c-subtle);
+  pointer-events: none;
+}
+
 .hr-paper > :first-child {
   margin-top: 0;
 }

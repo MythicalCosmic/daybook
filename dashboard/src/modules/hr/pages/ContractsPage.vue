@@ -25,7 +25,7 @@ import { useFormat } from "@/lib/useFormat";
 import { rs, useRouteState } from "@/lib/useRouteState";
 import { useCompanyStore } from "@/stores/company";
 
-import { useContracts, useOverview } from "../api";
+import { useContracts, useWarnDays } from "../api";
 import ContractActionDialog from "../components/ContractActionDialog.vue";
 import ContractDrawer from "../components/ContractDrawer.vue";
 import ContractFormDialog from "../components/ContractFormDialog.vue";
@@ -44,8 +44,7 @@ const access = computed(() => hrAccess((perm) => company.can(perm)));
 
 const view = useRouteState<ContractView>("status", rs.enum(["active", "draft", "ended", "all"] as const, "active"));
 const search = useRouteState("q", rs.string(""));
-const overview = useOverview();
-const warn = computed(() => overview.data.value?.warn_days ?? { documents: 30, contracts: 30, probation: 7 });
+const warn = useWarnDays();
 
 const defs = computed<FilterDef[]>(() => [
   { key: "ending", label: t("hr.contract.filter.ending"), type: "boolean", icon: Timer, pinned: true, trueLabel: t("hr.contract.filter.endingYes", { n: warn.value.contracts }, warn.value.contracts), falseLabel: t("common.all") },

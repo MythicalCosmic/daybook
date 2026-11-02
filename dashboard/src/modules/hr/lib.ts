@@ -3,6 +3,7 @@
  * masked IDs and their reveal, a document's expiry state, the list filters as API params, the
  * compliance matrix, contract actions by status, and the template placeholders.
  */
+import type { PersonRef } from "@/api/types";
 import type { StatusTone } from "@/components/StatusPill.vue";
 import type { FilterValues } from "@/components/filters";
 import { diffDays } from "@/lib/dates";
@@ -19,6 +20,7 @@ import {
   type DocumentKind,
   type DocumentParams,
   type DocumentState,
+  type HrOverview,
   type HrProfile,
   type HrSensitive,
   type SensitiveField,
@@ -104,14 +106,6 @@ export function kindGroup(kind: DocumentKind): KindGroup {
   return "other";
 }
 
-/** How to show a file: an image inline, a PDF in the viewer, anything else as a link. */
-export function fileKind(nameOrUrl: string | null | undefined): "image" | "pdf" | "other" {
-  const path = (nameOrUrl ?? "").split(/[?#]/)[0]!.toLowerCase();
-  if (/\.(jpe?g|png|webp|gif|heic|heif)$/.test(path)) return "image";
-  if (path.endsWith(".pdf")) return "pdf";
-  return "other";
-}
-
 // ─── Expiry ────────────────────────────────────────────────────────────────
 
 export function documentState(expiresOn: string | null, today: string, warnDays: number): DocumentState {
@@ -128,6 +122,33 @@ export function daysUntil(day: string, today: string): number {
   return diffDays(today, day);
 }
 
+// ─── Overview ──────────────────────────────────────────────────────────────
+
+/**
+ * The headcount tile: people now, and 30 days ago (now, less who joined since, plus who left
+ * since) for the change; the 12-month trend as its sparkline.
+ */
+export function headcountKpi(overview: Pick<HrOverview, "headcount" | "trend">): { value: number; previous: number; spark: number[] } {
+  const h = overview.headcount;
+  return { value: h.current, previous: h.current - h.joined_30d + h.left_30d, spark: overview.trend.map((point) => point.headcount) };
+}
+
+export interface WeekCelebration {
+  kind: "birthday" | "anniversary";
+  member: PersonRef;
+  date: string;
+  days_until: number;
+  years: number | null;
+}
+
+/** Birthdays and work anniversaries of the coming week in one list, soonest first. */
+export function weekCelebrations(overview: Pick<HrOverview, "birthdays" | "anniversaries">): WeekCelebration[] {
+  return [
+    ...overview.birthdays.map((row) => ({ kind: "birthday" as const, member: row.member, date: row.date, days_until: row.days_until, years: null })),
+    ...overview.anniversaries.map((row) => ({ kind: "anniversary" as const, member: row.member, date: row.date, days_until: row.days_until, years: row.years })),
+  ].sort((a, b) => a.days_until - b.days_until || a.member.name.localeCompare(b.member.name));
+}
+
 // ─── Filters → params ──────────────────────────────────────────────────────
 
 const asList = (value: unknown): string[] => (Array.isArray(value) ? value.map(String) : typeof value === "string" && value ? [value] : []);
@@ -137,15 +158,17 @@ const asNumber = (value: unknown): number | undefined => {
 };
 const asBoolean = (value: unknown): boolean | undefined => (value === true || value === "true" ? true : value === false || value === "false" ? false : undefined);
 
+const STATES: readonly DocumentState[] = ["valid", "expiring", "expired", "no_expiry"];
+
 /**
- * The Documents filters as the API's query: "state" is a chip (expiring within the warning
- * window, or expired), "kind" many kinds, "verified" yes/no, "member" one person.
+ * The Documents filters as the API's query: "state" is a chip (expiring inside the company's
+ * warning window, or expired; the server knows the window), "kind" many kinds, "verified" yes/no,
+ * "member" one person.
  */
-export function documentParams(values: FilterValues, search: string, warnDays: number): DocumentParams {
+export function documentParams(values: FilterValues, search: string): DocumentParams {
   const params: DocumentParams = {};
-  const state = asList(values.state)[0];
-  if (state === "expiring") params.expiring_within = warnDays;
-  if (state === "expired") params.expired = true;
+  const state = asList(values.state)[0] as DocumentState | undefined;
+  if (state && STATES.includes(state)) params.state = state;
   const kinds = asList(values.kind);
   if (kinds.length) params.kind = kinds;
   const verified = asBoolean(values.verified);
@@ -180,13 +203,14 @@ export function contractParams(view: ContractView, values: FilterValues, search:
 
 // ─── Compliance ────────────────────────────────────────────────────────────
 
-export const COMPLIANCE_TONES: Record<ComplianceStatus, StatusTone> = { ok: "success", expiring: "warning", expired: "danger", missing: "danger", unverified: "info" };
 /** Statuses that count as a gap (something to fix). */
 export const GAPS: readonly ComplianceStatus[] = ["missing", "expired", "expiring", "unverified"];
 
 export interface MatrixRow extends ComplianceRow {
   /** Cell per column kind; null where the person's position doesn't require it. */
   byKind: Record<string, ComplianceStatus | null>;
+  /** The document behind each cell, when there is one (it opens on a click). */
+  documents: Record<string, number | null>;
   /** Kinds to fix, worst first (missing and expired before expiring and unverified). */
   gaps: Array<{ kind: DocumentKind; status: ComplianceStatus; document_id?: number | null }>;
 }
@@ -222,9 +246,11 @@ export function shapeCompliance(data: Compliance | null | undefined, options: { 
   for (const row of data?.rows ?? []) {
     people += 1;
     const byKind: Record<string, ComplianceStatus | null> = Object.fromEntries(kinds.map((kind) => [kind, null]));
+    const documents: Record<string, number | null> = {};
     const gaps: MatrixRow["gaps"] = [];
-    for (const cell of row.cells) {
+    for (const cell of row.items) {
       byKind[cell.kind] = cell.status;
+      documents[cell.kind] = cell.document_id ?? null;
       if (GAPS.includes(cell.status)) {
         gaps.push({ kind: cell.kind, status: cell.status, document_id: cell.document_id ?? null });
         gapsByKind[cell.kind] = (gapsByKind[cell.kind] ?? 0) + 1;
@@ -235,7 +261,7 @@ export function shapeCompliance(data: Compliance | null | undefined, options: { 
     if (options.onlyGaps && !gaps.length) continue;
     const key = row.position ? `p${row.position.id}` : "none";
     const group = groups.get(key) ?? { key, position: row.position?.name ?? null, rows: [] };
-    group.rows.push({ ...row, byKind, gaps });
+    group.rows.push({ ...row, byKind, documents, gaps });
     groups.set(key, group);
   }
   const sorted = [...groups.values()].sort((a, b) => (a.position === null ? 1 : b.position === null ? -1 : collator.compare(a.position, b.position)));

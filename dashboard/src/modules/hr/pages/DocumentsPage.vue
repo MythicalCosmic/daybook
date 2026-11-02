@@ -24,13 +24,13 @@ import { useFormat } from "@/lib/useFormat";
 import { rs, useRouteState } from "@/lib/useRouteState";
 import { useCompanyStore } from "@/stores/company";
 
-import { useDocuments, useOverview } from "../api";
+import { useDocuments, useOverview, useWarnDays } from "../api";
 import ComplianceMatrix from "../components/ComplianceMatrix.vue";
 import DaysChip from "../components/DaysChip.vue";
 import DocumentDrawer from "../components/DocumentDrawer.vue";
 import DocumentFormDrawer from "../components/DocumentFormDrawer.vue";
 import RequiredDocumentsDrawer from "../components/RequiredDocumentsDrawer.vue";
-import { documentParams, hrAccess, kindGroup, needsSensitive } from "../lib";
+import { documentParams, hrAccess, kindGroup } from "../lib";
 import { DOCUMENT_KINDS, type DocumentKind, type HrDocument } from "../types";
 
 const { t } = useI18n();
@@ -43,7 +43,8 @@ const access = computed(() => hrAccess((perm) => company.can(perm)));
 const view = useRouteState<"list" | "compliance">("view", rs.enum(["list", "compliance"] as const, "list"));
 const search = useRouteState("q", rs.string(""));
 const overview = useOverview();
-const warnDays = computed(() => overview.data.value?.warn_days.documents ?? 30);
+const warn = useWarnDays();
+const warnDays = computed(() => warn.value.documents);
 
 const defs = computed<FilterDef[]>(() => [
   {
@@ -69,7 +70,7 @@ const filters = useUrlFilters(defs);
 const table = useDataTable({ id: "hr.documents", url: true, ordering: "expires_on" });
 table.resetPageOn(() => [filters.params.value, search.value]);
 
-const params = computed(() => ({ ...documentParams(filters.values.value, search.value, warnDays.value), ...table.params.value }));
+const params = computed(() => ({ ...documentParams(filters.values.value, search.value), ...table.params.value }));
 const documents = useDocuments(params, computed(() => view.value === "list"));
 const filtered = computed(() => filters.active.value > 0 || !!search.value);
 
@@ -92,7 +93,7 @@ const columns = computed<TableColumn<HrDocument>[]>(() => [
   { id: "kind", header: t("hr.field.kind"), minWidth: 180, value: (row) => t(`hr.kind.${row.kind}`) },
   { id: "number", header: t("hr.field.number"), width: 140, value: (row) => row.number },
   { id: "expires_on", header: t("hr.field.expiresOn"), width: 168, sortable: true, value: (row) => row.expires_on ?? "" },
-  { id: "verified", header: t("hr.filter.verified"), width: 140, value: (row) => (row.verified_at ? "1" : "") },
+  { id: "verified", header: t("hr.filter.verified"), width: 140, value: (row) => (row.verified ? "1" : "") },
   { id: "file", header: t("hr.field.file"), width: 64, align: "center", hideable: false, value: (row) => (row.file ? "1" : "") },
 ]);
 
@@ -128,9 +129,6 @@ const editOpen = computed({
 });
 const requiredOpen = ref(false);
 
-function hiddenFile(row: HrDocument): boolean {
-  return !row.file && needsSensitive(row.kind as DocumentKind) && !access.value.sensitive;
-}
 </script>
 
 <template>
@@ -225,14 +223,14 @@ function hiddenFile(row: HrDocument): boolean {
           <span v-else class="text-sm text-subtle">{{ t("hr.document.noExpiry") }}</span>
         </template>
         <template #cell-verified="{ row }">
-          <StatusPill v-if="row.verified_at" tone="success" size="sm" :icon="CircleCheck" :dot="false" :label="t('hr.document.verified')" />
+          <StatusPill v-if="row.verified" tone="success" size="sm" :icon="CircleCheck" :dot="false" :label="t('hr.document.verified')" />
           <StatusPill v-else tone="neutral" size="sm" :label="t('hr.document.notVerified')" />
         </template>
         <template #cell-file="{ row }">
           <a v-if="row.file" :href="row.file" target="_blank" rel="noopener" class="pressable grid size-8 place-items-center rounded-button text-muted hover:bg-highlight hover:text-fg" :aria-label="t('hr.document.openFile')" @click.stop>
             <Paperclip :size="16" />
           </a>
-          <LockKeyhole v-else-if="hiddenFile(row)" :size="15" class="text-subtle" :aria-label="t('hr.document.fileHidden')" />
+          <LockKeyhole v-else-if="row.file_hidden" :size="15" class="text-subtle" :aria-label="t('hr.document.fileHidden')" />
         </template>
         <template #card="{ row }">
           <div class="flex items-start gap-3">
@@ -243,7 +241,7 @@ function hiddenFile(row: HrDocument): boolean {
               <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
                 <span v-if="row.expires_on" class="text-xs text-muted">{{ t("hr.document.expiresShort", { date: fmt.day(row.expires_on, "medium") }) }}</span>
                 <DaysChip v-if="row.expires_on" :day="row.expires_on" :warn-days="warnDays" prefix="expires" />
-                <StatusPill v-if="row.verified_at" tone="success" size="sm" :icon="CircleCheck" :dot="false" :label="t('hr.document.verified')" />
+                <StatusPill v-if="row.verified" tone="success" size="sm" :icon="CircleCheck" :dot="false" :label="t('hr.document.verified')" />
               </div>
             </div>
             <Paperclip v-if="row.file" :size="16" class="mt-1 shrink-0 text-subtle" aria-hidden="true" />

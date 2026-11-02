@@ -185,6 +185,8 @@ class PrivateFileView(View):
             )
         for header, value in SANDBOX_HEADERS.items():
             response[header] = value
+        # The dashboard's PdfPreview frames contracts and payslips (plan §6.3); nobody else may.
+        response["X-Frame-Options"] = "SAMEORIGIN"
         response["Cache-Control"] = "private, no-store"
         response["Referrer-Policy"] = "no-referrer"
         return response

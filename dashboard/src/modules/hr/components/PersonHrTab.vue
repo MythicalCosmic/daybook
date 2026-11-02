@@ -4,7 +4,7 @@
  * reveal for hr.sensitive that the server audits), emergency contacts, the contract and the
  * documents. hr.manage edits; everyone else with hr.view reads.
  */
-import { CircleCheck, Eye, EyeOff, FilePlus2, FileSignature, FileText, IdCard, LockKeyhole, Pencil, Phone, Plus, ShieldAlert, UserRound } from "@lucide/vue";
+import { CircleCheck, Eye, EyeOff, FilePlus2, FileSignature, FileText, IdCard, LockKeyhole, Pencil, Phone, Plus, ShieldAlert, StickyNote, UserRound } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink, useRoute, useRouter } from "vue-router";
@@ -12,6 +12,7 @@ import { RouterLink, useRoute, useRouter } from "vue-router";
 import DescriptionList, { type DescriptionItem } from "@/components/DescriptionList.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
+import InlineAlert from "@/components/InlineAlert.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import StatusPill from "@/components/StatusPill.vue";
 import UiButton from "@/components/UiButton.vue";
@@ -21,7 +22,7 @@ import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { useCompanyId, useCompanyStore } from "@/stores/company";
 
-import { hrApi, useContracts, useDocuments, useOverview, useProfile } from "../api";
+import { hrApi, useContracts, useDocuments, useProfile, useWarnDays } from "../api";
 import { CONTRACT_TONES, groupDigits, hrAccess, idDisplay, onProbation, SENSITIVE_FIELDS } from "../lib";
 import type { HrDocument, HrSensitive, SensitiveField } from "../types";
 import ContractFormDialog from "./ContractFormDialog.vue";
@@ -44,8 +45,7 @@ const access = computed(() => hrAccess((perm) => company.can(perm)));
 const query = useProfile(() => props.memberId);
 const profile = computed(() => query.data.value ?? null);
 const skeleton = useDelayedPending(computed(() => query.isPending.value));
-const overview = useOverview();
-const warn = computed(() => overview.data.value?.warn_days ?? { documents: 30, contracts: 30, probation: 7 });
+const warn = useWarnDays();
 
 const documents = useDocuments(() => ({ member: props.memberId, page_size: 50, ordering: "expires_on" }));
 const contracts = useContracts(() => ({ member: props.memberId, page_size: 20, ordering: "-starts_on" }));
@@ -79,11 +79,13 @@ function hide(): void {
 }
 const ids = computed(() =>
   profile.value
-    ? SENSITIVE_FIELDS.map((field: SensitiveField) => ({ field, ...idDisplay(profile.value!, field, revealed.value, access.value.sensitive) }))
+    ? SENSITIVE_FIELDS.map((field: SensitiveField) => ({ field, ...idDisplay(profile.value!, field, revealed.value, profile.value!.can_reveal) }))
     : [],
 );
 const canReveal = computed(() => ids.value.some((id) => id.canReveal));
 const anyRevealed = computed(() => ids.value.some((id) => id.revealed));
+/** The server's word on editing (hr.manage). */
+const canEdit = computed(() => !!profile.value?.can_edit && access.value.manage);
 
 const details = computed<DescriptionItem[]>(() => {
   const p = profile.value;
@@ -132,15 +134,20 @@ const contractLink = computed(() => (contract.value ? { path: `/c/${company.curr
         <header class="flex items-center gap-2 border-b border-line px-5 py-3">
           <UserRound :size="16" class="text-subtle" aria-hidden="true" />
           <h2 class="flex-1 text-md font-semibold text-fg">{{ t("hr.profile.title") }}</h2>
-          <UiButton v-if="access.manage" size="sm" :icon="Pencil" @click="editing = true">{{ t("common.edit") }}</UiButton>
+          <UiButton v-if="canEdit" size="sm" :icon="Pencil" @click="editing = true">{{ t("common.edit") }}</UiButton>
         </header>
-        <div class="p-5">
+        <div class="flex flex-col gap-4 p-5">
           <DescriptionList :items="details" :columns="2">
             <template #value-phone="{ item }">
               <a v-if="profile.personal_phone" :href="`tel:${profile.personal_phone}`" class="inline-flex items-center gap-1.5 tabular-nums hover:text-primary"><Phone :size="14" class="text-subtle" />{{ item.value }}</a>
               <span v-else class="text-subtle">—</span>
             </template>
           </DescriptionList>
+          <!-- HR's own note: the server sends it to hr.manage only. -->
+          <figure v-if="profile.notes" class="rounded-[10px] border border-line bg-surface-2/60 px-3.5 py-2.5" data-hr-notes>
+            <figcaption class="mb-0.5 flex items-center gap-1.5 text-xs font-semibold text-muted"><StickyNote :size="13" aria-hidden="true" />{{ t("hr.profile.notes") }}</figcaption>
+            <p class="whitespace-pre-line text-sm text-fg">{{ profile.notes }}</p>
+          </figure>
         </div>
       </section>
 
@@ -170,12 +177,13 @@ const contractLink = computed(() => (contract.value ? { path: `/c/${company.curr
               <dd class="mt-1 font-mono text-[0.92em] tabular-nums text-fg">{{ profile.tin || "—" }}</dd>
             </div>
           </dl>
+          <InlineAlert v-if="profile.passport_shared" tone="warning" size="sm" :description="t('hr.profile.passportShared')" />
           <p v-if="anyRevealed" class="flex items-center gap-1.5 text-xs text-warning"><ShieldAlert :size="13" aria-hidden="true" />{{ t("hr.profile.revealAudited") }}</p>
-          <p v-else-if="!access.sensitive" class="text-xs text-subtle">{{ t("hr.profile.maskedHint") }}</p>
+          <p v-else-if="!profile.can_reveal" class="text-xs text-subtle">{{ t("hr.profile.maskedHint") }}</p>
         </div>
       </section>
 
-      <EmergencyContacts :member-id="memberId" :contacts="profile.emergency_contacts" :can-manage="access.manage" />
+      <EmergencyContacts :member-id="memberId" :contacts="profile.emergency_contacts" :can-manage="canEdit" />
     </div>
 
     <div class="flex min-w-0 flex-col gap-4">
@@ -220,21 +228,23 @@ const contractLink = computed(() => (contract.value ? { path: `/c/${company.curr
           <li v-for="doc in documents.data.value!.results" :key="doc.id">
             <button type="button" class="flex min-h-12 w-full items-center gap-3 px-5 py-2.5 text-left transition-colors hover:bg-highlight" @click="openDocument(doc.id)">
               <div class="min-w-0 flex-1">
-                <p class="truncate text-sm font-medium text-fg">{{ doc.title || t(`hr.kind.${doc.kind}`) }}</p>
+                <p class="truncate text-sm font-medium text-fg">
+                  {{ t(`hr.kind.${doc.kind}`) }}<span v-if="doc.title && doc.title !== t(`hr.kind.${doc.kind}`)" class="font-normal text-muted"> · {{ doc.title }}</span>
+                </p>
                 <p class="truncate text-xs text-muted">
                   {{ doc.expires_on ? t("hr.document.expiresShort", { date: fmt.day(doc.expires_on, "medium") }) : t("hr.document.noExpiry") }}
-                  <template v-if="doc.verified_at"> · {{ t("hr.document.verified") }}</template>
+                  <template v-if="doc.verified"> · {{ t("hr.document.verified") }}</template>
                 </p>
               </div>
               <DaysChip v-if="doc.expires_on" :day="doc.expires_on" :warn-days="warn.documents" prefix="expires" />
-              <LockKeyhole v-if="!doc.file && !access.sensitive && ['passport', 'id_card', 'military_id'].includes(doc.kind)" :size="14" class="shrink-0 text-subtle" aria-hidden="true" />
+              <LockKeyhole v-if="doc.file_hidden" :size="14" class="shrink-0 text-subtle" aria-hidden="true" />
             </button>
           </li>
         </ul>
       </section>
     </div>
 
-    <ProfileEditDrawer v-if="access.manage" v-model:open="editing" :profile="profile" />
+    <ProfileEditDrawer v-if="canEdit" v-model:open="editing" :profile="profile" />
     <DocumentFormDrawer v-if="access.manage" v-model:open="uploading" :member="member" />
     <ContractFormDialog v-if="access.manage" v-model:open="creatingContract" :member="member" />
     <DocumentFormDrawer v-if="access.manage" v-model:open="editDocOpen" :document="editingDoc" />
