@@ -886,6 +886,103 @@ paths:
                 items:
                   $ref: '#/components/schemas/Holiday'
           description: ''
+  /api/v1/companies/{company_id}/hr/celebrations/:
+    get:
+      operationId: v1_companies_hr_celebrations_list
+      description: This week's birthdays (of people who show theirs) and work anniversaries
+        in the team.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HrCelebration'
+          description: ''
+  /api/v1/companies/{company_id}/hr/contract/:
+    get:
+      operationId: v1_companies_hr_contract_retrieve
+      description: 'My contract: its terms and the signed PDF or scan.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrMyContract'
+          description: ''
+  /api/v1/companies/{company_id}/hr/contract/{id}/acknowledge/:
+    post:
+      operationId: v1_companies_hr_contract_acknowledge_create
+      description: '''I''ve read my contract.'''
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrMyContract'
+          description: ''
+  /api/v1/companies/{company_id}/hr/contract/pdf/:
+    get:
+      operationId: v1_companies_hr_contract_pdf_retrieve
+      description: A short-lived link to my contract's file (Telegram opens it outside
+        the app).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrFileLink'
+          description: ''
   /api/v1/companies/{company_id}/hr/documents/:
     get:
       operationId: v1_companies_hr_documents_list
@@ -5285,6 +5382,63 @@ components:
       - date
       - id
       - name
+    HrCelebration:
+      type: object
+      properties:
+        member:
+          allOf:
+          - $ref: '#/components/schemas/HrPersonRef'
+          readOnly: true
+        kind:
+          $ref: '#/components/schemas/HrCelebrationKindEnum'
+        date:
+          type: string
+          format: date
+        years:
+          type: integer
+          nullable: true
+          description: Years with the company.
+        days_until:
+          type: integer
+          description: Negative once past.
+      required:
+      - date
+      - days_until
+      - kind
+      - member
+      - years
+    HrCelebrationKindEnum:
+      enum:
+      - birthday
+      - anniversary
+      type: string
+      description: |-
+        * `birthday` - Birthday
+        * `anniversary` - Work anniversary
+    HrContractKindEnum:
+      enum:
+      - indefinite
+      - fixed_term
+      - civil
+      - internship
+      type: string
+      description: |-
+        * `indefinite` - Indefinite
+        * `fixed_term` - Fixed term
+        * `civil` - Civil contract
+        * `internship` - Internship
+    HrContractStatusEnum:
+      enum:
+      - draft
+      - active
+      - ended
+      - terminated
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `active` - In force
+        * `ended` - Ended
+        * `terminated` - Terminated
     HrDocumentKindEnum:
       enum:
       - passport
@@ -5395,6 +5549,92 @@ components:
         * `part_time` - Part time
         * `contractor` - Contractor
         * `intern` - Intern
+    HrFileLink:
+      type: object
+      properties:
+        url:
+          type: string
+      required:
+      - url
+    HrMyContract:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        number:
+          type: string
+          readOnly: true
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/HrContractKindEnum'
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/HrContractStatusEnum'
+          readOnly: true
+        position:
+          type: string
+          nullable: true
+          readOnly: true
+        starts_on:
+          type: string
+          format: date
+          readOnly: true
+        ends_on:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        probation_until:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        probation_passed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        weekly_hours:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,1})?$
+          readOnly: true
+          nullable: true
+        file:
+          type: string
+          nullable: true
+          readOnly: true
+          description: Signed download link (a PDF or a scan).
+        acknowledged_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        needs_acknowledgement:
+          type: boolean
+          readOnly: true
+        terminated_on:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+      required:
+      - acknowledged_at
+      - ends_on
+      - file
+      - id
+      - kind
+      - needs_acknowledgement
+      - number
+      - position
+      - probation_passed_at
+      - probation_until
+      - starts_on
+      - status
+      - terminated_on
+      - weekly_hours
     HrMyDocument:
       type: object
       properties:
@@ -5581,6 +5821,20 @@ components:
         * `cash` - Cash
         * `card` - Card
         * `bank` - Bank transfer
+    HrPersonRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        photo_url:
+          type: string
+          nullable: true
+      required:
+      - id
+      - name
+      - photo_url
     InboxPerson:
       type: object
       properties:

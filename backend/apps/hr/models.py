@@ -9,14 +9,14 @@ findable without decrypting anything.
 
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
-from django.core.validators import MaxValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
 from apps.companies.models import Company, TenantModel
 from apps.core.crypto import DigestField, EncryptedTextField
-from apps.core.models import TimeStampedModel
+from apps.core.models import Language, TimeStampedModel
 from apps.core.storage import private_storage, private_upload_to
 from apps.members.models import Membership, Position
 
@@ -34,6 +34,9 @@ class HRSettings(TimeStampedModel):
     probation_warn_days = _warn_days(7)
     celebrations_enabled = models.BooleanField(default=True)
     celebrate_anniversaries = models.BooleanField(default=True)
+    # The employer as contracts print it ({{company_name}}, {{company_tin}}).
+    employer_name = models.CharField(max_length=200, blank=True)
+    employer_tin = models.CharField(max_length=9, blank=True)
 
     class Meta:
         verbose_name = "HR settings"
@@ -248,3 +251,172 @@ class EmployeeDocument(TenantModel):
     @property
     def is_id(self) -> bool:
         return self.kind in ID_KINDS
+
+
+class ContractKind(models.TextChoices):
+    INDEFINITE = "indefinite", _("Indefinite")
+    FIXED_TERM = "fixed_term", _("Fixed term")
+    CIVIL = "civil", _("Civil contract")
+    INTERNSHIP = "internship", _("Internship")
+
+
+# Kinds that run to an end date.
+TERM_KINDS = frozenset({ContractKind.FIXED_TERM, ContractKind.INTERNSHIP, ContractKind.CIVIL})
+
+
+class ContractTemplate(TenantModel):
+    """A company's contract text: sanitized HTML with {{placeholders}} from a fixed list
+    (apps.hr.printing.PLACEHOLDERS), printed as a PDF for one person."""
+
+    name = models.CharField(max_length=150)
+    kind = models.CharField(
+        max_length=16, choices=ContractKind.choices, blank=True, help_text=_("Empty: any kind.")
+    )
+    language = models.CharField(max_length=2, choices=Language.choices, default=Language.UZ)
+    body = models.TextField()
+    is_active = models.BooleanField(default=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+
+    class Meta:
+        ordering = ["-is_active", "name", "pk"]
+        constraints = [
+            models.UniqueConstraint(fields=["company", "name"], name="hr_unique_template_name"),
+        ]
+
+    def __str__(self):
+        return self.name
+
+
+class Contract(TenantModel):
+    """Someone's employment contract. At most one is in force per person at a time; pay lives
+    in payroll (`payroll.Compensation`), never here."""
+
+    class Status(models.TextChoices):
+        DRAFT = "draft", _("Draft")
+        ACTIVE = "active", _("In force")
+        ENDED = "ended", _("Ended")
+        TERMINATED = "terminated", _("Terminated")
+
+    membership = models.ForeignKey(Membership, on_delete=models.PROTECT, related_name="contracts")
+    number = models.CharField(max_length=30, blank=True)
+    kind = models.CharField(
+        max_length=16, choices=ContractKind.choices, default=ContractKind.INDEFINITE
+    )
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.DRAFT)
+    # The position when it was drawn up (people change positions; their contract doesn't).
+    position = models.ForeignKey(
+        Position, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    starts_on = models.DateField()
+    ends_on = models.DateField(null=True, blank=True)
+    probation_until = models.DateField(null=True, blank=True)
+    probation_passed_at = models.DateTimeField(null=True, blank=True)
+    weekly_hours = models.DecimalField(
+        max_digits=4,
+        decimal_places=1,
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(1), MaxValueValidator(60)],
+    )
+    template = models.ForeignKey(
+        ContractTemplate,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="contracts",
+    )
+    # The PDF made from the template, or the signed paper scanned.
+    file = models.FileField(
+        storage=private_storage, upload_to=private_upload_to("hr/contracts"), blank=True
+    )
+    pdf_generated_at = models.DateTimeField(null=True, blank=True)
+    # A file with the salary in it opens only for payroll.view (and the person themselves).
+    file_has_salary = models.BooleanField(default=False)
+    acknowledged_at = models.DateTimeField(null=True, blank=True)
+    # The last day it was in force, once it ended or was terminated.
+    terminated_on = models.DateField(null=True, blank=True)
+    termination_reason = models.CharField(max_length=300, blank=True)
+    note = models.CharField(max_length=300, blank=True)
+    # Warning steps already sent (days before the end / before probation finishes).
+    end_notified = ArrayField(models.SmallIntegerField(), default=list, blank=True)
+    probation_notified = ArrayField(models.SmallIntegerField(), default=list, blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+
+    class Meta:
+        ordering = ["-starts_on", "-pk"]
+        indexes = [
+            models.Index(fields=["company", "status"]),
+            models.Index(fields=["company", "ends_on"]),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["membership"],
+                condition=Q(status="active"),
+                name="hr_one_active_contract",
+            ),
+            models.UniqueConstraint(
+                fields=["company", "number"],
+                condition=~Q(number=""),
+                name="hr_unique_contract_number",
+            ),
+            models.CheckConstraint(
+                condition=~Q(kind="fixed_term") | Q(ends_on__isnull=False),
+                name="hr_fixed_term_has_an_end",
+            ),
+            models.CheckConstraint(
+                condition=Q(ends_on__isnull=True) | Q(ends_on__gte=models.F("starts_on")),
+                name="hr_contract_ends_after_it_starts",
+            ),
+            models.CheckConstraint(
+                condition=Q(probation_until__isnull=True)
+                | Q(probation_until__gte=models.F("starts_on")),
+                name="hr_probation_after_the_start",
+            ),
+        ]
+
+    def __str__(self):
+        return self.number or f"#{self.pk}"
+
+    @property
+    def on_probation(self) -> bool:
+        return self.probation_until is not None and self.probation_passed_at is None
+
+
+class Celebration(TenantModel):
+    """A birthday or a work anniversary that was celebrated (posted to the groups, the person
+    greeted), so each one is celebrated once."""
+
+    class Kind(models.TextChoices):
+        BIRTHDAY = "birthday", _("Birthday")
+        ANNIVERSARY = "anniversary", _("Work anniversary")
+
+    membership = models.ForeignKey(
+        Membership, on_delete=models.CASCADE, related_name="celebrations"
+    )
+    kind = models.CharField(max_length=12, choices=Kind.choices)
+    day = models.DateField()
+    years = models.PositiveSmallIntegerField(null=True, blank=True)
+    posted_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-day", "pk"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["membership", "kind", "day"], name="hr_unique_celebration"
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.get_kind_display()} {self.day}"

@@ -17,4 +17,12 @@ urlpatterns = [
         name="hr-my-emergency-contact",
     ),
     path("hr/documents/", api.MyDocumentsView.as_view(), name="hr-my-documents"),
+    path("hr/celebrations/", api.CelebrationsView.as_view(), name="hr-my-celebrations"),
+    path("hr/contract/", api.MyContractView.as_view(), name="hr-my-contract"),
+    path("hr/contract/pdf/", api.MyContractPdfView.as_view(), name="hr-my-contract-pdf"),
+    path(
+        "hr/contract/<int:pk>/acknowledge/",
+        api.AcknowledgeContractView.as_view(),
+        name="hr-my-contract-acknowledge",
+    ),
 ]

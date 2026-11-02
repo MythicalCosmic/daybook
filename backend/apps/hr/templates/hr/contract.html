@@ -1,0 +1,10 @@
+{% extends "core/base_print.html" %}
+{% block style %}
+.contract { font-size: 10.5pt; line-height: 1.55; }
+.contract h1, .contract h2, .contract h3 { text-align: center; }
+.contract p { text-align: justify; }
+.contract blockquote { margin: 0 0 0.6em 6mm; }
+{% endblock %}
+{% block content %}
+<article class="contract">{{ body|safe }}</article>
+{% endblock %}

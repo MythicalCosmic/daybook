@@ -16,7 +16,13 @@ from django.utils import timezone
 
 from apps.audit.models import AuditLog
 from apps.hr import conf
-from apps.hr.models import DocumentKind, EmployeeDocument, EmployeeProfile, RequiredDocument
+from apps.hr.models import (
+    Contract,
+    DocumentKind,
+    EmployeeDocument,
+    EmployeeProfile,
+    RequiredDocument,
+)
 from apps.members.models import Membership
 
 # Working here now (a suspended person keeps their file); and everyone who ever worked here.
@@ -158,9 +164,104 @@ def expiring_count(member: Membership) -> int:
     settings = conf.get_settings(company)
     day = today(company)
     branch_ids = scope.branch_ids(member)
-    return expiring_documents(
-        company, branch_ids=branch_ids, day=day, within=settings.document_warn_days
-    ).count()
+    return (
+        expiring_documents(
+            company, branch_ids=branch_ids, day=day, within=settings.document_warn_days
+        ).count()
+        + ending_contracts(
+            company, branch_ids=branch_ids, day=day, within=settings.contract_warn_days
+        ).count()
+        + probation_endings(
+            company, branch_ids=branch_ids, day=day, within=settings.probation_warn_days
+        ).count()
+    )
+
+
+# Contracts -------------------------------------------------------------------------------
+
+
+def contracts(company, *, branch_ids: list[int] | None) -> QuerySet[Contract]:
+    """Contracts of people who work or worked here, inside the branch scope."""
+    rows = Contract.objects.for_company(company)
+    if branch_ids is not None:
+        rows = rows.filter(
+            membership_id__in=people(company, branch_ids=branch_ids, statuses=EMPLOYED).values("pk")
+        )
+    return rows
+
+
+def ending_contracts(
+    company, *, branch_ids: list[int] | None, day: date, within: int
+) -> QuerySet[Contract]:
+    """Contracts in force whose end date is within `within` days of `day` (or has passed
+    while they are still in force), soonest first."""
+    return (
+        contracts(company, branch_ids=branch_ids)
+        .filter(
+            status=Contract.Status.ACTIVE,
+            ends_on__isnull=False,
+            ends_on__lte=day + timedelta(days=within),
+        )
+        .select_related("membership__user")
+        .order_by("ends_on", "pk")
+    )
+
+
+def probation_endings(
+    company, *, branch_ids: list[int] | None, day: date, within: int
+) -> QuerySet[Contract]:
+    """Contracts in force whose probation ends within `within` days of `day` (or ended
+    without anyone confirming it), soonest first."""
+    return (
+        contracts(company, branch_ids=branch_ids)
+        .filter(
+            status=Contract.Status.ACTIVE,
+            probation_until__isnull=False,
+            probation_passed_at__isnull=True,
+            probation_until__lte=day + timedelta(days=within),
+        )
+        .select_related("membership__user")
+        .order_by("probation_until", "pk")
+    )
+
+
+def org(company) -> dict:
+    """The company's structure (`hr.queries.org`, fixed for the lifecycle's org chart):
+    departments with their head and headcount, and every current person with their department
+    and manager (their nearest head)."""
+    from apps.members import departments
+
+    tree = departments.Org(company.pk)
+    counts = departments.counts(company.pk)
+    rows = []
+    for pk in tree.order:
+        department = tree.departments[pk]
+        rows.append(
+            {
+                "id": pk,
+                "name": department.name,
+                "parent_id": department.parent_id,
+                "depth": tree.depths[pk],
+                "head_id": department.head_id,
+                "headcount": counts.get(pk, 0),
+            }
+        )
+    members = list(
+        people(company, branch_ids=None).select_related("user", "position", "department")
+    )
+    staff = []
+    for member in members:
+        manager = departments.manager_of(member, tree)
+        staff.append(
+            {
+                "id": member.pk,
+                "name": str(member),
+                "position": member.position.name if member.position_id else None,
+                "department_id": member.department_id,
+                "manager_id": manager.pk if manager else None,
+            }
+        )
+    return {"departments": rows, "people": staff}
 
 
 def required_for(company) -> dict[int | None, list[RequiredDocument]]:

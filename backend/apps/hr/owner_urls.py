@@ -15,6 +15,10 @@ router.register(
     "hr/required-documents", owner_api.RequiredDocumentViewSet, basename="hr-required-document"
 )
 router.register(
+    "hr/contract-templates", owner_api.ContractTemplateViewSet, basename="hr-contract-template"
+)
+router.register("hr/contracts", owner_api.ContractViewSet, basename="hr-contract")
+router.register(
     r"hr/people/(?P<member_id>\d+)/emergency-contacts",
     owner_api.EmergencyContactViewSet,
     basename="hr-emergency-contact",
@@ -23,6 +27,7 @@ router.register(
 urlpatterns = [
     path("hr/settings/", owner_api.SettingsView.as_view(), name="hr-settings"),
     path("hr/overview/", owner_api.OverviewView.as_view(), name="hr-overview"),
+    path("hr/celebrations/", owner_api.CelebrationsView.as_view(), name="hr-celebrations"),
     path("hr/people/<int:member_id>/profile/", owner_api.ProfileView.as_view(), name="hr-profile"),
     path(
         "hr/people/<int:member_id>/sensitive/",

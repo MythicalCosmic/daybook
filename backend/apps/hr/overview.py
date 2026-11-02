@@ -8,10 +8,11 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.hr import conf, queries
-from apps.hr.models import DocumentKind, EmployeeProfile
+from apps.hr.models import Celebration, Contract, DocumentKind, EmployeeProfile
 from apps.hr.serializers import PersonRefSerializer
 from apps.members.queries import person_ref
 
+BIRTHDAY, ANNIVERSARY = Celebration.Kind.BIRTHDAY, Celebration.Kind.ANNIVERSARY
 TREND_MONTHS = 12
 LIST_LIMIT = 10
 CELEBRATION_DAYS = 7
@@ -69,23 +70,65 @@ def build(company, viewer, *, branch_ids: list[int] | None, day: date | None = N
             for document in expiring[:LIST_LIMIT]
         ],
         **contract_part(company, branch_ids=branch_ids, day=day, settings=settings),
-        "birthdays": birthdays(current, day, CELEBRATION_DAYS),
-        "anniversaries": anniversaries(current, dates, day, CELEBRATION_DAYS),
+        **_celebrations(company, current, dates, day),
+    }
+
+
+def _celebrations(company, current, dates, day: date) -> dict:
+    upcoming = celebrations_between(
+        company, current, day, day + timedelta(days=CELEBRATION_DAYS - 1), dates=dates
+    )
+    return {
+        "birthdays": [row for row in upcoming if row["kind"] == BIRTHDAY],
+        "anniversaries": [row for row in upcoming if row["kind"] == ANNIVERSARY],
     }
 
 
 def contract_part(company, *, branch_ids, day: date, settings) -> dict:
-    """Contract counts, contracts ending and probations finishing (contracts come next)."""
+    """Contract counts, the contracts ending and the probations finishing soon."""
+    rows = queries.contracts(company, branch_ids=branch_ids)
+    active = rows.filter(status=Contract.Status.ACTIVE, membership__status__in=queries.CURRENT)
+    ending = list(
+        queries.ending_contracts(
+            company, branch_ids=branch_ids, day=day, within=settings.contract_warn_days
+        )
+    )
+    probation = list(
+        queries.probation_endings(
+            company, branch_ids=branch_ids, day=day, within=settings.probation_warn_days
+        )
+    )
+    current = queries.people(company, branch_ids=branch_ids)
+    covered = set(active.values_list("membership_id", flat=True))
     return {
         "contracts": {
-            "active": 0,
-            "drafts": 0,
-            "ending": 0,
-            "on_probation": 0,
-            "without_contract": 0,
+            "active": len(covered),
+            "drafts": rows.filter(
+                status=Contract.Status.DRAFT, membership__status__in=queries.CURRENT
+            ).count(),
+            "ending": len(ending),
+            "on_probation": active.filter(
+                probation_until__isnull=False, probation_passed_at__isnull=True
+            ).count(),
+            "without_contract": current.exclude(pk__in=covered).count(),
         },
-        "ending_contracts": [],
-        "probation_endings": [],
+        "ending_contracts": [
+            _contract_date(contract, contract.ends_on, day) for contract in ending[:LIST_LIMIT]
+        ],
+        "probation_endings": [
+            _contract_date(contract, contract.probation_until, day)
+            for contract in probation[:LIST_LIMIT]
+        ],
+    }
+
+
+def _contract_date(contract: Contract, when: date, day: date) -> dict:
+    return {
+        "id": contract.pk,
+        "member": contract.membership,
+        "number": contract.number,
+        "date": when,
+        "days_left": (when - day).days,
     }
 
 
@@ -99,7 +142,7 @@ def trend(dates: dict[int, tuple[date, date | None]], day: date) -> list[dict]:
         first = (first - timedelta(days=1)).replace(day=1)
     rows = []
     for start in reversed(months):
-        end = min(_month_end(start), day)
+        end = min(month_end(start), day)
         rows.append(
             {
                 "month": start.strftime("%Y-%m"),
@@ -115,35 +158,60 @@ def trend(dates: dict[int, tuple[date, date | None]], day: date) -> list[dict]:
     return rows
 
 
-def birthdays(members, day: date, days: int) -> list[dict]:
-    """Birthdays from `day` on for `days` days, of people who show theirs."""
-    profiles = EmployeeProfile.objects.filter(
-        membership__in=members, show_birthday=True, birth_date__isnull=False
-    ).select_related("membership__user")
-    found = []
-    for profile in profiles:
-        when = next_date(profile.birth_date, day)
-        if (when - day).days < days:
-            found.append(
-                {"member": profile.membership, "date": when, "days_until": (when - day).days}
-            )
-    return sorted(found, key=lambda row: (row["date"], row["member"].full_name))
-
-
-def anniversaries(members, dates, day: date, days: int) -> list[dict]:
-    """Work anniversaries (a whole year or more) from `day` on for `days` days."""
+def celebrations_between(
+    company, members, start: date, end: date, *, dates=None, anniversaries: bool = True
+) -> list[dict]:
+    """Birthdays (of people who show theirs) and work anniversaries (a whole year or more)
+    from `start` to `end`, both days in, soonest first:
+    {"member", "kind": birthday|anniversary, "date", "years" (anniversaries), "days_until"}."""
+    members = list(members)
+    dates = (
+        dates
+        if dates is not None
+        else queries.employment_dates(company, [member.pk for member in members])
+    )
+    shown = {
+        profile.membership_id: profile.birth_date
+        for profile in EmployeeProfile.objects.filter(
+            membership__in=members, show_birthday=True, birth_date__isnull=False
+        )
+    }
     found = []
     for member in members:
+        if born := shown.get(member.pk):
+            found += [
+                {"member": member, "kind": BIRTHDAY, "date": when, "years": None}
+                for when in occurrences(born, start, end)
+            ]
         hired = dates.get(member.pk, (None, None))[0]
-        if hired is None:
-            continue
-        when = next_date(hired, day)
-        years = when.year - hired.year
-        if years >= 1 and (when - day).days < days:
-            found.append(
-                {"member": member, "date": when, "years": years, "days_until": (when - day).days}
-            )
-    return sorted(found, key=lambda row: (row["date"], row["member"].full_name))
+        if anniversaries and hired:
+            found += [
+                {
+                    "member": member,
+                    "kind": ANNIVERSARY,
+                    "date": when,
+                    "years": when.year - hired.year,
+                }
+                for when in occurrences(hired, start, end)
+                if when.year > hired.year
+            ]
+    for row in found:
+        row["days_until"] = (row["date"] - start).days
+    # Birthdays first on a day, then by name.
+    return sorted(
+        found,
+        key=lambda row: (row["date"], row["kind"] != BIRTHDAY, row["member"].full_name),
+    )
+
+
+def occurrences(anchor: date, start: date, end: date) -> list[date]:
+    """The days from `start` to `end` with the day and month of `anchor`."""
+    found = []
+    for year in range(start.year, end.year + 1):
+        when = next_date(anchor, date(year, 1, 1))
+        if start <= when <= end:
+            found.append(when)
+    return found
 
 
 def next_date(anchor: date, day: date) -> date:
@@ -159,7 +227,7 @@ def next_date(anchor: date, day: date) -> date:
     return when
 
 
-def _month_end(start: date) -> date:
+def month_end(start: date) -> date:
     return (start.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
 
 
@@ -257,6 +325,21 @@ class AnniversarySerializer(BirthdaySerializer):
 
     class Meta:
         ref_name = "HrAnniversary"
+
+
+class CelebrationSerializer(serializers.Serializer):
+    member = serializers.SerializerMethodField()
+    kind = serializers.ChoiceField(Celebration.Kind.choices)
+    date = serializers.DateField()
+    years = serializers.IntegerField(allow_null=True, help_text="Years with the company.")
+    days_until = serializers.IntegerField(help_text="Negative once past.")
+
+    class Meta:
+        ref_name = "HrCelebration"
+
+    @extend_schema_field(PersonRefSerializer)
+    def get_member(self, row) -> dict:
+        return person_ref(row["member"])
 
 
 class OverviewSerializer(serializers.Serializer):

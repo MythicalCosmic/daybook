@@ -7,7 +7,11 @@ still read it (not change it). While the HR module is off the endpoints answer 4
     GET/PATCH   hr/profile/                          phone, email, address, birthday shown, card
     GET/POST    hr/profile/emergency-contacts/       ·  PATCH/DELETE …/{id}/
     GET/POST    hr/documents/                        their documents; upload a renewed one
+    GET         hr/contract/  ·  hr/contract/pdf/      their contract (in force, else the latest)
+    POST        hr/contract/{id}/acknowledge/          "I've read it"
 """
+
+from datetime import timedelta
 
 from django.utils.translation import gettext as _
 from drf_spectacular.utils import extend_schema
@@ -18,9 +22,9 @@ from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.hr import conf, queries, services
+from apps.hr import conf, overview, queries, services
 from apps.hr import serializers as s
-from apps.hr.models import EmergencyContact, EmployeeDocument
+from apps.hr.models import Contract, EmergencyContact, EmployeeDocument
 from apps.members.api import IsCompanyMember
 from apps.members.models import Membership
 
@@ -136,3 +140,63 @@ class MyDocumentsView(MemberView):
             s.MyDocumentSerializer(document, context=self.context()).data,
             status=status.HTTP_201_CREATED,
         )
+
+
+def my_contract(membership: Membership) -> Contract | None:
+    """The person's contract in force, else their latest signed one (drafts aren't theirs to
+    see yet)."""
+    rows = Contract.objects.filter(membership=membership).exclude(status=Contract.Status.DRAFT)
+    return (
+        rows.filter(status=Contract.Status.ACTIVE).first()
+        or rows.order_by("-starts_on", "-pk").first()
+    )
+
+
+class MyContractView(MemberView):
+    """My contract: its terms and the signed PDF or scan."""
+
+    @extend_schema(responses=s.MyContractSerializer)
+    def get(self, request, company_id):
+        contract = my_contract(self.membership)
+        if contract is None:
+            raise NotFound(_("You have no contract on file yet."))
+        return Response(s.MyContractSerializer(contract, context=self.context()).data)
+
+
+class MyContractPdfView(MemberView):
+    """A short-lived link to my contract's file (Telegram opens it outside the app)."""
+
+    @extend_schema(responses=s.FileLinkSerializer)
+    def get(self, request, company_id):
+        contract = my_contract(self.membership)
+        if contract is None or not contract.file:
+            raise NotFound(_("You have no contract on file yet."))
+        return Response({"url": s.contract_link(contract, request.user)})
+
+
+class CelebrationsView(MemberView):
+    """This week's birthdays (of people who show theirs) and work anniversaries in the team."""
+
+    @extend_schema(responses=overview.CelebrationSerializer(many=True))
+    def get(self, request, company_id):
+        company = self.membership.company
+        today = queries.today(company)
+        people = queries.people(
+            company, branch_ids=None, statuses=(Membership.Status.APPROVED,)
+        ).select_related("user")
+        rows = overview.celebrations_between(
+            company, people, today, today + timedelta(days=overview.CELEBRATION_DAYS - 1)
+        )
+        return Response(overview.CelebrationSerializer(rows, many=True).data)
+
+
+class AcknowledgeContractView(MemberView):
+    """'I've read my contract.'"""
+
+    @extend_schema(request=None, responses=s.MyContractSerializer)
+    def post(self, request, company_id, pk):
+        contract = Contract.objects.filter(membership=self.membership, pk=pk).first()
+        if contract is None:
+            raise NotFound
+        contract = services.acknowledge_contract(contract, by=self.membership)
+        return Response(s.MyContractSerializer(contract, context=self.context()).data)
