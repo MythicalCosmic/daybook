@@ -167,10 +167,17 @@ const title = computed(() => (existing.value ? existing.value.name : t(`payroll.
             <p class="-mt-2 text-xs text-muted">{{ t(`payroll.metricHint.${draft.metric}`) }}</p>
             <!-- Tiers take the condition too: "≥" picks the highest tier reached, "≤" the lowest. -->
             <div class="grid gap-4 sm:grid-cols-2">
-              <FormField :label="t('payroll.rules.condition')" :hint="draft.mode === 'tiered' ? t('payroll.rules.conditionTiers') : undefined">
-                <SelectBox v-model="draft.op" :options="opOptions" />
+              <FormField :label="t('payroll.rules.condition')" :hint="draft.mode === 'tiered' ? t('payroll.rules.conditionTiers') : undefined" :class="draft.mode === 'tiered' && 'sm:col-span-2'">
+                <SelectBox v-model="draft.op" :options="opOptions" :class="draft.mode === 'tiered' && 'sm:max-w-[calc(50%-0.5rem)]'" />
               </FormField>
-              <FormField v-if="draft.mode !== 'tiered'" :label="t('payroll.rules.threshold')" :error="show('threshold') ? t('payroll.rules.errThreshold') : serverErrors.threshold" :required="draft.mode === 'once'">
+              <!-- Per unit: a threshold only narrows who counts ("from the 3rd"); empty counts everyone. -->
+              <FormField
+                v-if="draft.mode !== 'tiered'"
+                :label="t('payroll.rules.threshold')"
+                :error="show('threshold') ? t('payroll.rules.errThreshold') : serverErrors.threshold"
+                :required="draft.mode === 'once'"
+                :optional="draft.mode === 'per_unit'"
+              >
                 <NumberInput v-model="draft.threshold" :min="0" :max="unit === 'percent' ? 100 : undefined" :decimals="unit === 'count' ? 0 : 2" :suffix="unitSuffix" :invalid="show('threshold')" />
               </FormField>
             </div>

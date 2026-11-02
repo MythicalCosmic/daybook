@@ -60,7 +60,8 @@ const kpis = computed(() => {
       currency: data?.currency,
       // A finalized month is its run's sums; otherwise it is worked out with today's data.
       hint: projected ? t(projected.source === "run" ? "payroll.kpi.nextHintRun" : "payroll.kpi.nextHint", { month: fmt.day(projected.period, "monthYear"), n: projected.people }, projected.people) : undefined,
-      spark: data && data.months.length > 1 ? data.months.map((row) => row.net) : undefined,
+      // A trend from three months on: two points say little and crowd the hint.
+      spark: data && data.months.length > 2 ? data.months.map((row) => row.net) : undefined,
       loading: overview.isPending.value,
       error: overview.error.value,
       retry: () => overview.refetch(),
