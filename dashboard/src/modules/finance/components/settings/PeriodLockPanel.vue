@@ -15,9 +15,9 @@ import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import UiButton from "@/components/UiButton.vue";
 import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
-import { addDays, startOfMonth, todayIn } from "@/lib/dates";
+import { addDays, startOfMonth } from "@/lib/dates";
 import { useFormat } from "@/lib/useFormat";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyStore, useCompanyToday } from "@/stores/company";
 
 import { financeApi, useRefresh, useSettings } from "../../api";
 
@@ -28,7 +28,7 @@ const confirm = useConfirm();
 const refresh = useRefresh();
 const settings = useSettings();
 const data = computed(() => settings.data.value);
-const today = computed(() => todayIn(company.timezone));
+const today = useCompanyToday();
 const endOfLastMonth = computed(() => addDays(startOfMonth(today.value), -1));
 const until = ref<string | null>(null);
 watch(

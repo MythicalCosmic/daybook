@@ -10,11 +10,11 @@ import { ChevronLeft, ChevronRight } from "@lucide/vue";
 import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
-import { addDays, formatDay, formatRange, startOfWeek, todayIn, zonedNow } from "@/lib/dates";
+import { addDays, formatDay, formatRange, startOfWeek, zonedNow } from "@/lib/dates";
 import { fromMinutes } from "@/lib/time";
 import { useFormat } from "@/lib/useFormat";
 import { useNow } from "@/lib/useNow";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyStore, useCompanyToday } from "@/stores/company";
 
 import { isWeekend } from "./calendar";
 import { itemColor, itemsByDay, layoutTimed, type CalendarItem } from "./calendarItems";
@@ -39,7 +39,7 @@ const scroller = ref<HTMLElement | null>(null);
 
 const monday = computed(() => startOfWeek(week.value));
 const days = computed(() => Array.from({ length: 7 }, (_, i) => addDays(monday.value, i)));
-const today = computed(() => todayIn(company.timezone, now.value));
+const today = useCompanyToday();
 const hours = computed(() => Array.from({ length: props.endHour - props.startHour }, (_, i) => props.startHour + i));
 const placed = computed(() => itemsByDay(props.items, days.value, company.timezone));
 

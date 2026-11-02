@@ -22,12 +22,12 @@ import UiButton from "@/components/UiButton.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
 import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
-import { addMonths, formatDay, todayIn } from "@/lib/dates";
+import { addMonths, formatDay } from "@/lib/dates";
 import { divide, multiply } from "@/lib/decimal";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { rs, useRouteState } from "@/lib/useRouteState";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyStore, useCompanyToday } from "@/stores/company";
 
 import { salesApi, useSalesMutation, useTargets } from "../api";
 import TargetDialog from "../components/TargetDialog.vue";
@@ -38,7 +38,8 @@ const fmt = useFormat();
 const company = useCompanyStore();
 const confirm = useConfirm();
 
-const thisMonth = computed(() => todayIn(company.timezone).slice(0, 7));
+const companyToday = useCompanyToday();
+const thisMonth = computed(() => companyToday.value.slice(0, 7));
 const month = useRouteState<string>("month", rs.string(""));
 const shown = computed(() => (/^\d{4}-\d{2}$/.test(month.value) ? month.value : thisMonth.value));
 const query = useTargets(shown);

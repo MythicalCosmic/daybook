@@ -21,10 +21,10 @@ import WidgetGrid from "@/components/WidgetGrid.vue";
 import { arrange, EMPTY_LAYOUT, type WidgetLayout } from "@/components/widgetLayout";
 import { isModuleVisible } from "@/core/access";
 import { modules, type WidgetSpan } from "@/core/modules";
-import { dayPart, formatDay, todayIn } from "@/lib/dates";
+import { dayPart, formatDay } from "@/lib/dates";
 import { useFormat } from "@/lib/useFormat";
 import { useNow } from "@/lib/useNow";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyStore, useCompanyToday } from "@/stores/company";
 import { useSessionStore } from "@/stores/session";
 
 import WidgetCell from "../components/WidgetCell.vue";
@@ -36,7 +36,7 @@ const company = useCompanyStore();
 const session = useSessionStore();
 const now = useNow();
 
-const today = computed(() => todayIn(company.timezone, now.value));
+const today = useCompanyToday();
 const greeting = computed(() => t(`overview.greeting.${dayPart(company.timezone, now.value)}`, { name: session.me?.user.first_name || session.me?.user.full_name || "" }));
 const subtitle = computed(() => [formatDay(today.value, fmt.lang.value, "weekday"), company.current?.name].filter(Boolean).join(" · "));
 
