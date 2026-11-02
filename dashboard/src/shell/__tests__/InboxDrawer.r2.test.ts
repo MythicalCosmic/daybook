@@ -35,3 +35,14 @@ describe("InboxDrawer page link", () => {
     expect(app.router.currentRoute.value.fullPath).toBe("/c/1/inbox");
   });
 });
+
+describe("the inbox drawer on a phone", () => {
+  it("keeps its Open inbox page bar flush with the sheet bottom, over the safe area", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { resolve } = await import("node:path");
+    const source = readFileSync(resolve(process.cwd(), "src/shell/InboxDrawer.vue"), "utf8");
+    const bar = /<div v-if="inboxPage" class="([^"]*)"/.exec(source)?.[1] ?? "";
+    expect(bar).toContain("bottom-[calc(-1*var(--safe-bottom))]");
+    expect(bar).toContain("pb-[calc(0.625rem+var(--safe-bottom))]");
+  });
+});

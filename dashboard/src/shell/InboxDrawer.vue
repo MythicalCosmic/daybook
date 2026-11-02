@@ -378,7 +378,7 @@ const unreadBadge = computed(() => (notes.data.value && notesFilter.value === "u
         </ul>
       </div>
 
-      <div v-if="inboxPage" class="sticky bottom-0 shrink-0 border-t border-line bg-surface/95 px-4 py-2.5 backdrop-blur md:px-5">
+      <div v-if="inboxPage" class="sticky bottom-[calc(-1*var(--safe-bottom))] shrink-0 border-t border-line bg-surface/95 px-4 pb-[calc(0.625rem+var(--safe-bottom))] pt-2.5 backdrop-blur md:px-5">
         <!-- The page's URL has no ?inbox, so going there closes the drawer; closing it first raced
              the push (close goes Back when the drawer was pushed, and that Back could land last). -->
         <RouterLink :to="`/c/${companyId}/inbox`" class="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline">

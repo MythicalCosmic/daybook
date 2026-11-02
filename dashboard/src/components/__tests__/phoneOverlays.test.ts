@@ -125,6 +125,20 @@ describe("BottomSheet", () => {
     vi.unstubAllGlobals();
   });
 
+  it("shows no header of its own for a drawer that brings its own (the inbox)", async () => {
+    await router.push("/c/1?inbox=needs");
+    const wrapper = mount(UiDrawer, {
+      props: { queryKey: "inbox", title: "Inbox", hideHeader: true },
+      slots: { default: () => h("h2", "Inbox") },
+      global: { plugins: plugins() },
+      attachTo: document.body,
+    });
+    await flushPromises();
+    expect(sheet().querySelector("header")).toBeNull();
+    expect(sheet().querySelector('button[aria-label="Close"]')).toBeNull();
+    wrapper.unmount();
+  });
+
   it("has a close button, with or without a visible header", async () => {
     for (const hideHeader of [false, true]) {
       const closed = vi.fn();
