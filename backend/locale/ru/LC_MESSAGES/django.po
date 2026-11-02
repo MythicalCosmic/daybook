@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-02 17:38+0500\n"
+"POT-Creation-Date: 2026-11-02 18:11+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -1462,8 +1462,9 @@ msgstr "Срок действия должен заканчиваться пос
 #: backend/apps/attendance/services.py backend/apps/console/base.py
 #: backend/apps/inbox/services.py backend/apps/knowledge/owner_api.py
 #: backend/apps/members/departments.py backend/apps/members/join_links.py
-#: backend/apps/members/services.py backend/apps/payroll/services.py
-#: backend/apps/sales/handlers.py backend/apps/timeoff/services.py
+#: backend/apps/members/services.py backend/apps/payroll/runs.py
+#: backend/apps/payroll/services.py backend/apps/sales/handlers.py
+#: backend/apps/timeoff/services.py
 #: employee_bot/bot/handlers/admin/approvals.py
 msgid "You don't have permission to do this."
 msgstr "У вас нет прав на это действие."
@@ -2457,7 +2458,7 @@ msgstr "Нет предстоящих смен и открытых заявок.
 msgid "Shift"
 msgstr "Смена"
 
-#: backend/apps/attendance/providers.py
+#: backend/apps/attendance/providers.py backend/apps/payroll/labels.py
 msgid "Leave"
 msgstr "Отпуск"
 
@@ -2514,7 +2515,8 @@ msgstr "За один раз можно опубликовать график н
 msgid "Their coming shifts you could swap for."
 msgstr "Предстоящие смены коллеги, на которые можно поменяться."
 
-#: backend/apps/attendance/services.py backend/apps/payroll/services.py
+#: backend/apps/attendance/services.py backend/apps/payroll/runs.py
+#: backend/apps/payroll/services.py
 msgid "That doesn't belong to this company."
 msgstr "Это принадлежит другой компании."
 
@@ -3779,8 +3781,9 @@ msgstr "Категория"
 msgid "Counterparty"
 msgstr "Контрагент"
 
-#: backend/apps/finance/exporters.py backend/apps/sales/hooks.py
-#: backend/apps/tasks/hooks.py
+#: backend/apps/finance/exporters.py
+#: backend/apps/payroll/templates/payroll/payslip.html
+#: backend/apps/sales/hooks.py backend/apps/tasks/hooks.py
 msgid "Branch"
 msgstr "Филиал"
 
@@ -3789,6 +3792,7 @@ msgid "Description"
 msgstr "Описание"
 
 #: backend/apps/finance/exporters.py
+#: backend/apps/payroll/templates/payroll/payslip.html
 msgid "Amount"
 msgstr "Сумма"
 
@@ -3825,6 +3829,7 @@ msgid "Subcategory"
 msgstr "Подкатегория"
 
 #: backend/apps/finance/exporters.py
+#: backend/apps/payroll/templates/payroll/payslip.html
 msgid "Line"
 msgstr "Статья"
 
@@ -3853,6 +3858,7 @@ msgid "In base currency"
 msgstr "В базовой валюте"
 
 #: backend/apps/finance/exporters.py
+#: backend/apps/payroll/templates/payroll/payslip.html
 msgid "Month"
 msgstr "Месяц"
 
@@ -3959,7 +3965,7 @@ msgid "A day like 2026-10-20."
 msgstr "Дата в формате 2026-10-20."
 
 #: backend/apps/finance/filters.py backend/apps/finance/services.py
-#: backend/apps/payroll/services.py
+#: backend/apps/payroll/runs.py backend/apps/payroll/services.py
 msgid "Enter an amount of money."
 msgstr "Введите сумму."
 
@@ -4614,7 +4620,7 @@ msgstr "%(person)s, наличные на руках"
 msgid "Pick the account the money went to or came from."
 msgstr "Выберите счёт, на который поступили или с которого ушли деньги."
 
-#: backend/apps/finance/services.py
+#: backend/apps/finance/services.py backend/apps/payroll/finance_bridge.py
 #, python-format
 msgid "%(account)s holds %(currency)s."
 msgstr "Валюта счёта «%(account)s» — %(currency)s."
@@ -6805,8 +6811,10 @@ msgstr ""
 msgid "Name"
 msgstr "Имя"
 
-#: backend/apps/members/providers.py backend/apps/reports/hooks.py
-#: backend/apps/tasks/hooks.py backend/apps/timeoff/providers.py
+#: backend/apps/members/providers.py
+#: backend/apps/payroll/templates/payroll/payslip.html
+#: backend/apps/reports/hooks.py backend/apps/tasks/hooks.py
+#: backend/apps/timeoff/providers.py
 msgid "Position"
 msgstr "Должность"
 
@@ -7178,6 +7186,64 @@ msgstr "Из расчётного листка удалена строка"
 msgid "Confirmed a salary was received"
 msgstr "Получение зарплаты подтверждено"
 
+#: backend/apps/payroll/calculator.py backend/apps/payroll/labels.py
+#, python-format
+msgid "Expenses paid back: %(what)s"
+msgstr "Возмещение расходов: %(what)s"
+
+#: backend/apps/payroll/finance_bridge.py
+#, python-format
+msgid "The pay of %(name)s is below zero: lower a deduction first."
+msgstr "Зарплата ниже нуля: %(name)s. Сначала уменьшите удержание."
+
+#: backend/apps/payroll/finance_bridge.py
+#, python-format
+msgid "Salary for %(month)s: %(name)s"
+msgstr "Зарплата (%(month)s): %(name)s"
+
+#: backend/apps/payroll/finance_bridge.py
+#, python-format
+msgid "The pay of %(name)s can't cover the advance."
+msgstr "Зарплаты не хватает на возврат аванса: %(name)s."
+
+#: backend/apps/payroll/finance_bridge.py
+#, python-format
+msgid ""
+"An expense of %(name)s was paid back another way meanwhile: calculate the "
+"run again."
+msgstr ""
+"Тем временем расход сотрудника возмещён иначе: %(name)s. Пересчитайте "
+"зарплату."
+
+#: backend/apps/payroll/finance_bridge.py
+msgid "Tax office"
+msgstr "Налоговая инспекция"
+
+#: backend/apps/payroll/finance_bridge.py
+msgid "Add the tax office to the counterparties first."
+msgstr "Сначала добавьте налоговую инспекцию в контрагенты."
+
+#: backend/apps/payroll/finance_bridge.py
+msgid "Income tax and pension withheld"
+msgstr "Удержанные НДФЛ и пенсионный взнос"
+
+#: backend/apps/payroll/finance_bridge.py
+msgid "Income tax and pension on pay"
+msgstr "НДФЛ и пенсионный взнос сверх оплаты"
+
+#: backend/apps/payroll/finance_bridge.py
+msgid "Social tax"
+msgstr "Социальный налог"
+
+#: backend/apps/payroll/finance_bridge.py
+#, python-format
+msgid "Payroll for %(month)s reopened"
+msgstr "Зарплата открыта заново: %(month)s"
+
+#: backend/apps/payroll/finance_bridge.py
+msgid "Taxes of this payroll were already paid: void that payment first."
+msgstr "Налоги по этой зарплате уже уплачены: сначала аннулируйте этот платёж."
+
 #: backend/apps/payroll/hooks.py
 msgid "Payslip"
 msgstr "Расчётный листок"
@@ -7212,6 +7278,10 @@ msgstr ""
 "Укажите оплату каждого сотрудника, чтобы рассчитывать их расчётные листки."
 
 #: backend/apps/payroll/hooks.py
+msgid "Payroll (payslips of a month)"
+msgstr "Зарплата (расчётные листки за месяц)"
+
+#: backend/apps/payroll/hooks.py
 msgid "Approved advances to pay"
 msgstr "Одобренные авансы к выплате"
 
@@ -7234,6 +7304,218 @@ msgstr "Ваши авансы"
 #: backend/apps/payroll/hooks.py
 msgid "Your payslips"
 msgstr "Ваши расчётные листки"
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid "%(count)s day"
+msgid_plural "%(count)s days"
+msgstr[0] "%(count)s день"
+msgstr[1] "%(count)s дня"
+msgstr[2] "%(count)s дней"
+msgstr[3] "%(count)s дня"
+
+#: backend/apps/payroll/labels.py
+msgid "Annual leave"
+msgstr "Ежегодный отпуск"
+
+#: backend/apps/payroll/labels.py
+msgid "Sick leave"
+msgstr "Больничный"
+
+#: backend/apps/payroll/labels.py
+msgid "Unpaid leave"
+msgstr "Отпуск без сохранения зарплаты"
+
+#: backend/apps/payroll/labels.py
+msgid "Study leave"
+msgstr "Учебный отпуск"
+
+#: backend/apps/payroll/labels.py
+msgid "Maternity leave"
+msgstr "Декретный отпуск"
+
+#: backend/apps/payroll/labels.py
+msgid "Day off"
+msgstr "Выходной"
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid "Monthly pay for %(days)s of %(scheduled)s working days"
+msgstr "Оклад за %(days)s из %(scheduled)s рабочих дней"
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid "Monthly pay for %(days)s of %(calendar_days)s calendar days"
+msgstr "Оклад за %(days)s из %(calendar_days)s календарных дней"
+
+#: backend/apps/payroll/labels.py
+msgid "Monthly pay"
+msgstr "Оклад"
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid "Days worked: %(days)s"
+msgstr "Отработано: %(days)s"
+
+#: backend/apps/payroll/labels.py backend/apps/payroll/payslip_pdf.py
+#, python-format
+msgid "Hours worked: %(hours)s"
+msgstr "Отработано часов: %(hours)s"
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid "Absent: %(days)s"
+msgstr "Прогулы: %(days)s"
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid "Not employed on those days: %(days)s"
+msgstr "Вне периода работы: %(days)s"
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid "Unpaid leave: %(days)s"
+msgstr "Отпуск без сохранения: %(days)s"
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid "Suspended without pay: %(days)s"
+msgstr "Отстранение без оплаты: %(days)s"
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid "%(leave)s at %(percent)s%%: %(days)s"
+msgstr "%(leave)s, %(percent)s%%: %(days)s"
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid "Overtime: %(hours)s h at ×%(multiplier)s"
+msgstr "Сверхурочные: %(hours)s ч, ×%(multiplier)s"
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid "Night hours: %(hours)s h at ×%(multiplier)s"
+msgstr "Ночные часы: %(hours)s ч, ×%(multiplier)s"
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid "Work on holidays at ×%(multiplier)s"
+msgstr "Работа в праздники, ×%(multiplier)s"
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid "%(count)s task"
+msgid_plural "%(count)s tasks"
+msgstr[0] "%(count)s задача"
+msgstr[1] "%(count)s задачи"
+msgstr[2] "%(count)s задач"
+msgstr[3] "%(count)s задачи"
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid "Task pay: %(routine)s, %(tasks)s"
+msgstr "Оплата за задачи: %(routine)s, %(tasks)s"
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid "Task pay: %(tasks)s"
+msgstr "Оплата за задачи: %(tasks)s"
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid "Reward for a task: %(title)s"
+msgstr "Премия за задачу: %(title)s"
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid "(capped, of %(full)s)"
+msgstr "(ограничено, полная сумма: %(full)s)"
+
+#: backend/apps/payroll/labels.py
+msgid "Advance repaid"
+msgstr "Возврат аванса"
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid "Income tax, %(percent)s%%"
+msgstr "НДФЛ, %(percent)s%%"
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid "Pension contribution, %(percent)s%%"
+msgstr "Пенсионный взнос, %(percent)s%%"
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid "%(name)s has no pay setup: no payslip."
+msgstr "Нет условий оплаты, листок не составлен: %(name)s."
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid "%(count)s bonus or fine still waits for a decision."
+msgid_plural "%(count)s bonuses or fines still wait for a decision."
+msgstr[0] "Ещё %(count)s премия или штраф ждёт решения."
+msgstr[1] "Ещё %(count)s премии или штрафа ждут решения."
+msgstr[2] "Ещё %(count)s премий или штрафов ждут решения."
+msgstr[3] "Ещё %(count)s премии или штрафа ждут решения."
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid "%(count)s disputed fine has no answer yet."
+msgid_plural "%(count)s disputed fines have no answer yet."
+msgstr[0] "%(count)s оспоренный штраф пока без ответа."
+msgstr[1] "%(count)s оспоренных штрафа пока без ответа."
+msgstr[2] "%(count)s оспоренных штрафов пока без ответа."
+msgstr[3] "%(count)s оспоренного штрафа пока без ответа."
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid "%(count)s overtime record waits for approval: unpaid until approved."
+msgid_plural ""
+"%(count)s overtime records wait for approval: unpaid until approved."
+msgstr[0] ""
+"%(count)s запись сверхурочных ждёт одобрения: до одобрения не оплачивается."
+msgstr[1] ""
+"%(count)s записи сверхурочных ждут одобрения: до одобрения не оплачиваются."
+msgstr[2] ""
+"%(count)s записей сверхурочных ждут одобрения: до одобрения не оплачиваются."
+msgstr[3] ""
+"%(count)s записи сверхурочных ждут одобрения: до одобрения не оплачиваются."
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid "%(count)s person is still checked in."
+msgid_plural "%(count)s people are still checked in."
+msgstr[0] "%(count)s человек ещё не отметил уход."
+msgstr[1] "%(count)s человека ещё не отметили уход."
+msgstr[2] "%(count)s человек ещё не отметили уход."
+msgstr[3] "%(count)s человека ещё не отметили уход."
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid "%(name)s is paid in dollars and there is no dollar rate: no payslip."
+msgstr "Оплата в долларах, а курса доллара нет, листок не составлен: %(name)s."
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid "Fines of %(name)s are capped at %(percent)s%% of the pay."
+msgstr "Штрафы ограничены %(percent)s%% оплаты: %(name)s."
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid "%(name)s earned too little to repay the advance in full this month."
+msgstr ""
+"В этом месяце заработка не хватило, чтобы вернуть аванс целиком: %(name)s."
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid "The pay of %(name)s is below zero: lower a deduction."
+msgstr "Зарплата ниже нуля: %(name)s. Уменьшите удержание."
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid "%(name)s has no working days this month: paid by calendar days."
+msgstr "В этом месяце нет рабочих дней, оплата по календарным дням: %(name)s."
 
 #: backend/apps/payroll/models.py
 msgctxt "pay type"
@@ -7863,6 +8145,29 @@ msgstr "Это могут только те, кто одобряет преми�
 msgid "Write an answer."
 msgstr "Напишите ответ."
 
+#: backend/apps/payroll/payslip_pdf.py
+#, python-format
+msgid "Working days: %(days)s"
+msgstr "Рабочих дней: %(days)s"
+
+#: backend/apps/payroll/payslip_pdf.py
+#, python-format
+msgid "Paid days: %(days)s"
+msgstr "Оплачиваемых дней: %(days)s"
+
+#: backend/apps/payroll/payslip_pdf.py
+#, python-format
+msgid ""
+"Taxes are paid by the company on top: income tax %(income)s, pension "
+"%(pension)s."
+msgstr ""
+"Налоги компания платит сверху: НДФЛ %(income)s, пенсионный взнос %(pension)s."
+
+#: backend/apps/payroll/payslip_pdf.py
+#, python-format
+msgid "Payslip: %(month)s"
+msgstr "Расчётный листок: %(month)s"
+
 #: backend/apps/payroll/providers.py
 #, python-format
 msgid "%(kind)s for %(name)s: %(amount)s"
@@ -7871,6 +8176,86 @@ msgstr "%(kind)s: %(name)s, %(amount)s"
 #: backend/apps/payroll/providers.py
 msgid "Answer"
 msgstr "Ответить"
+
+#: backend/apps/payroll/runs.py
+msgid "A payroll can't be made for a month that hasn't started."
+msgstr "Нельзя рассчитать зарплату за месяц, который ещё не начался."
+
+#: backend/apps/payroll/runs.py
+#, python-format
+msgid "There is already a payroll for %(month)s."
+msgstr "Зарплата за этот месяц уже есть: %(month)s."
+
+#: backend/apps/payroll/runs.py
+msgid "Only a draft payroll can be calculated."
+msgstr "Пересчитать можно только черновик зарплаты."
+
+#: backend/apps/payroll/runs.py
+msgid "Only a draft payroll can be finalized."
+msgstr "Утвердить можно только черновик зарплаты."
+
+#: backend/apps/payroll/runs.py
+msgid "There is nobody to pay in this payroll."
+msgstr "В этом расчёте некому платить."
+
+#: backend/apps/payroll/runs.py
+#, python-format
+msgid "The pay of %(names)s is below zero: lower a deduction first."
+msgstr "Зарплата ниже нуля: %(names)s. Сначала уменьшите удержание."
+
+#: backend/apps/payroll/runs.py
+msgid "Only a finalized payroll that isn't paid can be reopened."
+msgstr ""
+"Открыть заново можно только утверждённую и ещё не выплаченную зарплату."
+
+#: backend/apps/payroll/runs.py
+msgid "Some payslips are paid already, so this payroll stays finalized."
+msgstr "Часть листков уже выплачена, поэтому зарплата остаётся утверждённой."
+
+#: backend/apps/payroll/runs.py
+msgid "A later month is finalized: reopen that one first."
+msgstr "Более поздний месяц утверждён: сначала откройте его."
+
+#: backend/apps/payroll/runs.py
+msgid "Only a draft payroll can be cancelled. Reopen it first."
+msgstr "Отменить можно только черновик. Сначала откройте зарплату заново."
+
+#: backend/apps/payroll/runs.py
+msgid "Some of those payslips aren't in this payroll."
+msgstr "Некоторых из этих листков нет в этой зарплате."
+
+#: backend/apps/payroll/runs.py
+msgid "Finalize the payroll before publishing it."
+msgstr "Перед публикацией утвердите зарплату."
+
+#: backend/apps/payroll/runs.py
+msgid "Only a finalized payroll can be paid."
+msgstr "Выплатить можно только утверждённую зарплату."
+
+#: backend/apps/payroll/runs.py backend/apps/payroll/services.py
+msgid "Pick how it was paid."
+msgstr "Выберите способ выплаты."
+
+#: backend/apps/payroll/runs.py
+msgid "This isn't your payslip."
+msgstr "Это не ваш расчётный листок."
+
+#: backend/apps/payroll/runs.py
+msgid "This pay isn't marked paid yet."
+msgstr "Эта зарплата ещё не отмечена как выплаченная."
+
+#: backend/apps/payroll/runs.py
+msgid "Lines can be added only while the payroll is a draft."
+msgstr "Добавлять строки можно, только пока зарплата — черновик."
+
+#: backend/apps/payroll/runs.py backend/apps/payroll/services.py
+#, python-format
+msgid "At most %(count)s at a time."
+msgstr "Не больше %(count)s за раз."
+
+#: backend/apps/payroll/runs.py
+msgid "Write what the line is for."
+msgstr "Напишите, за что эта строка."
 
 #: backend/apps/payroll/serializers.py
 msgid "A finalized payroll used it. Add a new pay setup to change the pay."
@@ -7989,11 +8374,6 @@ msgid "There is no open dispute on this."
 msgstr "Открытого возражения нет."
 
 #: backend/apps/payroll/services.py
-#, python-format
-msgid "At most %(count)s at a time."
-msgstr "Не больше %(count)s за раз."
-
-#: backend/apps/payroll/services.py
 msgid "Advances are paid back from this month or a later one."
 msgstr "Аванс возвращается с этого месяца или позже."
 
@@ -8039,10 +8419,6 @@ msgid "Only an approved advance can be paid."
 msgstr "Выплатить можно только одобренный аванс."
 
 #: backend/apps/payroll/services.py
-msgid "Pick how it was paid."
-msgstr "Выберите способ выплаты."
-
-#: backend/apps/payroll/services.py
 #, python-format
 msgid "Advance to %(name)s"
 msgstr "Аванс: %(name)s"
@@ -8050,6 +8426,39 @@ msgstr "Аванс: %(name)s"
 #: backend/apps/payroll/services.py
 msgid "Only a paid advance can be paid back."
 msgstr "Вернуть можно только выплаченный аванс."
+
+#: backend/apps/payroll/templates/payroll/payslip.html
+msgid "Employee"
+msgstr "Сотрудник"
+
+#: backend/apps/payroll/templates/payroll/payslip.html
+msgid "Pay"
+msgstr "Оплата"
+
+#: backend/apps/payroll/templates/payroll/payslip.html
+msgid "To be paid"
+msgstr "К выплате"
+
+#: backend/apps/payroll/templates/payroll/payslip.html
+#, python-format
+msgid "Paid %(paid_on)s"
+msgstr "Выплачено: %(paid_on)s"
+
+#: backend/apps/payroll/templates/payroll/payslip.html
+msgid "How much"
+msgstr "Расчёт"
+
+#: backend/apps/payroll/templates/payroll/payslip.html
+msgid "Earned"
+msgstr "Начислено"
+
+#: backend/apps/payroll/templates/payroll/payslip.html
+msgid "Deducted"
+msgstr "Удержано"
+
+#: backend/apps/payroll/templates/payroll/payslip.html
+msgid "Accountant"
+msgstr "Бухгалтер"
 
 #: backend/apps/projects/ai_tools.py
 msgid ""

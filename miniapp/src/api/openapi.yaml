@@ -1394,6 +1394,137 @@ paths:
               schema:
                 $ref: '#/components/schemas/Advance'
           description: ''
+  /api/v1/companies/{company_id}/payroll/payslips/:
+    get:
+      operationId: v1_companies_payroll_payslips_list
+      description: 'My payslips: the month, the net and whether it is paid and received.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PayslipRow'
+          description: ''
+  /api/v1/companies/{company_id}/payroll/payslips/{id}/:
+    get:
+      operationId: v1_companies_payroll_payslips_retrieve
+      description: One of my payslips with every line; opening it marks it seen.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayrollPayslip'
+          description: ''
+  /api/v1/companies/{company_id}/payroll/payslips/{id}/pdf/:
+    get:
+      operationId: v1_companies_payroll_payslips_pdf_retrieve
+      description: A short-lived link to my payslip as a PDF, in my language.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayrollFileLink'
+          description: ''
+  /api/v1/companies/{company_id}/payroll/payslips/{id}/received/:
+    get:
+      operationId: v1_companies_payroll_payslips_received_retrieve
+      description: I received this pay ("I received it").
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayrollPayslip'
+          description: ''
+    post:
+      operationId: v1_companies_payroll_payslips_received_create
+      description: I received this pay ("I received it").
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayrollPayslip'
+          description: ''
   /api/v1/companies/{company_id}/positions/:
     get:
       operationId: v1_companies_positions_list
@@ -5979,6 +6110,55 @@ components:
         * `uz` - O‘zbekcha
         * `ru` - Русский
         * `en` - English
+    Line:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/PayrollLineKindEnum'
+          readOnly: true
+        label:
+          type: string
+          readOnly: true
+        quantity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        params:
+          readOnly: true
+        adjustment:
+          type: integer
+          nullable: true
+        advance:
+          type: integer
+          nullable: true
+        manual:
+          type: boolean
+          readOnly: true
+      required:
+      - adjustment
+      - advance
+      - amount
+      - id
+      - kind
+      - label
+      - manual
+      - params
+      - quantity
+      - rate
     MarkReadRequest:
       type: object
       properties:
@@ -7044,6 +7224,63 @@ components:
           maxLength: 500
       required:
       - text
+    PayrollFileLink:
+      type: object
+      properties:
+        url:
+          type: string
+        name:
+          type: string
+        expires_in:
+          type: integer
+      required:
+      - expires_in
+      - name
+      - url
+    PayrollLineKindEnum:
+      enum:
+      - base
+      - proration
+      - overtime
+      - holiday_work
+      - night_work
+      - piece
+      - task_reward
+      - bonus
+      - allowance
+      - reimbursement
+      - fine
+      - deduction
+      - advance
+      - loan
+      - income_tax
+      - inps
+      - leave_compensation
+      - leave_payout
+      - rounding
+      - manual
+      type: string
+      description: |-
+        * `base` - Base pay
+        * `proration` - Days not paid
+        * `overtime` - Overtime
+        * `holiday_work` - Holiday work
+        * `night_work` - Night work
+        * `piece` - Task pay
+        * `task_reward` - Task reward
+        * `bonus` - Bonus
+        * `allowance` - Allowance
+        * `reimbursement` - Expenses paid back
+        * `fine` - Fine
+        * `deduction` - Deduction
+        * `advance` - Advance repaid
+        * `loan` - Loan repaid
+        * `income_tax` - Income tax
+        * `inps` - Pension contribution
+        * `leave_compensation` - Paid leave
+        * `leave_payout` - Unused leave paid out
+        * `rounding` - Rounding
+        * `manual` - Added by hand
     PayrollMyAdvances:
       type: object
       properties:
@@ -7056,6 +7293,18 @@ components:
       required:
       - advances
       - cap
+    PayrollPayTypeEnum:
+      enum:
+      - monthly
+      - daily
+      - hourly
+      - per_task
+      type: string
+      description: |-
+        * `monthly` - Monthly
+        * `daily` - Daily
+        * `hourly` - Hourly
+        * `per_task` - Per task
     PayrollPayoutMethodEnum:
       enum:
       - cash
@@ -7066,6 +7315,179 @@ components:
         * `cash` - Cash
         * `card` - Card
         * `bank` - Bank transfer
+    PayrollPayslip:
+      type: object
+      description: A payslip with every line and how it was worked out.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        member:
+          allOf:
+          - $ref: '#/components/schemas/PayrollPersonCard'
+          readOnly: true
+        period:
+          type: string
+          readOnly: true
+        pay_type:
+          allOf:
+          - $ref: '#/components/schemas/PayrollPayTypeEnum'
+          readOnly: true
+        currency:
+          allOf:
+          - $ref: '#/components/schemas/CurrencyEnum'
+          readOnly: true
+        base_pay:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        bonuses:
+          type: string
+          readOnly: true
+        fines:
+          type: string
+          readOnly: true
+        advances:
+          type: string
+          readOnly: true
+        reimbursements:
+          type: string
+          readOnly: true
+        gross:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        deductions:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        net:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        status:
+          allOf:
+          - $ref: '#/components/schemas/PayrollPayslipStatusEnum'
+          readOnly: true
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        viewed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        paid_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        received_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        payout_method:
+          allOf:
+          - $ref: '#/components/schemas/PayrollPayoutMethodEnum'
+          readOnly: true
+        run:
+          type: integer
+        run_status:
+          type: string
+        month:
+          type: string
+          readOnly: true
+        scheduled_days:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,1})?$
+        paid_days:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,1})?$
+        paid_leave_days:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,1})?$
+        unpaid_leave_days:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,1})?$
+        absent_days:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,1})?$
+        worked_minutes:
+          type: integer
+          readOnly: true
+        overtime_minutes:
+          type: integer
+          readOnly: true
+        night_minutes:
+          type: integer
+          readOnly: true
+        late_arrivals:
+          type: integer
+          readOnly: true
+        task_stats:
+          type: object
+          additionalProperties: {}
+        taxes:
+          type: object
+          additionalProperties: {}
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/Line'
+          readOnly: true
+      required:
+      - absent_days
+      - advances
+      - base_pay
+      - bonuses
+      - currency
+      - deductions
+      - fines
+      - gross
+      - id
+      - late_arrivals
+      - lines
+      - member
+      - month
+      - net
+      - night_minutes
+      - overtime_minutes
+      - paid_at
+      - paid_days
+      - paid_leave_days
+      - pay_type
+      - payout_method
+      - period
+      - published_at
+      - received_at
+      - reimbursements
+      - run
+      - run_status
+      - scheduled_days
+      - status
+      - task_stats
+      - taxes
+      - unpaid_leave_days
+      - viewed_at
+      - worked_minutes
+    PayrollPayslipStatusEnum:
+      enum:
+      - draft
+      - published
+      - paid
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `published` - Published
+        * `paid` - Paid
     PayrollPerson:
       type: object
       properties:
@@ -7080,6 +7502,31 @@ components:
       - id
       - name
       - photo_url
+    PayrollPersonCard:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        photo_url:
+          type: string
+          nullable: true
+        position:
+          type: string
+          nullable: true
+        home_branch:
+          type: string
+          nullable: true
+        status:
+          type: string
+      required:
+      - home_branch
+      - id
+      - name
+      - photo_url
+      - position
+      - status
     PayrollRef:
       type: object
       properties:
@@ -7119,6 +7566,105 @@ components:
       - note
       - paid_on
       - payslip
+    PayslipRow:
+      type: object
+      description: 'A row of a run''s payslip table: the person and their sums by
+        kind.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        member:
+          allOf:
+          - $ref: '#/components/schemas/PayrollPersonCard'
+          readOnly: true
+        period:
+          type: string
+          readOnly: true
+        pay_type:
+          allOf:
+          - $ref: '#/components/schemas/PayrollPayTypeEnum'
+          readOnly: true
+        currency:
+          allOf:
+          - $ref: '#/components/schemas/CurrencyEnum'
+          readOnly: true
+        base_pay:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        bonuses:
+          type: string
+          readOnly: true
+        fines:
+          type: string
+          readOnly: true
+        advances:
+          type: string
+          readOnly: true
+        reimbursements:
+          type: string
+          readOnly: true
+        gross:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        deductions:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        net:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        status:
+          allOf:
+          - $ref: '#/components/schemas/PayrollPayslipStatusEnum'
+          readOnly: true
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        viewed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        paid_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        received_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        payout_method:
+          allOf:
+          - $ref: '#/components/schemas/PayrollPayoutMethodEnum'
+          readOnly: true
+      required:
+      - advances
+      - base_pay
+      - bonuses
+      - currency
+      - deductions
+      - fines
+      - gross
+      - id
+      - member
+      - net
+      - paid_at
+      - pay_type
+      - payout_method
+      - period
+      - published_at
+      - received_at
+      - reimbursements
+      - status
+      - viewed_at
     Period:
       type: object
       properties:

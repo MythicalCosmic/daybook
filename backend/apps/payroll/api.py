@@ -19,7 +19,7 @@ from apps.members.api import IsCompanyMember
 from apps.members.models import Membership
 from apps.payroll import periods, queries, services
 from apps.payroll import serializers as s
-from apps.payroll.models import Adjustment, Advance, AdvanceRepayment
+from apps.payroll.models import Adjustment, Advance, AdvanceRepayment, Payslip
 
 
 class PayrollOn(BasePermission):
@@ -140,3 +140,64 @@ class CancelAdvanceView(WalletView):
         services.cancel_advance(row, by=self.membership)
         row = _my_advances(self.membership).get(pk=row.pk)
         return Response(s.AdvanceSerializer(row, context=self.context()).data)
+
+
+# Payslips -------------------------------------------------------------------------------
+
+
+def _my_payslips(membership: Membership):
+    """My published and paid payslips (drafts are nobody's business yet), newest first."""
+    return (
+        Payslip.objects.filter(membership=membership, published_at__isnull=False)
+        .exclude(status=Payslip.Status.DRAFT)
+        .select_related(
+            "membership__user", "membership__position", "membership__home_branch", "run"
+        )
+        .order_by("-run__period", "-pk")
+    )
+
+
+class MyPayslipsView(WalletView):
+    """My payslips: the month, the net and whether it is paid and received."""
+
+    @extend_schema(responses=s.PayslipRowSerializer(many=True))
+    def get(self, request, company_id):
+        rows = _my_payslips(self.membership).prefetch_related("lines")[:60]
+        return Response(s.PayslipRowSerializer(rows, many=True, context=self.context()).data)
+
+
+class MyPayslipView(WalletView):
+    """One of my payslips with every line; opening it marks it seen."""
+
+    def payslip(self, pk) -> Payslip:
+        payslip = _my_payslips(self.membership).filter(pk=pk).first()
+        if payslip is None:
+            raise NotFound
+        return payslip
+
+    @extend_schema(responses=s.PayslipSerializer)
+    def get(self, request, company_id, pk):
+        payslip = services.mark_viewed(self.payslip(pk), by=self.membership)
+        return Response(s.PayslipSerializer(payslip, context=self.context()).data)
+
+
+class MyPayslipPdfView(MyPayslipView):
+    """A short-lived link to my payslip as a PDF, in my language."""
+
+    @extend_schema(responses=s.FileLinkSerializer)
+    def get(self, request, company_id, pk):
+        from apps.payroll.owner_api import pdf_link
+
+        return Response(pdf_link(self.payslip(pk), request))
+
+
+class ReceivedView(MyPayslipView):
+    """I received this pay ("I received it")."""
+
+    allow_suspended = False
+
+    @extend_schema(request=None, responses=s.PayslipSerializer)
+    def post(self, request, company_id, pk):
+        payslip = services.confirm_received(self.payslip(pk), by=self.membership)
+        payslip = self.payslip(payslip.pk)
+        return Response(s.PayslipSerializer(payslip, context=self.context()).data)

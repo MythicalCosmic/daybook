@@ -7,6 +7,8 @@ holders: for anyone else they are left out of the response. Except for the setti
 endpoints answer 403 while the module is off.
 """
 
+from decimal import Decimal
+
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext as _
@@ -24,7 +26,7 @@ from apps.members.permissions import Perm
 from apps.members.queries import in_scope
 from apps.payroll import conf, periods, queries, services
 from apps.payroll import serializers as s
-from apps.payroll.models import Adjustment, Advance, Compensation, TaskRate
+from apps.payroll.models import Adjustment, Advance, Compensation, PayrollRun, Payslip, TaskRate
 
 VIEW, PROPOSE, MANAGE = Perm.PAYROLL_VIEW, Perm.PAYROLL_PROPOSE, Perm.PAYROLL_MANAGE
 FINALIZE, PAY = Perm.PAYROLL_FINALIZE, Perm.PAYROLL_PAY
@@ -583,7 +585,7 @@ class AdvanceViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, PayrollVi
         return self._answer(row)
 
     @extend_schema(request=s.AdvanceRepaySerializer, responses=s.AdvanceSerializer)
-    @action(detail=True, methods=["post"])
+    @action(detail=True, methods=["post"], url_path="repay")
     def repay(self, request, company_id, pk):
         serializer = s.AdvanceRepaySerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -598,3 +600,252 @@ class AdvanceViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, PayrollVi
             note=data["note"],
         )
         return self._answer(advance)
+
+
+# Runs and payslips ----------------------------------------------------------------------
+
+
+def _visible_totals(run, payslips) -> dict:
+    """A run's totals over the payslips the caller sees (people outside their branches left
+    out)."""
+    totals = dict(run.totals or {})
+    rows = list(payslips)
+    totals["people"] = len(rows)
+    for field in ("gross", "deductions", "net"):
+        totals[field] = f"{sum((getattr(p, field) for p in rows), Decimal(0)):.2f}"
+    for field in ("bonuses", "fines", "advances", "reimbursements"):
+        totals.pop(field, None)
+    totals["paid"] = sum(1 for p in rows if p.status == Payslip.Status.PAID)
+    totals["published"] = sum(1 for p in rows if p.published_at is not None)
+    return totals
+
+
+class RunViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, PayrollViewSet):
+    """Payroll runs: one a month (plus final settlements). Draft → calculate (again and again)
+    → finalize → publish → mark paid; reopen and cancel. Warnings come first."""
+
+    perm = VIEW
+    perms_by_action = {
+        "create": MANAGE,
+        "calculate": MANAGE,
+        "cancel": MANAGE,
+        "finalize": FINALIZE,
+        "reopen": FINALIZE,
+        "publish": FINALIZE,
+        "mark_paid": PAY,
+    }
+    serializer_class = s.RunSerializer
+    http_method_names = ("get", "post")
+
+    def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return PayrollRun.objects.none()
+        rows = PayrollRun.objects.for_company(self.company).select_related(
+            "membership__user", "finalized_by"
+        )
+        if self.action == "list":
+            params = self.request.query_params
+            if value := params.get("status"):
+                rows = rows.filter(status__in=value.split(","))
+            if value := params.get("kind"):
+                rows = rows.filter(kind__in=value.split(","))
+            if value := params.get("year"):
+                rows = rows.filter(period__year=self.int_param("year"))
+            rows = rows.order_by("-period", "-pk")
+        return rows
+
+    def visible_payslips(self, run):
+        rows = run.payslips.select_related(
+            "membership__user", "membership__position", "membership__home_branch", "run"
+        ).prefetch_related("lines")
+        return queries.people_scope(rows, self.branch_scope)
+
+    def _out(self, run, code=status.HTTP_200_OK) -> Response:
+        data = s.RunSerializer(run, context=self.get_serializer_context()).data
+        if self.branch_scope is not None:
+            data["totals"] = _visible_totals(run, self.visible_payslips(run))
+            visible = set(self.visible_payslips(run).values_list("membership_id", flat=True))
+            data["warnings"] = [
+                warning
+                for warning in data["warnings"]
+                if warning.get("member") is None or warning["member"]["id"] in visible
+            ]
+        return Response(data, status=code)
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter("status", str, description="draft,finalized,paid,cancelled"),
+            OpenApiParameter("kind", str, description="regular,final"),
+            OpenApiParameter("year", int),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        page = self.paginate_queryset(self.get_queryset())
+        context = self.get_serializer_context()
+        rows = []
+        for run in page:
+            data = s.RunSerializer(run, context=context).data
+            if self.branch_scope is not None:
+                data["totals"] = _visible_totals(run, self.visible_payslips(run))
+                data["warnings"] = []
+            rows.append(data)
+        return self.get_paginated_response(rows)
+
+    def retrieve(self, request, *args, **kwargs):
+        return self._out(self.get_object())
+
+    @extend_schema(request=s.RunCreateSerializer, responses={201: s.RunSerializer})
+    def create(self, request, company_id):
+        serializer = s.RunCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        run = services.create_run(
+            self.company,
+            by=self.membership,
+            period=data["period"],
+            usd_rate=data.get("usd_rate"),
+            notes=data["notes"],
+        )
+        return self._out(run, status.HTTP_201_CREATED)
+
+    @extend_schema(
+        parameters=[OpenApiParameter("status", str, description="draft,published,paid")],
+        responses=s.PayslipRowSerializer(many=True),
+    )
+    @action(detail=True, methods=["get"])
+    def payslips(self, request, company_id, pk):
+        run = self.get_object()
+        rows = self.visible_payslips(run)
+        if value := request.query_params.get("status"):
+            rows = rows.filter(status__in=value.split(","))
+        rows = rows.order_by("membership__first_name", "membership__last_name", "pk")
+        page = self.paginate_queryset(rows)
+        data = s.PayslipRowSerializer(page, many=True, context=self.context()).data
+        return self.get_paginated_response(data)
+
+    @extend_schema(request=s.RunCalculateSerializer, responses=s.RunSerializer)
+    @action(detail=True, methods=["post"])
+    def calculate(self, request, company_id, pk):
+        serializer = s.RunCalculateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        run = services.calculate_run(
+            self.get_object(),
+            by=self.membership,
+            usd_rate=serializer.validated_data.get("usd_rate"),
+        )
+        return self._out(run)
+
+    @extend_schema(request=None, responses=s.RunSerializer)
+    @action(detail=True, methods=["post"])
+    def finalize(self, request, company_id, pk):
+        return self._out(services.finalize_run(self.get_object(), by=self.membership))
+
+    @extend_schema(request=s.ReasonSerializer, responses=s.RunSerializer)
+    @action(detail=True, methods=["post"])
+    def reopen(self, request, company_id, pk):
+        serializer = s.ReasonSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        run = services.reopen_run(
+            self.get_object(), by=self.membership, reason=serializer.validated_data["reason"]
+        )
+        return self._out(run)
+
+    @extend_schema(request=s.ReasonSerializer, responses=s.RunSerializer)
+    @action(detail=True, methods=["post"])
+    def cancel(self, request, company_id, pk):
+        serializer = s.ReasonSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        run = services.cancel_run(
+            self.get_object(), by=self.membership, reason=serializer.validated_data["reason"]
+        )
+        return self._out(run)
+
+    def _payslip_ids(self, run, ids):
+        """Ids the caller may act on: payslips of people in their scope."""
+        if ids is None:
+            return list(self.visible_payslips(run).values_list("pk", flat=True))
+        visible = set(self.visible_payslips(run).filter(pk__in=ids).values_list("pk", flat=True))
+        if visible != set(ids):
+            raise NotFound
+        return ids
+
+    @extend_schema(request=s.PublishSerializer, responses=s.RunSerializer)
+    @action(detail=True, methods=["post"])
+    def publish(self, request, company_id, pk):
+        serializer = s.PublishSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        run = self.get_object()
+        ids = self._payslip_ids(run, serializer.validated_data.get("payslip_ids"))
+        services.publish(run, by=self.membership, payslip_ids=ids)
+        run.refresh_from_db()
+        return self._out(run)
+
+    @extend_schema(request=s.MarkPaidSerializer, responses=s.RunSerializer)
+    @action(detail=True, methods=["post"], url_path="mark-paid")
+    def mark_paid(self, request, company_id, pk):
+        serializer = s.MarkPaidSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        run = self.get_object()
+        services.mark_paid(
+            run,
+            by=self.membership,
+            payslip_ids=self._payslip_ids(run, data["payslip_ids"]),
+            account=self.account(data["account"]),
+            method=data["method"],
+            paid_on=data.get("paid_on"),
+        )
+        run.refresh_from_db()
+        return self._out(run)
+
+
+class PayslipViewSet(mixins.RetrieveModelMixin, PayrollViewSet):
+    """One payslip with its lines; hand-made lines while the run is a draft; the PDF."""
+
+    perm = VIEW
+    perms_by_action = {"partial_update": MANAGE}
+    serializer_class = s.PayslipSerializer
+    http_method_names = ("get", "patch")
+
+    def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Payslip.objects.none()
+        rows = Payslip.objects.for_company(self.company).select_related(
+            "membership__user", "membership__position", "membership__home_branch", "run"
+        )
+        return queries.people_scope(rows, self.branch_scope)
+
+    @extend_schema(request=s.PayslipPatchSerializer, responses=s.PayslipSerializer)
+    def partial_update(self, request, company_id, pk):
+        serializer = s.PayslipPatchSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        payslip = services.set_manual_lines(
+            self.get_object(), by=self.membership, lines=serializer.validated_data["manual_lines"]
+        )
+        payslip = self.get_queryset().get(pk=payslip.pk)
+        return Response(s.PayslipSerializer(payslip, context=self.context()).data)
+
+    @extend_schema(responses=s.FileLinkSerializer)
+    @action(detail=True, methods=["get"])
+    def pdf(self, request, company_id, pk):
+        """A short-lived link to the payslip as a PDF, in your language."""
+        return Response(pdf_link(self.get_object(), request))
+
+
+def pdf_link(payslip: Payslip, request) -> dict:
+    from django.utils import translation
+
+    from apps.core.files import DEFAULT_TTL, signed_url
+    from apps.payroll import payslip_pdf
+
+    language = (translation.get_language() or "uz")[:2]
+    stored = payslip_pdf.save(payslip, language=language)
+    name = payslip_pdf.file_name(payslip)
+    url = signed_url(
+        stored,
+        user=request.user,
+        company_id=payslip.company_id,
+        check=f"payroll.payslip:{payslip.pk}",
+        filename=name,
+    )
+    return {"url": url, "name": name, "expires_in": DEFAULT_TTL}
