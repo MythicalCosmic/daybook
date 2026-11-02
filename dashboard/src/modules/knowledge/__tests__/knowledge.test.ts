@@ -488,6 +488,22 @@ describe("SpacePage archive", () => {
   });
 });
 
+describe("KnowledgeHome", () => {
+  it("says the spaces failed to load instead of showing an empty Spaces section", async () => {
+    stubApi({
+      "GET knowledge/overview/": () => json({ attention: [], to_read: [], recent: [] }),
+      "GET knowledge/spaces/": () => json({ detail: "boom" }, 500),
+    });
+    const { default: KnowledgeHome } = await import("../pages/KnowledgeHome.vue");
+    const app = await testApp("/c/1/knowledge");
+    const { wrapper } = mountWithProviders(KnowledgeHome, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    expect(wrapper.text()).toContain("Try again");
+    wrapper.unmount();
+  });
+});
+
 describe("PageEditor on a phone", () => {
   it("sticks the formatting toolbar under the phone's top bar and the page bar, not under the desktop bar alone", async () => {
     const { readFileSync } = await import("node:fs");
