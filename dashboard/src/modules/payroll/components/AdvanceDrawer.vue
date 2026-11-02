@@ -5,7 +5,7 @@
  * schedule month by month and the repayments so far. The footer offers what the status allows:
  * approve or reject, pay out, record a repayment made in cash, cancel.
  */
-import { Ban, CalendarClock, HandCoins, Receipt } from "@lucide/vue";
+import { Ban, HandCoins, Receipt } from "@lucide/vue";
 import { computed, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
@@ -33,6 +33,7 @@ import { useCompanyStore } from "@/stores/company";
 import { payrollApi, useAdvance, useRefresh } from "../api";
 import { ADVANCE_TONES, repaidShare } from "../lib";
 import type { Advance } from "../types";
+import AccountField from "./AccountField.vue";
 import PayAmount from "./PayAmount.vue";
 
 const emit = defineEmits<{ pay: [advance: Advance] }>();
@@ -65,31 +66,35 @@ const facts = computed<DescriptionItem[]>(() => {
       value: a.installments > 1 ? t("payroll.advances.planMany", { n: a.installments, month: fmt.day(a.first_period, "monthYear") }, a.installments) : t("payroll.advances.planOne", { month: fmt.day(a.first_period, "monthYear") }),
       wide: true,
     },
-    { key: "requested", label: t("payroll.advances.requested"), value: `${a.requested_by?.name ?? a.member.name} · ${fmt.instant(a.created_at, "date")}` },
+    { key: "requested", label: t("payroll.advances.requested"), value: `${a.requested_by ?? a.member.name} · ${fmt.instant(a.created_at, "date")}` },
   ];
-  if (a.decided_at) items.push({ key: "decided", label: a.status === "rejected" ? t("payroll.adjustments.rejectedBy") : t("payroll.adjustments.approvedBy"), value: `${a.decided_by?.name ?? "—"} · ${fmt.instant(a.decided_at, "date")}` });
+  if (a.decided_at) items.push({ key: "decided", label: a.status === "rejected" ? t("payroll.adjustments.rejectedBy") : t("payroll.adjustments.approvedBy"), value: `${a.decided_by ?? "—"} · ${fmt.instant(a.decided_at, "date")}` });
   if (a.paid_at) items.push({ key: "paid", label: t("payroll.advances.paidAt"), value: `${fmt.instant(a.paid_at, "date")}${a.payout_method ? ` · ${t(`payroll.method.${a.payout_method}`)}` : ""}` });
+  if (a.decision_note) items.push({ key: "note", label: t("payroll.advances.decisionNote"), value: a.decision_note, wide: true });
   return items;
 });
-const SCHEDULE_TONES = { planned: "neutral", deducted: "info", paid: "success" } as const;
 
-// A repayment made outside payroll (cash handed back) ---------------------------------------------
+// Money paid back outside payroll (cash handed back), into an account ---------------------------
 const repaying = ref(false);
-const repay = reactive({ amount: null as string | null, paid_on: null as string | null, note: "" });
+const repay = reactive({ amount: null as string | null, paid_on: null as string | null, note: "", account: null as number | null });
 const repayErrors = reactive<Record<string, string | undefined>>({});
 const saving = ref(false);
 watch(id, () => (repaying.value = false));
 function startRepay(): void {
-  Object.assign(repay, { amount: advance.value?.outstanding ?? null, paid_on: todayIn(company.timezone), note: "" });
+  Object.assign(repay, { amount: advance.value?.left ?? null, paid_on: todayIn(company.timezone), note: "", account: null });
   for (const key of Object.keys(repayErrors)) delete repayErrors[key];
   repaying.value = true;
 }
 async function saveRepay(): Promise<void> {
   const a = advance.value;
   if (!a || !repay.amount || !repay.paid_on || saving.value) return;
+  if (!repay.account) {
+    repayErrors.account = t("payroll.payout.chooseAccount");
+    return;
+  }
   saving.value = true;
   try {
-    await payrollApi.repayAdvance(company.currentId ?? 0, a.id, { amount: repay.amount, paid_on: repay.paid_on, note: repay.note.trim() });
+    await payrollApi.repayAdvance(company.currentId ?? 0, a.id, { amount: repay.amount, account: repay.account, paid_on: repay.paid_on, note: repay.note.trim() });
     toast.success(t("payroll.advances.repaidSaved"));
     repaying.value = false;
     refresh();
@@ -159,30 +164,19 @@ async function cancel(): Promise<void> {
           <p v-if="advance.reason" class="rounded-[10px] bg-surface-2 px-3 py-2.5 text-base text-fg">{{ advance.reason }}</p>
           <DescriptionList :items="facts" :columns="2" />
 
-          <section v-if="advance.schedule?.length" class="flex flex-col gap-2">
-            <h3 class="flex items-center gap-1.5 text-sm font-semibold text-fg"><CalendarClock :size="15" class="text-subtle" />{{ t("payroll.advances.schedule") }}</h3>
-            <ul class="flex flex-col divide-y divide-line rounded-[10px] border border-line">
-              <li v-for="row in advance.schedule" :key="row.period" class="flex min-h-11 items-center gap-3 px-3 py-2">
-                <span class="w-32 shrink-0 text-sm text-fg">{{ fmt.day(row.period, "monthYear") }}</span>
-                <StatusPill :tone="SCHEDULE_TONES[row.status]" size="sm" :label="t(`payroll.advances.scheduleStatus.${row.status}`)" />
-                <span class="flex-1" />
-                <span class="text-sm font-semibold tabular-nums text-fg"><PayAmount :value="row.amount" :currency="advance.currency" /></span>
-              </li>
-            </ul>
-          </section>
-
-          <section v-if="advance.repayments?.length" class="flex flex-col gap-2">
+          <section class="flex flex-col gap-2">
             <h3 class="flex items-center gap-1.5 text-sm font-semibold text-fg"><Receipt :size="15" class="text-subtle" />{{ t("payroll.advances.repayments") }}</h3>
-            <ul class="flex flex-col divide-y divide-line rounded-[10px] border border-line">
+            <ul v-if="advance.repayments?.length" class="flex flex-col divide-y divide-line rounded-[10px] border border-line" data-testid="repayments">
               <li v-for="row in advance.repayments" :key="row.id" class="flex min-h-11 items-center gap-3 px-3 py-2">
                 <span class="w-24 shrink-0 text-sm text-muted">{{ fmt.day(row.paid_on, "short") }}</span>
-                <span class="min-w-0 flex-1 truncate text-sm text-fg">{{ row.note || (row.payslip ? t("payroll.advances.fromPayslip") : t("payroll.advances.byHand")) }}</span>
+                <span class="min-w-0 flex-1 truncate text-sm text-fg" :title="row.note">{{ row.how === "payslip" ? t("payroll.advances.fromPayslip") : t("payroll.advances.byHand") }}<template v-if="row.note"> · {{ row.note }}</template></span>
                 <span class="shrink-0 text-sm font-semibold tabular-nums"><PayAmount :value="row.amount" :currency="advance.currency" /></span>
               </li>
             </ul>
+            <p v-else class="text-sm text-muted">{{ advance.status === "paid" ? t("payroll.advances.repaymentsNone", { month: fmt.day(advance.first_period, "monthYear") }) : t("payroll.advances.repaymentsLater") }}</p>
           </section>
 
-          <div v-if="repaying" class="flex flex-col gap-3 rounded-[12px] border border-line p-3">
+          <div v-if="repaying" class="flex flex-col gap-3 rounded-[12px] border border-line p-3" data-testid="repay-form">
             <p class="text-sm font-semibold text-fg">{{ t("payroll.advances.repayTitle") }}</p>
             <div class="grid gap-3 sm:grid-cols-2">
               <FormField :label="t('payroll.field.amount')" :error="repayErrors.amount" required>
@@ -192,6 +186,7 @@ async function cancel(): Promise<void> {
                 <DatePicker v-model="repay.paid_on" :max="todayIn(company.timezone)" />
               </FormField>
             </div>
+            <AccountField v-model="repay.account" :currency="advance.currency" :label="t('payroll.advances.intoAccount')" :error="repayErrors.account" />
             <FormField :label="t('payroll.pay.note')" optional>
               <TextInput v-model="repay.note" :maxlength="200" />
             </FormField>
@@ -214,7 +209,7 @@ async function cancel(): Promise<void> {
           :on-reject="(reason: string) => decide('reject', reason)"
         />
         <UiButton v-if="canPay && advance.status === 'approved'" variant="primary" size="sm" :icon="HandCoins" @click="emit('pay', advance)">{{ t("payroll.advances.pay") }}</UiButton>
-        <UiButton v-if="canManage && advance.status === 'paid' && !repaying" size="sm" :icon="Receipt" @click="startRepay">{{ t("payroll.advances.repay") }}</UiButton>
+        <UiButton v-if="canPay && advance.status === 'paid' && !repaying" size="sm" :icon="Receipt" data-testid="start-repay" @click="startRepay">{{ t("payroll.advances.repay") }}</UiButton>
       </div>
     </template>
   </UiDrawer>

@@ -72,18 +72,20 @@ async function save(): Promise<void> {
   if (Object.keys(errors).length || saving.value) return;
   saving.value = true;
   try {
-    const created = await payrollApi.createAdjustment(company.currentId ?? 0, { member: form.member!, period: form.period, kind: form.kind, amount: form.amount!, reason: form.reason.trim() });
-    if (canManage.value && form.approve && created.status === "proposed") {
-      await payrollApi.decideAdjustment(company.currentId ?? 0, created.id, "approve");
-      toast.success(t("payroll.propose.doneApproved"));
-    } else {
-      toast.success(created.status === "approved" ? t("payroll.propose.doneApproved") : t("payroll.propose.done"));
-    }
+    const created = await payrollApi.createAdjustment(company.currentId ?? 0, {
+      membership: form.member!,
+      period: form.period,
+      kind: form.kind,
+      amount: form.amount!,
+      reason: form.reason.trim(),
+      approve: canManage.value && form.approve,
+    });
+    toast.success(created.status === "approved" ? t("payroll.propose.doneApproved") : t("payroll.propose.done"));
     refresh();
     open.value = false;
   } catch (error) {
-    if (isApiError(error)) for (const [field, messages] of Object.entries(error.fieldErrors)) errors[field] = messages[0];
-    refresh();
+    // "membership" is the person field on the server.
+    if (isApiError(error)) for (const [field, messages] of Object.entries(error.fieldErrors)) errors[field === "membership" ? "member" : field] = messages[0];
   } finally {
     saving.value = false;
   }

@@ -33,7 +33,7 @@ import AdjustmentDrawer from "../components/AdjustmentDrawer.vue";
 import PayAmount from "../components/PayAmount.vue";
 import ProposeDialog from "../components/ProposeDialog.vue";
 import SourceLabel from "../components/SourceLabel.vue";
-import { ADJUSTMENT_TONES, bulkPlan, isAddition, isDecidable, periodOf, shiftPeriod, signedAmount } from "../lib";
+import { ADJUSTMENT_TONES, bulkOutcome, bulkPlan, isAddition, isDecidable, periodOf, shiftPeriod, signedAmount } from "../lib";
 import type { Adjustment, AdjustmentKind } from "../types";
 
 const { t } = useI18n();
@@ -74,7 +74,7 @@ const defs = computed<FilterDef[]>(() => [
     label: t("payroll.adjustments.source"),
     type: "multi",
     icon: Sparkles,
-    options: (["manual", "rule", "task", "attendance"] as const).map((source) => ({ value: source, label: t(`payroll.source.${source}`) })),
+    options: (["manual", "rule", "task", "attendance", "discipline"] as const).map((source) => ({ value: source, label: t(`payroll.source.${source}`) })),
   },
 ]);
 const filters = useUrlFilters(defs);
@@ -86,7 +86,7 @@ const tabParams = (value: Tab) => (value === "disputed" ? { disputed: "true" } :
 const params = computed(() => ({ ...tabParams(tab.value), ...filters.params.value, ...(search.value ? { q: search.value } : {}), ...table.params.value }));
 const list = useAdjustments(params);
 const proposedCount = useAdjustments(() => ({ status: "proposed", page_size: 1 }));
-const disputedCount = useAdjustments(() => ({ disputed: "true", page_size: 1 }));
+const disputedCount = useAdjustments(() => ({ disputed: "open", page_size: 1 }));
 const rows = computed(() => list.data.value?.results ?? []);
 const filtered = computed(() => filters.active.value > 0 || !!search.value);
 
@@ -119,7 +119,6 @@ async function decide(row: Adjustment, decision: "approve" | "reject", reason = 
 }
 
 async function bulk(selected: string[], decision: "approve" | "reject", clear: () => void): Promise<void> {
-  let reason = "";
   const count = bulkPlan(rows.value, selected, decision).ids.length;
   if (!count) return;
   const answer = await confirm({
@@ -132,13 +131,13 @@ async function bulk(selected: string[], decision: "approve" | "reject", clear: (
     reasonPlaceholder: t("common.reasonPlaceholder"),
   });
   if (!answer) return;
-  reason = answer.reason;
-  const plan = bulkPlan(rows.value, selected, decision, reason);
+  const plan = bulkPlan(rows.value, selected, decision, answer.reason);
   try {
-    const result = await payrollApi.bulkDecide(company.currentId ?? 0, plan.body);
-    const skipped = (result.skipped?.length ?? 0) + plan.skipped.length;
-    toast.success(t("payroll.adjustments.bulkDone", { n: result.decided?.length ?? plan.ids.length }, result.decided?.length ?? plan.ids.length));
-    if (skipped) toast.info(t("payroll.adjustments.bulkSkipped", { n: skipped }, skipped));
+    const outcome = bulkOutcome(await payrollApi.bulkDecide(company.currentId ?? 0, plan.body));
+    const skipped = outcome.refused.length + plan.skipped.length;
+    toast.success(t("payroll.adjustments.bulkDone", { n: outcome.decided }, outcome.decided));
+    // What the server refused (decided meanwhile, locked…), in its own words when there is one.
+    if (skipped) toast.info(outcome.refused.length === 1 && outcome.refused[0]!.error ? outcome.refused[0]!.error : t("payroll.adjustments.bulkSkipped", { n: skipped }, skipped));
     clear();
     refresh();
   } catch {

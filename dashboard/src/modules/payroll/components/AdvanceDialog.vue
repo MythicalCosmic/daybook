@@ -58,7 +58,7 @@ async function save(): Promise<void> {
   saving.value = true;
   try {
     await payrollApi.createAdvance(company.currentId ?? 0, {
-      member: form.member!,
+      membership: form.member!,
       amount: form.amount!,
       installments: Math.max(1, Math.min(12, form.installments ?? 1)),
       first_period: form.first_period,
@@ -68,7 +68,7 @@ async function save(): Promise<void> {
     refresh();
     open.value = false;
   } catch (error) {
-    if (isApiError(error)) for (const [field, messages] of Object.entries(error.fieldErrors)) errors[field] = messages[0];
+    if (isApiError(error)) for (const [field, messages] of Object.entries(error.fieldErrors)) errors[field === "membership" ? "member" : field] = messages[0];
   } finally {
     saving.value = false;
   }

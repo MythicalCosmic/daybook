@@ -18,7 +18,7 @@ export type PayoutMethod = "cash" | "card" | "bank";
 
 export type AdjustmentKind = "bonus" | "fine" | "allowance" | "deduction";
 export type AdjustmentStatus = "proposed" | "approved" | "rejected" | "void";
-export type AdjustmentSource = "manual" | "rule" | "task" | "attendance";
+export type AdjustmentSource = "manual" | "rule" | "task" | "attendance" | "discipline";
 
 export type AdvanceStatus = "requested" | "approved" | "rejected" | "paid" | "repaid" | "cancelled";
 
@@ -63,10 +63,15 @@ export type PayslipLineKind =
   | "rounding"
   | "manual";
 
-/** A person as payroll names them: their membership, with position and branch when known. */
+/**
+ * A person as payroll names them: their membership. The pay setups list adds the position, the
+ * home branch and the membership status; payslips add the branch.
+ */
 export interface Member extends PersonRef {
   position?: string | null;
+  home_branch?: string | null;
   branch?: string | null;
+  status?: string;
 }
 
 export interface Ref {
@@ -86,16 +91,17 @@ export interface PayrollSettings {
   income_tax_percent: string;
   social_tax_percent: string;
   inps_percent: string;
-  deductions_cap_percent: number;
+  deductions_cap_percent: string;
   rounding_step: Money;
   overtime_multiplier: string;
   holiday_work_multiplier: string;
   night_multiplier: string;
-  /** "22:00" */
+  /** "22:00:00" */
   night_starts_at: string;
   night_ends_at: string;
   daily_hours: string;
   auto_prepare: boolean;
+  leave_payout_months?: number;
 }
 
 // Pay setups ----------------------------------------------------------------------------------
@@ -111,16 +117,17 @@ export interface Compensation {
   pays_task_rates: boolean;
   overtime_eligible: boolean;
   note: string;
-  created_by: PersonRef | null;
+  /** Who set it (a name). */
+  created_by: string | null;
   created_at: string;
   /** Used by a finalized run: read-only, a change is a new row. */
   locked: boolean;
-  /** Why it is locked ("Used by the October 2026 payroll"), when the server says. */
+  /** Why it is locked, in the viewer's language. */
   locked_reason?: string | null;
 }
 
 export interface CompensationInput {
-  member: number;
+  membership: number;
   effective_from: string;
   pay_type: PayType;
   amount: Money;
@@ -131,14 +138,11 @@ export interface CompensationInput {
   note: string;
 }
 
-/** One person on the pay setups page: their pay now, and the rows that led to it. */
+/** One person on the pay setups page (`compensations/people/`): today's setup and the next one planned. */
 export interface PayRow {
   member: Member;
   current: Compensation | null;
-  /** Newest first. */
-  history: Compensation[];
-  /** A setup that starts later than today. */
-  upcoming: Compensation | null;
+  next: Compensation | null;
 }
 
 // Adjustments ---------------------------------------------------------------------------------
@@ -153,39 +157,49 @@ export interface Adjustment {
   reason: string;
   source: AdjustmentSource;
   rule: Ref | null;
-  task: { id: number; title: string } | null;
-  attendance: number | null;
+  task: Ref | null;
   status: AdjustmentStatus;
-  proposed_by: PersonRef | null;
-  decided_by: PersonRef | null;
+  /** Names. */
+  proposed_by: string | null;
+  decided_by: string | null;
   decided_at: string | null;
+  decision_note?: string;
   disputed_at: string | null;
   dispute_text: string;
   dispute_answer: string;
-  /** Set once a finalized payslip took it: read-only from then on. */
+  dispute_answered_at?: string | null;
+  /** Disputed and not answered yet. */
+  dispute_open?: boolean;
+  /** A finalized payslip took it: read-only from then on. */
+  locked?: boolean;
   payslip: number | null;
   created_at: string;
 }
 
 export interface AdjustmentInput {
-  member: number;
+  membership: number;
   period: string;
   kind: AdjustmentKind;
   amount: Money;
   reason: string;
+  /** Approve at once (payroll.manage). */
+  approve?: boolean;
 }
 
 export type Decision = "approve" | "reject";
 
 export interface BulkDecideInput {
   ids: number[];
-  decision: Decision;
+  approve: boolean;
   reason?: string;
 }
 
-export interface BulkDecideResult {
-  decided: number[];
-  skipped: Array<{ id: number; detail: string }>;
+/** One row of the bulk decision's answer. */
+export interface BulkDecideRow {
+  id: number;
+  ok: boolean;
+  status?: string;
+  error?: string;
 }
 
 // Rules ---------------------------------------------------------------------------------------
@@ -258,16 +272,12 @@ export interface RulePreview {
 
 export interface AdvanceRepayment {
   id: number;
-  amount: Money;
+  amount?: Money | null;
   paid_on: string;
   note: string;
   payslip: number | null;
-}
-
-export interface AdvanceScheduleRow {
-  period: string;
-  amount: Money;
-  status: "planned" | "deducted" | "paid";
+  /** Taken from a payslip, or paid back in money. */
+  how: "payslip" | "money";
 }
 
 export interface Advance {
@@ -279,22 +289,24 @@ export interface Advance {
   first_period: string;
   reason: string;
   status: AdvanceStatus;
-  requested_by: PersonRef | null;
-  decided_by: PersonRef | null;
+  /** Names. */
+  requested_by: string | null;
+  decided_by: string | null;
   decided_at: string | null;
   decision_note?: string;
   paid_at: string | null;
-  paid_by: PersonRef | null;
+  paid_by: string | null;
   payout_method: PayoutMethod | "";
   repaid?: Money | null;
-  outstanding?: Money | null;
+  /** What is still owed. */
+  left?: Money | null;
   repayments?: AdvanceRepayment[];
-  schedule?: AdvanceScheduleRow[];
+  debt?: number | null;
   created_at: string;
 }
 
 export interface AdvanceInput {
-  member: number;
+  membership: number;
   amount: Money;
   installments: number;
   first_period: string;
@@ -304,13 +316,15 @@ export interface AdvanceInput {
 export interface PayInput {
   method: PayoutMethod;
   account: number;
+  paid_on?: string;
 }
 
+/** Money paid back outside payroll: into an account, through finance. */
 export interface RepayInput {
   amount: Money;
+  account: number;
   paid_on: string;
   note: string;
-  account?: number | null;
 }
 
 // Runs and payslips ---------------------------------------------------------------------------

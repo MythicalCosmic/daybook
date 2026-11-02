@@ -16,13 +16,15 @@ import type {
   AdjustmentStatus,
   Advance,
   AdvanceStatus,
+  BulkDecideInput,
+  BulkDecideRow,
   Compensation,
   Decision,
-  Member,
   PayAccount,
   PayoutMethod,
   PayrollSettings,
   PayRow,
+  PayType,
   Payslip,
   PayslipLine,
   PayslipLineKind,
@@ -267,13 +269,13 @@ export function quantityText(quantity: string, lang: "uz" | "ru" | "en"): string
 export const isDecidable = (row: Pick<Adjustment, "status">): boolean => row.status === "proposed";
 
 /** An approved adjustment no finalized payslip took yet: it can still be voided. */
-export const isVoidable = (row: Pick<Adjustment, "status" | "payslip">): boolean => row.status === "approved" && !row.payslip;
+export const isVoidable = (row: Pick<Adjustment, "status" | "payslip" | "locked">): boolean => row.status === "approved" && !row.payslip && !row.locked;
 
 export interface BulkPlan {
   ids: number[];
   /** Selected rows that are no longer waiting (decided meanwhile): left out. */
   skipped: number[];
-  body: { ids: number[]; decision: Decision; reason?: string };
+  body: BulkDecideInput;
 }
 
 /** The bulk-decide request for a selection: only proposed rows, with the reason for a rejection. */
@@ -285,8 +287,14 @@ export function bulkPlan(rows: readonly Adjustment[], selected: Iterable<number 
     if (!wanted.has(row.id)) continue;
     (isDecidable(row) ? ids : skipped).push(row.id);
   }
-  const body = decision === "reject" ? { ids, decision, reason: reason.trim() } : { ids, decision };
+  const body: BulkDecideInput = decision === "reject" ? { ids, approve: false, reason: reason.trim() } : { ids, approve: true };
   return { ids, skipped, body };
+}
+
+/** How a bulk decision went, from the server's rows: decided, and the ones it refused with why. */
+export function bulkOutcome(rows: readonly BulkDecideRow[]): { decided: number; refused: BulkDecideRow[] } {
+  const refused = rows.filter((row) => !row.ok);
+  return { decided: rows.length - refused.length, refused };
 }
 
 // ─── Rules ──────────────────────────────────────────────────────────────────
@@ -490,30 +498,28 @@ export function adaptToMetric(draft: RuleDraft, metric: RuleMetric): RuleDraft {
 
 const byNewest = (a: Compensation, b: Compensation) => (a.effective_from < b.effective_from ? 1 : a.effective_from > b.effective_from ? -1 : b.id - a.id);
 
+export interface PayHistory {
+  /** The setup in force on `today`. */
+  current: Compensation | null;
+  /** Every row, newest first. */
+  history: Compensation[];
+  /** The next one planned (the earliest that starts after today). */
+  upcoming: Compensation | null;
+}
+
 /** A person's rows, newest first; the current one is the latest that has started by `today`. */
-export function payHistory(rows: readonly Compensation[], today: string): Pick<PayRow, "current" | "history" | "upcoming"> {
+export function payHistory(rows: readonly Compensation[], today: string): PayHistory {
   const history = [...rows].sort(byNewest);
   const current = history.find((row) => row.effective_from <= today) ?? null;
   const upcoming = history.filter((row) => row.effective_from > today).at(-1) ?? null;
   return { current, history, upcoming };
 }
 
-/** Everyone on the pay setups page: people from the team list, with or without a pay setup. */
-export function payRows(people: readonly Member[], compensations: readonly Compensation[], today: string): PayRow[] {
-  const byMember = new Map<number, Compensation[]>();
-  for (const row of compensations) byMember.set(row.member.id, [...(byMember.get(row.member.id) ?? []), row]);
-  const seen = new Set<number>();
-  const result: PayRow[] = [];
-  for (const person of people) {
-    seen.add(person.id);
-    result.push({ member: person, ...payHistory(byMember.get(person.id) ?? [], today) });
-  }
-  // Someone with pay rows who isn't in the team list (left, or outside the picker's filter).
-  for (const [id, rows] of byMember) {
-    if (seen.has(id)) continue;
-    result.push({ member: rows[0]!.member, ...payHistory(rows, today) });
-  }
-  return result.sort((a, b) => a.member.name.localeCompare(b.member.name));
+/** Pay setups page filters, on the server's rows (today's setup and the next one). */
+export function payRowMatches(row: PayRow, filter: { missing: boolean; type: PayType | "all" }): boolean {
+  if (filter.missing && row.current) return false;
+  if (filter.type !== "all" && row.current?.pay_type !== filter.type) return false;
+  return true;
 }
 
 export type ChangePlan = { mode: "create" } | { mode: "update"; id: number } | { mode: "locked"; row: Compensation };
@@ -555,7 +561,7 @@ export interface SettingsForm {
   auto_prepare: boolean;
 }
 
-const DECIMAL_SETTINGS = ["overtime_multiplier", "holiday_work_multiplier", "night_multiplier", "daily_hours", "income_tax_percent", "social_tax_percent", "inps_percent"] as const;
+const DECIMAL_SETTINGS = ["deductions_cap_percent", "overtime_multiplier", "holiday_work_multiplier", "night_multiplier", "daily_hours", "income_tax_percent", "social_tax_percent", "inps_percent"] as const;
 const hhmm = (value: string | null | undefined): string | null => (value ? value.slice(0, 5) : null);
 
 export function settingsForm(settings: PayrollSettings): SettingsForm {
@@ -564,7 +570,6 @@ export function settingsForm(settings: PayrollSettings): SettingsForm {
     pay_day: settings.pay_day,
     advance_day: settings.advance_day,
     advance_cap_percent: settings.advance_cap_percent,
-    deductions_cap_percent: settings.deductions_cap_percent,
     rounding_step: dec(settings.rounding_step).toFixed(2),
     night_starts_at: hhmm(settings.night_starts_at),
     night_ends_at: hhmm(settings.night_ends_at),

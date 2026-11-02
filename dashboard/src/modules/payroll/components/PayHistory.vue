@@ -26,9 +26,10 @@ const stage = (row: Compensation) => (row.id === props.current?.id ? "current" :
 
 <template>
   <EmptyState v-if="!history.length" size="sm" :icon="Clock3" :title="t('payroll.pay.noHistory')" :description="t('payroll.pay.noHistoryBody')" tone="neutral" />
-  <ol v-else class="relative flex flex-col gap-3" data-testid="pay-history">
-    <span class="absolute bottom-5 left-[7px] top-5 w-px bg-line-strong" aria-hidden="true" />
-    <li v-for="row in history" :key="row.id" class="relative pl-6">
+  <ol v-else class="flex flex-col gap-3" data-testid="pay-history">
+    <li v-for="(row, index) in history" :key="row.id" class="relative pl-6">
+      <!-- The line to the next row's dot (each row draws its own piece). -->
+      <span v-if="index < history.length - 1" class="absolute -bottom-3 left-[7px] top-[30px] w-0.5 -translate-x-[0.5px] rounded-full bg-line" aria-hidden="true" />
       <span
         :class="[
           'absolute left-0 top-4 size-[15px] rounded-full border-2',
@@ -56,7 +57,7 @@ const stage = (row: Compensation) => (row.id === props.current?.id ? "current" :
         </div>
         <p v-if="row.note" class="mt-2 text-sm text-fg">{{ row.note }}</p>
         <p class="mt-1.5 text-xs text-subtle">
-          {{ row.created_by ? t("payroll.pay.setBy", { name: row.created_by.name, date: fmt.instant(row.created_at, "date") }) : fmt.instant(row.created_at, "date") }}
+          {{ row.created_by ? t("payroll.pay.setBy", { name: row.created_by, date: fmt.instant(row.created_at, "date") }) : fmt.instant(row.created_at, "date") }}
         </p>
         <p v-if="row.locked" class="mt-2 flex items-start gap-1.5 rounded-[8px] bg-surface-2 px-2.5 py-2 text-xs text-muted" data-testid="pay-locked">
           <Lock :size="12" class="mt-px shrink-0" />{{ row.locked_reason || t("payroll.pay.lockedReason") }}

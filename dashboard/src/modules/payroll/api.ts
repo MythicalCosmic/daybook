@@ -18,7 +18,7 @@ import type {
   Advance,
   AdvanceInput,
   BulkDecideInput,
-  BulkDecideResult,
+  BulkDecideRow,
   Compensation,
   CompensationInput,
   Decision,
@@ -26,6 +26,7 @@ import type {
   MarkPaidInput,
   PayAccount,
   PayInput,
+  PayRow,
   PayrollOverview,
   PayrollSettings,
   Payslip,
@@ -54,8 +55,11 @@ export const payrollApi = {
   updateSettings: (cid: number, input: Partial<PayrollSettings>) => http.patch<PayrollSettings>(path(cid, "settings/"), input),
   overview: (cid: number, months = 12) => http.get<PayrollOverview>(path(cid, "overview/"), { months }),
 
+  /** A person's pay setups, newest first (or everyone's with `current=true`: today's only). */
   compensations: (cid: number, params: Query = {}, signal?: AbortSignal) =>
-    http.get<Page<Compensation> | Compensation[]>(path(cid, "compensations/"), { page_size: 500, ...params }, { signal }),
+    http.get<Page<Compensation> | Compensation[]>(path(cid, "compensations/"), { page_size: 200, ...params }, { signal }),
+  /** Everyone who can be paid, with today's setup and the next one planned. */
+  payPeople: (cid: number, params: Query = {}, signal?: AbortSignal) => http.get<Page<PayRow>>(path(cid, "compensations/people/"), { page_size: 200, ...params }, { signal }),
   createCompensation: (cid: number, input: CompensationInput) => http.post<Compensation>(path(cid, "compensations/"), input),
   updateCompensation: (cid: number, id: number, input: Partial<CompensationInput>) => http.patch<Compensation>(path(cid, `compensations/${id}/`), input),
   deleteCompensation: (cid: number, id: number) => http.delete(path(cid, `compensations/${id}/`)),
@@ -63,12 +67,11 @@ export const payrollApi = {
   adjustments: (cid: number, params: Query, signal?: AbortSignal) => http.get<Page<Adjustment>>(path(cid, "adjustments/"), params, { signal }),
   adjustment: (cid: number, id: number) => http.get<Adjustment>(path(cid, `adjustments/${id}/`)),
   createAdjustment: (cid: number, input: AdjustmentInput) => http.post<Adjustment>(path(cid, "adjustments/"), input),
-  decideAdjustment: (cid: number, id: number, decision: Decision, reason = "") =>
-    http.post<Adjustment>(path(cid, `adjustments/${id}/${decision}/`), decision === "reject" ? { reason } : {}),
+  decideAdjustment: (cid: number, id: number, decision: Decision, reason = "") => http.post<Adjustment>(path(cid, `adjustments/${id}/${decision}/`), { reason }),
   voidAdjustment: (cid: number, id: number, reason: string) => http.post<Adjustment>(path(cid, `adjustments/${id}/void/`), { reason }),
-  answerDispute: (cid: number, id: number, answer: string, decision?: "keep" | "void") =>
-    http.post<Adjustment>(path(cid, `adjustments/${id}/answer-dispute/`), decision ? { answer, decision } : { answer }),
-  bulkDecide: (cid: number, input: BulkDecideInput) => http.post<BulkDecideResult>(path(cid, "adjustments/bulk-decide/"), input),
+  /** Answer a dispute; `voidIt` also takes the fine back. */
+  answerDispute: (cid: number, id: number, answer: string, voidIt = false) => http.post<Adjustment>(path(cid, `adjustments/${id}/answer-dispute/`), { answer, void: voidIt }),
+  bulkDecide: (cid: number, input: BulkDecideInput) => http.post<BulkDecideRow[]>(path(cid, "adjustments/bulk-decide/"), input),
 
   rules: (cid: number, signal?: AbortSignal) => http.get<Page<Rule> | Rule[]>(path(cid, "rules/"), { page_size: 200 }, { signal }),
   createRule: (cid: number, input: RuleInput) => http.post<Rule>(path(cid, "rules/"), input),
@@ -81,7 +84,7 @@ export const payrollApi = {
   advances: (cid: number, params: Query, signal?: AbortSignal) => http.get<Page<Advance>>(path(cid, "advances/"), params, { signal }),
   advance: (cid: number, id: number) => http.get<Advance>(path(cid, `advances/${id}/`)),
   createAdvance: (cid: number, input: AdvanceInput) => http.post<Advance>(path(cid, "advances/"), input),
-  decideAdvance: (cid: number, id: number, decision: Decision, note = "") => http.post<Advance>(path(cid, `advances/${id}/decide/`), { decision, note }),
+  decideAdvance: (cid: number, id: number, decision: Decision, reason = "") => http.post<Advance>(path(cid, `advances/${id}/decide/`), { approve: decision === "approve", reason }),
   payAdvance: (cid: number, id: number, input: PayInput) => http.post<Advance>(path(cid, `advances/${id}/pay/`), input),
   repayAdvance: (cid: number, id: number, input: RepayInput) => http.post<Advance>(path(cid, `advances/${id}/repay/`), input),
   cancelAdvance: (cid: number, id: number, reason: string) => http.post<Advance>(path(cid, `advances/${id}/cancel/`), { reason }),
@@ -92,7 +95,7 @@ export const payrollApi = {
   runAction: (cid: number, id: number, action: "calculate" | "finalize" | "reopen" | "cancel" | "publish", body: Record<string, unknown> = {}) =>
     http.post<Run>(path(cid, `runs/${id}/${action}/`), body),
   markPaid: (cid: number, id: number, input: MarkPaidInput) => http.post<Run>(path(cid, `runs/${id}/mark-paid/`), input),
-  payslips: (cid: number, runId: number, signal?: AbortSignal) => http.get<Page<Payslip> | Payslip[]>(path(cid, `runs/${runId}/payslips/`), { page_size: 500 }, { signal }),
+  payslips: (cid: number, runId: number, signal?: AbortSignal) => http.get<Page<Payslip> | Payslip[]>(path(cid, `runs/${runId}/payslips/`), { page_size: 200 }, { signal }),
   memberPayslips: (cid: number, member: number, signal?: AbortSignal) => http.get<Page<Payslip> | Payslip[]>(path(cid, "payslips/"), { member, page_size: 24 }, { signal }),
 
   payslip: (cid: number, id: number) => http.get<Payslip>(path(cid, `payslips/${id}/`)),
@@ -134,6 +137,8 @@ export const useSettings = (enabled: MaybeRefOrGetter<boolean> = true) => useRes
 export const useOverview = (enabled: MaybeRefOrGetter<boolean> = true) => useResource("overview", {}, (cid) => payrollApi.overview(cid), { enabled });
 export const useCompensations = (params: MaybeRefOrGetter<Query> = {}, enabled: MaybeRefOrGetter<boolean> = true) =>
   useResource("compensations", () => ({ ...toValue(params) }), async (cid, p, signal) => rowsOf(await payrollApi.compensations(cid, p as Query, signal)), { enabled, keepPrevious: true });
+export const usePayPeople = (params: MaybeRefOrGetter<Query> = {}) =>
+  useResource("pay-people", () => ({ ...toValue(params) }), (cid, p, signal) => payrollApi.payPeople(cid, p as Query, signal), { keepPrevious: true });
 export const useAdjustments = (params: MaybeRefOrGetter<Query>, enabled: MaybeRefOrGetter<boolean> = true) =>
   useResource("adjustments", () => ({ ...toValue(params) }), (cid, p, signal) => payrollApi.adjustments(cid, p as Query, signal), { enabled, keepPrevious: true });
 export const useAdjustment = (id: MaybeRefOrGetter<number | null>) =>

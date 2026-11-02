@@ -95,7 +95,7 @@ async function save(): Promise<void> {
   if (Object.keys(errors).length || saving.value) return;
   saving.value = true;
   const input = {
-    member: props.member.id,
+    membership: props.member.id,
     effective_from: form.effective_from!,
     pay_type: form.pay_type,
     amount: needsAmount.value ? form.amount! : "0.00",

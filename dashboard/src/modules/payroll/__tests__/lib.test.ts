@@ -7,6 +7,7 @@ import { formatMoney } from "@/lib/money";
 import {
   accountsFor,
   adaptToMetric,
+  bulkOutcome,
   bulkPlan,
   changePlan,
   emptyRule,
@@ -15,7 +16,7 @@ import {
   lineHow,
   monthName,
   payHistory,
-  payRows,
+  payRowMatches,
   paySelection,
   prepareTarget,
   previewBody,
@@ -33,7 +34,7 @@ import {
   type Can,
   type RuleDraft,
 } from "../lib";
-import type { Adjustment, Compensation, PayAccount, PayrollSettings, Payslip, PayslipLine, Rule, Run } from "../types";
+import type { Adjustment, Compensation, PayAccount, PayrollSettings, PayRow, Payslip, PayslipLine, Rule, Run } from "../types";
 
 const all: Can = () => true;
 const only =
@@ -113,7 +114,7 @@ function adjustment(id: number, status: Adjustment["status"]): Adjustment {
     source: "manual",
     rule: null,
     task: null,
-    attendance: null,
+
     status,
     proposed_by: null,
     decided_by: null,
@@ -187,11 +188,20 @@ describe("bulk decisions", () => {
   const rows = [adjustment(1, "proposed"), adjustment(2, "approved"), adjustment(3, "proposed")];
 
   it("take only proposed rows; approving sends no reason", () => {
-    expect(bulkPlan(rows, ["1", "2", "3"], "approve")).toEqual({ ids: [1, 3], skipped: [2], body: { ids: [1, 3], decision: "approve" } });
+    expect(bulkPlan(rows, ["1", "2", "3"], "approve")).toEqual({ ids: [1, 3], skipped: [2], body: { ids: [1, 3], approve: true } });
   });
 
   it("rejecting sends the reason, trimmed", () => {
-    expect(bulkPlan(rows, [3], "reject", "  Wrong month  ").body).toEqual({ ids: [3], decision: "reject", reason: "Wrong month" });
+    expect(bulkPlan(rows, [3], "reject", "  Wrong month  ").body).toEqual({ ids: [3], approve: false, reason: "Wrong month" });
+  });
+
+  it("reads the server's answer: how many were decided, and what it refused", () => {
+    const outcome = bulkOutcome([
+      { id: 1, ok: true, status: "approved" },
+      { id: 3, ok: false, error: "Already decided." },
+    ]);
+    expect(outcome.decided).toBe(1);
+    expect(outcome.refused).toEqual([{ id: 3, ok: false, error: "Already decided." }]);
   });
 });
 
@@ -286,16 +296,12 @@ describe("pay history and locks", () => {
     expect(suggestedEffectiveFrom("2026-11-02")).toBe("2026-12-01");
   });
 
-  it("lists everyone, with or without pay, by name", () => {
-    const people = [
-      { id: 9, name: "Zuhra" },
-      { id: 3, name: "Alisher Valiyev" },
-    ];
-    const list = payRows(people, rows, "2026-11-02");
-    expect(list.map((row) => [row.member.name, row.current?.id ?? null])).toEqual([
-      ["Alisher Valiyev", 2],
-      ["Zuhra", null],
-    ]);
+  it("filters the people list: only those without pay, or one pay type", () => {
+    const withPay: PayRow = { member: { id: 3, name: "Alisher Valiyev" }, current: rows[1]!, next: rows[2]! };
+    const without: PayRow = { member: { id: 9, name: "Aziza Rasulova" }, current: null, next: null };
+    expect([withPay, without].filter((row) => payRowMatches(row, { missing: true, type: "all" })).map((row) => row.member.id)).toEqual([9]);
+    expect([withPay, without].filter((row) => payRowMatches(row, { missing: false, type: "monthly" })).map((row) => row.member.id)).toEqual([3]);
+    expect([withPay, without].filter((row) => payRowMatches(row, { missing: false, type: "hourly" }))).toEqual([]);
   });
 });
 
@@ -401,7 +407,7 @@ describe("settings", () => {
     income_tax_percent: "12.00",
     social_tax_percent: "12.00",
     inps_percent: "0.10",
-    deductions_cap_percent: 20,
+    deductions_cap_percent: "20.00",
     rounding_step: "1000.00",
     overtime_multiplier: "2.00",
     holiday_work_multiplier: "2.00",

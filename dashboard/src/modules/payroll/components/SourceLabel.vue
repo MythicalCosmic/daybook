@@ -3,7 +3,7 @@
  * Where a bonus or fine came from: by hand (and who proposed it), an automatic rule (its name), a
  * task (its title, linked) or attendance. One line with an icon; tables and drawers use it.
  */
-import { CalendarCheck, Hand, ListTodo, Zap } from "@lucide/vue";
+import { CalendarCheck, Gavel, Hand, ListTodo, Zap } from "@lucide/vue";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink } from "vue-router";
@@ -17,13 +17,13 @@ const props = withDefaults(defineProps<{ row: Pick<Adjustment, "source" | "rule"
 
 const { t } = useI18n();
 const company = useCompanyStore();
-const icon = computed(() => ({ manual: Hand, rule: Zap, task: ListTodo, attendance: CalendarCheck })[props.row.source]);
+const icon = computed(() => ({ manual: Hand, rule: Zap, task: ListTodo, attendance: CalendarCheck, discipline: Gavel })[props.row.source]);
 const text = computed(() => {
   const row = props.row;
   if (row.source === "rule") return row.rule?.name ?? t("payroll.source.rule");
-  if (row.source === "task") return row.task?.title ?? t("payroll.source.task");
-  if (row.source === "manual") return row.proposed_by && !props.plain ? t("payroll.source.by", { name: row.proposed_by.name }) : t("payroll.source.manual");
-  return t("payroll.source.attendance");
+  if (row.source === "task") return row.task?.name ?? t("payroll.source.task");
+  if (row.source === "manual") return row.proposed_by && !props.plain ? t("payroll.source.by", { name: row.proposed_by }) : t("payroll.source.manual");
+  return t(`payroll.source.${row.source}`);
 });
 </script>
 

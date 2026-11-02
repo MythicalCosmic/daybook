@@ -157,7 +157,7 @@ const base = computed(() => `/c/${company.currentId}/payroll`);
             <RouterLink :to="`${base}/advances?advance=${row.id}`" class="flex min-h-11 items-center gap-3 rounded-[8px] px-1 py-1.5 hover:bg-surface-2">
               <div class="min-w-0 flex-1">
                 <p class="truncate text-sm font-medium text-fg">{{ fmt.instant(row.created_at, "date") }}<template v-if="row.reason"> · {{ row.reason }}</template></p>
-                <p v-if="row.status === 'paid' && row.outstanding" class="truncate text-xs text-muted">{{ t("payroll.person.owes", { amount: fmt.money(row.outstanding, row.currency) }) }}</p>
+                <p v-if="row.status === 'paid' && row.left" class="truncate text-xs text-muted">{{ t("payroll.person.owes", { amount: fmt.money(row.left, row.currency) }) }}</p>
               </div>
               <StatusPill :tone="ADVANCE_TONES[row.status]" size="sm" :label="t(`payroll.advanceStatus.${row.status}`)" />
               <span class="w-28 shrink-0 text-right text-sm font-semibold tabular-nums text-fg"><PayAmount :value="row.amount" :currency="row.currency" /></span>

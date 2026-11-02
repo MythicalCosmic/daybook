@@ -6,15 +6,13 @@
  * `?missing=1` shows only the people without one (a run's warning links here).
  */
 import { CalendarClock, Clock3, Lock, Search, UserRoundX, WalletCards } from "@lucide/vue";
-import { computed, ref } from "vue";
+import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 
 import DataTable from "@/components/DataTable.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import PageHeader from "@/components/PageHeader.vue";
-import { useCompanyPeople } from "@/components/pickers";
-import { normalize } from "@/components/options";
 import SegmentedControl from "@/components/SegmentedControl.vue";
 import SelectBox from "@/components/SelectBox.vue";
 import StatusPill from "@/components/StatusPill.vue";
@@ -22,45 +20,29 @@ import type { TableColumn } from "@/components/table";
 import TextInput from "@/components/TextInput.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
 import { useDataTable } from "@/components/useDataTable";
-import { todayIn } from "@/lib/dates";
 import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useFormat } from "@/lib/useFormat";
 import { rs, useRouteState } from "@/lib/useRouteState";
-import { useCompanyStore } from "@/stores/company";
 
-import { useCompensations } from "../api";
+import { usePayPeople } from "../api";
 import PayAmount from "../components/PayAmount.vue";
 import PayDrawer from "../components/PayDrawer.vue";
-import { payRows } from "../lib";
-import type { Member, PayRow } from "../types";
+import { payRowMatches } from "../lib";
+import type { PayRow } from "../types";
 
 const { t } = useI18n();
 const fmt = useFormat();
 const route = useRoute();
 const router = useRouter();
-const company = useCompanyStore();
-const today = computed(() => todayIn(company.timezone));
 
-const compensations = useCompensations();
-// The team list names everyone, also those without a pay setup (members.view; without it, only
-// the people who have one are listed).
-const peopleQuery = useCompanyPeople(
-  computed(() => company.can("members.view")),
-  computed(() => ({ status: "active" })),
-);
-const people = computed<Member[]>(() => (peopleQuery.data.value ?? []).map((person) => ({ id: person.id, name: person.name, photo_url: person.photo_url ?? null, position: person.subtitle ?? null })));
-const rows = computed(() => payRows(people.value, compensations.data.value ?? [], today.value));
+// Everyone who can be paid, with today's setup and the next one (the server searches names).
+const search = useRouteState("q", rs.string(""));
+const people = usePayPeople(() => (search.value ? { q: search.value } : {}));
+const rows = computed(() => people.data.value?.results ?? []);
 
 const missingOnly = useRouteState("missing", rs.boolean(false));
 const type = useRouteState("type", rs.enum(["all", "monthly", "daily", "hourly", "per_task"] as const, "all"));
-const search = ref("");
-const visible = computed(() => {
-  const needle = normalize(search.value.trim());
-  return rows.value
-    .filter((row) => (missingOnly.value ? !row.current : true))
-    .filter((row) => (type.value === "all" ? true : row.current?.pay_type === type.value))
-    .filter((row) => !needle || normalize(`${row.member.name} ${row.member.position ?? ""}`).includes(needle));
-});
+const visible = computed(() => rows.value.filter((row) => payRowMatches(row, { missing: missingOnly.value, type: type.value })));
 const missing = computed(() => rows.value.filter((row) => !row.current).length);
 const { isPhone } = useBreakpoints();
 const typeOptions = computed(() => [
@@ -69,7 +51,7 @@ const typeOptions = computed(() => [
 ]);
 const filtered = computed(() => missingOnly.value || type.value !== "all" || !!search.value);
 
-const table = useDataTable({ id: "payroll.pay", pageSize: 500, hidden: ["proration"] });
+const table = useDataTable({ id: "payroll.pay", pageSize: 200, hidden: ["proration"] });
 const columns = computed<TableColumn<PayRow>[]>(() => [
   { id: "person", header: t("payroll.payslips.person"), minWidth: 220, sticky: true, hideable: false, value: (row) => row.member.name },
   { id: "type", header: t("payroll.pay.type"), width: 130, value: (row) => (row.current ? t(`payroll.payType.${row.current.pay_type}`) : "") },
@@ -84,7 +66,7 @@ function open(row: PayRow): void {
   void router.push({ query: { ...route.query, member: String(row.member.id) } });
 }
 const per = (row: PayRow) => (row.current ? t(`payroll.pay.per.${row.current.pay_type}`) : "");
-const loading = computed(() => compensations.isPending.value || (company.can("members.view") && peopleQuery.isPending.value));
+const where = (row: PayRow) => [row.member.position, row.member.home_branch].filter(Boolean).join(" · ");
 </script>
 
 <template>
@@ -96,10 +78,10 @@ const loading = computed(() => compensations.isPending.value || (company.can("me
       :columns="columns"
       :rows="visible"
       :row-key="(row: PayRow) => row.member.id"
-      :loading="loading"
-      :fetching="compensations.isFetching.value"
-      :error="compensations.error.value"
-      :retry="() => compensations.refetch()"
+      :loading="people.isPending.value"
+      :fetching="people.isFetching.value"
+      :error="people.error.value"
+      :retry="() => people.refetch()"
       clickable
       :active-key="activeKey"
       :filtered="filtered"
@@ -114,7 +96,7 @@ const loading = computed(() => compensations.isPending.value || (company.can("me
     >
       <template #toolbar>
         <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-          <TextInput v-model="search" :icon="Search" size="sm" clearable :placeholder="t('payroll.payslips.search')" class="w-full sm:w-64" />
+          <TextInput v-model="search" :icon="Search" size="sm" clearable :debounce="250" :placeholder="t('payroll.payslips.search')" class="w-full sm:w-64" />
           <!-- Five choices don't fit a phone's width as segments: a select there. -->
           <SelectBox v-if="isPhone" v-model="type" size="sm" :options="typeOptions" class="w-40" :aria-label="t('payroll.pay.type')" />
           <SegmentedControl v-else v-model="type" size="sm" :options="typeOptions" />
@@ -141,7 +123,7 @@ const loading = computed(() => compensations.isPending.value || (company.can("me
           <UserAvatar :name="row.member.name" :src="row.member.photo_url" :size="30" />
           <div class="min-w-0">
             <p class="truncate text-base font-medium text-fg" :title="row.member.name">{{ row.member.name }}</p>
-            <p v-if="row.member.position" class="truncate text-xs text-muted">{{ row.member.position }}</p>
+            <p v-if="where(row)" class="truncate text-xs text-muted">{{ where(row) }}</p>
           </div>
         </div>
       </template>
@@ -165,9 +147,9 @@ const loading = computed(() => compensations.isPending.value || (company.can("me
           <span class="inline-flex items-center gap-1 text-sm text-fg">
             <Lock v-if="row.current.locked" :size="12" class="text-subtle" :aria-label="t('payroll.pay.locked')" />{{ fmt.day(row.current.effective_from, "medium") }}
           </span>
-          <span v-if="row.upcoming" class="inline-flex items-center gap-1 truncate text-xs font-semibold text-info"><CalendarClock :size="11" />{{ t("payroll.pay.changes", { date: fmt.day(row.upcoming.effective_from, "short") }) }}</span>
+          <span v-if="row.next" class="inline-flex items-center gap-1 truncate text-xs font-semibold text-info"><CalendarClock :size="11" />{{ t("payroll.pay.changes", { date: fmt.day(row.next.effective_from, "short") }) }}</span>
         </div>
-        <span v-else-if="row.upcoming" class="inline-flex items-center gap-1 text-xs font-semibold text-info"><CalendarClock :size="11" />{{ t("payroll.pay.starts", { date: fmt.day(row.upcoming.effective_from, "short") }) }}</span>
+        <span v-else-if="row.next" class="inline-flex items-center gap-1 text-xs font-semibold text-info"><CalendarClock :size="11" />{{ t("payroll.pay.starts", { date: fmt.day(row.next.effective_from, "short") }) }}</span>
       </template>
       <template #card="{ row }">
         <div class="flex items-start gap-3">
@@ -175,7 +157,7 @@ const loading = computed(() => compensations.isPending.value || (company.can("me
           <div class="min-w-0 flex-1">
             <p class="truncate text-base font-semibold text-fg">{{ row.member.name }}</p>
             <p class="truncate text-xs text-muted">{{ [row.member.position, row.current ? t(`payroll.payType.${row.current.pay_type}`) : null].filter(Boolean).join(" · ") }}</p>
-            <p v-if="row.upcoming" class="mt-0.5 inline-flex items-center gap-1 text-xs font-semibold text-info"><CalendarClock :size="11" />{{ t("payroll.pay.changes", { date: fmt.day(row.upcoming.effective_from, "short") }) }}</p>
+            <p v-if="row.next" class="mt-0.5 inline-flex items-center gap-1 text-xs font-semibold text-info"><CalendarClock :size="11" />{{ t("payroll.pay.changes", { date: fmt.day(row.next.effective_from, "short") }) }}</p>
           </div>
           <PayAmount v-if="row.current" cell strong :value="row.current.amount" :currency="row.current.currency" :sub="per(row)" />
           <StatusPill v-else tone="warning" size="sm" :label="t('payroll.pay.none')" />

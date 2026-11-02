@@ -56,9 +56,9 @@ const facts = computed<DescriptionItem[]>(() => {
     { key: "month", label: t("payroll.adjustments.month"), value: fmt.day(r.period, "monthYear") },
     { key: "kind", label: t("payroll.adjustments.kind"), value: t(`payroll.adjustmentKind.${r.kind}`) },
     { key: "source", label: t("payroll.adjustments.source"), value: "" },
-    { key: "proposed", label: t("payroll.adjustments.proposedBy"), value: `${r.proposed_by?.name ?? t("payroll.adjustments.system")} · ${fmt.instant(r.created_at, "date")}` },
+    { key: "proposed", label: t("payroll.adjustments.proposedBy"), value: `${r.proposed_by ?? t("payroll.adjustments.system")} · ${fmt.instant(r.created_at, "date")}` },
   ];
-  if (r.decided_at) items.push({ key: "decided", label: t(r.status === "rejected" ? "payroll.adjustments.rejectedBy" : "payroll.adjustments.approvedBy"), value: `${r.decided_by?.name ?? t("payroll.adjustments.system")} · ${fmt.instant(r.decided_at, "date")}` });
+  if (r.decided_at) items.push({ key: "decided", label: t(r.status === "rejected" ? "payroll.adjustments.rejectedBy" : "payroll.adjustments.approvedBy"), value: `${r.decided_by ?? t("payroll.adjustments.system")} · ${fmt.instant(r.decided_at, "date")}` });
   return items;
 });
 
@@ -70,14 +70,14 @@ watch(id, () => {
   answer.value = "";
   cancelIt.value = false;
 });
-const canAnswer = computed(() => !!row.value?.disputed_at && !row.value.dispute_answer && canManage.value && row.value.status === "approved");
+const canAnswer = computed(() => !!row.value && canManage.value && (row.value.dispute_open ?? (!!row.value.disputed_at && !row.value.dispute_answer)));
 
 async function sendAnswer(): Promise<void> {
   const r = row.value;
   if (!r || !answer.value.trim() || answering.value) return;
   answering.value = true;
   try {
-    await payrollApi.answerDispute(cid.value, r.id, answer.value.trim(), cancelIt.value ? "void" : "keep");
+    await payrollApi.answerDispute(cid.value, r.id, answer.value.trim(), cancelIt.value);
     toast.success(cancelIt.value ? t("payroll.adjustments.answeredVoided") : t("payroll.adjustments.answerSent"));
     refresh();
   } catch {
