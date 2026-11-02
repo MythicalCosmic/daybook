@@ -379,6 +379,26 @@ describe("rule preview", () => {
     expect(document.querySelector('[data-testid="preview-saved-only"]')).not.toBeNull();
   });
 
+  it("deleting a rule asks first, then sends the DELETE itself", async () => {
+    const calls = stub({
+      "POST payroll/rules/5/preview/": () => json(answer),
+      "DELETE payroll/rules/5/": () => new Response(null, { status: 204 }),
+    });
+    const RuleDrawer = (await import("../components/RuleDrawer.vue")).default;
+    const app = await testApp("/c/1/payroll/rules?rule=5");
+    mountWithProviders(RuleDrawer, { plugins: app.plugins, props: { rules: [saved] } });
+    await settle();
+    const remove = [...document.querySelectorAll("button")].find((button) => button.textContent?.trim() === "Delete");
+    remove!.click();
+    await settle();
+    expect(confirmQueue.value).toHaveLength(1);
+    expect(calls.filter((call) => call.method === "DELETE")).toEqual([]);
+    settleConfirm(confirmQueue.value[0]!.id, { reason: "" }, 0);
+    await settle();
+    expect(calls.filter((call) => call.method === "DELETE").map((call) => call.path)).toEqual(["payroll/rules/5/"]);
+    expect(app.router.currentRoute.value.query.rule).toBeUndefined();
+  });
+
   it("a new rule is saved before it can be tried: nothing is asked", async () => {
     const calls = stub({});
     const RulePreview = (await import("../components/RulePreview.vue")).default;

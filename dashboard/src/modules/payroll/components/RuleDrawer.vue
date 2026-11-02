@@ -50,6 +50,8 @@ const param = computed(() => {
 });
 const ruleId = computed(() => (param.value && /^\d+$/.test(param.value) ? Number(param.value) : null));
 const existing = computed(() => (ruleId.value ? (props.rules.find((rule) => rule.id === ruleId.value) ?? null) : null));
+/** A rule deleted here: the preview stops asking for it while the panel closes. */
+const removed = ref<number | null>(null);
 const kindParam = computed(() => (route.query.kind === "bonus" ? "bonus" : "fine"));
 
 const draft = ref<RuleDraft>(emptyRule());
@@ -121,19 +123,27 @@ async function save(): Promise<void> {
 async function remove(): Promise<void> {
   const rule = existing.value;
   if (!rule) return;
+  // The answer first, then the call: an `onConfirm` passed through ConfirmHost never runs today
+  // (it arrives merged with the host's own listener); a refusal shows above the buttons.
   const answer = await confirm({
     title: t("payroll.rules.deleteTitle", { name: rule.name }),
     message: t("payroll.rules.deleteBody"),
     confirmLabel: t("common.delete"),
     tone: "danger",
     icon: Trash2,
-    onConfirm: () => payrollApi.deleteRule(company.currentId ?? 0, rule.id),
   });
-  if (answer) {
-    toast.success(t("payroll.rules.deleted"));
-    refresh();
-    closeQueryKey(router, "rule");
+  if (!answer) return;
+  formError.value = null;
+  try {
+    await payrollApi.deleteRule(company.currentId ?? 0, rule.id, true);
+  } catch (error) {
+    formError.value = isApiError(error) ? (error.detail ?? t("common.error.generic")) : t("common.error.generic");
+    return;
   }
+  removed.value = rule.id;
+  toast.success(t("payroll.rules.deleted"));
+  closeQueryKey(router, "rule");
+  refresh();
 }
 const title = computed(() => (existing.value ? existing.value.name : t(`payroll.rules.newTitle.${draft.value.kind}`)));
 </script>
@@ -267,7 +277,7 @@ const title = computed(() => (existing.value ? existing.value.name : t(`payroll.
           </section>
         </div>
         <aside class="min-w-0 lg:sticky lg:top-0 lg:self-start">
-          <RulePreview :draft="draft" :rule="existing" />
+          <RulePreview :draft="draft" :rule="existing && existing.id !== removed ? existing : null" />
         </aside>
       </div>
     </template>

@@ -77,7 +77,7 @@ export const payrollApi = {
   /** `quiet`: the builder shows a refusal itself (a toast would sit behind its panel). */
   createRule: (cid: number, input: RuleInput, quiet = false) => http.post<Rule>(path(cid, "rules/"), input, quiet ? { toast: false } : undefined),
   updateRule: (cid: number, id: number, input: Partial<RuleInput>, quiet = false) => http.patch<Rule>(path(cid, `rules/${id}/`), input, quiet ? { toast: false } : undefined),
-  deleteRule: (cid: number, id: number) => http.delete(path(cid, `rules/${id}/`)),
+  deleteRule: (cid: number, id: number, quiet = false) => http.delete(path(cid, `rules/${id}/`), quiet ? { toast: false } : {}),
   /** Dry run of a saved rule for a month ("2026-10-01"): who would get what. Nothing is written. */
   previewRule: (cid: number, id: number, period: string, signal?: AbortSignal) =>
     http.post<RulePreview>(path(cid, `rules/${id}/preview/`), { period }, { signal, toast: false }),
