@@ -371,7 +371,7 @@ FEATURE_APPS: dict[str, tuple[str, ...]] = {
     Feature.SALES: ("finance", "sales"),
     Feature.STOCK: ("inventory",),
     Feature.ATTENDANCE: ("attendance",),
-    Feature.HR: ("hr", "lifecycle"),
+    Feature.HR: ("hr", "lifecycle", "ai"),  # ai: the HR assistant comes on with AI on
     Feature.PAYROLL: ("payroll",),
     Feature.AI: ("ai",),
     Feature.RECOGNITION: ("recognition",),

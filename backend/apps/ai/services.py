@@ -203,15 +203,30 @@ def enable_ai(company, *, by: Membership) -> AISettings:
         row.enabled_at = timezone.now()
         row.save()
         audit.record(AIAction.ENABLED, company_id=company.pk, actor=by.user, target=row)
-    claude = availability.configured()
-    for agent in agents.all_agents():
-        if agent.default_enabled and (claude or not agent.needs_claude):
-            state = agents.state_of(company, agent.key)
-            if not state.enabled:
-                state.enabled = True
-                runner.schedule_first_run(state)
-                state.save(update_fields=["enabled", "next_run_at", "updated_at"])
+    switch_on_default_agents(company)
     return row
+
+
+def switch_on_default_agents(company, *, new_only: bool = False) -> None:
+    """Every agent that is on by default and can work here (its module on, Claude when it
+    needs it) switched on; with `new_only`, only those never set up in the company yet (no
+    state row): an agent added in a later release, or one whose module just came on."""
+    claude = availability.configured()
+    known = (
+        set(AgentState.objects.filter(company=company).values_list("key", flat=True))
+        if new_only
+        else set()
+    )
+    for agent in agents.all_agents():
+        if agent.key in known or not agent.default_enabled or not agent.works_in(company):
+            continue
+        if agent.needs_claude and not claude:
+            continue
+        state = agents.state_of(company, agent.key)
+        if not state.enabled:
+            state.enabled = True
+            runner.schedule_first_run(state)
+            state.save(update_fields=["enabled", "next_run_at", "updated_at"])
 
 
 @transaction.atomic
