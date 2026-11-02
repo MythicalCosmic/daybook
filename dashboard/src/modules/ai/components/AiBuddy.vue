@@ -5,7 +5,8 @@
  * (yellow, a rising sun on its head), deadline watcher (red, an alarm clock on its head) and photo
  * checker (teal, round glasses). Expressions: open eyes, a blink, a look around, ^ ^ when happy,
  * heart eyes, closed eyes asleep. Moves: breathing, hop, wave, dance, typing, a poke, walking,
- * sitting; it lets out hearts, sparkles, or a z now and then while asleep. AiBuddyStage.vue and
+ * sitting, listening (sound waves), ringing (the prop shakes, red "!"), cheering (arms up); it lets
+ * out hearts, sparkles, or a z now and then while asleep. AiBuddyStage.vue and
  * AgentChibi.vue decide what it does; this only draws it. Hearts, sparkles and z's are drawn
  * pixels, never emoji characters; with reduced motion nothing moves or floats.
  */
@@ -14,7 +15,7 @@ import { useI18n } from "vue-i18n";
 
 import { reducedMotion } from "@/components/chartOptions";
 
-import { BUDDY_PARTICLES, type BuddyAction, type BuddyMood, type BuddyVariant } from "../lib";
+import { BUDDY_PARTICLES, type BuddyAction, type BuddyMood, type BuddyParticle, type BuddyVariant } from "../lib";
 
 const props = withDefaults(
   defineProps<{
@@ -36,7 +37,7 @@ const props = withDefaults(
 const emit = defineEmits<{ tap: [] }>();
 
 const { t } = useI18n();
-type Particle = { id: number; kind: "heart" | "spark" | "z"; x: number; delay: number };
+type Particle = { id: number; kind: BuddyParticle; x: number; delay: number };
 const particles = ref<Particle[]>([]);
 const lookRight = ref(false);
 const reduced = reducedMotion();
@@ -57,6 +58,8 @@ const eyes = computed(() => {
       return "blink";
     case "hearts":
     case "tap":
+    case "listen":
+    case "cheer":
       return "happy";
     case "love":
       return "love";
@@ -239,6 +242,15 @@ onBeforeUnmount(() => {
         <rect class="buddy-spark" x="2" y="0" width="1" height="5" />
         <rect class="buddy-spark" x="0" y="2" width="5" height="1" />
       </svg>
+      <svg v-else-if="particle.kind === 'wave'" viewBox="0 0 5 5" shape-rendering="crispEdges" class="block h-3 w-3">
+        <rect class="buddy-wave" x="0" y="2" width="1" height="3" />
+        <rect class="buddy-wave" x="2" y="0" width="1" height="5" />
+        <rect class="buddy-wave" x="4" y="1" width="1" height="4" />
+      </svg>
+      <svg v-else-if="particle.kind === 'alert'" viewBox="0 0 3 5" shape-rendering="crispEdges" class="block h-3.5 w-2">
+        <rect class="buddy-alert" x="1" y="0" width="1" height="3" />
+        <rect class="buddy-alert" x="1" y="4" width="1" height="1" />
+      </svg>
       <svg v-else viewBox="0 0 5 5" shape-rendering="crispEdges" class="block h-2.5 w-2.5">
         <rect class="buddy-z" x="0" y="0" width="5" height="1" />
         <rect class="buddy-z" x="3" y="1" width="1" height="1" />
@@ -276,6 +288,8 @@ onBeforeUnmount(() => {
 .buddy-glint { fill: #fff; opacity: 0.85; }
 .buddy-spark { fill: var(--buddy-gold); }
 .buddy-z { fill: currentColor; opacity: 0.55; }
+.buddy-wave { fill: #8b7cf6; }
+.buddy-alert { fill: #e5484d; }
 .buddy-gear { fill: var(--buddy-gear); }
 .buddy-cup { fill: #c9c1ff; }
 .buddy-sun { fill: #ff8a3d; }
@@ -305,6 +319,13 @@ onBeforeUnmount(() => {
 .ai-buddy[data-action="dance"] .buddy-leg-b,
 .ai-buddy[data-action="type"] .buddy-arm-right,
 .ai-buddy[data-walking] .buddy-leg-b { animation: buddy-arm 0.2s steps(1) infinite 0.1s; }
+/* Listening sways to the voice; ringing shakes the prop on its head; cheering hops twice, arms up. */
+.ai-buddy[data-action="listen"] .buddy-figure { animation: buddy-wiggle 0.6s steps(1) 4; }
+.ai-buddy[data-action="ring"] [data-prop] { transform-box: fill-box; transform-origin: center bottom; animation: buddy-shake 0.12s steps(1) 12; }
+.ai-buddy[data-action="ring"] .buddy-figure { animation: buddy-shiver 0.12s steps(1) 12; }
+.ai-buddy[data-action="cheer"] .buddy-figure { animation: buddy-hop 0.5s ease-out 2; }
+.ai-buddy[data-action="cheer"] .buddy-arm-left,
+.ai-buddy[data-action="cheer"] .buddy-arm-right { transform: translateY(-4px); animation: buddy-arm 0.25s steps(1) 6; }
 /* Walking leans into the step; sitting lets the legs hang from the edge it sits on. */
 .ai-buddy[data-walking] .buddy-figure { animation: buddy-step 0.4s steps(2) infinite; }
 .ai-buddy[data-sitting] .buddy-leg { transform: translateY(2px); }
@@ -341,6 +362,14 @@ onBeforeUnmount(() => {
 @keyframes buddy-wiggle {
   0% { transform: rotate(-5deg); }
   50% { transform: rotate(5deg); }
+}
+@keyframes buddy-shake {
+  0% { transform: rotate(-12deg); }
+  50% { transform: rotate(12deg); }
+}
+@keyframes buddy-shiver {
+  0% { transform: translateX(-0.5px); }
+  50% { transform: translateX(0.5px); }
 }
 @keyframes buddy-step {
   0% { transform: translateY(0) rotate(3deg); }

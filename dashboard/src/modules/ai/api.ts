@@ -60,6 +60,8 @@ export const aiApi = {
   activity: (cid: number, params: { agent?: string; limit?: number; before?: number }, signal?: AbortSignal) =>
     http.get<ActivityPage>(path(cid, "activity/"), params, { signal }),
 
+  /** How many tasks were finished today (the tasks module's summary), for the helpers' cheers. */
+  tasksDoneToday: (cid: number, signal?: AbortSignal) => http.get<{ done_today: number }>(ownerPath(cid, "tasks/summary/"), undefined, { signal }),
   drafts: (cid: number, params: DraftFilters, signal?: AbortSignal) => http.get<Page<AiDraft>>(path(cid, "task-drafts/"), { ...params }, { signal }),
   draft: (cid: number, id: number, signal?: AbortSignal) => http.get<AiDraft>(path(cid, `task-drafts/${id}/`), undefined, { signal }),
   /** The refusals (ai_off, limit_reached, text_too_long…) are explained where the text was typed. */

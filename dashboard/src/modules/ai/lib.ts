@@ -6,6 +6,7 @@
 import { TZDate } from "@date-fns/tz";
 
 import { isApiError } from "@/api/http";
+import type { Pulse } from "@/api/types";
 import { addDays } from "@/lib/dates";
 
 import type {
@@ -376,7 +377,7 @@ export function budgetShare(budget: { monthly_usd: string; spent_usd: string } |
 // moves it) ---------------------------------------------------------------------------------------
 
 export type BuddyMood = "on" | "busy";
-export type BuddyAction = "idle" | "blink" | "look" | "hop" | "wave" | "dance" | "hearts" | "love" | "sparkle" | "type" | "touch" | "tap";
+export type BuddyAction = "idle" | "blink" | "look" | "hop" | "wave" | "dance" | "hearts" | "love" | "sparkle" | "type" | "touch" | "tap" | "listen" | "ring" | "cheer";
 /** The family: Claude itself, and one chibi per agent, each with its colours and its prop. */
 export type BuddyVariant = "claude" | "voice" | "morning" | "deadline" | "photo";
 
@@ -406,15 +407,23 @@ export const BUDDY_DURATION: Record<BuddyAction, number> = {
   type: 1800,
   touch: 900,
   tap: 1300,
+  listen: 2400,
+  ring: 1800,
+  cheer: 1600,
 };
 
-export const BUDDY_PARTICLES: Partial<Record<BuddyAction, { kind: "heart" | "spark" | "z"; count: number }>> = {
+export type BuddyParticle = "heart" | "spark" | "z" | "wave" | "alert";
+
+export const BUDDY_PARTICLES: Partial<Record<BuddyAction, { kind: BuddyParticle; count: number }>> = {
   hearts: { kind: "heart", count: 3 },
   love: { kind: "heart", count: 2 },
   tap: { kind: "heart", count: 4 },
   sparkle: { kind: "spark", count: 3 },
   type: { kind: "spark", count: 2 },
   touch: { kind: "spark", count: 2 },
+  listen: { kind: "wave", count: 3 },
+  ring: { kind: "alert", count: 2 },
+  cheer: { kind: "heart", count: 4 },
 };
 
 /** The next thing it does in place; `random` in [0, 1) picks from the mood's pool. */
@@ -470,3 +479,54 @@ export function standPoint(card: Box, root: Box, size: number, random: number, s
   const legs = Math.round((size * 6) / 36);
   return { x: Math.round(card.left - root.left + 12 + random * span), y: Math.round(card.top - root.top - feet + (sitting ? legs : 0)) };
 }
+
+// What happens in the company, as the helpers' reactions (components/buddyCues.ts) ----------------
+
+/** One reaction: `key` is an agent's key, or "" for everyone; `visit` sends Claude to that card. */
+export type BuddyReaction = { key: string; action: BuddyAction; visit?: boolean };
+
+/** Agent activity that arrived since the last look, as reactions: a late task told to someone
+ * rings the deadline watcher's clock (and Claude goes to see), tasks made from a voice note
+ * please its chibi, a checked photo pleases or puzzles the photo checker. */
+export function activityReactions(items: readonly Pick<ActivityItem, "agent" | "kind">[]): BuddyReaction[] {
+  return items.flatMap((item): BuddyReaction[] => {
+    switch (`${item.agent}:${item.kind}`) {
+      case "deadline_watcher:escalated":
+        return [{ key: "deadline_watcher", action: "ring", visit: true }];
+      case "voice_tasks:draft_applied":
+      case "voice_tasks:draft_auto_applied":
+        return [{ key: "voice_tasks", action: "hearts" }];
+      case "photo_checker:looks_right":
+        return [{ key: "photo_checker", action: "hearts" }];
+      case "photo_checker:check":
+      case "photo_checker:unclear":
+        return [{ key: "photo_checker", action: "look" }];
+      case "morning_plan:plan_sent":
+        return [{ key: "morning_plan", action: "wave" }];
+      default:
+        return [];
+    }
+  });
+}
+
+/** Between two pulses: a task went late (the late count went up), and the tasks changed (worth
+ * asking whether one was finished). The first real pulse is only the baseline — the empty one the
+ * shell holds before the server first answers is none. */
+export function pulseCues(previous: Pick<Pulse, "counters" | "versions"> | null, next: Pick<Pulse, "counters" | "versions">): { late: boolean; tasksChanged: boolean } {
+  if (!previous || (!Object.keys(previous.counters).length && !Object.keys(previous.versions).length)) return { late: false, tasksChanged: false };
+  return {
+    late: (next.counters["tasks.late_now"] ?? 0) > (previous.counters["tasks.late_now"] ?? 0),
+    tasksChanged: (next.versions["tasks.tasks"] ?? "") !== (previous.versions["tasks.tasks"] ?? ""),
+  };
+}
+
+/** The newest voice notes against what was seen before: listen while any is being written down,
+ * and a happy moment for a note that became tasks to look at (ready or created) since. */
+export function draftCues(seen: ReadonlyMap<number, DraftStatus> | null, drafts: readonly Pick<AiDraft, "id" | "status">[]): { seen: Map<number, DraftStatus>; listen: boolean; done: boolean } {
+  const now = new Map(drafts.map((draft) => [draft.id, draft.status] as const));
+  const listen = drafts.some((draft) => WORKING.includes(draft.status));
+  if (!seen) return { seen: now, listen, done: false };
+  const done = drafts.some((draft) => (draft.status === "ready" || draft.status === "applied") && seen.get(draft.id) !== draft.status && (!seen.has(draft.id) || WORKING.includes(seen.get(draft.id)!)));
+  return { seen: now, listen, done };
+}
+

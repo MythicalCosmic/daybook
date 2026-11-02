@@ -5,15 +5,18 @@ import { flushPromises, mount } from "@vue/test-utils";
 import { defineComponent, h } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { pulse } from "@/core/pulse";
 import { mergeModuleMessages } from "@/i18n";
+import { json } from "@/test/fixtures";
 import { mountWithProviders, testApp } from "@/test/plugins";
 
 import AgentChibi from "../components/AgentChibi.vue";
 import AiBuddy from "../components/AiBuddy.vue";
 import AiBuddyStage from "../components/AiBuddyStage.vue";
-import { buddyGreeting, greet } from "../components/buddyBus";
+import { buddyCue, buddyGreeting, cue, greet } from "../components/buddyBus";
+import { useBuddyCues } from "../components/buddyCues";
 import en from "../i18n/en.json";
-import { buddyBox, buddyVariant, buddyWalkMs, pickBuddyAction, pickChibiAction, planBuddy, standPoint } from "../lib";
+import { activityReactions, buddyBox, buddyVariant, buddyWalkMs, draftCues, pickBuddyAction, pickChibiAction, planBuddy, pulseCues, standPoint } from "../lib";
 
 /** What the app sets on <html> from the system's "reduce motion" (app/theme.ts). */
 function reducedMotion(on: boolean): void {
@@ -30,6 +33,8 @@ afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
   buddyGreeting.value = null;
+  buddyCue.value = null;
+  pulse.value = { counters: {}, versions: {} };
   document.body.innerHTML = "";
 });
 
@@ -243,5 +248,119 @@ describe("the helper's walks", () => {
     expect(vi.getTimerCount()).toBe(0);
     wrapper.unmount();
     expect(vi.getTimerCount()).toBe(0);
+  });
+});
+
+describe("what happens, as reactions", () => {
+  it("turns agent activity into the right chibi's reaction", () => {
+    expect(
+      activityReactions([
+        { agent: "deadline_watcher", kind: "escalated" },
+        { agent: "voice_tasks", kind: "draft_auto_applied" },
+        { agent: "voice_tasks", kind: "draft_failed" },
+        { agent: "photo_checker", kind: "looks_right" },
+        { agent: "photo_checker", kind: "unclear" },
+        { agent: "morning_plan", kind: "plan_sent" },
+        { agent: "flows", kind: "ran" },
+      ]),
+    ).toEqual([
+      { key: "deadline_watcher", action: "ring", visit: true },
+      { key: "voice_tasks", action: "hearts" },
+      { key: "photo_checker", action: "hearts" },
+      { key: "photo_checker", action: "look" },
+      { key: "morning_plan", action: "wave" },
+    ]);
+  });
+
+  it("hears a task go late and the tasks change in the pulse, never on the first one", () => {
+    const first = { counters: { "tasks.late_now": 2 }, versions: { "tasks.tasks": "a" } };
+    expect(pulseCues(null, first)).toEqual({ late: false, tasksChanged: false });
+    expect(pulseCues({ counters: {}, versions: {} }, first)).toEqual({ late: false, tasksChanged: false }); // before the server answered
+    expect(pulseCues(first, { counters: { "tasks.late_now": 3 }, versions: { "tasks.tasks": "a" } })).toEqual({ late: true, tasksChanged: false });
+    expect(pulseCues(first, { counters: { "tasks.late_now": 1 }, versions: { "tasks.tasks": "b" } })).toEqual({ late: false, tasksChanged: true });
+  });
+
+  it("listens while a voice note is written down and is pleased when it became tasks", () => {
+    const start = draftCues(null, [{ id: 7, status: "transcribing" }, { id: 6, status: "applied" }]);
+    expect(start).toMatchObject({ listen: true, done: false });
+    const ready = draftCues(start.seen, [{ id: 7, status: "ready" }, { id: 6, status: "applied" }]);
+    expect(ready).toMatchObject({ listen: false, done: true });
+    expect(draftCues(ready.seen, [{ id: 7, status: "ready" }, { id: 6, status: "applied" }])).toMatchObject({ listen: false, done: false });
+    expect(draftCues(ready.seen, [{ id: 8, status: "applied" }, { id: 7, status: "ready" }]).done).toBe(true); // a quick one, never seen working
+    expect(draftCues(start.seen, [{ id: 7, status: "failed" }]).done).toBe(false);
+  });
+});
+
+describe("the helpers react", () => {
+  it("listens with sound waves, rings with red marks, cheers with hearts", async () => {
+    vi.useFakeTimers();
+    const app = await testApp("/c/1/ai");
+    const wrapper = mount(AiBuddy, { props: { mood: "on", variant: "deadline" }, global: { plugins: app.plugins }, attachTo: document.body });
+    await wrapper.setProps({ action: "listen", beat: 1 });
+    expect(wrapper.find('[data-eyes="happy"]').exists()).toBe(true);
+    expect(wrapper.findAll('[data-kind="wave"]')).toHaveLength(3);
+    await wrapper.setProps({ action: "ring", beat: 2 });
+    expect(wrapper.attributes("data-action")).toBe("ring");
+    expect(wrapper.findAll('[data-kind="alert"]')).toHaveLength(2);
+    await wrapper.setProps({ action: "cheer", beat: 3 });
+    expect(wrapper.findAll('[data-kind="heart"]')).toHaveLength(4);
+  });
+
+  it("an agent's chibi reacts to its own agent's news and to everyone's, not to another's", async () => {
+    const app = await testApp("/c/1/ai");
+    const { wrapper } = mountWithProviders(AgentChibi, { props: { agentKey: "deadline_watcher", name: "Deadline watcher", on: false }, plugins: app.plugins });
+    await flushPromises();
+    const buddy = () => wrapper.find('[data-testid="ai-buddy"]');
+    cue("voice_tasks", "listen");
+    await flushPromises();
+    expect(buddy().attributes("data-action")).toBe("idle");
+    cue("deadline_watcher", "ring");
+    await flushPromises();
+    expect(buddy().attributes("data-action")).toBe("ring");
+    expect(buddy().attributes("data-asleep")).toBeUndefined(); // the alarm wakes it up
+    cue("", "cheer");
+    await flushPromises();
+    expect(buddy().attributes("data-action")).toBe("cheer");
+  });
+});
+
+describe("the page's live data", () => {
+  it("hears a voice note, a late task and a finished task, but nothing from before", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval", "Date"] });
+    let drafts = [{ id: 5, status: "applied" }];
+    let doneToday = 3;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string) => {
+        if (input.includes("task-drafts/")) return json({ count: drafts.length, next: null, previous: null, results: drafts });
+        if (input.includes("tasks/summary/")) return json({ done_today: doneToday });
+        if (input.includes("ai/activity/")) return json({ results: [], next_before: null });
+        return json({});
+      }),
+    );
+    const Probe = defineComponent({
+      setup() {
+        useBuddyCues(true);
+        return () => h("div");
+      },
+    });
+    const app = await testApp("/c/1/ai");
+    mountWithProviders(Probe, { plugins: app.plugins });
+    pulse.value = { counters: { "tasks.late_now": 1 }, versions: { "tasks.tasks": "a" } };
+    await vi.advanceTimersByTimeAsync(100);
+    expect(buddyCue.value).toBeNull(); // what was already there is the baseline
+
+    drafts = [{ id: 6, status: "transcribing" }, ...drafts];
+    await vi.advanceTimersByTimeAsync(5100);
+    expect(buddyCue.value).toMatchObject({ key: "voice_tasks", action: "listen" });
+
+    pulse.value = { counters: { "tasks.late_now": 2 }, versions: { "tasks.tasks": "a" } };
+    await vi.advanceTimersByTimeAsync(100);
+    expect(buddyCue.value).toMatchObject({ key: "deadline_watcher", action: "ring" });
+
+    doneToday = 4;
+    pulse.value = { counters: { "tasks.late_now": 2 }, versions: { "tasks.tasks": "b" } };
+    await vi.advanceTimersByTimeAsync(100);
+    expect(buddyCue.value).toMatchObject({ key: "", action: "cheer" });
   });
 });
