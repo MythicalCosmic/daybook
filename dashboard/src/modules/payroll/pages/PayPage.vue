@@ -39,6 +39,8 @@ const router = useRouter();
 const search = useRouteState("q", rs.string(""));
 const people = usePayPeople(() => (search.value ? { q: search.value } : {}));
 const rows = computed(() => people.data.value?.results ?? []);
+/** The whole list is here (loaded, unsearched, one page): someone missing from it is really gone. */
+const complete = computed(() => !people.isPending.value && !search.value && !people.data.value?.next);
 
 const missingOnly = useRouteState("missing", rs.boolean(false));
 const type = useRouteState("type", rs.enum(["all", "monthly", "daily", "hourly", "per_task"] as const, "all"));
@@ -165,6 +167,6 @@ const where = (row: PayRow) => [row.member.position, row.member.home_branch].fil
       </template>
     </DataTable>
 
-    <PayDrawer :rows="rows" />
+    <PayDrawer :rows="rows" :ready="complete" />
   </div>
 </template>

@@ -393,6 +393,16 @@ describe("pay setups", () => {
     expect(cards[1]!.find("button").exists()).toBe(false);
     expect(cards[0]!.text()).toContain("5,600,000\u00a0UZS");
   });
+
+  it("a link to someone not on the list says so, with nothing to change", async () => {
+    stub({ "GET payroll/compensations/": () => json(page([])) });
+    const PayDrawer = (await import("../components/PayDrawer.vue")).default;
+    const app = await testApp("/c/1/payroll/pay?member=999");
+    mountWithProviders(PayDrawer, { plugins: app.plugins, props: { rows: [], ready: true } });
+    await settle();
+    expect(document.querySelector('[data-testid="pay-not-found"]')?.textContent).toContain(en["payroll.pay.notFound"]);
+    expect(document.querySelector('[data-testid="change-pay"]')).toBeNull();
+  });
 });
 
 describe("amounts", () => {

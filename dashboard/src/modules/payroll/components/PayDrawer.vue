@@ -5,11 +5,12 @@
  * used are locked (read-only, with the reason); a change is a new row from a day, made with
  * "Change pay".
  */
-import { CalendarClock, Lock, Pencil, WalletCards } from "@lucide/vue";
+import { CalendarClock, Lock, Pencil, UserRoundX, WalletCards } from "@lucide/vue";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink, useRoute } from "vue-router";
 
+import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import StatusPill from "@/components/StatusPill.vue";
@@ -25,7 +26,8 @@ import type { Compensation, Member, PayRow } from "../types";
 import ChangePayDialog from "./ChangePayDialog.vue";
 import PayHistory from "./PayHistory.vue";
 
-const props = defineProps<{ rows: PayRow[] }>();
+/** `ready`: the list has loaded, so a person missing from it (a stale link, another branch) is gone. */
+const props = defineProps<{ rows: PayRow[]; ready?: boolean }>();
 
 const { t } = useI18n();
 const route = useRoute();
@@ -63,6 +65,7 @@ function change(from?: Compensation): void {
           <SkeletonBlock v-for="n in 3" :key="n" height="120px" radius="12px" />
         </div>
         <ErrorState v-else-if="query.isError.value" :error="query.error.value" :retry="() => query.refetch()" />
+        <EmptyState v-else-if="ready && !member" :icon="UserRoundX" :title="t('payroll.pay.notFound')" data-testid="pay-not-found" />
         <div v-else class="flex flex-col gap-5">
           <header v-if="member" class="flex items-center gap-3">
             <UserAvatar :name="member.name" :src="member.photo_url" :size="44" shape="rounded" />
@@ -78,12 +81,12 @@ function change(from?: Compensation): void {
       </div>
     </template>
     <template #footer>
-      <div v-if="memberId && canManage" class="flex w-full items-center gap-2">
+      <div v-if="memberId && canManage && member" class="flex w-full items-center gap-2">
         <p v-if="pay.upcoming" class="inline-flex min-w-0 flex-1 items-center gap-1 truncate text-xs text-muted"><CalendarClock :size="12" />{{ t("payroll.pay.upcomingHint") }}</p>
         <span v-else class="flex-1" />
         <UiButton variant="primary" size="sm" :icon="pay.current ? Pencil : WalletCards" :disabled="!member" data-testid="change-pay" @click="change()">{{ pay.current ? t("payroll.pay.change") : t("payroll.pay.set") }}</UiButton>
       </div>
-      <p v-else-if="memberId" class="inline-flex items-center gap-1.5 text-xs text-muted"><Lock :size="12" />{{ t("payroll.pay.readOnly") }}</p>
+      <p v-else-if="memberId && member" class="inline-flex items-center gap-1.5 text-xs text-muted"><Lock :size="12" />{{ t("payroll.pay.readOnly") }}</p>
     </template>
   </UiDrawer>
   <ChangePayDialog v-if="member" v-model:open="changing" :member="member" :history="pay.history" :start="editing" />
