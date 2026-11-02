@@ -87,6 +87,7 @@ const where = (row: PayRow) => [row.member.position, row.member.home_branch].fil
       clickable
       :active-key="activeKey"
       :filtered="filtered"
+      :empty-title="t('payroll.pay.noMatch')"
       hide-pagination
       csv-name="pay-setups"
       @row-click="open"
@@ -117,8 +118,9 @@ const where = (row: PayRow) => [row.member.position, row.member.home_branch].fil
           </button>
         </div>
       </template>
-      <template #empty>
-        <EmptyState :icon="WalletCards" :title="filtered ? t('payroll.pay.noMatch') : t('payroll.pay.empty')" :description="filtered ? undefined : t('payroll.pay.emptyBody')" />
+      <!-- Filtered and empty: the table's own state (neutral, with "Clear filters") under our title. -->
+      <template v-if="!filtered" #empty>
+        <EmptyState :icon="WalletCards" :title="t('payroll.pay.empty')" :description="t('payroll.pay.emptyBody')" />
       </template>
       <template #cell-person="{ row }">
         <div class="flex min-w-0 items-center gap-2.5">

@@ -255,6 +255,7 @@
   "payroll.pay.noMatch": "Никого не нашлось",
   "payroll.pay.drawerTitle": "Оплата",
   "payroll.pay.notFound": "Этого сотрудника нет в списке",
+  "payroll.pay.notFoundBody": "Ссылка могла устареть, или сотрудник работает в филиале, который вам не виден.",
   "payroll.pay.change": "Изменить оплату",
   "payroll.pay.set": "Задать оплату",
   "payroll.pay.edit": "Изменить",

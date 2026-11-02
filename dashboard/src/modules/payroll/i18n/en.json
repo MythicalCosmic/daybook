@@ -255,6 +255,7 @@
   "payroll.pay.noMatch": "Nobody matches",
   "payroll.pay.drawerTitle": "Pay",
   "payroll.pay.notFound": "This person isn’t on the list",
+  "payroll.pay.notFoundBody": "The link may be out of date, or the person works in a branch you don’t see.",
   "payroll.pay.change": "Change pay",
   "payroll.pay.set": "Set pay",
   "payroll.pay.edit": "Edit",

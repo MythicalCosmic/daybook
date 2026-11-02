@@ -163,10 +163,7 @@ watch(
   { immediate: true },
 );
 
-const emptyText = computed(() => {
-  if (filtered.value) return { title: t("payroll.adjustments.noMatch"), body: t("payroll.adjustments.noMatchBody") };
-  return { title: t(`payroll.adjustments.empty.${tab.value}`), body: t(`payroll.adjustments.emptyBody.${tab.value}`) };
-});
+const emptyText = computed(() => ({ title: t(`payroll.adjustments.empty.${tab.value}`), body: t(`payroll.adjustments.emptyBody.${tab.value}`) }));
 </script>
 
 <template>
@@ -192,6 +189,8 @@ const emptyText = computed(() => {
       :selectable="selectable"
       :active-key="activeKey"
       :filtered="filtered"
+      :empty-title="t('payroll.adjustments.noMatch')"
+      :empty-description="t('payroll.adjustments.noMatchBody')"
       :row-class="(row: Adjustment) => (isDecidable(row) || tab !== 'proposed' ? undefined : 'opacity-60')"
       csv-name="bonuses-fines"
       @row-click="open"
@@ -207,9 +206,10 @@ const emptyText = computed(() => {
         <UiButton size="sm" variant="primary" :icon="Check" data-testid="bulk-approve" @click="bulk(selected, 'approve', clear)">{{ t("payroll.adjustments.approveSome", { n: selected.length }, selected.length) }}</UiButton>
         <UiButton size="sm" variant="danger" :icon="X" data-testid="bulk-reject" @click="bulk(selected, 'reject', clear)">{{ t("payroll.adjustments.rejectSome", { n: selected.length }, selected.length) }}</UiButton>
       </template>
-      <template #empty>
+      <!-- Filtered and empty: the table's own state (neutral, with "Clear filters") under our title. -->
+      <template v-if="!filtered" #empty>
         <EmptyState :icon="tab === 'disputed' ? MessageCircleWarning : Gift" :tone="tab === 'proposed' || tab === 'disputed' ? 'success' : 'primary'" :title="emptyText.title" :description="emptyText.body">
-          <UiButton v-if="!filtered && canPropose && tab !== 'disputed'" variant="primary" :icon="Gift" @click="propose('bonus')">{{ t("payroll.adjustments.newBonus") }}</UiButton>
+          <UiButton v-if="canPropose && (tab === 'proposed' || tab === 'approved')" variant="primary" :icon="Gift" @click="propose('bonus')">{{ t("payroll.adjustments.newBonus") }}</UiButton>
         </EmptyState>
       </template>
       <template #cell-person="{ row }">

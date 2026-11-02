@@ -65,7 +65,7 @@ function change(from?: Compensation): void {
           <SkeletonBlock v-for="n in 3" :key="n" height="120px" radius="12px" />
         </div>
         <ErrorState v-else-if="query.isError.value" :error="query.error.value" :retry="() => query.refetch()" />
-        <EmptyState v-else-if="ready && !member" :icon="UserRoundX" :title="t('payroll.pay.notFound')" data-testid="pay-not-found" />
+        <EmptyState v-else-if="ready && !member" tone="neutral" :icon="UserRoundX" :title="t('payroll.pay.notFound')" :description="t('payroll.pay.notFoundBody')" data-testid="pay-not-found" />
         <div v-else class="flex flex-col gap-5">
           <header v-if="member" class="flex items-center gap-3">
             <UserAvatar :name="member.name" :src="member.photo_url" :size="44" shape="rounded" />

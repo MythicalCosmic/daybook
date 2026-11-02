@@ -255,6 +255,7 @@
   "payroll.pay.noMatch": "Hech kim topilmadi",
   "payroll.pay.drawerTitle": "Maosh",
   "payroll.pay.notFound": "Bu xodim ro‘yxatda yo‘q",
+  "payroll.pay.notFoundBody": "Havola eskirgan bo‘lishi yoki xodim siz ko‘rmaydigan filialda ishlashi mumkin.",
   "payroll.pay.change": "Maoshni o‘zgartirish",
   "payroll.pay.set": "Maosh belgilash",
   "payroll.pay.edit": "Tahrirlash",

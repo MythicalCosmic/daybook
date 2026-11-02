@@ -208,6 +208,32 @@ describe("bonuses and fines", () => {
     // They may still propose.
     expect(document.querySelector('[data-testid="new-bonus"]')).not.toBeNull();
   });
+
+  const bonusButtons = () => [...document.querySelectorAll("button")].filter((button) => button.textContent?.trim() === en["payroll.adjustments.newBonus"]);
+
+  it("an empty rejected tab says so and offers no bonus (only the header does)", async () => {
+    stub({ "GET payroll/adjustments/": () => json(page([])) });
+    const AdjustmentsPage = (await import("../pages/AdjustmentsPage.vue")).default;
+    const app = await testApp("/c/1/payroll/adjustments?tab=rejected");
+    mountWithProviders(AdjustmentsPage, { plugins: app.plugins });
+    await settle();
+    expect(document.body.textContent).toContain(en["payroll.adjustments.empty.rejected"]);
+    expect(bonusButtons()).toHaveLength(1);
+  });
+
+  it("a search with no match offers to clear it", async () => {
+    stub({ "GET payroll/adjustments/": () => json(page([])) });
+    const AdjustmentsPage = (await import("../pages/AdjustmentsPage.vue")).default;
+    const app = await testApp("/c/1/payroll/adjustments?q=zzzz");
+    mountWithProviders(AdjustmentsPage, { plugins: app.plugins });
+    await settle();
+    expect(document.body.textContent).toContain(en["payroll.adjustments.noMatch"]);
+    const clear = [...document.querySelectorAll("button")].find((button) => button.textContent?.trim() === "Clear filters");
+    expect(clear).toBeDefined();
+    clear!.click();
+    await settle();
+    expect(app.router.currentRoute.value.query.q).toBeUndefined();
+  });
 });
 
 describe("runs", () => {
