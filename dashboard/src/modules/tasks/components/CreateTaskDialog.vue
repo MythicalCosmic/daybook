@@ -16,6 +16,7 @@ import { RouterLink } from "vue-router";
 
 import AvatarStack from "@/components/AvatarStack.vue";
 import BranchPicker from "@/components/BranchPicker.vue";
+import ChecklistEditor from "@/components/ChecklistEditor.vue";
 import DatePicker from "@/components/DatePicker.vue";
 import ExtensionSlot from "@/components/ExtensionSlot.vue";
 import FormField from "@/components/FormField.vue";
@@ -38,7 +39,6 @@ import { useCompanyId, useCompanyStore } from "@/stores/company";
 import { useCreateTasks, useTaskOptions, useTasksSettings } from "../api";
 import { resultKey, useQuickAdd } from "../quickAdd";
 import type { ProofKind, TaskPriority } from "../types";
-import ChecklistEditor from "./ChecklistEditor.vue";
 import PriorityFlag from "./PriorityFlag.vue";
 
 const open = defineModel<boolean>("open", { default: false });
@@ -353,7 +353,7 @@ async function submit(): Promise<void> {
           <MoneyInput v-model="reward" />
         </FormField>
         <FormField :label="t('tasks.drawer.checklist')" optional>
-          <ChecklistEditor v-model="checklist" />
+          <ChecklistEditor v-model="checklist" texts="tasks.checklist" />
         </FormField>
       </div>
     </form>
