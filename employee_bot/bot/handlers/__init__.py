@@ -10,6 +10,7 @@ from bot.handlers.features.signin import router as signin_router
 from bot.handlers.groups import router as groups_router
 from bot.handlers.language import router as language_router
 from bot.handlers.member import router as member_router
+from bot.handlers.profile_fix import router as profile_fix_router
 from bot.handlers.start import router as start_router
 
 
@@ -24,6 +25,7 @@ def register_all_handlers(dp: Dispatcher) -> None:
         signin_router,
         start_router,
         language_router,
+        profile_fix_router,
         company_router,
         applicants_router,
         approvals_router,

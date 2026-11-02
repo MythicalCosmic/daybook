@@ -38,3 +38,14 @@ class JoinSetup(CallbackData, prefix="joins"):
     branches: str = ""
     role: int = 0
     pick: int = 0
+
+
+class ProfileFix(CallbackData, prefix="pfix"):
+    """The one-off "check your details" survey (apps.members.profile_fix): every choice so far
+    travels in the button. `step`: b (branch picked), d (department picked), p (title picked),
+    ok (save), redo (start again)."""
+
+    step: str
+    b: int = 0
+    d: int = 0
+    p: int = 0

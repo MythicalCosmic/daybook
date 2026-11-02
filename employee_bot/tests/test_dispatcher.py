@@ -47,6 +47,7 @@ def test_top_level_order(dp):
         "feature_signin",  # sign-in and deep links work for anyone, member or not
         "start",
         "language",  # the language picker, /help and /settings: anyone may use them
+        "profile_fix",  # the post-launch details survey: approved and waiting people alike
         "company",  # the company switch of someone in several companies
         "feature_applicants",  # applicants aren't members; their contact isn't a join request
         "approvals",

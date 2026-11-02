@@ -521,3 +521,115 @@ def test_the_answer_is_json_the_service_wrote(service):
     )
 
     assert transcribe().text == "Kassani sanash"
+
+
+# OpenAI's own models, a model per language, and the fallback ----------------------------------
+
+
+@pytest.fixture
+def openai(settings, monkeypatch):
+    """OpenAI first (a model per language), the server's own Whisper second. Each host answers
+    what `replies[host]` holds (a Response or an exception); `seen` keeps every request."""
+    settings.AI_SPEECH_URL = "https://api.openai.com/v1"
+    settings.AI_SPEECH_API_KEY = "sk-test"
+    settings.AI_SPEECH_MODEL = "gpt-4o-mini-transcribe"
+    settings.AI_SPEECH_MODELS_BY_LANGUAGE = {"uz": "gpt-4o-transcribe"}
+    settings.AI_SPEECH_TIMEOUT = 60
+    settings.AI_SPEECH_FALLBACK_URL = "http://stt:8000/v1"
+    settings.AI_SPEECH_FALLBACK_MODEL = "large-v3"
+    settings.AI_SPEECH_FALLBACK_TIMEOUT = 600
+    settings.AI_FAKE = False
+    state = {
+        "seen": [],
+        "replies": {
+            "api.openai.com": httpx2.Response(200, json={"text": "Alisher, ertaga soat 10 gacha"}),
+            "stt": httpx2.Response(200, json={"text": "local", "language": "uzbek"}),
+        },
+    }
+
+    def handle(request: httpx2.Request) -> httpx2.Response:
+        state["seen"].append(request)
+        reply = state["replies"][request.url.host]
+        if isinstance(reply, Exception):
+            raise reply
+        return reply
+
+    monkeypatch.setattr(
+        speech, "_client", lambda: httpx2.Client(transport=httpx2.MockTransport(handle))
+    )
+    return state
+
+
+def test_openai_models_get_plain_json_and_uzbek_by_name(openai):
+    heard = transcribe(language="uz")
+
+    [request] = openai["seen"]
+    fields, _files = form(request)
+    assert fields["model"] == "gpt-4o-transcribe"  # mini can't write Uzbek
+    assert fields["response_format"] == "json"
+    assert "language" not in fields  # "Language code 'uz' is not recognized"
+    assert fields["prompt"].startswith("O‘zbekcha ovozli xabar. Demo Dorixona")
+    assert request.headers["authorization"] == "Bearer sk-test"
+    assert heard == Transcript("Alisher, ertaga soat 10 gacha", "uz", None)
+
+
+def test_openai_takes_russian_by_its_code_on_the_default_model(openai):
+    transcribe(language="ru", prompt="Алишер")
+
+    fields, _files = form(openai["seen"][0])
+    assert (fields["model"], fields["language"], fields["prompt"]) == (
+        "gpt-4o-mini-transcribe",
+        "ru",
+        "Алишер",
+    )
+
+
+@pytest.mark.parametrize(
+    "failure",
+    [
+        httpx2.Response(429, json={"error": {"code": "insufficient_quota"}}),  # out of credit
+        httpx2.Response(500),
+        httpx2.ConnectError("down"),
+        httpx2.ReadTimeout("slow"),
+    ],
+)
+def test_when_openai_fails_the_own_whisper_writes_it_down(openai, failure):
+    openai["replies"]["api.openai.com"] = failure
+
+    heard = transcribe(language="uz")
+
+    assert [r.url.host for r in openai["seen"]] == ["api.openai.com", "stt"]
+    fields, _files = form(openai["seen"][1])
+    assert (fields["model"], fields["language"], fields["response_format"]) == (
+        "large-v3",
+        "uz",
+        "verbose_json",
+    )
+    assert "authorization" not in openai["seen"][1].headers  # the key stays with OpenAI
+    assert heard.text == "local"
+
+
+def test_both_failing_reports_the_last_service(openai):
+    openai["replies"]["api.openai.com"] = httpx2.Response(500)
+    openai["replies"]["stt"] = httpx2.Response(503)
+
+    with pytest.raises(speech.SpeechBusy):  # the job tries again in a while
+        transcribe()
+
+
+def test_without_a_fallback_a_failure_is_final(openai, settings):
+    settings.AI_SPEECH_FALLBACK_URL = ""
+    openai["replies"]["api.openai.com"] = httpx2.Response(500)
+
+    with pytest.raises(SpeechError):
+        transcribe()
+    assert len(openai["seen"]) == 1
+
+
+def test_a_fallback_that_is_the_service_itself_is_not_tried_twice(openai, settings):
+    settings.AI_SPEECH_FALLBACK_URL = "https://api.openai.com/v1/"
+    openai["replies"]["api.openai.com"] = httpx2.Response(500)
+
+    with pytest.raises(SpeechError):
+        transcribe()
+    assert len(openai["seen"]) == 1

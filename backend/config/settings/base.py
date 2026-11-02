@@ -348,6 +348,14 @@ AI_SPEECH_URL = env("AI_SPEECH_URL", default="")
 AI_SPEECH_API_KEY = env("AI_SPEECH_API_KEY", default="")
 AI_SPEECH_MODEL = env("AI_SPEECH_MODEL", default="large-v3")
 AI_SPEECH_TIMEOUT = env.float("AI_SPEECH_TIMEOUT", default=90)
+# A model per language at that service ("uz=gpt-4o-transcribe,ru=gpt-4o-mini-transcribe");
+# languages not named use AI_SPEECH_MODEL.
+AI_SPEECH_MODELS_BY_LANGUAGE = env.dict("AI_SPEECH_MODELS_BY_LANGUAGE", default={})
+# Where a recording goes when that service fails (down, out of credit, too slow): the server's
+# own Whisper (http://stt:8000/v1, no key). Empty: no second try.
+AI_SPEECH_FALLBACK_URL = env("AI_SPEECH_FALLBACK_URL", default="")
+AI_SPEECH_FALLBACK_MODEL = env("AI_SPEECH_FALLBACK_MODEL", default="large-v3")
+AI_SPEECH_FALLBACK_TIMEOUT = env.float("AI_SPEECH_FALLBACK_TIMEOUT", default=600)
 
 LOGGING = {
     "version": 1,

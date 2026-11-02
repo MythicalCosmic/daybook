@@ -41,6 +41,8 @@ AI_FAKE = False
 # ...nor a speech service: speech tests give the HTTP client a mock transport.
 AI_SPEECH_URL = ""
 AI_SPEECH_API_KEY = ""
+AI_SPEECH_MODELS_BY_LANGUAGE = {}
+AI_SPEECH_FALLBACK_URL = ""
 
 DASHBOARD_DEV_LOGIN = False
 DASHBOARD_URL = ""
