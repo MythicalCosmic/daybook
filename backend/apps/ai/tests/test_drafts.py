@@ -452,11 +452,21 @@ def test_old_recordings_are_deleted_and_the_words_stay(
     assert not os.path.exists(path)
 
 
-def test_the_card_writes_dates_in_the_readers_language(team, django_capture_on_commit_callbacks):
-    """A Russian reader saw "Ertaga, 10:00" (the Uzbek word, capitalised mid-line)."""
+def test_the_card_writes_dates_in_the_readers_language(
+    team, django_capture_on_commit_callbacks, monkeypatch
+):
+    """A Russian reader saw "Ertaga, 10:00" (the Uzbek word, capitalised mid-line). The clock
+    is a weekday morning: after 18:00 "bugun kechqurun" (this evening) is already past and the
+    card rightly says another time, which failed this test every evening."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
     from django.utils import translation
 
     from apps.ai import bot_messages
+
+    morning = datetime(2026, 11, 3, 9, 0, tzinfo=ZoneInfo("Asia/Tashkent"))
+    monkeypatch.setattr("django.utils.timezone.now", lambda: morning)
 
     draft = start(team["manager"], django_capture_on_commit_callbacks, text=SAID)
 
