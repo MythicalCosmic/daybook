@@ -82,11 +82,11 @@ const run = (overrides: Partial<Run> = {}): Run => ({
   usd_rate: null,
   calculated_at: "2026-11-01T06:00:00+05:00",
   finalized_at: "2026-11-01T09:00:00+05:00",
-  finalized_by: { id: 1, name: "Dilnoza Karimova" },
+  finalized_by: "Dilnoza Karimova",
   paid_at: null,
   notes: "",
   warnings: [],
-  totals: { people: 3, currencies: [{ currency: "UZS", gross: "15300000.00", deductions: "550000.00", net: "14750000.75", people: 3 }] },
+  totals: { currency: "UZS", people: 3, gross: "15300000.00", deductions: "550000.00", net: "14750000.75", paid: 0, published: 3 },
   ...overrides,
 });
 

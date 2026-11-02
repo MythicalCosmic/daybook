@@ -43,8 +43,8 @@ const link = (warning: RunWarning) => {
           :to="link(warning) ?? undefined"
           :class="['flex min-h-11 items-center gap-3 rounded-[8px] px-2 py-2', link(warning) && 'group hover:bg-surface/70']"
         >
-          <span class="size-1.5 shrink-0 rounded-full bg-warning" aria-hidden="true" />
-          <span class="min-w-0 flex-1 text-sm text-fg">{{ warning.message }}</span>
+          <span :class="['size-1.5 shrink-0 rounded-full', warning.level === 'info' ? 'bg-info' : 'bg-warning']" aria-hidden="true" />
+          <span class="min-w-0 flex-1 text-sm text-fg">{{ warning.text }}</span>
           <span v-if="link(warning)" class="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-accent-fg">
             {{ t("payroll.warnings.fix") }}<ArrowRight :size="14" class="transition-transform group-hover:translate-x-0.5" />
           </span>

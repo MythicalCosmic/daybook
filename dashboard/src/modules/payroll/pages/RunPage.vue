@@ -12,7 +12,6 @@ import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 
 import DataTable from "@/components/DataTable.vue";
-import DeltaBadge from "@/components/DeltaBadge.vue";
 import DropdownMenu, { type MenuEntry } from "@/components/DropdownMenu.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
@@ -43,7 +42,7 @@ import MarkPaidDialog from "../components/MarkPaidDialog.vue";
 import PayAmount from "../components/PayAmount.vue";
 import PayslipDrawer from "../components/PayslipDrawer.vue";
 import RunWarnings from "../components/RunWarnings.vue";
-import { hasAmount, PAYSLIP_TONES, quantityText, RUN_TONES, runActions, type Can } from "../lib";
+import { hasAmount, PAYSLIP_TONES, RUN_TONES, runActions, type Can } from "../lib";
 import type { Payslip, RunAction } from "../types";
 
 const { t } = useI18n();
@@ -72,36 +71,42 @@ usePageTitle(() => (run.value ? title.value : undefined));
 const can: Can = (perm) => company.can(perm);
 const actions = computed<RunAction[]>(() => (run.value ? runActions(run.value, can, slipsQuery.data.value) : []));
 const has = (action: RunAction) => actions.value.includes(action);
-const totals = computed(() => run.value?.totals?.currencies ?? []);
+const totals = computed(() => run.value?.totals ?? null);
 const peopleCount = computed(() => run.value?.totals?.people ?? payslips.value.length);
+/** Payslips sent to people and paid so far, out of all (a finalized run). */
+const progress = computed(() => {
+  const t_ = run.value?.totals;
+  if (!t_ || run.value?.status === "draft") return null;
+  return { published: t_.published ?? 0, paid: t_.paid ?? 0, people: t_.people };
+});
 
 // Payslips table -----------------------------------------------------------------------------
 
-const table = useDataTable({ id: "payroll.payslips", pageSize: 500, hidden: ["gross", "deductions", "days"] });
+const table = useDataTable({ id: "payroll.payslips", pageSize: 200, hidden: ["gross", "deductions", "reimbursements"] });
 const search = ref("");
 const show = ref<"all" | "waiting" | "paid">("all");
+const where = (slip: Payslip) => [slip.member.position, slip.member.home_branch].filter(Boolean).join(" · ");
 const visible = computed(() => {
   const needle = normalize(search.value.trim());
   return payslips.value
     .filter((slip) => (show.value === "all" ? true : show.value === "paid" ? slip.status === "paid" : slip.status !== "paid"))
-    .filter((slip) => !needle || normalize(`${slip.member.name} ${slip.member.position ?? ""} ${slip.member.branch ?? ""}`).includes(needle))
+    .filter((slip) => !needle || normalize(`${slip.member.name} ${where(slip)}`).includes(needle))
     .sort((a, b) => a.member.name.localeCompare(b.member.name));
 });
 const selectable = computed(() => run.value?.status === "finalized" && has("mark_paid"));
 
 const columns = computed<TableColumn<Payslip>[]>(() => [
   { id: "person", header: t("payroll.payslips.person"), minWidth: 210, sticky: true, hideable: false, value: (row) => row.member.name },
-  { id: "days", header: t("payroll.payslips.days"), width: 88, numeric: true, value: (row) => row.paid_days ?? "" },
-  { id: "base", header: t("payroll.payslips.base"), width: 132, numeric: true, value: (row) => row.base_pay ?? null },
-  { id: "bonuses", header: t("payroll.payslips.bonuses"), width: 120, numeric: true, value: (row) => row.bonuses ?? null },
-  { id: "fines", header: t("payroll.payslips.fines"), width: 120, numeric: true, value: (row) => row.fines ?? null },
-  { id: "advances", header: t("payroll.payslips.advances"), width: 120, numeric: true, value: (row) => row.advances ?? null },
+  { id: "base", header: t("payroll.payslips.base"), width: 136, numeric: true, value: (row) => row.base_pay ?? null },
+  { id: "bonuses", header: t("payroll.payslips.bonuses"), width: 124, numeric: true, value: (row) => row.bonuses ?? null },
+  { id: "fines", header: t("payroll.payslips.fines"), width: 124, numeric: true, value: (row) => row.fines ?? null },
+  { id: "advances", header: t("payroll.payslips.advances"), width: 124, numeric: true, value: (row) => row.advances ?? null },
+  { id: "reimbursements", header: t("payroll.payslips.reimbursements"), width: 124, numeric: true, value: (row) => row.reimbursements ?? null },
   { id: "gross", header: t("payroll.totals.gross"), width: 136, numeric: true, value: (row) => row.gross ?? null },
   { id: "deductions", header: t("payroll.totals.deductions"), width: 136, numeric: true, value: (row) => row.deductions ?? null },
-  { id: "net", header: t("payroll.totals.net"), width: 144, numeric: true, value: (row) => row.net ?? null },
-  { id: "change", header: t("payroll.payslips.change"), width: 96, numeric: true, hint: t("payroll.payslips.changeHint"), value: (row) => row.change_percent ?? null },
+  { id: "net", header: t("payroll.totals.net"), width: 148, numeric: true, value: (row) => row.net ?? null },
   // Every payslip of a draft is a draft: the column says something only once the run is finalized.
-  ...(run.value && run.value.status !== "draft" ? [{ id: "status", header: t("payroll.payslips.status"), width: 116, value: (row: Payslip) => t(`payroll.payslipStatus.${row.status}`) }] : []),
+  ...(run.value && run.value.status !== "draft" ? [{ id: "status", header: t("payroll.payslips.status"), width: 128, value: (row: Payslip) => t(`payroll.payslipStatus.${row.status}`) }] : []),
 ]);
 
 /**
@@ -203,12 +208,18 @@ function startPay(ids: number[] | null): void {
   payOpen.value = true;
 }
 
-/** The one main action for the status; the rest go in the More menu. */
+/**
+ * Payslips not sent yet. The server offers "publish" on every finalized run (sending again is
+ * allowed), so the page decides whether sending is the next step or a "send again".
+ */
+const unsent = computed(() => payslips.value.filter((slip) => slip.status === "draft").length);
+
+/** The one main action for the status; the rest go beside it or in the More menu. */
 const primary = computed<RunAction | null>(() => {
   const r = run.value;
   if (!r) return null;
   if (r.status === "draft") return has("finalize") ? "finalize" : has("calculate") ? "calculate" : null;
-  if (r.status === "finalized") return has("publish") ? "publish" : has("mark_paid") ? "mark_paid" : null;
+  if (r.status === "finalized") return has("publish") && unsent.value ? "publish" : has("mark_paid") ? "mark_paid" : null;
   return null;
 });
 const secondary = computed<RunAction[]>(() => {
@@ -239,6 +250,8 @@ function run_(action: RunAction): void {
 }
 const menu = computed<MenuEntry[]>(() => {
   const list: MenuEntry[] = [];
+  // Everyone has their payslip already: sending again is a menu item, not the main button.
+  if (has("publish") && primary.value !== "publish") list.push({ label: t("payroll.run.publishAgain"), description: t("payroll.run.publishAgainHint"), icon: Send, onSelect: () => void publish() });
   if (has("reopen")) list.push({ label: t("payroll.run.reopen"), description: t("payroll.run.reopenHint"), icon: RotateCcw, onSelect: () => void reopen() });
   if (has("cancel")) list.push({ label: t("payroll.run.cancel"), description: t("payroll.run.cancelHint"), icon: Ban, danger: true, onSelect: () => void cancel() });
   return list;
@@ -248,7 +261,7 @@ const metaLine = computed(() => {
   const r = run.value;
   if (!r) return "";
   if (r.status === "paid" && r.paid_at) return t("payroll.runs.paidOn", { date: fmt.instant(r.paid_at, "date") });
-  if (r.finalized_at) return r.finalized_by ? t("payroll.run.finalizedBy", { date: fmt.instant(r.finalized_at, "date"), name: r.finalized_by.name }) : t("payroll.runs.finalizedOn", { date: fmt.instant(r.finalized_at, "date") });
+  if (r.finalized_at) return r.finalized_by ? t("payroll.run.finalizedBy", { date: fmt.instant(r.finalized_at, "date"), name: r.finalized_by }) : t("payroll.runs.finalizedOn", { date: fmt.instant(r.finalized_at, "date") });
   if (r.calculated_at) return t("payroll.runs.calculatedAt", { date: fmt.relative(r.calculated_at) });
   return t("payroll.runs.notCalculated");
 });
@@ -293,29 +306,29 @@ const statusNote = computed(() => {
       <RunWarnings v-if="run.warnings.length && run.status === 'draft'" :warnings="run.warnings" :final="run.kind === 'final'" />
       <InlineAlert v-if="statusNote" :tone="statusNote.tone" size="sm" :description="statusNote.text" />
 
-      <!-- Totals per currency; on a phone they stay under the top bar while the list scrolls. -->
+      <!-- The totals; on a phone they stay under the top bar while the list scrolls. -->
       <section
-        v-for="row in totals"
-        :key="row.currency"
+        v-if="totals && run.calculated_at"
         class="ui-card sticky top-[calc(var(--topbar-h)+var(--safe-top))] z-10 grid grid-cols-3 gap-x-3 gap-y-1 px-4 py-3 md:static md:grid-cols-4 md:px-5 md:py-4"
         :aria-label="t('payroll.totals.title')"
         data-testid="run-totals"
       >
         <div class="hidden md:block">
           <p class="kpi-label">{{ t("payroll.runs.people") }}</p>
-          <p class="mt-1 text-xl font-semibold tabular-nums text-fg">{{ row.people }}</p>
+          <p class="mt-1 text-xl font-semibold tabular-nums text-fg">{{ totals.people }}</p>
+          <p v-if="progress" class="mt-0.5 text-xs text-muted">{{ t("payroll.run.progress", { published: progress.published, paid: progress.paid }) }}</p>
         </div>
         <div class="min-w-0">
           <p class="kpi-label">{{ t("payroll.totals.gross") }}</p>
-          <p class="mt-1 truncate text-base font-semibold tabular-nums text-fg md:text-xl"><PayAmount :value="row.gross" :currency="row.currency" :compact="isPhone" /></p>
+          <p class="mt-1 truncate text-base font-semibold tabular-nums text-fg md:text-xl"><PayAmount :value="totals.gross" :currency="totals.currency" :compact="isPhone" /></p>
         </div>
         <div class="min-w-0">
           <p class="kpi-label">{{ t("payroll.totals.deductions") }}</p>
-          <p class="mt-1 truncate text-base font-semibold tabular-nums text-fg md:text-xl"><PayAmount :value="row.deductions" :currency="row.currency" :compact="isPhone" /></p>
+          <p class="mt-1 truncate text-base font-semibold tabular-nums text-fg md:text-xl"><PayAmount :value="totals.deductions" :currency="totals.currency" :compact="isPhone" /></p>
         </div>
         <div class="min-w-0">
           <p class="kpi-label">{{ t("payroll.totals.net") }}</p>
-          <p class="mt-1 truncate text-base font-semibold tabular-nums text-accent-fg md:text-xl" data-testid="run-net"><PayAmount :value="row.net" :currency="row.currency" :compact="isPhone" /></p>
+          <p class="mt-1 truncate text-base font-semibold tabular-nums text-accent-fg md:text-xl" data-testid="run-net"><PayAmount :value="totals.net" :currency="totals.currency" :compact="isPhone" /></p>
         </div>
       </section>
 
@@ -375,25 +388,18 @@ const statusNote = computed(() => {
             <UserAvatar :name="row.member.name" :src="row.member.photo_url" :size="30" />
             <div class="min-w-0">
               <p class="truncate text-base font-medium text-fg" :title="row.member.name">{{ row.member.name }}</p>
-              <p class="truncate text-xs text-muted">{{ [row.member.position, row.member.branch].filter(Boolean).join(" · ") || t(`payroll.payType.${row.pay_type}`) }}</p>
+              <p class="truncate text-xs text-muted">{{ where(row) || t(`payroll.payType.${row.pay_type}`) }}</p>
             </div>
           </div>
-        </template>
-        <template #cell-days="{ row }">
-          <span v-if="row.paid_days !== null && row.scheduled_days !== null" class="tabular-nums text-fg">{{ quantityText(row.paid_days, fmt.lang.value) }}<span class="text-muted">/{{ quantityText(row.scheduled_days, fmt.lang.value) }}</span></span>
-          <span v-else class="text-subtle">—</span>
         </template>
         <template #cell-base="{ row }"><PayAmount cell :value="row.base_pay" :currency="row.currency" /></template>
         <template #cell-bonuses="{ row }"><PayAmount cell :value="row.bonuses" :currency="row.currency" sign="always" colored /></template>
         <template #cell-fines="{ row }"><PayAmount cell :value="row.fines" :currency="row.currency" colored /></template>
         <template #cell-advances="{ row }"><PayAmount cell :value="row.advances" :currency="row.currency" /></template>
+        <template #cell-reimbursements="{ row }"><PayAmount cell :value="row.reimbursements" :currency="row.currency" /></template>
         <template #cell-gross="{ row }"><PayAmount cell :value="row.gross" :currency="row.currency" /></template>
         <template #cell-deductions="{ row }"><PayAmount cell :value="row.deductions" :currency="row.currency" /></template>
         <template #cell-net="{ row }"><PayAmount cell strong :value="row.net" :currency="row.currency" /></template>
-        <template #cell-change="{ row }">
-          <DeltaBadge v-if="row.change_percent !== null && row.change_percent !== undefined" :value="row.change_percent" />
-          <span v-else class="text-sm text-subtle">—</span>
-        </template>
         <template #cell-status="{ row }">
           <StatusPill :tone="PAYSLIP_TONES[row.status]" size="sm" :label="t(`payroll.payslipStatus.${row.status}`)" />
         </template>
@@ -402,7 +408,7 @@ const statusNote = computed(() => {
             <UserAvatar :name="row.member.name" :src="row.member.photo_url" :size="34" />
             <div class="min-w-0 flex-1">
               <p class="truncate text-base font-semibold text-fg">{{ row.member.name }}</p>
-              <p class="truncate text-xs text-muted">{{ [row.member.position, row.member.branch].filter(Boolean).join(" · ") || t(`payroll.payType.${row.pay_type}`) }}</p>
+              <p class="truncate text-xs text-muted">{{ where(row) || t(`payroll.payType.${row.pay_type}`) }}</p>
               <p v-if="breakdown(row).length" class="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-xs tabular-nums text-muted" data-testid="card-breakdown">
                 <span v-for="part in breakdown(row)" :key="part.key" class="whitespace-nowrap">
                   {{ part.label }} <span :class="part.tone">{{ part.text }}</span>

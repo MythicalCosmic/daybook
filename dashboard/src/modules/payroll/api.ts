@@ -96,13 +96,21 @@ export const payrollApi = {
     http.post<Run>(path(cid, `runs/${id}/${action}/`), body),
   markPaid: (cid: number, id: number, input: MarkPaidInput) => http.post<Run>(path(cid, `runs/${id}/mark-paid/`), input),
   payslips: (cid: number, runId: number, signal?: AbortSignal) => http.get<Page<Payslip> | Payslip[]>(path(cid, `runs/${runId}/payslips/`), { page_size: 200 }, { signal }),
-  memberPayslips: (cid: number, member: number, signal?: AbortSignal) => http.get<Page<Payslip> | Payslip[]>(path(cid, "payslips/"), { member, page_size: 24 }, { signal }),
+  /**
+   * One person's payslips of the last `months` runs. There is no list by person on the server
+   * yet: the recent runs' payslip tables are read and the person's row kept.
+   */
+  memberPayslips: async (cid: number, member: number, months = 6, signal?: AbortSignal): Promise<Payslip[]> => {
+    const runs = rowsOf(await payrollApi.runs(cid, { page_size: months }, signal)).filter((run) => run.status !== "cancelled");
+    const tables = await Promise.all(runs.map((run) => payrollApi.payslips(cid, run.id, signal)));
+    return tables.flatMap((table, index) => rowsOf(table).filter((slip) => slip.member.id === member).map((slip) => ({ ...slip, run: runs[index]!.id })));
+  },
 
   payslip: (cid: number, id: number) => http.get<Payslip>(path(cid, `payslips/${id}/`)),
   /** Replaces the payslip's manual lines (only while its run is a draft). */
   setManualLines: (cid: number, id: number, lines: ManualLineInput[]) => http.patch<Payslip>(path(cid, `payslips/${id}/`), { manual_lines: lines }),
-  /** The PDF: a signed link (JSON) or the file itself. */
-  payslipPdf: (cid: number, id: number) => http.get<Response>(path(cid, `payslips/${id}/pdf/`), undefined, { raw: true, toast: true }),
+  /** A short-lived signed link to the payslip's PDF, in the viewer's language. */
+  payslipPdf: (cid: number, id: number) => http.get<PdfLink>(path(cid, `payslips/${id}/pdf/`), undefined, { toast: true }),
 
   /** Accounts money may be paid from: the finance options (a plain call; the finance module isn't imported). */
   accounts: (cid: number) => http.get<{ accounts: PayAccount[] }>(ownerPath(cid, "finance/options/")),
@@ -154,7 +162,7 @@ export const useRun = (id: MaybeRefOrGetter<number | null>) => useResource("run"
 export const usePayslips = (runId: MaybeRefOrGetter<number | null>) =>
   useResource("payslips", () => ({ run: toValue(runId) }), async (cid, p, signal) => rowsOf(await payrollApi.payslips(cid, Number(p.run), signal)), { enabled: () => !!toValue(runId) });
 export const useMemberPayslips = (member: MaybeRefOrGetter<number>, enabled: MaybeRefOrGetter<boolean> = true) =>
-  useResource("member-payslips", () => ({ member: toValue(member) }), async (cid, p, signal) => rowsOf(await payrollApi.memberPayslips(cid, Number(p.member), signal)), { enabled });
+  useResource("member-payslips", () => ({ member: toValue(member) }), (cid, p, signal) => payrollApi.memberPayslips(cid, Number(p.member), 6, signal), { enabled });
 export const usePayslip = (id: MaybeRefOrGetter<number | null>) => useResource("payslip", () => ({ id: toValue(id) }), (cid, p) => payrollApi.payslip(cid, Number(p.id)), { enabled: () => !!toValue(id) });
 export const useAccounts = (enabled: MaybeRefOrGetter<boolean> = true) =>
   useResource("accounts", {}, async (cid) => (await payrollApi.accounts(cid)).accounts ?? [], { enabled, staleTime: 60_000 });
@@ -172,35 +180,23 @@ export function useRefresh() {
 }
 
 /**
- * Opens a payslip's PDF: a signed link goes to Telegram's own download inside Telegram, or a new
- * tab elsewhere; a file sent directly is saved through a temporary link.
+ * Opens a payslip's PDF from its short-lived signed link: Telegram's own download inside
+ * Telegram (the link needs no sign-in, so Telegram can fetch it), a new tab elsewhere (the server
+ * serves PDFs inline).
  */
 export async function openPayslipPdf(cid: number, id: number, fallbackName: string): Promise<void> {
-  const response = await payrollApi.payslipPdf(cid, id);
-  const type = response.headers.get("Content-Type") ?? "";
-  if (type.includes("application/json")) {
-    const link = (await response.json()) as PdfLink;
-    openLink(link.url, link.file_name ?? fallbackName);
+  const link = await payrollApi.payslipPdf(cid, id);
+  const absolute = new URL(link.url, window.location.origin).href;
+  const webApp = window.Telegram?.WebApp;
+  if (webApp?.initData && webApp.downloadFile && webApp.isVersionAtLeast("8.0")) {
+    webApp.downloadFile({ url: absolute, file_name: link.name || fallbackName });
     return;
   }
-  const blob = await response.blob();
-  const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = fallbackName;
+  anchor.href = absolute;
+  anchor.target = "_blank";
   anchor.rel = "noopener";
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 30_000);
-}
-
-function openLink(url: string, fileName: string): void {
-  const webApp = typeof window !== "undefined" ? window.Telegram?.WebApp : undefined;
-  const absolute = new URL(url, window.location.origin).href;
-  if (webApp?.initData && webApp.downloadFile && webApp.isVersionAtLeast("8.0")) {
-    webApp.downloadFile({ url: absolute, file_name: fileName });
-    return;
-  }
-  window.open(absolute, "_blank", "noopener");
 }

@@ -329,25 +329,32 @@ export interface RepayInput {
 
 // Runs and payslips ---------------------------------------------------------------------------
 
-export interface CurrencyTotals {
-  currency: Currency;
-  gross: Money;
-  deductions: Money;
-  net: Money;
-  people: number;
-}
-
+/**
+ * A run's totals, in the company's currency, over the payslips the viewer sees (bonuses, fines,
+ * advances and reimbursements are left out for someone limited to some branches).
+ */
 export interface RunTotals {
+  currency?: Currency;
   people: number;
-  /** One row per currency people are paid in (so‘m first). */
-  currencies: CurrencyTotals[];
-  paid_people?: number;
+  gross?: Money;
+  deductions?: Money;
+  net?: Money;
+  bonuses?: Money;
+  fines?: Money;
+  advances?: Money;
+  reimbursements?: Money;
+  taxes?: Record<string, Money>;
+  /** Payslips paid, and published (sent). */
+  paid?: number;
+  published?: number;
 }
 
 export interface RunWarning {
   code: string;
+  /** "warning", or "info" for something worth knowing that doesn't block. */
+  level?: string;
   /** The server's sentence, already in the viewer's language. */
-  message: string;
+  text: string;
   member?: PersonRef | null;
   count?: number;
 }
@@ -355,6 +362,8 @@ export interface RunWarning {
 export interface Run {
   id: number;
   period: string;
+  /** The month in the viewer's language, from the server. */
+  month?: string;
   kind: RunKind;
   status: RunStatus;
   /** The one person of a final run. */
@@ -362,19 +371,21 @@ export interface Run {
   usd_rate: string | null;
   calculated_at: string | null;
   finalized_at: string | null;
-  finalized_by: PersonRef | null;
+  /** A name. */
+  finalized_by: string | null;
   paid_at: string | null;
-  published_at?: string | null;
   notes: string;
   warnings: RunWarning[];
   totals: RunTotals | null;
-  /** What the viewer may do now, when the server says (else derived from the status and permissions). */
+  created_at?: string;
+  /** What the viewer may do now (the server says; the Excel export is ours to offer). */
   actions?: RunAction[];
 }
 
 export interface PayslipLine {
   id: number;
   kind: PayslipLineKind;
+  /** Readable, with how it was worked out ("Base pay: 24 of 26 days"). */
   label: string;
   params: Record<string, unknown>;
   quantity: string | null;
@@ -383,42 +394,52 @@ export interface PayslipLine {
   amount: Money;
   adjustment: number | null;
   advance: number | null;
-  order: number;
+  /** Added by hand on a draft. */
+  manual?: boolean;
+  order?: number;
 }
 
 export interface Payslip {
   id: number;
-  run: number;
+  /** In a run's table; the detail has it too. */
+  run?: number;
   period: string;
   member: Member;
   currency: Currency;
   pay_type: PayType;
   base_pay?: Money | null;
-  scheduled_days: string | null;
-  paid_days: string | null;
-  absent_days?: string | null;
-  worked_minutes?: number | null;
-  overtime_minutes?: number | null;
-  /** Sums by line group, for the table. */
+  /** Sums by line kind, signed as on the payslip (fines and advances negative). */
   bonuses?: Money | null;
   fines?: Money | null;
   advances?: Money | null;
+  reimbursements?: Money | null;
   gross?: Money | null;
   deductions?: Money | null;
   net?: Money | null;
-  /** Change of net against the person's previous payslip, percent; null without one. */
-  change_percent?: number | null;
   status: PayslipStatus;
   published_at: string | null;
   viewed_at: string | null;
   paid_at: string | null;
   payout_method: PayoutMethod | "";
   received_at: string | null;
+  // The detail only:
   run_status?: RunStatus;
+  month?: string;
+  scheduled_days?: string | null;
+  paid_days?: string | null;
+  paid_leave_days?: string | null;
+  unpaid_leave_days?: string | null;
+  absent_days?: string | null;
+  worked_minutes?: number | null;
+  overtime_minutes?: number | null;
+  night_minutes?: number | null;
+  late_arrivals?: number | null;
   lines?: PayslipLine[];
 }
 
+/** A hand-made line; existing ones keep their id. */
 export interface ManualLineInput {
+  id?: number;
   label: string;
   amount: Money;
 }
@@ -427,11 +448,14 @@ export interface MarkPaidInput {
   payslip_ids: number[];
   method: PayoutMethod;
   account: number;
+  paid_on?: string;
 }
 
+/** A short-lived signed link to a file (the payslip PDF). */
 export interface PdfLink {
   url: string;
-  file_name?: string;
+  name?: string;
+  expires_in?: number;
 }
 
 // Overview ------------------------------------------------------------------------------------

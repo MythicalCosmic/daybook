@@ -14,7 +14,7 @@ import IconButton from "@/components/IconButton.vue";
 import MoneyText from "@/components/MoneyText.vue";
 import { useFormat } from "@/lib/useFormat";
 
-import { lineGroups, lineHow, quantityText } from "../lib";
+import { isManualLine, lineGroups, lineHow, quantityText } from "../lib";
 import type { PayslipLine } from "../types";
 import PayAmount from "./PayAmount.vue";
 
@@ -36,11 +36,11 @@ const emit = defineEmits<{ remove: [line: PayslipLine] }>();
 const { t, te } = useI18n();
 const fmt = useFormat();
 const groups = computed(() => lineGroups(props.lines));
+// Rounding belongs with the totals (between what is taken and the net), not as its own section.
 const sections = computed(() =>
   [
     { id: "earnings", title: t("payroll.lines.earned"), icon: Plus, tone: "text-success", lines: groups.value.earnings },
     { id: "deductions", title: t("payroll.lines.takenOff"), icon: Minus, tone: "text-danger", lines: groups.value.deductions },
-    { id: "other", title: t("payroll.lines.other"), icon: null, tone: "text-muted", lines: groups.value.other },
   ].filter((section) => section.lines.length),
 );
 
@@ -68,7 +68,7 @@ const kindLabel = (line: PayslipLine) => (te(`payroll.lineKind.${line.kind}`) ? 
           </div>
           <span class="shrink-0 pt-px text-sm font-semibold tabular-nums"><MoneyText :value="line.amount" :currency="currency" colored /></span>
           <IconButton
-            v-if="editable && line.kind === 'manual'"
+            v-if="editable && isManualLine(line)"
             :icon="Trash2"
             size="sm"
             :label="t('payroll.lines.remove', { label: line.label })"
@@ -88,6 +88,10 @@ const kindLabel = (line: PayslipLine) => (te(`payroll.lineKind.${line.kind}`) ? 
       <div class="flex items-baseline justify-between gap-4">
         <dt class="text-muted">{{ t("payroll.totals.deductions") }}</dt>
         <dd class="font-medium tabular-nums text-fg"><PayAmount :value="deductions" :currency="currency" /></dd>
+      </div>
+      <div v-for="line in groups.other" :key="line.id" class="flex items-baseline justify-between gap-4" :data-line-kind="line.kind">
+        <dt class="text-muted">{{ line.label || kindLabel(line) }}</dt>
+        <dd class="font-medium tabular-nums text-fg"><MoneyText :value="line.amount" :currency="currency" /></dd>
       </div>
       <div class="mt-0.5 flex items-baseline justify-between gap-4 border-t border-line pt-2">
         <dt class="text-base font-semibold text-fg">{{ t("payroll.totals.net") }}</dt>

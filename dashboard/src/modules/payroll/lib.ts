@@ -129,7 +129,8 @@ export function runActions(run: Pick<Run, "status" | "actions" | "calculated_at"
   };
   let actions: RunAction[];
   if (run.actions) {
-    actions = run.actions;
+    // The server's list, and the Excel export once there is something to export.
+    actions = [...run.actions, ...(run.status !== "cancelled" && run.calculated_at ? (["export"] as const) : [])];
   } else {
     const unpublished = payslips ? payslips.some((slip) => slip.status === "draft") : true;
     const unpaid = payslips ? payslips.some((slip) => slip.status !== "paid") : true;
@@ -205,24 +206,30 @@ export function accountsFor(accounts: readonly PayAccount[], currency: Currency,
   return accounts.filter((row) => row.currency === currency).sort((a, b) => rank(a.kind) - rank(b.kind) || a.name.localeCompare(b.name));
 }
 
-/** Where a warning's "Fix" goes, relative to the company (null when there is nothing to open). */
+/**
+ * Where a warning's "Fix" goes, relative to the company (null when there is nothing to open), for
+ * the server's warning codes (apps/payroll/labels.py).
+ */
 export function warningLink(warning: RunWarning): string | null {
   const member = warning.member?.id;
   switch (warning.code) {
-    case "no_compensation":
+    case "no_pay_setup":
       return member ? `payroll/pay?member=${member}` : "payroll/pay?missing=1";
-    case "disputes_open":
-    case "dispute_open":
+    case "no_usd_rate":
+      return "finance/settings/rates";
+    case "disputes":
       return "payroll/adjustments?tab=disputed";
-    case "proposed_open":
-    case "adjustments_proposed":
+    case "proposed":
       return "payroll/adjustments?tab=proposed";
-    case "advances_pending":
-    case "advance_requested":
-      return "payroll/advances";
-    case "no_attendance":
-    case "attendance_missing":
-      return member ? `attendance/timesheet?member=${member}` : "attendance/timesheet";
+    case "pending_overtime":
+      return "attendance/corrections";
+    case "open_attendance":
+      return "attendance";
+    case "deductions_capped":
+    case "advance_reduced":
+    case "negative_net":
+    case "no_scheduled_days":
+      return member ? `people/${member}/pay` : null;
     default:
       return member ? `people/${member}/pay` : null;
   }
@@ -239,21 +246,32 @@ export interface LineGroups {
   other: PayslipLine[];
 }
 
-/** Lines in the payslip's order, in three groups: what is earned, what is taken, the rest. */
+/** A line someone added by hand on a draft payslip. */
+export const isManualLine = (line: Pick<PayslipLine, "kind" | "manual">): boolean => line.manual === true || line.kind === "manual";
+
+/**
+ * Lines in the payslip's order (the server's, or `order` when it sends one), in three groups:
+ * what is earned, what is taken, the rest.
+ */
 export function lineGroups(lines: readonly PayslipLine[]): LineGroups {
-  const sorted = [...lines].sort((a, b) => a.order - b.order || a.id - b.id);
+  const sorted = lines.map((line, index) => ({ line, index })).sort((a, b) => (a.line.order ?? a.index) - (b.line.order ?? b.index) || a.index - b.index);
   const groups: LineGroups = { earnings: [], deductions: [], other: [] };
-  for (const line of sorted) {
+  for (const { line } of sorted) {
     if (line.kind === "rounding") groups.other.push(line);
-    else if (DEDUCTION_KINDS.has(line.kind) || (line.kind === "manual" && dec(line.amount).isNegative())) groups.deductions.push(line);
+    else if (DEDUCTION_KINDS.has(line.kind) || (isManualLine(line) && dec(line.amount).isNegative())) groups.deductions.push(line);
     else groups.earnings.push(line);
   }
   return groups;
 }
 
-/** "24 × 200 000": how a line was worked out, when the server sent its quantity and rate. */
-export function lineHow(line: Pick<PayslipLine, "quantity" | "rate">): { quantity: string; rate: Money } | null {
+/**
+ * "24 × 200 000": how a line was worked out, when the server's quantity times its rate is the
+ * line's amount to the tiyin. Otherwise (a rounded quantity, a multiplier on top) the server's
+ * label says how, and a product that doesn't add up is never shown.
+ */
+export function lineHow(line: Pick<PayslipLine, "quantity" | "rate" | "amount">): { quantity: string; rate: Money } | null {
   if (line.quantity === null || line.quantity === undefined || !hasAmount(line.rate)) return null;
+  if (!dec(line.quantity).times(dec(line.rate)).toDecimalPlaces(2).abs().eq(dec(line.amount).abs())) return null;
   return { quantity: line.quantity, rate: line.rate };
 }
 

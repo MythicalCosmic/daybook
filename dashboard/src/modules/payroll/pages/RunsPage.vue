@@ -46,7 +46,7 @@ const latestDone = computed(() => rows.value.find((run) => run.kind === "regular
 const kpis = computed(() => {
   const data = overview.data.value;
   const projected = data?.projected ?? null;
-  const last = latestDone.value?.totals?.currencies[0] ?? null;
+  const last = latestDone.value?.totals ?? null;
   return [
     {
       id: "next",
@@ -98,9 +98,9 @@ const columns = computed<TableColumn<Run>[]>(() => [
   { id: "period", header: t("payroll.runs.month"), minWidth: 200, sticky: true, hideable: false, value: (row) => runTitle(row) },
   { id: "status", header: t("payroll.runs.status"), width: 130, value: (row) => t(`payroll.runStatus.${row.status}`) },
   { id: "people", header: t("payroll.runs.people"), width: 92, numeric: true, value: (row) => row.totals?.people ?? null },
-  { id: "gross", header: t("payroll.totals.gross"), width: 150, numeric: true, value: (row) => row.totals?.currencies[0]?.gross ?? null },
-  { id: "deductions", header: t("payroll.totals.deductions"), width: 150, numeric: true, value: (row) => row.totals?.currencies[0]?.deductions ?? null },
-  { id: "net", header: t("payroll.totals.net"), width: 160, numeric: true, value: (row) => row.totals?.currencies[0]?.net ?? null },
+  { id: "gross", header: t("payroll.totals.gross"), width: 150, numeric: true, value: (row) => row.totals?.gross ?? null },
+  { id: "deductions", header: t("payroll.totals.deductions"), width: 150, numeric: true, value: (row) => row.totals?.deductions ?? null },
+  { id: "net", header: t("payroll.totals.net"), width: 160, numeric: true, value: (row) => row.totals?.net ?? null },
   { id: "when", header: t("payroll.runs.when"), width: 150, value: (row) => row.paid_at ?? row.finalized_at ?? row.calculated_at ?? "" },
 ]);
 
@@ -194,17 +194,9 @@ watch(
       </template>
       <template #cell-status="{ row }"><StatusPill :tone="RUN_TONES[row.status]" size="sm" :label="t(`payroll.runStatus.${row.status}`)" /></template>
       <template #cell-people="{ row }"><span class="tabular-nums text-fg">{{ row.totals?.people ?? "—" }}</span></template>
-      <template #cell-gross="{ row }"><PayAmount cell :value="row.totals?.currencies[0]?.gross" :currency="row.totals?.currencies[0]?.currency" /></template>
-      <template #cell-deductions="{ row }"><PayAmount cell :value="row.totals?.currencies[0]?.deductions" :currency="row.totals?.currencies[0]?.currency" /></template>
-      <template #cell-net="{ row }">
-        <PayAmount
-          cell
-          strong
-          :value="row.totals?.currencies[0]?.net"
-          :currency="row.totals?.currencies[0]?.currency"
-          :sub="row.totals && row.totals.currencies.length > 1 ? fmt.money(row.totals.currencies[1]!.net, row.totals.currencies[1]!.currency) : undefined"
-        />
-      </template>
+      <template #cell-gross="{ row }"><PayAmount cell :value="row.totals?.gross" :currency="row.totals?.currency" /></template>
+      <template #cell-deductions="{ row }"><PayAmount cell :value="row.totals?.deductions" :currency="row.totals?.currency" /></template>
+      <template #cell-net="{ row }"><PayAmount cell strong :value="row.totals?.net" :currency="row.totals?.currency" /></template>
       <template #cell-when="{ row }"><span class="truncate text-sm text-muted" :title="whenText(row)">{{ whenShort(row) }}</span></template>
       <template #card="{ row }">
         <div class="flex items-start gap-3">
@@ -218,7 +210,7 @@ watch(
             </p>
             <p v-if="row.warnings.length && row.status === 'draft'" class="mt-0.5 text-xs font-medium text-warning">{{ t("payroll.run.warningsCount", { n: row.warnings.length }, row.warnings.length) }}</p>
           </div>
-          <PayAmount cell strong :value="row.totals?.currencies[0]?.net" :currency="row.totals?.currencies[0]?.currency" />
+          <PayAmount cell strong :value="row.totals?.net" :currency="row.totals?.currency" />
         </div>
       </template>
     </DataTable>

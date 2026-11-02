@@ -346,9 +346,10 @@ describe("runs and months", () => {
   });
 
   it("links each warning to where it is fixed", () => {
-    expect(warningLink({ code: "no_compensation", message: "", member: { id: 12, name: "A" } })).toBe("payroll/pay?member=12");
-    expect(warningLink({ code: "disputes_open", message: "" })).toBe("payroll/adjustments?tab=disputed");
-    expect(warningLink({ code: "something_new", message: "" })).toBeNull();
+    expect(warningLink({ code: "no_pay_setup", text: "", member: { id: 12, name: "A" } })).toBe("payroll/pay?member=12");
+    expect(warningLink({ code: "proposed", text: "", count: 3 })).toBe("payroll/adjustments?tab=proposed");
+    expect(warningLink({ code: "disputes", text: "" })).toBe("payroll/adjustments?tab=disputed");
+    expect(warningLink({ code: "something_new", text: "" })).toBeNull();
   });
 });
 
@@ -377,6 +378,10 @@ describe("payslip lines", () => {
   it("says how a line was worked out when the server sent quantity and rate", () => {
     expect(lineHow(line(1, "base", "4800000.00", 1, { quantity: "24.0", rate: "200000.00" }))).toEqual({ quantity: "24.0", rate: "200000.00" });
     expect(lineHow(line(1, "bonus", "300000.00", 1))).toBeNull();
+    // 184 minutes of overtime at ×2: the server rounds the hours to 3.07 and its label carries
+    // the multiplier, so "3,07 × 36 111,11" would not add up to the line and isn't shown.
+    expect(lineHow(line(2, "overtime", "221481.48", 2, { quantity: "3.07", rate: "36111.11" }))).toBeNull();
+    expect(lineHow(line(3, "advance", "-500000.00", 3, { quantity: "1.00", rate: "500000.00" }))).toEqual({ quantity: "1.00", rate: "500000.00" });
     expect(quantityText("24.0", "uz")).toBe("24");
     expect(quantityText("1.50", "ru")).toBe("1,5");
     expect(quantityText("1.50", "en")).toBe("1.5");

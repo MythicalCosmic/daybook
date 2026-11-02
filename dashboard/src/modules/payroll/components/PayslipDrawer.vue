@@ -26,8 +26,8 @@ import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore } from "@/stores/company";
 
 import { openPayslipPdf, payrollApi, usePayslip, useRefresh } from "../api";
-import { isPayable, PAYSLIP_TONES, quantityText } from "../lib";
-import type { PayslipLine, Run } from "../types";
+import { isManualLine, isPayable, PAYSLIP_TONES, quantityText } from "../lib";
+import type { ManualLineInput, PayslipLine, Run } from "../types";
 import PayAmount from "./PayAmount.vue";
 import PayslipLines from "./PayslipLines.vue";
 
@@ -54,12 +54,17 @@ const facts = computed<DescriptionItem[]>(() => {
   const s = slip.value;
   if (!s) return [];
   const items: DescriptionItem[] = [{ key: "type", label: t("payroll.payslip.payType"), value: t(`payroll.payType.${s.pay_type}`) }];
-  if (s.scheduled_days !== null && s.paid_days !== null) {
+  if (s.scheduled_days && s.paid_days) {
     items.push({ key: "days", label: t("payroll.payslip.days"), value: t("payroll.payslip.daysValue", { paid: quantityText(s.paid_days, fmt.lang.value), scheduled: quantityText(s.scheduled_days, fmt.lang.value) }) });
   }
-  if (s.absent_days && !dec(s.absent_days).isZero()) items.push({ key: "absent", label: t("payroll.payslip.absent"), value: quantityText(s.absent_days, fmt.lang.value) });
+  const someDays = (value: string | null | undefined) => !!value && !dec(value).isZero();
+  if (someDays(s.absent_days)) items.push({ key: "absent", label: t("payroll.payslip.absent"), value: quantityText(s.absent_days!, fmt.lang.value) });
+  if (someDays(s.paid_leave_days)) items.push({ key: "leave", label: t("payroll.payslip.paidLeave"), value: quantityText(s.paid_leave_days!, fmt.lang.value) });
+  if (someDays(s.unpaid_leave_days)) items.push({ key: "unpaid", label: t("payroll.payslip.unpaidLeave"), value: quantityText(s.unpaid_leave_days!, fmt.lang.value) });
   if (s.worked_minutes) items.push({ key: "worked", label: t("payroll.payslip.worked"), value: fmt.duration(s.worked_minutes) });
   if (s.overtime_minutes) items.push({ key: "overtime", label: t("payroll.payslip.overtime"), value: fmt.duration(s.overtime_minutes) });
+  if (s.night_minutes) items.push({ key: "night", label: t("payroll.payslip.night"), value: fmt.duration(s.night_minutes) });
+  if (s.late_arrivals) items.push({ key: "late", label: t("payroll.payslip.lateArrivals"), value: String(s.late_arrivals) });
   if (s.paid_at) items.push({ key: "paid", label: t("payroll.payslip.paidAt"), value: `${fmt.instant(s.paid_at, "date")}${s.payout_method ? ` · ${t(`payroll.method.${s.payout_method}`)}` : ""}` });
   return items;
 });
@@ -74,9 +79,10 @@ watch(id, () => {
   draft.value = { label: "", amount: null, sign: "plus" };
 });
 
-const manualLines = computed(() => (slip.value?.lines ?? []).filter((line) => line.kind === "manual").map((line) => ({ label: line.label, amount: line.amount })));
+/** The hand-made lines as the server keeps them (each with its id, so it stays the same line). */
+const manualLines = computed<ManualLineInput[]>(() => (slip.value?.lines ?? []).filter(isManualLine).map((line) => ({ id: line.id, label: line.label, amount: line.amount })));
 
-async function saveLines(lines: Array<{ label: string; amount: string }>, done: string): Promise<boolean> {
+async function saveLines(lines: ManualLineInput[], done: string): Promise<boolean> {
   if (!slip.value) return false;
   try {
     await payrollApi.setManualLines(company.currentId ?? 0, slip.value.id, lines);
@@ -102,8 +108,10 @@ async function addLine(): Promise<void> {
 
 async function removeLine(line: PayslipLine): Promise<void> {
   removing.value = line.id;
-  const rest = (slip.value?.lines ?? []).filter((row) => row.kind === "manual" && row.id !== line.id).map((row) => ({ label: row.label, amount: row.amount }));
-  await saveLines(rest, t("payroll.payslip.lineRemoved"));
+  await saveLines(
+    manualLines.value.filter((row) => row.id !== line.id),
+    t("payroll.payslip.lineRemoved"),
+  );
   removing.value = null;
 }
 
@@ -135,7 +143,7 @@ async function pdf(): Promise<void> {
             <UserAvatar :name="slip.member.name" :src="slip.member.photo_url" :size="44" shape="rounded" />
             <div class="min-w-0 flex-1">
               <p class="truncate text-base font-semibold text-fg" :title="slip.member.name">{{ slip.member.name }}</p>
-              <p class="truncate text-sm text-muted">{{ [slip.member.position, slip.member.branch, fmt.day(slip.period, "monthYear")].filter(Boolean).join(" · ") }}</p>
+              <p class="truncate text-sm text-muted">{{ [slip.member.position, slip.member.home_branch, fmt.day(slip.period, "monthYear")].filter(Boolean).join(" · ") }}</p>
               <p class="mt-1 text-[1.625rem] font-semibold leading-8 tracking-[-0.02em] tabular-nums text-fg"><PayAmount :value="slip.net" :currency="slip.currency" /></p>
               <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
                 <StatusPill :tone="PAYSLIP_TONES[slip.status]" size="sm" :label="t(`payroll.payslipStatus.${slip.status}`)" />
