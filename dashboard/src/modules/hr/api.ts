@@ -93,8 +93,9 @@ export const hrApi = {
   createTemplate: (cid: number, input: TemplateInput) => http.post<ContractTemplate>(path(cid, "contract-templates/"), input),
   updateTemplate: (cid: number, id: number, input: Partial<TemplateInput>) => http.patch<ContractTemplate>(path(cid, `contract-templates/${id}/`), input),
   removeTemplate: (cid: number, id: number) => http.delete<void>(path(cid, `contract-templates/${id}/`)),
-  previewTemplate: (cid: number, id: number, input: { member_id: number; body?: string }, signal?: AbortSignal) =>
-    http.post<TemplatePreview>(path(cid, `contract-templates/${id}/preview/`), input, { signal, toast: false }),
+  /** A saved template filled in for a person, or unsaved text (`id` null: `body` is required). */
+  previewTemplate: (cid: number, id: number | null, input: { member_id: number | null; body?: string; language?: string }, signal?: AbortSignal) =>
+    http.post<TemplatePreview>(path(cid, id ? `contract-templates/${id}/preview/` : "contract-templates/preview/"), input, { signal, toast: false }),
 
   celebrations: (cid: number, range: { from: string; to: string }, signal?: AbortSignal) => http.get<Celebration[] | Page<Celebration>>(path(cid, "celebrations/"), range, { signal }),
 

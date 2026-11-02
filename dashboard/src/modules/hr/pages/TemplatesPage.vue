@@ -58,7 +58,7 @@ const rows = computed(() => {
             <span class="grid size-10 shrink-0 place-items-center rounded-[10px] bg-accent-soft text-accent-fg" aria-hidden="true"><FileSignature :size="19" /></span>
             <div class="min-w-0 flex-1">
               <p class="line-clamp-2 text-base font-semibold text-fg group-hover:text-primary">{{ row.name }}</p>
-              <p class="truncate text-sm text-muted">{{ t(`hr.contractKind.${row.kind}`) }}</p>
+              <p class="truncate text-sm text-muted">{{ row.kind ? t(`hr.contractKind.${row.kind}`) : t("hr.template.anyKind") }}</p>
             </div>
           </div>
           <div class="mt-auto flex flex-wrap items-center gap-1.5">

@@ -78,7 +78,7 @@ const templateOptions = computed<SelectOption<number>[]>(() =>
   (templates.data.value ?? [])
     .filter((row) => row.is_active)
     .sort((a, b) => Number(b.kind === form.kind) - Number(a.kind === form.kind))
-    .map((row) => ({ value: row.id, label: row.name, description: `${t(`hr.contractKind.${row.kind}`)} · ${row.language.toUpperCase()}` })),
+    .map((row) => ({ value: row.id, label: row.name, description: `${row.kind ? t(`hr.contractKind.${row.kind}`) : t("hr.template.anyKind")} · ${t(`hr.language.${row.language}`)}` })),
 );
 // Pick the first template for the chosen kind, unless one was picked by hand.
 const pickedByHand = ref(false);
@@ -86,7 +86,8 @@ watch(
   () => [form.kind, templateOptions.value] as const,
   () => {
     if (pickedByHand.value && form.template) return;
-    const match = (templates.data.value ?? []).find((row) => row.is_active && row.kind === form.kind);
+    const active = (templates.data.value ?? []).filter((row) => row.is_active);
+    const match = active.find((row) => row.kind === form.kind) ?? active.find((row) => row.kind === "");
     form.template = match?.id ?? null;
   },
 );

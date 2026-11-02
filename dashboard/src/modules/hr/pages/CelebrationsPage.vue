@@ -47,13 +47,13 @@ const skeleton = useDelayedPending(computed(() => query.isPending.value));
 const settings = useHrSettings(computed(() => access.value.manage));
 const switchedOff = computed(() => settings.data.value?.celebrations_enabled === false);
 
-const rows = computed(() => [...(query.data.value ?? [])].sort((a, b) => a.day.localeCompare(b.day) || a.member.name.localeCompare(b.member.name)));
+const rows = computed(() => [...(query.data.value ?? [])].sort((a, b) => a.date.localeCompare(b.date) || a.member.name.localeCompare(b.member.name)));
 const days = computed(() => {
   const groups: Array<{ day: string; items: Celebration[] }> = [];
   for (const row of rows.value) {
     const last = groups.at(-1);
-    if (last && last.day === row.day) last.items.push(row);
-    else groups.push({ day: row.day, items: [row] });
+    if (last && last.day === row.date) last.items.push(row);
+    else groups.push({ day: row.date, items: [row] });
   }
   return groups;
 });
@@ -64,10 +64,10 @@ const counts = computed(() => ({
 
 const items = computed<CalendarItem[]>(() =>
   rows.value.map((row) => ({
-    id: `${row.kind}-${row.member.id}-${row.day}`,
+    id: `${row.kind}-${row.member.id}-${row.date}`,
     kind: row.kind,
     title: row.member.name,
-    start: row.day,
+    start: row.date,
     all_day: true,
     color: row.kind === "birthday" ? "var(--c-chart-1)" : "var(--c-chart-3)",
     url: `/c/${company.currentId}/people/${row.member.id}`,
@@ -87,13 +87,14 @@ function dayLabel(day: string): string {
 <template>
   <div>
     <PageHeader :title="t('hr.nav.celebrations')" :description="t('hr.celebrations.description')">
+      <!-- On wide screens the calendar has its own month switcher; phones get this one. -->
       <template #actions>
-        <div class="flex items-center gap-1">
-          <IconButton :icon="ChevronLeft" variant="secondary" :label="t('common.date.prevMonth')" @click="month = shiftMonth(month, -1)" />
+        <div class="flex items-center gap-1 lg:hidden">
+          <IconButton :icon="ChevronLeft" variant="secondary" size="lg" :label="t('common.date.prevMonth')" @click="month = shiftMonth(month, -1)" />
           <span class="min-w-[136px] text-center text-sm font-semibold text-fg">{{ fmt.day(`${month}-01`, "monthYear") }}</span>
-          <IconButton :icon="ChevronRight" variant="secondary" :label="t('common.date.nextMonth')" @click="month = shiftMonth(month, 1)" />
+          <IconButton :icon="ChevronRight" variant="secondary" size="lg" :label="t('common.date.nextMonth')" @click="month = shiftMonth(month, 1)" />
         </div>
-        <UiButton v-if="month !== monthOf(today)" variant="ghost" @click="month = monthOf(today)">{{ t("hr.celebrations.thisMonth") }}</UiButton>
+        <UiButton v-if="month !== monthOf(today)" variant="ghost" class="lg:hidden" @click="month = monthOf(today)">{{ t("hr.celebrations.thisMonth") }}</UiButton>
       </template>
     </PageHeader>
 
@@ -122,10 +123,7 @@ function dayLabel(day: string): string {
               <li v-for="row in group.items" :key="`${row.kind}-${row.member.id}`">
                 <RouterLink :to="`/c/${company.currentId}/people/${row.member.id}`" class="flex min-h-12 items-center gap-3 rounded-[10px] px-2 py-1.5 hover:bg-highlight">
                   <UserAvatar :name="row.member.name" :src="row.member.photo_url" :size="34" />
-                  <div class="min-w-0 flex-1">
-                    <p class="truncate text-sm font-semibold text-fg">{{ row.member.name }}</p>
-                    <p class="truncate text-xs text-muted">{{ row.position ?? "" }}</p>
-                  </div>
+                  <p class="min-w-0 flex-1 truncate text-sm font-semibold text-fg">{{ row.member.name }}</p>
                   <span
                     :class="[
                       'inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold',

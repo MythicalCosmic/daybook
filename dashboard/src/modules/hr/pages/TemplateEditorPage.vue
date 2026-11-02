@@ -38,10 +38,10 @@ import { hrApi, MODULE, useHrMutation, useTemplate } from "../api";
 import TemplateBodyEditor from "../components/TemplateBodyEditor.vue";
 import { unknownPlaceholders } from "../lib";
 import { sanitizeContractHtml } from "../sanitize";
-import { CONTRACT_KINDS, type TemplateInput, type TemplateLanguage } from "../types";
+import { CONTRACT_KINDS, type ContractKind, type TemplateInput, type TemplateLanguage } from "../types";
 import "../contract.css";
 
-const { t } = useI18n();
+const { t, te } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const company = useCompanyStore();
@@ -80,7 +80,12 @@ watch(isNew, (fresh) => {
 
 const dirty = computed(() => (Object.keys(draft) as Array<keyof TemplateInput>).some((key) => draft[key] !== saved.value[key]));
 const unknown = computed(() => unknownPlaceholders(draft.body));
-const kindOptions = computed(() => CONTRACT_KINDS.map((kind) => ({ value: kind, label: t(`hr.contractKind.${kind}`) })));
+/** "" (fits any contract) can't be a select value: the select says "any" for it. */
+const kindOptions = computed(() => [{ value: "any" as const, label: t("hr.template.anyKind") }, ...CONTRACT_KINDS.map((kind) => ({ value: kind, label: t(`hr.contractKind.${kind}`) }))]);
+const kindChoice = computed({
+  get: () => draft.kind || "any",
+  set: (value: ContractKind | "any") => (draft.kind = value === "any" ? "" : value),
+});
 const languageOptions = computed(() => (["uz", "ru", "en"] as TemplateLanguage[]).map((value) => ({ value, label: t(`hr.language.${value}`) })));
 
 // Saving --------------------------------------------------------------------------------------
@@ -140,12 +145,15 @@ const pane = ref<"text" | "preview">("text");
 const person = ref<number | null>(null);
 const body = refDebounced(computed(() => draft.body), 600);
 const preview = useQuery({
-  queryKey: computed(() => qk(cid.value, MODULE, "preview", { id: id.value, member: person.value, body: body.value })),
-  queryFn: ({ signal }) => hrApi.previewTemplate(cid.value, id.value!, { member_id: person.value!, body: body.value }, signal),
-  enabled: computed(() => cid.value > 0 && !!id.value && !!person.value && !!body.value.trim()),
+  queryKey: computed(() => qk(cid.value, MODULE, "preview", { id: id.value, member: person.value, body: body.value, language: draft.language })),
+  // The text as it is in the editor, saved or not, in the template's language.
+  queryFn: ({ signal }) => hrApi.previewTemplate(cid.value, id.value, { member_id: person.value, body: body.value, language: draft.language }, signal),
+  enabled: computed(() => cid.value > 0 && !!person.value && !!body.value.trim()),
   placeholderData: (previous) => previous,
   staleTime: 60_000,
 });
+/** A placeholder's readable name ("Lavozim"), or the raw token for one the dictionary doesn't know. */
+const placeholderName = (key: string) => (te(`hr.placeholder.${key}`) ? t(`hr.placeholder.${key}`) : `{{${key}}}`);
 const previewHtml = computed(() => sanitizeContractHtml(preview.data.value?.html ?? ""));
 const showText = computed(() => !isPhone.value || pane.value === "text");
 const showPreview = computed(() => !isPhone.value || pane.value === "preview");
@@ -175,7 +183,7 @@ const showPreview = computed(() => !isPhone.value || pane.value === "preview");
         </div>
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
           <FormField :label="t('hr.field.contractKind')">
-            <SelectBox v-model="draft.kind" :options="kindOptions" />
+            <SelectBox v-model="kindChoice" :options="kindOptions" />
           </FormField>
           <FormField :label="t('hr.template.language')">
             <SelectBox v-model="draft.language" :options="languageOptions" />
@@ -205,17 +213,16 @@ const showPreview = computed(() => !isPhone.value || pane.value === "preview");
           <header class="flex flex-wrap items-center gap-3 border-b border-line px-4 py-3">
             <h2 class="flex items-center gap-1.5 text-sm font-semibold text-fg"><Eye :size="15" class="text-subtle" aria-hidden="true" />{{ t("hr.template.preview") }}</h2>
             <div class="min-w-[200px] flex-1">
-              <PersonPicker v-model="person" size="sm" :placeholder="t('hr.template.previewFor')" :disabled="isNew" />
+              <PersonPicker v-model="person" size="sm" :placeholder="t('hr.template.previewFor')" />
             </div>
           </header>
           <div class="min-h-[320px] flex-1 overflow-y-auto bg-surface-2/50 p-3 sm:p-5">
-            <EmptyState v-if="isNew" size="sm" tone="neutral" :icon="Save" :title="t('hr.template.previewSaveFirst')" :description="t('hr.template.previewSaveFirstBody')" />
-            <EmptyState v-else-if="!person" size="sm" tone="neutral" :icon="UserRound" :title="t('hr.template.previewPick')" :description="t('hr.template.previewPickBody')" />
+            <EmptyState v-if="!person" size="sm" tone="neutral" :icon="UserRound" :title="t('hr.template.previewPick')" :description="t('hr.template.previewPickBody')" />
             <EmptyState v-else-if="!draft.body.trim()" size="sm" tone="neutral" :icon="Braces" :title="t('hr.template.previewEmpty')" />
             <div v-else-if="preview.isPending.value" class="hr-paper-sheet flex flex-col gap-3"><SkeletonBlock v-for="n in 8" :key="n" :width="n % 3 ? '100%' : '70%'" /></div>
             <ErrorState v-else-if="preview.isError.value" compact :error="preview.error.value" :retry="() => preview.refetch()" />
             <template v-else-if="preview.data.value">
-              <InlineAlert v-if="preview.data.value.missing?.length" tone="info" size="sm" class="mb-3" :description="t('hr.template.missing', { list: preview.data.value.missing.map((key) => t(`hr.placeholder.${key}`)).join(', ') })" />
+              <InlineAlert v-if="preview.data.value.empty.length" tone="info" size="sm" class="mb-3" :description="t('hr.template.missing', { list: preview.data.value.empty.map(placeholderName).join(', ') })" />
               <!-- v-html is safe here: the server's rendering, sanitized again by sanitizeContractHtml. -->
               <article :class="['hr-paper hr-paper-sheet transition-opacity', preview.isFetching.value && 'opacity-70']" v-html="previewHtml" />
             </template>

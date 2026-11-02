@@ -230,34 +230,66 @@ export const CONTRACT_KINDS = ["indefinite", "fixed_term", "civil", "internship"
 export type ContractKind = (typeof CONTRACT_KINDS)[number];
 export type ContractStatus = "draft" | "active" | "ended" | "terminated";
 
+/** What the viewer may do with a contract now (the server decides; the dashboard shows buttons). */
+export interface ContractActionFlags {
+  edit: boolean;
+  delete: boolean;
+  activate: boolean;
+  terminate: boolean;
+  end: boolean;
+  renew: boolean;
+  pass_probation: boolean;
+  extend_probation: boolean;
+  generate_pdf: boolean;
+}
+
+/** One row of `GET contracts/` (apps.hr.serializers.ContractSerializer). */
 export interface Contract {
   id: number;
   member: PersonRef;
+  home_branch: BranchRef | null;
   number: string;
   kind: ContractKind;
   status: ContractStatus;
-  position: { id: number; name: string } | null;
+  position: Named | null;
   starts_on: string;
   ends_on: string | null;
   probation_until: string | null;
   probation_passed_at: string | null;
+  on_probation: boolean;
   weekly_hours: string | null;
-  template: { id: number; name: string } | null;
-  /** The generated PDF or the uploaded scan (signed link), or null. */
+  template: Named | null;
+  /** The generated PDF or the uploaded scan (signed link), or null: none, or not for this viewer. */
   file: string | null;
+  has_file: boolean;
+  /** There is a file this viewer may not open (it shows the pay: payroll.view only). */
+  file_hidden: boolean;
+  /** The file is a scan of a paper contract, not printed from a template. */
+  file_is_scan: boolean;
+  pdf_generated_at: string | null;
   acknowledged_at: string | null;
   terminated_on: string | null;
-  termination_reason?: string;
+  termination_reason: string;
+  note: string;
+  /** Days until it ends; null if open-ended. */
+  days_left: number | null;
+  probation_days_left: number | null;
+  created_by: string | null;
   created_at: string;
+  actions: ContractActionFlags;
 }
 
 export interface ContractParams {
   status?: ContractStatus[];
   member?: number;
+  /** In force, ending within N days. */
   ending_within?: number;
-  probation?: boolean;
+  /** Probation ending within N days. */
+  probation_within?: number;
+  acknowledged?: boolean;
   kind?: string[];
   q?: string;
+  /** starts_on, -starts_on, ends_on or -ends_on. */
   ordering?: string;
   page?: number;
   page_size?: number;
@@ -276,7 +308,7 @@ export interface ContractInput {
   file?: File | null;
 }
 
-export type ContractAction = "activate" | "renew" | "terminate" | "pass-probation" | "extend-probation" | "generate-pdf";
+export type ContractAction = "activate" | "renew" | "end" | "terminate" | "pass-probation" | "extend-probation" | "generate-pdf";
 
 // ─── Templates ─────────────────────────────────────────────────────────────
 
@@ -285,31 +317,38 @@ export type TemplateLanguage = "uz" | "ru" | "en";
 export interface ContractTemplate {
   id: number;
   name: string;
-  kind: ContractKind;
+  /** "" when it fits any kind. */
+  kind: ContractKind | "";
   language: TemplateLanguage;
   body: string;
   is_active: boolean;
+  /** Contracts printed from it. */
+  contracts: number;
   updated_at: string;
 }
 
 export type TemplateInput = Pick<ContractTemplate, "name" | "kind" | "language" | "body" | "is_active">;
 
-/** `POST contract-templates/{id}/preview/`: the body filled in for one person. */
+/** `POST contract-templates/{id}/preview/` (or `contract-templates/preview/` for unsaved text). */
 export interface TemplatePreview {
+  /** The filled-in text (safe HTML). */
   html: string;
-  /** Placeholders the person has no value for (shown empty in the text). */
-  missing?: string[];
+  /** Placeholders with nothing to fill in for this person. */
+  empty: string[];
+  has_salary: boolean;
 }
 
 // ─── Celebrations ──────────────────────────────────────────────────────────
 
+/** One row of `GET celebrations/?from&to`. */
 export interface Celebration {
   member: PersonRef;
-  position: string | null;
   kind: "birthday" | "anniversary";
-  day: string;
-  /** Years at the company (anniversaries); never an age. */
+  date: string;
+  /** Years with the company (anniversaries); never an age. */
   years: number | null;
+  /** Negative once past. */
+  days_until: number;
 }
 
 // ─── Overview ──────────────────────────────────────────────────────────────

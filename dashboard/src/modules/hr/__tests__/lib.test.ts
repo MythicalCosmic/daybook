@@ -21,7 +21,7 @@ import {
   unknownPlaceholders,
   weekCelebrations,
 } from "../lib";
-import type { Compliance, Contract } from "../types";
+import type { Compliance, ContractActionFlags } from "../types";
 
 describe("access", () => {
   it("reads only without hr.manage; manage implies view; sensitive is its own permission", () => {
@@ -126,10 +126,11 @@ describe("filters → query", () => {
     expect(documentParams({}, "")).toEqual({});
   });
 
-  it("turns the Contracts tab and chips into the API's params", () => {
-    expect(contractParams("active", { ending: true, probation: "true" }, "", 21)).toEqual({ status: ["active"], ending_within: 21, probation: true });
-    expect(contractParams("ended", { kind: "fixed_term" }, "No 12", 30)).toEqual({ status: ["ended", "terminated"], kind: ["fixed_term"], q: "No 12" });
-    expect(contractParams("all", {}, "", 30)).toEqual({});
+  it("turns the Contracts tab and chips into the API's params with the company's windows", () => {
+    const warn = { contracts: 21, probation: 7 };
+    expect(contractParams("active", { ending: true, probation: "true" }, "", warn)).toEqual({ status: ["active"], ending_within: 21, probation_within: 7 });
+    expect(contractParams("ended", { kind: "fixed_term" }, "No 12", warn)).toEqual({ status: ["ended", "terminated"], kind: ["fixed_term"], q: "No 12" });
+    expect(contractParams("all", {}, "", warn)).toEqual({});
   });
 });
 
@@ -180,34 +181,36 @@ describe("compliance matrix", () => {
 });
 
 describe("contract actions by status", () => {
-  const base: Pick<Contract, "status" | "kind" | "probation_until" | "probation_passed_at" | "template"> = {
-    status: "active",
-    kind: "fixed_term",
-    probation_until: null,
-    probation_passed_at: null,
-    template: { id: 1, name: "Mehnat shartnomasi" },
-  };
+  const none: ContractActionFlags = { edit: false, delete: false, activate: false, terminate: false, end: false, renew: false, pass_probation: false, extend_probation: false, generate_pdf: false };
+  const template = { id: 1, name: "Mehnat shartnomasi" };
+  // What apps.hr.serializers.contract_actions sends for hr.manage, by status.
+  const draft = { status: "draft" as const, template, actions: { ...none, edit: true, delete: true, activate: true, generate_pdf: true } };
+  const active = { status: "active" as const, template, actions: { ...none, terminate: true, end: true, renew: true, generate_pdf: true } };
+  const onTrial = { ...active, actions: { ...active.actions, pass_probation: true, extend_probation: true } };
+  const ended = { status: "ended" as const, template, actions: { ...none, renew: true, generate_pdf: true } };
+  const terminated = { status: "terminated" as const, template, actions: { ...none, generate_pdf: true } };
 
-  it("offers what each status allows", () => {
-    expect(contractActions({ ...base, status: "draft" }, true)).toEqual(["activate", "generate-pdf"]);
-    expect(contractActions(base, true)).toEqual(["renew", "terminate", "generate-pdf"]);
-    expect(contractActions({ ...base, kind: "indefinite" }, true)).toEqual(["terminate", "generate-pdf"]);
-    expect(contractActions({ ...base, probation_until: "2026-11-07" }, true)).toEqual(["pass-probation", "extend-probation", "renew", "terminate", "generate-pdf"]);
-    expect(contractActions({ ...base, probation_until: "2026-11-07", probation_passed_at: "2026-11-01T09:00:00Z" }, true)).toEqual(["renew", "terminate", "generate-pdf"]);
-    expect(contractActions({ ...base, status: "ended" }, true)).toEqual(["renew"]);
-    expect(contractActions({ ...base, status: "terminated" }, true)).toEqual([]);
-    expect(contractActions({ ...base, status: "draft", template: null }, true)).toEqual(["activate"]);
+  it("offers what each status allows, the decision due first and the endings last", () => {
+    expect(contractActions(draft)).toEqual(["activate", "generate-pdf"]);
+    expect(contractActions(active)).toEqual(["renew", "generate-pdf", "end", "terminate"]);
+    expect(contractActions(onTrial)).toEqual(["pass-probation", "extend-probation", "renew", "generate-pdf", "end", "terminate"]);
+    expect(contractActions(ended)).toEqual(["renew"]);
+    expect(contractActions(terminated)).toEqual([]);
   });
 
-  it("offers nothing to someone who only reads", () => {
-    expect(contractActions({ ...base, status: "draft" }, false)).toEqual([]);
-    expect(contractActions(base, false)).toEqual([]);
+  it("makes a PDF only from a template, while the contract is a draft or in force", () => {
+    expect(contractActions({ ...draft, template: null })).toEqual(["activate"]);
+    expect(contractActions({ ...active, template: null })).toEqual(["renew", "end", "terminate"]);
+  });
+
+  it("offers nothing to someone who only reads (the server sends every flag off)", () => {
+    expect(contractActions({ ...active, actions: none })).toEqual([]);
   });
 
   it("says when probation is running", () => {
-    expect(onProbation({ status: "active", probation_until: "2026-11-07", probation_passed_at: null })).toBe(true);
-    expect(onProbation({ status: "draft", probation_until: "2026-11-07", probation_passed_at: null })).toBe(false);
-    expect(onProbation({ status: "active", probation_until: null, probation_passed_at: null })).toBe(false);
+    expect(onProbation({ status: "active", on_probation: true })).toBe(true);
+    expect(onProbation({ status: "draft", on_probation: true })).toBe(false);
+    expect(onProbation({ status: "active", on_probation: false })).toBe(false);
   });
 
   it("checks the dates: a fixed-term contract needs an end, probation stays inside", () => {

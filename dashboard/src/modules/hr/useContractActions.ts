@@ -33,7 +33,8 @@ export interface ActionRequest {
 
 const DIALOG_ACTIONS: readonly ContractAction[] = ["renew", "terminate", "extend-probation"];
 
-export function useContractActions(onDone?: (contract: Contract) => void) {
+/** `onDone` hears the contract the server sent back: a renewal sends the new one. */
+export function useContractActions(onDone?: (contract: Contract, action: ContractAction) => void) {
   const { t } = useI18n();
   const confirm = useConfirm();
   const request = ref<ActionRequest | null>(null);
@@ -45,7 +46,7 @@ export function useContractActions(onDone?: (contract: Contract) => void) {
     try {
       const result = await mutation.mutateAsync({ id: contract.id, action, payload });
       toast.success(t(`hr.contract.done.${action}`, { name: contract.member.name }));
-      onDone?.(result);
+      onDone?.(result, action);
       return result;
     } catch {
       // The HTTP layer showed the server's reason.

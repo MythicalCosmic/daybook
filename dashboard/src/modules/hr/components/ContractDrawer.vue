@@ -4,7 +4,7 @@
  * probation, whether the employee has read and acknowledged it, the PDF (generated from the
  * template or the uploaded scan) in the viewer, and the actions its status allows.
  */
-import { BadgeCheck, CircleCheck, EllipsisVertical, FileDown, FileText, Hourglass, Trash2 } from "@lucide/vue";
+import { CircleCheck, EllipsisVertical, FileDown, FileText, Hourglass, LockKeyhole, Trash2 } from "@lucide/vue";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink, useRoute, useRouter } from "vue-router";
@@ -50,9 +50,11 @@ const id = computed(() => {
 });
 const query = useContract(id);
 const contract = computed(() => query.data.value ?? null);
-const actions = computed(() => (contract.value ? contractActions(contract.value, access.value.manage) : []));
-/** The buttons at the bottom: the everyday ones; terminate sits in the menu. */
-const buttons = computed(() => actions.value.filter((action) => action !== "terminate" && action !== "generate-pdf"));
+const actions = computed(() => (contract.value ? contractActions(contract.value) : []));
+/** The buttons at the bottom: the everyday ones; ending, terminating and the PDF sit in the menu. */
+const buttons = computed(() => actions.value.filter((action) => action !== "terminate" && action !== "end" && action !== "generate-pdf"));
+/** The footer reads left to right with the decision due first at the right end, as the primary. */
+const footer = computed(() => [...buttons.value.slice(1).reverse(), ...buttons.value.slice(0, 1)]);
 
 const items = computed<DescriptionItem[]>(() => {
   const c = contract.value;
@@ -97,11 +99,10 @@ const menu = computed<MenuEntry[]>(() => {
   if (!c || !access.value.manage) return [];
   const entries: MenuEntry[] = [];
   if (actions.value.includes("generate-pdf")) entries.push({ label: t("hr.contract.action.generate-pdf"), icon: FileDown, onSelect: () => emit("action", c, "generate-pdf") });
-  if (actions.value.includes("terminate")) {
-    if (entries.length) entries.push({ type: "separator" });
-    entries.push({ label: t("hr.contract.action.terminate"), icon: ACTION_ICONS.terminate, danger: true, onSelect: () => emit("action", c, "terminate") });
-  }
-  if (c.status === "draft") {
+  const endings = (["end", "terminate"] as const).filter((action) => actions.value.includes(action));
+  if (endings.length && entries.length) entries.push({ type: "separator" });
+  for (const action of endings) entries.push({ label: t(`hr.contract.action.${action}`), icon: ACTION_ICONS[action], danger: true, onSelect: () => emit("action", c, action) });
+  if (c.actions?.delete) {
     if (entries.length) entries.push({ type: "separator" });
     entries.push({ label: t("common.delete"), icon: Trash2, danger: true, onSelect: () => void removeDraft() });
   }
@@ -158,7 +159,10 @@ const menu = computed<MenuEntry[]>(() => {
         <DescriptionList :items="items" :columns="2" />
 
         <section class="flex flex-col gap-2">
-          <PdfPreview v-if="contract.file" :src="contract.file" :title="t('hr.contract.pdf')" :filename="contract.number ? `${contract.number}.pdf` : undefined" height="min(70vh, 820px)" />
+          <div v-if="contract.file_hidden" class="flex items-center gap-3 rounded-card border border-dashed border-line-strong px-4 py-5 text-sm text-muted" data-contract-file-hidden>
+            <LockKeyhole :size="18" class="shrink-0 text-subtle" aria-hidden="true" />{{ t("hr.contract.fileHidden") }}
+          </div>
+          <PdfPreview v-else-if="contract.file" :src="contract.file" :title="contract.file_is_scan ? t('hr.contract.scan') : t('hr.contract.pdf')" :filename="contract.number ? `${contract.number}.pdf` : undefined" height="min(70vh, 820px)" />
           <div v-else class="rounded-card border border-dashed border-line-strong">
             <EmptyState size="sm" tone="neutral" :icon="FileText" :title="t('hr.contract.noPdf')" :description="contract.template ? t('hr.contract.noPdfTemplate') : t('hr.contract.noPdfScan')">
               <UiButton v-if="actions.includes('generate-pdf')" variant="primary" :icon="FileDown" @click="emit('action', contract, 'generate-pdf')">{{ t("hr.contract.action.generate-pdf") }}</UiButton>
@@ -169,10 +173,10 @@ const menu = computed<MenuEntry[]>(() => {
     </div>
     <template v-if="contract && buttons.length" #footer>
       <UiButton
-        v-for="(action, index) in buttons"
+        v-for="action in footer"
         :key="action"
-        :variant="index === buttons.length - 1 ? 'primary' : 'secondary'"
-        :icon="action === 'pass-probation' ? BadgeCheck : ACTION_ICONS[action]"
+        :variant="action === buttons[0] ? 'primary' : 'secondary'"
+        :icon="ACTION_ICONS[action]"
         @click="emit('action', contract, action)"
       >
         {{ t(`hr.contract.action.${action}`) }}

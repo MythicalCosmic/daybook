@@ -86,7 +86,7 @@ async function submit(): Promise<void> {
     return;
   }
   const payload: Record<string, unknown> =
-    a === "renew" ? { ends_on: day.value } : a === "extend-probation" ? { probation_until: day.value } : { terminated_on: day.value, reason: reason.value.trim() };
+    a === "renew" ? { ends_on: day.value } : a === "extend-probation" ? { until: day.value } : { terminated_on: day.value, reason: reason.value.trim() };
   saving.value = true;
   try {
     const done = await props.perform(c, a, payload);

@@ -48,14 +48,14 @@ const warn = useWarnDays();
 
 const defs = computed<FilterDef[]>(() => [
   { key: "ending", label: t("hr.contract.filter.ending"), type: "boolean", icon: Timer, pinned: true, trueLabel: t("hr.contract.filter.endingYes", { n: warn.value.contracts }, warn.value.contracts), falseLabel: t("common.all") },
-  { key: "probation", label: t("hr.contract.filter.probation"), type: "boolean", icon: Clock4, pinned: true, trueLabel: t("hr.contract.filter.probationYes"), falseLabel: t("common.all") },
+  { key: "probation", label: t("hr.contract.filter.probation"), type: "boolean", icon: Clock4, pinned: true, trueLabel: t("hr.contract.filter.probationYes", { n: warn.value.probation }, warn.value.probation), falseLabel: t("common.all") },
   { key: "kind", label: t("hr.field.contractKind"), type: "multi", icon: Tags, options: CONTRACT_KINDS.map((kind) => ({ value: kind, label: t(`hr.contractKind.${kind}`) })) },
 ]);
 const filters = useUrlFilters(defs);
 const table = useDataTable({ id: "hr.contracts", url: true });
 table.resetPageOn(() => [filters.params.value, search.value, view.value]);
 
-const params = computed(() => ({ ...contractParams(view.value, filters.values.value, search.value, warn.value.contracts), ...table.params.value }));
+const params = computed(() => ({ ...contractParams(view.value, filters.values.value, search.value, warn.value), ...table.params.value }));
 const contracts = useContracts(params);
 const filtered = computed(() => filters.active.value > 0 || !!search.value);
 
@@ -81,12 +81,15 @@ function open(row: Contract): void {
 }
 const activeKey = computed(() => (typeof route.query.contract === "string" ? route.query.contract : null));
 
-const { request: actionRequest, run: runAction, perform } = useContractActions();
+// A renewal is a new contract: open it.
+const { request: actionRequest, run: runAction, perform } = useContractActions((result, action) => {
+  if (action === "renew") void router.push({ query: { ...route.query, contract: String(result.id) } });
+});
 function rowMenu(row: Contract): MenuEntry[] {
-  return contractActions(row, access.value.manage).map((action) => ({
+  return contractActions(row).map((action) => ({
     label: t(`hr.contract.action.${action}`),
     icon: ACTION_ICONS[action],
-    danger: action === "terminate",
+    danger: action === "terminate" || action === "end",
     onSelect: () => void runAction(row, action),
   }));
 }

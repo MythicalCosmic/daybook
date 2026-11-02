@@ -69,6 +69,7 @@ describe("api", () => {
     await hrApi.contractAction(1, 3, "renew", { ends_on: "2027-11-30" });
     await hrApi.contractAction(1, 3, "pass-probation");
     await hrApi.previewTemplate(1, 2, { member_id: 9, body: "<p>{{employee_full_name}}</p>" });
+    await hrApi.previewTemplate(1, null, { member_id: null, body: "<p>{{today}}</p>", language: "ru" });
     await hrApi.celebrations(1, { from: "2026-11-01", to: "2026-11-30" });
     await hrApi.saveSettings(1, { document_warn_days: 45 });
     expect(calls.map((c) => `${c.method} ${c.url}`)).toEqual([
@@ -86,6 +87,7 @@ describe("api", () => {
       "POST hr/contracts/3/renew/",
       "POST hr/contracts/3/pass-probation/",
       "POST hr/contract-templates/2/preview/",
+      "POST hr/contract-templates/preview/",
       "GET hr/celebrations/?from=2026-11-01&to=2026-11-30",
       "PATCH hr/settings/",
     ]);

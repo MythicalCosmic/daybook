@@ -15,6 +15,7 @@ import {
   type Compliance,
   type Contract,
   type ContractAction,
+  type ContractActionFlags,
   type ContractParams,
   type ContractStatus,
   type DocumentKind,
@@ -188,13 +189,13 @@ const VIEW_STATUSES: Record<ContractView, ContractStatus[] | undefined> = {
   all: undefined,
 };
 
-/** The Contracts tab and chips as the API's query. */
-export function contractParams(view: ContractView, values: FilterValues, search: string, warnDays: number): ContractParams {
+/** The Contracts tab and chips as the API's query: "ending" and "probation" use the company's warning windows. */
+export function contractParams(view: ContractView, values: FilterValues, search: string, warn: { contracts: number; probation: number }): ContractParams {
   const params: ContractParams = {};
   const status = VIEW_STATUSES[view];
   if (status) params.status = status;
-  if (asBoolean(values.ending)) params.ending_within = warnDays;
-  if (asBoolean(values.probation)) params.probation = true;
+  if (asBoolean(values.ending)) params.ending_within = warn.contracts;
+  if (asBoolean(values.probation)) params.probation_within = warn.probation;
   const kinds = asList(values.kind);
   if (kinds.length) params.kind = kinds;
   if (search.trim()) params.q = search.trim();
@@ -273,36 +274,33 @@ export function shapeCompliance(data: Compliance | null | undefined, options: { 
 
 export const CONTRACT_TONES: Record<ContractStatus, StatusTone> = { draft: "neutral", active: "success", ended: "info", terminated: "danger" };
 
-/** Probation still running: a date set and not passed yet. */
-export function onProbation(contract: Pick<Contract, "status" | "probation_until" | "probation_passed_at">): boolean {
-  return contract.status === "active" && !!contract.probation_until && !contract.probation_passed_at;
+/** Probation still running (the server's `on_probation`): in force, a date set, not passed yet. */
+export function onProbation(contract: Pick<Contract, "status" | "on_probation">): boolean {
+  return contract.status === "active" && contract.on_probation;
 }
 
+/** The order buttons and menu items take: the decision due first, the PDF and the endings last. */
+const ACTION_ORDER: ReadonlyArray<[ContractAction, keyof ContractActionFlags]> = [
+  ["activate", "activate"],
+  ["pass-probation", "pass_probation"],
+  ["extend-probation", "extend_probation"],
+  ["renew", "renew"],
+  ["generate-pdf", "generate_pdf"],
+  ["end", "end"],
+  ["terminate", "terminate"],
+];
+
 /**
- * What can be done to a contract now (plan §3.11): a draft is activated; an active one is
- * renewed, terminated, its probation passed or extended; an ended one renewed; a terminated one is
- * final. A PDF is generated from a template while it is a draft or active. Nothing without hr.manage.
+ * What can be done to a contract now, as the server says (its status and the viewer's hr.manage:
+ * a draft is activated; one in force has its probation passed or extended, is renewed when it has
+ * a term, ends or is terminated; an ended fixed-term one is renewed), in the order the drawer and
+ * the menus show them. A PDF is made from the template only while it is a draft or in force.
  */
-export function contractActions(contract: Pick<Contract, "status" | "kind" | "probation_until" | "probation_passed_at" | "template">, canManage: boolean): ContractAction[] {
-  if (!canManage) return [];
-  const actions: ContractAction[] = [];
-  switch (contract.status) {
-    case "draft":
-      actions.push("activate");
-      break;
-    case "active":
-      if (onProbation(contract)) actions.push("pass-probation", "extend-probation");
-      if (contract.kind !== "indefinite") actions.push("renew");
-      actions.push("terminate");
-      break;
-    case "ended":
-      actions.push("renew");
-      break;
-    case "terminated":
-      break;
-  }
-  if (contract.template && (contract.status === "draft" || contract.status === "active")) actions.push("generate-pdf");
-  return actions;
+export function contractActions(contract: Pick<Contract, "status" | "actions" | "template">): ContractAction[] {
+  const flags = contract.actions;
+  if (!flags) return [];
+  const pdfFits = !!contract.template && (contract.status === "draft" || contract.status === "active");
+  return ACTION_ORDER.filter(([action, flag]) => flags[flag] && (action !== "generate-pdf" || pdfFits)).map(([action]) => action);
 }
 
 /** A fixed-term contract needs an end; an end can't come before the start. Returns the field at fault. */
