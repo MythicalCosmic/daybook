@@ -21,7 +21,7 @@ import { useCompanyStore } from "@/stores/company";
 
 import { periodParams, usePnl } from "../../api";
 import { useCssColor } from "../../colors";
-import { comparablePrevious, dropEmptyCompare, trimLeadingPeriods } from "../../lib";
+import { comparablePrevious, dropEmptyCompare, quarterLabel, trimLeadingPeriods } from "../../lib";
 import { openQuickAdd } from "../../quickAdd";
 import PnlTable from "./PnlTable.vue";
 
@@ -62,7 +62,7 @@ const kpis = computed(() => {
   ];
 });
 
-const labels = computed(() => (data.value?.periods ?? []).map((p) => (p.key.includes("Q") ? p.key.replace("-", " ") : fmt.day(`${p.key}-01`, "monthYear"))));
+const labels = computed(() => (data.value?.periods ?? []).map((p) => quarterLabel(p.key, t) ?? fmt.day(`${p.key}-01`, "monthYear")));
 const series = computed(() => [
   { name: t("finance.reports.income"), data: data.value?.income.amounts ?? [], color: css("var(--c-success)") },
   { name: t("finance.reports.expenses"), data: data.value?.expense.amounts ?? [], color: css("var(--c-chart-1)") },

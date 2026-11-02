@@ -518,6 +518,7 @@
   "finance.reports.byDay": "День",
   "finance.reports.byMonth": "Месяц",
   "finance.reports.byQuarter": "Квартал",
+  "finance.reports.quarter": "{q} кв. {year}",
   "finance.reports.byWeek": "Неделя",
   "finance.reports.cashFlowChart": "Поступления и выплаты",
   "finance.reports.cashOn": "Деньги на дату",

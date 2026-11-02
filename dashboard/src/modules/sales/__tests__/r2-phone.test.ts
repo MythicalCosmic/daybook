@@ -12,6 +12,9 @@ import { mountWithProviders, testApp } from "@/test/plugins";
 import salesModule from "..";
 import en from "../i18n/en.json";
 
+// Whole pages and dialogs mount here: slow while the rest of the suite runs beside them.
+vi.setConfig({ testTimeout: 20_000 });
+
 beforeAll(() => {
   // Phone width before anything reads the shared breakpoints.
   vi.stubGlobal("matchMedia", (query: string) => ({ matches: query.includes("max-width: 767.98px"), media: query, addEventListener: () => undefined, removeEventListener: () => undefined }));
@@ -73,7 +76,7 @@ describe("payment methods on a phone", () => {
     await flushPromises();
     expect(calls.find((c) => c.url.includes("reorder/"))?.body).toEqual({ ids: [2, 1] });
     wrapper.unmount();
-  }, 20_000);
+  });
 });
 
 describe("sales phone cards", () => {
@@ -112,7 +115,7 @@ describe("sales phone cards", () => {
     // Void on the two that stand, none on the voided one.
     expect(document.querySelectorAll(`ul li button[aria-label="${en["sales.cash.void"]}"]`)).toHaveLength(2);
     wrapper.unmount();
-  }, 20_000);
+  });
 
   it("shows a cash movement's status and Void on its card", async () => {
     const movement = (id: number, status: string) => ({
@@ -154,5 +157,5 @@ describe("sales phone cards", () => {
     expect(cards[1]!.querySelector(`button[aria-label="${en["sales.cash.void"]}"]`)).not.toBeNull();
     expect(cards[0]!.querySelector(`button[aria-label="${en["sales.cash.void"]}"]`)).toBeNull();
     wrapper.unmount();
-  }, 20_000);
+  });
 });

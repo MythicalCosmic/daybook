@@ -52,7 +52,11 @@ function go(step: number): void {
   const next = addMonths(`${shown.value}-01`, step).slice(0, 7);
   month.value = next === thisMonth.value ? "" : next;
 }
-const monthLabel = computed(() => formatDay(`${shown.value}-01`, fmt.lang.value, "monthYear"));
+// One capital letter: CSS `capitalize` made "Октябрь 2026 Г." of the Russian month.
+const monthLabel = computed(() => {
+  const label = formatDay(`${shown.value}-01`, fmt.lang.value, "monthYear");
+  return label.charAt(0).toLocaleUpperCase() + label.slice(1);
+});
 
 const chart = computed(() => {
   const series = data.value?.series ?? [];
@@ -107,7 +111,7 @@ const expected = (target: SalesTarget) => (target.days ? target.elapsed / target
       <template #actions>
         <div class="flex items-center gap-1 rounded-button border border-line bg-surface p-0.5">
           <IconButton :icon="ChevronLeft" :label="t('sales.targets.prev')" size="sm" @click="go(-1)" />
-          <span class="min-w-[120px] px-2 text-center text-sm font-semibold capitalize text-fg">{{ monthLabel }}</span>
+          <span class="min-w-[120px] px-2 text-center text-sm font-semibold text-fg" data-testid="target-month">{{ monthLabel }}</span>
           <IconButton :icon="ChevronRight" :label="t('sales.targets.next')" size="sm" @click="go(1)" />
         </div>
         <UiButton v-if="canManage" variant="primary" :icon="Plus" @click="dialog = true">{{ t("sales.targets.new") }}</UiButton>

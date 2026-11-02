@@ -16,7 +16,7 @@ import { currencyLabel } from "@/lib/money";
 import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore } from "@/stores/company";
 
-import { colorFor, comparablePrevious, isNegative, isZeroMoney } from "../../lib";
+import { colorFor, comparablePrevious, isNegative, isZeroMoney, quarterLabel } from "../../lib";
 import type { Pnl, PnlNode } from "../../types";
 
 // `branch`: the report's branch filter, carried into every drill-down link.
@@ -46,7 +46,8 @@ function expandAll(value: boolean): void {
 defineExpose({ expandAll });
 
 function periodLabel(key: string): string {
-  if (key.includes("Q")) return key.replace("-", " ");
+  const quarter = quarterLabel(key, t);
+  if (quarter) return quarter;
   // A column heading starts with a capital in every language ("Октябрь 2026 г.", "Oktabr 2026").
   const label = fmt.day(`${key}-01`, "monthYear");
   return label.charAt(0).toLocaleUpperCase() + label.slice(1);

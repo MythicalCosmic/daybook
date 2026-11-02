@@ -518,6 +518,7 @@
   "finance.reports.byDay": "Day",
   "finance.reports.byMonth": "Month",
   "finance.reports.byQuarter": "Quarter",
+  "finance.reports.quarter": "Q{q} {year}",
   "finance.reports.byWeek": "Week",
   "finance.reports.cashFlowChart": "Money in and out",
   "finance.reports.cashOn": "Cash on the day",

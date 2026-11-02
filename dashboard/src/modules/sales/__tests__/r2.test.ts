@@ -15,6 +15,9 @@ import { mountWithProviders, testApp } from "@/test/plugins";
 import salesModule from "..";
 import en from "../i18n/en.json";
 
+// Whole pages and dialogs mount here: slow while the rest of the suite runs beside them.
+vi.setConfig({ testTimeout: 20_000 });
+
 interface Call {
   method: string;
   url: string;

@@ -19,6 +19,9 @@ import TransactionDrawer from "../components/TransactionDrawer.vue";
 import en from "../i18n/en.json";
 import type { Options, Pnl, PnlNode, Transaction } from "../types";
 
+// Whole pages and dialogs mount here: slow while the rest of the suite runs beside them.
+vi.setConfig({ testTimeout: 20_000 });
+
 interface Call {
   method: string;
   url: string;
@@ -269,6 +272,18 @@ function pnl(income: PnlNode[]): Pnl {
     margin: { amounts: [null, null], total: null, previous: null },
   };
 }
+
+describe("PnlTable quarters", () => {
+  it("names a quarter column the language's way ('Q3 2026'), not the API's key", async () => {
+    const data = { ...pnl([node(1, ["900000.00", "700000.00"])]), group: "quarter", periods: [{ key: "2026-Q3", from: "2026-07-01", to: "2026-09-30" }, { key: "2026-Q4", from: "2026-10-01", to: "2026-10-21" }] } as Pnl;
+    const app = await testApp("/c/1/finance/reports/pnl?group=quarter");
+    const { wrapper } = mountWithProviders(PnlTable, { plugins: app.plugins, props: { data } });
+    const headings = wrapper.findAll("thead th").map((th) => th.text());
+    expect(headings).toContain("Q3 2026");
+    expect(headings).not.toContain("2026 Q3");
+    wrapper.unmount();
+  });
+});
 
 describe("PnlTable drill-down", () => {
   it("never sends the 'without a subcategory' line to every entry, and keeps the branch filter on its links", async () => {

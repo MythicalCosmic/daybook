@@ -18,6 +18,9 @@ import en from "../i18n/en.json";
 import module from "../index";
 import type { Account, Options } from "../types";
 
+// Whole pages and dialogs mount here: slow while the rest of the suite runs beside them.
+vi.setConfig({ testTimeout: 20_000 });
+
 const PREFIX = "/api/v1/owner/companies/1/finance/";
 
 function stub(routes: Record<string, () => Response>): void {

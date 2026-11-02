@@ -518,6 +518,7 @@
   "finance.reports.byDay": "Kun",
   "finance.reports.byMonth": "Oy",
   "finance.reports.byQuarter": "Chorak",
+  "finance.reports.quarter": "{year}, {q}-chorak",
   "finance.reports.byWeek": "Hafta",
   "finance.reports.cashFlowChart": "Kirim va chiqim",
   "finance.reports.cashOn": "Shu kundagi pul",

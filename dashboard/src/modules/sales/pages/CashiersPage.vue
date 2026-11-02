@@ -92,7 +92,7 @@ const columns = computed<TableColumn<CashierScore>[]>(() => [
   { id: "surpluses", header: t("sales.col.surpluses"), numeric: true, width: 110 },
   { id: "late_opens", header: t("sales.col.lateOpens"), sortable: true, numeric: true, width: 132 },
   { id: "verified", header: t("sales.col.checks"), width: 124 },
-  { id: "avg_hours", header: t("sales.col.hours"), numeric: true, width: 100, format: (v) => t("sales.cashiers.hours", { n: String(v) }) },
+  { id: "avg_hours", header: t("sales.col.hours"), numeric: true, width: 100, format: (v) => t("sales.cashiers.hours", { n: fmt.number(Number(v), 1) }) },
 ]);
 
 function open(row: CashierScore): void {
