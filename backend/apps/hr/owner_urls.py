@@ -27,6 +27,7 @@ router.register(
 urlpatterns = [
     path("hr/settings/", owner_api.SettingsView.as_view(), name="hr-settings"),
     path("hr/overview/", owner_api.OverviewView.as_view(), name="hr-overview"),
+    path("hr/celebrations/", owner_api.CelebrationsView.as_view(), name="hr-celebrations"),
     path("hr/people/<int:member_id>/profile/", owner_api.ProfileView.as_view(), name="hr-profile"),
     path(
         "hr/people/<int:member_id>/sensitive/",

@@ -5930,6 +5930,48 @@ paths:
                 items:
                   $ref: '#/components/schemas/Holiday'
           description: ''
+  /api/v1/owner/companies/{company_id}/hr/celebrations/:
+    get:
+      operationId: companies_hr_celebrations_list
+      description: |-
+        Birthdays (of people who show theirs) and work anniversaries between two days: this
+        month by default, a year at most.
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: array
+          items:
+            type: integer
+        description: Branch ids (in scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: from
+        schema:
+          type: string
+        description: YYYY-MM-DD; the 1st of this month.
+      - in: query
+        name: to
+        schema:
+          type: string
+        description: YYYY-MM-DD; the month's last day.
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HrCelebration'
+          description: ''
   /api/v1/owner/companies/{company_id}/hr/contract-templates/:
     get:
       operationId: companies_hr_contract_templates_list
@@ -20478,6 +20520,39 @@ components:
       - code
       - id
       - name
+    HrCelebration:
+      type: object
+      properties:
+        member:
+          allOf:
+          - $ref: '#/components/schemas/HrPersonRef'
+          readOnly: true
+        kind:
+          $ref: '#/components/schemas/HrCelebrationKindEnum'
+        date:
+          type: string
+          format: date
+        years:
+          type: integer
+          nullable: true
+          description: Years with the company.
+        days_until:
+          type: integer
+          description: Negative once past.
+      required:
+      - date
+      - days_until
+      - kind
+      - member
+      - years
+    HrCelebrationKindEnum:
+      enum:
+      - birthday
+      - anniversary
+      type: string
+      description: |-
+        * `birthday` - Birthday
+        * `anniversary` - Work anniversary
     HrCheckStateEnum:
       enum:
       - ok

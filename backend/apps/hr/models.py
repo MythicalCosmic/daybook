@@ -392,3 +392,31 @@ class Contract(TenantModel):
     @property
     def on_probation(self) -> bool:
         return self.probation_until is not None and self.probation_passed_at is None
+
+
+class Celebration(TenantModel):
+    """A birthday or a work anniversary that was celebrated (posted to the groups, the person
+    greeted), so each one is celebrated once."""
+
+    class Kind(models.TextChoices):
+        BIRTHDAY = "birthday", _("Birthday")
+        ANNIVERSARY = "anniversary", _("Work anniversary")
+
+    membership = models.ForeignKey(
+        Membership, on_delete=models.CASCADE, related_name="celebrations"
+    )
+    kind = models.CharField(max_length=12, choices=Kind.choices)
+    day = models.DateField()
+    years = models.PositiveSmallIntegerField(null=True, blank=True)
+    posted_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-day", "pk"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["membership", "kind", "day"], name="hr_unique_celebration"
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.get_kind_display()} {self.day}"

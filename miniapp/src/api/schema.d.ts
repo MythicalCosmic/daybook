@@ -481,6 +481,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/companies/{company_id}/hr/celebrations/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description This week's birthdays (of people who show theirs) and work anniversaries in the team. */
+        get: operations["v1_companies_hr_celebrations_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/companies/{company_id}/hr/contract/": {
         parameters: {
             query?: never;
@@ -2419,6 +2436,22 @@ export interface components {
             readonly date: string;
             readonly name: string;
         };
+        HrCelebration: {
+            readonly member: components["schemas"]["HrPersonRef"];
+            kind: components["schemas"]["HrCelebrationKindEnum"];
+            /** Format: date */
+            date: string;
+            /** @description Years with the company. */
+            years: number | null;
+            /** @description Negative once past. */
+            days_until: number;
+        };
+        /**
+         * @description * `birthday` - Birthday
+         *     * `anniversary` - Work anniversary
+         * @enum {string}
+         */
+        HrCelebrationKindEnum: "birthday" | "anniversary";
         /**
          * @description * `indefinite` - Indefinite
          *     * `fixed_term` - Fixed term
@@ -2578,6 +2611,11 @@ export interface components {
          * @enum {string}
          */
         HrPayoutMethodEnum: "cash" | "card" | "bank";
+        HrPersonRef: {
+            id: number;
+            name: string;
+            photo_url: string | null;
+        };
         InboxPerson: {
             id: number;
             name: string;
@@ -4879,6 +4917,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Holiday"][];
+                };
+            };
+        };
+    };
+    v1_companies_hr_celebrations_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HrCelebration"][];
                 };
             };
         };

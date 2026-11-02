@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-02 17:50+0500\n"
+"POT-Creation-Date: 2026-11-02 18:10+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -1529,6 +1529,7 @@ msgid "Attendance isn't switched on for this company."
 msgstr "Учёт посещаемости в этой компании не включён."
 
 #: backend/apps/attendance/api.py backend/apps/attendance/owner_api.py
+#: backend/apps/hr/owner_api.py
 msgid "Give a day as YYYY-MM-DD."
 msgstr "Укажите день в формате YYYY-MM-DD."
 
@@ -3076,7 +3077,7 @@ msgstr "Склад"
 msgid "Attendance"
 msgstr "Посещаемость"
 
-#: backend/apps/companies/models.py
+#: backend/apps/companies/models.py backend/apps/hr/providers.py
 msgid "HR"
 msgstr "Кадры"
 
@@ -5213,7 +5214,7 @@ msgstr "Изменения смен"
 msgid "Cash and handovers"
 msgstr "Касса и передача денег"
 
-#: backend/apps/groups/models.py
+#: backend/apps/groups/models.py backend/apps/hr/hooks.py
 msgid "Birthdays and work anniversaries"
 msgstr "Дни рождения и годовщины работы"
 
@@ -5274,6 +5275,16 @@ msgstr "Эта группа отключена. Сначала снова доб
 #: backend/apps/groups/services.py
 msgid "That event isn't available for this company."
 msgstr "Такой тип новостей недоступен для этой компании."
+
+#: backend/apps/hr/ai_tools.py
+msgid ""
+"HR at a glance: headcount and its trend, documents that expire or have "
+"expired, contracts and probation that end, missing required documents, "
+"birthdays and work anniversaries of the coming week"
+msgstr ""
+"Кадры кратко: численность и её динамика, документы, срок которых истекает "
+"или истёк, заканчивающиеся договоры и испытательные сроки, недостающие "
+"обязательные документы, дни рождения и трудовые юбилеи на ближайшую неделю"
 
 #: backend/apps/hr/api.py backend/apps/hr/owner_api.py
 msgid "HR isn't switched on for this company."
@@ -5404,9 +5415,152 @@ msgstr ""
 "Договор № %(number)s вступил в силу. Прочитайте его в приложении и "
 "подтвердите, что ознакомились."
 
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Document expires on %(date)s"
+msgstr "Срок документа истекает: %(date)s"
+
+#: backend/apps/hr/bot_messages.py
+msgid "Document expires today"
+msgstr "Срок документа истекает сегодня"
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Document expired on %(date)s"
+msgstr "Срок документа истёк: %(date)s"
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Your document expires on %(date)s"
+msgstr "Срок вашего документа истекает: %(date)s"
+
+#: backend/apps/hr/bot_messages.py
+msgid "Your document expires today"
+msgstr "Срок вашего документа истекает сегодня"
+
+#: backend/apps/hr/bot_messages.py
+msgid "Your document has expired"
+msgstr "Срок вашего документа истёк"
+
+#: backend/apps/hr/bot_messages.py
+msgid "Upload the new one in the app."
+msgstr "Загрузите новый в приложении."
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Contract ends on %(date)s"
+msgstr "Договор заканчивается: %(date)s"
+
+#: backend/apps/hr/bot_messages.py
+msgid "Contract ends today"
+msgstr "Договор заканчивается сегодня"
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Contract ended on %(date)s and is still in force"
+msgstr "Срок договора истёк (%(date)s), но он ещё действует"
+
+#: backend/apps/hr/bot_messages.py
+msgid "Renew it or end it."
+msgstr "Продлите или завершите его."
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Probation ends on %(date)s"
+msgstr "Испытательный срок заканчивается: %(date)s"
+
+#: backend/apps/hr/bot_messages.py
+msgid "Probation ends today"
+msgstr "Испытательный срок заканчивается сегодня"
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Probation ended on %(date)s"
+msgstr "Испытательный срок закончился: %(date)s"
+
+#: backend/apps/hr/bot_messages.py
+msgid "Keep them, or extend the probation by a month."
+msgstr "Оставьте сотрудника или продлите испытательный срок на месяц."
+
+#: backend/apps/hr/bot_messages.py
+msgctxt "probation"
+msgid "Keep"
+msgstr "Оставить"
+
+#: backend/apps/hr/bot_messages.py
+msgid "Extend 1 month"
+msgstr "Продлить на месяц"
+
+#: backend/apps/hr/bot_messages.py
+msgid "Probation passed"
+msgstr "Испытательный срок пройден"
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Probation extended: until %(date)s"
+msgstr "Испытательный срок продлён. Новый срок: %(date)s"
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Birthday today: %(name)s. Happy birthday!"
+msgstr "Сегодня день рождения: %(name)s. Поздравляем!"
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Work anniversary: %(name)s, %(years)d year with the team. Thank you!"
+msgid_plural ""
+"Work anniversary: %(name)s, %(years)d years with the team. Thank you!"
+msgstr[0] "Трудовой юбилей: %(name)s, %(years)d год в команде. Спасибо!"
+msgstr[1] "Трудовой юбилей: %(name)s, %(years)d года в команде. Спасибо!"
+msgstr[2] "Трудовой юбилей: %(name)s, %(years)d лет в команде. Спасибо!"
+msgstr[3] "Трудовой юбилей: %(name)s, %(years)d года в команде. Спасибо!"
+
+#: backend/apps/hr/bot_messages.py
+msgid "Happy birthday!"
+msgstr "С днём рождения!"
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "%(years)d year with the team"
+msgid_plural "%(years)d years with the team"
+msgstr[0] "%(years)d год в команде"
+msgstr[1] "%(years)d года в команде"
+msgstr[2] "%(years)d лет в команде"
+msgstr[3] "%(years)d года в команде"
+
+#. Translators: %(company)s is the company's name.
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "The whole team of «%(company)s» congratulates you."
+msgstr "Вся команда «%(company)s» поздравляет вас."
+
+#: backend/apps/hr/hooks.py
+msgid "Documents that expire"
+msgstr "Документы с истекающим сроком"
+
+#: backend/apps/hr/hooks.py
+msgid "Contracts that end"
+msgstr "Заканчивающиеся договоры"
+
+#: backend/apps/hr/hooks.py
+msgid "Probations that end"
+msgstr "Заканчивающиеся испытательные сроки"
+
 #: backend/apps/hr/hooks.py
 msgid "Your contract"
 msgstr "Ваш договор"
+
+#: backend/apps/hr/hooks.py
+msgid "Your documents that expire"
+msgstr "Ваши документы с истекающим сроком"
+
+#: backend/apps/hr/hooks.py
+msgid "Birthday and work anniversary greetings"
+msgstr "Поздравления с днём рождения и трудовым юбилеем"
+
+#: backend/apps/hr/hooks.py
+msgid "Contracts and probation"
+msgstr "Договоры и испытательные сроки"
 
 #: backend/apps/hr/ids.py
 msgid "A PINFL is 14 digits."
@@ -5607,6 +5761,18 @@ msgstr "Завершён"
 msgid "Terminated"
 msgstr "Расторгнут"
 
+#: backend/apps/hr/models.py
+msgid "Birthday"
+msgstr "День рождения"
+
+#: backend/apps/hr/models.py
+msgid "Work anniversary"
+msgstr "Трудовой юбилей"
+
+#: backend/apps/hr/owner_api.py
+msgid "Pick at most a year, ending after it starts."
+msgstr "Выберите не больше года; конец должен быть позже начала."
+
 #: backend/apps/hr/owner_api.py backend/apps/hr/services.py
 msgid "Pick a kind of document."
 msgstr "Выберите тип документа."
@@ -5631,6 +5797,53 @@ msgstr "Текст договора слишком длинный."
 #, python-format
 msgid "Unknown placeholders: %(names)s."
 msgstr "Неизвестные поля: %(names)s."
+
+#: backend/apps/hr/providers.py backend/apps/hr/services.py
+msgid "This contract has no probation running."
+msgstr "По этому договору испытательный срок не идёт."
+
+#: backend/apps/hr/providers.py
+msgid "This contract no longer exists."
+msgstr "Этого договора больше нет."
+
+#: backend/apps/hr/providers.py
+#, python-format
+msgid "Birthday: %(name)s"
+msgstr "День рождения: %(name)s"
+
+#: backend/apps/hr/providers.py
+#, python-format
+msgid "Work anniversary: %(name)s, %(years)d year"
+msgid_plural "Work anniversary: %(name)s, %(years)d years"
+msgstr[0] "Трудовой юбилей: %(name)s, %(years)d год"
+msgstr[1] "Трудовой юбилей: %(name)s, %(years)d года"
+msgstr[2] "Трудовой юбилей: %(name)s, %(years)d лет"
+msgstr[3] "Трудовой юбилей: %(name)s, %(years)d года"
+
+#: backend/apps/hr/providers.py
+#, python-format
+msgid "Documents to renew: %(count)d"
+msgstr "Обновить документы: %(count)d"
+
+#: backend/apps/hr/providers.py
+#, python-format
+msgid "Contracts ending: %(count)d"
+msgstr "Заканчиваются договоры: %(count)d"
+
+#: backend/apps/hr/providers.py
+#, python-format
+msgid "Probations ending: %(count)d"
+msgstr "Заканчиваются испытательные сроки: %(count)d"
+
+#: backend/apps/hr/providers.py
+#, python-format
+msgid "Contract ends: %(name)s"
+msgstr "Заканчивается договор: %(name)s"
+
+#: backend/apps/hr/providers.py
+#, python-format
+msgid "Probation ends: %(name)s"
+msgstr "Заканчивается испытательный срок: %(name)s"
 
 #: backend/apps/hr/services.py
 msgid "Someone else in the company has this PINFL."
@@ -5746,10 +5959,6 @@ msgstr "Новый договор должен начаться после те�
 #: backend/apps/hr/services.py
 msgid "This person already has a contract in force."
 msgstr "У этого сотрудника уже есть действующий договор."
-
-#: backend/apps/hr/services.py
-msgid "This contract has no probation running."
-msgstr "По этому договору испытательный срок не идёт."
 
 #: backend/apps/hr/services.py
 msgid "Pick a day after the current end of probation."

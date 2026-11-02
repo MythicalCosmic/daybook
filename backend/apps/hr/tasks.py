@@ -13,3 +13,19 @@ def notify_contract_ready(contract_id: int) -> None:
     from apps.hr import notify
 
     notify.contract_ready(contract_id)
+
+
+@shared_task
+def watch_expiries() -> int:
+    """Documents, contracts and probations reaching a warning step → HR (once per step)."""
+    from apps.hr import watch
+
+    return watch.watch_expiries()
+
+
+@shared_task
+def post_celebrations() -> int:
+    """Today's birthdays and work anniversaries → the groups and the person (once each)."""
+    from apps.hr import watch
+
+    return watch.post_celebrations()

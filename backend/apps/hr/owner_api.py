@@ -18,7 +18,7 @@ Everything is company- and branch-scoped (a person outside the caller's branches
 like another company's id) and answers 403 while the HR module is off, except the settings.
 """
 
-from datetime import timedelta
+from datetime import date, timedelta
 
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
@@ -134,6 +134,44 @@ class OverviewView(ModuleOn, HRContext, OwnerAPIView):
         return Response(
             overview.OverviewSerializer(data, context=self.get_serializer_context()).data
         )
+
+
+class CelebrationsView(ModuleOn, HRContext, OwnerAPIView):
+    """Birthdays (of people who show theirs) and work anniversaries between two days: this
+    month by default, a year at most."""
+
+    perm = VIEW
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter("from", str, description="YYYY-MM-DD; the 1st of this month."),
+            OpenApiParameter("to", str, description="YYYY-MM-DD; the month's last day."),
+            BRANCH_PARAM,
+        ],
+        responses=overview.CelebrationSerializer(many=True),
+    )
+    def get(self, request, company_id):
+        today = queries.today(self.company)
+        start = _day(request.query_params.get("from"), "from", today.replace(day=1))
+        end = _day(request.query_params.get("to"), "to", overview.month_end(start))
+        if end < start or (end - start).days > 366:
+            raise ValidationError({"to": [_("Pick at most a year, ending after it starts.")]})
+        people = queries.people(self.company, branch_ids=self.requested_branches())
+        rows = overview.celebrations_between(
+            self.company, people.select_related("user"), start, end
+        )
+        for row in rows:
+            row["days_until"] = (row["date"] - today).days
+        return Response(overview.CelebrationSerializer(rows, many=True).data)
+
+
+def _day(value, name: str, default):
+    if not value:
+        return default
+    try:
+        return date.fromisoformat(value)
+    except ValueError as exc:
+        raise ValidationError({name: [_("Give a day as YYYY-MM-DD.")]}) from exc
 
 
 # Profiles ---------------------------------------------------------------------------------

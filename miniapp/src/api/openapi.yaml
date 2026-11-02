@@ -886,6 +886,31 @@ paths:
                 items:
                   $ref: '#/components/schemas/Holiday'
           description: ''
+  /api/v1/companies/{company_id}/hr/celebrations/:
+    get:
+      operationId: v1_companies_hr_celebrations_list
+      description: This week's birthdays (of people who show theirs) and work anniversaries
+        in the team.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HrCelebration'
+          description: ''
   /api/v1/companies/{company_id}/hr/contract/:
     get:
       operationId: v1_companies_hr_contract_retrieve
@@ -5357,6 +5382,39 @@ components:
       - date
       - id
       - name
+    HrCelebration:
+      type: object
+      properties:
+        member:
+          allOf:
+          - $ref: '#/components/schemas/HrPersonRef'
+          readOnly: true
+        kind:
+          $ref: '#/components/schemas/HrCelebrationKindEnum'
+        date:
+          type: string
+          format: date
+        years:
+          type: integer
+          nullable: true
+          description: Years with the company.
+        days_until:
+          type: integer
+          description: Negative once past.
+      required:
+      - date
+      - days_until
+      - kind
+      - member
+      - years
+    HrCelebrationKindEnum:
+      enum:
+      - birthday
+      - anniversary
+      type: string
+      description: |-
+        * `birthday` - Birthday
+        * `anniversary` - Work anniversary
     HrContractKindEnum:
       enum:
       - indefinite
@@ -5763,6 +5821,20 @@ components:
         * `cash` - Cash
         * `card` - Card
         * `bank` - Bank transfer
+    HrPersonRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        photo_url:
+          type: string
+          nullable: true
+      required:
+      - id
+      - name
+      - photo_url
     InboxPerson:
       type: object
       properties:

@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-02 17:50+0500\n"
+"POT-Creation-Date: 2026-11-02 18:10+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -1512,6 +1512,7 @@ msgid "Attendance isn't switched on for this company."
 msgstr "Bu kompaniyada davomat yoqilmagan."
 
 #: backend/apps/attendance/api.py backend/apps/attendance/owner_api.py
+#: backend/apps/hr/owner_api.py
 msgid "Give a day as YYYY-MM-DD."
 msgstr "Kunni YYYY-MM-DD ko‘rinishida kiriting."
 
@@ -3085,7 +3086,7 @@ msgstr "Ombor"
 msgid "Attendance"
 msgstr "Davomat"
 
-#: backend/apps/companies/models.py
+#: backend/apps/companies/models.py backend/apps/hr/providers.py
 msgid "HR"
 msgstr "Kadrlar"
 
@@ -5260,7 +5261,7 @@ msgstr "Smena o‘zgarishlari"
 msgid "Cash and handovers"
 msgstr "Kassa va pul topshirish"
 
-#: backend/apps/groups/models.py
+#: backend/apps/groups/models.py backend/apps/hr/hooks.py
 msgid "Birthdays and work anniversaries"
 msgstr "Tug‘ilgan kunlar va ish yilliklari"
 
@@ -5322,6 +5323,17 @@ msgstr "Bu guruh uzilgan. Avval botni unga qayta qo‘shing."
 #: backend/apps/groups/services.py
 msgid "That event isn't available for this company."
 msgstr "Bu kompaniya uchun bunday xabar turi mavjud emas."
+
+#: backend/apps/hr/ai_tools.py
+msgid ""
+"HR at a glance: headcount and its trend, documents that expire or have "
+"expired, contracts and probation that end, missing required documents, "
+"birthdays and work anniversaries of the coming week"
+msgstr ""
+"Kadrlar qisqacha: xodimlar soni va uning o‘zgarishi, muddati tugayotgan yoki "
+"tugagan hujjatlar, tugayotgan shartnomalar va sinov muddatlari, "
+"yetishmayotgan majburiy hujjatlar, kelgusi haftadagi tug‘ilgan kunlar va "
+"ishdagi yubileylar"
 
 #: backend/apps/hr/api.py backend/apps/hr/owner_api.py
 msgid "HR isn't switched on for this company."
@@ -5452,9 +5464,146 @@ msgstr ""
 "%(number)s raqamli shartnoma kuchga kirdi. Uni ilovada o‘qib chiqing va "
 "tanishganingizni tasdiqlang."
 
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Document expires on %(date)s"
+msgstr "Hujjat muddati tugaydi: %(date)s"
+
+#: backend/apps/hr/bot_messages.py
+msgid "Document expires today"
+msgstr "Hujjat muddati bugun tugaydi"
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Document expired on %(date)s"
+msgstr "Hujjat muddati tugagan: %(date)s"
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Your document expires on %(date)s"
+msgstr "Hujjatingiz muddati tugaydi: %(date)s"
+
+#: backend/apps/hr/bot_messages.py
+msgid "Your document expires today"
+msgstr "Hujjatingiz muddati bugun tugaydi"
+
+#: backend/apps/hr/bot_messages.py
+msgid "Your document has expired"
+msgstr "Hujjatingiz muddati tugagan"
+
+#: backend/apps/hr/bot_messages.py
+msgid "Upload the new one in the app."
+msgstr "Yangisini ilovaga yuklang."
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Contract ends on %(date)s"
+msgstr "Shartnoma tugaydi: %(date)s"
+
+#: backend/apps/hr/bot_messages.py
+msgid "Contract ends today"
+msgstr "Shartnoma bugun tugaydi"
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Contract ended on %(date)s and is still in force"
+msgstr "Shartnoma muddati tugagan (%(date)s), lekin u hali amalda"
+
+#: backend/apps/hr/bot_messages.py
+msgid "Renew it or end it."
+msgstr "Uni uzaytiring yoki yakunlang."
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Probation ends on %(date)s"
+msgstr "Sinov muddati tugaydi: %(date)s"
+
+#: backend/apps/hr/bot_messages.py
+msgid "Probation ends today"
+msgstr "Sinov muddati bugun tugaydi"
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Probation ended on %(date)s"
+msgstr "Sinov muddati tugadi: %(date)s"
+
+#: backend/apps/hr/bot_messages.py
+msgid "Keep them, or extend the probation by a month."
+msgstr "Xodimni qoldiring yoki sinov muddatini bir oyga uzaytiring."
+
+#: backend/apps/hr/bot_messages.py
+msgctxt "probation"
+msgid "Keep"
+msgstr "Qoldirish"
+
+#: backend/apps/hr/bot_messages.py
+msgid "Extend 1 month"
+msgstr "1 oyga uzaytirish"
+
+#: backend/apps/hr/bot_messages.py
+msgid "Probation passed"
+msgstr "Sinov muddatidan o‘tdi"
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Probation extended: until %(date)s"
+msgstr "Sinov muddati uzaytirildi. Yangi muddat: %(date)s"
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Birthday today: %(name)s. Happy birthday!"
+msgstr "Bugun tug‘ilgan kun: %(name)s. Tabriklaymiz!"
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Work anniversary: %(name)s, %(years)d year with the team. Thank you!"
+msgid_plural ""
+"Work anniversary: %(name)s, %(years)d years with the team. Thank you!"
+msgstr[0] "Ishdagi yubiley: %(name)s, jamoamizda %(years)d yil. Rahmat!"
+
+#: backend/apps/hr/bot_messages.py
+msgid "Happy birthday!"
+msgstr "Tug‘ilgan kuningiz bilan!"
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "%(years)d year with the team"
+msgid_plural "%(years)d years with the team"
+msgstr[0] "Jamoamizda %(years)d yil"
+
+#. Translators: %(company)s is the company's name.
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "The whole team of «%(company)s» congratulates you."
+msgstr "«%(company)s» jamoasi sizni tabriklaydi."
+
+#: backend/apps/hr/hooks.py
+msgid "Documents that expire"
+msgstr "Muddati tugayotgan hujjatlar"
+
+#: backend/apps/hr/hooks.py
+msgid "Contracts that end"
+msgstr "Tugayotgan shartnomalar"
+
+#: backend/apps/hr/hooks.py
+msgid "Probations that end"
+msgstr "Tugayotgan sinov muddatlari"
+
 #: backend/apps/hr/hooks.py
 msgid "Your contract"
 msgstr "Shartnomangiz"
+
+#: backend/apps/hr/hooks.py
+msgid "Your documents that expire"
+msgstr "Muddati tugayotgan hujjatlaringiz"
+
+#: backend/apps/hr/hooks.py
+msgid "Birthday and work anniversary greetings"
+msgstr "Tug‘ilgan kun va ishdagi yubiley tabriklari"
+
+#: backend/apps/hr/hooks.py
+msgid "Contracts and probation"
+msgstr "Shartnomalar va sinov muddatlari"
 
 #: backend/apps/hr/ids.py
 msgid "A PINFL is 14 digits."
@@ -5655,6 +5804,18 @@ msgstr "Tugagan"
 msgid "Terminated"
 msgstr "Bekor qilingan"
 
+#: backend/apps/hr/models.py
+msgid "Birthday"
+msgstr "Tug‘ilgan kun"
+
+#: backend/apps/hr/models.py
+msgid "Work anniversary"
+msgstr "Ishdagi yubiley"
+
+#: backend/apps/hr/owner_api.py
+msgid "Pick at most a year, ending after it starts."
+msgstr "Ko‘pi bilan bir yilni tanlang; oxiri boshidan keyin bo‘lsin."
+
 #: backend/apps/hr/owner_api.py backend/apps/hr/services.py
 msgid "Pick a kind of document."
 msgstr "Hujjat turini tanlang."
@@ -5679,6 +5840,50 @@ msgstr "Shartnoma matni juda uzun."
 #, python-format
 msgid "Unknown placeholders: %(names)s."
 msgstr "Noma’lum maydonlar: %(names)s."
+
+#: backend/apps/hr/providers.py backend/apps/hr/services.py
+msgid "This contract has no probation running."
+msgstr "Bu shartnomada sinov muddati ketmayapti."
+
+#: backend/apps/hr/providers.py
+msgid "This contract no longer exists."
+msgstr "Bu shartnoma endi mavjud emas."
+
+#: backend/apps/hr/providers.py
+#, python-format
+msgid "Birthday: %(name)s"
+msgstr "Tug‘ilgan kun: %(name)s"
+
+#: backend/apps/hr/providers.py
+#, python-format
+msgid "Work anniversary: %(name)s, %(years)d year"
+msgid_plural "Work anniversary: %(name)s, %(years)d years"
+msgstr[0] "Ishdagi yubiley: %(name)s, %(years)d yil"
+
+#: backend/apps/hr/providers.py
+#, python-format
+msgid "Documents to renew: %(count)d"
+msgstr "Yangilanadigan hujjatlar: %(count)d"
+
+#: backend/apps/hr/providers.py
+#, python-format
+msgid "Contracts ending: %(count)d"
+msgstr "Tugayotgan shartnomalar: %(count)d"
+
+#: backend/apps/hr/providers.py
+#, python-format
+msgid "Probations ending: %(count)d"
+msgstr "Tugayotgan sinov muddatlari: %(count)d"
+
+#: backend/apps/hr/providers.py
+#, python-format
+msgid "Contract ends: %(name)s"
+msgstr "Shartnoma tugaydi: %(name)s"
+
+#: backend/apps/hr/providers.py
+#, python-format
+msgid "Probation ends: %(name)s"
+msgstr "Sinov muddati tugaydi: %(name)s"
 
 #: backend/apps/hr/services.py
 msgid "Someone else in the company has this PINFL."
@@ -5796,10 +6001,6 @@ msgstr "Yangi shartnoma joriy shartnomadan keyin boshlanishi kerak."
 #: backend/apps/hr/services.py
 msgid "This person already has a contract in force."
 msgstr "Bu xodimning amaldagi shartnomasi bor."
-
-#: backend/apps/hr/services.py
-msgid "This contract has no probation running."
-msgstr "Bu shartnomada sinov muddati ketmayapti."
 
 #: backend/apps/hr/services.py
 msgid "Pick a day after the current end of probation."

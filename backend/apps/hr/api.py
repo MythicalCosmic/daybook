@@ -11,6 +11,8 @@ still read it (not change it). While the HR module is off the endpoints answer 4
     POST        hr/contract/{id}/acknowledge/          "I've read it"
 """
 
+from datetime import timedelta
+
 from django.utils.translation import gettext as _
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
@@ -20,7 +22,7 @@ from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.hr import conf, queries, services
+from apps.hr import conf, overview, queries, services
 from apps.hr import serializers as s
 from apps.hr.models import Contract, EmergencyContact, EmployeeDocument
 from apps.members.api import IsCompanyMember
@@ -170,6 +172,22 @@ class MyContractPdfView(MemberView):
         if contract is None or not contract.file:
             raise NotFound(_("You have no contract on file yet."))
         return Response({"url": s.contract_link(contract, request.user)})
+
+
+class CelebrationsView(MemberView):
+    """This week's birthdays (of people who show theirs) and work anniversaries in the team."""
+
+    @extend_schema(responses=overview.CelebrationSerializer(many=True))
+    def get(self, request, company_id):
+        company = self.membership.company
+        today = queries.today(company)
+        people = queries.people(
+            company, branch_ids=None, statuses=(Membership.Status.APPROVED,)
+        ).select_related("user")
+        rows = overview.celebrations_between(
+            company, people, today, today + timedelta(days=overview.CELEBRATION_DAYS - 1)
+        )
+        return Response(overview.CelebrationSerializer(rows, many=True).data)
 
 
 class AcknowledgeContractView(MemberView):
