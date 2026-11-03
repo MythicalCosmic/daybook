@@ -76,7 +76,14 @@ describe("the helper's choices", () => {
   });
 
   it("gives every agent its own chibi and the rest Claude", () => {
-    expect(["voice_tasks", "morning_plan", "deadline_watcher", "photo_checker", "flows"].map(buddyVariant)).toEqual(["voice", "morning", "deadline", "photo", "claude"]);
+    expect(["voice_tasks", "morning_plan", "deadline_watcher", "photo_checker", "hr_assistant", "flows"].map(buddyVariant)).toEqual([
+      "voice",
+      "morning",
+      "deadline",
+      "photo",
+      "hr",
+      "claude",
+    ]);
   });
 });
 
@@ -97,6 +104,13 @@ describe("the drawing", () => {
     const wrapper = await draw({ variant });
     expect(wrapper.find(`[data-prop="${prop}"]`).exists()).toBe(true);
     expect(wrapper.find("[data-prop]:not([data-prop=" + prop + "])").exists()).toBe(false);
+  });
+
+  it("draws the HR chibi in a tie, holding a clipboard that moves with its hand", async () => {
+    const wrapper = await draw({ variant: "hr" });
+    expect(wrapper.attributes("data-variant")).toBe("hr");
+    expect(wrapper.findAll("[data-prop]").map((prop) => prop.attributes("data-prop"))).toEqual(["clipboard", "tie"]);
+    expect(wrapper.find('[data-prop="clipboard"]').classes()).toContain("buddy-arm-left");
   });
 
   it("draws Claude without a prop, with open eyes and its own name for screen readers", async () => {
@@ -264,6 +278,10 @@ describe("what happens, as reactions", () => {
         { agent: "photo_checker", kind: "looks_right" },
         { agent: "photo_checker", kind: "unclear" },
         { agent: "morning_plan", kind: "plan_sent" },
+        { agent: "hr_assistant", kind: "digest_sent" },
+        { agent: "hr_assistant", kind: "payroll_ready" },
+        { agent: "hr_assistant", kind: "payroll_blocked" },
+        { agent: "hr_assistant", kind: "bonuses_suggested" },
         { agent: "flows", kind: "ran" },
       ]),
     ).toEqual([
@@ -272,6 +290,10 @@ describe("what happens, as reactions", () => {
       { key: "photo_checker", action: "hearts" },
       { key: "photo_checker", action: "look" },
       { key: "morning_plan", action: "wave" },
+      { key: "hr_assistant", action: "wave" },
+      { key: "hr_assistant", action: "cheer" },
+      { key: "hr_assistant", action: "look" },
+      { key: "hr_assistant", action: "hearts" },
     ]);
   });
 

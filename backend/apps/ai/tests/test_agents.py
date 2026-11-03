@@ -63,6 +63,7 @@ def test_the_agents_in_the_dashboards_order():
         "deadline_watcher",
         "morning_plan",
         "photo_checker",
+        "hr_assistant",
     ]
     assert agents.get("photo_checker").needs_claude
     assert not agents.get("photo_checker").default_enabled

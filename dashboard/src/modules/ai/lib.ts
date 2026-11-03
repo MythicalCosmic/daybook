@@ -265,7 +265,7 @@ export function setAssignee(edit: EditableDraft, person: { id: number; name: str
 
 export type FieldControl =
   | { kind: "switch" }
-  | { kind: "stepper"; min: number; max: number; unit: string }
+  | { kind: "stepper"; min: number; max: number; unit: string; step: number }
   | { kind: "time" }
   | { kind: "segmented"; options: { value: string; label: string }[] }
   | { kind: "select"; options: { value: string; label: string }[] };
@@ -276,7 +276,8 @@ export function fieldControl(field: AgentField): FieldControl {
     case "bool":
       return { kind: "switch" };
     case "int":
-      return { kind: "stepper", min: field.min ?? 0, max: field.max ?? 9999, unit: field.unit ?? "" };
+      // An amount (a range into the hundreds of thousands, like a bonus in so‘m) steps by 10 000, not by 1.
+      return { kind: "stepper", min: field.min ?? 0, max: field.max ?? 9999, unit: field.unit ?? "", step: (field.max ?? 0) >= 100_000 ? 10_000 : 1 };
     case "time":
       return { kind: "time" };
     case "choice": {
@@ -384,9 +385,15 @@ export type BuddyAction =
   // little dances
   | "twist" | "disco" | "spin" | "bounce" | "jumpjack";
 /** The family: Claude itself, and one chibi per agent, each with its colours and its prop. */
-export type BuddyVariant = "claude" | "voice" | "morning" | "deadline" | "photo";
+export type BuddyVariant = "claude" | "voice" | "morning" | "deadline" | "photo" | "hr";
 
-const AGENT_BUDDIES: Record<string, BuddyVariant> = { voice_tasks: "voice", morning_plan: "morning", deadline_watcher: "deadline", photo_checker: "photo" };
+const AGENT_BUDDIES: Record<string, BuddyVariant> = {
+  voice_tasks: "voice",
+  morning_plan: "morning",
+  deadline_watcher: "deadline",
+  photo_checker: "photo",
+  hr_assistant: "hr",
+};
 
 /** An agent's chibi; an agent without one of its own gets Claude. */
 export function buddyVariant(agentKey: string): BuddyVariant {
@@ -536,6 +543,14 @@ export function activityReactions(items: readonly Pick<ActivityItem, "agent" | "
         return [{ key: "photo_checker", action: "look" }];
       case "morning_plan:plan_sent":
         return [{ key: "morning_plan", action: "wave" }];
+      case "hr_assistant:digest_sent":
+        return [{ key: "hr_assistant", action: "wave" }];
+      case "hr_assistant:payroll_ready":
+        return [{ key: "hr_assistant", action: "cheer" }];
+      case "hr_assistant:payroll_blocked":
+        return [{ key: "hr_assistant", action: "look" }];
+      case "hr_assistant:bonuses_suggested":
+        return [{ key: "hr_assistant", action: "hearts" }];
       default:
         return [];
     }

@@ -85,6 +85,36 @@ def pharmacy(freeze):
     return company, people
 
 
+def test_every_payslip_row_adds_up(pharmacy, owner_api):
+    """The run page's columns: in both demo months each row's parts are exactly its net."""
+    company, people = pharmacy
+    owner = owner_api(people["owner"])
+    parts = (
+        "base_pay",
+        "extras",
+        "bonuses",
+        "fines",
+        "advances",
+        "taxes_withheld",
+        "reimbursements",
+    )
+    runs = PayrollRun.objects.filter(company=company)
+    assert runs.count() == 2
+    for run in runs:
+        url = f"/api/v1/owner/companies/{company.pk}/payroll/runs/{run.pk}/payslips/?page_size=200"
+        rows = owner.get(url).data["results"]
+        assert rows
+        for row in rows:
+            assert sum((D(row[name]) for name in parts), D(0)) == D(row["net"]), row
+    # October's overtime and night premium are in extras, not lost between base and net.
+    october = runs.get(period=date(2026, 10, 1))
+    url = f"/api/v1/owner/companies/{company.pk}/payroll/runs/{october.pk}/payslips/?page_size=200"
+    nigora = next(
+        row for row in owner.get(url).data["results"] if row["member"]["id"] == people["nigora"].pk
+    )
+    assert D(nigora["extras"]) > D("2000000")
+
+
 def test_the_whole_story(pharmacy):
     company, people = pharmacy
     october = PayrollRun.objects.get(company=company, period=date(2026, 10, 1))

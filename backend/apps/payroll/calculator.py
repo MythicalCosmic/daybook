@@ -25,6 +25,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
@@ -214,15 +215,20 @@ def night_minutes(start: datetime, end: datetime, tz, starts_at, ends_at) -> int
 
 
 def scheduled_days(person: Person, inputs: Inputs) -> set[date]:
-    """`S` as days (§2.7, §3.17)."""
+    """`S` as days (§2.7, §3.17): the planned shift days of someone on a roster, otherwise
+    the company's workdays; holidays never count.
+
+    Someone on a roster who joins or leaves during the month has shifts only while employed
+    (leaving cancels the rest), so S also counts the company workdays outside their employment:
+    those come off as "not employed", and a leaver on 14 October is paid 11 of 26 days, not
+    the whole month."""
+    workdays = {
+        day for day in periods.days(inputs.start, inputs.end) if day.weekday() in inputs.workdays
+    }
     if person.planned_days:
-        base = person.planned_days
+        base = person.planned_days | {day for day in workdays if not employed(person, day)}
     else:
-        base = {
-            day
-            for day in periods.days(inputs.start, inputs.end)
-            if day.weekday() in inputs.workdays
-        }
+        base = workdays
     return {day for day in base if day not in inputs.holidays}
 
 
@@ -299,6 +305,7 @@ def compute(person: Person, inputs: Inputs, manual_lines=()) -> Result | None:
             seg_records=seg_records,
             absent=_between(absent, first, last) & seg_in_job,
             result=result,
+            in_job=in_job,
         )
         if setup.pay_type == PayType.MONTHLY:
             earnings += _monthly(context)
@@ -391,6 +398,7 @@ class SegmentContext:
     seg_records: list[Record]
     absent: set[date]
     result: Result
+    in_job: set[date] = field(default_factory=set)  # every employed day of the month
     unpaid_days: int = 0
 
     @property
@@ -403,15 +411,22 @@ class SegmentContext:
         return {"from": self.first.isoformat(), "to": self.last.isoformat()}
 
 
-def _in_payroll_currency(setup: Compensation, inputs: Inputs, result: Result) -> Decimal | None:
-    if setup.currency == inputs.currency:
-        return setup.amount
+def in_payroll_currency(amount: Decimal, currency: str, inputs: Inputs) -> Decimal | None:
+    """`amount` in the payroll currency at the run's dollar rate (None without one)."""
+    if currency == inputs.currency:
+        return amount
     if inputs.usd_rate is None:
-        result.warnings.append({"code": "no_usd_rate", "currency": setup.currency})
         return None
     if inputs.currency == "UZS":
-        return money(setup.amount * inputs.usd_rate)
-    return money(setup.amount / inputs.usd_rate)
+        return money(amount * inputs.usd_rate)
+    return money(amount / inputs.usd_rate)
+
+
+def _in_payroll_currency(setup: Compensation, inputs: Inputs, result: Result) -> Decimal | None:
+    amount = in_payroll_currency(setup.amount, setup.currency, inputs)
+    if amount is None:
+        result.warnings.append({"code": "no_usd_rate", "currency": setup.currency})
+    return amount
 
 
 def _hours_rate(context: SegmentContext) -> tuple[Decimal, Decimal]:
@@ -575,7 +590,10 @@ def _monthly(context: SegmentContext) -> list[Line]:
         if not context.seg_in_job:
             return lines
         calendar = (context.last - context.first).days + 1
-        base = amount if context.whole else money(amount * calendar / inputs.days_in_month)
+        # The full amount for a setup that covers every day worked this month (a joiner whose
+        # setup starts on the hire day, too); only a change within the month splits it.
+        covers = context.whole or context.seg_in_job == context.in_job
+        base = amount if covers else money(amount * calendar / inputs.days_in_month)
         lines.append(
             Line(
                 kind=Kind.BASE,
@@ -666,7 +684,9 @@ def _daily(context: SegmentContext) -> list[Line]:
             )
         )
     lines += _paid_leave(context, day_value=rate, attended=attended)
-    lines += _extras(context, base_includes_hours=True)
+    # A day's rate pays a normal day: overtime hours are not in it (unlike an hourly
+    # earner's base), so they earn the whole multiplier.
+    lines += _extras(context, base_includes_hours=False)
     return lines
 
 
@@ -748,8 +768,14 @@ def _pieces(context: SegmentContext) -> list[Line]:
         if rate is not None:
             if rate.on_time_only and not task.on_time:
                 continue
+            amount = in_payroll_currency(rate.amount, rate.currency, context.inputs)
+            if amount is None:
+                warning = {"code": "no_usd_rate", "currency": rate.currency}
+                if warning not in context.result.warnings:
+                    context.result.warnings.append(warning)
+                continue
             key = rate.pk
-            rates[key] = (rate.amount, rate.template.title if rate.template_id else "")
+            rates[key] = (amount, rate.template.title if rate.template_id else "")
         elif setup.pay_type == PayType.PER_TASK and setup.amount > 0:
             key = "default"
             rates[key] = (context.amount, "")
@@ -1064,26 +1090,48 @@ def gather(
         if member.pk in people:
             people[member.pk].task_stats = score.as_dict()
 
+    # A task counts in the month it was accepted: one finished on 31 October and accepted on
+    # 3 November is paid with November (October may be finalized by then).
     since = datetime.combine(start, datetime.min.time(), tzinfo=tz)
     until = datetime.combine(end + timedelta(days=1), datetime.min.time(), tzinfo=tz)
-    done = Task.objects.filter(
-        company=company,
-        assignee_id__in=ids,
-        status=Task.Status.DONE,
-        kind__in=(Task.Kind.DAILY, Task.Kind.ASSIGNED),
-        completed_at__gte=since,
-        completed_at__lt=until,
-    ).values_list("pk", "assignee_id", "title", "template_id", "completed_at", "due_at", "reward")
-    for pk, assignee_id, title, template_id, completed_at, due_at, reward in done.order_by(
-        "completed_at", "pk"
-    ):
+    done = (
+        Task.objects.filter(
+            company=company,
+            assignee_id__in=ids,
+            status=Task.Status.DONE,
+            kind__in=(Task.Kind.DAILY, Task.Kind.ASSIGNED),
+        )
+        .annotate(accepted_at=Coalesce("confirmed_at", "completed_at"))
+        .filter(accepted_at__gte=since, accepted_at__lt=until)
+        .values_list(
+            "pk",
+            "assignee_id",
+            "title",
+            "template_id",
+            "accepted_at",
+            "completed_at",
+            "due_at",
+            "reward",
+        )
+    )
+    for (
+        pk,
+        assignee_id,
+        title,
+        template_id,
+        accepted_at,
+        completed_at,
+        due_at,
+        reward,
+    ) in done.order_by("accepted_at", "pk"):
+        finished = completed_at or accepted_at
         people[assignee_id].done_tasks.append(
             DoneTask(
                 id=pk,
                 title=title,
                 template_id=template_id,
-                day=timezone.localtime(completed_at, tz).date(),
-                on_time=due_at is None or completed_at <= due_at,
+                day=timezone.localtime(accepted_at, tz).date(),
+                on_time=due_at is None or finished <= due_at,
                 reward=reward,
             )
         )

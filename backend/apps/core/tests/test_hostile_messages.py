@@ -97,14 +97,18 @@ def jobs() -> list:
 
 
 def test_every_scheduled_message_escapes_what_people_typed(settings, sent_messages):
+    # The demo is seeded at 07:00 today, so what the day's jobs find to send doesn't depend on the
+    # hour the suite runs (seeded at 20:00, most of the day's work was already late or done).
+    tz = ZoneInfo("Asia/Tashkent")
+    today = timezone.localtime(timezone.now(), tz).date()
     settings.DEBUG = True
-    call_command("seed_demo", stdout=StringIO())
+    with moment(datetime.combine(today, time(7, 0), tzinfo=tz)):
+        call_command("seed_demo", stdout=StringIO())
     settings.DEBUG = False
     assert make_hostile() > 40
 
     pharmacy = Company.objects.get(slug=seed_demo.SLUG)
-    tz = ZoneInfo(pharmacy.timezone)
-    today = timezone.localtime(timezone.now(), tz).date()
+    assert pharmacy.timezone == "Asia/Tashkent"
     for at in DAY:
         with moment(datetime.combine(today, at, tzinfo=tz)):
             for _key, job, args in jobs():

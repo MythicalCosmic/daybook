@@ -175,8 +175,26 @@ def book_taxes(run: PayrollRun, *, by) -> None:
         )
 
 
+def paid_elsewhere(run: PayrollRun):
+    """Live rows on the run's salary debts that payroll didn't book: money paid out (or
+    written off) in Finance, Debts. Cancelling the debts would void them, as if that money
+    never left the till."""
+    debts = [debt for debt in run.payslips.values_list("salary_debt_id", flat=True) if debt]
+    return Transaction.objects.filter(
+        company_id=run.company_id, debt_id__in=debts, status__in=("posted", "pending")
+    ).exclude(source_type=PAYSLIP)
+
+
 def unbook_run(run: PayrollRun, *, by) -> None:
-    """Void every ledger row the run booked and release what it reserved."""
+    """Void every ledger row the run booked and release what it reserved. Refused while part
+    of a salary was paid or written off in Finance: that has to be voided there first."""
+    if paid_elsewhere(run).exists():
+        raise DomainError(
+            _(
+                "Part of this pay was already paid or written off in Finance. Void that "
+                "payment first, then reopen the payroll."
+            )
+        )
     reason = _("Payroll for %(month)s reopened") % {"month": queries.month_label(run.period)}
     payslips = list(run.payslips.select_related("salary_debt"))
     for payslip in payslips:

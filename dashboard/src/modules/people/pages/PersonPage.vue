@@ -136,7 +136,7 @@ const kpis = computed(() => {
 const editing = ref(false);
 const suspending = ref(false);
 /** Package S brings its own Suspend (with records); until then this page offers the basic one. */
-const lifecycleInstalled = computed(() => modules.some((module) => module.id === "lifecycle"));
+const lifecycleInstalled = computed(() => modules.some((module) => module.id === "lifecycle" && isModuleVisible(module, company.current)));
 const act = usePersonMutation((cid, input: { id: number; action: "block" | "unblock" | "reinstate" }) => personAction(cid, input.id, input.action));
 
 async function block(p: PersonDetail): Promise<void> {

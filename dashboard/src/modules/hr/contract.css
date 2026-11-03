@@ -1,0 +1,148 @@
+/* Contract text: the template editor and the preview share these rules, so a template reads the
+   same while it is written and once it is filled in. Only design tokens; sizes from the type scale. */
+
+.hr-paper {
+  color: var(--c-text);
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.hr-paper-edit {
+  min-height: 360px;
+  outline: none;
+}
+
+/* The editor on a touch screen: iOS zooms the page into editable text under 16 px. */
+@media (pointer: coarse) {
+  .hr-paper[contenteditable="true"] {
+    font-size: 1rem;
+  }
+}
+
+/* The preview: a sheet of paper on the canvas. */
+.hr-paper-sheet {
+  margin: 0 auto;
+  max-width: 760px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-card);
+  padding: 28px 32px;
+  box-shadow: 0 1px 2px rgb(32 30 29 / 0.06);
+}
+
+@media (max-width: 639px) {
+  .hr-paper-sheet {
+    padding: 18px 16px;
+  }
+}
+
+/* The empty editor says what goes in it. */
+.hr-paper-edit p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: var(--c-subtle);
+  pointer-events: none;
+}
+
+.hr-paper > :first-child {
+  margin-top: 0;
+}
+
+.hr-paper > :last-child {
+  margin-bottom: 0;
+}
+
+.hr-paper p {
+  margin: 0 0 0.8em;
+}
+
+.hr-paper h1,
+.hr-paper h2,
+.hr-paper h3 {
+  color: var(--c-text);
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+}
+
+.hr-paper h1 {
+  font-size: var(--text-xl);
+  margin: 0.4em 0 0.7em;
+  text-align: center;
+}
+
+.hr-paper h2 {
+  font-size: var(--text-md);
+  margin: 1.4em 0 0.5em;
+}
+
+.hr-paper h3 {
+  font-size: var(--text-base);
+  margin: 1.2em 0 0.4em;
+}
+
+.hr-paper strong,
+.hr-paper b {
+  font-weight: 650;
+}
+
+.hr-paper ul,
+.hr-paper ol {
+  margin: 0 0 0.9em;
+  padding-left: 1.4em;
+}
+
+.hr-paper ul {
+  list-style: disc;
+}
+
+.hr-paper ol {
+  list-style: decimal;
+}
+
+.hr-paper li {
+  margin: 0.2em 0;
+}
+
+.hr-paper li > p {
+  margin: 0;
+}
+
+.hr-paper hr {
+  border: 0;
+  border-top: 1px solid var(--c-border);
+  margin: 1.5em 0;
+}
+
+.hr-paper table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 1em;
+}
+
+.hr-paper td,
+.hr-paper th {
+  border: 1px solid var(--c-border);
+  padding: 0.35em 0.6em;
+  vertical-align: top;
+}
+
+/* A placeholder in the editor: a soft chip; an unknown one (a typo) in red. */
+.hr-token {
+  background: var(--c-accent-soft);
+  color: var(--c-accent-fg);
+  border-radius: 5px;
+  padding: 0.05em 0.25em;
+  font-weight: 600;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.hr-token-unknown {
+  background: var(--c-danger-soft);
+  color: var(--c-danger);
+  text-decoration: wavy underline;
+  text-underline-offset: 3px;
+}

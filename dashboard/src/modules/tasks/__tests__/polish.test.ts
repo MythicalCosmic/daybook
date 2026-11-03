@@ -66,7 +66,7 @@ describe("send back with a reason (contract 4)", () => {
     const onConfirm = vi.fn();
     const { wrapper } = mountWithProviders(ConfirmDialog, {
       plugins: app.plugins,
-      props: { open: true, title: "Send back for another go", tone: "danger", confirmLabel: "Send back", ...returnReasonFields(t), onConfirm },
+      props: { open: true, title: "Send back for another go", tone: "danger", confirmLabel: "Send back", ...returnReasonFields(t), action: onConfirm },
     });
     await flushPromises();
     return { wrapper, onConfirm };

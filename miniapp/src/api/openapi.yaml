@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: 911 Trello API
-  version: 0.2.0
+  version: 0.3.0
   description: API for the employee mini app and the owner dashboard.
 paths:
   /api/v1/auth/telegram/:
@@ -8579,15 +8579,28 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        extras:
+          type: string
+          readOnly: true
+          description: Overtime, holiday and night work, piecework, paid leave, unused
+            leave paid out, lines added by hand that pay, and the rounding of the
+            net.
         bonuses:
           type: string
           readOnly: true
         fines:
           type: string
           readOnly: true
+          description: Fines and deductions, with lines added by hand that take money
+            (negative).
         advances:
           type: string
           readOnly: true
+          description: Advances and loans repaid (negative).
+        taxes_withheld:
+          type: string
+          readOnly: true
+          description: Income tax and pension withheld (negative).
         reimbursements:
           type: string
           readOnly: true
@@ -8688,6 +8701,7 @@ components:
       - bonuses
       - currency
       - deductions
+      - extras
       - fines
       - gross
       - id
@@ -8713,6 +8727,7 @@ components:
       - status
       - task_stats
       - taxes
+      - taxes_withheld
       - unpaid_leave_days
       - viewed_at
       - worked_minutes
@@ -8818,8 +8833,10 @@ components:
         * `lt` - less than
     PayslipRow:
       type: object
-      description: 'A row of a run''s payslip table: the person and their sums by
-        kind.'
+      description: |-
+        A row of a run's payslip table: the person and their sums by kind. The parts are signed
+        like the lines and add up exactly: base_pay + extras + bonuses + fines + advances +
+        taxes_withheld + reimbursements = net (PayslipLine.ROW_PARTS).
       properties:
         id:
           type: integer
@@ -8843,15 +8860,28 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        extras:
+          type: string
+          readOnly: true
+          description: Overtime, holiday and night work, piecework, paid leave, unused
+            leave paid out, lines added by hand that pay, and the rounding of the
+            net.
         bonuses:
           type: string
           readOnly: true
         fines:
           type: string
           readOnly: true
+          description: Fines and deductions, with lines added by hand that take money
+            (negative).
         advances:
           type: string
           readOnly: true
+          description: Advances and loans repaid (negative).
+        taxes_withheld:
+          type: string
+          readOnly: true
+          description: Income tax and pension withheld (negative).
         reimbursements:
           type: string
           readOnly: true
@@ -8901,6 +8931,7 @@ components:
       - bonuses
       - currency
       - deductions
+      - extras
       - fines
       - gross
       - id
@@ -8914,6 +8945,7 @@ components:
       - received_at
       - reimbursements
       - status
+      - taxes_withheld
       - viewed_at
     Period:
       type: object

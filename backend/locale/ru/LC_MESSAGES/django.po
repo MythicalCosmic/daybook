@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-02 19:33+0500\n"
+"POT-Creation-Date: 2026-11-02 20:48+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -508,10 +508,126 @@ msgstr "Тишина до"
 msgid "Told %(to)s that «%(task)s» is late (%(assignee)s)"
 msgstr "%(to)s: сообщено, что «%(task)s» опаздывает (%(assignee)s)"
 
+#: backend/apps/ai/agents/hr_assistant.py
 #: backend/apps/ai/agents/morning_plan.py
 #, python-format
 msgid "Workdays at %(time)s"
 msgstr "По рабочим дням в %(time)s"
+
+#: backend/apps/ai/agents/hr_assistant.py
+msgid "HR assistant"
+msgstr "HR-помощник"
+
+#: backend/apps/ai/agents/hr_assistant.py
+msgid ""
+"Each workday morning HR hears what needs them: documents and contracts that "
+"end, probations, explanations owed and birthdays. Before pay day it "
+"calculates the payroll draft and says what holds it up; it can also suggest "
+"bonuses for the best on-time work, for a person to approve."
+msgstr ""
+"Каждое рабочее утро сообщает кадровикам, что требует внимания: истекающие "
+"документы и договоры, испытательные сроки, ожидаемые объяснительные и дни "
+"рождения. Перед днём зарплаты рассчитывает черновик и говорит, что ему "
+"мешает; может предложить премии тем, кто лучше всех выполняет задачи "
+"вовремя, а утверждает их человек."
+
+#: backend/apps/ai/agents/hr_assistant.py
+#: backend/apps/ai/agents/morning_plan.py
+msgid "Send at"
+msgstr "Отправлять в"
+
+#: backend/apps/ai/agents/hr_assistant.py
+msgid "Payroll check before pay day"
+msgstr "Проверка зарплаты перед днём выплаты"
+
+#: backend/apps/ai/agents/hr_assistant.py
+msgid ""
+"Last month's payroll draft is calculated and checked this many days before "
+"pay day."
+msgstr ""
+"Черновик зарплаты за прошлый месяц рассчитывается и проверяется за столько "
+"дней до дня выплаты."
+
+#: backend/apps/ai/agents/hr_assistant.py
+msgid "days"
+msgstr "дней"
+
+#: backend/apps/ai/agents/hr_assistant.py
+msgid "Point out pay changes over"
+msgstr "Порог заметного изменения"
+
+#: backend/apps/ai/agents/hr_assistant.py
+msgid "Net pay that moved more than this against the month before."
+msgstr ""
+"Если сумма к выплате изменилась к прошлому месяцу сильнее, об этом будет "
+"сказано."
+
+#: backend/apps/ai/agents/hr_assistant.py
+msgid "Suggest bonuses"
+msgstr "Предлагать премии"
+
+#: backend/apps/ai/agents/hr_assistant.py
+msgid ""
+"On the month's last workday, propose a bonus for the people with the best on-"
+"time work. A person approves each one in Payroll."
+msgstr ""
+"В последний рабочий день месяца предлагает премию тем, кто лучше всех "
+"выполнял задачи вовремя. Каждую утверждает человек в разделе «Зарплата»."
+
+#: backend/apps/ai/agents/hr_assistant.py
+msgid "People to suggest"
+msgstr "Сколько человек предложить"
+
+#: backend/apps/ai/agents/hr_assistant.py
+msgid "people"
+msgstr "чел."
+
+#: backend/apps/ai/agents/hr_assistant.py
+msgid "Bonus amount"
+msgstr "Сумма премии"
+
+#: backend/apps/ai/agents/hr_assistant.py
+msgid "Each suggested bonus, in the payroll's currency."
+msgstr "Каждая предложенная премия, в валюте зарплаты."
+
+#: backend/apps/ai/agents/hr_assistant.py
+#, python-format
+msgid "HR digest for %(to)s: %(count)s item"
+msgid_plural "HR digest for %(to)s: %(count)s items"
+msgstr[0] "Кадровая сводка (%(to)s): %(count)s пункт"
+msgstr[1] "Кадровая сводка (%(to)s): %(count)s пункта"
+msgstr[2] "Кадровая сводка (%(to)s): %(count)s пунктов"
+msgstr[3] "Кадровая сводка (%(to)s): %(count)s пункта"
+
+#: backend/apps/ai/agents/hr_assistant.py
+#, python-format
+msgid "Payroll %(month)s is calculated: nothing holds it up"
+msgstr "Зарплата (%(month)s) рассчитана: ничего не мешает"
+
+#: backend/apps/ai/agents/hr_assistant.py
+#, python-format
+msgid ""
+"Payroll %(month)s is calculated: %(count)s thing to settle before pay day"
+msgid_plural ""
+"Payroll %(month)s is calculated: %(count)s things to settle before pay day"
+msgstr[0] ""
+"Зарплата (%(month)s) рассчитана: до дня выплаты решить %(count)s вопрос"
+msgstr[1] ""
+"Зарплата (%(month)s) рассчитана: до дня выплаты решить %(count)s вопроса"
+msgstr[2] ""
+"Зарплата (%(month)s) рассчитана: до дня выплаты решить %(count)s вопросов"
+msgstr[3] ""
+"Зарплата (%(month)s) рассчитана: до дня выплаты решить %(count)s вопроса"
+
+#: backend/apps/ai/agents/hr_assistant.py
+#, python-format
+msgid "Suggested %(count)s bonus for %(month)s: it waits for approval"
+msgid_plural ""
+"Suggested %(count)s bonuses for %(month)s: they wait for approval"
+msgstr[0] "Предложена %(count)s премия (%(month)s): ждёт утверждения"
+msgstr[1] "Предложены %(count)s премии (%(month)s): ждут утверждения"
+msgstr[2] "Предложено %(count)s премий (%(month)s): ждут утверждения"
+msgstr[3] "Предложено %(count)s премии (%(month)s): ждут утверждения"
 
 #: backend/apps/ai/agents/morning_plan.py backend/apps/groups/models.py
 msgid "Morning plan"
@@ -524,10 +640,6 @@ msgid ""
 msgstr ""
 "Каждое рабочее утро каждый руководитель и менеджер получает день своей "
 "команды: что к сроку, что опаздывает, что ждёт проверки и кто отдыхает."
-
-#: backend/apps/ai/agents/morning_plan.py
-msgid "Send at"
-msgstr "Отправлять в"
 
 #: backend/apps/ai/agents/morning_plan.py
 msgid "Who gets it"
@@ -953,6 +1065,147 @@ msgstr "Проверить (%(count)s)"
 #, python-format
 msgid "New deadline for «%(title)s»: %(when)s"
 msgstr "Новый срок для «%(title)s»: %(when)s"
+
+#: backend/apps/ai/bot_messages.py
+msgid "HR today"
+msgstr "Кадры: на сегодня"
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "Documents: %(count)s"
+msgstr "Документы: %(count)s"
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "Contracts ending: %(count)s"
+msgstr "Заканчиваются договоры: %(count)s"
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "Probation ending: %(count)s"
+msgstr "Заканчиваются испытательные сроки: %(count)s"
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "Waiting for an explanation: %(count)s"
+msgstr "Ждём объяснительную: %(count)s"
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "And more: %(count)s"
+msgstr "И ещё: %(count)s"
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "In today's separate notices: %(count)s"
+msgstr "В сегодняшних отдельных уведомлениях: %(count)s"
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "Birthday today: %(names)s"
+msgstr "Сегодня день рождения: %(names)s"
+
+#: backend/apps/ai/bot_messages.py
+msgid "Open HR"
+msgstr "Открыть «Кадры»"
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "expired: %(date)s"
+msgstr "срок истёк: %(date)s"
+
+#: backend/apps/ai/bot_messages.py
+msgid "expires today"
+msgstr "срок истекает сегодня"
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "expires: %(date)s"
+msgstr "срок истекает: %(date)s"
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "ended: %(date)s, still in force"
+msgstr "закончился: %(date)s, но ещё действует"
+
+#: backend/apps/ai/bot_messages.py
+msgid "ends today"
+msgstr "заканчивается сегодня"
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "ends: %(date)s"
+msgstr "заканчивается: %(date)s"
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "ended: %(date)s, no decision yet"
+msgstr "закончился: %(date)s, решения пока нет"
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "Payroll: %(month)s"
+msgstr "Зарплата: %(month)s"
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "The draft is calculated: %(count)s payslip."
+msgid_plural "The draft is calculated: %(count)s payslips."
+msgstr[0] "Черновик рассчитан: %(count)s расчётный листок."
+msgstr[1] "Черновик рассчитан: %(count)s расчётных листка."
+msgstr[2] "Черновик рассчитан: %(count)s расчётных листков."
+msgstr[3] "Черновик рассчитан: %(count)s расчётного листка."
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "Pay day: %(date)s"
+msgstr "День зарплаты: %(date)s"
+
+#: backend/apps/ai/bot_messages.py
+msgid "Nothing holds it up: check it and finalize it."
+msgstr "Ничего не мешает: проверьте и утвердите."
+
+#: backend/apps/ai/bot_messages.py
+msgid "Settle before pay day:"
+msgstr "До дня зарплаты решите:"
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "No pay setup: %(names)s"
+msgstr "Нет условий оплаты: %(names)s"
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "and more: %(count)s"
+msgstr "и ещё: %(count)s"
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "Big change against last month: %(changes)s"
+msgstr "Заметное изменение к прошлому месяцу: %(changes)s"
+
+#: backend/apps/ai/bot_messages.py
+msgid "Open the payroll"
+msgstr "Открыть расчёт зарплаты"
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid ""
+"%(month)s: %(percent)s%% of %(count)s task done on time, no lateness fine."
+msgid_plural ""
+"%(month)s: %(percent)s%% of %(count)s tasks done on time, no lateness fine."
+msgstr[0] ""
+"%(month)s: вовремя выполнено %(percent)s%% из %(count)s задачи, штрафов за "
+"опоздание нет."
+msgstr[1] ""
+"%(month)s: вовремя выполнено %(percent)s%% из %(count)s задач, штрафов за "
+"опоздание нет."
+msgstr[2] ""
+"%(month)s: вовремя выполнено %(percent)s%% из %(count)s задач, штрафов за "
+"опоздание нет."
+msgstr[3] ""
+"%(month)s: вовремя выполнено %(percent)s%% из %(count)s задачи, штрафов за "
+"опоздание нет."
 
 #: backend/apps/ai/chat.py
 msgid "Ask AI isn't available here."
@@ -8233,6 +8486,14 @@ msgid "Social tax"
 msgstr "Социальный налог"
 
 #: backend/apps/payroll/finance_bridge.py
+msgid ""
+"Part of this pay was already paid or written off in Finance. Void that "
+"payment first, then reopen the payroll."
+msgstr ""
+"Часть этой зарплаты уже выплачена или списана в Финансах. Сначала "
+"аннулируйте тот платёж, затем откройте зарплату заново."
+
+#: backend/apps/payroll/finance_bridge.py
 #, python-format
 msgid "Payroll for %(month)s reopened"
 msgstr "Зарплата открыта заново: %(month)s"
@@ -9333,6 +9594,14 @@ msgid "A finalized payroll used it. Add a new pay setup to change the pay."
 msgstr ""
 "Эти условия уже использованы в утверждённой зарплате. Чтобы изменить оплату, "
 "добавьте новые."
+
+#: backend/apps/payroll/services.py
+msgid "You can't decide a bonus or a fine of your own."
+msgstr "Нельзя принимать решение по собственной премии или штрафу."
+
+#: backend/apps/payroll/services.py
+msgid "You can't change your own pay."
+msgstr "Нельзя менять собственную оплату."
 
 #: backend/apps/payroll/services.py backend/apps/tasks/services.py
 #, python-format

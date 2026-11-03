@@ -57,7 +57,7 @@ function change(value: unknown): void {
       :model-value="typeof value === 'number' ? value : null"
       :min="control.min"
       :max="control.max"
-      :step="1"
+      :step="control.step"
       :suffix="control.unit || undefined"
       :size="size"
       steppers

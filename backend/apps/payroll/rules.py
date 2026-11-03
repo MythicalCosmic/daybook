@@ -50,7 +50,6 @@ TASK_METRICS = {
     Metric.TASKS_AVG_DELAY,
 }
 MONEY_METRICS = {Metric.SALES_NET}
-LOCKED = (Adjustment.Status.REJECTED, Adjustment.Status.VOID)
 
 
 # Metrics --------------------------------------------------------------------------------
@@ -308,11 +307,18 @@ def _create(rule, member, period, amount, text, key) -> Adjustment:
     return row
 
 
+def voided_by_rule(row: Adjustment) -> bool:
+    """Voided by its rule (the metric stopped earning it), not by a person."""
+    return row.status == Adjustment.Status.VOID and row.decided_by_id is None
+
+
 def _follows(row: Adjustment, rule: AdjustmentRule) -> bool:
-    """A rule adjustment still following its metric: undecided, or approved automatically."""
+    """A rule adjustment still following its metric: undecided, approved automatically, or
+    voided by the rule itself (it comes back when the metric earns it again). What a person
+    decided stays."""
     if row.is_locked:
         return False
-    if row.status == Adjustment.Status.PROPOSED:
+    if row.status == Adjustment.Status.PROPOSED or voided_by_rule(row):
         return True
     return (
         row.status == Adjustment.Status.APPROVED and rule.auto_approve and row.decided_by_id is None
@@ -320,17 +326,17 @@ def _follows(row: Adjustment, rule: AdjustmentRule) -> bool:
 
 
 def _period_open(company, period: date) -> bool:
+    """Whether the month's regular run isn't finalized. The run row is locked until the
+    transaction ends, so a finalize waits for this evaluation (or this one for it)."""
     from apps.payroll.models import PayrollRun
 
-    return (
-        not PayrollRun.objects.for_company(company)
-        .filter(
-            kind=PayrollRun.Kind.REGULAR,
-            period=period,
-            status__in=(PayrollRun.Status.FINALIZED, PayrollRun.Status.PAID),
-        )
-        .exists()
+    run = (
+        PayrollRun.objects.select_for_update()
+        .filter(company=company, kind=PayrollRun.Kind.REGULAR, period=period)
+        .exclude(status=PayrollRun.Status.CANCELLED)
+        .first()
     )
+    return run is None or run.status not in (PayrollRun.Status.FINALIZED, PayrollRun.Status.PAID)
 
 
 def evaluate_monthly(company, period, *, by=None, now=None) -> int:
@@ -374,9 +380,31 @@ def _evaluate_monthly(company, period, *, now=None) -> int:
             if not _follows(row, rule):
                 continue
             if result is None:
+                if voided_by_rule(row):
+                    continue
                 row.status = Adjustment.Status.VOID
                 row.decision_note = _("The rule no longer applies.")
                 row.save(update_fields=["status", "decision_note", "updated_at"])
+                changed += 1
+            elif voided_by_rule(row):
+                # The metric earns it again: the rule's own void comes back to life.
+                row.status = (
+                    Adjustment.Status.APPROVED if rule.auto_approve else Adjustment.Status.PROPOSED
+                )
+                row.amount = result.amount
+                row.reason = reason(rule, result)[:300]
+                row.decision_note = ""
+                row.decided_at = timezone.now() if rule.auto_approve else None
+                row.save(
+                    update_fields=[
+                        "status",
+                        "amount",
+                        "reason",
+                        "decision_note",
+                        "decided_at",
+                        "updated_at",
+                    ]
+                )
                 changed += 1
             elif row.amount != result.amount or row.reason != reason(rule, result)[:300]:
                 row.amount = result.amount
@@ -421,7 +449,9 @@ def _evaluate_daily(company, today: date, *, now=None) -> int:
             )
             if rows.filter(rule_key=key).exists():
                 continue
-            already = sum((row.amount for row in rows.exclude(status__in=LOCKED)), ZERO)
+            # What the rule already put to people this month: a fine a manager rejected or
+            # voided counts as handled and is never proposed again.
+            already = sum((row.amount for row in rows if not voided_by_rule(row)), ZERO)
             due = proposal.outcome.amount if proposal.outcome is not None else ZERO
             if due > already:
                 text = reason(rule, proposal.outcome)

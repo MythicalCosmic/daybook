@@ -112,9 +112,12 @@ function payslipRow(extra: Partial<PayslipRow> = {}): PayslipRow {
     pay_type: "monthly",
     currency: "UZS",
     base_pay: "4800000.00",
+    // The row's parts add up to net, as the server's do: overtime 244 000 and rounding 10 are extras.
+    extras: "244010.00",
     bonuses: "781990.00",
     fines: "0.00",
     advances: "0.00",
+    taxes_withheld: "0.00",
     reimbursements: "0.00",
     gross: "5826000.00",
     deductions: "0.00",

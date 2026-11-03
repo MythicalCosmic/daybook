@@ -1,5 +1,53 @@
 # Changelog
 
+## 0.3.0 — 2026-11-02
+
+### New: HR and payroll
+Two modules an owner switches on per company (Settings › Modules: **HR** and **Payroll**). Until then nothing
+changes for anyone.
+- **HR** (dashboard › HR): an overview of what needs doing (headcount and its trend, documents to renew,
+  contracts ending, probations ending, birthdays this week, each with a one-tap action); every person's HR
+  card (passport, PINFL and payout card stored encrypted and shown masked, opened only with the
+  "sensitive" permission and audited; emergency contacts; hire date); **documents** with expiry dates, a
+  check of who lacks what by position (medical book, diploma, certificates…) and private scans;
+  **contracts** made from templates with placeholders (`{{employee_full_name}}`, salary, dates…) or from an
+  uploaded scan, with renewals, probation, termination, a PDF and the employee's "I have read it";
+  **celebrations** (birthdays and work anniversaries) posted to the team group. HR watches expiry dates and
+  tells the people who manage HR ahead of time (30 days for documents and contracts, 7 for probation),
+  a week before and on the day, once each.
+- **Discipline** (dashboard › HR › Discipline): warnings and reprimands in pharmacy categories (storage,
+  dispensing errors, prescriptions, expired sales, stock shortages…), with evidence, the employee's
+  acknowledgement and explanation, a suggested next step from the last six months, and "also propose a
+  fine" that goes to payroll as a proposal. Suspensions with an end date or until further notice, and
+  reinstatement.
+- **Payroll** (dashboard › Money › Payroll): pay setups per person (monthly, daily, hourly; changes are
+  dated, months already paid are locked); a month's run worked out from attendance, leave, holidays,
+  overtime and night hours, task rates, bonuses and fines, advances and the deductions cap, with every
+  line explained; finalize, reopen, publish payslips (bot message with a PDF), mark paid from finance
+  accounts, xlsx export. **Bonuses and fines** are proposed and approved (one or many), employees can
+  dispute a fine; **rules** propose them automatically (on-time %, lateness, sales…) with a preview of
+  who would get what; **advances** are requested, decided, paid and repaid over months. Finance gets the
+  salary, advance and tax rows by itself. Shipped rules start switched off; taxes are off by default.
+- **The HR assistant** — a fifth AI agent with its own chibi (green, in a tie, with a clipboard): the HR
+  morning digest for the people who manage HR, payroll readiness before pay day, and (opt-in) monthly
+  bonus suggestions that a person approves. Runs on Haiku.
+- Coming next: the employee side in the mini app (my pay and payslips, my documents and contract, my record).
+
+### Also since 0.2.0
+- **Voice notes in seconds**: speech goes to OpenAI's gpt-4o-transcribe (Uzbek included), with our own
+  Whisper server as the fallback.
+- **Claude's little helper** on AI › Agents and a chibi for every agent: they react to what happens
+  (voice notes, late and finished tasks), walk with you to every page (switch "Har sahifada"), with many
+  faces and little dances. Dashboard only.
+- A one-time survey in the bot let everyone pick their branch, department and job title again.
+
+### Fixed
+- **"Are you sure?" dialogs ran nothing** for actions passed through them: archiving an account, writing
+  off or cancelling a debt, rejecting or voiding a transaction, locking a period, deleting a category and
+  the attendance record actions now work again.
+- A person's page keeps its own Suspend button for companies without HR.
+- Contract and payslip PDFs show inside the dashboard's preview (they were blocked from framing).
+
 ## 0.2.0 — 2026-11-02
 
 ### New: AI that works for the team
