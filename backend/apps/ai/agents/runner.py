@@ -157,10 +157,11 @@ def prune(company_id: int, key: str) -> int:
 def next_runs(agent, state: AgentState, company, now: datetime, count: int) -> list[datetime]:
     """When a scheduled agent runs next, `count` times: its stored next time (one already due
     reads as `now`: the next tick takes it), then its schedule stepped on. None at all when
-    its next time can't be worked out (a setting it can't read)."""
+    its schedule can't be worked out (a setting it can't read: the runner only retries)."""
     config = registry.config_of(agent, state)
     try:
-        moment = max(state.next_run_at or agent.next_run(config, now, company), now)
+        scheduled = agent.next_run(config, now, company)
+        moment = max(state.next_run_at or scheduled, now)
         found = [moment]
         while len(found) < count:
             moment = agent.next_run(config, moment, company)
