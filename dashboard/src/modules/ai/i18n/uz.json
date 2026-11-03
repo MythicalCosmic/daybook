@@ -85,7 +85,7 @@
   "ai.agent.line.running": "Ish bajarilmoqda…",
   "ai.agent.line.error": "Xato bilan to‘xtadi",
   "ai.agent.line.done": "Tugadi: {n} ta ish | Tugadi: {n} ta ish | Tugadi: {n} ta ish",
-  "ai.agent.line.quiet": "Tekshirildi, yangi ish yo‘q",
+  "ai.agent.line.quiet": "Tekshirildi, yangisi yo‘q",
   "ai.agent.run.running": "Ishlayapti",
   "ai.agent.run.ok": "Bajarildi",
   "ai.agent.run.error": "Xato",

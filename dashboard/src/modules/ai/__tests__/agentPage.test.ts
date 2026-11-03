@@ -98,6 +98,16 @@ describe("an agent's page: the logic", () => {
     expect(sceneLines([], [], tr)).toEqual([]);
   });
 
+  it("words a run so it fits the scene's screen (26 characters) in every language", async () => {
+    const dictionaries = [en, (await import("../i18n/ru.json")).default, (await import("../i18n/uz.json")).default] as Record<string, string>[];
+    for (const words of dictionaries) {
+      const texts = ["ai.agent.line.running", "ai.agent.line.error", "ai.agent.line.quiet"].map((key) => words[key]!);
+      // Every plural form of "Finished: 99 actions".
+      texts.push(...words["ai.agent.line.done"]!.split("|").map((form) => form.trim().replace("{n}", "99")));
+      expect(texts.filter((text) => text.length > 26)).toEqual([]);
+    }
+  });
+
   it("reads dollars from the API's strings, and never says $0.00 for something spent", () => {
     expect(usdText("0.421300")).toBe("$0.42");
     expect(usdText("0.010000")).toBe("$0.01");
