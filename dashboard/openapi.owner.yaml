@@ -333,8 +333,38 @@ paths:
                   $ref: '#/components/schemas/AIAgent'
           description: ''
   /api/v1/owner/companies/{company_id}/ai/agents/{key}/:
+    get:
+      operationId: companies_ai_agents_retrieve
+      description: |-
+        GET: the agent's page, for anyone who sees the agents (money and error texts only with
+        ai.configure). PATCH: ai.configure.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: key
+        schema:
+          type: string
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIAgentDetail'
+          description: ''
     patch:
       operationId: companies_ai_agents_partial_update
+      description: |-
+        GET: the agent's page, for anyone who sees the agents (money and error texts only with
+        ai.configure). PATCH: ai.configure.
       parameters:
       - in: path
         name: company_id
@@ -18290,6 +18320,144 @@ components:
       - schedule
       - stats
       - unavailable_reason
+    AIAgentCall:
+      type: object
+      properties:
+        at:
+          type: string
+          format: date-time
+        model:
+          type: string
+        input_tokens:
+          type: integer
+        output_tokens:
+          type: integer
+        cache_read_tokens:
+          type: integer
+        latency_ms:
+          type: integer
+        stop_reason:
+          type: string
+        cost_usd:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,6})?$
+          nullable: true
+          description: Only for ai.configure (null otherwise).
+      required:
+      - at
+      - cache_read_tokens
+      - cost_usd
+      - input_tokens
+      - latency_ms
+      - model
+      - output_tokens
+      - stop_reason
+    AIAgentCompanyMonth:
+      type: object
+      properties:
+        month_cost_usd:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,6})?$
+        monthly_budget_usd:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+      required:
+      - month_cost_usd
+      - monthly_budget_usd
+    AIAgentDetail:
+      type: object
+      properties:
+        key:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        icon:
+          type: string
+          description: A lucide icon name.
+        enabled:
+          type: boolean
+        needs_claude:
+          type: boolean
+        available:
+          type: boolean
+        unavailable_reason:
+          oneOf:
+          - $ref: '#/components/schemas/UnavailableReasonEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        schedule:
+          type: string
+        running:
+          type: boolean
+        last_run_at:
+          type: string
+          format: date-time
+          nullable: true
+        next_run_at:
+          type: string
+          format: date-time
+          nullable: true
+        stats:
+          $ref: '#/components/schemas/AIAgentStats'
+        config:
+          type: object
+          additionalProperties: {}
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/AIAgentField'
+        runs:
+          type: array
+          items:
+            $ref: '#/components/schemas/AIAgentRun'
+          description: The newest 30 runs, newest first.
+        calls:
+          type: array
+          items:
+            $ref: '#/components/schemas/AIAgentCall'
+          description: 'Its newest 30 Claude calls, newest first: never a prompt or
+            answer.'
+        usage:
+          $ref: '#/components/schemas/AIAgentUsage'
+        upcoming:
+          type: array
+          items:
+            $ref: '#/components/schemas/AIAgentUpcoming'
+          description: At most 6, soonest first; the ones without a time last.
+        scene:
+          allOf:
+          - $ref: '#/components/schemas/SceneEnum'
+          description: |-
+            working while it runs, idle when on and able to work, else asleep.
+
+            * `working` - working
+            * `idle` - idle
+            * `asleep` - asleep
+      required:
+      - available
+      - calls
+      - config
+      - description
+      - enabled
+      - fields
+      - icon
+      - key
+      - last_run_at
+      - name
+      - needs_claude
+      - next_run_at
+      - running
+      - runs
+      - scene
+      - schedule
+      - stats
+      - unavailable_reason
+      - upcoming
+      - usage
     AIAgentField:
       type: object
       properties:
@@ -18338,6 +18506,75 @@ components:
       required:
       - label
       - value
+    AIAgentRun:
+      type: object
+      properties:
+        id:
+          type: integer
+        started_at:
+          type: string
+          format: date-time
+        finished_at:
+          type: string
+          format: date-time
+          nullable: true
+        duration_ms:
+          type: integer
+          nullable: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/AIAgentRunStatusEnum'
+          description: |-
+            A run still "running" an hour after it started reads as an error.
+
+            * `running` - running
+            * `ok` - ok
+            * `error` - error
+        forced:
+          type: boolean
+          description: '"Run now", not the schedule.'
+        done:
+          type: integer
+          description: How many things the run did.
+        error:
+          type: string
+          nullable: true
+          description: Only for ai.configure (null otherwise).
+        calls:
+          type: integer
+        input_tokens:
+          type: integer
+        output_tokens:
+          type: integer
+        cost_usd:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,6})?$
+          nullable: true
+          description: Only for ai.configure (null otherwise).
+      required:
+      - calls
+      - cost_usd
+      - done
+      - duration_ms
+      - error
+      - finished_at
+      - forced
+      - id
+      - input_tokens
+      - output_tokens
+      - started_at
+      - status
+    AIAgentRunStatusEnum:
+      enum:
+      - running
+      - ok
+      - error
+      type: string
+      description: |-
+        * `running` - running
+        * `ok` - ok
+        * `error` - error
     AIAgentStats:
       type: object
       properties:
@@ -18348,6 +18585,97 @@ components:
       required:
       - today
       - week
+    AIAgentUpcoming:
+      type: object
+      properties:
+        at:
+          type: string
+          format: date-time
+          nullable: true
+        kind:
+          $ref: '#/components/schemas/AIAgentUpcomingKindEnum'
+        label:
+          type: string
+      required:
+      - at
+      - kind
+      - label
+    AIAgentUpcomingKindEnum:
+      enum:
+      - run
+      - item
+      type: string
+      description: |-
+        * `run` - run
+        * `item` - item
+    AIAgentUsage:
+      type: object
+      properties:
+        month:
+          allOf:
+          - $ref: '#/components/schemas/AIAgentUsageMonth'
+          description: This month in the company's calendar.
+        days:
+          type: array
+          items:
+            $ref: '#/components/schemas/AIAgentUsageDay'
+          description: The last 30 days in the company's calendar, oldest first.
+        company:
+          allOf:
+          - $ref: '#/components/schemas/AIAgentCompanyMonth'
+          nullable: true
+          description: The whole company's month. Only for ai.configure (null otherwise).
+      required:
+      - company
+      - days
+      - month
+    AIAgentUsageDay:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        calls:
+          type: integer
+        input_tokens:
+          type: integer
+        output_tokens:
+          type: integer
+        cost_usd:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,6})?$
+          nullable: true
+          description: Only for ai.configure (null otherwise).
+      required:
+      - calls
+      - cost_usd
+      - date
+      - input_tokens
+      - output_tokens
+    AIAgentUsageMonth:
+      type: object
+      properties:
+        calls:
+          type: integer
+        input_tokens:
+          type: integer
+        output_tokens:
+          type: integer
+        cache_read_tokens:
+          type: integer
+        cost_usd:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,6})?$
+          nullable: true
+          description: Only for ai.configure (null otherwise).
+      required:
+      - cache_read_tokens
+      - calls
+      - cost_usd
+      - input_tokens
+      - output_tokens
     AIApplyFailure:
       type: object
       properties:
@@ -35323,6 +35651,16 @@ components:
       required:
       - module
       - name
+    SceneEnum:
+      enum:
+      - working
+      - idle
+      - asleep
+      type: string
+      description: |-
+        * `working` - working
+        * `idle` - idle
+        * `asleep` - asleep
     Schedule:
       type: object
       properties:

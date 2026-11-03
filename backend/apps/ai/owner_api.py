@@ -295,6 +295,91 @@ class AIAgentSerializer(serializers.Serializer):
     fields = AIAgentFieldSerializer(many=True)
 
 
+MONEY = {"max_digits": 16, "decimal_places": 6, "allow_null": True}
+ONLY_CONFIGURE = "Only for ai.configure (null otherwise)."
+
+
+class AIAgentRunSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    started_at = serializers.DateTimeField()
+    finished_at = serializers.DateTimeField(allow_null=True)
+    duration_ms = serializers.IntegerField(allow_null=True)
+    status = serializers.ChoiceField(
+        ["running", "ok", "error"],
+        help_text='A run still "running" an hour after it started reads as an error.',
+    )
+    forced = serializers.BooleanField(help_text='"Run now", not the schedule.')
+    done = serializers.IntegerField(help_text="How many things the run did.")
+    error = serializers.CharField(allow_null=True, help_text=ONLY_CONFIGURE)
+    calls = serializers.IntegerField()
+    input_tokens = serializers.IntegerField()
+    output_tokens = serializers.IntegerField()
+    cost_usd = serializers.DecimalField(**MONEY, help_text=ONLY_CONFIGURE)
+
+
+class AIAgentCallSerializer(serializers.Serializer):
+    at = serializers.DateTimeField()
+    model = serializers.CharField()
+    input_tokens = serializers.IntegerField()
+    output_tokens = serializers.IntegerField()
+    cache_read_tokens = serializers.IntegerField()
+    latency_ms = serializers.IntegerField()
+    stop_reason = serializers.CharField(allow_blank=True)
+    cost_usd = serializers.DecimalField(**MONEY, help_text=ONLY_CONFIGURE)
+
+
+class AIAgentUsageMonthSerializer(serializers.Serializer):
+    calls = serializers.IntegerField()
+    input_tokens = serializers.IntegerField()
+    output_tokens = serializers.IntegerField()
+    cache_read_tokens = serializers.IntegerField()
+    cost_usd = serializers.DecimalField(**MONEY, help_text=ONLY_CONFIGURE)
+
+
+class AIAgentUsageDaySerializer(serializers.Serializer):
+    date = serializers.DateField()
+    calls = serializers.IntegerField()
+    input_tokens = serializers.IntegerField()
+    output_tokens = serializers.IntegerField()
+    cost_usd = serializers.DecimalField(**MONEY, help_text=ONLY_CONFIGURE)
+
+
+class AIAgentCompanyMonthSerializer(serializers.Serializer):
+    month_cost_usd = serializers.DecimalField(max_digits=16, decimal_places=6)
+    monthly_budget_usd = serializers.DecimalField(max_digits=10, decimal_places=2)
+
+
+class AIAgentUsageSerializer(serializers.Serializer):
+    month = AIAgentUsageMonthSerializer(help_text="This month in the company's calendar.")
+    days = AIAgentUsageDaySerializer(
+        many=True, help_text="The last 30 days in the company's calendar, oldest first."
+    )
+    company = AIAgentCompanyMonthSerializer(
+        allow_null=True, help_text="The whole company's month. " + ONLY_CONFIGURE
+    )
+
+
+class AIAgentUpcomingSerializer(serializers.Serializer):
+    at = serializers.DateTimeField(allow_null=True)
+    kind = serializers.ChoiceField(["run", "item"])
+    label = serializers.CharField()
+
+
+class AIAgentDetailSerializer(AIAgentSerializer):
+    runs = AIAgentRunSerializer(many=True, help_text="The newest 30 runs, newest first.")
+    calls = AIAgentCallSerializer(
+        many=True, help_text="Its newest 30 Claude calls, newest first: never a prompt or answer."
+    )
+    usage = AIAgentUsageSerializer()
+    upcoming = AIAgentUpcomingSerializer(
+        many=True, help_text="At most 6, soonest first; the ones without a time last."
+    )
+    scene = serializers.ChoiceField(
+        ["working", "idle", "asleep"],
+        help_text="working while it runs, idle when on and able to work, else asleep.",
+    )
+
+
 class AIAgentUpdateSerializer(serializers.Serializer):
     enabled = serializers.BooleanField(required=False)
     config = serializers.DictField(required=False)
@@ -334,10 +419,6 @@ class AIActivityPageSerializer(serializers.Serializer):
     next_before = serializers.IntegerField(allow_null=True)
 
 
-def _agent_row(company, key: str) -> dict:
-    return next(row for row in queries.agent_rows(company) if row["key"] == key)
-
-
 class AgentListView(OwnerAPIView):
     perm = None
 
@@ -347,11 +428,25 @@ class AgentListView(OwnerAPIView):
 
 
 class AgentView(OwnerAPIView):
-    perm = CONFIGURE
+    """GET: the agent's page, for anyone who sees the agents (money and error texts only with
+    ai.configure). PATCH: ai.configure."""
+
+    perm = None
+    perms_by_action = {"patch": CONFIGURE}
+
+    @extend_schema(responses=AIAgentDetailSerializer)
+    def get(self, request, company_id, key):
+        page = queries.agent_detail(
+            self.company, key, can_configure=self.membership.has_perm(CONFIGURE)
+        )
+        if page is None:
+            raise NotFound
+        return Response(AIAgentDetailSerializer(page).data)
 
     @extend_schema(request=AIAgentUpdateSerializer, responses=AIAgentSerializer)
     def patch(self, request, company_id, key):
-        if agents.get(key) is None:
+        agent = agents.get(key)
+        if agent is None or not agent.works_in(self.company):
             raise NotFound
         form = AIAgentUpdateSerializer(data=request.data)
         form.is_valid(raise_exception=True)
@@ -360,7 +455,7 @@ class AgentView(OwnerAPIView):
         except DjangoValidationError as exc:
             raise ValidationError({"config": exc.message_dict}) from exc
         self.bump(PULSE_SETTINGS)
-        return Response(AIAgentSerializer(_agent_row(self.company, key)).data)
+        return Response(AIAgentSerializer(queries.agent_row(self.company, key)).data)
 
 
 class AgentRunView(OwnerAPIView):
