@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.3.1 — 2026-11-03
+
+### New: the employee side of HR and payroll (mini app)
+- **Maoshim (My pay)**: this month's pay so far and the month's estimate with its parts, the bonus rules'
+  progress ("2 ta kechikish qoldi — bonus saqlanadi"), payslips with every line, the PDF and "Oldim" once paid,
+  bonuses and fines with their reasons (a fine can be disputed once, and the answer shows), and advances
+  (asked for within the allowed amount, cancelled while undecided, repaid month by month).
+- **Hujjatlarim (My documents)**: the contract with its PDF and "Tanishdim", documents with their end dates
+  (a scan can be uploaded), one's own details (pay card and IDs shown masked) and up to three emergency
+  contacts.
+- **Intizom (My record)**: warnings and reprimands in a calm tone: read, acknowledge, explain once.
+- The bot's notices about payslips, pay and records open the right screen.
+
+### Changed
+- The HR assistant shows, and comes on, where the company has HR or Payroll: its payroll check before pay
+  day and its bonus suggestions are payroll's.
+- The bot's /pay says "Hozircha qo‘lga tegadi", the app's word for the same number.
+
+### Fixed
+- Dates in another year show their year in the mini app.
+
 ## 0.3.0 — 2026-11-02
 
 ### New: HR and payroll
