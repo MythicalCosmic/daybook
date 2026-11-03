@@ -109,9 +109,9 @@ def test_the_hr_assistant_is_an_agent_with_its_settings():
     agent = agents.get(KEY)
 
     assert [item.key for item in agents.all_agents()][-1] == KEY
-    assert (agent.icon, agent.feature, agent.needs_claude, agent.default_enabled) == (
+    assert (agent.icon, agent.features, agent.needs_claude, agent.default_enabled) == (
         "briefcase",
-        "hr",
+        ("hr", "payroll"),
         False,
         True,
     )
@@ -142,7 +142,7 @@ def test_it_runs_on_workdays_at_its_time(shop):
     assert hr_assistant.AGENT.next_run({"at": "09:00"}, local(DAY, 8), shop) == MORNING
 
 
-def test_ai_on_switches_it_on_only_where_the_company_has_hr(shop, staff, member):
+def test_ai_on_switches_it_on_only_where_the_company_has_hr_or_payroll(shop, staff, member):
     from apps.companies.tests.factories import CompanyFactory
 
     services.enable_ai(shop, by=staff.owner)
@@ -153,7 +153,7 @@ def test_ai_on_switches_it_on_only_where_the_company_has_hr(shop, staff, member)
     assert not AgentState.objects.filter(company=other, key=KEY).exists()
 
 
-def test_the_card_shows_only_with_the_hr_module(owner_api, team, shop):
+def test_the_card_shows_with_hr_or_payroll(owner_api, team, shop):
     url = f"/api/v1/owner/companies/{shop.pk}/ai/agents/"
 
     rows = owner_api(team.owner).get(url).json()
@@ -165,16 +165,22 @@ def test_the_card_shows_only_with_the_hr_module(owner_api, team, shop):
     )
     assert card["next_run_at"] is not None
 
+    # Payroll alone keeps it: the payroll check before pay day and the bonus suggestions are its.
     companies.set_features(shop, by=team.owner, features=["payroll", "attendance", "ai"])
+    assert KEY in [row["key"] for row in owner_api(team.owner).get(url).json()]
+
+    companies.set_features(shop, by=team.owner, features=["attendance", "ai"])
     assert KEY not in [row["key"] for row in owner_api(team.owner).get(url).json()]
 
 
-def test_switching_hr_on_brings_the_assistant_where_ai_is_on(shop, staff, ai_on):
-    shop.features = ["payroll", "attendance"]
+@pytest.mark.parametrize("module", ["hr", "payroll"])
+def test_switching_hr_or_payroll_on_brings_the_assistant_where_ai_is_on(shop, staff, ai_on, module):
+    shop.features = ["attendance"]
     shop.save(update_fields=["features"])
     ai_on(shop)
+    assert not AgentState.objects.filter(company=shop, key=KEY, enabled=True).exists()
 
-    companies.set_features(shop, by=staff.owner, features=[*shop.features, "hr"])
+    companies.set_features(shop, by=staff.owner, features=[*shop.features, module])
 
     state = AgentState.objects.get(company=shop, key=KEY)
     assert state.enabled and state.next_run_at is not None

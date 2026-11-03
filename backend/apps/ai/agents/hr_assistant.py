@@ -817,7 +817,7 @@ AGENT = registry.register(
     Agent(
         key=KEY,
         order=50,
-        feature=Feature.HR,
+        features=(Feature.HR, Feature.PAYROLL),
         name=gettext_lazy("HR assistant"),
         description=gettext_lazy(
             "Each workday morning HR hears what needs them: documents and contracts that end, "
