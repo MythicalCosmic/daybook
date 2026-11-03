@@ -479,27 +479,6 @@ onBeforeUnmount(() => {
   touch-action: pan-y;
 }
 
-:global([data-theme="dark"]) .agent-scene {
-  --sc-wall: #2c2720;
-  --sc-stripe: rgba(255, 255, 255, 0.022);
-  --sc-base: #4b3e2f;
-  --sc-floor: #4d3b2a;
-  --sc-seam: #3f3022;
-  --sc-rug: #5d4934;
-  --sc-rug-edge: #725a3d;
-  --sc-frame: #d8d0c0;
-  --sc-frame-dark: #a69d8b;
-  --sc-curtain: #4f8170;
-  --sc-curtain-fold: #426d5e;
-  --sc-wood: #80593a;
-  --sc-wood-dark: #634329;
-  --sc-desk-top: #a07549;
-  --sc-desk-light: #b98b5b;
-  --sc-desk-front: #7f5a36;
-  --sc-desk-shade: #67472a;
-  --sc-chair: #43526a;
-  --sc-chair-light: #55667f;
-}
 
 .agent-scene[data-night] {
   --sc-sky-top: #1a2246;
@@ -697,12 +676,39 @@ onBeforeUnmount(() => {
   50% { transform: translate(4px, -3px); }
 }
 
-:global(html[data-motion="reduced"]) .agent-scene *,
-:global(html[data-motion="reduced"]) .agent-scene {
+</style>
+
+<style>
+/* Unscoped on purpose: in a scoped block `:global(X) .agent-scene` compiles to just `X` (Vue drops
+ * the rest), so the dark palette and reduced motion live here, keyed by the scene's own class. */
+html[data-theme="dark"] .agent-scene {
+  --sc-wall: #2c2720;
+  --sc-stripe: rgba(255, 255, 255, 0.022);
+  --sc-base: #4b3e2f;
+  --sc-floor: #4d3b2a;
+  --sc-seam: #3f3022;
+  --sc-rug: #5d4934;
+  --sc-rug-edge: #725a3d;
+  --sc-frame: #d8d0c0;
+  --sc-frame-dark: #a69d8b;
+  --sc-curtain: #4f8170;
+  --sc-curtain-fold: #426d5e;
+  --sc-wood: #80593a;
+  --sc-wood-dark: #634329;
+  --sc-desk-top: #a07549;
+  --sc-desk-light: #b98b5b;
+  --sc-desk-front: #7f5a36;
+  --sc-desk-shade: #67472a;
+  --sc-chair: #43526a;
+  --sc-chair-light: #55667f;
+}
+
+html[data-motion="reduced"] .agent-scene,
+html[data-motion="reduced"] .agent-scene * {
   animation: none !important;
   transition: none !important;
 }
-:global(html[data-motion="reduced"]) .scene-camera {
-  transform: none;
+html[data-motion="reduced"] .agent-scene .scene-camera {
+  transform: none !important;
 }
 </style>
