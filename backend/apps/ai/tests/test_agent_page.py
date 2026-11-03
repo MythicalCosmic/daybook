@@ -540,9 +540,9 @@ def test_the_deadline_watcher_counts_the_work_due_within_a_day(owner_api, pharma
     upcoming = page(owner_api, pharmacy.owner, deadline_watcher.KEY).json()["upcoming"]
 
     assert [(when(item), item["kind"], item["label"]) for item in upcoming] == [
-        (at(3, 10, 30), "run", "Scheduled run"),
-        (at(3, 11), "run", "Scheduled run"),
-        (at(3, 11, 30), "run", "Scheduled run"),
+        (at(3, 10, 30), "run", "Checks for late work"),
+        (at(3, 11), "run", "Checks for late work"),
+        (at(3, 11, 30), "run", "Checks for late work"),
         (None, "item", "Tasks due in the next 24 hours: 2"),
     ]
 
@@ -552,18 +552,18 @@ def test_the_morning_plan_says_whom_its_next_run_is_for(owner_api, pharmacy):
     upcoming = page(owner_api, pharmacy.owner, morning_plan.KEY).json()["upcoming"]
 
     assert [(when(item), item["kind"], item["label"]) for item in upcoming] == [
-        (at(4, 8, 30), "run", "Scheduled run"),
+        (at(4, 8, 30), "run", "Sends the morning plans"),
         (at(4, 8, 30), "item", "Plans for 2 people"),
-        (at(5, 8, 30), "run", "Scheduled run"),
-        (at(6, 8, 30), "run", "Scheduled run"),
+        (at(5, 8, 30), "run", "Sends the morning plans"),
+        (at(6, 8, 30), "run", "Sends the morning plans"),
     ]
 
 
 @pytest.mark.parametrize(
     ("language", "labels"),
     [
-        ("uz", ["Jadval bo‘yicha ishga tushadi", "2 kishi uchun reja"]),
-        ("ru", ["Запуск по расписанию", "Планы для 2 человек"]),
+        ("uz", ["Ertalabki rejalarni yuboradi", "2 kishi uchun reja"]),
+        ("ru", ["Разошлёт утренние планы", "Планы для 2 человек"]),
     ],
 )
 def test_what_comes_next_reads_in_the_readers_language(owner_api, pharmacy, language, labels):

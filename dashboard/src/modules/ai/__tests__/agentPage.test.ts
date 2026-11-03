@@ -12,7 +12,7 @@ import { i18n, mergeModuleMessages } from "@/i18n";
 import { json } from "@/test/fixtures";
 import { mountWithProviders, testApp } from "@/test/plugins";
 
-import { agentKpis, agentStatus, durationText, isNight, isScheduled, monthShare, sceneLines, sceneOf, tokensText, upcomingWhen, usdText, type Translate } from "../agentPage";
+import { agentKpis, agentStatus, durationText, isNight, isScheduled, monthShare, sceneLines, screenText, sceneOf, tokensText, upcomingWhen, usdText, type Translate } from "../agentPage";
 import AgentScene from "../components/AgentScene.vue";
 import en from "../i18n/en.json";
 import AgentPage from "../pages/AgentPage.vue";
@@ -96,6 +96,12 @@ describe("an agent's page: the logic", () => {
     ]);
     expect(sceneLines(items, runs, tr, 3)).toEqual(["Finished: 2 actions", "Checked, nothing new", "Working…"]);
     expect(sceneLines([], [], tr)).toEqual([]);
+    // The agent's own name isn't repeated on its screen.
+    const plan = [{ text: "Ertalabki reja (Dilnoza Karimova): bugun muddati — 3", created_at: "2026-11-03T03:30:00Z" }];
+    expect(sceneLines(plan, [], tr, 6, "Ertalabki reja")).toEqual(["Dilnoza Karimova: bugun muddati — 3"]);
+    expect(screenText("Ertalabki reja — yuborildi", "Ertalabki reja")).toBe("yuborildi");
+    expect(screenText("Told Bekzod that «Kassa» is late", "Deadline watcher")).toBe("Told Bekzod that «Kassa» is late");
+    expect(screenText("Ertalabki reja", "Ertalabki reja")).toBe("Ertalabki reja");
   });
 
   it("words a run so it fits the scene's screen (26 characters) in every language", async () => {

@@ -985,6 +985,7 @@ AGENT = registry.register(
             ),
         ),
         schedule=_schedule,
+        run_label=gettext_lazy("Morning HR check"),
         run=run,
         next_run=morning_plan.next_run,
         upcoming=upcoming,

@@ -71,13 +71,26 @@ export function runLine(run: Pick<AgentRun, "status" | "done">, t: Translate): s
 }
 
 /**
+ * An activity text as its own screen shows it: without the agent's own name in front, which the
+ * room already says ("Ertalabki reja (Dilnoza Karimova): bugun …" → "Dilnoza Karimova: bugun …").
+ */
+export function screenText(text: string, agentName: string): string {
+  const name = agentName.trim();
+  if (!name || !text.startsWith(name)) return text;
+  const rest = text.slice(name.length).trim();
+  const named = /^\(([^)]+)\)\s*([\s\S]*)$/.exec(rest);
+  if (named) return `${named[1]}${named[2].startsWith(":") ? "" : " "}${named[2]}`.trim() || text;
+  return rest.replace(/^[:—–-]\s*/, "") || text;
+}
+
+/**
  * The newest things it did (activity texts) and its runs in a few words, newest last, at most
  * `max`. A run that found nothing new shows once (the newest), so thirty quiet checks don't push
  * what it really did off the screen; a run still going is always the last line.
  */
-export function sceneLines(activity: readonly Pick<ActivityItem, "text" | "created_at">[], runs: readonly AgentRun[], t: Translate, max = SCENE_LINES): string[] {
+export function sceneLines(activity: readonly Pick<ActivityItem, "text" | "created_at">[], runs: readonly AgentRun[], t: Translate, max = SCENE_LINES, agentName = ""): string[] {
   const lines = [
-    ...activity.map((item) => ({ at: Date.parse(item.created_at), text: item.text, quiet: false })),
+    ...activity.map((item) => ({ at: Date.parse(item.created_at), text: screenText(item.text, agentName), quiet: false })),
     ...runs.map((run) => ({
       at: run.status === "running" ? Number.POSITIVE_INFINITY : Date.parse(run.finished_at ?? run.started_at),
       text: runLine(run, t),

@@ -70,7 +70,7 @@ const runnable = computed(() => !!agent.value && isScheduled(agent.value) && can
 
 // The scene: its state, what is on its screen, day or night in the company.
 const scene = computed(() => (agent.value ? sceneOf(agent.value, aiOn.value) : "asleep"));
-const lines = computed(() => (agent.value ? sceneLines(feed.items.value, agent.value.runs, t) : []));
+const lines = computed(() => (agent.value ? sceneLines(feed.items.value, agent.value.runs, t, undefined, agent.value.name) : []));
 const night = computed(() => isNight(company.timezone, now.value));
 const sceneLabel = computed(() => (agent.value ? t("ai.agent.scene.label", { name: agent.value.name, state: t(`ai.agent.scene.${scene.value}`) }) : ""));
 

@@ -262,7 +262,8 @@ def _upcoming(company, agent, state, now: datetime) -> list[dict]:
     """Its next scheduled runs and what it expects (its `upcoming` hook): soonest first, the
     ones without a time last."""
     runs = runner.next_runs(agent, state, company, now, NEXT_RUNS_SHOWN) if agent.scheduled else []
-    found = [{"at": moment, "kind": "run", "label": _("Scheduled run")} for moment in runs]
+    label = str(agent.run_label) if agent.run_label else _("Scheduled run")
+    found = [{"at": moment, "kind": "run", "label": label} for moment in runs]
     if agent.upcoming is not None:
         found += [
             {"at": at, "kind": "item", "label": str(label)}

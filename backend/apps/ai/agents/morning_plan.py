@@ -233,6 +233,7 @@ AGENT = registry.register(
             ),
         ),
         schedule=_schedule,
+        run_label=gettext_lazy("Sends the morning plans"),
         run=run,
         next_run=next_run,
         upcoming=upcoming,

@@ -166,6 +166,7 @@ AGENT = registry.register(
             Field("quiet_to", "time", gettext_lazy("Quiet until"), "08:00"),
         ),
         schedule=_schedule,
+        run_label=gettext_lazy("Checks for late work"),
         run=run,
         next_run=next_run,
         upcoming=upcoming,

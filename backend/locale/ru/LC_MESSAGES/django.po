@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-03 14:34+0500\n"
+"POT-Creation-Date: 2026-11-03 15:48+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -509,6 +509,10 @@ msgid "Quiet until"
 msgstr "Тишина до"
 
 #: backend/apps/ai/agents/deadline_watcher.py
+msgid "Checks for late work"
+msgstr "Проверит просроченные задачи"
+
+#: backend/apps/ai/agents/deadline_watcher.py
 #, python-format
 msgid "Told %(to)s that «%(task)s» is late (%(assignee)s)"
 msgstr "%(to)s: сообщено, что «%(task)s» опаздывает (%(assignee)s)"
@@ -605,6 +609,10 @@ msgid "Each suggested bonus, in the payroll's currency."
 msgstr "Каждая предложенная премия, в валюте зарплаты."
 
 #: backend/apps/ai/agents/hr_assistant.py
+msgid "Morning HR check"
+msgstr "Утренняя проверка по кадрам"
+
+#: backend/apps/ai/agents/hr_assistant.py
 #, python-format
 msgid "HR digest for %(to)s: %(count)s item"
 msgid_plural "HR digest for %(to)s: %(count)s items"
@@ -679,6 +687,10 @@ msgstr "Менеджеры"
 #: backend/apps/ai/agents/morning_plan.py
 msgid "Heads and managers"
 msgstr "Руководители и менеджеры"
+
+#: backend/apps/ai/agents/morning_plan.py
+msgid "Sends the morning plans"
+msgstr "Разошлёт утренние планы"
 
 #: backend/apps/ai/agents/morning_plan.py
 #, python-format

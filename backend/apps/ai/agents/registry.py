@@ -92,6 +92,8 @@ class Agent:
     needs_speech: bool = False
     # Where the dashboard lists it (lowest first).
     order: int = 100
+    # What a scheduled run does, for its page's upcoming list ("Sends the morning plans").
+    run_label: str | Promise = ""
     # The company modules it works for ("hr", "payroll"): listed, and switched on with AI, only
     # where the company has at least one of them.
     features: tuple[str, ...] = ()
