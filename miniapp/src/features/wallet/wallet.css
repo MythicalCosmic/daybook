@@ -1,0 +1,212 @@
+/* "Maoshim": the month's hero, its parts, rule cards, rows with an amount, and the sheets. */
+@import "../states.css";
+
+.wal-hero {
+  gap: 6px;
+  padding: 20px 22px 22px;
+}
+
+.wal-hero-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.wal-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+/* The big number wraps its currency under it rather than running off a narrow phone. */
+.wal-hero-amount {
+  flex-wrap: wrap;
+  row-gap: 2px;
+}
+
+.wal-hero-estimate {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-accent-2-700);
+  font-variant-numeric: tabular-nums;
+}
+
+/* — the month's parts, a payslip's lines — */
+
+.wal-parts .list-item,
+.wal-lines .list-item {
+  font-size: 15px;
+}
+
+.wal-total {
+  font-weight: 700;
+}
+
+.wal-total .list-item-value {
+  color: var(--color-text);
+  font-size: 17px;
+}
+
+/* — rows — */
+
+/* A reason may be long ("Savdo bonusi, 1%: Sof savdo 112 710 000 so‘m"): two lines, then "…". */
+.wal-row .row-meta {
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.wal-struck {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
+/* A bonus's or a fine's amount on its row's first line. */
+.wal-entry-amount {
+  font-size: 15.5px;
+  font-weight: 700;
+}
+
+/* — bonus rules — */
+
+.wal-rule {
+  gap: 10px;
+  padding: 16px 18px;
+}
+
+.wal-rule-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.wal-rule-name {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.3;
+  min-width: 0;
+}
+
+.wal-rule-earned {
+  flex: none;
+  font-weight: 700;
+}
+
+.wal-good {
+  color: var(--color-accent-2-700);
+  font-weight: 600;
+}
+
+/* — the advance cap — */
+
+.wal-cap {
+  gap: 4px;
+}
+
+.wal-cap .ui-money--lg {
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.wal-cap-button {
+  margin-top: 10px;
+}
+
+/* — sheets — */
+
+.wal-sheet-amount {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.wal-sheet-amount .ui-money--lg {
+  font-size: 26px;
+  font-weight: 800;
+}
+
+.wal-link {
+  align-self: flex-start;
+  margin-left: -12px;
+  color: var(--color-accent-700);
+}
+
+.wal-dispute {
+  gap: 6px;
+  padding: 14px 16px;
+}
+
+.wal-dispute-head {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.wal-dispute-text {
+  margin: 0 0 4px;
+  font-size: 15px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.wal-dispute .tag {
+  align-self: flex-start;
+}
+
+/* — an advance's months — */
+
+.wal-schedule {
+  display: flex;
+  flex-direction: column;
+  margin: -4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wal-schedule li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.wal-schedule li:last-child {
+  border-bottom: 0;
+}
+
+.wal-schedule-icon {
+  display: grid;
+  color: var(--muted);
+}
+
+.wal-schedule-done .wal-schedule-icon {
+  color: var(--color-accent-2-600);
+}
+
+.wal-schedule-month {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.wal-schedule-value {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--muted);
+  text-align: right;
+}
+
+.wal-schedule-value small {
+  font-size: 12.5px;
+  font-weight: 600;
+}

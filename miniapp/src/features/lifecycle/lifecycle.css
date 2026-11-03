@@ -1,0 +1,17 @@
+/* "Intizom": the record's words and my explanation. */
+@import "../states.css";
+
+.lc-text {
+  gap: 12px;
+}
+
+.lc-yours {
+  gap: 6px;
+  padding: 14px 16px;
+}
+
+.lc-yours-head {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--muted);
+}

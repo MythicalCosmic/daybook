@@ -8379,6 +8379,16 @@ components:
           type: string
         metric:
           type: string
+        op:
+          allOf:
+          - $ref: '#/components/schemas/PayrollRuleOpEnum'
+          description: |-
+            Whether more (gte, gt) or less is better.
+
+            * `gte` - at least
+            * `gt` - more than
+            * `lte` - at most
+            * `lt` - less than
         value:
           type: string
         earned:
@@ -8389,6 +8399,11 @@ components:
         target_amount:
           type: string
           nullable: true
+        limit:
+          type: string
+          nullable: true
+          description: 'An at-most rule that pays now: the number to stay within to
+            keep it.'
         min_tasks:
           type: integer
           nullable: true
@@ -8397,9 +8412,11 @@ components:
           nullable: true
       required:
       - earned
+      - limit
       - metric
       - min_tasks
       - name
+      - op
       - rule
       - target
       - target_amount
@@ -8802,6 +8819,18 @@ components:
       - note
       - paid_on
       - payslip
+    PayrollRuleOpEnum:
+      enum:
+      - gte
+      - gt
+      - lte
+      - lt
+      type: string
+      description: |-
+        * `gte` - at least
+        * `gt` - more than
+        * `lte` - at most
+        * `lt` - less than
     PayslipRow:
       type: object
       description: |-

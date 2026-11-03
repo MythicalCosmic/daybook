@@ -525,15 +525,22 @@ def progress(member, period: date, *, now=None) -> list[dict]:
         elif rule.mode == Mode.ONCE and rule.threshold is not None and current is None:
             target = rule.threshold
             reward = outcome(rule, target, base)
+        # An at-most rule that pays now: the number to stay within to keep it (the wallet's
+        # "2 more late arrivals allowed: the bonus stays").
+        limit = None
+        if current is not None and rule.op in (Op.LTE, Op.LT):
+            limit = current.tier if current.tier is not None else rule.threshold
         found.append(
             {
                 "rule": rule.pk,
                 "name": rule.name,
                 "metric": rule.metric,
+                "op": rule.op,
                 "value": value,
                 "earned": current.amount if current else ZERO,
                 "target": target,
                 "target_amount": reward.amount if reward else None,
+                "limit": limit,
                 "min_tasks": rule.min_tasks if rule.metric in TASK_METRICS else None,
                 "tasks": numbers.task_total if rule.metric in TASK_METRICS else None,
             }

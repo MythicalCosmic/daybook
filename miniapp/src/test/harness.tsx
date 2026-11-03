@@ -123,6 +123,29 @@ export function renderApp(
   return { client, ...result };
 }
 
+type ApiMock = { mockImplementation: (impl: (path: string, options?: { method?: string; json?: unknown; form?: FormData }) => Promise<unknown>) => unknown };
+
+/**
+ * Answer a mocked `api` by the path's end and the method ("GET" by default, or "POST /x/"): a
+ * value, a function of the request's body, or an error to throw. The longest matching end wins;
+ * anything else gets `{}`.
+ */
+export function routeApi(api: ApiMock, routes: Record<string, unknown>): void {
+  api.mockImplementation(async (path, options) => {
+    const method = options?.method ?? (options?.json !== undefined || options?.form ? "POST" : "GET");
+    const key = Object.keys(routes)
+      .filter((route) => {
+        const [verb, suffix] = route.includes(" ") ? route.split(" ") : ["GET", route];
+        return verb === method && path.endsWith(suffix);
+      })
+      .sort((a, b) => b.length - a.length)[0];
+    if (!key) return {};
+    const answer = routes[key];
+    if (answer instanceof Error) throw answer;
+    return typeof answer === "function" ? (answer as (body: unknown) => unknown)(options?.json ?? options?.form) : answer;
+  });
+}
+
 export function navigationState(container: HTMLElement = document.body): {
   tab: string;
   tasksTab: string;

@@ -3678,10 +3678,21 @@ export interface components {
             rule: number;
             name: string;
             metric: string;
+            /**
+             * @description Whether more (gte, gt) or less is better.
+             *
+             *     * `gte` - at least
+             *     * `gt` - more than
+             *     * `lte` - at most
+             *     * `lt` - less than
+             */
+            op: components["schemas"]["PayrollRuleOpEnum"];
             value: string;
             earned: string;
             target: string | null;
             target_amount: string | null;
+            /** @description An at-most rule that pays now: the number to stay within to keep it. */
+            limit: string | null;
             min_tasks: number | null;
             tasks: number | null;
         };
@@ -3839,6 +3850,14 @@ export interface components {
             readonly payslip: number | null;
             readonly how: string;
         };
+        /**
+         * @description * `gte` - at least
+         *     * `gt` - more than
+         *     * `lte` - at most
+         *     * `lt` - less than
+         * @enum {string}
+         */
+        PayrollRuleOpEnum: "gte" | "gt" | "lte" | "lt";
         /**
          * @description A row of a run's payslip table: the person and their sums by kind. The parts are signed
          *     like the lines and add up exactly: base_pay + extras + bonuses + fines + advances +

@@ -2,7 +2,7 @@ import { CalendarDays, ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import { useId, useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
 
 import { useI18n } from "../i18n";
-import { addDays, capitalise, dayMonth, dayMonthLong, monthYear, weekdayLong, weekdayShort, type DayKey } from "../lib/time";
+import { addDays, capitalise, dayKey, dayMonth, dayMonthLong, dayMonthYear, monthYear, weekdayLong, weekdayShort, type DayKey } from "../lib/time";
 import { haptic } from "../telegram";
 import { cx } from "./cx";
 import { useFieldControl } from "./Field";
@@ -211,10 +211,12 @@ export function DateInput({
   const panelId = useId();
   const trigger = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(defaultOpen);
-  const shown = value
-    ? capitalise(long ? `${weekdayLong(value, "UTC", locale)}, ${dayMonthLong(value, "UTC", locale)}` : `${weekdayShort(value, "UTC", locale)}, ${dayMonth(value, "UTC", locale)}`)
-    : "";
-  const spoken = value ? `${label}: ${weekdayLong(value, "UTC", locale)}, ${dayMonthLong(value, "UTC", locale)}` : label;
+  // A day in another year says its year ("a year from today" must not read as today).
+  const otherYear = Boolean(value) && value.slice(0, 4) !== (today ?? dayKey(new Date(), "UTC")).slice(0, 4);
+  const dayText = (short: boolean) =>
+    otherYear ? dayMonthYear(value, "UTC", locale) : short ? dayMonth(value, "UTC", locale) : dayMonthLong(value, "UTC", locale);
+  const shown = value ? capitalise(long ? `${weekdayLong(value, "UTC", locale)}, ${dayText(false)}` : `${weekdayShort(value, "UTC", locale)}, ${dayText(true)}`) : "";
+  const spoken = value ? `${label}: ${weekdayLong(value, "UTC", locale)}, ${dayText(false)}` : label;
   const close = () => {
     setOpen(false);
     trigger.current?.focus({ preventScroll: true });

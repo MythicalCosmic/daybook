@@ -195,6 +195,15 @@ describe("DateInput", () => {
     expect(document.activeElement).toBe(field);
   });
 
+  it("says the year of a day in another year, so a year from today doesn't read as today", () => {
+    render(<DateHost start="2027-11-02" max="2028-12-31" />);
+    const field = screen.getByRole("button", { name: "Kun: seshanba, 2027-yil 2-noyabr" });
+    expect(field.textContent).toBe("Sesh, 2027-yil 2-noyabr");
+    cleanup();
+    render(<DateHost start="2027-11-02" max="2028-12-31" lang="en" />);
+    expect(screen.getByRole("button", { name: /^Kun: / }).textContent).toBe("Tue, 2 November 2027");
+  });
+
   it("names months and weekdays in Russian and English too", () => {
     render(<DateHost lang="ru" />);
     fireEvent.click(screen.getByRole("button", { name: /^Kun: / }));

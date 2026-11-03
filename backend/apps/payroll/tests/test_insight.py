@@ -79,14 +79,56 @@ def test_rule_progress_in_the_wallet(shop, team, freeze):
             "rule": found[0]["rule"],
             "name": "On time",
             "metric": "attendance.hours",
+            "op": "gte",
             "value": "0.00",
             "earned": "0.00",
             "target": "100.00",
             "target_amount": "100000.00",
+            "limit": None,
             "min_tasks": None,
             "tasks": None,
         }
     ]
+
+
+def test_an_at_most_rule_says_the_limit_to_stay_within(shop, team, freeze, api_as):
+    """ "2 more late arrivals and the bonus stays": the wallet needs the rule's direction and the
+    number to stay within while the bonus is earned."""
+    freeze(local(date(2026, 10, 21), 12))
+    services.save_rule(
+        shop,
+        by=None,
+        name="Punctual",
+        kind="bonus",
+        metric=AdjustmentRule.Metric.LATE_ARRIVALS,
+        mode=AdjustmentRule.Mode.ONCE,
+        op=AdjustmentRule.Op.LTE,
+        threshold="2",
+        amount="200000",
+        is_active=True,
+    )
+    services.save_rule(
+        shop,
+        by=None,
+        name="Few absences",
+        kind="bonus",
+        metric=AdjustmentRule.Metric.ABSENCES,
+        mode=AdjustmentRule.Mode.TIERED,
+        op=AdjustmentRule.Op.LTE,
+        tiers=[{"threshold": "0", "amount": "300000"}, {"threshold": "1", "amount": "100000"}],
+        is_active=True,
+    )
+    rows = api_as(team.ali).get(my_url(shop, "earnings/current/")).data["progress"]
+    punctual, absences = sorted(rows, key=lambda row: row["name"], reverse=True)
+    assert (punctual["op"], punctual["value"], punctual["earned"], punctual["limit"]) == (
+        "lte",
+        "0.00",
+        "200000.00",
+        "2.00",
+    )
+    assert punctual["target"] is None
+    # Tiered: no absences holds the best tier, so that tier's threshold is the one to stay within.
+    assert (absences["earned"], absences["limit"]) == ("300000.00", "0.00")
 
 
 def test_overview(shop, team, freeze, owner_api):
