@@ -16,7 +16,7 @@ from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from django.utils import translation
 
-from apps.ai import agents, drafting, events, services
+from apps.ai import agents, availability, drafting, events, services
 from apps.ai.agents import (
     deadline_watcher,
     hr_assistant,
@@ -26,7 +26,7 @@ from apps.ai.agents import (
     runner,
     voice_tasks,
 )
-from apps.ai.models import AgentRun, AgentState, AIUsage
+from apps.ai.models import AgentEvent, AgentRun, AgentState, AIUsage
 from apps.hr import services as hr
 from apps.hr.tests.factories import EmployeeDocumentFactory
 from apps.members.models import AccessRole
@@ -444,6 +444,9 @@ def test_a_run_still_running_after_an_hour_reads_as_an_error(owner_api, pharmacy
 def test_token_use_by_day_in_the_companys_calendar(owner_api, pharmacy, other_company):
     company = pharmacy.company
     key = deadline_watcher.KEY
+    # The budget's cached month total (stale here: rows written past the client) is not what
+    # the page reads; the agent's share comes from the same rows as the company's month.
+    assert availability.month_spend_micro(company) == 0
     usage(company, key, at(2, 23, 30), input_tokens=100, output_tokens=10, cost_micro_usd=1000)
     # 00:30 in Tashkent is still Monday in UTC: it counts on Tuesday.
     usage(
@@ -647,6 +650,36 @@ def test_the_hr_assistant_expects_the_payroll_check_and_the_bonuses(owner_api, h
 
 def test_the_hr_assistant_expects_no_payroll_check_while_payroll_is_unused(hr_team, shop):
     assert hr_upcoming(shop) == [(None, "Documents and contracts to watch: 0")]
+
+
+# The demo ---------------------------------------------------------------------------------------
+
+
+def test_the_demo_fills_the_agent_pages(owner_api, pharmacy):
+    """`make demo`: the scheduled agents' runs of yesterday and today (Sunday is off) and 30
+    days of Claude calls on workdays, nothing after now; a run counts its own calls."""
+    from apps.ai import demo
+
+    company = pharmacy.company
+    told = events.log(company, deadline_watcher.KEY, "escalated", params={"task": "Kassa"})
+    AgentEvent.objects.filter(pk=told.pk).update(created_at=at(3, 9, 10))
+
+    demo.agent_pages(company, NOW)
+
+    watcher = runs_of(company, deadline_watcher.KEY)
+    assert len(watcher) == 26 + 4  # Monday 08:00-20:30, today until 09:30
+    assert [(run.started_at, run.done) for run in watcher[:2]] == [(at(3, 9, 30), 0), (at(3, 9), 1)]
+    [failed] = [run for run in watcher if run.status == "error"]
+    assert failed.started_at == at(2, 13) and failed.error
+    plans = runs_of(company, morning_plan.KEY)
+    assert [run.started_at for run in plans] == [at(3, 8, 30), at(2, 8, 30)]
+    assert AIUsage.objects.filter(company=company, created_at__gte=NOW).count() == 0
+    state = AgentState.objects.get(company=company, key=deadline_watcher.KEY)
+    assert state.last_run_at == at(3, 9, 30)
+    voice = page(owner_api, pharmacy.owner, voice_tasks.KEY).json()
+    assert len(voice["calls"]) == 30 and voice["usage"]["month"]["calls"] == 2  # today: at 10:05
+    called = [date.fromisoformat(day["date"]) for day in voice["usage"]["days"] if day["calls"]]
+    assert len(called) == 21 and all(day.weekday() < 5 for day in called)
 
 
 # Queries ----------------------------------------------------------------------------------------
