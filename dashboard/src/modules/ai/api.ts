@@ -17,6 +17,7 @@ import type {
   ActivityItem,
   ActivityPage,
   Agent,
+  AgentDetail,
   AgentPatch,
   AiDraft,
   AiSettings,
@@ -55,6 +56,8 @@ export const aiApi = {
   disable: (cid: number) => http.post<AiStatus>(path(cid, "settings/disable/")),
 
   agents: (cid: number, signal?: AbortSignal) => http.get<Agent[] | Page<Agent>>(path(cid, "agents/"), undefined, { signal }).then(rows),
+  /** One agent with its runs, Claude calls, token usage and what comes next (its page). */
+  agent: (cid: number, key: string, signal?: AbortSignal) => http.get<AgentDetail>(path(cid, `agents/${key}/`), undefined, { signal }),
   patchAgent: (cid: number, key: string, patch: AgentPatch) => http.patch<Agent>(path(cid, `agents/${key}/`), patch),
   runAgent: (cid: number, key: string) => http.post<{ queued: boolean }>(path(cid, `agents/${key}/run/`)),
   activity: (cid: number, params: { agent?: string; limit?: number; before?: number }, signal?: AbortSignal) =>
@@ -85,6 +88,7 @@ export const aiKeys = {
   status: (cid: number) => qk(cid, MODULE, "status"),
   settings: (cid: number) => qk(cid, MODULE, "settings"),
   agents: (cid: number) => qk(cid, MODULE, "agents"),
+  agent: (cid: number, key: string) => qk(cid, MODULE, "agent", { key }),
   activity: (cid: number, agent: string, limit: number) => qk(cid, MODULE, "activity", { agent, limit }),
   drafts: (cid: number, filters: DraftFilters) => qk(cid, MODULE, "drafts", { ...filters }),
   draft: (cid: number, id: number) => qk(cid, MODULE, "draft", { id }),
@@ -134,43 +138,82 @@ export function useAgents() {
   });
 }
 
-/** Switch an agent or change its settings: the card changes at once and goes back if refused. */
+/** While its page is open the agent refreshes every few seconds at work, else twice a minute. */
+export const AGENT_PAGE_POLL_MS = 30_000;
+
+/** One agent's page: the agent with its runs, Claude calls, token usage and what comes next. */
+export function useAgent(key: MaybeRefOrGetter<string>) {
+  const cid = useCompanyId();
+  return useQuery({
+    queryKey: computed(() => aiKeys.agent(cid.value, toValue(key))),
+    queryFn: ({ signal }) => aiApi.agent(cid.value, toValue(key), signal),
+    enabled: computed(() => cid.value > 0 && !!toValue(key)),
+    staleTime: 10_000,
+    refetchInterval: (query) => (query.state.data?.running || query.state.data?.scene === "working" ? AGENTS_BUSY_POLL_MS : AGENT_PAGE_POLL_MS),
+  });
+}
+
+/**
+ * One agent changed in the agents list and on its own page alike (the page's detail carries every
+ * list field). Returns what both held before, for a rollback.
+ */
+function useAgentCaches() {
+  const cid = useCompanyId();
+  const client = useQueryClient();
+  return {
+    async cancel(key: string): Promise<void> {
+      await Promise.all([client.cancelQueries({ queryKey: aiKeys.agents(cid.value) }), client.cancelQueries({ queryKey: aiKeys.agent(cid.value, key) })]);
+    },
+    change(key: string, change: (agent: Agent) => Agent): { list: Agent[] | undefined; detail: AgentDetail | undefined } {
+      const before = { list: client.getQueryData<Agent[]>(aiKeys.agents(cid.value)), detail: client.getQueryData<AgentDetail>(aiKeys.agent(cid.value, key)) };
+      if (before.list) client.setQueryData<Agent[]>(aiKeys.agents(cid.value), before.list.map((agent) => (agent.key === key ? change(agent) : agent)));
+      if (before.detail) client.setQueryData<AgentDetail>(aiKeys.agent(cid.value, key), { ...before.detail, ...change(before.detail) });
+      return before;
+    },
+    restore(key: string, before: { list: Agent[] | undefined; detail: AgentDetail | undefined }): void {
+      if (before.list) client.setQueryData(aiKeys.agents(cid.value), before.list);
+      if (before.detail) client.setQueryData(aiKeys.agent(cid.value, key), before.detail);
+    },
+    refresh(key: string): void {
+      void client.invalidateQueries({ queryKey: aiKeys.agents(cid.value) });
+      void client.invalidateQueries({ queryKey: aiKeys.agent(cid.value, key) });
+    },
+  };
+}
+
+/** Switch an agent or change its settings: the card and the page change at once and go back if refused. */
 export function usePatchAgent() {
   const cid = useCompanyId();
   const client = useQueryClient();
+  const caches = useAgentCaches();
   return useMutation({
     mutationFn: ({ key, patch }: { key: string; patch: AgentPatch }) => aiApi.patchAgent(cid.value, key, patch),
     onMutate: async ({ key, patch }) => {
-      const queryKey = aiKeys.agents(cid.value);
-      await client.cancelQueries({ queryKey });
-      const before = client.getQueryData<Agent[]>(queryKey);
-      if (before) {
-        client.setQueryData<Agent[]>(
-          queryKey,
-          before.map((agent) => (agent.key === key ? { ...agent, ...(patch.enabled !== undefined ? { enabled: patch.enabled } : {}), config: { ...agent.config, ...patch.config } } : agent)),
-        );
-      }
+      await caches.cancel(key);
+      const before = caches.change(key, (agent) => ({ ...agent, ...(patch.enabled !== undefined ? { enabled: patch.enabled } : {}), config: { ...agent.config, ...patch.config } }));
       return { before };
     },
-    onError: (_error, _input, context) => {
-      if (context?.before) client.setQueryData(aiKeys.agents(cid.value), context.before);
+    onError: (_error, { key }, context) => {
+      if (context?.before) caches.restore(key, context.before);
     },
     onSuccess: (agent) => {
-      client.setQueryData<Agent[]>(aiKeys.agents(cid.value), (list) => list?.map((item) => (item.key === agent.key ? agent : item)));
+      caches.change(agent.key, () => agent);
       void client.invalidateQueries({ queryKey: aiKeys.status(cid.value) });
+      // The page's next run and what comes next follow the new settings.
+      void client.invalidateQueries({ queryKey: aiKeys.agent(cid.value, agent.key) });
     },
   });
 }
 
 export function useRunAgent() {
+  const caches = useAgentCaches();
   const cid = useCompanyId();
-  const client = useQueryClient();
   return useMutation({
     mutationFn: (key: string) => aiApi.runAgent(cid.value, key),
     onSuccess: (_result, key) => {
-      // The run is queued: show the card working until the next answer says otherwise.
-      client.setQueryData<Agent[]>(aiKeys.agents(cid.value), (list) => list?.map((agent) => (agent.key === key ? { ...agent, running: true } : agent)));
-      setTimeout(() => void client.invalidateQueries({ queryKey: aiKeys.agents(cid.value) }), 1500);
+      // The run is queued: show the card (and the page) working until the next answer says otherwise.
+      caches.change(key, (agent) => ({ ...agent, running: true }));
+      setTimeout(() => caches.refresh(key), 1500);
     },
   });
 }

@@ -2,7 +2,8 @@
 /**
  * What the agents did, newest first and grouped by day: who it was about (their photo, or the
  * agent's icon), the sentence, the record it touched as a chip that opens it, and the time. New
- * items slide in at the top and glow for a moment; older ones load as the list scrolls down.
+ * items slide in at the top and glow for a moment; older ones load as the list scrolls down. On
+ * one agent's own page (`oneAgent`) its name isn't repeated on every row.
  */
 import { AudioLines, CircleAlert, CircleCheck, ListChecks, UserRound } from "@lucide/vue";
 import { useIntersectionObserver } from "@vueuse/core";
@@ -28,12 +29,10 @@ const props = withDefaults(
     hasOlder?: boolean;
     loadingOlder?: boolean;
     olderFailed?: boolean;
-    /** Fewer details (the agent drawer): no agent names, no day headings. */
-    compact?: boolean;
-    /** Load older pages by themselves when the end comes into view. */
-    autoload?: boolean;
+    /** Everything is from one agent (its own page): no agent name on each row. */
+    oneAgent?: boolean;
   }>(),
-  { fresh: () => [], hasOlder: false, loadingOlder: false, olderFailed: false, compact: false, autoload: true },
+  { fresh: () => [], hasOlder: false, loadingOlder: false, olderFailed: false, oneAgent: false },
 );
 const emit = defineEmits<{ older: [] }>();
 
@@ -57,14 +56,14 @@ const groups = computed(() => {
     }
     group.items.push(item);
   }
-  return props.compact ? [{ day: "", label: "", items: props.items }] : out;
+  return out;
 });
 
 const sentinel = ref<HTMLElement | null>(null);
 useIntersectionObserver(
   sentinel,
   ([entry]) => {
-    if (entry?.isIntersecting && props.autoload && props.hasOlder && !props.loadingOlder && !props.olderFailed) emit("older");
+    if (entry?.isIntersecting && props.hasOlder && !props.loadingOlder && !props.olderFailed) emit("older");
   },
   { rootMargin: "240px" },
 );
@@ -109,9 +108,9 @@ useIntersectionObserver(
                 <component :is="SUBJECT_ICON[item.subject.type]" :size="13" class="shrink-0 text-muted" aria-hidden="true" />
                 <span class="truncate">{{ item.subject.label }}</span>
               </RouterLink>
-              <span v-if="!compact" class="truncate">{{ item.agent_name }}</span>
-              <span v-if="!compact" class="text-subtle" aria-hidden="true">·</span>
-              <time :datetime="item.created_at" class="num shrink-0 text-subtle" :title="fmt.instant(item.created_at)">{{ compact ? fmt.relative(item.created_at) : fmt.instant(item.created_at, "time") }}</time>
+              <span v-if="!oneAgent" class="truncate">{{ item.agent_name }}</span>
+              <span v-if="!oneAgent" class="text-subtle" aria-hidden="true">·</span>
+              <time :datetime="item.created_at" class="num shrink-0 text-subtle" :title="fmt.instant(item.created_at)">{{ fmt.instant(item.created_at, "time") }}</time>
             </div>
           </div>
         </li>
@@ -120,7 +119,7 @@ useIntersectionObserver(
     <div ref="sentinel" class="flex min-h-10 items-center justify-center">
       <UiSpinner v-if="loadingOlder" :label="t('ai.activity.loadingOlder')" />
       <UiButton v-else-if="hasOlder" variant="ghost" size="lg" @click="emit('older')">{{ olderFailed ? t("ai.activity.olderFailed") : t("ai.activity.older") }}</UiButton>
-      <p v-else-if="items.length && !compact" class="text-sm text-subtle">{{ t("ai.activity.end") }}</p>
+      <p v-else-if="items.length" class="text-sm text-subtle">{{ t("ai.activity.end") }}</p>
     </div>
   </div>
 </template>

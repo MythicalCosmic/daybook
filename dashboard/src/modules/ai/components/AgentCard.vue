@@ -2,12 +2,13 @@
 /**
  * One agent: what it does and when, its switch, how much it did today and this week, when it last
  * ran and runs next, and "Run now" for the scheduled ones. A soft shimmer runs along the top while
- * it works. The whole card opens the agent's settings (the title is the button, stretched); its
- * chibi (AgentChibi.vue) sits where an icon would and takes its own taps.
+ * it works. The whole card opens the agent's own page (the title is the link, stretched); its
+ * switch, "Run now" and its chibi (AgentChibi.vue, where an icon would be) take their own taps.
  */
-import { LoaderCircle, Lock, Play, ScanEye } from "@lucide/vue";
+import { ChevronRight, LoaderCircle, Lock, Play, ScanEye } from "@lucide/vue";
 import { computed, useId } from "vue";
 import { useI18n } from "vue-i18n";
+import { RouterLink } from "vue-router";
 
 import ToggleSwitch from "@/components/ToggleSwitch.vue";
 import UiBadge from "@/components/UiBadge.vue";
@@ -15,7 +16,9 @@ import UiButton from "@/components/UiButton.vue";
 import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useFormat } from "@/lib/useFormat";
 import { useNow } from "@/lib/useNow";
+import { useCompanyStore } from "@/stores/company";
 
+import { isScheduled } from "../agentPage";
 import type { Agent } from "../types";
 import AgentChibi from "./AgentChibi.vue";
 
@@ -23,17 +26,17 @@ const props = withDefaults(defineProps<{ agent: Agent; canConfigure: boolean; ai
   switching: false,
   starting: false,
 });
-const emit = defineEmits<{ open: []; toggle: [value: boolean]; run: [] }>();
+const emit = defineEmits<{ toggle: [value: boolean]; run: [] }>();
 
 const { t } = useI18n();
 const fmt = useFormat();
 const now = useNow();
 const switchId = useId();
 const { isPhone } = useBreakpoints();
+const company = useCompanyStore();
 
-/** The scheduled agents (contract §3); a backend that names the next run says so for any other. */
-const SCHEDULED = new Set(["deadline_watcher", "morning_plan"]);
-const scheduled = computed(() => SCHEDULED.has(props.agent.key) || props.agent.next_run_at !== null);
+const scheduled = computed(() => isScheduled(props.agent));
+const page = computed(() => ({ name: "ai.agent", params: { companyId: company.currentId ?? 0, key: props.agent.key } }));
 const on = computed(() => props.aiOn && props.agent.enabled);
 const blocked = computed(() => !props.agent.available && props.agent.unavailable_reason !== "" && props.agent.unavailable_reason !== "ai_off");
 const switchDisabled = computed(() => !props.canConfigure || !props.aiOn || (blocked.value && !props.agent.enabled));
@@ -57,10 +60,10 @@ const nextRun = computed(() => (props.agent.next_run_at && on.value ? fmt.relati
       <AgentChibi class="relative z-[1] -my-1 shrink-0" :agent-key="agent.key" :name="agent.name" :on="on" :running="agent.running" />
       <div class="min-w-0 flex-1">
         <h3 class="text-md font-semibold leading-6 text-fg">
-          <!-- The stretched button: a tap anywhere on the card opens the settings. -->
-          <button type="button" class="ai-stretch text-left outline-none" :aria-label="t('ai.agents.openSettings', { name: agent.name })" @click="emit('open')">
-            {{ agent.name }}
-          </button>
+          <!-- The stretched link: a tap anywhere on the card opens the agent's page. -->
+          <RouterLink :to="page" class="ai-stretch inline-flex items-center gap-0.5 text-left outline-none" :aria-label="t('ai.agents.open', { name: agent.name })" :data-testid="`agent-open-${agent.key}`">
+            {{ agent.name }}<ChevronRight :size="16" class="shrink-0 text-subtle transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden="true" />
+          </RouterLink>
         </h3>
         <p class="text-sm text-muted">{{ agent.schedule }}</p>
       </div>

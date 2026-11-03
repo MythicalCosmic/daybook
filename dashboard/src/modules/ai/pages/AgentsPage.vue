@@ -1,15 +1,15 @@
 <script setup lang="ts">
 /**
  * AI › Agents (the module's first page): one line on what the agents do, the engines' state, the
- * "Turn on AI" hero while AI is off, and a card per agent with its switch, numbers and settings.
- * Dictate and Smart add are one tap away from here too. While AI is on, Claude's little helper
- * lives in a strip at the top and wanders over the cards (AiBuddyStage.vue), and every agent card
- * has its own chibi.
+ * "Turn on AI" hero while AI is off, and a card per agent with its switch and numbers; a card opens
+ * the agent's own page (AgentPage.vue). Dictate and Smart add are one tap away from here too.
+ * While AI is on, Claude's little helper lives in a strip at the top and wanders over the cards
+ * (AiBuddyStage.vue), and every agent card has its own chibi.
  */
 import { Bot, KeyRound, Mic, Settings2, Sparkles, WalletCards } from "@lucide/vue";
-import { computed, ref, useId } from "vue";
+import { computed, useId } from "vue";
 import { useI18n } from "vue-i18n";
-import { RouterLink, useRoute, useRouter } from "vue-router";
+import { RouterLink } from "vue-router";
 
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
@@ -17,15 +17,12 @@ import InlineAlert from "@/components/InlineAlert.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import ToggleSwitch from "@/components/ToggleSwitch.vue";
 import UiButton from "@/components/UiButton.vue";
-import UiDrawer from "@/components/UiDrawer.vue";
-import { toast } from "@/components/useToast";
 import { useBreakpoints } from "@/lib/useBreakpoints";
-import { patchQuery } from "@/lib/useRouteState";
 import { useCompanyStore } from "@/stores/company";
 
-import { useAgents, useAiStatus, usePatchAgent, useRunAgent } from "../api";
+import { useAgentActions } from "../agentActions";
+import { useAgents, useAiStatus } from "../api";
 import AgentCard from "../components/AgentCard.vue";
-import AgentDrawerBody from "../components/AgentDrawerBody.vue";
 import AiBuddyStage from "../components/AiBuddyStage.vue";
 import { useBuddyCues } from "../components/buddyCues";
 import { buddyEverywhere } from "../components/buddyPrefs";
@@ -33,56 +30,17 @@ import AiHeader from "../components/AiHeader.vue";
 import TurnOnCard from "../components/TurnOnCard.vue";
 import { openDictation } from "../dictation";
 import { aiVisibility, isMissingEndpoint } from "../lib";
-import type { Agent } from "../types";
 
 const { t } = useI18n();
-const route = useRoute();
-const router = useRouter();
 const company = useCompanyStore();
 const { isPhone } = useBreakpoints();
 
 const status = useAiStatus();
 const agents = useAgents();
-const patch = usePatchAgent();
-const run = useRunAgent();
 const show = computed(() => aiVisibility(status.data.value));
 const aiOn = computed(() => status.data.value?.enabled ?? false);
 const canConfigure = computed(() => status.data.value?.can_configure ?? false);
-const switching = ref<string | null>(null);
-const starting = ref<string | null>(null);
-
-const openKey = computed(() => {
-  const value = route.query.agent;
-  return typeof value === "string" ? value : null;
-});
-const openAgent = computed(() => agents.data.value?.find((agent) => agent.key === openKey.value) ?? null);
-function openDrawer(agent: Agent): void {
-  patchQuery(router, { agent: agent.key }, true);
-}
-
-async function toggle(agent: Agent, enabled: boolean): Promise<void> {
-  switching.value = agent.key;
-  try {
-    await patch.mutateAsync({ key: agent.key, patch: { enabled } });
-    toast.success(t(enabled ? "ai.agents.turnedOn" : "ai.agents.turnedOff", { name: agent.name }));
-  } catch {
-    // Rolled back; the reason is a toast.
-  } finally {
-    switching.value = null;
-  }
-}
-
-async function runNow(agent: Agent): Promise<void> {
-  starting.value = agent.key;
-  try {
-    await run.mutateAsync(agent.key);
-    toast.success(t("ai.agents.started", { name: agent.name }));
-  } catch {
-    // The reason is a toast.
-  } finally {
-    starting.value = null;
-  }
-}
+const { switching, starting, toggle, runNow } = useAgentActions();
 
 const settingsPath = computed(() => `/c/${company.currentId}/settings/ai`);
 // The helpers react to what happens in the company: voice notes, late and finished tasks.
@@ -165,7 +123,6 @@ const buddyLine = computed(() => {
           :ai-on="aiOn"
           :switching="switching === agent.key"
           :starting="starting === agent.key"
-          @open="openDrawer(agent)"
           @toggle="(value) => toggle(agent, value)"
           @run="runNow(agent)"
         />
@@ -175,26 +132,5 @@ const buddyLine = computed(() => {
         <RouterLink :to="settingsPath" class="font-medium text-accent-fg hover:underline">{{ t("ai.agents.settingsLink") }}</RouterLink>
       </p>
     </section>
-
-    <UiDrawer query-key="agent" :title="openAgent?.name ?? t('ai.agents.title')" :description="openAgent?.schedule" size="md">
-      <template v-if="openAgent" #header-actions>
-        <ToggleSwitch
-          class="mr-1"
-          :model-value="aiOn && openAgent.enabled"
-          :loading="switching === openAgent.key"
-          :disabled="!canConfigure || !aiOn || (!openAgent.available && !openAgent.enabled)"
-          :label="t('ai.agents.onLabel')"
-          @update:model-value="(value: boolean) => openAgent && toggle(openAgent, value)"
-        />
-      </template>
-      <AgentDrawerBody v-if="openAgent" :agent="openAgent" :can-configure="canConfigure" :ai-on="aiOn" />
-      <div v-else-if="agents.isPending.value" class="flex flex-col gap-3 p-5" aria-hidden="true">
-        <SkeletonBlock v-for="n in 3" :key="n" height="56px" radius="10px" />
-      </div>
-      <EmptyState v-else class="my-10" :icon="Bot" :title="t('ai.agents.notFound')" />
-      <template v-if="openAgent && (openAgent.key === 'deadline_watcher' || openAgent.key === 'morning_plan' || openAgent.next_run_at) && canConfigure && aiOn && openAgent.enabled" #footer>
-        <UiButton :loading="starting === openAgent.key" :disabled="openAgent.running" @click="openAgent && runNow(openAgent)">{{ openAgent.running ? t("ai.agents.working") : t("ai.agents.runNow") }}</UiButton>
-      </template>
-    </UiDrawer>
   </div>
 </template>

@@ -168,9 +168,16 @@ describe("New task: Dictate and Smart add", () => {
   });
 });
 
+/** The Agents page, with the route a card links to. */
+async function agentsApp() {
+  const app = await testApp("/c/1/ai");
+  app.router.addRoute({ path: "/c/:companyId/ai/agents/:key", name: "ai.agent", component: { render: () => null } });
+  return app;
+}
+
 describe("agents", () => {
   it("shows what a card says and keeps an agent that needs Claude switched off", async () => {
-    const app = await testApp("/c/1/ai");
+    const app = await agentsApp();
     const photo = AGENTS[3]!;
     const { wrapper } = mountWithProviders(AgentCard, { props: { agent: photo, canConfigure: true, aiOn: true }, plugins: app.plugins });
     await flushPromises();
@@ -181,23 +188,36 @@ describe("agents", () => {
     expect(wrapper.find("[data-testid=agent-run-photo_checker]").exists()).toBe(false);
   });
 
-  it("offers Run now on a scheduled agent, and switches and opens it", async () => {
-    const app = await testApp("/c/1/ai");
+  it("offers Run now on a scheduled agent, switches it, and opens its own page from the title", async () => {
+    const app = await agentsApp();
     const events: string[] = [];
     const { wrapper } = mountWithProviders(AgentCard, {
-      props: { agent: agent({ running: false }), canConfigure: true, aiOn: true, onToggle: (value: boolean) => events.push(`toggle:${value}`), onRun: () => events.push("run"), onOpen: () => events.push("open") },
+      props: { agent: agent({ running: false }), canConfigure: true, aiOn: true, onToggle: (value: boolean) => events.push(`toggle:${value}`), onRun: () => events.push("run") },
       plugins: app.plugins,
     });
     await flushPromises();
     expect(wrapper.text()).toContain("Today3");
     await wrapper.find("[data-testid=agent-run-deadline_watcher]").trigger("click");
     await wrapper.find("[role=switch]").trigger("click");
-    await wrapper.find("h3 button").trigger("click");
-    expect(events).toEqual(["run", "toggle:false", "open"]);
+    expect(events).toEqual(["run", "toggle:false"]);
+    // The switch and Run now keep their own taps: the page didn't open.
+    expect(app.router.currentRoute.value.path).toBe("/c/1/ai");
+    const open = wrapper.find("h3 a[data-testid=agent-open-deadline_watcher]");
+    expect(open.attributes("href")).toBe("/c/1/ai/agents/deadline_watcher");
+    await open.trigger("click");
+    await flushPromises();
+    expect(app.router.currentRoute.value.path).toBe("/c/1/ai/agents/deadline_watcher");
+  });
+
+  it("counts the HR assistant among the agents with Run now, even before it names a next run", async () => {
+    const app = await agentsApp();
+    const { wrapper } = mountWithProviders(AgentCard, { props: { agent: agent({ key: "hr_assistant", name: "HR assistant", next_run_at: null }), canConfigure: true, aiOn: true }, plugins: app.plugins });
+    await flushPromises();
+    expect(wrapper.find("[data-testid=agent-run-hr_assistant]").exists()).toBe(true);
   });
 
   it("shows the working state while an agent runs", async () => {
-    const app = await testApp("/c/1/ai");
+    const app = await agentsApp();
     const { wrapper } = mountWithProviders(AgentCard, { props: { agent: agent({ running: true }), canConfigure: true, aiOn: true }, plugins: app.plugins });
     await flushPromises();
     expect(wrapper.find(".is-running").exists()).toBe(true);

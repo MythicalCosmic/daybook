@@ -1,7 +1,9 @@
 /**
  * AI (briefs/ai-contract.md §5, §7): the agents that work by themselves (voice tasks, the deadline
- * watcher, the morning plan, the photo checker) with their switches and settings, what they did
- * (live), the voice notes and what they became, and Ask AI over the company's data. "Dictate" and
+ * watcher, the morning plan, the photo checker, the HR assistant) with their switches, each with
+ * its own page (briefs/v5-agent-page.md: at work in its scene, what it did, its runs and Claude
+ * calls, tokens, what comes next, its settings), what they did (live), the voice notes and what
+ * they became, and Ask AI over the company's data. "Dictate" and
  * "Smart add" sit in the Tasks New task dialog (`tasks.create.tools`); the dictate dialog and the
  * shell's own Ask AI live in `shell.panel`, and so does Claude's little helper that walks with the
  * person on every page (BuddyCompanion.vue). Not behind the "ai" switch: turning AI on (the Agents
@@ -25,7 +27,8 @@ export default defineModule({
   perm: "dashboard.access",
   routes,
   nav: [
-    { key: "agents", title: "ai.nav.agents", to: "ai", exact: true },
+    // Not exact: an agent's own page (ai/agents/<key>) keeps "Agents" lit; the other pages are longer paths and win.
+    { key: "agents", title: "ai.nav.agents", to: "ai" },
     { key: "activity", title: "ai.nav.activity", to: "ai/activity" },
     { key: "voice", title: "ai.nav.voice", to: "ai/voice" },
     { key: "ask", title: "ai.nav.ask", to: "ai/ask", perm: "ai.use" },
@@ -59,10 +62,11 @@ export default defineModule({
     "shell.panel": [defineAsyncComponent(() => import("./components/ShellHost.vue")), defineAsyncComponent(() => import("./components/BuddyCompanion.vue"))],
     "tasks.create.tools": [defineAsyncComponent(() => import("./components/NewTaskTools.vue"))],
   },
-  // The owner bot's "Edit" (`startapp=draft_41`) opens that voice note; `ai` the agents.
+  // The owner bot's "Edit" (`startapp=draft_41`) opens that voice note; `ai` the agents, and
+  // `ai_deadline_watcher` that agent's page.
   deepLinks: {
     draft: (argument) => (/^\d+$/.test(argument) ? `ai/voice?draft=${argument}` : "ai/voice"),
-    ai: () => "ai",
+    ai: (argument) => (/^[a-z0-9_]+$/.test(argument) ? `ai/agents/${argument}` : "ai"),
   },
   messages: (language) => import(`./i18n/${language}.json`),
 });
