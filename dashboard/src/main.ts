@@ -30,6 +30,8 @@ async function start(): Promise<void> {
   // Development only: the component kitchen at /dashboard/_kitchen (plan §6.3), W0-D's visual acceptance test.
   if (import.meta.env.DEV) {
     router.addRoute({ path: "/_kitchen", name: "kitchen", component: () => import("./dev/Kitchen.vue"), meta: { public: true, title: "dev.kitchen.title" } });
+    // An agent's room in every state (?variant=hr&state=working|idle|asleep&night=1&theme=dark).
+    router.addRoute({ path: "/_scene", name: "scene-lab", component: () => import("./dev/SceneLab.vue"), meta: { public: true, title: "dev.kitchen.title" } });
   }
   installProviders(app, router);
   app.use(router);

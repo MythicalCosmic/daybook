@@ -30,10 +30,12 @@ const props = withDefaults(
     facing?: "left" | "right";
     sitting?: boolean;
     asleep?: boolean;
+    /** Where its open eyes look when nothing else moves them (at its screen, in AgentScene). */
+    gaze?: "left" | "right";
     /** What a screen reader says for it (Claude's own words by default). */
     label?: string;
   }>(),
-  { variant: "claude", action: "idle", beat: 0, size: 88, walking: false, facing: "right", sitting: false, asleep: false, label: "" },
+  { variant: "claude", action: "idle", beat: 0, size: 88, walking: false, facing: "right", sitting: false, asleep: false, gaze: undefined, label: "" },
 );
 const emit = defineEmits<{ tap: [] }>();
 
@@ -82,7 +84,7 @@ const eyes = computed(() => {
     case "look":
       return lookRight.value ? "right" : "left";
     default:
-      return props.asleep ? "asleep" : "open";
+      return props.asleep ? "asleep" : (props.gaze ?? "open");
   }
 });
 const eyeShift = computed(() => (eyes.value === "left" ? -2 : eyes.value === "right" ? 2 : 0));
