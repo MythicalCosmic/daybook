@@ -165,6 +165,74 @@ export interface AgentPatch {
   config?: Record<string, AgentConfigValue>;
 }
 
+// ─── One agent's page (`GET ai/agents/{key}/`, briefs/v5-agent-page.md) ─────
+
+/** What the big scene shows: at work, on and waiting, or asleep (off, or it can't run). */
+export type SceneState = "working" | "idle" | "asleep";
+export type AgentRunStatus = "running" | "ok" | "error";
+
+/** One run of the agent, newest first. `error` and `cost_usd` are null without ai.configure. */
+export interface AgentRun {
+  id: number;
+  started_at: string;
+  finished_at: string | null;
+  duration_ms: number | null;
+  status: AgentRunStatus;
+  /** Started with "Run now". */
+  forced: boolean;
+  /** How many things the run did. */
+  done: number;
+  error: string | null;
+  calls: number;
+  input_tokens: number;
+  output_tokens: number;
+  cost_usd: string | null;
+}
+
+/** One Claude call the agent made (never a prompt or an answer). */
+export interface AgentCall {
+  at: string;
+  model: string;
+  input_tokens: number;
+  output_tokens: number;
+  cache_read_tokens: number;
+  latency_ms: number;
+  stop_reason: string;
+  cost_usd: string | null;
+}
+
+export interface AgentUsageDay {
+  /** A company-local day, "2026-11-03". */
+  date: string;
+  calls: number;
+  input_tokens: number;
+  output_tokens: number;
+  cost_usd: string | null;
+}
+
+export interface AgentUsage {
+  month: { calls: number; input_tokens: number; output_tokens: number; cache_read_tokens: number; cost_usd: string | null };
+  /** The last 30 days in the company's calendar, oldest first, days without calls included. */
+  days: AgentUsageDay[];
+  /** The whole company's month, for this agent's share of it (ai.configure only, else null). */
+  company: { month_cost_usd: string; monthly_budget_usd: string } | null;
+}
+
+/** What comes next: a scheduled run, or something the agent expects (counts only, already translated). */
+export interface AgentUpcoming {
+  at: string | null;
+  kind: "run" | "item";
+  label: string;
+}
+
+export interface AgentDetail extends Agent {
+  runs: AgentRun[];
+  calls: AgentCall[];
+  usage: AgentUsage;
+  upcoming: AgentUpcoming[];
+  scene: SceneState;
+}
+
 export type ActivityLevel = "info" | "success" | "warning";
 export type SubjectType = "task" | "member" | "draft";
 

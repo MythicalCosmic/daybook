@@ -5,6 +5,7 @@
  * and danger above 100% (budgets). `indeterminate` for work of unknown length.
  *
  *   <ProgressBar :value="38" :max="52" show-value />
+ *   <ProgressBar :value="0.42" :max="20" label="Budget" value-text="$0.42 of $20.00" />
  *   <ProgressBar :segments="[{ value: 62, color: 'var(--c-chart-1)', label: 'Cash' }, …]" />
  */
 import { computed } from "vue";
@@ -27,9 +28,11 @@ const props = withDefaults(
     target?: number;
     label?: string;
     showValue?: boolean;
+    /** The value in words, shown (and read out) instead of the number when the number isn't the point ("$0.42 of $20.00"). */
+    valueText?: string;
     indeterminate?: boolean;
   }>(),
-  { value: 0, max: 100, segments: undefined, tone: "primary", size: "sm", target: undefined, label: undefined, showValue: false, indeterminate: false },
+  { value: 0, max: 100, segments: undefined, tone: "primary", size: "sm", target: undefined, label: undefined, showValue: false, valueText: undefined, indeterminate: false },
 );
 
 const fmt = useFormat();
@@ -57,9 +60,10 @@ const heights = { xs: "h-1", sm: "h-1.5", md: "h-2", lg: "h-2.5" } as const;
 
 <template>
   <div class="flex min-w-0 flex-col gap-1.5">
-    <div v-if="label || showValue" class="flex items-baseline justify-between gap-3 text-sm">
+    <div v-if="label || showValue || valueText" class="flex items-baseline justify-between gap-3 text-sm">
       <span class="min-w-0 truncate font-medium text-fg">{{ label }}</span>
-      <span v-if="showValue" class="shrink-0 tabular-nums text-muted">
+      <span v-if="valueText" class="shrink-0 tabular-nums text-muted">{{ valueText }}</span>
+      <span v-else-if="showValue" class="shrink-0 tabular-nums text-muted">
         <template v-if="max === 100">{{ fmt.percent(percent) }}</template>
         <template v-else>{{ fmt.number(value) }}<span class="text-subtle"> / {{ fmt.number(max) }}</span></template>
       </span>
@@ -67,6 +71,7 @@ const heights = { xs: "h-1", sm: "h-1.5", md: "h-2", lg: "h-2.5" } as const;
     <div
       role="progressbar"
       :aria-valuenow="indeterminate || stacked.length ? undefined : Math.round(percent)"
+      :aria-valuetext="valueText"
       aria-valuemin="0"
       aria-valuemax="100"
       :aria-label="label"
