@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.2 — 2026-11-03
+
+### New: every AI agent gets its own page
+- A tap on an agent (AI › Agentlar) opens its page instead of a side panel. At the top, its chibi sits at
+  a desk in a little pixel room: it types while the agent works (its screen fills with what it did), watches
+  the screen while it waits, and sleeps on the desk when the agent is off. The window shows day or night by
+  the company's clock; a tap on the chibi makes it send hearts.
+- Below: the last and next run, tokens and cost this month, then **Nima qildi** (its activity),
+  **Ichki jurnal** (every run with its time, result, tokens and cost, and every Claude call), **Tokenlar**
+  (30 days of input and output tokens and its share of the company's AI spend), **Keyingi ishlar** (its next
+  runs and what it expects) and **Sozlamalar**. Costs and error texts are shown only to people who manage AI.
+- Every scheduled run is now logged (the newest 200 per agent).
+
 ## 0.3.1 — 2026-11-03
 
 ### New: the employee side of HR and payroll (mini app)
