@@ -59,6 +59,10 @@ def _schedule(config: dict) -> str:
     return _("When a task is finished with a photo")
 
 
+def upcoming(company, state, now) -> list[tuple[None, str]]:
+    return [(None, _("Checks each proof photo as it arrives"))]
+
+
 def wants(task: Task) -> bool:
     """Whether a finished task's photo is to be checked."""
     company = task.company
@@ -185,6 +189,7 @@ AGENT = registry.register(
             ),
         ),
         schedule=_schedule,
+        upcoming=upcoming,
         events={
             "looks_right": EventTemplate(
                 gettext_lazy("Photo of «%(task)s» looks right: %(note)s"), level="success"

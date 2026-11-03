@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-02 20:48+0500\n"
+"POT-Creation-Date: 2026-11-03 14:34+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -473,6 +473,11 @@ msgid "Every 30 minutes, %(start)s–%(end)s"
 msgstr "Har 30 daqiqada, %(start)s–%(end)s"
 
 #: backend/apps/ai/agents/deadline_watcher.py
+#, python-format
+msgid "Tasks due in the next 24 hours: %(count)s"
+msgstr "Keyingi 24 soatda muddati keladigan vazifalar: %(count)s"
+
+#: backend/apps/ai/agents/deadline_watcher.py
 msgid "Deadline watcher"
 msgstr "Muddat nazoratchisi"
 
@@ -516,6 +521,19 @@ msgid "Workdays at %(time)s"
 msgstr "Ish kunlari, soat %(time)s"
 
 #: backend/apps/ai/agents/hr_assistant.py
+msgid "Payroll check before pay day"
+msgstr "Ish haqi kunidan oldin tekshirish"
+
+#: backend/apps/ai/agents/hr_assistant.py
+msgid "Bonus suggestions"
+msgstr "Bonus takliflari"
+
+#: backend/apps/ai/agents/hr_assistant.py
+#, python-format
+msgid "Documents and contracts to watch: %(count)s"
+msgstr "Kuzatiladigan hujjat va shartnomalar: %(count)s"
+
+#: backend/apps/ai/agents/hr_assistant.py
 msgid "HR assistant"
 msgstr "HR yordamchisi"
 
@@ -537,10 +555,6 @@ msgstr ""
 #: backend/apps/ai/agents/morning_plan.py
 msgid "Send at"
 msgstr "Yuborish vaqti"
-
-#: backend/apps/ai/agents/hr_assistant.py
-msgid "Payroll check before pay day"
-msgstr "Ish haqi kunidan oldin tekshirish"
 
 #: backend/apps/ai/agents/hr_assistant.py
 msgid ""
@@ -622,6 +636,12 @@ msgid_plural ""
 msgstr[0] ""
 "Bonus taklif qilindi (%(month)s): %(count)s ta, tasdiqlash kutilmoqda"
 
+#: backend/apps/ai/agents/morning_plan.py
+#, python-format
+msgid "Plans for %(count)s person"
+msgid_plural "Plans for %(count)s people"
+msgstr[0] "%(count)s kishi uchun reja"
+
 #: backend/apps/ai/agents/morning_plan.py backend/apps/groups/models.py
 msgid "Morning plan"
 msgstr "Ertalabki reja"
@@ -666,6 +686,10 @@ msgstr "Muntazam vazifa rasm bilan bajarilganda"
 #: backend/apps/ai/agents/photo_checker.py
 msgid "When a task is finished with a photo"
 msgstr "Vazifa rasm bilan bajarilganda"
+
+#: backend/apps/ai/agents/photo_checker.py
+msgid "Checks each proof photo as it arrives"
+msgstr "Har bir dalil rasmini kelishi bilan tekshiradi"
 
 #: backend/apps/ai/agents/photo_checker.py
 msgid "The fridge shows 5 °C, inside 2-8 °C."
@@ -749,6 +773,10 @@ msgstr "Kimdir aytib berganda; vazifalarni darhol yaratadi"
 #: backend/apps/ai/agents/voice_tasks.py
 msgid "When someone dictates"
 msgstr "Kimdir aytib berganda"
+
+#: backend/apps/ai/agents/voice_tasks.py
+msgid "Works when a voice note arrives"
+msgstr "Ovozli xabar kelganda ishlaydi"
 
 #: backend/apps/ai/agents/voice_tasks.py
 msgid "Voice tasks"
@@ -1382,6 +1410,14 @@ msgstr "Vazifa"
 #: backend/apps/ai/models.py
 msgid "Voice note"
 msgstr "Ovozli xabar"
+
+#: backend/apps/ai/queries.py
+msgid "Did not finish"
+msgstr "Oxiriga yetmadi"
+
+#: backend/apps/ai/queries.py
+msgid "Scheduled run"
+msgstr "Jadval bo‘yicha ishga tushadi"
 
 #: backend/apps/ai/queries.py
 #, python-format

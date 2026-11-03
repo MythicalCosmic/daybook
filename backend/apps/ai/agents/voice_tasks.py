@@ -21,6 +21,10 @@ def _schedule(config: dict) -> str:
     return _("When someone dictates")
 
 
+def upcoming(company, state, now) -> list[tuple[None, str]]:
+    return [(None, _("Works when a voice note arrives"))]
+
+
 AGENT = register(
     Agent(
         key=KEY,
@@ -56,6 +60,9 @@ AGENT = register(
             ),
         ),
         schedule=_schedule,
+        upcoming=upcoming,
+        # Its Claude calls are the drafting's (apps.ai.drafting).
+        usage_features=("task_drafts",),
         events={
             "draft_ready": EventTemplate(
                 ngettext_lazy(

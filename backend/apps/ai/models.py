@@ -198,6 +198,42 @@ class AgentState(TenantModel):
         return f"{self.key} of {self.company}"
 
 
+class AgentRun(TenantModel):
+    """One run of a scheduled agent (apps.ai.agents.runner): when, how it ended, what it did
+    and what its Claude calls cost. The newest RUNS_KEPT of each agent are kept."""
+
+    class Status(models.TextChoices):
+        RUNNING = "running", _("Running")
+        OK = "ok", _("Done")
+        ERROR = "error", _("Failed")
+
+    key = models.CharField(max_length=32)
+    started_at = models.DateTimeField()
+    finished_at = models.DateTimeField(null=True, blank=True)
+    status = models.CharField(max_length=8, choices=Status.choices, default=Status.RUNNING)
+    # "Run now" from the dashboard, not the schedule.
+    forced = models.BooleanField(default=False)
+    # What the run returned: how many things the agent did.
+    done = models.IntegerField(default=0)
+    # The same short text AgentState.last_error gets.
+    error = models.CharField(max_length=200, blank=True)
+    # The AIUsage rows of the agent's usage features made during the run, summed.
+    calls = models.PositiveIntegerField(default=0)
+    input_tokens = models.PositiveIntegerField(default=0)
+    output_tokens = models.PositiveIntegerField(default=0)
+    cost_micro_usd = models.BigIntegerField(default=0)
+
+    RUNS_KEPT = 200
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["company", "key", "-started_at"], name="ai_run_agent_recent"),
+        ]
+
+    def __str__(self):
+        return f"{self.key} run #{self.pk}"
+
+
 class AIConversation(TenantModel):
     """An "Ask AI" conversation, private to its author."""
 

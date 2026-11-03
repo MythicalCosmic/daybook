@@ -15,12 +15,12 @@ from django.conf import settings
 from django.db import transaction
 from django.utils import timezone, translation
 from django.utils.translation import gettext as _
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_lazy, ngettext
 from pydantic import BaseModel
 from pydantic import Field as PydanticField
 
 from apps.ai import availability, bot_messages, client, events
-from apps.ai.agents import registry
+from apps.ai.agents import registry, runner
 from apps.ai.agents.registry import Agent, EventTemplate, Field
 from apps.members import departments
 from apps.members.models import Membership
@@ -67,9 +67,10 @@ def recipients(company, who: str) -> list[Membership]:
         .exclude(user__telegram_id__isnull=True)
         .select_related("user", "role", "company")
     )
+    org = departments.Org(company.pk)  # the tree once, not once per person
     chosen = []
     for person in people[:BATCH]:
-        heads = departments.leads(person)
+        heads = bool(departments.team_ids(person, org))
         manages = person.has_perm(Perm.TASKS_ASSIGN)
         if (
             (who == "heads" and heads)
@@ -188,6 +189,15 @@ def run(company, state, now: datetime) -> int:
     return sent
 
 
+def upcoming(company, state, now: datetime) -> list[tuple[datetime | None, str]]:
+    """The plans of the next run: one for each head or manager it is for (those with nothing
+    to hear that morning get none)."""
+    people = len(recipients(company, registry.config_of(AGENT, state)["who"]))
+    at = next(iter(runner.next_runs(AGENT, state, company, now, 1)), None)
+    label = ngettext("Plans for %(count)s person", "Plans for %(count)s people", people)
+    return [(at, label % {"count": people})]
+
+
 def _bot_of(member: Membership) -> str:
     """The bot the person uses: the staff bot, unless they only ever talk to the owner bot."""
     user = member.user
@@ -225,6 +235,7 @@ AGENT = registry.register(
         schedule=_schedule,
         run=run,
         next_run=next_run,
+        upcoming=upcoming,
         events={
             "plan_sent": EventTemplate(
                 gettext_lazy(

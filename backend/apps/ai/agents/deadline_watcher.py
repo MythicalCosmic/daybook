@@ -64,15 +64,8 @@ def run(company, state, now: datetime) -> int:
         return 0
     late_before = now - timedelta(hours=int(config["escalate_after_hours"]))
     late = (
-        Task.objects.for_company(company)
-        .filter(
-            kind=Task.Kind.ASSIGNED,
-            status__in=Task.OPEN_STATUSES,
-            due_at__lt=late_before,
-            escalated_at__isnull=True,
-            blocked_at__isnull=True,
-            assignee__status=Membership.Status.APPROVED,
-        )
+        watched(company)
+        .filter(due_at__lt=late_before)
         .select_related("assignee__user", "created_by__user", "company")
         .order_by("due_at")[:BATCH]
     )
@@ -86,6 +79,23 @@ def run(company, state, now: datetime) -> int:
         _tell(task, recipient, now)
         told += 1
     return told
+
+
+def watched(company):
+    """The work it looks after: tasks given to someone still working here, open, not blocked,
+    and not escalated yet."""
+    return Task.objects.for_company(company).filter(
+        kind=Task.Kind.ASSIGNED,
+        status__in=Task.OPEN_STATUSES,
+        escalated_at__isnull=True,
+        blocked_at__isnull=True,
+        assignee__status=Membership.Status.APPROVED,
+    )
+
+
+def upcoming(company, state, now: datetime) -> list[tuple[None, str]]:
+    due = watched(company).filter(due_at__gte=now, due_at__lt=now + timedelta(hours=24)).count()
+    return [(None, _("Tasks due in the next 24 hours: %(count)s") % {"count": due})]
 
 
 def _who_hears(task: Task) -> Membership | None:
@@ -158,6 +168,7 @@ AGENT = registry.register(
         schedule=_schedule,
         run=run,
         next_run=next_run,
+        upcoming=upcoming,
         events={
             "escalated": EventTemplate(
                 gettext_lazy("Told %(to)s that «%(task)s» is late (%(assignee)s)"),
