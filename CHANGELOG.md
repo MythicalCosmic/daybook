@@ -31,6 +31,9 @@ changes for anyone.
 - **The HR assistant** — a fifth AI agent with its own chibi (green, in a tie, with a clipboard): the HR
   morning digest for the people who manage HR, payroll readiness before pay day, and (opt-in) monthly
   bonus suggestions that a person approves. Runs on Haiku.
+- Payroll's money logic went through an independent review before release (ten fixes, each with a test).
+  Not in this release: the final settlement for someone who leaves (last pay with unused leave paid out),
+  which is still done by hand.
 - Coming next: the employee side in the mini app (my pay and payslips, my documents and contract, my record).
 
 ### Also since 0.2.0
