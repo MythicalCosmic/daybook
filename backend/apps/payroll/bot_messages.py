@@ -50,7 +50,7 @@ def my_pay(member: Membership, earnings: dict, last: Payslip | None) -> BotMessa
         so_far = earnings["so_far"]
         estimate = earnings["estimate"]
         lines.append(
-            html.quote(_("Earned so far in %(month)s:") % {"month": month})
+            html.quote(_("Net pay so far in %(month)s:") % {"month": month})
             + f" <b>{_money(so_far['net'], currency)}</b>"
         )
         lines.append(

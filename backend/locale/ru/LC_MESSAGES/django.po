@@ -8394,8 +8394,8 @@ msgstr "Ваша оплата ещё не настроена. Спросите �
 
 #: backend/apps/payroll/bot_messages.py
 #, python-format
-msgid "Earned so far in %(month)s:"
-msgstr "Заработано на сегодня (%(month)s):"
+msgid "Net pay so far in %(month)s:"
+msgstr "К выплате на сегодня (%(month)s):"
 
 #: backend/apps/payroll/bot_messages.py
 msgid "Estimate for the month:"

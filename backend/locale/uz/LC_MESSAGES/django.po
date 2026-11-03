@@ -8429,8 +8429,8 @@ msgstr "Ish haqingiz hali belgilanmagan. Rahbaringizdan so‘rang."
 
 #: backend/apps/payroll/bot_messages.py
 #, python-format
-msgid "Earned so far in %(month)s:"
-msgstr "Hozirgacha topilgan (%(month)s):"
+msgid "Net pay so far in %(month)s:"
+msgstr "Hozircha qo‘lga tegadi (%(month)s):"
 
 #: backend/apps/payroll/bot_messages.py
 msgid "Estimate for the month:"
