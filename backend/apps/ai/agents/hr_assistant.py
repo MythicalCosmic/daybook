@@ -59,7 +59,7 @@ from pydantic import BaseModel
 from pydantic import Field as PydanticField
 
 from apps.ai import availability, bot_messages, client, events
-from apps.ai.agents import morning_plan, registry
+from apps.ai.agents import morning_plan, registry, runner
 from apps.ai.agents.registry import Agent, EventTemplate, Field
 from apps.ai.tools.scrub import scrub_data
 from apps.companies.models import Feature
@@ -86,7 +86,7 @@ from apps.payroll import queries as payroll_queries
 from apps.payroll import rules as payroll_rules
 from apps.payroll import services as payroll_services
 from apps.payroll.models import Adjustment, AdjustmentRule, Compensation, PayrollRun
-from apps.timeoff.queries import is_holiday
+from apps.timeoff.queries import holidays_between, is_holiday
 
 logger = logging.getLogger(__name__)
 
@@ -232,12 +232,7 @@ def gather(company, branch_ids: list[int] | None, day: date, hr_settings) -> Dig
     """Everything due in one branch scope (`branch_ids`, None: every branch), before it is
     narrowed to a reader."""
     current = hr_queries.CURRENT
-    documents = hr_queries.expiring_documents(
-        company, branch_ids=branch_ids, day=day, within=hr_settings.document_warn_days
-    )
-    contracts = hr_queries.ending_contracts(
-        company, branch_ids=branch_ids, day=day, within=hr_settings.contract_warn_days
-    ).filter(membership__status__in=current)
+    documents, contracts = watch_lists(company, branch_ids, day, hr_settings)
     probations = hr_queries.probation_endings(
         company, branch_ids=branch_ids, day=day, within=hr_settings.probation_warn_days
     ).filter(membership__status__in=current)
@@ -265,6 +260,18 @@ def gather(company, branch_ids: list[int] | None, day: date, hr_settings) -> Dig
         explanations=list(explanations[:BATCH]),
         birthdays=[row["member"] for row in birthdays],
     )
+
+
+def watch_lists(company, branch_ids: list[int] | None, day: date, hr_settings) -> tuple:
+    """The documents that expired or expire within the warning days and the contracts in force
+    of current people that end within theirs, in one branch scope; soonest first."""
+    documents = hr_queries.expiring_documents(
+        company, branch_ids=branch_ids, day=day, within=hr_settings.document_warn_days
+    )
+    contracts = hr_queries.ending_contracts(
+        company, branch_ids=branch_ids, day=day, within=hr_settings.contract_warn_days
+    ).filter(membership__status__in=hr_queries.CURRENT)
+    return documents, contracts
 
 
 def for_reader(reader: Membership, found: Digest, day: date, since: datetime, hr_settings):
@@ -381,14 +388,28 @@ class Readiness:
         return len(self.no_setup) + self.disputes + self.proposals + len(self.changes)
 
 
+def pay_day_ahead(day: date, pay_day: int, days_before: int) -> date | None:
+    """`day`'s month's pay day when `day` is one of the days the payroll is checked before it
+    (from `days_before` days before it, within the month, until the day before); else None."""
+    due = day.replace(day=pay_day)
+    start = max(due - timedelta(days=days_before), day.replace(day=1))
+    return due if start <= day < due else None
+
+
+def payroll_key(period: date) -> str:
+    """The check of `period`'s payroll: once, however often it runs."""
+    return f"payroll:{period:%Y-%m}"
+
+
 def check_payroll(company, config: dict, now: datetime) -> int:
     today = _local(company, now).date()
-    pay_day = today.replace(day=payroll_conf.get_settings(company).pay_day)
-    start = max(pay_day - timedelta(days=config["days_before_pay_day"]), today.replace(day=1))
-    if not start <= today < pay_day:
+    pay_day = pay_day_ahead(
+        today, payroll_conf.get_settings(company).pay_day, config["days_before_pay_day"]
+    )
+    if pay_day is None:
         return 0
     period = periods.previous_period(today)
-    key = f"payroll:{period:%Y-%m}"
+    key = payroll_key(period)
     if events.already(company, key):
         return 0
     if not Compensation.objects.for_company(company).exists():
@@ -562,7 +583,7 @@ def suggest_bonuses(company, config: dict, now: datetime) -> int:
     if today != last_workday(company, today):
         return 0
     period = today.replace(day=1)
-    key = f"bonuses:{period:%Y-%m}"
+    key = bonuses_key(period)
     if events.already(company, key):
         return 0
     run = payroll_queries.regular_run(company, period)
@@ -598,6 +619,11 @@ def suggest_bonuses(company, config: dict, now: datetime) -> int:
             dedupe_key=key,
         )
     return made
+
+
+def bonuses_key(period: date) -> str:
+    """`period`'s month of suggestions: once, however often it runs."""
+    return f"bonuses:{period:%Y-%m}"
 
 
 def bonus_key(member: Membership, period: date) -> str:
@@ -735,6 +761,82 @@ def bonus_reasons(company, chosen: list[Candidate], period: date) -> list[str]:
         with translation.override(candidate.member.user.language):
             reasons.append(bot_messages.bonus_reason(candidate.percent, candidate.tasks, period))
     return reasons
+
+
+# Its page ----------------------------------------------------------------------------------
+
+# How many of its next runs its page looks through for the payroll check and the bonuses: more
+# than two months of workdays.
+LOOK_AHEAD_RUNS = 70
+
+
+def upcoming(company, state, now: datetime) -> list[tuple[datetime | None, str]]:
+    """What it expects: the run that checks the payroll before pay day and, when on, the one
+    that suggests the month's bonuses (each the next not done yet), and how many documents
+    and contracts the digest keeps an eye on. Counts only."""
+    config = registry.config_of(AGENT, state)
+    found = []
+    if company.has_feature(Feature.PAYROLL):
+        runs = _working_runs(company, state, now)
+        if at := _payroll_check_at(company, config, runs):
+            found.append((at, _("Payroll check before pay day")))
+        if config["suggest_bonuses"] and (at := _bonuses_at(company, runs)):
+            found.append((at, _("Bonus suggestions")))
+    if company.has_feature(Feature.HR):
+        day = _local(company, now).date()
+        documents, contracts = watch_lists(company, None, day, hr_conf.get_settings(company))
+        count = documents.count() + contracts.count()
+        found.append((None, _("Documents and contracts to watch: %(count)s") % {"count": count}))
+    return found
+
+
+def _working_runs(company, state, now: datetime) -> list[datetime]:
+    """Its next runs that do something: on a workday that isn't a holiday."""
+    runs = runner.next_runs(AGENT, state, company, now, LOOK_AHEAD_RUNS)
+    if not runs:
+        return []
+    days = [_local(company, moment).date() for moment in runs]
+    holidays = set(holidays_between(company, days[0], days[-1]).values_list("date", flat=True))
+    workdays = company.workdays or []
+    return [
+        moment
+        for moment, day in zip(runs, days, strict=True)
+        if day.weekday() in workdays and day not in holidays
+    ]
+
+
+def _payroll_check_at(company, config: dict, runs: list[datetime]) -> datetime | None:
+    """The run that checks last month's payroll: the first one in the days before pay day
+    whose month isn't checked yet. None while payroll isn't used."""
+    if not runs or not Compensation.objects.for_company(company).exists():
+        return None
+    pay_day = payroll_conf.get_settings(company).pay_day
+    checked: dict[date, bool] = {}
+    for moment in runs:
+        day = _local(company, moment).date()
+        if pay_day_ahead(day, pay_day, config["days_before_pay_day"]) is None:
+            continue
+        period = periods.previous_period(day)
+        if period not in checked:
+            checked[period] = events.already(company, payroll_key(period))
+        if not checked[period]:
+            return moment
+    return None
+
+
+def _bonuses_at(company, runs: list[datetime]) -> datetime | None:
+    """The run that suggests a month's bonuses: on its last workday, the next month that has
+    none yet."""
+    last: dict[date, date | None] = {}
+    for moment in runs:
+        day = _local(company, moment).date()
+        period = day.replace(day=1)
+        if period not in last:
+            done = events.already(company, bonuses_key(period))
+            last[period] = None if done else last_workday(company, day)
+        if day == last[period]:
+            return moment
+    return None
 
 
 # Claude, sending ---------------------------------------------------------------------------
@@ -885,6 +987,7 @@ AGENT = registry.register(
         schedule=_schedule,
         run=run,
         next_run=morning_plan.next_run,
+        upcoming=upcoming,
         events={
             "digest_sent": EventTemplate(
                 ngettext_lazy(

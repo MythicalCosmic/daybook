@@ -3,7 +3,9 @@
 An agent is a module in `apps/ai/agents/` that registers one `Agent`: what it is called, what
 it does, whether it needs Claude, its settings (`fields`, rendered by the dashboard), how its
 schedule reads, its `run(company, state)` when it works on a schedule, and the templates of the
-events it logs (worded at read time in the reader's language, apps.ai.events).
+events it logs (worded at read time in the reader's language, apps.ai.events). Its page (the
+dashboard's agent page) also sums the Claude calls of its `usage_features` and lists what its
+`upcoming(company, state, now)` expects.
 
     state = state_of(company, "voice_tasks")         # the AgentState row, made on first read
     config = config_of(get("voice_tasks"), state)     # the settings, defaults filled in
@@ -93,6 +95,16 @@ class Agent:
     # The company modules it works for ("hr", "payroll"): listed, and switched on with AI, only
     # where the company has at least one of them.
     features: tuple[str, ...] = ()
+    # The `feature` its Claude calls record in AIUsage (apps.ai.client): its key unless said.
+    usage_features: tuple[str, ...] = ()
+    # upcoming(company, state, now) -> [(when or None, label)]: what it expects next, for its
+    # page. Counts only, never a name or a text, about what its own messages are about; the
+    # labels in the active language.
+    upcoming: Callable | None = None
+
+    def __post_init__(self):
+        if not self.usage_features:
+            object.__setattr__(self, "usage_features", (self.key,))
 
     @property
     def scheduled(self) -> bool:
