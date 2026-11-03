@@ -18,7 +18,7 @@ from django.db.models.functions import TruncDate
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
-from apps.ai import agents, availability, conf, events
+from apps.ai import agents, conf, events
 from apps.ai.agents import runner
 from apps.ai.models import AgentEvent, AgentRun, AIDraft, AIUsage
 from apps.members.models import Membership
@@ -192,31 +192,32 @@ def _calls(company, agent, can_configure: bool) -> list[dict]:
     ]
 
 
-USAGE_SUMS = ("calls", "input_tokens", "output_tokens", "cache_read_tokens", "cost")
+USAGE_SUMS = ("calls", "input_tokens", "output_tokens", "cache_read_tokens", "cost", "all_cost")
 
 
 def _usage(company, agent, now: datetime, can_configure: bool) -> dict:
     """The agent's Claude calls summed: this month, and each of the last USAGE_DAYS days (zero
-    days too, oldest first), in the company's calendar; and the company's month beside it."""
+    days too, oldest first), in the company's calendar; and the company's month beside it,
+    from the same rows (its share never reads over 100%)."""
     zone = ZoneInfo(company.timezone)
     today = timezone.localtime(now, zone).date()
     first = today - timedelta(days=USAGE_DAYS - 1)
     month = today.replace(day=1)
+    mine = Q(feature__in=agent.usage_features)
     per_day: dict[date, dict] = {
         row["day"]: row
         for row in AIUsage.objects.filter(
-            company=company,
-            feature__in=agent.usage_features,
-            created_at__gte=datetime.combine(min(first, month), time.min, zone),
+            company=company, created_at__gte=datetime.combine(min(first, month), time.min, zone)
         )
         .annotate(day=TruncDate("created_at", tzinfo=zone))
         .values("day")
         .annotate(
-            calls=Count("pk"),
-            input_tokens=Sum("input_tokens"),
-            output_tokens=Sum("output_tokens"),
-            cache_read_tokens=Sum("cache_read_tokens"),
-            cost=Sum("cost_micro_usd"),
+            calls=Count("pk", filter=mine),
+            input_tokens=Sum("input_tokens", filter=mine, default=0),
+            output_tokens=Sum("output_tokens", filter=mine, default=0),
+            cache_read_tokens=Sum("cache_read_tokens", filter=mine, default=0),
+            cost=Sum("cost_micro_usd", filter=mine, default=0),
+            all_cost=Sum("cost_micro_usd", default=0),
         )
     }
 
@@ -241,7 +242,7 @@ def _usage(company, agent, now: datetime, can_configure: bool) -> dict:
     company_month = None
     if can_configure:
         company_month = {
-            "month_cost_usd": _usd(availability.month_spend_micro(company)),
+            "month_cost_usd": _usd(this_month["all_cost"]),
             "monthly_budget_usd": f"{conf.get_settings(company).monthly_budget_usd:.2f}",
         }
     return {

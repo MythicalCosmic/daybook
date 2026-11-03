@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-02 20:48+0500\n"
+"POT-Creation-Date: 2026-11-03 14:34+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -472,6 +472,11 @@ msgid "Every 30 minutes, %(start)s–%(end)s"
 msgstr "Каждые 30 минут, %(start)s–%(end)s"
 
 #: backend/apps/ai/agents/deadline_watcher.py
+#, python-format
+msgid "Tasks due in the next 24 hours: %(count)s"
+msgstr "Задачи со сроком в ближайшие 24 часа: %(count)s"
+
+#: backend/apps/ai/agents/deadline_watcher.py
 msgid "Deadline watcher"
 msgstr "Контроль сроков"
 
@@ -515,6 +520,19 @@ msgid "Workdays at %(time)s"
 msgstr "По рабочим дням в %(time)s"
 
 #: backend/apps/ai/agents/hr_assistant.py
+msgid "Payroll check before pay day"
+msgstr "Проверка зарплаты перед днём выплаты"
+
+#: backend/apps/ai/agents/hr_assistant.py
+msgid "Bonus suggestions"
+msgstr "Предложения премий"
+
+#: backend/apps/ai/agents/hr_assistant.py
+#, python-format
+msgid "Documents and contracts to watch: %(count)s"
+msgstr "Документы и договоры под наблюдением: %(count)s"
+
+#: backend/apps/ai/agents/hr_assistant.py
 msgid "HR assistant"
 msgstr "HR-помощник"
 
@@ -535,10 +553,6 @@ msgstr ""
 #: backend/apps/ai/agents/morning_plan.py
 msgid "Send at"
 msgstr "Отправлять в"
-
-#: backend/apps/ai/agents/hr_assistant.py
-msgid "Payroll check before pay day"
-msgstr "Проверка зарплаты перед днём выплаты"
 
 #: backend/apps/ai/agents/hr_assistant.py
 msgid ""
@@ -629,6 +643,15 @@ msgstr[1] "Предложены %(count)s премии (%(month)s): ждут у�
 msgstr[2] "Предложено %(count)s премий (%(month)s): ждут утверждения"
 msgstr[3] "Предложено %(count)s премии (%(month)s): ждут утверждения"
 
+#: backend/apps/ai/agents/morning_plan.py
+#, python-format
+msgid "Plans for %(count)s person"
+msgid_plural "Plans for %(count)s people"
+msgstr[0] "Планы для %(count)s человека"
+msgstr[1] "Планы для %(count)s человек"
+msgstr[2] "Планы для %(count)s человек"
+msgstr[3] "Планы для %(count)s человека"
+
 #: backend/apps/ai/agents/morning_plan.py backend/apps/groups/models.py
 msgid "Morning plan"
 msgstr "Утренний план"
@@ -673,6 +696,10 @@ msgstr "Когда регулярная задача выполнена с фо�
 #: backend/apps/ai/agents/photo_checker.py
 msgid "When a task is finished with a photo"
 msgstr "Когда задача выполнена с фото"
+
+#: backend/apps/ai/agents/photo_checker.py
+msgid "Checks each proof photo as it arrives"
+msgstr "Проверяет каждый фотоотчёт, как только он приходит"
 
 #: backend/apps/ai/agents/photo_checker.py
 msgid "The fridge shows 5 °C, inside 2-8 °C."
@@ -756,6 +783,10 @@ msgstr "Когда кто-то диктует; задачи создаются �
 #: backend/apps/ai/agents/voice_tasks.py
 msgid "When someone dictates"
 msgstr "Когда кто-то диктует"
+
+#: backend/apps/ai/agents/voice_tasks.py
+msgid "Works when a voice note arrives"
+msgstr "Работает, когда приходит голосовое сообщение"
 
 #: backend/apps/ai/agents/voice_tasks.py
 msgid "Voice tasks"
@@ -1418,6 +1449,14 @@ msgstr "Задача"
 #: backend/apps/ai/models.py
 msgid "Voice note"
 msgstr "Голосовое"
+
+#: backend/apps/ai/queries.py
+msgid "Did not finish"
+msgstr "Не завершился"
+
+#: backend/apps/ai/queries.py
+msgid "Scheduled run"
+msgstr "Запуск по расписанию"
 
 #: backend/apps/ai/queries.py
 #, python-format
