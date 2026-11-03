@@ -40,15 +40,19 @@
   align-self: center;
 }
 
+/* When the title and the amount don't fit side by side (a narrow phone), the amount drops to its
+   own line at the right instead of squeezing the title into two ("Oktabr / 2026"). */
 .ft-entry-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
-  gap: 10px;
+  gap: 2px 10px;
 }
 
 .ft-entry-head > :last-child:not(:first-child) {
   flex: none;
+  margin-left: auto;
 }
 
 /* A detail may be long ("Savdo bonusi, 1%: Sof savdo 112 710 000 so‘m"): two lines, then "…". */

@@ -6,7 +6,7 @@ import { dayMonthYear } from "../../lib/time";
 import { Badge, Banner, type BadgeTone } from "../../ui";
 import { EntryRow } from "../EntryRow";
 import type { Contract, DocumentState, HrDocument } from "./api";
-import { documentName, kindIcon, stateLabel, useHrT } from "./text";
+import { attentionText, documentName, kindIcon, stateLabel, useHrT } from "./text";
 
 /** "Please read your contract": Home and the HR page, until "I've read it". */
 export function ContractBanner({ contract, onOpen, size = "md" }: { contract: Contract; onOpen: () => void; size?: "md" | "lg" }) {
@@ -29,16 +29,13 @@ export function ContractBanner({ contract, onOpen, size = "md" }: { contract: Co
 /** A document that ran out or soon will: "Medical book: 12 days left · upload the renewed one". */
 export function DocumentBanner({ document, onOpen, size = "md" }: { document: HrDocument; onOpen: () => void; size?: "md" | "lg" }) {
   const t = useHrT();
-  const name = documentName(t, document);
-  const title =
-    document.state === "expired" ? t("home.expired", { kind: name }) : t("home.expiring", { kind: name, count: Math.max(0, document.days_left ?? 0) });
   return (
     <Banner
       size={size}
       tone={size === "md" ? "accent" : "plain"}
       iconTone="accent"
       icon={document.kind === "medical_book" || document.kind === "medical_exam" ? Stethoscope : kindIcon(document.kind)}
-      title={title}
+      title={attentionText(t, document)}
       body={t("home.documentBody")}
       chevron
       wrap

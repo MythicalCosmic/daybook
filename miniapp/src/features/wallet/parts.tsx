@@ -1,6 +1,5 @@
 /** Rows and cards the wallet's pages share: a bonus or fine, a payslip, an advance, a bonus rule. */
 import { BadgeMinus, BadgePlus, CircleMinus, FileText, Gift, HandCoins } from "lucide-react";
-import type { ReactNode } from "react";
 
 import { useI18n } from "../../i18n";
 import { compareMoney, formatMoney, isZero } from "../../lib/money";
@@ -13,16 +12,6 @@ import { isNegative, payslipState, progressView, signedAmount, type PayslipState
 import { advanceStatus, captionText, kindLabel, metricText, monthLabel, payslipStateLabel, useWalletT, type WalletKey } from "./text";
 
 const KIND_ICON = { bonus: Gift, allowance: BadgePlus, fine: BadgeMinus, deduction: CircleMinus } as const;
-
-/** An amount with a small badge under it, at the right of a row. */
-function AmountStack({ children, badge }: { children: ReactNode; badge?: ReactNode }) {
-  return (
-    <span className="wal-amount">
-      {children}
-      {badge}
-    </span>
-  );
-}
 
 /**
  * A bonus or a fine: the kind and the amount on one line, the reason under them across the whole
@@ -63,19 +52,20 @@ export function PayslipListRow({ row, onOpen }: { row: PayslipRow; onOpen: () =>
   const { locale } = useI18n();
   const member = useMember();
   const state = payslipState(row);
+  // The month and net pay on one line, the payment under them, the state last: nothing squeezed on a narrow phone.
   return (
-    <ListRow
-      variant="card"
+    <EntryRow
       icon={FileText}
       tone={state === "received" ? "sage" : "accent"}
       title={monthLabel(row.period, locale)}
-      subtitle={row.paid_at ? t("payslip.paidOn", { date: dayMonthLong(row.paid_at, member.timeZone, locale) }) : t("payslip.notPaid")}
-      value={
-        <AmountStack badge={<Badge tone={STATE_TONE[state]} size="small">{payslipStateLabel(t, state)}</Badge>}>
-          <MoneyText amount={row.net} currency={row.currency} />
-        </AmountStack>
+      aside={<MoneyText amount={row.net} currency={row.currency} className="wal-entry-amount" />}
+      details={[row.paid_at ? t("payslip.paidOn", { date: dayMonthLong(row.paid_at, member.timeZone, locale) }) : t("payslip.notPaid")]}
+      chips={
+        <Badge tone={STATE_TONE[state]} size="small">
+          {payslipStateLabel(t, state)}
+        </Badge>
       }
-      onClick={onOpen}
+      onOpen={onOpen}
       className="wal-row"
     />
   );

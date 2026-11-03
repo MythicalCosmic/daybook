@@ -44,6 +44,11 @@
   overflow-wrap: anywhere;
 }
 
+/* "Medical book: 12 days left" says all of it, on two lines if it must. */
+.hr-wrap .list-item-sub {
+  white-space: normal;
+}
+
 .hr-empty {
   font-weight: 500;
   color: var(--muted);

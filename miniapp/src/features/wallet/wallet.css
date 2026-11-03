@@ -49,18 +49,7 @@
   font-size: 17px;
 }
 
-/* — rows with an amount on the right — */
-
-.wal-amount {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--color-text);
-  white-space: nowrap;
-}
+/* — rows — */
 
 /* A reason may be long ("Savdo bonusi, 1%: Sof savdo 112 710 000 so‘m"): two lines, then "…". */
 .wal-row .row-meta {

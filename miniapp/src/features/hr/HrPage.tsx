@@ -12,7 +12,7 @@ import { Avatar, Badge, Button, Card, ListCard, ListRow, LoadError, PageHeader, 
 import { useFeatureOpen } from "../useFeatureOpen";
 import { useContract, useDocuments, useProfile, type Profile } from "./api";
 import { MAX_CONTACTS, needingAttention } from "./lib";
-import { documentName, shortMask, stateLabel, useHrT, type HrKey } from "./text";
+import { attentionText, shortMask, useHrT, type HrKey } from "./text";
 import "./hr.css";
 
 export default function HrPage() {
@@ -61,8 +61,9 @@ export default function HrPage() {
         <ListRow
           icon={FolderOpen}
           title={t("row.documents")}
-          subtitle={first ? `${documentName(t, first)}: ${stateLabel(t, first)}` : undefined}
+          subtitle={first ? attentionText(t, first) : undefined}
           alert={Boolean(first)}
+          className="hr-wrap"
           value={documents.data ? String(documents.data.length) : undefined}
           onClick={() => go.page("documents")}
         />

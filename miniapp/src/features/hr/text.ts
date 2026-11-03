@@ -16,6 +16,12 @@ export const kindLabel = (t: HrT, kind: DocumentKind | string): string => t(`kin
 export const documentName = (t: HrT, document: Pick<HrDocument, "kind" | "title">): string =>
   document.title ? `${kindLabel(t, document.kind)}: ${document.title}` : kindLabel(t, document.kind);
 
+/** A document that needs renewing, said in a line: "Medical book: 12 days left", "…: expired". */
+export function attentionText(t: HrT, document: Pick<HrDocument, "kind" | "title" | "state" | "days_left">): string {
+  const kind = documentName(t, document);
+  return document.state === "expired" ? t("home.expired", { kind }) : t("home.expiring", { kind, count: Math.max(0, document.days_left ?? 0) });
+}
+
 /** Where a document stands, in a word or two ("12 days left"). */
 export function stateLabel(t: HrT, document: Pick<HrDocument, "state" | "days_left">): string {
   if (document.state === "expiring") return t("state.expiring", { count: Math.max(0, document.days_left ?? 0) });
