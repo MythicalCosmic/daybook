@@ -28,8 +28,11 @@ const runTable = useDataTable({ id: "ai.agent.runs", pageSize: 30 });
 const callTable = useDataTable({ id: "ai.agent.calls", pageSize: 30 });
 
 const tokens = (input: number, output: number) => `${tokensText(input, fmt.lang.value)} / ${tokensText(output, fmt.lang.value)}`;
-const cost = (value: string | null) => usdText(value, true) ?? "—";
+const cost = (value: string | null) => usdText(value) ?? "—";
 const when = (iso: string) => fmt.instant(iso, "short");
+/** Why Claude stopped, in words for the ones that happen ("end_turn": it finished), else as Claude says it. */
+const STOP_REASONS = new Set(["end_turn", "max_tokens", "tool_use", "refusal", "pause_turn", "stop_sequence"]);
+const stopText = (reason: string) => (!reason ? "—" : STOP_REASONS.has(reason) ? t(`ai.agent.stop.${reason}`) : reason);
 
 const runColumns = computed<TableColumn<AgentRun>[]>(() => {
   const list: TableColumn<AgentRun>[] = [
@@ -118,7 +121,7 @@ const noCalls = computed(() => (props.claude === "not_configured" ? t("ai.agent.
       <EmptyState v-if="!agent.calls.length" class="ui-card" size="sm" tone="neutral" :icon="Cpu" :title="t('ai.agent.log.noCalls')" :description="noCalls" data-testid="agent-no-calls" />
       <DataTable v-else :state="callTable" :columns="callColumns" :rows="agent.calls" :row-key="(row) => `${row.at}:${row.model}:${row.input_tokens}:${row.output_tokens}`" hide-toolbar hide-pagination max-height="560px" :caption="t('ai.agent.log.calls')">
         <template #cell-model="{ row }"><span class="block truncate font-mono text-sm text-fg" :title="row.model">{{ row.model }}</span></template>
-        <template #cell-stop_reason="{ row }"><span class="block truncate font-mono text-xs text-muted" :title="row.stop_reason">{{ row.stop_reason || "—" }}</span></template>
+        <template #cell-stop_reason="{ row }"><span class="block truncate text-sm text-muted" :title="row.stop_reason || undefined">{{ stopText(row.stop_reason) }}</span></template>
         <template #card="{ row }">
           <div class="flex flex-col gap-1.5">
             <div class="flex items-center justify-between gap-3">

@@ -468,6 +468,7 @@ describe("Claude on every page", () => {
     buddyEverywhere.value = true;
     const app = await testApp(path);
     app.router.addRoute({ path: "/c/:cid/ai", name: "ai.agents", component: { render: () => null } });
+    app.router.addRoute({ path: "/c/:cid/ai/agents/:key", name: "ai.agent", component: { render: () => null } });
     const { wrapper } = mountWithProviders(BuddyCompanion, { plugins: app.plugins });
     await vi.advanceTimersByTimeAsync(50);
     await flushPromises();
@@ -489,6 +490,10 @@ describe("Claude on every page", () => {
   it("leaves the Agents page to the strip's own helper, and comes along to the next page", async () => {
     const { wrapper, app } = await page();
     await app.router.push("/c/1/ai");
+    await flushPromises();
+    expect(wrapper.find('[data-testid="ai-buddy-companion"]').exists()).toBe(false);
+    // An agent's page has its chibi at its desk: it stays away there too.
+    await app.router.push("/c/1/ai/agents/deadline_watcher");
     await flushPromises();
     expect(wrapper.find('[data-testid="ai-buddy-companion"]').exists()).toBe(false);
     await app.router.push("/c/1/people");

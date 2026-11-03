@@ -2,6 +2,7 @@
  * The AI endpoints' shapes (briefs/ai-contract.md §4–§5, `/api/v1/owner/companies/{cid}/ai/…`),
  * typed by hand until the owner schema has them.
  */
+import type { SceneState } from "./scene";
 
 export type ClaudeState = "connected" | "not_configured" | "fake" | "blocked" | "budget_reached" | "unavailable";
 export type SpeechState = "ready" | "not_configured" | "fake";
@@ -167,8 +168,6 @@ export interface AgentPatch {
 
 // ─── One agent's page (`GET ai/agents/{key}/`, briefs/v5-agent-page.md) ─────
 
-/** What the big scene shows: at work, on and waiting, or asleep (off, or it can't run). */
-export type SceneState = "working" | "idle" | "asleep";
 export type AgentRunStatus = "running" | "ok" | "error";
 
 /** One run of the agent, newest first. `error` and `cost_usd` are null without ai.configure. */
@@ -230,6 +229,7 @@ export interface AgentDetail extends Agent {
   calls: AgentCall[];
   usage: AgentUsage;
   upcoming: AgentUpcoming[];
+  /** What its scene shows (AgentScene.vue): at work, on and waiting, or asleep. */
   scene: SceneState;
 }
 

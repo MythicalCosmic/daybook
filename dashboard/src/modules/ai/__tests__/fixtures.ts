@@ -1,5 +1,5 @@
 /** Contract-shaped AI data for the module's tests (briefs/ai-contract.md §4–§5). */
-import type { ActivityItem, Agent, AiDraft, AiStatus } from "../types";
+import type { ActivityItem, Agent, AgentDetail, AgentRun, AgentUsageDay, AiDraft, AiStatus } from "../types";
 
 export function status(overrides: Partial<AiStatus> = {}): AiStatus {
   return {
@@ -129,6 +129,64 @@ export function activity(id: number, overrides: Partial<ActivityItem> = {}): Act
     created_at: "2026-11-02T10:00:00+05:00",
     actor: null,
     subject: { type: "task", id: 300 + id, label: "Kassani sanash" },
+    ...overrides,
+  };
+}
+
+/** One run of an agent, as `GET ai/agents/{key}/` lists them (newest first). */
+export function agentRun(id: number, overrides: Partial<AgentRun> = {}): AgentRun {
+  return {
+    id,
+    started_at: "2026-11-03T14:30:00+05:00",
+    finished_at: "2026-11-03T14:30:02.400+05:00",
+    duration_ms: 2400,
+    status: "ok",
+    forced: false,
+    done: 2,
+    error: null,
+    calls: 1,
+    input_tokens: 1840,
+    output_tokens: 312,
+    cost_usd: "0.003400",
+    ...overrides,
+  };
+}
+
+/** The last 30 company days up to 3 Nov 2026, oldest first, tokens on a few of them. */
+export function usageDays(busy: Record<string, [input: number, output: number]> = { "2026-11-01": [12000, 1800], "2026-11-03": [1840, 312] }): AgentUsageDay[] {
+  const days: AgentUsageDay[] = [];
+  const last = Date.UTC(2026, 10, 3);
+  for (let back = 29; back >= 0; back -= 1) {
+    const date = new Date(last - back * 86_400_000).toISOString().slice(0, 10);
+    const [input, output] = busy[date] ?? [0, 0];
+    days.push({ date, calls: input ? 1 : 0, input_tokens: input, output_tokens: output, cost_usd: input ? "0.003400" : "0.000000" });
+  }
+  return days;
+}
+
+/** The deadline watcher's page (`GET ai/agents/deadline_watcher/`) as an owner sees it. */
+export function agentDetail(overrides: Partial<AgentDetail> = {}): AgentDetail {
+  return {
+    ...agent({ last_run_at: "2026-11-03T14:30:00+05:00", next_run_at: "2026-11-03T15:00:00+05:00" }),
+    runs: [
+      agentRun(12),
+      agentRun(11, { started_at: "2026-11-03T14:00:00+05:00", finished_at: "2026-11-03T14:00:00.800+05:00", duration_ms: 800, done: 0, calls: 0, input_tokens: 0, output_tokens: 0, cost_usd: "0.000000" }),
+      agentRun(10, { started_at: "2026-11-03T13:30:00+05:00", finished_at: "2026-11-03T13:30:05+05:00", duration_ms: 5000, status: "error", forced: true, done: 0, error: "Claude didn’t answer in time", output_tokens: 0, cost_usd: "0.000900" }),
+    ],
+    calls: [
+      { at: "2026-11-03T14:30:01+05:00", model: "claude-haiku-5-5", input_tokens: 1840, output_tokens: 312, cache_read_tokens: 1200, latency_ms: 1900, stop_reason: "end_turn", cost_usd: "0.003400" },
+    ],
+    usage: {
+      month: { calls: 37, input_tokens: 48210, output_tokens: 6930, cache_read_tokens: 22000, cost_usd: "0.421300" },
+      days: usageDays(),
+      company: { month_cost_usd: "3.500000", monthly_budget_usd: "20.00" },
+    },
+    upcoming: [
+      { at: "2026-11-03T15:00:00+05:00", kind: "run", label: "Next check" },
+      { at: "2026-11-03T15:30:00+05:00", kind: "run", label: "Next check" },
+      { at: null, kind: "item", label: "Tasks due in the next 24 hours: 4" },
+    ],
+    scene: "idle",
     ...overrides,
   };
 }

@@ -28,8 +28,9 @@ const days = computed(() => props.agent.usage.days);
 const month = computed(() => props.agent.usage.month);
 const hasTokens = computed(() => days.value.some((day) => day.input_tokens > 0 || day.output_tokens > 0));
 const series = computed(() => [
-  { name: t("ai.agent.tokens.input"), data: days.value.map((day) => day.input_tokens), color: "var(--c-chart-1)" },
-  { name: t("ai.agent.tokens.output"), data: days.value.map((day) => day.output_tokens), color: "var(--c-chart-2)" },
+  // The chart theme's validated palette, in its fixed order (no colours of our own).
+  { name: t("ai.agent.tokens.input"), data: days.value.map((day) => day.input_tokens) },
+  { name: t("ai.agent.tokens.output"), data: days.value.map((day) => day.output_tokens) },
 ]);
 const share = computed(() => monthShare(props.agent.usage));
 const hidden = computed(() => month.value.cost_usd === null);
@@ -39,7 +40,7 @@ const totals = computed(() => [
   { id: "input", label: t("ai.agent.tokens.input"), value: tokensText(month.value.input_tokens, fmt.lang.value) },
   { id: "output", label: t("ai.agent.tokens.output"), value: tokensText(month.value.output_tokens, fmt.lang.value) },
   { id: "cache", label: t("ai.agent.tokens.cache"), value: tokensText(month.value.cache_read_tokens, fmt.lang.value) },
-  { id: "cost", label: t("ai.agent.kpi.cost"), value: usdText(month.value.cost_usd, true) ?? t("ai.agent.hidden") },
+  { id: "cost", label: t("ai.agent.tokens.cost"), value: usdText(month.value.cost_usd) ?? t("ai.agent.hidden") },
 ]);
 
 const csv = computed<ChartCsv<AgentUsageDay>>(() => ({
@@ -49,7 +50,7 @@ const csv = computed<ChartCsv<AgentUsageDay>>(() => ({
     { key: "calls", label: t("ai.agent.tokens.calls"), value: (row) => row.calls },
     { key: "input", label: t("ai.agent.tokens.input"), value: (row) => row.input_tokens },
     { key: "output", label: t("ai.agent.tokens.output"), value: (row) => row.output_tokens },
-    ...(hidden.value ? [] : [{ key: "cost", label: t("ai.agent.kpi.cost"), value: (row: AgentUsageDay) => row.cost_usd ?? "" }]),
+    ...(hidden.value ? [] : [{ key: "cost", label: t("ai.agent.tokens.cost"), value: (row: AgentUsageDay) => row.cost_usd ?? "" }]),
   ],
   rows: days.value,
 }));
@@ -88,7 +89,7 @@ const csv = computed<ChartCsv<AgentUsageDay>>(() => ({
         <h3 class="text-sm font-semibold text-fg">{{ t("ai.agent.tokens.share") }}</h3>
         <div class="flex flex-col gap-1">
           <ProgressBar :value="share.share ?? 0" :max="100" size="md" :label="t('ai.agent.tokens.ofCompany')" :value-text="share.share === null ? '—' : shareText(share.share, fmt.lang.value)" />
-          <p class="num text-xs text-muted">{{ t("ai.agent.tokens.ofCompanyHint", { agent: usdText(share.agent, true), company: usdText(share.company) }) }}</p>
+          <p class="num text-xs text-muted">{{ t("ai.agent.tokens.ofCompanyHint", { agent: usdText(share.agent), company: usdText(share.company) }) }}</p>
         </div>
         <div class="flex flex-col gap-1">
           <ProgressBar

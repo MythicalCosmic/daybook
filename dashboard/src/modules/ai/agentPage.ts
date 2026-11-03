@@ -5,12 +5,13 @@
  */
 import type { Language } from "@/api/types";
 import { shareText } from "@/components/chartCard";
-import { formatInstant, formatRelative, todayIn, zonedDay, zonedNow } from "@/lib/dates";
+import { addDays, formatDay, formatInstant, formatRelative, todayIn, zonedDay, zonedNow } from "@/lib/dates";
 import { capitalize, formatNumber } from "@/lib/format";
 import { formatCompact } from "@/lib/money";
 
 import type { Tone } from "./lib";
-import type { ActivityItem, Agent, AgentDetail, AgentRun, AgentRunStatus, AgentUsage, SceneState } from "./types";
+import { isNightHour, type SceneState } from "./scene";
+import type { ActivityItem, Agent, AgentDetail, AgentRun, AgentRunStatus, AgentUsage } from "./types";
 
 /** vue-i18n's `t` as these functions use it (a count picks the plural form). */
 export type Translate = (key: string, named?: Record<string, unknown>, plural?: number) => string;
@@ -52,15 +53,15 @@ export function sceneOf(agent: Pick<AgentDetail, "running" | "enabled" | "availa
   return aiOn && agent.enabled && agent.available ? "idle" : "asleep";
 }
 
-/** Night in the company (20:00–06:00): the scene's window goes dark. */
+/** Night in the company (20:00–06:00 by its clock): the scene's window goes dark. */
 export function isNight(timeZone: string, now: number): boolean {
-  const hour = zonedNow(timeZone, now).getHours();
-  return hour >= 20 || hour < 6;
+  return isNightHour(zonedNow(timeZone, now).getHours());
 }
 
 // ─── The lines on its screen ────────────────────────────────────────────────
 
-export const SCREEN_LINES = 6;
+/** How many lines the page hands the scene (it shows the newest that fit: scene.ts screenLines). */
+export const SCENE_LINES = 6;
 
 /** A run in a few words: working, stopped with an error, what it did, or nothing new. */
 export function runLine(run: Pick<AgentRun, "status" | "done">, t: Translate): string {
@@ -74,7 +75,7 @@ export function runLine(run: Pick<AgentRun, "status" | "done">, t: Translate): s
  * `max`. A run that found nothing new shows once (the newest), so thirty quiet checks don't push
  * what it really did off the screen; a run still going is always the last line.
  */
-export function screenLines(activity: readonly Pick<ActivityItem, "text" | "created_at">[], runs: readonly AgentRun[], t: Translate, max = SCREEN_LINES): string[] {
+export function sceneLines(activity: readonly Pick<ActivityItem, "text" | "created_at">[], runs: readonly AgentRun[], t: Translate, max = SCENE_LINES): string[] {
   const lines = [
     ...activity.map((item) => ({ at: Date.parse(item.created_at), text: item.text, quiet: false })),
     ...runs.map((run) => ({
@@ -97,19 +98,18 @@ export function screenLines(activity: readonly Pick<ActivityItem, "text" | "crea
 // ─── Numbers ────────────────────────────────────────────────────────────────
 
 /**
- * Dollars from the API's string ("0.003500"): "$0.42"; `precise` (one run, one call) keeps four
- * places below a dollar ("$0.0035"). Something spent never reads "$0.00": "<$0.01". Null stays
- * null (hidden or unknown; the caller says which).
+ * Dollars from the API's string ("0.003500"), as the AI settings show them: "$0.42", "$12.50",
+ * and below a cent four places ("$0.0035": Haiku's calls cost fractions of a cent), so something
+ * spent never reads "$0.00" ("<$0.0001" below that). Null stays null: hidden or unknown, the
+ * caller says which.
  */
-export function usdText(value: string | number | null | undefined, precise = false): string | null {
+export function usdText(value: string | number | null | undefined): string | null {
   if (value === null || value === undefined || value === "") return null;
   const amount = Number(value);
   if (!Number.isFinite(amount)) return null;
   if (amount === 0) return "$0.00";
-  const floor = precise ? 0.0001 : 0.01;
-  if (amount > 0 && amount < floor) return `<$${floor}`;
-  if (precise && amount < 1) return `$${amount.toFixed(4).replace(/0{1,2}$/, "")}`;
-  return `$${amount.toFixed(2)}`;
+  if (amount > 0 && amount < 0.0001) return "<$0.0001";
+  return `$${amount.toFixed(amount < 0.01 ? 4 : 2)}`;
 }
 
 /** Tokens: "48 210", or "48,2 ming" / "48,2 тыс." / "48.2K" with `compact` from ten thousand up. */
@@ -176,6 +176,21 @@ export interface KpiContext {
   aiOn: boolean;
 }
 
+/**
+ * When something coming up happens, said once: "Bugun, 15:15" (with "20 daqiqadan keyin" beside
+ * it), "Ertaga, 08:30", "Payshanba, 5-noyabr, 08:30".
+ */
+export function upcomingWhen(iso: string, timeZone: string, lang: Language, now: number, today: string): { when: string; soon: string | null } {
+  const day = zonedDay(iso, timeZone);
+  const time = formatInstant(iso, timeZone, lang, "time");
+  if (day === todayIn(timeZone, now)) {
+    const relative = formatRelative(iso, timeZone, lang, now);
+    return { when: `${today}, ${time}`, soon: relative === time ? null : relative };
+  }
+  if (day === addDays(todayIn(timeZone, now), 1)) return { when: capitalize(formatRelative(iso, timeZone, lang, now)), soon: null };
+  return { when: `${formatDay(day, lang, "weekday")}, ${time}`, soon: null };
+}
+
 /** An instant as a tile shows it: the time today ("14:30"), else "Kecha, 14:30" / "Ertaga, 09:00" / the date. */
 export function clockText(iso: string, timeZone: string, lang: Language, now: number): string {
   if (zonedDay(iso, timeZone) === todayIn(timeZone, now)) return formatInstant(iso, timeZone, lang, "time");
@@ -186,17 +201,23 @@ export function clockText(iso: string, timeZone: string, lang: Language, now: nu
 export function agentKpis(agent: AgentDetail, ctx: KpiContext): AgentKpi[] {
   const { t, lang, timeZone, now } = ctx;
   const clock = (iso: string) => clockText(iso, timeZone, lang, now);
-  const ago = (iso: string) => formatRelative(iso, timeZone, lang, now);
+
+  // "3 min ago" under "14:49"; nothing more under "Kecha, 14:30", which already says it.
+  const ago = (iso: string, shown: string) => {
+    const relative = formatRelative(iso, timeZone, lang, now);
+    return relative.toLocaleLowerCase() === shown.toLocaleLowerCase() ? null : relative;
+  };
+  const join = (...parts: (string | null)[]) => parts.filter(Boolean).join(" · ") || undefined;
 
   const run = agent.runs[0] ?? null;
   const last: AgentKpi = { id: "last", label: t("ai.agent.kpi.last"), value: "—", hint: t("ai.agent.kpi.never") };
   if (run) {
     last.value = clock(run.started_at);
     last.status = { tone: RUN_TONE[run.status], label: t(`ai.agent.run.${run.status}`), live: run.status === "running" };
-    last.hint = run.status !== "running" && run.duration_ms !== null ? `${ago(run.started_at)} · ${durationText(run.duration_ms, lang)}` : ago(run.started_at);
+    last.hint = join(ago(run.started_at, last.value), run.status !== "running" && run.duration_ms !== null ? durationText(run.duration_ms, lang) : null);
   } else if (agent.last_run_at) {
     last.value = clock(agent.last_run_at);
-    last.hint = ago(agent.last_run_at);
+    last.hint = join(ago(agent.last_run_at, last.value));
   }
 
   const on = ctx.aiOn && agent.enabled;
@@ -205,7 +226,8 @@ export function agentKpis(agent: AgentDetail, ctx: KpiContext): AgentKpi[] {
   if (!on) next.hint = t("ai.agent.kpi.nextOff");
   else if (nextAt) {
     next.value = clock(nextAt);
-    next.hint = ago(nextAt);
+    // Tomorrow's run says when it repeats instead ("Ish kunlari, soat 08:30").
+    next.hint = ago(nextAt, next.value) ?? agent.schedule;
   } else if (!isScheduled(agent)) {
     next.value = t("ai.agent.kpi.onEvent");
     next.hint = agent.schedule;

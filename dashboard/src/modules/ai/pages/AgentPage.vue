@@ -31,17 +31,16 @@ import { rs, useRouteState } from "@/lib/useRouteState";
 import { useCompanyStore } from "@/stores/company";
 
 import { useAgentActions } from "../agentActions";
-import { AGENT_TABS, agentKpis, agentStatus, isNight, isScheduled, sceneOf, screenLines, type AgentTab } from "../agentPage";
+import { AGENT_TABS, agentKpis, agentStatus, isNight, isScheduled, sceneLines, sceneOf, type AgentTab } from "../agentPage";
 import { useActivityFeed, useAgent, useAiStatus } from "../api";
 import ActivityFeed from "../components/ActivityFeed.vue";
 import AgentKpis from "../components/AgentKpis.vue";
 import AgentLog from "../components/AgentLog.vue";
-import AgentScenePlaceholder from "../components/AgentScenePlaceholder.vue";
+import AgentScene from "../components/AgentScene.vue";
 import AgentSectionTabs, { type SectionTab } from "../components/AgentSectionTabs.vue";
 import AgentSettings from "../components/AgentSettings.vue";
 import AgentUpcoming from "../components/AgentUpcoming.vue";
 import AgentUsage from "../components/AgentUsage.vue";
-import { buddyVariant } from "../lib";
 
 const { t } = useI18n();
 const fmt = useFormat();
@@ -71,7 +70,7 @@ const runnable = computed(() => !!agent.value && isScheduled(agent.value) && can
 
 // The scene: its state, what is on its screen, day or night in the company.
 const scene = computed(() => (agent.value ? sceneOf(agent.value, aiOn.value) : "asleep"));
-const lines = computed(() => (agent.value ? screenLines(feed.items.value, agent.value.runs, t) : []));
+const lines = computed(() => (agent.value ? sceneLines(feed.items.value, agent.value.runs, t) : []));
 const night = computed(() => isNight(company.timezone, now.value));
 const sceneLabel = computed(() => (agent.value ? t("ai.agent.scene.label", { name: agent.value.name, state: t(`ai.agent.scene.${scene.value}`) }) : ""));
 
@@ -92,7 +91,11 @@ const agentsLink = computed(() => ({ name: "ai.agents", params: { companyId: com
     <PageHeader :title="agent?.name ?? t('ai.agent.title')" :description="agent?.description" :back="agentsLink" :back-label="t('ai.agents.title')">
       <template v-if="agent" #actions>
         <div class="flex h-10 items-center gap-2.5 rounded-button border border-line bg-surface pl-3 pr-2 max-sm:flex-1" data-testid="agent-switch">
-          <label :for="switchId" class="flex-1 cursor-pointer text-sm font-medium text-fg">{{ t("ai.agents.onLabel") }}</label>
+          <!-- The words follow the switch; a screen reader hears what it switches. -->
+          <label :for="switchId" class="flex-1 cursor-pointer text-sm font-medium text-fg">
+            <span class="sr-only">{{ t("ai.agents.switch", { name: agent.name }) }}</span>
+            <span aria-hidden="true" data-testid="agent-switch-state">{{ on ? t("ai.agent.status.on") : t("ai.agent.status.off") }}</span>
+          </label>
           <ToggleSwitch
             :id="switchId"
             :model-value="on"
@@ -127,14 +130,15 @@ const agentsLink = computed(() => ({ name: "ai.agents", params: { companyId: com
     </EmptyState>
     <ErrorState v-else-if="query.isError.value && !agent" class="ui-card" :error="query.error.value" :retry="() => query.refetch()" />
     <template v-else>
+      <!-- The page's main thing, right under the header: the agent at its desk. -->
+      <AgentScene v-if="agent" :variant="agent.key" :state="scene" :lines="lines" :night="night" :label="sceneLabel" />
+      <SkeletonBlock v-else class="!h-60 md:!h-[380px]" radius="12px" />
+
       <InlineAlert v-if="status.data.value && !aiOn" tone="neutral" :icon="Bot" :title="t('ai.off.title')" :description="canConfigure ? t('ai.agent.aiOffOwner') : t('ai.off.body')">
         <template v-if="canConfigure" #actions>
           <UiButton size="sm" :to="agentsLink">{{ t("ai.turnOn.button") }}</UiButton>
         </template>
       </InlineAlert>
-
-      <AgentScenePlaceholder v-if="agent" :variant="buddyVariant(agent.key)" :state="scene" :lines="lines" :night="night" :label="sceneLabel" />
-      <SkeletonBlock v-else class="!h-[240px] md:!h-[380px]" radius="12px" />
 
       <AgentKpis :kpis="kpis" :loading="!agent" />
 
@@ -156,6 +160,7 @@ const agentsLink = computed(() => ({ name: "ai.agents", params: { companyId: com
               <EmptyState v-else-if="!feed.items.value.length" size="sm" tone="neutral" :icon="Activity" :title="t('ai.activity.emptyAgent')" :description="on ? t('ai.agent.done.emptyBody') : t('ai.agent.done.emptyOff')" data-testid="agent-no-activity" />
               <ActivityFeed
                 v-else
+                one-agent
                 :items="feed.items.value"
                 :fresh="feed.fresh.value"
                 :has-older="feed.hasOlder.value"

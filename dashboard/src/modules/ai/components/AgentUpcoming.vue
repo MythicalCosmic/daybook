@@ -11,7 +11,9 @@ import { useI18n } from "vue-i18n";
 import EmptyState from "@/components/EmptyState.vue";
 import { useFormat } from "@/lib/useFormat";
 import { useNow } from "@/lib/useNow";
+import { useCompanyStore } from "@/stores/company";
 
+import { upcomingWhen } from "../agentPage";
 import type { AgentUpcoming } from "../types";
 
 const props = defineProps<{ items: AgentUpcoming[]; on: boolean }>();
@@ -19,14 +21,14 @@ const props = defineProps<{ items: AgentUpcoming[]; on: boolean }>();
 const { t } = useI18n();
 const fmt = useFormat();
 const now = useNow();
+const company = useCompanyStore();
 
 const rows = computed(() =>
   props.items.map((item, index) => ({
     ...item,
     id: `${index}:${item.at ?? ""}:${item.label}`,
     icon: item.at === null ? Zap : item.kind === "run" ? CalendarClock : Inbox,
-    when: item.at ? fmt.relative(item.at, now.value) : null,
-    exact: item.at ? fmt.instant(item.at, "short") : null,
+    ...(item.at ? upcomingWhen(item.at, company.timezone, fmt.lang.value, now.value, t("common.today")) : { when: null, soon: null }),
   })),
 );
 </script>
@@ -48,8 +50,10 @@ const rows = computed(() =>
           <p class="mt-0.5 text-sm text-muted">
             <template v-if="row.when">
               <time :datetime="row.at ?? undefined" class="num font-medium text-fg">{{ row.when }}</time>
-              <span class="px-1.5 text-subtle" aria-hidden="true">·</span>
-              <span class="num">{{ row.exact }}</span>
+              <template v-if="row.soon">
+                <span class="px-1.5 text-subtle" aria-hidden="true">·</span>
+                <span class="num">{{ row.soon }}</span>
+              </template>
             </template>
             <template v-else>{{ t("ai.agent.next.onArrival") }}</template>
           </p>

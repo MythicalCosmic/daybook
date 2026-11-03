@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
  * Claude's helper on every page of the dashboard while AI is on (mounted in the shell's
- * `shell.panel` slot; AI › Agents has its own, so it stays away there). It lives on the floor — the
+ * `shell.panel` slot; AI › Agents has its own, and an agent's page its chibi at its desk, so it
+ * stays away from both). It lives on the floor — the
  * phone's tab bar, else the bottom of the window — and every few seconds it acts in place (blinks,
  * winks, star eyes, thinks, little dances), strolls or moonwalks along the floor, or climbs onto a
  * card it can see, pokes it or sits on it, dances and comes back down. A new page: it walks in from
@@ -48,7 +49,8 @@ const reduced = reducedMotion();
 
 const size = computed(() => (isPhone.value ? 52 : 60));
 const height = computed(() => buddyBox(size.value).height);
-const shown = computed(() => buddyEverywhere.value && status.data.value?.enabled === true && route.name !== "ai.agents");
+const OWN_CHIBI = new Set(["ai.agents", "ai.agent"]);
+const shown = computed(() => buddyEverywhere.value && status.data.value?.enabled === true && !OWN_CHIBI.has(String(route.name)));
 // Away from the Agents page it listens to the pulse only (late and finished tasks).
 useBuddyCues(shown, { drafts: false, activity: false });
 
