@@ -188,7 +188,8 @@ export function upcomingWhen(iso: string, timeZone: string, lang: Language, now:
     return { when: `${today}, ${time}`, soon: relative === time ? null : relative };
   }
   if (day === addDays(todayIn(timeZone, now), 1)) return { when: capitalize(formatRelative(iso, timeZone, lang, now)), soon: null };
-  return { when: `${formatDay(day, lang, "weekday")}, ${time}`, soon: null };
+  // Russian weekdays come lower-case from Intl ("четверг, 5 ноября").
+  return { when: capitalize(`${formatDay(day, lang, "weekday")}, ${time}`), soon: null };
 }
 
 /** An instant as a tile shows it: the time today ("14:30"), else "Kecha, 14:30" / "Ertaga, 09:00" / the date. */

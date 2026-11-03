@@ -88,7 +88,7 @@ const agentsLink = computed(() => ({ name: "ai.agents", params: { companyId: com
 
 <template>
   <div class="flex min-w-0 flex-col gap-4 md:gap-5">
-    <PageHeader :title="agent?.name ?? t('ai.agent.title')" :description="agent?.description" :back="agentsLink" :back-label="t('ai.agents.title')">
+    <PageHeader :title="agent?.name ?? t('ai.agent.title')" :description="agent?.description" clamp-description :back="agentsLink" :back-label="t('ai.agents.title')">
       <template v-if="agent" #actions>
         <div class="flex h-10 items-center gap-2.5 rounded-button border border-line bg-surface pl-3 pr-2 max-sm:flex-1" data-testid="agent-switch">
           <!-- The words follow the switch; a screen reader hears what it switches. -->

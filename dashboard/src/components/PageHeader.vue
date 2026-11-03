@@ -2,7 +2,8 @@
 /**
  * The top of every page: optional back link, title, description, actions, a meta row (pills) and
  * tabs. Tabs are links when they have `to` (synced with the route) or buttons bound to `v-model:tab`.
- * The active tab's underline slides between tabs.
+ * The active tab's underline slides between tabs. `clampDescription`: on phones a long description
+ * shows its first two lines and a tap shows the rest (a screen reader always reads all of it).
  */
 import { ArrowLeft } from "@lucide/vue";
 import { useEventListener } from "@vueuse/core";
@@ -29,12 +30,14 @@ const props = withDefaults(
     back?: RouteLocationRaw;
     backLabel?: string;
     tabs?: PageTab[];
+    clampDescription?: boolean;
   }>(),
-  { description: undefined, back: undefined, backLabel: undefined, tabs: () => [] },
+  { description: undefined, back: undefined, backLabel: undefined, tabs: () => [], clampDescription: false },
 );
 
 const route = useRoute();
 const router = useRouter();
+const descriptionOpen = ref(false);
 
 function isActive(tab: PageTab): boolean {
   if (tab.to) return router.resolve(tab.to).path === route.path;
@@ -84,7 +87,14 @@ const { indicator } = useSlidingIndicator(tabsEl, {
     <div class="flex flex-wrap items-start gap-x-4 gap-y-3">
       <div class="min-w-[min(100%,260px)] flex-1">
         <h1 class="text-lg font-semibold tracking-[-0.01em] text-fg md:text-xl">{{ title }}</h1>
-        <p v-if="description" class="mt-1 max-w-[720px] text-base text-muted">{{ description }}</p>
+        <p
+          v-if="description"
+          :class="['mt-1 max-w-[720px] text-base text-muted', clampDescription && !descriptionOpen && 'max-sm:line-clamp-2 max-sm:cursor-pointer']"
+          data-page-description
+          @click="clampDescription && (descriptionOpen = !descriptionOpen)"
+        >
+          {{ description }}
+        </p>
       </div>
       <!-- Never wider than the header: on phones the actions take their own full row and wrap inside it. -->
       <div v-if="$slots.actions" class="flex min-w-0 max-w-full shrink-0 flex-wrap items-center gap-2 max-sm:w-full" data-page-actions>

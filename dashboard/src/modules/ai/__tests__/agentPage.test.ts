@@ -172,6 +172,7 @@ describe("an agent's page: the logic", () => {
     expect(when("2026-11-03T21:00:00+05:00")).toEqual({ when: "Today, 21:00", soon: "in 6 h" });
     expect(when("2026-11-04T08:30:00+05:00", "uz")).toEqual({ when: "Ertaga, 08:30", soon: null });
     expect(when("2026-11-05T08:30:00+05:00", "uz")).toEqual({ when: "Payshanba, 5-noyabr, 08:30", soon: null });
+    expect(upcomingWhen("2026-11-05T08:30:00+05:00", "Asia/Tashkent", "ru", NOW.getTime(), "Сегодня").when).toBe("Четверг, 5 ноября, 08:30");
   });
 
   it("takes this agent's share of the company's month, and the company's of its budget", () => {

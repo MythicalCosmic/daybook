@@ -71,10 +71,11 @@ const csv = computed<ChartCsv<AgentUsageDay>>(() => ({
       <BarChart :categories="days.map((day) => day.date)" :series="series" stacked integer x-format="day" height="240px" :label="t('ai.agent.tokens.chart')" />
     </ChartCard>
 
-    <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+    <!-- Side by side with the company's spending when the reader may see it; else the month takes the row. -->
+    <div :class="['grid gap-4', share && 'lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]']">
       <section class="ui-card p-4 md:p-5" :aria-label="t('ai.agent.tokens.month')">
         <h3 class="text-sm font-semibold text-fg">{{ t("ai.agent.tokens.month") }}</h3>
-        <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3">
+        <dl :class="['mt-3 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3', share ? 'lg:grid-cols-2 xl:grid-cols-3' : 'lg:grid-cols-5']">
           <div v-for="item in totals" :key="item.id" class="min-w-0" :data-total="item.id">
             <dt class="truncate text-xs font-medium text-muted">{{ item.label }}</dt>
             <dd :class="['num mt-0.5 flex items-center gap-1.5 text-lg font-semibold', item.id === 'cost' && hidden ? 'text-muted' : 'text-fg']">

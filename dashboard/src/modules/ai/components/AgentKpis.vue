@@ -26,7 +26,8 @@ withDefaults(defineProps<{ kpis: AgentKpi[]; loading?: boolean }>(), { loading: 
     </template>
     <template v-else>
       <div v-for="kpi in kpis" :key="kpi.id" class="flex min-w-0 flex-col p-4 @container" :data-kpi="kpi.id">
-        <span class="kpi-label">{{ kpi.label }}</span>
+        <!-- In a row, as KpiCard has it: the label's flex-grow is sideways, never down into the tile. -->
+        <div class="flex items-start gap-2"><span class="kpi-label">{{ kpi.label }}</span></div>
         <p :class="['num mt-1.5 flex min-w-0 flex-wrap items-baseline gap-x-1.5 text-xl font-semibold leading-8 tracking-[-0.02em] md:text-[1.625rem]', kpi.hidden ? 'text-muted' : 'text-fg']" aria-live="polite">
           <Lock v-if="kpi.hidden" :size="18" class="shrink-0 self-center" aria-hidden="true" />
           <span class="truncate">{{ kpi.value }}</span>

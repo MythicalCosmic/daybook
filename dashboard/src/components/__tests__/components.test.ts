@@ -294,6 +294,21 @@ describe("small layout fixes", () => {
     expect(header.find("[data-page-actions]").classes()).toEqual(expect.arrayContaining(["max-w-full", "min-w-0", "flex-wrap", "max-sm:w-full"]));
   });
 
+  it("PageHeader shows two lines of a long description on phones when asked, and the rest on a tap", async () => {
+    const text = "Every working morning it tells HR what is coming: expiring documents and contracts, probations, birthdays.";
+    const plain = mount(PageHeader, { props: { title: "HR assistant", description: text }, global: { plugins: plugins() } });
+    expect(plain.find("[data-page-description]").classes()).not.toContain("max-sm:line-clamp-2");
+    const header = mount(PageHeader, { props: { title: "HR assistant", description: text, clampDescription: true }, global: { plugins: plugins() } });
+    const description = header.find("[data-page-description]");
+    // Clamped only on screen: a screen reader reads all of it.
+    expect(description.text()).toBe(text);
+    expect(description.classes()).toContain("max-sm:line-clamp-2");
+    await description.trigger("click");
+    expect(description.classes()).not.toContain("max-sm:line-clamp-2");
+    await description.trigger("click");
+    expect(description.classes()).toContain("max-sm:line-clamp-2");
+  });
+
   it("PageHeader moves the tab underline when a tab's count arrives and widens it", async () => {
     // jsdom has no layout: a tab is 10 px per character, placed after the tabs before it.
     const width = (el: HTMLElement) => (el.textContent ?? "").trim().length * 10;
