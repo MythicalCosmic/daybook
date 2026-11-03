@@ -332,6 +332,11 @@ describe("review edits → apply payload", () => {
 });
 
 describe("problems → fixes", () => {
+  // The sample cards are due this morning: the clock stays at NOW, whatever hour the suite runs.
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(NOW);
+  });
   const now = NOW;
   const heard = (fields: Partial<DraftItem>) => drafts.editableFrom(draft({ drafts: [item(fields)] }), now, TZ)[0]!;
 
@@ -458,6 +463,12 @@ describe("problems → fixes", () => {
 // — smart add —
 
 describe("smart add", () => {
+  // The sample cards are due this morning: the clock stays at NOW, whatever hour the suite runs.
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(NOW);
+  });
+
   it("sends the typed text and opens the same review", async () => {
     server.handler = (path, method) => {
       if (path.endsWith("/ai/status/")) return STATUS;
