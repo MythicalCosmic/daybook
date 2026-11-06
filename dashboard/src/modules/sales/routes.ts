@@ -1,6 +1,7 @@
 /**
  * Routes of sales and cash (plan §6.1: `sales`, `sales/shifts`, `sales/cash`, `sales/entries`,
- * `sales/targets`, plus `sales/cashiers` and `sales/setup`), children of /c/:companyId. Pages load
+ * `sales/targets`, plus `sales/cashiers`, `sales/setup` and §14.7's `sales/import` and
+ * `sales/lines`), children of /c/:companyId. Pages load
  * lazily; the shift drawer lives in the URL (`?shift=1042`) on any of them that opens one.
  */
 import type { RouteRecordRaw } from "vue-router";
@@ -46,6 +47,18 @@ export const routes: RouteRecordRaw[] = [
     name: "sales.entries",
     component: () => import("./pages/EntriesPage.vue"),
     meta: { title: "sales.nav.entries", perm: "sales.view" },
+  },
+  {
+    path: "sales/import",
+    name: "sales.import",
+    component: () => import("./pages/ImportPage.vue"),
+    meta: { title: "sales.nav.import", perm: "sales.manage" },
+  },
+  {
+    path: "sales/lines",
+    name: "sales.lines",
+    component: () => import("./pages/LinesPage.vue"),
+    meta: { title: "sales.nav.lines", perm: "sales.view" },
   },
   {
     path: "sales/setup",

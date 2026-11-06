@@ -17,7 +17,16 @@ import type {
   CashPositions,
   Entry,
   EntryInput,
+  FileKind,
   GroupBy,
+  ImportPreview,
+  ImportProfile,
+  ImportProfileInput,
+  LineCode,
+  PosCashier,
+  ProductHit,
+  SaleLine,
+  SalesImport,
   Movement,
   MovementInput,
   PaymentLineInput,
@@ -83,6 +92,35 @@ export const salesApi = {
     http.post<{ id: number }>(path(cid, "targets/"), input),
   updateTarget: (cid: number, id: number, amount: string) => http.patch<{ id: number }>(path(cid, `targets/${id}/`), { amount }),
   deleteTarget: (cid: number, id: number) => http.delete(path(cid, `targets/${id}/`)),
+
+  // Sale lines from the cash-register software (§14.7).
+  profiles: (cid: number) => http.get<ImportProfile[]>(path(cid, "import-profiles/")),
+  createProfile: (cid: number, input: ImportProfileInput) => http.post<ImportProfile>(path(cid, "import-profiles/"), input),
+  updateProfile: (cid: number, id: number, input: ImportProfileInput) => http.patch<ImportProfile>(path(cid, `import-profiles/${id}/`), input),
+  preview: (cid: number, file: File, layout: { file_kind: FileKind; encoding?: string; delimiter?: string; header_row?: number }) => {
+    const form = new FormData();
+    form.append("file", file);
+    form.append("file_kind", layout.file_kind);
+    form.append("encoding", layout.encoding ?? "");
+    form.append("delimiter", layout.delimiter ?? "");
+    form.append("header_row", String(layout.header_row ?? 1));
+    return http.form<ImportPreview>(path(cid, "import-profiles/preview/"), form);
+  },
+  imports: (cid: number, params: Query) => http.get<Page<SalesImport>>(path(cid, "imports/"), params),
+  importDetail: (cid: number, id: number) => http.get<SalesImport>(path(cid, `imports/${id}/`)),
+  upload: (cid: number, profileId: number, file: File) => {
+    const form = new FormData();
+    form.append("profile_id", String(profileId));
+    form.append("file", file);
+    return http.form<SalesImport>(path(cid, "imports/"), form);
+  },
+  lines: (cid: number, params: Query) => http.get<Page<SaleLine>>(path(cid, "lines/"), params),
+  codes: (cid: number, status: "waiting" | "skipped") => http.get<{ results: LineCode[] }>(path(cid, "lines/codes/"), { status }),
+  match: (cid: number, code: string, productId: number) => http.post<{ lines: number }>(path(cid, "lines/match/"), { code, product_id: productId }),
+  skip: (cid: number, code: string) => http.post<{ lines: number }>(path(cid, "lines/skip/"), { code }),
+  posCashiers: (cid: number) => http.get<PosCashier[]>(path(cid, "pos-cashiers/")),
+  mapCashier: (cid: number, id: number, memberId: number | null) => http.patch<PosCashier>(path(cid, `pos-cashiers/${id}/`), { member_id: memberId }),
+  products: (cid: number, q: string, signal?: AbortSignal) => http.get<{ results: ProductHit[] }>(path(cid, "products/"), { q }, { signal }),
 };
 
 // ─── Keys and queries ────────────────────────────────────────────────────────
@@ -138,6 +176,33 @@ export function useMovements(params: MaybeRefOrGetter<Record<string, unknown>>) 
 
 export function useEntries(params: MaybeRefOrGetter<Record<string, unknown>>) {
   return useResource("entries", params, (cid, p) => salesApi.entries(cid, p as Query), { keep: true });
+}
+
+export const useProfiles = () => useResource("profiles", {}, (cid) => salesApi.profiles(cid));
+export const usePosCashiers = () => useResource("pos-cashiers", {}, (cid) => salesApi.posCashiers(cid));
+
+export function useImports(params: MaybeRefOrGetter<Record<string, unknown>>) {
+  return useResource("imports", params, (cid, p) => salesApi.imports(cid, p as Query), { keep: true });
+}
+
+/** One import; while it is being read, it asks again every two seconds. */
+export function useImport(id: MaybeRefOrGetter<number | null>) {
+  const cid = useCompanyId();
+  return useQuery({
+    queryKey: computed(() => salesKeys.resource(cid.value, "import", { id: toValue(id) })),
+    queryFn: () => salesApi.importDetail(cid.value, toValue(id)!),
+    enabled: computed(() => cid.value > 0 && !!toValue(id)),
+    refetchInterval: (query) => (["queued", "processing"].includes(query.state.data?.status ?? "") ? 2000 : false),
+    staleTime: 5_000,
+  });
+}
+
+export function useLines(params: MaybeRefOrGetter<Record<string, unknown>>) {
+  return useResource("lines", params, (cid, p) => salesApi.lines(cid, p as Query), { keep: true });
+}
+
+export function useCodes(status: MaybeRefOrGetter<"waiting" | "skipped">) {
+  return useResource("codes", () => ({ status: toValue(status) }), (cid, p) => salesApi.codes(cid, p.status as "waiting" | "skipped"), { keep: true });
 }
 
 export function useTargets(month: MaybeRefOrGetter<string>) {

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
  * Settings → Sales (plan §6.2, the `sales` panel): how sales are recorded (shift totals or single
- * receipts; invoices arrive with package J), when the business day ends, the cash tolerance, the
+ * receipts; invoices arrive with package J), where sale lines come from (§14.7: none, or imported
+ * from the cash-register program), when the business day ends, the cash tolerance, the
  * blind count and photo rules, and when owners hear about late openings, open tills, unconfirmed
  * handovers and big payouts. Saved together; the page warns before leaving unsaved changes.
  */
@@ -44,6 +45,7 @@ const form = reactive<SalesSettings>({
   big_payout_alert: null,
   late_open_minutes: 10,
   close_alert_minutes: 60,
+  sales_lines: "none",
 });
 const loaded = ref("");
 watch(
@@ -60,6 +62,13 @@ const modes = computed(() => [
   { value: "shift_totals" as const, label: t("sales.settings.mode.shift_totals"), description: t("sales.settings.mode.shift_totalsHint") },
   { value: "receipts" as const, label: t("sales.settings.mode.receipts"), description: t("sales.settings.mode.receiptsHint") },
   { value: "invoices" as const, label: t("sales.settings.mode.invoices"), description: t("sales.settings.mode.invoicesHint"), disabled: true },
+]);
+
+// Where sale lines come from (§14.7): typed with each receipt arrives in a later version.
+const lineSources = computed(() => [
+  { value: "none" as const, label: t("sales.settings.lines.none"), description: t("sales.settings.lines.noneHint") },
+  { value: "import" as const, label: t("sales.settings.lines.import"), description: t("sales.settings.lines.importHint") },
+  { value: "receipts" as const, label: t("sales.settings.lines.receipts"), description: t("sales.settings.lines.receiptsHint"), disabled: true },
 ]);
 
 const save = useSalesMutation((cid, input: Partial<SalesSettings>) => salesApi.saveSettings(cid, input));
@@ -93,6 +102,9 @@ async function submit(): Promise<void> {
             </FormField>
           </div>
         </div>
+      </PageSection>
+      <PageSection variant="card" :title="t('sales.settings.lines.title')" :description="t('sales.settings.lines.hint')">
+        <RadioCards v-model="form.sales_lines" :options="lineSources" :columns="3" :disabled="!canEdit" />
       </PageSection>
       <PageSection variant="card" :title="t('sales.settings.control')" :description="t('sales.settings.controlHint')">
         <div class="flex flex-col divide-y divide-line">

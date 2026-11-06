@@ -204,6 +204,8 @@ export const CATALOG: readonly CatalogEntry[] = [
       { id: "cash", to: "sales/cash", perm: "sales.view" },
       { id: "cashiers", to: "sales/cashiers", perm: "sales.view" },
       { id: "entries", to: "sales/entries", perm: "sales.view" },
+      { id: "lines", to: "sales/lines", perm: "sales.view" },
+      { id: "import", to: "sales/import", perm: "sales.manage", badge: "sales.unmatched" },
       { id: "targets", to: "sales/targets", perm: "sales.view" },
       { id: "invoices", to: "sales/invoices", perm: ["sales.invoices", "finance.view"], badge: "sales.invoices_overdue" },
       { id: "customers", to: "sales/customers", perm: "sales.view" },
