@@ -1255,12 +1255,9 @@ def dispose(
     posting.book_asset_cost(
         asset, amount=value, day=on, key="disposal", description=posting.text_written_off(asset)
     )
-    if (
-        proceeds
-        and account is not None
-        and posting.finance_on(company)
-        and asset.books_depreciation
-    ):
+    # The money comes in whether or not its depreciation is booked (an asset whose purchase was
+    # an expense sells at a gain of all of it).
+    if proceeds and account is not None and posting.finance_on(company):
         from apps.finance import services as finance
         from apps.finance.sources import Source
 

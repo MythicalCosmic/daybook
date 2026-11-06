@@ -11,6 +11,7 @@ from apps.assets.models import AssetCategory, DepreciationEntry
 from apps.assets.tests.test_posting import buy, depreciation_rows
 from apps.core.exceptions import DomainError
 from apps.finance import queries as finance_queries
+from apps.finance import services as finance
 from apps.finance.models import Transaction
 
 pytestmark = pytest.mark.django_db
@@ -235,3 +236,31 @@ def test_books_depreciation_follows_the_purchase_in_finance(
     with pytest.raises(DomainError):
         services.update_asset(asset, by=owner, books_depreciation=False)
     services.update_asset(asset, by=owner, books_depreciation=True)  # unchanged is fine
+
+
+def test_a_sale_brings_the_money_in_even_when_the_purchase_was_an_expense(
+    shop, owner, cash, equipment, chilonzor, category
+):
+    """Its purchase is in closed books, so it books no depreciation; sold, the money still
+    comes in on the account picked (all of it a gain: the cost was an expense long ago)."""
+    txn = buy(shop, owner, cash, equipment, chilonzor)
+    finance.lock_period(shop, by=owner, until=date(2026, 6, 30))
+    asset = services.create_asset(
+        shop,
+        by=owner,
+        category=category,
+        name="Muzlatgich",
+        purchase_transaction=txn,
+        in_service_on=date(2026, 5, 25),
+    )
+    assert not asset.books_depreciation
+    services.dispose(
+        asset, by=owner, on=date(2026, 11, 5), kind="sold", amount=D(9_000_000), account=cash
+    )
+    cash.refresh_from_db()
+    assert cash.balance == D("47000000.00")  # 50 000 000 - 12 000 000 + 9 000 000
+    assert november(shop) == {
+        "income": D("9000000.00"),
+        "expense": D("0.00"),
+        "profit": D("9000000.00"),
+    }
