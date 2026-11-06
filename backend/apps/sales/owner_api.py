@@ -9,7 +9,7 @@ lets the services audit and bump the pulse keys.
 from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
-from django.db.models import Q
+from django.db.models import Count, Max, Q
 from django.utils import timezone
 from django.utils.translation import gettext as _
 from drf_spectacular.utils import (
@@ -26,12 +26,20 @@ from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.response import Response
 
 from apps.companies.models import Branch, Feature
-from apps.console.base import HasPerm, OwnerAPIView, OwnerCompanyAccess, OwnerViewSet, RangeMixin
+from apps.console.base import (
+    AnyOf,
+    HasPerm,
+    OwnerAPIView,
+    OwnerCompanyAccess,
+    OwnerViewSet,
+    RangeMixin,
+)
 from apps.finance.models import Category, MoneyAccount
 from apps.members import scope
 from apps.members.models import Membership
 from apps.members.permissions import Perm
-from apps.sales import cash, queries, services
+from apps.sales import cash, importer, queries, services
+from apps.sales import lines as sale_lines
 from apps.sales.conf import get_settings
 from apps.sales.days import business_day
 from apps.sales.models import (
@@ -39,20 +47,32 @@ from apps.sales.models import (
     CashShift,
     DailySales,
     PaymentMethod,
+    PosCashier,
     Register,
     Sale,
+    SaleLine,
+    SalesImport,
+    SalesImportProfile,
     SalesTarget,
 )
 from apps.sales.serializers import (
+    CodeSerializer,
     CorrectSerializer,
     ForceCloseSerializer,
+    ImportProfileSerializer,
+    ImportSerializer,
+    ImportUploadSerializer,
+    MatchSerializer,
     MovementSerializer,
     MovementWriteSerializer,
     OptionalReasonSerializer,
     PaymentMethodSerializer,
+    PosCashierSerializer,
+    PreviewSerializer,
     ReasonSerializer,
     RegisterSerializer,
     ReorderSerializer,
+    SaleLineSerializer,
     SaleSerializer,
     SaleWriteSerializer,
     SettingsSerializer,
@@ -990,6 +1010,7 @@ class OptionsView(SalesView):
                     "blind_cash_count": settings.blind_cash_count,
                     "cash_tolerance": queries.m(settings.cash_tolerance),
                     "business_day_ends_at": settings.business_day_ends_at.strftime("%H:%M"),
+                    "sales_lines": settings.sales_lines,
                 },
                 "today": business_day(company).isoformat(),
                 "branches": [
@@ -1025,3 +1046,360 @@ class OptionsView(SalesView):
                 ],
             }
         )
+
+
+# Sale lines from the cash-register software (§14.7) ---------------------------------------
+#
+#   GET/POST    sales/import-profiles/ · GET/PATCH sales/import-profiles/{id}/
+#   POST        sales/import-profiles/preview/         the column mapper's first 20 rows
+#   GET/POST    sales/imports/ · GET sales/imports/{id}/
+#   GET         sales/lines/?from&to&branch&status&rx&cap&q&product&cashier&import
+#   GET         sales/lines/codes/?status=waiting|skipped    the match list
+#   POST        sales/lines/match/ {code, product_id} · sales/lines/skip/ {code}
+#   GET/PATCH   sales/pos-cashiers/ · sales/pos-cashiers/{id}/ {member_id}
+#   GET         sales/products/?q=                      the catalogue, for matching and invoices
+#
+# Imports, the match list and cashier codes need sales.manage; the lines need sales.view. A
+# person who sees only some branches works only with profiles fixed to one of them.
+
+
+def _profiles(member: Membership):
+    rows = SalesImportProfile.objects.for_company(member.company).select_related("branch")
+    allowed = scope.branch_ids(member)
+    if allowed is not None:
+        rows = rows.filter(branch_id__in=allowed)
+    return rows
+
+
+class ImportProfileViewSet(
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.CreateModelMixin,
+    mixins.UpdateModelMixin,
+    SalesViewSet,
+):
+    """How each cash-register program's export is read: the column map saved once."""
+
+    perm = Perm.SALES_MANAGE
+    serializer_class = ImportProfileSerializer
+    pagination_class = None
+    http_method_names = ["get", "post", "patch"]
+
+    def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return SalesImportProfile.objects.none()
+        return _profiles(self.membership).order_by("-is_active", "name", "pk")
+
+    def _branch_value(self, data) -> dict:
+        if "branch_id" not in data:
+            return {}
+        if data["branch_id"] is None:
+            if self.branch_scope is not None:
+                raise ValidationError({"branch_id": [_("Pick one of your branches.")]})
+            return {"branch": None}
+        return {"branch": _branch(self.membership, data["branch_id"])}
+
+    def perform_create(self, serializer):
+        data = dict(serializer.validated_data)
+        branch = self._branch_value(data)
+        if not branch and self.branch_scope is not None:
+            raise ValidationError({"branch_id": [_("Pick one of your branches.")]})
+        data.pop("branch_id", None)
+        serializer.instance = services.create_import_profile(
+            self.company, by=self.membership, **data, **branch
+        )
+
+    def perform_update(self, serializer):
+        data = dict(serializer.validated_data)
+        branch = self._branch_value(data)
+        data.pop("branch_id", None)
+        serializer.instance = services.update_import_profile(
+            serializer.instance, by=self.membership, **data, **branch
+        )
+
+    @extend_schema(
+        request={"multipart/form-data": PreviewSerializer},
+        responses=inline_serializer(
+            "SalesImportPreview",
+            {
+                "headers": serializers.ListField(child=serializers.CharField()),
+                "rows": serializers.ListField(
+                    child=serializers.ListField(child=serializers.CharField())
+                ),
+                "total_rows": serializers.IntegerField(),
+                "guess": serializers.DictField(child=serializers.CharField()),
+                "file_kind": serializers.CharField(),
+            },
+        ),
+    )
+    @action(detail=False, methods=["post"], parser_classes=(MultiPartParser, FormParser))
+    def preview(self, request, company_id):
+        """The file's column names, its first 20 rows and a proposed column map. Nothing is
+        saved: the mapper shows what a profile would read."""
+        from apps.core.uploads import accept_document
+
+        data = PreviewSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        values = data.validated_data
+        clean = accept_document(values["file"], allowed=("csv", "xlsx"))
+        kind = clean.name.rsplit(".", 1)[-1]
+        delimiter = values.get("delimiter") or ""
+        if delimiter in ("\\t", "tab"):
+            delimiter = "\t"
+        layout = importer.Layout(
+            file_kind=kind,
+            encoding=(values.get("encoding") or "").strip().lower(),
+            delimiter=delimiter[:1],
+            header_row=values.get("header_row") or 1,
+        )
+        found = importer.preview(clean.read(), layout)
+        return Response({**found, "file_kind": kind})
+
+
+def _import(member: Membership, pk) -> SalesImport:
+    found = (
+        SalesImport.objects.for_company(member.company)
+        .select_related("profile", "created_by")
+        .filter(pk=pk, profile__in=_profiles(member))
+        .first()
+    )
+    if found is None:
+        raise NotFound
+    return found
+
+
+class ImportViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, SalesViewSet):
+    """Files of sale lines: upload one (it is read in the background), then the results with
+    matched, unmatched and duplicate lines, what couldn't be read and the day check."""
+
+    perm = Perm.SALES_MANAGE
+    serializer_class = ImportSerializer
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
+
+    def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return SalesImport.objects.none()
+        rows = (
+            SalesImport.objects.for_company(self.company)
+            .filter(profile__in=_profiles(self.membership))
+            .select_related("profile", "created_by")
+        )
+        if profile := _int(self.request.query_params, "profile"):
+            rows = rows.filter(profile_id=profile)
+        return rows.order_by("-created_at", "-pk")
+
+    @extend_schema(parameters=[OpenApiParameter("profile", int)])
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    def retrieve(self, request, company_id, pk):
+        imp = _import(self.membership, pk)
+        data = ImportSerializer(imp).data
+        if imp.status == SalesImport.Status.READY and imp.day_check:
+            # The tills may have closed since the file was read: the check as it stands now.
+            pairs = [(row["branch"]["id"], date.fromisoformat(row["day"])) for row in imp.day_check]
+            data["day_check"] = sale_lines.day_check(self.company, pairs)
+        return Response(data)
+
+    @extend_schema(
+        request={"multipart/form-data": ImportUploadSerializer}, responses=ImportSerializer
+    )
+    def create(self, request, company_id):
+        data = ImportUploadSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        profile = _profiles(self.membership).filter(pk=data.validated_data["profile_id"]).first()
+        if profile is None:
+            raise ValidationError({"profile_id": [_("Pick one of your import profiles.")]})
+        imp = services.start_import(profile, by=self.membership, file=data.validated_data["file"])
+        return Response(ImportSerializer(imp).data, status=status.HTTP_201_CREATED)
+
+
+def _line_filters(params) -> dict:
+    filters = {
+        "from": _day(params, "from"),
+        "to": _day(params, "to"),
+        "branch": _ids(params, "branch"),
+        "status": params.get("status") or None,
+        "rx": _flag(params, "rx"),
+        "cap": _flag(params, "cap"),
+        "q": (params.get("q") or "").strip()[:100],
+        "product": _int(params, "product"),
+        "cashier": _int(params, "cashier"),
+        "import": _int(params, "import"),
+    }
+    return {key: value for key, value in filters.items() if value not in (None, "", [])}
+
+
+class LineViewSet(mixins.ListModelMixin, SalesViewSet):
+    """Every sale line with its receipt: filter by day, branch, status, prescription items and
+    lines sold above the legal price. Costs only for finance.view."""
+
+    serializer_class = SaleLineSerializer
+    perms_by_action = {
+        "codes": Perm.SALES_MANAGE,
+        "match": Perm.SALES_MANAGE,
+        "skip": Perm.SALES_MANAGE,
+    }
+
+    def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return SaleLine.objects.none()
+        return queries.lines_list(
+            self.company, _line_filters(self.request.query_params), branch_ids=self.branch_scope
+        )
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter("from", str),
+            OpenApiParameter("to", str),
+            OpenApiParameter("branch", int, many=True),
+            OpenApiParameter("status", str, enum=SaleLine.Status.values),
+            OpenApiParameter("rx", bool),
+            OpenApiParameter("cap", bool),
+            OpenApiParameter("q", str),
+            OpenApiParameter("product", int),
+            OpenApiParameter("cashier", int),
+            OpenApiParameter("import", int),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(
+        parameters=[OpenApiParameter("status", str, enum=["waiting", "skipped"])],
+        responses=inline_serializer(
+            "SalesLineCodes", {"results": serializers.ListField(child=serializers.DictField())}
+        ),
+    )
+    @action(detail=False, methods=["get"])
+    def codes(self, request, company_id):
+        """The match list: one row per item code the catalogue doesn't know, with its lines."""
+        wanted = request.query_params.get("status")
+        line_status = SaleLine.Status.SKIPPED if wanted == "skipped" else SaleLine.Status.WAITING
+        rows = sale_lines.codes(self.company, branch_ids=self.branch_scope, status=line_status)
+        for row in rows:
+            row.pop("last_sold_at", None)
+        return Response({"results": rows})
+
+    @extend_schema(
+        request=MatchSerializer,
+        responses=inline_serializer("SalesLineMatched", {"lines": serializers.IntegerField()}),
+    )
+    @action(detail=False, methods=["post"])
+    def match(self, request, company_id):
+        """The code means this medicine from now on; every line waiting for it is settled."""
+        from apps.inventory.models import Product
+
+        data = MatchSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        product = (
+            Product.objects.for_company(self.company)
+            .filter(pk=data.validated_data["product_id"])
+            .first()
+        )
+        if product is None:
+            raise ValidationError({"product_id": [_("Pick a medicine from the catalogue.")]})
+        code = data.validated_data["code"].strip()
+        mine = SaleLine.objects.filter(
+            sale__company=self.company,
+            code=code,
+            status__in=(SaleLine.Status.WAITING, SaleLine.Status.SKIPPED),
+        )
+        if self.branch_scope is not None:
+            mine = mine.filter(sale__branch_id__in=self.branch_scope)
+        if not mine.exists():
+            raise ValidationError({"code": [_("No line waits for this code.")]})
+        done = services.match_code(self.company, by=self.membership, code=code, product=product)
+        return Response({"lines": done})
+
+    @extend_schema(
+        request=CodeSerializer,
+        responses=inline_serializer("SalesLineSkipped", {"lines": serializers.IntegerField()}),
+    )
+    @action(detail=False, methods=["post"])
+    def skip(self, request, company_id):
+        """The code isn't goods the stock keeps (a bag, a service): its lines stop waiting."""
+        data = CodeSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        code = data.validated_data["code"].strip()
+        if (
+            not sale_lines.waiting_lines(self.company, branch_ids=self.branch_scope)
+            .filter(code=code)
+            .exists()
+        ):
+            raise ValidationError({"code": [_("No line waits for this code.")]})
+        done = services.skip_code(self.company, by=self.membership, code=code)
+        return Response({"lines": done})
+
+
+class PosCashierViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, SalesViewSet):
+    """The cash-register program's cashier codes and who each one is (set once)."""
+
+    perm = Perm.SALES_MANAGE
+    serializer_class = PosCashierSerializer
+    pagination_class = None
+    http_method_names = ["get", "patch"]
+
+    def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return PosCashier.objects.none()
+        rows = PosCashier.objects.for_company(self.company).select_related("membership")
+        scoped = Q(sales__source=Sale.Source.IMPORT)
+        if self.branch_scope is not None:
+            scoped &= Q(sales__branch_id__in=self.branch_scope)
+            seen = (
+                Sale.objects.imported()
+                .filter(company=self.company, branch_id__in=self.branch_scope)
+                .values("pos_cashier_id")
+            )
+            rows = rows.filter(pk__in=seen)
+        return rows.annotate(
+            receipts=Count("sales", filter=scoped),
+            last_sold_at=Max("sales__sold_at", filter=scoped),
+        ).order_by("membership_id", "code")
+
+    def perform_update(self, serializer):
+        member_id = serializer.validated_data.get("member_id")
+        member = None
+        if member_id is not None:
+            member = (
+                Membership.objects.for_company(self.company)
+                .filter(status=Membership.Status.APPROVED, pk=member_id)
+                .first()
+            )
+            if member is None:
+                raise ValidationError({"member_id": [_("Pick someone from the team.")]})
+        services.map_cashier(serializer.instance, by=self.membership, membership=member)
+        serializer.instance = self.get_queryset().get(pk=serializer.instance.pk)
+
+
+class ProductLookupView(SalesView):
+    """The medicines catalogue by name, trade name, INN or barcode (`inventory.queries.lookup`),
+    for the match list and invoice lines."""
+
+    perm = AnyOf(Perm.SALES_VIEW, Perm.SALES_INVOICES)
+
+    @extend_schema(
+        parameters=[OpenApiParameter("q", str)],
+        responses=inline_serializer(
+            "SalesProductLookup", {"results": serializers.ListField(child=serializers.DictField())}
+        ),
+    )
+    def get(self, request, company_id):
+        from apps.inventory import queries as stock_queries
+
+        q = (request.query_params.get("q") or "").strip()[:100]
+        found = stock_queries.lookup(self.company, q, branch_ids=self.branch_scope, limit=20)
+        results = [
+            {
+                "id": row["id"],
+                "name": row["name"],
+                "trade_name": row.get("trade_name", ""),
+                "inn": row.get("inn", ""),
+                "barcode": row.get("barcode", ""),
+                "rx_required": row.get("rx_required", False),
+                "sale_price": queries.m(row.get("sale_price")),
+            }
+            for row in found
+        ]
+        return Response({"results": results})

@@ -20,8 +20,15 @@ router.register("sales/shifts", owner_api.ShiftViewSet, basename="sales-shift")
 router.register("sales/cash-movements", owner_api.MovementViewSet, basename="sales-cash-movement")
 router.register("sales/handovers", owner_api.HandoverViewSet, basename="sales-handover")
 router.register("sales/entries", owner_api.EntryViewSet, basename="sales-entry")
+router.register(
+    "sales/import-profiles", owner_api.ImportProfileViewSet, basename="sales-import-profile"
+)
+router.register("sales/imports", owner_api.ImportViewSet, basename="sales-import")
+router.register("sales/lines", owner_api.LineViewSet, basename="sales-line")
+router.register("sales/pos-cashiers", owner_api.PosCashierViewSet, basename="sales-pos-cashier")
 
 urlpatterns = [
+    path("sales/products/", owner_api.ProductLookupView.as_view(), name="sales-products"),
     path("sales/settings/", owner_api.SettingsView.as_view(), name="sales-settings"),
     path("sales/today/", owner_api.TodayView.as_view(), name="sales-today"),
     path("sales/summary/", owner_api.SummaryView.as_view(), name="sales-summary"),
