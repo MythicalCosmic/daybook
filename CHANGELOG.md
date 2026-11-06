@@ -1,5 +1,72 @@
 # Changelog
 
+## 0.4.0 — 2026-11-07
+
+### New: fixed assets and depreciation (Asosiy vositalar va amortizatsiya)
+A module an owner switches on per company (Settings › Modules: **Assets and equipment**). Until then
+nothing changes for anyone.
+- **The register** (Money › Assets): every fridge, air conditioner, shelf, till, thermometer, the courier's
+  scooter and the renovation of a rented pharmacy, with its inventory number (AV-0001), branch, who holds
+  it, its cost, what it is worth today and last month's depreciation; the totals on top, an Excel export,
+  search in the command palette.
+- **Depreciation month by month** by the four methods of NSBU No. 5 (straight line, double declining
+  balance, sum of the years' digits, units of output), from the 1st of the next month or from the day it
+  is put into service (the company's policy). An improvement added to the cost, a write-down, a new
+  useful life or residual value, and mothballing apply from the first month not posted yet; posted months
+  never change.
+- **Profit tells the truth**: an expense that bought equipment ("Turn into an asset") leaves the P&L, and
+  its depreciation comes back month by month as a cost that moves no money (one Finance row per month
+  and branch). Selling or writing an asset off books what it was still worth and the money of a sale, so
+  the P&L shows the gain or the loss. Equipment bought before the app keeps its earlier months in the
+  old books, or takes their sum.
+- **Each asset's page**: its value over its whole life (posted and planned), the schedule by year, the
+  **tax book** (straight line at the Tax Code's annual maximum rates, art. 306) and its difference from
+  the books, upkeep with days left, who held it when (confirmed by them in the app), photos and documents,
+  the timeline, and a **QR label** to stick on it.
+- **Reports**: depreciation by category or branch for any year, and the movement of fixed assets
+  (at the start, in, out, depreciation, write-downs, at the end).
+- **Planning**: replacements due in the next three years by quarter, at today's prices grown by
+  inflation; "repair or replace?" when repairs near a new one's price; money sitting idle in storage or
+  mothballed; old assets still working for free; upkeep coming up; things given out that nobody confirmed.
+- **Upkeep reminders** in the owner bot (a warranty ending, a service due, an instrument check due or
+  overdue, insurance ending), **inventory counts** per branch (found, damaged, missing), and an
+  **offboarding** step: what the leaver holds is handed back, written off as lost or left with them.
+- Starter categories for a pharmacy with their useful lives, Tax Code groups and rates (to be confirmed
+  by the company's accountant).
+
+### New: your own AI agents
+- **New agent** on AI › Agents: start from one of eight examples ("Kechki hisobot", Monday's best of the
+  week, daily attendance at 10:00, the week's biggest expenses, documents running out…) or write in your
+  own words what it should do; pick when it runs, who gets it and what it may read. It runs on Haiku with
+  its owner's rights and branches, and sends one short message per person in their language (or to a
+  group).
+- Each has its own page like the built-in agents (its chibi in the colour you pick), Run now (10 a day),
+  pause, edit and delete; at most 10 per company. Nothing is sent when AI is off or the budget is spent, and
+  an agent whose owner left or lost access pauses itself and says why.
+
+### New: money planning (Finance)
+- **The tax regime** (turnover tax, VAT 12 %, simplified VAT 6 %) with the turnover-tax threshold tile,
+  and a **tax calendar** per regime (due days to confirm with your accountant).
+- **Recurring payments**: rent, utilities and the like as reminders or booked by themselves, moved off
+  holidays, each due date once. **Upcoming payments** in one calendar.
+- **Budgets** per category and month with alerts at 80 % and 100 % and "copy last month".
+- **Payables**: pay several distributors' debts at once; credit notes on a debt.
+- **Expense claims**: staff send a receipt with `/expense` or a `#xarajat` photo in the bot or from the
+  mini app's (+); approved claims are paid back through payroll or in cash.
+- **Cash forecast** for 30, 60 or 90 days with its low point and the first day below zero.
+- Five pharmacy categories for every company with Finance (marketing bonuses, insurance fund
+  reimbursements, licences and certificates, destruction services, instrument checks).
+
+### New: storage readings and the temperature log
+- A routine can ask for readings (fridge and room temperature, humidity) within an allowed range: staff
+  type them in the bot or the mini app; a value out of range needs a note and alerts the people who check
+  it at once, and a recheck within two hours closes the alert. "One of us does it" routines close their
+  colleagues' copies.
+- **Set up storage readings** for a branch in one go (fridges 2–8 °C, the room 15–25 °C, humidity ≤ 60 %,
+  at 09:00 and 20:00 by default), each routine's journal with a chart of the allowed band, and the branch's
+  **monthly temperature and humidity log as a PDF** for inspectors. `/today` in the owner bot lists what was
+  out of range and what nobody took.
+
 ## 0.3.2 — 2026-11-03
 
 ### New: every AI agent gets its own page
