@@ -13,6 +13,7 @@ import { useRoute, useRouter } from "vue-router";
 import DropdownMenu from "@/components/DropdownMenu.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
+import ExtensionSlot from "@/components/ExtensionSlot.vue";
 import IconButton from "@/components/IconButton.vue";
 import InlineAlert from "@/components/InlineAlert.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
@@ -205,6 +206,8 @@ onMounted(() => {
     </div>
 
     <InlineAlert v-if="canManage && roster?.unpublished" tone="warning" :title="t('attendance.roster.draftsTitle', { n: roster.unpublished })" :description="t('attendance.roster.draftsBody')" />
+
+    <ExtensionSlot name="attendance.roster.coverage" :context="{ companyId, branchId: branch, week }" />
 
     <div v-if="skeleton" class="ui-card flex flex-col gap-2 p-3">
       <SkeletonBlock height="44px" radius="8px" />
