@@ -400,6 +400,85 @@ def record_transaction(
     )
 
 
+def book_non_cash(
+    company,
+    *,
+    amount,
+    occurred_on: date,
+    category: Category | str,
+    source: Source,
+    branch=None,
+    project=None,
+    description: str = "",
+    is_contra: bool = False,
+) -> Transaction:
+    """Book a cost that moves no money: a month's depreciation, the book value of an asset
+    written off. One row without an account, in the base currency, in the P&L under its
+    expense category and never in a balance or the cash flow. For other modules' jobs only:
+    `source` is required, and a repeat returns the row it booked the first time. `is_contra`
+    books it the other way (a correction that lowers the cost)."""
+    source = sources.check(source)
+    if source is None:
+        raise ValueError("book_non_cash needs a source.")
+    booked = {"kind": Kind.NON_CASH, "account_id": None}
+    if (found := _live_row(company, source)) is not None:
+        return _same_booking(found, source, booked)
+    value = _money(amount)
+    category = _category(company, category, kind=Category.Kind.EXPENSE)
+    _same_company(company, branch, project)
+    _check_open(company, occurred_on)
+    signed = value if is_contra else -value
+
+    def write() -> Transaction:
+        return _row(
+            company,
+            user=None,
+            kind=Kind.NON_CASH,
+            amount=signed,
+            occurred_on=occurred_on,
+            currency=company.base_currency,
+            quote=RateQuote(ONE, False, "base"),
+            category=category,
+            branch=branch,
+            project=project,
+            is_contra=is_contra,
+            description=description,
+            source=source,
+        )
+
+    return _write_once(
+        write, lambda: _same_booking(_live_row(company, source), source, booked), source
+    )
+
+
+def capitalize(txn: Transaction, *, by: Membership | None, capitalized: bool = True) -> Transaction:
+    """Mark an expense as the purchase of a fixed asset (or undo it). The money still left the
+    account and the cash flow shows it as an investment, but the P&L leaves it out: the asset's
+    depreciation brings the cost in month by month. Refused in a closed period, whose profit
+    was already reported."""
+    with transaction.atomic():
+        row = Transaction.objects.select_for_update().select_related("company").get(pk=txn.pk)
+        if row.capitalized == capitalized:
+            return row
+        if (
+            row.kind != Kind.EXPENSE
+            or row.is_contra
+            or row.status not in (Status.POSTED, Status.PENDING)
+        ):
+            raise DomainError(_("Only a live expense can be the purchase of an asset."))
+        _check_open(row.company, row.occurred_on)
+        row.capitalized = capitalized
+        row.save(update_fields=["capitalized", "updated_at"])
+        _audit(
+            FinanceAction.TRANSACTION_CAPITALIZED,
+            row.company,
+            by.user if by is not None else None,
+            row,
+            capitalized=capitalized,
+        )
+    return row
+
+
 @transaction.atomic
 def approve_transaction(txn: Transaction, *, by: Membership) -> Transaction:
     """Post a pending entry: it now moves its account's balance."""
@@ -467,6 +546,10 @@ def void_transaction(txn: Transaction, *, by: Membership, reason: str) -> Transa
     _hold_books(company)
     if current.transfer_id is not None:
         raise DomainError(_("This entry is part of a transfer: void the transfer instead."))
+    if current.capitalized:
+        raise DomainError(
+            _("This expense bought a fixed asset: remove or dispose of the asset first.")
+        )
     if current.kind == Kind.DEBT_OPEN or (
         current.kind in (Kind.INCOME, Kind.EXPENSE)
         and current.account_id is None
@@ -1913,6 +1996,10 @@ def update_transaction(txn: Transaction, *, by: Membership, **changes) -> Transa
     row = _lock_row(txn)
     if row.status not in LIVE_STATUSES:
         raise DomainError(_("A void or rejected entry can't be changed."))
+    if row.capitalized and {"amount", "occurred_on", "account", "currency", "rate"} & set(changes):
+        raise DomainError(
+            _("This expense bought a fixed asset: its amount and day change with the asset.")
+        )
     if not _is_manual(row) and set(changes) - {"description"}:
         raise DomainError(_manual_only_message(row))
     before = _row_snapshot(row)
@@ -2570,6 +2657,9 @@ def _category(company, category, *, kind: str | None = None, by=None) -> Categor
         category = rows.first()
         if category is None and code in defaults.SYSTEM_CODES:
             defaults.ensure(company)  # a company made before its defaults were
+            category = rows.first()
+        elif category is None and code in defaults.ASSET_CODES:
+            defaults.ensure_asset_categories(company)
             category = rows.first()
         if category is None:
             raise ValueError(f"No category with system code {code!r}.")

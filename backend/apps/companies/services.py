@@ -375,6 +375,7 @@ FEATURE_APPS: dict[str, tuple[str, ...]] = {
     Feature.PAYROLL: ("payroll", "ai"),  # ai: the HR assistant's payroll check comes on too
     Feature.AI: ("ai",),
     Feature.RECOGNITION: ("recognition",),
+    Feature.ASSETS: ("assets",),
 }
 
 

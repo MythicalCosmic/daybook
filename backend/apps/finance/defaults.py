@@ -38,6 +38,14 @@ SYSTEM_CATEGORIES = (
 )
 SYSTEM_CODES = frozenset(code for code, *_rest in SYSTEM_CATEGORIES)
 
+# Booked into by the fixed assets module (apps.assets), made only for companies that use it.
+ASSET_CATEGORIES = (
+    ("depreciation", EXPENSE, _("Depreciation"), False),
+    ("asset_disposal", EXPENSE, _("Fixed assets written off"), False),
+    ("asset_sale", INCOME, _("Sale of fixed assets"), False),
+)
+ASSET_CODES = frozenset(code for code, *_rest in ASSET_CATEGORIES)
+
 DEFAULT_ACCOUNTS = (
     (MoneyAccount.Kind.CASH, _("Cash desk")),
     (MoneyAccount.Kind.CLEARING, _("Card terminal")),
@@ -66,6 +74,21 @@ def ensure(company) -> None:
                     currency=company.base_currency,
                     order=order,
                 )
+
+
+def ensure_asset_categories(company) -> None:
+    """The categories fixed assets book into (depreciation, write-offs, sales of assets), after
+    the system ones. Idempotent."""
+    with translation.override(company.default_language), transaction.atomic():
+        have = set(
+            Category.objects.filter(company=company)
+            .exclude(system_code="")
+            .values_list("system_code", flat=True)
+        )
+        for order, (code, kind, name, sensitive) in enumerate(ASSET_CATEGORIES):
+            if code not in have:
+                base = len(SYSTEM_CATEGORIES) + order
+                _add_system_category(company, code, kind, str(name), base, sensitive)
 
 
 def _add_system_category(company, code, kind, name, order, sensitive) -> None:

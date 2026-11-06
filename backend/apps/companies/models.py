@@ -34,6 +34,7 @@ class Feature(models.TextChoices):
     PAYROLL = "payroll", _("Payroll")
     AI = "ai", _("AI assistant")
     RECOGNITION = "recognition", _("Recognition")
+    ASSETS = "assets", _("Assets and equipment")
 
 
 def default_workdays() -> list[int]:

@@ -612,6 +612,9 @@ class Transaction(Voidable, TenantModel):
         FX = "fx", _("Exchange difference")
         OWNER = "owner", _("Owner contribution or draw")
         OPENING = "opening", _("Opening balance")
+        # A cost that moves no money (depreciation, an asset written off): no account, in the
+        # P&L only. Booked by `book_non_cash`, never by hand.
+        NON_CASH = "non_cash", _("Non-cash cost")
 
     class Status(models.TextChoices):
         PENDING = "pending", _("Waiting for approval")
@@ -620,7 +623,7 @@ class Transaction(Voidable, TenantModel):
         VOID = "void", _("Void")
 
     # Kinds in the profit and loss statement.
-    PNL_KINDS = (Kind.INCOME, Kind.EXPENSE, Kind.WRITE_OFF, Kind.FX)
+    PNL_KINDS = (Kind.INCOME, Kind.EXPENSE, Kind.WRITE_OFF, Kind.FX, Kind.NON_CASH)
 
     company = models.ForeignKey(
         Company, on_delete=models.PROTECT, related_name="finance_transactions"
@@ -697,6 +700,13 @@ class Transaction(Voidable, TenantModel):
     )
     is_contra = models.BooleanField(
         default=False, help_text=_("Reduces its own kind: a refund reduces income.")
+    )
+    capitalized = models.BooleanField(
+        default=False,
+        help_text=_(
+            "Bought as a fixed asset: the money left, but the cost reaches the P&L month by "
+            "month as depreciation, not at once."
+        ),
     )
     description = models.CharField(max_length=300, blank=True)
     source_type = models.CharField(max_length=32, blank=True)
