@@ -182,3 +182,56 @@ def test_settings_lock_the_rule_once_posted(shop, owner_api, owner, fridge):
     fridge.entries.update(opening=False)
     reply = client.patch(f"{base(shop)}/settings/", {"start_rule": "daily"}, format="json")
     assert reply.status_code == 400
+
+
+def test_licences_and_permits(shop, owner, owner_api, keeper, chilonzor, yunusobod, freeze):
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    from apps.assets import watch
+    from apps.inbox.models import Notification
+
+    client = owner_api(owner)
+    reply = client.post(
+        f"{base(shop)}/permits/",
+        {
+            "kind": "pharmacy_licence",
+            "name": "Farmatsevtika litsenziyasi",
+            "number": "L-0042",
+            "issuer": "Sog‘liqni saqlash vazirligi",
+            "valid_until": "2026-12-17",
+            "branch": chilonzor.pk,
+        },
+        format="json",
+    )
+    assert reply.status_code == 201, reply.json()
+    permit = reply.json()
+    assert permit["days_left"] == 40 and permit["branch_name"] == "Chilonzor"
+    other = client.post(
+        f"{base(shop)}/permits/",
+        {"kind": "lease", "name": "Ijara", "branch": yunusobod.pk},
+        format="json",
+    ).json()
+    assert other["days_left"] is None
+    # The keeper works at Chilonzor only.
+    assert [row["id"] for row in owner_api(keeper).get(f"{base(shop)}/permits/").json()] == [
+        permit["id"]
+    ]
+    reply = client.patch(
+        f"{base(shop)}/permits/{permit['id']}/", {"remind_days": 30}, format="json"
+    )
+    assert reply.json()["remind_days"] == 30
+    pdf = SimpleUploadedFile("scan.pdf", b"%PDF-1.4\n%%EOF\n", content_type="application/pdf")
+    reply = client.post(f"{base(shop)}/permits/{permit['id']}/file/", {"file": pdf})
+    assert reply.status_code == 200 and reply.json()["file_url"]
+    # Within its warning days: one notice, once.
+    from apps.assets.tests.conftest import local
+
+    freeze(local(date(2026, 11, 20), 9))
+    assert watch.company_upkeep(shop, date(2026, 11, 20)) >= 1
+    assert watch.company_upkeep(shop, date(2026, 11, 20)) == 0
+    assert Notification.objects.filter(kind="assets.permit").exists()
+    assert client.delete(f"{base(shop)}/permits/{other['id']}/").status_code == 204
+    assert owner_api(keeper).delete(f"{base(shop)}/permits/{other['id']}/").status_code in (
+        403,
+        404,
+    )

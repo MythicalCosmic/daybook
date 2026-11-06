@@ -544,3 +544,60 @@ class AssetFile(TenantModel):
 
     def __str__(self):
         return f"{self.asset} {self.kind}"
+
+
+class Permit(TenantModel):
+    """A licence, permit or contract the business must keep valid (the pharmacy licence, the
+    controlled-substances licence, the lease, fire safety and sanitary approvals, the cash
+    register's registration, insurance), with what it is, where it applies and when it ends."""
+
+    class Kind(models.TextChoices):
+        PHARMACY_LICENCE = "pharmacy_licence", _("Pharmacy licence")
+        CONTROLLED_LICENCE = "controlled_licence", _("Controlled substances licence")
+        LEASE = "lease", _("Lease agreement")
+        FIRE_SAFETY = "fire_safety", _("Fire safety approval")
+        SANITARY = "sanitary", _("Sanitary approval")
+        CASH_REGISTER = "cash_register", _("Cash register registration")
+        INSURANCE = "insurance", _("Insurance policy")
+        OTHER = "other", _("Other")
+
+    company = models.ForeignKey(Company, on_delete=models.PROTECT, related_name="permits")
+    branch = models.ForeignKey(
+        Branch, on_delete=models.PROTECT, null=True, blank=True, related_name="permits"
+    )
+    kind = models.CharField(max_length=20, choices=Kind.choices, default=Kind.OTHER)
+    name = models.CharField(max_length=120)
+    number = models.CharField(max_length=64, blank=True)
+    issuer = models.CharField(max_length=150, blank=True, help_text=_("Who issued it."))
+    issued_on = models.DateField(null=True, blank=True)
+    valid_until = models.DateField(
+        null=True, blank=True, help_text=_("Empty: it doesn't end (renewed by hand).")
+    )
+    remind_days = models.PositiveSmallIntegerField(
+        default=60, help_text=_("Days ahead to start warning (renewals take time).")
+    )
+    responsible = models.ForeignKey(
+        "members.Membership",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="permits_responsible",
+    )
+    notes = models.TextField(blank=True)
+    file = models.FileField(
+        storage=private_storage, upload_to=private_upload_to("assets/permits"), blank=True
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+
+    class Meta:
+        ordering = ["valid_until", "name"]
+        indexes = [models.Index(fields=["company", "valid_until"])]
+
+    def __str__(self):
+        return self.name

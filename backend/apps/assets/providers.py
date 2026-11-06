@@ -7,7 +7,7 @@ from django.db.models import Q
 from django.utils.translation import gettext as _
 
 from apps.assets import posting, queries
-from apps.assets.models import Asset, AssetCategory, AssetFile
+from apps.assets.models import Asset, AssetCategory, AssetFile, Permit
 from apps.console.perms import AnyOf, holds
 from apps.console.registry import CalendarItem, FieldSpec, OffboardStep, SearchHit
 from apps.members import scope
@@ -279,3 +279,19 @@ def register_rows(member: Membership, params: dict):
             "next_service_on": asset.next_service_on,
             "next_verification_on": asset.next_verification_on,
         }
+
+
+def may_open_permit(user, company_id: int, permit_id: int) -> bool:
+    """`assets.permit`: whoever may read the register in the permit's branch."""
+    permit = Permit.objects.filter(company_id=company_id, pk=permit_id).first()
+    viewer = (
+        Membership.objects.filter(
+            company_id=company_id, user=user, status=Membership.Status.APPROVED
+        )
+        .select_related("role", "company")
+        .first()
+    )
+    if permit is None or viewer is None or not holds(viewer, READ):
+        return False
+    seen = scope.branch_ids(viewer)
+    return seen is None or (permit.branch_id is not None and permit.branch_id in seen)

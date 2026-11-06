@@ -7,7 +7,7 @@ from datetime import timedelta
 from django.utils import timezone
 
 from apps.assets import conf, notify, posting
-from apps.assets.models import Asset
+from apps.assets.models import Asset, Permit
 from apps.companies.models import Company, Feature
 
 MORNING = 8
@@ -48,4 +48,13 @@ def company_upkeep(company, today) -> int:
                 sent += notify.upkeep(asset, what, day, "due")
             elif day <= soon:
                 sent += notify.upkeep(asset, what, day, "soon")
+    permits = Permit.objects.for_company(company).filter(valid_until__isnull=False)
+    for permit in permits.select_related("company", "branch", "responsible"):
+        left = (permit.valid_until - today).days
+        if left < 0 and left >= -30:
+            sent += notify.permit(permit, "expired", today)
+        elif 0 <= left <= 7:
+            sent += notify.permit(permit, "week", today)
+        elif left <= permit.remind_days:
+            sent += notify.permit(permit, "soon", today)
     return sent

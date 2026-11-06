@@ -20,3 +20,5 @@ class AssetAction(models.TextChoices):
     FILE_REMOVED = "assets.file_removed", _("Removed a photo or document of an asset")
     COUNT_STARTED = "assets.count_started", _("Started an asset count")
     COUNT_CLOSED = "assets.count_closed", _("Closed an asset count")
+    PERMIT_SAVED = "assets.permit_saved", _("Saved a licence or permit")
+    PERMIT_DELETED = "assets.permit_deleted", _("Deleted a licence or permit")

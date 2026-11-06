@@ -42,6 +42,7 @@ from apps.assets.models import (
     AssetCountLine,
     AssetFile,
     DepreciationEntry,
+    Permit,
 )
 from apps.assets.providers import MANAGE, READ
 from apps.console.base import OwnerAPIView, OwnerViewSet
@@ -901,3 +902,102 @@ class CountLineView(CountView):
         serializer.is_valid(raise_exception=True)
         services.mark(line, by=self.membership, **serializer.validated_data)
         return Response(s.CountSerializer(_count_out(count, lines=True)).data)
+
+
+# Licences and permits ---------------------------------------------------------------------------
+
+
+class PermitsView(ModuleOn, Scope, OwnerAPIView):
+    """GET (read) / POST (assets.manage) `assets/permits/`: soonest to end first."""
+
+    perm = READ
+    perms_by_action = {"post": MANAGE}
+    parser_classes = [JSONParser]
+
+    def rows(self):
+        rows = Permit.objects.for_company(self.company).select_related("branch", "responsible")
+        scope = self.branch_scope
+        if scope is not None:
+            rows = rows.filter(branch_id__in=scope)
+        return rows
+
+    def fields(self, data: dict) -> dict:
+        fields = dict(data)
+        if "branch" in fields:
+            fields["branch"] = self.branch(fields["branch"])
+        if "responsible" in fields:
+            fields["responsible"] = self.person(fields["responsible"], "responsible")
+        return fields
+
+    def out(self, permit):
+        return s.PermitSerializer(
+            s.permit_of(permit, user=self.request.user, today=_today(self.company))
+        ).data
+
+    @extend_schema(responses=s.PermitSerializer(many=True))
+    def get(self, request, company_id):
+        today = _today(self.company)
+        rows = sorted(
+            self.rows(),
+            key=lambda row: (row.valid_until is None, row.valid_until or today, row.name),
+        )
+        return Response(
+            s.PermitSerializer(
+                [s.permit_of(row, user=request.user, today=today) for row in rows], many=True
+            ).data
+        )
+
+    @extend_schema(request=s.PermitSerializer, responses={201: s.PermitSerializer})
+    def post(self, request, company_id):
+        serializer = s.PermitSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        fields = self.fields(serializer.validated_data)
+        if self.branch_scope is not None and fields.get("branch") is None:
+            raise ValidationError({"branch": [_("Pick the branch it is for.")]})
+        permit = services.save_permit(self.company, by=self.membership, **fields)
+        return Response(self.out(permit), status=status.HTTP_201_CREATED)
+
+
+class PermitView(PermitsView):
+    perm = MANAGE
+    perms_by_action = {}
+    http_method_names = ["patch", "delete"]
+
+    def one(self, permit_id) -> Permit:
+        found = self.rows().filter(pk=permit_id).first()
+        if found is None:
+            raise NotFound
+        return found
+
+    @extend_schema(request=s.PermitSerializer, responses=s.PermitSerializer)
+    def patch(self, request, company_id, permit_id):
+        permit = self.one(permit_id)
+        serializer = s.PermitSerializer(data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        permit = services.save_permit(
+            self.company,
+            by=self.membership,
+            permit=permit,
+            **self.fields(serializer.validated_data),
+        )
+        return Response(self.out(permit))
+
+    @extend_schema(responses={204: None})
+    def delete(self, request, company_id, permit_id):
+        services.delete_permit(self.one(permit_id), by=self.membership)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class PermitFileView(PermitView):
+    http_method_names = ["post"]
+    parser_classes = [MultiPartParser, FormParser]
+
+    @extend_schema(request=s.PermitFileSerializer, responses=s.PermitSerializer)
+    def post(self, request, company_id, permit_id):
+        permit = self.one(permit_id)
+        serializer = s.PermitFileSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        permit = services.attach_permit_file(
+            permit, by=self.membership, file=serializer.validated_data["file"]
+        )
+        return Response(self.out(permit))

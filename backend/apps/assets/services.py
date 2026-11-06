@@ -27,6 +27,7 @@ from apps.assets.models import (
     AssetFile,
     DepreciationEntry,
     Method,
+    Permit,
     StartRule,
 )
 from apps.audit import services as audit
@@ -1393,3 +1394,94 @@ def close_count(count: AssetCount, *, by: Membership) -> dict:
     _audit(AssetAction.COUNT_CLOSED, count.company, by, count, **summary)
     _bump(count.company)
     return summary
+
+
+# Licences and permits ---------------------------------------------------------------------------
+
+PERMIT_FIELDS = (
+    "kind",
+    "name",
+    "number",
+    "issuer",
+    "issued_on",
+    "valid_until",
+    "remind_days",
+    "responsible",
+    "notes",
+    "branch",
+)
+
+
+@transaction.atomic
+def save_permit(company, *, by: Membership, permit: Permit | None = None, **fields) -> Permit:
+    """Add a licence or permit, or change one (what it is, where, until when)."""
+    unknown = set(fields) - set(PERMIT_FIELDS)
+    if unknown:
+        raise ValueError(f"Unknown permit fields: {sorted(unknown)}")
+    _same_company(company, fields.get("branch"))
+    if "responsible" in fields:
+        fields["responsible"] = _member(company, fields["responsible"])
+    if "name" in fields:
+        fields["name"] = " ".join(str(fields["name"] or "").split())[:120]
+    if (permit is None and not fields.get("name")) or ("name" in fields and not fields["name"]):
+        raise DomainError(_("Give it a name."))
+    if "kind" in fields and fields["kind"] not in Permit.Kind.values:
+        raise DomainError(_("Pick a kind from the list."))
+    if "remind_days" in fields and not 1 <= int(fields["remind_days"]) <= 365:
+        raise DomainError(_("Warn 1 to 365 days ahead."))
+    issued = fields.get("issued_on", permit.issued_on if permit else None)
+    until = fields.get("valid_until", permit.valid_until if permit else None)
+    if issued and until and until <= issued:
+        raise DomainError(_("It ends after it was issued."))
+    created = permit is None
+    if created:
+        permit = Permit(company=company, created_by=_user(by))
+    before = {name: _plain(getattr(permit, name)) for name in fields} if not created else {}
+    for name, value in fields.items():
+        setattr(permit, name, value)
+    permit.save()
+    changes = {
+        name: [before[name], _plain(getattr(permit, name))]
+        for name in before
+        if before[name] != _plain(getattr(permit, name))
+    }
+    _audit(
+        AssetAction.PERMIT_SAVED,
+        company,
+        by,
+        permit,
+        name=permit.name,
+        created=created,
+        changes=changes,
+    )
+    _bump(company)
+    return permit
+
+
+@transaction.atomic
+def attach_permit_file(permit: Permit, *, by: Membership, file) -> Permit:
+    from apps.core.uploads import accept_document
+
+    clean = accept_document(file, allowed=("pdf", "image"))
+    old = permit.file.name if permit.file else ""
+    permit.file.save(clean.name, clean, save=True)
+    if old:
+        from apps.core.storage import private_storage
+
+        transaction.on_commit(lambda: private_storage.delete(old))
+    _audit(AssetAction.PERMIT_SAVED, permit.company, by, permit, name=permit.name, file=True)
+    _bump(permit.company)
+    return permit
+
+
+@transaction.atomic
+def delete_permit(permit: Permit, *, by: Membership) -> None:
+    company = permit.company
+    name = permit.file.name if permit.file else ""
+    _audit(AssetAction.PERMIT_DELETED, company, by, permit, name=permit.name)
+    permit.delete()
+    if name:
+        from apps.core.storage import private_storage
+
+        transaction.on_commit(lambda: private_storage.delete(name))
+    _bump(company)

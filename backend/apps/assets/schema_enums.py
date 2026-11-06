@@ -14,6 +14,7 @@ ENUM_NAME_OVERRIDES = {
     "AssetsFileKindEnum": "apps.assets.models.AssetFile.Kind",
     "AssetsCountStatusEnum": "apps.assets.models.AssetCount.Status",
     "AssetsCountResultEnum": "apps.assets.models.AssetCountLine.Result",
+    "AssetsPermitKindEnum": "apps.assets.models.Permit.Kind",
     "AssetsUpkeepEnum": "apps.assets.serializers.UPKEEP_KINDS",
     "AssetsMonthStateEnum": "apps.assets.serializers.MONTH_STATES",
     "AssetsReportGroupEnum": "apps.assets.serializers.REPORT_GROUPS",

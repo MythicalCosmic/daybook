@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-07 01:55+0500\n"
+"POT-Creation-Date: 2026-11-07 01:59+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -274,9 +274,9 @@ msgstr "Bayram"
 msgid "Deadline"
 msgstr "Oxirgi muddat"
 
-#: backend/apps/agenda/models.py backend/apps/finance/models.py
-#: backend/apps/hr/models.py backend/apps/lifecycle/models.py
-#: backend/apps/sales/models.py
+#: backend/apps/agenda/models.py backend/apps/assets/models.py
+#: backend/apps/finance/models.py backend/apps/hr/models.py
+#: backend/apps/lifecycle/models.py backend/apps/sales/models.py
 msgid "Other"
 msgstr "Boshqa"
 
@@ -654,7 +654,7 @@ msgstr[0] "Hozir %(count)s ta vazifa kechikmoqda."
 msgid "With Claude connected, this agent writes the report you asked for."
 msgstr "Claude ulanganda bu agent siz so‘ragan hisobotni yozadi."
 
-#: backend/apps/ai/agents/custom.py
+#: backend/apps/ai/agents/custom.py backend/apps/assets/services.py
 msgid "Give it a name."
 msgstr "Unga nom bering."
 
@@ -2332,6 +2332,14 @@ msgstr "Inventarizatsiyani boshladi"
 msgid "Closed an asset count"
 msgstr "Inventarizatsiyani yopdi"
 
+#: backend/apps/assets/audit_actions.py
+msgid "Saved a licence or permit"
+msgstr "Litsenziya yoki ruxsatnomani saqladi"
+
+#: backend/apps/assets/audit_actions.py
+msgid "Deleted a licence or permit"
+msgstr "Litsenziya yoki ruxsatnomani o‘chirdi"
+
 #: backend/apps/assets/defaults.py
 msgid "I.1 Buildings"
 msgstr "I.1 Binolar"
@@ -2423,6 +2431,10 @@ msgstr "Asosiy vosita"
 #: backend/apps/assets/hooks.py
 msgid "Equipment upkeep: services, instrument checks, warranties, insurance"
 msgstr "Uskunalarga xizmat: texnik xizmat, qiyoslash, kafolat, sug‘urta"
+
+#: backend/apps/assets/hooks.py
+msgid "Licences and permits that end"
+msgstr "Muddati tugayotgan litsenziya va ruxsatnomalar"
 
 #: backend/apps/assets/hooks.py
 msgid "Equipment given to you"
@@ -2753,6 +2765,46 @@ msgstr "Rasm"
 msgid "Document"
 msgstr "Hujjat"
 
+#: backend/apps/assets/models.py
+msgid "Pharmacy licence"
+msgstr "Farmatsevtika faoliyati litsenziyasi"
+
+#: backend/apps/assets/models.py
+msgid "Controlled substances licence"
+msgstr "Giyohvandlik va psixotrop vositalar litsenziyasi"
+
+#: backend/apps/assets/models.py
+msgid "Lease agreement"
+msgstr "Ijara shartnomasi"
+
+#: backend/apps/assets/models.py
+msgid "Fire safety approval"
+msgstr "Yong‘in xavfsizligi xulosasi"
+
+#: backend/apps/assets/models.py
+msgid "Sanitary approval"
+msgstr "Sanitariya-epidemiologik xulosa"
+
+#: backend/apps/assets/models.py
+msgid "Cash register registration"
+msgstr "Kassa apparatini ro‘yxatdan o‘tkazish"
+
+#: backend/apps/assets/models.py
+msgid "Insurance policy"
+msgstr "Sug‘urta polisi"
+
+#: backend/apps/assets/models.py
+msgid "Who issued it."
+msgstr "Kim bergan."
+
+#: backend/apps/assets/models.py
+msgid "Empty: it doesn't end (renewed by hand)."
+msgstr "Bo‘sh: muddatsiz (qo‘lda yangilanadi)."
+
+#: backend/apps/assets/models.py
+msgid "Days ahead to start warning (renewals take time)."
+msgstr "Necha kun oldin ogohlantirish (yangilash vaqt oladi)."
+
 #: backend/apps/assets/notify.py
 #, python-format
 msgid "You were given %(asset)s"
@@ -2804,6 +2856,31 @@ msgstr ""
 msgid "Renew the insurance, then put the new end date on the asset's page."
 msgstr ""
 "Sug‘urtani yangilang, so‘ng yangi tugash sanasini vosita sahifasiga yozing."
+
+#: backend/apps/assets/notify.py
+#, python-format
+msgid "Expired %(day)s: %(permit)s"
+msgstr "Muddati tugagan (%(day)s): %(permit)s"
+
+#: backend/apps/assets/notify.py
+#, python-format
+msgid "Ends %(day)s: %(permit)s"
+msgstr "Muddati tugaydi (%(day)s): %(permit)s"
+
+#: backend/apps/assets/notify.py
+msgid ""
+"Working without it can mean a fine or a closed pharmacy: renew it today."
+msgstr ""
+"Busiz ishlash jarima yoki dorixona yopilishiga olib kelishi mumkin: bugun "
+"yangilang."
+
+#: backend/apps/assets/notify.py
+msgid ""
+"Start the renewal now: the papers take time. Put the new end date on its "
+"card."
+msgstr ""
+"Yangilashni hozir boshlang: hujjatlar vaqt oladi. Yangi tugash sanasini "
+"kartasiga yozing."
 
 #: backend/apps/assets/owner_api.py backend/apps/assets/services.py
 #: backend/apps/attendance/owner_api.py backend/apps/hr/owner_api.py
@@ -2869,6 +2946,10 @@ msgstr "Ko‘pi bilan besh yillik davrni tanlang."
 #: backend/apps/assets/owner_api.py
 msgid "Pick the branch to count."
 msgstr "Inventarizatsiya qilinadigan filialni tanlang."
+
+#: backend/apps/assets/owner_api.py
+msgid "Pick the branch it is for."
+msgstr "Qaysi filial uchunligini tanlang."
 
 #: backend/apps/assets/posting.py
 #, python-format
@@ -3463,6 +3544,14 @@ msgstr "Ro‘yxatdan natijani tanlang."
 #, python-format
 msgid "Not found in the count of %(day)s."
 msgstr "%(day)s inventarizatsiyasida topilmadi."
+
+#: backend/apps/assets/services.py
+msgid "Warn 1 to 365 days ahead."
+msgstr "Ogohlantirish muddati: 1–365 kun."
+
+#: backend/apps/assets/services.py
+msgid "It ends after it was issued."
+msgstr "Tugash sanasi berilgan sanadan keyin bo‘lishi kerak."
 
 #: backend/apps/attendance/actions.py backend/apps/finance/claims.py
 #: backend/apps/finance/reminders.py backend/apps/payroll/actions.py

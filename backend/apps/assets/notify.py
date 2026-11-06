@@ -10,7 +10,7 @@ from datetime import date
 
 from django.utils.translation import gettext as _
 
-from apps.assets.models import Asset, AssetAssignment
+from apps.assets.models import Asset, AssetAssignment, Permit
 from apps.inbox import services as inbox
 from apps.members import scope
 from apps.members.models import Membership
@@ -106,5 +106,58 @@ def upkeep(asset: Asset, what: str, day: date, step: str) -> int:
         target=asset,
         severity="warning" if step == "due" else None,
         dedupe_key=f"assets.{what}:{asset.pk}:{day.isoformat()}:{step}",
+    )
+    return len(sent)
+
+
+PERMIT = "assets.permit"
+
+
+def permit_people(permit: Permit) -> list[Membership]:
+    """`assets.manage` holders who see the permit's branch, and the one responsible for it."""
+    found: list[Membership] = []
+    for candidate in members_with_perm(permit.company, Perm.ASSETS_MANAGE).select_related(
+        "user", "role", "company"
+    ):
+        seen = scope.branch_ids(candidate)
+        if seen is None or (permit.branch_id is not None and permit.branch_id in seen):
+            found.append(candidate)
+    responsible = permit.responsible if permit.responsible_id else None
+    if (
+        responsible is not None
+        and responsible.status == Membership.Status.APPROVED
+        and all(person.pk != responsible.pk for person in found)
+    ):
+        found.append(responsible)
+    return found
+
+
+def permit(permit: Permit, step: str, today: date) -> int:
+    """`step`: "soon" (within its warning days), "week" (7 days left) or "expired"."""
+    people = permit_people(permit)
+    if not people:
+        return 0
+    where = f"{permit.name} ({permit.branch.name})" if permit.branch_id else permit.name
+    day = _day(permit.valid_until)
+
+    def title(person):
+        if step == "expired":
+            return _("Expired %(day)s: %(permit)s") % {"day": day, "permit": where}
+        return _("Ends %(day)s: %(permit)s") % {"day": day, "permit": where}
+
+    def body(person):
+        if step == "expired":
+            return _("Working without it can mean a fine or a closed pharmacy: renew it today.")
+        return _("Start the renewal now: the papers take time. Put the new end date on its card.")
+
+    sent = inbox.notify(
+        people,
+        PERMIT,
+        title=title,
+        body=body,
+        url=f"/c/{permit.company_id}/assets/permits",
+        target=permit,
+        severity="warning" if step != "soon" else None,
+        dedupe_key=f"assets.permit:{permit.pk}:{permit.valid_until.isoformat()}:{step}",
     )
     return len(sent)

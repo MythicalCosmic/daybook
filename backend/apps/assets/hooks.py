@@ -21,6 +21,7 @@ READ, MANAGE = providers.READ, providers.MANAGE
 audit_registry.register(AssetAction)
 audit_registry.register_target("asset", MANAGE)
 audit_registry.register_target("assetsettings", MANAGE)
+audit_registry.register_target("permit", MANAGE)
 
 # Ledger rows link back here: the monthly depreciation to its report, an asset's own rows
 # (written off, written down, sold) to its page.
@@ -34,12 +35,19 @@ sources.register(
 )
 
 register_file_check("assets.file", providers.may_open_file)
+register_file_check("assets.permit", providers.may_open_permit)
 
 registry.register_pulse("assets", perm=READ, count=None, feature=FEATURE)
 
 register_kind(
     notify.UPKEEP,
     label=_("Equipment upkeep: services, instrument checks, warranties, insurance"),
+    audience="owner",
+    default_telegram=True,
+)
+register_kind(
+    notify.PERMIT,
+    label=_("Licences and permits that end"),
     audience="owner",
     default_telegram=True,
 )

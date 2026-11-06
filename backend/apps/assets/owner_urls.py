@@ -30,5 +30,12 @@ urlpatterns = [
         owner_api.CountLineView.as_view(),
         name="assets-count-line",
     ),
+    path("assets/permits/", owner_api.PermitsView.as_view(), name="assets-permits"),
+    path("assets/permits/<int:permit_id>/", owner_api.PermitView.as_view(), name="assets-permit"),
+    path(
+        "assets/permits/<int:permit_id>/file/",
+        owner_api.PermitFileView.as_view(),
+        name="assets-permit-file",
+    ),
     *router.urls,
 ]

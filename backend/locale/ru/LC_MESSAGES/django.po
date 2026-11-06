@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-07 01:55+0500\n"
+"POT-Creation-Date: 2026-11-07 01:59+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -275,9 +275,9 @@ msgstr "Праздник"
 msgid "Deadline"
 msgstr "Крайний срок"
 
-#: backend/apps/agenda/models.py backend/apps/finance/models.py
-#: backend/apps/hr/models.py backend/apps/lifecycle/models.py
-#: backend/apps/sales/models.py
+#: backend/apps/agenda/models.py backend/apps/assets/models.py
+#: backend/apps/finance/models.py backend/apps/hr/models.py
+#: backend/apps/lifecycle/models.py backend/apps/sales/models.py
 msgid "Other"
 msgstr "Другое"
 
@@ -657,7 +657,7 @@ msgstr[2] "Сейчас просрочено %(count)s задач."
 msgid "With Claude connected, this agent writes the report you asked for."
 msgstr "С подключённым Claude этот агент напишет отчёт, который вы описали."
 
-#: backend/apps/ai/agents/custom.py
+#: backend/apps/ai/agents/custom.py backend/apps/assets/services.py
 msgid "Give it a name."
 msgstr "Дайте ему название."
 
@@ -2369,6 +2369,14 @@ msgstr "Начал инвентаризацию"
 msgid "Closed an asset count"
 msgstr "Закрыл инвентаризацию"
 
+#: backend/apps/assets/audit_actions.py
+msgid "Saved a licence or permit"
+msgstr "Сохранил лицензию или разрешение"
+
+#: backend/apps/assets/audit_actions.py
+msgid "Deleted a licence or permit"
+msgstr "Удалил лицензию или разрешение"
+
 #: backend/apps/assets/defaults.py
 msgid "I.1 Buildings"
 msgstr "I.1 Здания"
@@ -2460,6 +2468,10 @@ msgstr "Основное средство"
 #: backend/apps/assets/hooks.py
 msgid "Equipment upkeep: services, instrument checks, warranties, insurance"
 msgstr "Обслуживание оборудования: ТО, поверка, гарантия, страховка"
+
+#: backend/apps/assets/hooks.py
+msgid "Licences and permits that end"
+msgstr "Истекающие лицензии и разрешения"
 
 #: backend/apps/assets/hooks.py
 msgid "Equipment given to you"
@@ -2790,6 +2802,46 @@ msgstr "Фото"
 msgid "Document"
 msgstr "Документ"
 
+#: backend/apps/assets/models.py
+msgid "Pharmacy licence"
+msgstr "Лицензия на фармацевтическую деятельность"
+
+#: backend/apps/assets/models.py
+msgid "Controlled substances licence"
+msgstr "Лицензия на наркотические и психотропные средства"
+
+#: backend/apps/assets/models.py
+msgid "Lease agreement"
+msgstr "Договор аренды"
+
+#: backend/apps/assets/models.py
+msgid "Fire safety approval"
+msgstr "Заключение пожарной безопасности"
+
+#: backend/apps/assets/models.py
+msgid "Sanitary approval"
+msgstr "Санитарно-эпидемиологическое заключение"
+
+#: backend/apps/assets/models.py
+msgid "Cash register registration"
+msgstr "Регистрация кассового аппарата"
+
+#: backend/apps/assets/models.py
+msgid "Insurance policy"
+msgstr "Страховой полис"
+
+#: backend/apps/assets/models.py
+msgid "Who issued it."
+msgstr "Кем выдано."
+
+#: backend/apps/assets/models.py
+msgid "Empty: it doesn't end (renewed by hand)."
+msgstr "Пусто: бессрочно (продлевается вручную)."
+
+#: backend/apps/assets/models.py
+msgid "Days ahead to start warning (renewals take time)."
+msgstr "За сколько дней предупреждать (продление требует времени)."
+
 #: backend/apps/assets/notify.py
 #, python-format
 msgid "You were given %(asset)s"
@@ -2838,6 +2890,29 @@ msgstr ""
 #: backend/apps/assets/notify.py
 msgid "Renew the insurance, then put the new end date on the asset's page."
 msgstr "Продлите страховку и укажите новую дату на странице средства."
+
+#: backend/apps/assets/notify.py
+#, python-format
+msgid "Expired %(day)s: %(permit)s"
+msgstr "Истёк %(day)s: %(permit)s"
+
+#: backend/apps/assets/notify.py
+#, python-format
+msgid "Ends %(day)s: %(permit)s"
+msgstr "Истекает %(day)s: %(permit)s"
+
+#: backend/apps/assets/notify.py
+msgid ""
+"Working without it can mean a fine or a closed pharmacy: renew it today."
+msgstr "Работа без него грозит штрафом или закрытием аптеки: продлите сегодня."
+
+#: backend/apps/assets/notify.py
+msgid ""
+"Start the renewal now: the papers take time. Put the new end date on its "
+"card."
+msgstr ""
+"Начните продление сейчас: документы требуют времени. Укажите новую дату в "
+"карточке."
 
 #: backend/apps/assets/owner_api.py backend/apps/assets/services.py
 #: backend/apps/attendance/owner_api.py backend/apps/hr/owner_api.py
@@ -2903,6 +2978,10 @@ msgstr "Выберите период не больше пяти лет."
 #: backend/apps/assets/owner_api.py
 msgid "Pick the branch to count."
 msgstr "Выберите филиал для инвентаризации."
+
+#: backend/apps/assets/owner_api.py
+msgid "Pick the branch it is for."
+msgstr "Выберите филиал, для которого оно."
 
 #: backend/apps/assets/posting.py
 #, python-format
@@ -3493,6 +3572,14 @@ msgstr "Выберите результат из списка."
 #, python-format
 msgid "Not found in the count of %(day)s."
 msgstr "Не найдено при инвентаризации %(day)s."
+
+#: backend/apps/assets/services.py
+msgid "Warn 1 to 365 days ahead."
+msgstr "Предупреждать можно за 1–365 дней."
+
+#: backend/apps/assets/services.py
+msgid "It ends after it was issued."
+msgstr "Дата окончания должна быть позже выдачи."
 
 #: backend/apps/attendance/actions.py backend/apps/finance/claims.py
 #: backend/apps/finance/reminders.py backend/apps/payroll/actions.py

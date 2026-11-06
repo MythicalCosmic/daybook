@@ -10,6 +10,7 @@ from apps.assets.models import (
     AssetEvent,
     AssetFile,
     Method,
+    Permit,
     StartRule,
 )
 from apps.core.files import signed_url
@@ -616,6 +617,55 @@ class CountStartSerializer(serializers.Serializer):
 class CountMarkSerializer(serializers.Serializer):
     result = serializers.ChoiceField(choices=AssetCountLine.Result.choices)
     note = serializers.CharField(required=False, allow_blank=True, max_length=300)
+
+
+# Licences and permits ------------------------------------------------------------------------
+
+
+class PermitSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
+    kind = serializers.ChoiceField(choices=Permit.Kind.choices, required=False)
+    name = serializers.CharField(max_length=120, required=False)
+    number = serializers.CharField(max_length=64, required=False, allow_blank=True)
+    issuer = serializers.CharField(max_length=150, required=False, allow_blank=True)
+    issued_on = serializers.DateField(required=False, allow_null=True)
+    valid_until = serializers.DateField(required=False, allow_null=True)
+    remind_days = serializers.IntegerField(required=False, min_value=1, max_value=365)
+    branch = serializers.IntegerField(required=False, allow_null=True)
+    branch_name = serializers.CharField(read_only=True, allow_null=True)
+    responsible = serializers.IntegerField(required=False, allow_null=True)
+    responsible_name = serializers.CharField(read_only=True, allow_null=True)
+    notes = serializers.CharField(required=False, allow_blank=True, max_length=4000)
+    days_left = serializers.IntegerField(read_only=True, allow_null=True)
+    file_url = serializers.CharField(read_only=True, allow_null=True)
+
+
+def permit_of(permit: Permit, *, user, today) -> dict:
+    return {
+        "id": permit.pk,
+        "kind": permit.kind,
+        "name": permit.name,
+        "number": permit.number,
+        "issuer": permit.issuer,
+        "issued_on": permit.issued_on,
+        "valid_until": permit.valid_until,
+        "remind_days": permit.remind_days,
+        "branch": permit.branch_id,
+        "branch_name": permit.branch.name if permit.branch_id else None,
+        "responsible": permit.responsible_id,
+        "responsible_name": str(permit.responsible) if permit.responsible_id else None,
+        "notes": permit.notes,
+        "days_left": (permit.valid_until - today).days if permit.valid_until else None,
+        "file_url": signed_url(
+            permit.file, user=user, company_id=permit.company_id, check=f"assets.permit:{permit.pk}"
+        )
+        if permit.file
+        else None,
+    }
+
+
+class PermitFileSerializer(serializers.Serializer):
+    file = serializers.FileField()
 
 
 # Every shape here gets an "Assets…" component name of its own, so none collides with another
