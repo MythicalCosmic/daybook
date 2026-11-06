@@ -79,13 +79,13 @@ const categoryModel = computed({ get: () => category.value || null, set: (value:
 
 const columns = computed<TableColumn<AssetRow>[]>(() => [
   { id: "number", header: t("assets.col.number"), width: 104, sticky: true },
-  { id: "name", header: t("assets.col.name"), minWidth: 220 },
+  { id: "name", header: t("assets.col.name"), minWidth: 280 },
   { id: "branch", header: t("assets.col.branch"), value: (row) => row.branch?.name ?? "", minWidth: 130 },
   { id: "custodian", header: t("assets.col.custodian"), value: (row) => row.custodian?.name ?? "", minWidth: 140 },
-  { id: "status", header: t("assets.col.status"), width: 150 },
-  { id: "cost", header: t("assets.col.cost"), numeric: true, width: 150 },
-  { id: "book_value", header: t("assets.col.book"), numeric: true, width: 150, hint: t("assets.col.bookHint") },
-  { id: "monthly", header: t("assets.col.monthly"), numeric: true, width: 140, hint: t("assets.col.monthlyHint") },
+  { id: "status", header: t("assets.col.status"), width: 140 },
+  { id: "cost", header: t("assets.col.cost"), numeric: true, width: 136 },
+  { id: "book_value", header: t("assets.col.book"), numeric: true, width: 136, hint: t("assets.col.bookHint") },
+  { id: "monthly", header: t("assets.col.monthly"), numeric: true, width: 124, hint: t("assets.col.monthlyHint") },
   { id: "next_due", header: t("assets.col.next"), width: 170, value: (row) => row.next_due?.day ?? "" },
 ]);
 const filtered = computed(() => Boolean(search.value || status.value || category.value || disposed.value));

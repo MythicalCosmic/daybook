@@ -139,9 +139,9 @@ const kpis = computed(() => {
   const values = page.value?.values;
   if (!values) return [];
   return [
-    { id: "cost", label: t("assets.item.kpiCost"), value: values.cost, format: "money" as const, hint: Number(values.added) ? t("assets.item.addedHint", { amount: fmt.money(values.added, undefined, { decimals: "never" }) }) : undefined },
-    { id: "accumulated", label: t("assets.item.kpiAccumulated"), value: values.accumulated, format: "money" as const },
-    { id: "book", label: t("assets.item.kpiBook"), value: values.book, format: "money" as const, hint: Number(values.salvage_value) ? t("assets.item.salvageHint", { amount: fmt.money(values.salvage_value, undefined, { decimals: "never" }) }) : undefined },
+    { id: "cost", label: t("assets.item.kpiCost"), value: values.cost, format: "money" as const, compact: true, hint: Number(values.added) ? t("assets.item.addedHint", { amount: fmt.money(values.added, undefined, { decimals: "never" }) }) : undefined },
+    { id: "accumulated", label: t("assets.item.kpiAccumulated"), value: values.accumulated, format: "money" as const, compact: true },
+    { id: "book", label: t("assets.item.kpiBook"), value: values.book, format: "money" as const, compact: true, hint: Number(values.salvage_value) ? t("assets.item.salvageHint", { amount: fmt.money(values.salvage_value, undefined, { decimals: "never" }) }) : undefined },
     { id: "month", label: t("assets.item.kpiMonth"), value: values.monthly_now, format: "money" as const },
     {
       id: "left",

@@ -108,8 +108,8 @@ const columns = computed(() => [
           <table class="w-full min-w-[960px] text-sm" data-testid="depreciation-table">
             <thead>
               <tr class="text-left text-xs text-muted">
-                <th class="sticky left-0 bg-surface px-4 py-2 font-medium">{{ group === "branch" ? t("assets.col.branch") : t("assets.field.category") }}</th>
-                <th v-for="month in report.data.value.months" :key="month" class="px-2 py-2 text-right font-medium capitalize">{{ fmt.day(month, "monthYear").split(" ")[0] }}</th>
+                <th class="sticky left-0 min-w-[200px] bg-surface px-4 py-2 font-medium">{{ group === "branch" ? t("assets.col.branch") : t("assets.field.category") }}</th>
+                <th v-for="month in report.data.value.months" :key="month" class="px-2 py-2 text-right font-medium capitalize">{{ fmt.day(month, "monthYear").split(/[\s,]+/)[0] }}</th>
                 <th class="px-4 py-2 text-right font-semibold">{{ t("assets.depreciation.total") }}</th>
               </tr>
             </thead>

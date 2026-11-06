@@ -37,7 +37,7 @@ const data = computed(() => planning.data.value);
 const today = useCompanyToday();
 
 const kpis = computed(() => [
-  { id: "replace", label: t("assets.planning.kpiReplace"), value: data.value?.replacement_total ?? null, format: "money" as const, compact: true, hint: t("assets.planning.kpiReplaceHint", { rate: data.value?.inflation ?? "10" }) },
+  { id: "replace", label: t("assets.planning.kpiReplace"), value: data.value?.replacement_total ?? null, format: "money" as const, compact: true, hint: t("assets.planning.kpiReplaceHint", { rate: fmt.number(data.value?.inflation ?? 10, Number(data.value?.inflation ?? 10) % 1 ? 1 : 0) }) },
   { id: "repairs", label: t("assets.planning.kpiRepairs"), value: data.value?.repairs.length ?? null, format: "number" as const },
   { id: "idle", label: t("assets.planning.kpiIdle"), value: data.value?.idle_value ?? null, format: "money" as const, compact: true },
   { id: "upkeep", label: t("assets.planning.kpiUpkeep"), value: data.value?.upkeep.filter((row) => row.overdue).length ?? null, format: "number" as const, hint: t("assets.planning.kpiUpkeepHint") },
