@@ -21,6 +21,7 @@ import type {
   BulkDecideRow,
   Compensation,
   Decision,
+  LeaveUnit,
   PayAccount,
   PayoutMethod,
   PayrollSettings,
@@ -145,6 +146,7 @@ export function runActions(run: Pick<Run, "status" | "actions" | "calculated_at"
     publish: can("payroll.finalize"),
     mark_paid: can("payroll.pay"),
     export: can("payroll.view") && can("data.export"),
+    leave_payout: can("payroll.manage"),
   };
   let actions: RunAction[];
   if (run.actions) {
@@ -304,6 +306,29 @@ export function lineHow(line: Pick<PayslipLine, "quantity" | "rate" | "amount">)
   if (line.quantity === null || line.quantity === undefined || !hasAmount(line.rate)) return null;
   if (!dec(line.quantity).times(dec(line.rate)).toDecimalPlaces(2).abs().eq(dec(line.amount).abs())) return null;
   return { quantity: line.quantity, rate: line.rate };
+}
+
+/**
+ * What a final payslip's own lines mean, under their label: the unused leave paid out (at the
+ * average day's pay of the history, or the monthly pay over the month's days) and an advance
+ * taken back in full. An i18n key with its values, or null for every other line.
+ */
+export function lineNote(line: Pick<PayslipLine, "kind" | "params">): { key: string; values: Record<string, unknown> } | null {
+  const params = line.params ?? {};
+  if (line.kind === "leave_payout") {
+    if (params.basis === "history") return { key: "payroll.lines.leavePayoutHistory", values: { months: params.history_months ?? params.months ?? 12 } };
+    if (params.basis === "current_pay") return { key: "payroll.lines.leavePayoutCurrent", values: {} };
+    return null;
+  }
+  if (line.kind === "advance" && params.in_full === true) return { key: "payroll.lines.advanceInFull", values: {} };
+  return null;
+}
+
+/** A final run's net below zero: what they owe, as a positive amount (null otherwise). */
+export function owedAfterSettlement(run: Pick<Run, "kind" | "totals">): Money | null {
+  const net = run.totals?.net;
+  if (run.kind !== "final" || !hasAmount(net) || !dec(net).isNegative()) return null;
+  return dec(net).negated().toFixed(2);
 }
 
 /** A quantity as people write it: "24", "1,5" / "1.5" (no trailing zeros). */
@@ -627,6 +652,8 @@ export interface SettingsForm {
   social_tax_percent: number | null;
   inps_percent: number | null;
   auto_prepare: boolean;
+  leave_payout_months: number | null;
+  leave_payout_unit: LeaveUnit;
 }
 
 const DECIMAL_SETTINGS = ["deductions_cap_percent", "overtime_multiplier", "holiday_work_multiplier", "night_multiplier", "daily_hours", "income_tax_percent", "social_tax_percent", "inps_percent"] as const;
@@ -644,6 +671,8 @@ export function settingsForm(settings: PayrollSettings): SettingsForm {
     amounts_are_net: settings.amounts_are_net,
     taxes_enabled: settings.taxes_enabled,
     auto_prepare: settings.auto_prepare,
+    leave_payout_months: settings.leave_payout_months ?? 12,
+    leave_payout_unit: settings.leave_payout_unit ?? "calendar",
     ...decimals,
   };
 }

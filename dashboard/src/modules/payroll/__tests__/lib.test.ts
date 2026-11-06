@@ -15,7 +15,9 @@ import {
   kpiCompact,
   lineGroups,
   lineHow,
+  lineNote,
   monthName,
+  owedAfterSettlement,
   payDateFor,
   payHistory,
   payRowMatches,
@@ -525,5 +527,40 @@ describe("settings", () => {
     form.advance_day = null;
     form.taxes_enabled = true;
     expect(settingsChanges(settings, form)).toEqual({ night_multiplier: "1.75", night_starts_at: "21:00", advance_day: null, taxes_enabled: true });
+  });
+
+  it("sends the unused leave payout method once changed", () => {
+    const saved: PayrollSettings = { ...settings, leave_payout_months: 12, leave_payout_unit: "calendar" };
+    const form = settingsForm(saved);
+    expect(settingsChanges(saved, form)).toEqual({});
+    form.leave_payout_months = 6;
+    form.leave_payout_unit = "work_days";
+    expect(settingsChanges(saved, form)).toEqual({ leave_payout_months: 6, leave_payout_unit: "work_days" });
+  });
+});
+
+describe("final settlement", () => {
+  const line = (kind: string, params: Record<string, unknown>) => ({ kind, params }) as Parameters<typeof lineNote>[0];
+
+  it("explains the unused leave paid out and an advance taken back in full", () => {
+    expect(lineNote(line("leave_payout", { basis: "history", months: 12, history_months: 9 }))).toEqual({ key: "payroll.lines.leavePayoutHistory", values: { months: 9 } });
+    expect(lineNote(line("leave_payout", { basis: "current_pay" }))?.key).toBe("payroll.lines.leavePayoutCurrent");
+    expect(lineNote(line("advance", { in_full: true }))?.key).toBe("payroll.lines.advanceInFull");
+    // A monthly instalment and every other line need no note.
+    expect(lineNote(line("advance", { installments: 2 }))).toBeNull();
+    expect(lineNote(line("base", {}))).toBeNull();
+  });
+
+  it("says what a leaver owes only for a final run below zero", () => {
+    const totals = (net: string) => ({ currency: "UZS" as const, people: 1, net });
+    expect(owedAfterSettlement({ kind: "final", totals: totals("-2400000.00") })).toBe("2400000.00");
+    expect(owedAfterSettlement({ kind: "final", totals: totals("2690000.00") })).toBeNull();
+    expect(owedAfterSettlement({ kind: "regular", totals: totals("-10.00") })).toBeNull();
+  });
+
+  it("offers the unused leave days to payroll managers only", () => {
+    const draft = run({ kind: "final", actions: ["calculate", "cancel", "leave_payout", "finalize"] });
+    expect(runActions(draft, all)).toContain("leave_payout");
+    expect(runActions(draft, (perm) => perm !== "payroll.manage")).not.toContain("leave_payout");
   });
 });

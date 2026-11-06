@@ -43,6 +43,7 @@ import MarkPaidDialog from "../components/MarkPaidDialog.vue";
 import PayAmount from "../components/PayAmount.vue";
 import PayslipDrawer from "../components/PayslipDrawer.vue";
 import RunWarnings from "../components/RunWarnings.vue";
+import SettlementCard from "../components/SettlementCard.vue";
 import { hasAmount, PAYSLIP_TONES, payslipStage, RUN_TONES, runActions, type Can } from "../lib";
 import type { Payslip, RunAction } from "../types";
 
@@ -166,9 +167,11 @@ const calculate = () => act("calculate", {}, t("payroll.run.calculated"));
 async function finalize(): Promise<void> {
   const r = run.value;
   if (!r) return;
+  const final = r.kind === "final";
+  const body = final ? t("payroll.run.finalizeFinalBody") : t("payroll.run.finalizeBody");
   const answer = await confirm({
-    title: t("payroll.run.finalizeTitle", { month: monthText.value }),
-    message: r.warnings.length ? `${t("payroll.run.finalizeBody")} ${t("payroll.run.finalizeWarnings", { n: r.warnings.length }, r.warnings.length)}` : t("payroll.run.finalizeBody"),
+    title: final ? t("payroll.run.finalizeFinalTitle", { name: r.member?.name ?? "—" }) : t("payroll.run.finalizeTitle", { month: monthText.value }),
+    message: r.warnings.length ? `${body} ${t("payroll.run.finalizeWarnings", { n: r.warnings.length }, r.warnings.length)}` : body,
     confirmLabel: t("payroll.run.finalize"),
     icon: Lock,
   });
@@ -243,7 +246,8 @@ const secondary = computed<RunAction[]>(() => {
   if (r.status === "finalized" && has("mark_paid") && primary.value !== "mark_paid") list.push("mark_paid");
   return list;
 });
-const ICONS: Record<RunAction, typeof Calculator> = { calculate: Calculator, finalize: Lock, publish: Send, mark_paid: HandCoins, reopen: RotateCcw, cancel: Ban, export: CircleCheck };
+// The unused leave days of a final run are changed in its settlement card, not from the toolbar.
+const ICONS: Record<RunAction, typeof Calculator> = { calculate: Calculator, finalize: Lock, publish: Send, mark_paid: HandCoins, reopen: RotateCcw, cancel: Ban, export: CircleCheck, leave_payout: Calculator };
 const LABELS = computed<Record<RunAction, string>>(() => ({
   calculate: run.value?.calculated_at ? t("payroll.run.recalculate") : t("payroll.run.calculate"),
   finalize: t("payroll.run.finalize"),
@@ -252,6 +256,7 @@ const LABELS = computed<Record<RunAction, string>>(() => ({
   reopen: t("payroll.run.reopen"),
   cancel: t("payroll.run.cancel"),
   export: t("common.export"),
+  leave_payout: t("payroll.settlement.recalculate"),
 }));
 function run_(action: RunAction): void {
   if (action === "calculate") void calculate();
@@ -284,7 +289,8 @@ const statusNote = computed(() => {
   if (!r) return null;
   // A draft with warnings has its panel to say what to do; the note is for a clean draft.
   if (r.status === "draft") return r.warnings.length ? null : { tone: "info" as const, text: t("payroll.run.draftNote") };
-  if (r.status === "finalized") return { tone: "info" as const, text: t("payroll.run.finalizedNote") };
+  // Someone who left no longer has the bot: their payslip goes to them as a PDF.
+  if (r.status === "finalized") return { tone: "info" as const, text: r.kind === "final" ? t("payroll.run.finalizedFinalNote") : t("payroll.run.finalizedNote") };
   if (r.status === "cancelled") return { tone: "neutral" as const, text: t("payroll.run.cancelledNote") };
   return null;
 });
@@ -318,6 +324,7 @@ const statusNote = computed(() => {
     <div v-else-if="run" class="flex flex-col gap-4">
       <RunWarnings v-if="run.warnings.length && run.status === 'draft'" :warnings="run.warnings" :final="run.kind === 'final'" />
       <InlineAlert v-if="statusNote" :tone="statusNote.tone" size="sm" :description="statusNote.text" />
+      <SettlementCard v-if="run.kind === 'final'" :run="run" :editable="run.status === 'draft' && has('leave_payout')" />
 
       <!-- The totals; on a phone they stay under the top bar while the list scrolls. -->
       <section
