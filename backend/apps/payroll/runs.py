@@ -295,8 +295,10 @@ def _calculate(run: PayrollRun, *, by, member_ids=None) -> PayrollRun:
     if member_ids is None:
         rules.evaluate_monthly(company, run.period, by=by)
     run.usd_rate = _usd_rate(run)
+    # A draft never holds its own adjustments (finalize sets them, reopen clears them), so one
+    # already on a payslip was paid by a final run of the month: never pay it twice.
     inputs, people = calculator.gather(
-        company, run.period, usd_rate=run.usd_rate, member_ids=member_ids
+        company, run.period, usd_rate=run.usd_rate, member_ids=member_ids, unpaid_only=True
     )
     # People settled by a final run of that month are paid there, not here (unless this run
     # had paid their month already when they left: then the final run pays only the rest).
