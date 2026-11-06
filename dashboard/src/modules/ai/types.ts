@@ -159,6 +159,8 @@ export interface Agent {
   stats: { today: number; week: number };
   config: Record<string, AgentConfigValue>;
   fields: AgentField[];
+  /** An agent an owner made (key `custom_<id>`); null (or absent) for a built-in one. */
+  custom?: CustomAgentInfo | null;
 }
 
 export interface AgentPatch {
@@ -300,4 +302,102 @@ export interface Turn {
   text: string;
   error_code: string;
   message_id: number | null;
+}
+
+// ─── The agents an owner makes (`ai/custom-agents/…`, briefs/v6-k.md) ───────
+
+export type CustomFrequency = "daily" | "weekdays" | "weekly" | "monthly";
+export type CustomRecipients = "me" | "people" | "group";
+/** Its chibi's colour (apps.ai.models.CustomAgent.Color). */
+export type CustomColor = "sky" | "rose" | "indigo" | "lime" | "amber" | "plum" | "aqua" | "slate";
+
+export interface CustomPerson {
+  id: number;
+  name: string;
+}
+
+/** An agent's own fields when an owner made it (`Agent.custom`; null for a built-in one). */
+export interface CustomAgentInfo {
+  id: number;
+  /** What it should do, in the owner's words. */
+  job: string;
+  color: CustomColor;
+  /** The template it started from ("" = written from scratch). */
+  template: string;
+  frequency: CustomFrequency;
+  /** "HH:MM" in the company's timezone. */
+  at: string;
+  /** Weekly: 0 = Monday. */
+  weekday: number | null;
+  /** Monthly: 1–28. */
+  month_day: number | null;
+  recipients: CustomRecipients;
+  people: CustomPerson[];
+  group: { id: number; title: string } | null;
+  domains: { key: string; label: string }[];
+  /** Whose rights it reads with: who "me" is. */
+  run_as: CustomPerson;
+  created_by: CustomPerson | null;
+  created_at: string;
+  /** Why it switched itself off: "", "left" or "no_access". */
+  paused_reason: string;
+  paused_text: string;
+  /** What it last wrote, only for its owner and the people it goes to (else null). */
+  last_report: string | null;
+  last_report_at: string | null;
+}
+
+/** `GET ai/custom-agents/templates/`: a ready job, in the reader's language. */
+export interface CustomAgentTemplate {
+  key: string;
+  name: string;
+  job: string;
+  frequency: CustomFrequency;
+  at: string;
+  weekday: number | null;
+  month_day: number | null;
+  domains: string[];
+  color: CustomColor;
+  /** A lucide icon name. */
+  icon: string;
+  /** The module it is about. */
+  needs: string | null;
+}
+
+/** What it may read, as the form offers it. */
+export interface CustomDomainOption {
+  key: string;
+  label: string;
+  /** Whether the person setting it up may read it themselves. */
+  available: boolean;
+  /** "", "switch_off" (Settings › AI keeps it from the AI) or "no_access". */
+  reason: string;
+  feature: string | null;
+}
+
+/** `GET ai/custom-agents/options/` (ai.configure). */
+export interface CustomAgentOptions {
+  domains: CustomDomainOption[];
+  groups: { id: number; title: string }[];
+  people: { id: number; name: string; position: string; photo: string | null }[];
+  max_agents: number;
+  live: number;
+  run_now_left: number;
+  me: CustomPerson;
+}
+
+/** The New agent form (POST `ai/custom-agents/`, or PATCH with the same fields). */
+export interface CustomAgentForm {
+  name: string;
+  job: string;
+  color: CustomColor;
+  template: string;
+  frequency: CustomFrequency;
+  at: string;
+  weekday: number | null;
+  month_day: number | null;
+  recipients: CustomRecipients;
+  people: number[];
+  group: number | null;
+  domains: string[];
 }

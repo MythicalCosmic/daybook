@@ -9,7 +9,7 @@ import { addDays, formatDay, formatInstant, formatRelative, todayIn, zonedDay, z
 import { capitalize, formatNumber } from "@/lib/format";
 import { formatCompact } from "@/lib/money";
 
-import type { Tone } from "./lib";
+import { isCustomAgent, type Tone } from "./lib";
 import { isNightHour, type SceneState } from "./scene";
 import type { ActivityItem, Agent, AgentDetail, AgentRun, AgentRunStatus, AgentUsage } from "./types";
 
@@ -26,11 +26,14 @@ export type AgentTab = (typeof AGENT_TABS)[number];
 
 // ─── Which agents work on a schedule ────────────────────────────────────────
 
-/** The agents with a schedule (they have "Run now"); a backend that names a next run says so for any other. */
+/**
+ * The agents with a schedule (they have "Run now"), the ones an owner made among them; a backend
+ * that names a next run says so for any other.
+ */
 const SCHEDULED_AGENTS = new Set(["deadline_watcher", "morning_plan", "hr_assistant"]);
 
 export function isScheduled(agent: Pick<Agent, "key" | "next_run_at">): boolean {
-  return SCHEDULED_AGENTS.has(agent.key) || agent.next_run_at !== null;
+  return SCHEDULED_AGENTS.has(agent.key) || isCustomAgent(agent.key) || agent.next_run_at !== null;
 }
 
 // ─── Status and scene ───────────────────────────────────────────────────────

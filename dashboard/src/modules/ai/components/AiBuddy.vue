@@ -3,7 +3,8 @@
  * The AI's little helpers, drawn: a pixel creature (no image file) in five looks — Claude itself
  * (orange) and one chibi per agent: voice tasks (violet, headphones and a mic), morning plan
  * (yellow, a rising sun on its head), deadline watcher (red, an alarm clock on its head) and photo
- * checker (teal, round glasses). Expressions: open eyes, a blink, a look around, ^ ^ when happy,
+ * checker (teal, round glasses); an agent an owner made is the same little creature in the colour
+ * its owner picked, with a heart on an antenna (`variant="custom"`, `color`). Expressions: open eyes, a blink, a look around, ^ ^ when happy,
  * heart eyes, closed eyes asleep, a wink, star eyes, wide-eyed surprise, shy eyes down, dizzy X
  * eyes, eyes up thinking. Little dances: wiggle, twist, disco arms, spin, bounce, jumping jacks. Moves: breathing, hop, wave, dance, typing, a poke, walking,
  * sitting, listening (sound waves), ringing (the prop shakes, red "!"), cheering (arms up); it lets
@@ -16,12 +17,14 @@ import { useI18n } from "vue-i18n";
 
 import { reducedMotion } from "@/components/chartOptions";
 
-import { BUDDY_PARTICLES, type BuddyAction, type BuddyMood, type BuddyParticle, type BuddyVariant } from "../lib";
+import { BUDDY_PARTICLES, customColors, type BuddyAction, type BuddyMood, type BuddyParticle, type BuddyVariant } from "../lib";
 
 const props = withDefaults(
   defineProps<{
     mood: BuddyMood;
     variant?: BuddyVariant;
+    /** A custom agent's colour (`sky`, `rose`…): only the `custom` variant reads it. */
+    color?: string | null;
     action?: BuddyAction;
     /** Goes up with every new action, so the same action twice in a row still lets out its hearts. */
     beat?: number;
@@ -35,7 +38,7 @@ const props = withDefaults(
     /** What a screen reader says for it (Claude's own words by default). */
     label?: string;
   }>(),
-  { variant: "claude", action: "idle", beat: 0, size: 88, walking: false, facing: "right", sitting: false, asleep: false, gaze: undefined, label: "" },
+  { variant: "claude", color: null, action: "idle", beat: 0, size: 88, walking: false, facing: "right", sitting: false, asleep: false, gaze: undefined, label: "" },
 );
 const emit = defineEmits<{ tap: [] }>();
 
@@ -88,6 +91,17 @@ const eyes = computed(() => {
   }
 });
 const eyeShift = computed(() => (eyes.value === "left" ? -2 : eyes.value === "right" ? 2 : 0));
+/** A custom chibi wears its owner's colour; the others have theirs in the stylesheet. */
+const tint = computed((): Record<string, string> => {
+  const tinted: Record<string, string> = {};
+  if (props.variant !== "custom") return tinted;
+  const colors = customColors(props.color);
+  tinted["--buddy-main"] = colors.main;
+  tinted["--buddy-light"] = colors.light;
+  tinted["--buddy-dark"] = colors.dark;
+  tinted["--buddy-gear"] = colors.gear;
+  return tinted;
+});
 const blush = computed(() => ["happy", "love", "wink", "shy"].includes(eyes.value));
 const height = computed(() => Math.round((props.size * 34) / 36));
 
@@ -137,8 +151,9 @@ onBeforeUnmount(() => {
   <button
     type="button"
     class="ai-buddy relative block shrink-0 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-accent"
-    :style="{ width: `${size}px`, height: `${height}px` }"
+    :style="{ width: `${size}px`, height: `${height}px`, ...tint }"
     :data-variant="variant"
+    :data-color="variant === 'custom' ? (color ?? 'sky') : undefined"
     :data-mood="mood"
     :data-action="action"
     :data-walking="walking || undefined"
@@ -293,6 +308,17 @@ onBeforeUnmount(() => {
           <rect class="buddy-glint" x="10" y="7" width="1" height="1" />
           <rect class="buddy-glint" x="21" y="7" width="1" height="1" />
         </g>
+        <g v-else-if="variant === 'custom'" data-prop="antenna">
+          <rect class="buddy-gear" x="17" y="-1" width="2" height="3" />
+          <g class="buddy-antenna">
+            <rect class="buddy-heartbit" x="15" y="-6" width="2" height="1" />
+            <rect class="buddy-heartbit" x="19" y="-6" width="2" height="1" />
+            <rect class="buddy-heartbit" x="15" y="-5" width="6" height="2" />
+            <rect class="buddy-heartbit" x="16" y="-3" width="4" height="1" />
+            <rect class="buddy-heartbit" x="17" y="-2" width="2" height="1" />
+            <rect class="buddy-glint" x="16" y="-5" width="1" height="1" />
+          </g>
+        </g>
       </g>
     </svg>
 
@@ -402,6 +428,10 @@ onBeforeUnmount(() => {
 .buddy-board { fill: #a8744a; }
 .buddy-ink { fill: #9fb3a6; }
 .buddy-tie { fill: #2f4a73; }
+.buddy-heartbit { fill: var(--buddy-pink); }
+/* Its little heart beats while its agent works. */
+.buddy-antenna { transform-box: fill-box; transform-origin: center bottom; }
+.ai-buddy[data-mood="busy"] .buddy-antenna { animation: buddy-beat 1.2s steps(2) infinite; }
 .buddy-shadow { fill: currentColor; opacity: 0.12; transform-box: fill-box; transform-origin: center; }
 
 .buddy-figure, .buddy-limb { transform-box: fill-box; transform-origin: center bottom; }
@@ -525,6 +555,10 @@ onBeforeUnmount(() => {
   0% { transform: translateY(0) rotate(3deg); }
   50% { transform: translateY(-1px) rotate(3deg); }
 }
+@keyframes buddy-beat {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.18); }
+}
 @keyframes buddy-float {
   0% { opacity: 0; transform: translateY(6px) scale(0.6); }
   15% { opacity: 1; transform: translateY(0) scale(1); }
@@ -532,6 +566,6 @@ onBeforeUnmount(() => {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .buddy-figure, .buddy-limb, .buddy-shadow, .buddy-particle { animation: none !important; }
+  .buddy-figure, .buddy-limb, .buddy-shadow, .buddy-particle, .buddy-antenna { animation: none !important; }
 }
 </style>

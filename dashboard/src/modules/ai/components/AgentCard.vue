@@ -5,7 +5,7 @@
  * it works. The whole card opens the agent's own page (the title is the link, stretched); its
  * switch, "Run now" and its chibi (AgentChibi.vue, where an icon would be) take their own taps.
  */
-import { ChevronRight, LoaderCircle, Lock, Play, ScanEye } from "@lucide/vue";
+import { ChevronRight, Heart, LoaderCircle, Lock, Pause, Play, ScanEye } from "@lucide/vue";
 import { computed, useId } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink } from "vue-router";
@@ -57,7 +57,7 @@ const nextRun = computed(() => (props.agent.next_run_at && on.value ? fmt.relati
   >
     <span v-if="agent.running" class="ai-shimmer pointer-events-none absolute inset-x-0 top-0 h-[3px]" aria-hidden="true" />
     <div class="flex items-start gap-3">
-      <AgentChibi class="relative z-[1] -my-1 shrink-0" :agent-key="agent.key" :name="agent.name" :on="on" :running="agent.running" />
+      <AgentChibi class="relative z-[1] -my-1 shrink-0" :agent-key="agent.key" :name="agent.name" :on="on" :running="agent.running" :color="agent.custom?.color" />
       <div class="min-w-0 flex-1">
         <h3 class="text-md font-semibold leading-6 text-fg">
           <!-- The stretched link: a tap anywhere on the card opens the agent's page. -->
@@ -81,7 +81,9 @@ const nextRun = computed(() => (props.agent.next_run_at && on.value ? fmt.relati
 
     <p class="text-base leading-[1.45] text-fg/90" :class="!on && 'text-muted'">{{ agent.description }}</p>
 
-    <div v-if="blocked || photoNote" class="flex flex-wrap gap-1.5">
+    <div v-if="blocked || photoNote || agent.custom" class="flex flex-wrap gap-1.5">
+      <UiBadge v-if="agent.custom" tone="neutral" size="md" data-testid="agent-own"><Heart :size="12" class="mr-1" aria-hidden="true" />{{ t("ai.custom.badge") }}</UiBadge>
+      <UiBadge v-if="agent.custom?.paused_reason" tone="warning" size="md" :title="agent.custom.paused_text" data-testid="agent-paused"><Pause :size="12" class="mr-1" aria-hidden="true" />{{ t("ai.custom.paused") }}</UiBadge>
       <UiBadge v-if="agent.unavailable_reason === 'needs_claude'" tone="warning" size="md"><Lock :size="12" class="mr-1" aria-hidden="true" />{{ t("ai.agents.needsClaude") }}</UiBadge>
       <UiBadge v-else-if="agent.unavailable_reason === 'needs_speech'" tone="warning" size="md"><Lock :size="12" class="mr-1" aria-hidden="true" />{{ t("ai.agents.needsSpeech") }}</UiBadge>
       <UiBadge v-if="photoNote" tone="info" size="md"><ScanEye :size="12" class="mr-1" aria-hidden="true" />{{ t("ai.agents.sendsPhotos") }}</UiBadge>

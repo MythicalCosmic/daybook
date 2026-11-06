@@ -17,6 +17,7 @@ import type {
   AiStatus,
   ApplyDraft,
   ClaudeState,
+  CustomColor,
   DraftProblem,
   DraftStatus,
   SpeechState,
@@ -402,8 +403,11 @@ export type BuddyAction =
   | "wink" | "star" | "wide" | "shy" | "dizzy" | "think" | "sweat" | "bye"
   // little dances
   | "twist" | "disco" | "spin" | "bounce" | "jumpjack";
-/** The family: Claude itself, and one chibi per agent, each with its colours and its prop. */
-export type BuddyVariant = "claude" | "voice" | "morning" | "deadline" | "photo" | "hr";
+/**
+ * The family: Claude itself, one chibi per agent, each with its colours and its prop, and the
+ * agents an owner made, all alike but each in the colour its owner picked (`custom`).
+ */
+export type BuddyVariant = "claude" | "voice" | "morning" | "deadline" | "photo" | "hr" | "custom";
 
 const AGENT_BUDDIES: Record<string, BuddyVariant> = {
   voice_tasks: "voice",
@@ -413,9 +417,42 @@ const AGENT_BUDDIES: Record<string, BuddyVariant> = {
   hr_assistant: "hr",
 };
 
+/** An agent an owner made in their own words (`custom_12`, briefs/v6-k.md). */
+export function isCustomAgent(key: string): boolean {
+  return /^custom_\d+$/.test(key);
+}
+
 /** An agent's chibi; an agent without one of its own gets Claude. */
 export function buddyVariant(agentKey: string): BuddyVariant {
+  if (isCustomAgent(agentKey)) return "custom";
   return AGENT_BUDDIES[agentKey] ?? "claude";
+}
+
+/** A custom chibi's colours, as the built-in chibis have theirs: body, highlight, shade, props. */
+export interface ChibiColors {
+  main: string;
+  light: string;
+  dark: string;
+  gear: string;
+}
+
+/** The colours an owner picks from (apps.ai.models.CustomAgent.Color), each one like the family's. */
+export const CUSTOM_COLORS = {
+  sky: { main: "#4a9fe8", light: "#76b8f0", dark: "#2f7fc4", gear: "#1d3557" },
+  rose: { main: "#ec6fa5", light: "#f396bf", dark: "#c94f85", gear: "#5a1f3a" },
+  indigo: { main: "#6c78ea", light: "#8f99f0", dark: "#4f59c6", gear: "#25285a" },
+  lime: { main: "#93c447", light: "#b0d877", dark: "#719f2c", gear: "#2d4318" },
+  amber: { main: "#f0a13c", light: "#f5bb6c", dark: "#cc801f", gear: "#5a3510" },
+  plum: { main: "#a96fd8", light: "#c195e4", dark: "#8752b6", gear: "#3b1f55" },
+  aqua: { main: "#3cbdd6", light: "#6dd0e2", dark: "#2496ae", gear: "#14404d" },
+  slate: { main: "#7f8ea6", light: "#a1adc0", dark: "#5f6d85", gear: "#262f3f" },
+} as const satisfies Record<CustomColor, ChibiColors>;
+
+export const CUSTOM_COLOR_KEYS = Object.keys(CUSTOM_COLORS) as CustomColor[];
+
+/** A custom agent's colours: its own, or sky's for one the server doesn't name. */
+export function customColors(color: string | null | undefined): ChibiColors {
+  return CUSTOM_COLORS[(color ?? "") as CustomColor] ?? CUSTOM_COLORS.sky;
 }
 
 /** What it does in place, by mood: while an agent runs it mostly types and sparkles. */
