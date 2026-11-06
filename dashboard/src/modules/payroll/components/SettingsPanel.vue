@@ -52,6 +52,8 @@ const roundingOptions = computed(() =>
   ["0.01", "100.00", "500.00", "1000.00", "5000.00", "10000.00"].map((value) => ({ value, label: value === "0.01" ? t("payroll.settings.noRounding") : fmt.money(value) })),
 );
 
+const leaveUnits = computed(() => (["calendar", "work_days"] as const).map((value) => ({ value, label: t(`payroll.settings.leaveUnit.${value}`) })));
+
 async function save(): Promise<void> {
   if (!dirty.value || saving.value) return;
   saving.value = true;
@@ -147,6 +149,17 @@ function reset(): void {
               <NumberInput :id="id" v-model="draft.inps_percent" :min="0" :max="100" :step="0.1" :decimals="2" suffix="%" class="sm:max-w-[200px]" />
             </FormField>
           </template>
+        </div>
+      </PageSection>
+
+      <PageSection variant="card" :heading-level="3" :title="t('payroll.settings.leaving')" :description="t('payroll.settings.leavingHint')">
+        <div class="flex flex-col gap-4">
+          <FormField v-slot="{ id }" layout="inline" :label="t('payroll.settings.leaveMonths')" :hint="t('payroll.settings.leaveMonthsHint')">
+            <NumberInput :id="id" v-model="draft.leave_payout_months" :min="1" :max="24" class="sm:max-w-[200px]" data-testid="leave-months" />
+          </FormField>
+          <FormField v-slot="{ id }" layout="inline" :label="t('payroll.settings.leaveUnit')" :hint="t('payroll.settings.leaveUnitHint')">
+            <SelectBox :id="id" v-model="draft.leave_payout_unit" :options="leaveUnits" class="sm:max-w-[200px]" />
+          </FormField>
         </div>
       </PageSection>
 

@@ -124,6 +124,21 @@ class Person:
 
 
 @dataclass
+class Settlement:
+    """A final settlement (§3.17): the month is paid through `last_day` (gather clips the
+    employment to it), unused leave is paid out at the average day's pay `day_value` (exact,
+    rounded only on the line) and every advance left is deducted in full, even below zero.
+    `work_paid`: the month's regular run had paid their work already, so only the leave and
+    what is still open (approved adjustments, expenses, advances) come here."""
+
+    last_day: date
+    leave_days: Decimal = ZERO
+    day_value: Decimal | None = None
+    day_params: dict = field(default_factory=dict)
+    work_paid: bool = False
+
+
+@dataclass
 class Inputs:
     company: object
     settings: PayrollSettings
@@ -258,8 +273,11 @@ def _between(days, first: date, last: date) -> set[date]:
 # The month of one person -----------------------------------------------------------------
 
 
-def compute(person: Person, inputs: Inputs, manual_lines=()) -> Result | None:
-    """One person's payslip lines for the month; None when no pay setup covers any of it."""
+def compute(
+    person: Person, inputs: Inputs, manual_lines=(), settlement: Settlement | None = None
+) -> Result | None:
+    """One person's payslip lines for the month; None when no pay setup covers any of it.
+    With `settlement`, their final payslip (see `Settlement`)."""
     parts = segments(person, inputs)
     if not parts:
         return None
@@ -270,6 +288,55 @@ def compute(person: Person, inputs: Inputs, manual_lines=()) -> Result | None:
         currency=inputs.currency,
         lines=[],
     )
+    result.task_stats = person.task_stats
+    if settlement is not None and settlement.work_paid:
+        earnings: list[Line] = []
+    else:
+        earnings = _work(person, inputs, parts, result)
+    lines = list(earnings)
+    if settlement is not None:
+        lines += _leave_payout(settlement)
+    lines += _adjustment_lines(person, positive=True)
+    lines += [_manual(line) for line in manual_lines]
+    gross = sum((line.amount for line in lines), ZERO)
+    lines += _capped_deductions(person, inputs, gross, result)
+    lines += _taxes(gross, inputs, result)
+    before_advances = sum((line.amount for line in lines), ZERO)
+    lines += _advance_lines(person, before_advances, result, in_full=settlement is not None)
+    lines += [
+        Line(
+            kind=Kind.REIMBURSEMENT,
+            label=_("Expenses paid back: %(what)s") % {"what": item.description}
+            if item.description
+            else str(Kind.REIMBURSEMENT.label),
+            amount=money(item.amount),
+            params={"code": "reimbursement", "what": item.description},
+            debt_id=item.debt_id,
+        )
+        for item in person.reimbursements
+    ]
+    net = sum((line.amount for line in lines), ZERO)
+    taken = -sum((line.amount for line in lines if line.kind == Kind.ADVANCE), ZERO)
+    if net > 0:
+        rounded = round_to_step(net, settings.rounding_step)
+        # Rounding down never eats into what an advance takes back: the pay for the month
+        # (the salary payable) must still cover the advance offsets.
+        if rounded != net and before_advances - taken + (rounded - net) >= 0:
+            lines.append(
+                Line(
+                    kind=Kind.ROUNDING,
+                    label=str(Kind.ROUNDING.label),
+                    amount=money(rounded - net),
+                    params={"code": "rounding", "step": text(settings.rounding_step)},
+                )
+            )
+    result.lines = lines
+    return result
+
+
+def _work(person: Person, inputs: Inputs, parts, result: Result) -> list[Line]:
+    """The month's pay for work (base, extras, piecework, task rewards), with the payslip's
+    header numbers (days, hours) written on `result`."""
     scheduled = scheduled_days(person, inputs)
     in_job = {day for day in periods.days(inputs.start, inputs.end) if employed(person, day)}
     attended_days = {record.day for record in person.records if record.attended}
@@ -279,7 +346,6 @@ def compute(person: Person, inputs: Inputs, manual_lines=()) -> Result | None:
         if record.absent and record.day in scheduled and record.day not in person.leave
     } - attended_days
     result.scheduled_days = len(scheduled)
-    result.task_stats = person.task_stats
 
     earnings: list[Line] = []
     unpaid_total = ZERO
@@ -342,45 +408,24 @@ def compute(person: Person, inputs: Inputs, manual_lines=()) -> Result | None:
     result.paid_days = Decimal(
         max(0, len(scheduled) - not_in_job - result.absent_days - len(unpaid_leave) - unpaid_total)
     )
+    return earnings + _rewards(person, inputs, in_job)
 
-    earnings += _rewards(person, inputs, in_job)
-    lines = list(earnings)
-    lines += _adjustment_lines(person, positive=True)
-    lines += [_manual(line) for line in manual_lines]
-    gross = sum((line.amount for line in lines), ZERO)
-    lines += _capped_deductions(person, inputs, gross, result)
-    lines += _taxes(gross, inputs, result)
-    before_advances = sum((line.amount for line in lines), ZERO)
-    lines += _advance_lines(person, before_advances, result)
-    lines += [
+
+def _leave_payout(settlement: Settlement) -> list[Line]:
+    """Unused leave days at the average day's pay (§3.17)."""
+    days = settlement.leave_days or ZERO
+    if days <= 0 or settlement.day_value is None:
+        return []
+    return [
         Line(
-            kind=Kind.REIMBURSEMENT,
-            label=_("Expenses paid back: %(what)s") % {"what": item.description}
-            if item.description
-            else str(Kind.REIMBURSEMENT.label),
-            amount=money(item.amount),
-            params={"code": "reimbursement", "what": item.description},
-            debt_id=item.debt_id,
+            kind=Kind.LEAVE_PAYOUT,
+            label=str(Kind.LEAVE_PAYOUT.label),
+            amount=money(days * settlement.day_value),
+            quantity=days,
+            rate=money(settlement.day_value),
+            params={"code": "leave_payout", "days": text(days), **settlement.day_params},
         )
-        for item in person.reimbursements
     ]
-    net = sum((line.amount for line in lines), ZERO)
-    taken = -sum((line.amount for line in lines if line.kind == Kind.ADVANCE), ZERO)
-    if net > 0:
-        rounded = round_to_step(net, settings.rounding_step)
-        # Rounding down never eats into what an advance takes back: the pay for the month
-        # (the salary payable) must still cover the advance offsets.
-        if rounded != net and before_advances - taken + (rounded - net) >= 0:
-            lines.append(
-                Line(
-                    kind=Kind.ROUNDING,
-                    label=str(Kind.ROUNDING.label),
-                    amount=money(rounded - net),
-                    params={"code": "rounding", "step": text(settings.rounding_step)},
-                )
-            )
-    result.lines = lines
-    return result
 
 
 @dataclass
@@ -923,12 +968,15 @@ def _taxes(gross: Decimal, inputs: Inputs, result: Result) -> list[Line]:
     ]
 
 
-def _advance_lines(person: Person, available: Decimal, result: Result) -> list[Line]:
-    """This month's share of each paid advance, never taking the pay below zero."""
+def _advance_lines(
+    person: Person, available: Decimal, result: Result, *, in_full: bool = False
+) -> list[Line]:
+    """This month's share of each paid advance, never taking the pay below zero. `in_full`
+    (a final settlement): everything left of each advance, below zero if need be."""
     lines = []
     room = max(available, ZERO)
     for advance, due in person.advances:
-        taken = min(due, room)
+        taken = due if in_full else min(due, room)
         room -= taken
         if taken < due:
             result.warnings.append(
@@ -950,6 +998,7 @@ def _advance_lines(person: Person, available: Decimal, result: Result) -> list[L
                         "advance": advance.pk,
                         "total": text(advance.amount),
                         "installments": advance.installments,
+                        **({"in_full": True} if in_full else {}),
                     },
                     advance_id=advance.pk,
                 )
@@ -967,9 +1016,16 @@ def gather(
     member_ids=None,
     usd_rate: Decimal | None = None,
     now: datetime | None = None,
+    last_day: date | None = None,
+    advances_in_full: bool = False,
+    unpaid_only: bool = False,
 ) -> tuple[Inputs, list[Person]]:
     """Everything `compute` needs for `period`, for everyone with a pay setup in force during
-    it and employed at least one day of it (or only `member_ids`)."""
+    it and employed at least one day of it (or only `member_ids`).
+
+    For a final settlement: `last_day` ends the employment that day at the latest,
+    `advances_in_full` takes every paid advance with everything left of it (whatever its
+    first month), and `unpaid_only` leaves out adjustments a finalized payslip already paid."""
     from apps.attendance import queries as attendance
     from apps.attendance.models import AttendanceRecord, WorkShift
     from apps.finance import conf as finance_conf
@@ -1012,6 +1068,8 @@ def gather(
     people: dict[int, Person] = {}
     for member_id in ids:
         first, last = dates.get(member_id, (None, None))
+        if last_day is not None:
+            last = last_day if last is None else min(last, last_day)
         if first is None or first > end or (last is not None and last < start):
             continue
         member = members[member_id]
@@ -1136,26 +1194,27 @@ def gather(
             )
         )
 
-    for row in Adjustment.objects.filter(
+    adjustments = Adjustment.objects.filter(
         company=company,
         membership_id__in=ids,
         period=start,
         status=Adjustment.Status.APPROVED,
-    ).order_by("created_at", "pk"):
+    )
+    if unpaid_only:
+        adjustments = adjustments.filter(payslip__isnull=True)
+    for row in adjustments.order_by("created_at", "pk"):
         people[row.membership_id].adjustments.append(row)
 
-    advances = (
-        Advance.objects.filter(
-            company=company,
-            membership_id__in=ids,
-            status=Advance.Status.PAID,
-            first_period__lte=start,
-        )
-        .prefetch_related("repayments")
-        .order_by("first_period", "pk")
+    advances = Advance.objects.filter(
+        company=company, membership_id__in=ids, status=Advance.Status.PAID
     )
-    for advance in advances:
-        due = queries.repayment_due(advance, start)
+    if not advances_in_full:
+        advances = advances.filter(first_period__lte=start)
+    for advance in advances.prefetch_related("repayments").order_by("first_period", "pk"):
+        if advances_in_full:
+            due = queries.advance_left_of(advance)
+        else:
+            due = queries.repayment_due(advance, start)
         if due > 0 and advance.currency == inputs.currency:
             people[advance.membership_id].advances.append((advance, due))
 

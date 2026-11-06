@@ -22,6 +22,7 @@ from apps.payroll.models import (
     Advance,
     Compensation,
     PayrollRun,
+    Payslip,
     PayslipLine,
 )
 from apps.payroll.tests.conftest import local
@@ -54,7 +55,7 @@ def test_core_demo_with_the_six_people(company, demo_people, freeze):
     setups = list(Compensation.objects.filter(membership=worker).order_by("effective_from"))
     assert [row.amount for row in setups] == [D("4900000"), D("5200000")]
     assert setups[1].effective_from == date(2026, 11, 1) and setups[0].locked
-    october = PayrollRun.objects.get(company=company, period=date(2026, 10, 1))
+    october = PayrollRun.objects.get(company=company, kind="regular", period=date(2026, 10, 1))
     assert october.status == "paid"
     assert october.payslips.filter(received_at__isnull=False).exists()
     november = PayrollRun.objects.get(company=company, period=date(2026, 11, 1))
@@ -107,7 +108,7 @@ def test_every_payslip_row_adds_up(pharmacy, owner_api):
         for row in rows:
             assert sum((D(row[name]) for name in parts), D(0)) == D(row["net"]), row
     # October's overtime and night premium are in extras, not lost between base and net.
-    october = runs.get(period=date(2026, 10, 1))
+    october = runs.get(kind="regular", period=date(2026, 10, 1))
     url = f"/api/v1/owner/companies/{company.pk}/payroll/runs/{october.pk}/payslips/?page_size=200"
     nigora = next(
         row for row in owner.get(url).data["results"] if row["member"]["id"] == people["nigora"].pk
@@ -117,7 +118,7 @@ def test_every_payslip_row_adds_up(pharmacy, owner_api):
 
 def test_the_whole_story(pharmacy):
     company, people = pharmacy
-    october = PayrollRun.objects.get(company=company, period=date(2026, 10, 1))
+    october = PayrollRun.objects.get(company=company, kind="regular", period=date(2026, 10, 1))
     assert october.status == "paid"
     # The night pharmacist at Yunusobod: the premium of her 20:00 to 08:00 shifts on top.
     nigora = october.payslips.get(membership=people["nigora"])
@@ -132,7 +133,10 @@ def test_the_whole_story(pharmacy):
     accruals = Transaction.objects.filter(
         company=company, debt__kind="salary", kind="expense", status="posted"
     )
-    assert accruals.count() == october.payslips.filter(salary_debt__isnull=False).count()
+    booked = Payslip.objects.filter(
+        run__company=company, run__status__in=("finalized", "paid"), salary_debt__isnull=False
+    )
+    assert accruals.count() == booked.count()
     # Bonuses and fines in every state, and Kamola's request waiting.
     this_month = Adjustment.objects.filter(company=company, period=date(2026, 11, 1))
     assert this_month.filter(status="proposed").exists()
@@ -144,3 +148,43 @@ def test_the_whole_story(pharmacy):
     )
     assert worker_advance.first_period == date(2026, 11, 1)
     assert worker_advance.debt.created_at <= timezone.now() + timedelta(seconds=1)
+
+
+@pytest.fixture
+def with_leavers(freeze):
+    """Demo Dorixona with the members demo too (its suspension, leaver and blocked courier) and
+    the HR demo, in the order seed_demo runs them."""
+    from apps.hr import demo as hr_demo
+    from apps.members import demo as members_demo
+
+    freeze(local(SEED_DAY, 14))
+    now = timezone.now()
+    company, people = Command()._build_pharmacy(now)
+    company.features = list(Feature.values)
+    company.save()
+    ensure_company_defaults(company)
+    for module in (members_demo, timeoff_demo, finance_demo, attendance_demo, hr_demo, demo):
+        module.seed(company, people, now)
+    return company, people
+
+
+def test_the_leaver_is_settled(with_leavers, owner_api):
+    """Nodira resigned on Wednesday 14 October: her final payslip pays her days through it and
+    9 unused leave days, takes her advance back in full and is paid; October's run skips her."""
+    company, people = with_leavers
+    nodira = Compensation.objects.get(company=company, membership__first_name="Nodira").membership
+    run = PayrollRun.objects.get(company=company, kind="final")
+    assert run.membership == nodira and run.last_day == date(2026, 10, 14)
+    assert run.status == "paid" and run.leave_days == D("9.00")
+    payslip = run.payslips.get()
+    payout = payslip.lines.get(kind=PayslipLine.Kind.LEAVE_PAYOUT)
+    assert payout.quantity == D("9.00") and payout.amount > 0
+    advance = payslip.lines.get(kind=PayslipLine.Kind.ADVANCE)
+    assert advance.amount == D("-800000.00") and advance.params["in_full"]
+    assert Advance.objects.get(membership=nodira).status == "repaid"
+    october = PayrollRun.objects.get(company=company, kind="regular", period=date(2026, 10, 1))
+    assert not october.payslips.filter(membership=nodira).exists()
+    url = f"/api/v1/owner/companies/{company.pk}/payroll/runs/{run.pk}/payslips/"
+    row = owner_api(people["owner"]).get(url).data["results"][0]
+    parts = ("base_pay", "extras", "bonuses", "fines", "advances", "taxes_withheld")
+    assert sum((D(row[name]) for name in (*parts, "reimbursements")), D(0)) == D(row["net"])

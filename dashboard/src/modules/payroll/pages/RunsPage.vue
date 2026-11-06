@@ -198,7 +198,9 @@ watch(
           <span v-if="row.kind === 'final'" class="grid size-8 shrink-0 place-items-center rounded-[9px] bg-warning-soft text-warning" :title="t('payroll.run.final')"><UserRoundMinus :size="16" /></span>
           <div class="min-w-0">
             <p class="truncate text-base font-semibold text-fg">{{ runTitle(row) }}</p>
-            <p v-if="row.kind === 'final'" class="truncate text-xs text-muted">{{ fmt.day(row.period, "monthYear") }}</p>
+            <p v-if="row.kind === 'final'" class="truncate text-xs text-muted" data-testid="final-badge">
+              <span class="font-medium text-warning">{{ t("payroll.run.finalBadge") }}</span> · {{ fmt.day(row.period, "monthYear") }}
+            </p>
             <p v-else-if="row.warnings.length && row.status === 'draft'" class="truncate text-xs font-medium text-warning">{{ t("payroll.run.warningsCount", { n: row.warnings.length }, row.warnings.length) }}</p>
           </div>
         </div>

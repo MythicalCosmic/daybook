@@ -12,7 +12,9 @@ export type Proration = "attendance" | "calendar" | "none";
 
 export type RunStatus = "draft" | "finalized" | "paid" | "cancelled";
 export type RunKind = "regular" | "final";
-export type RunAction = "calculate" | "finalize" | "reopen" | "cancel" | "publish" | "mark_paid" | "export";
+export type RunAction = "calculate" | "finalize" | "reopen" | "cancel" | "publish" | "mark_paid" | "export" | "leave_payout";
+/** How unused leave is counted for the payout on leaving (§3.17). */
+export type LeaveUnit = "calendar" | "work_days";
 export type PayslipStatus = "draft" | "published" | "paid";
 export type PayoutMethod = "cash" | "card" | "bank";
 
@@ -101,7 +103,9 @@ export interface PayrollSettings {
   night_ends_at: string;
   daily_hours: string;
   auto_prepare: boolean;
+  /** Unused leave paid out on leaving: the average day's pay of this many months before. */
   leave_payout_months?: number;
+  leave_payout_unit?: LeaveUnit;
 }
 
 // Pay setups ----------------------------------------------------------------------------------
@@ -380,6 +384,12 @@ export interface Run {
   status: RunStatus;
   /** The one person of a final run. */
   member: Member | null;
+  /** A final run: their last working day (paid through it), "2026-10-14". */
+  last_day?: string | null;
+  /** A final run: the unused leave days paid out, "5.50". */
+  leave_days?: string;
+  /** A final run: the month's regular run had paid their month already, so this pays the rest. */
+  after_regular?: boolean;
   usd_rate: string | null;
   calculated_at: string | null;
   finalized_at: string | null;
@@ -416,6 +426,8 @@ export interface Payslip {
   /** In a run's table; the detail has it too. */
   run?: number;
   period: string;
+  /** "final": the settlement of someone who left. */
+  run_kind?: RunKind;
   member: Member;
   currency: Currency;
   pay_type: PayType;

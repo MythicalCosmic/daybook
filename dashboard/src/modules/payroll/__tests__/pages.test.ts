@@ -492,3 +492,45 @@ describe("amounts", () => {
     expect(bonus.wrapper.html()).not.toContain("opacity-40");
   });
 });
+
+describe("final settlement", () => {
+  const final = (overrides: Partial<Run> = {}) =>
+    run({
+      kind: "final",
+      status: "draft",
+      member: { id: 30, name: "Nodira Xolmatova" },
+      last_day: "2026-10-14",
+      leave_days: "0.00",
+      after_regular: false,
+      actions: ["calculate", "cancel", "leave_payout", "finalize"],
+      totals: { currency: "UZS", people: 1, gross: "2200000.00", deductions: "500000.00", net: "1700000.00", paid: 0, published: 0 },
+      ...overrides,
+    });
+
+  it("changes the unused leave days of a draft and recalculates", async () => {
+    const calls = stub({ "POST payroll/runs/7/leave-payout/": () => json(final({ leave_days: "5.50" })) });
+    const SettlementCard = (await import("../components/SettlementCard.vue")).default;
+    const app = await testApp("/c/1/payroll/runs/7");
+    const { wrapper } = mountWithProviders(SettlementCard, { plugins: app.plugins, props: { run: final(), editable: true } });
+    await settle();
+    expect(wrapper.find("[data-testid='settlement-last-day']").text()).toContain("14");
+    expect(wrapper.find("[data-testid='settlement-save']").attributes("disabled")).toBeDefined();
+    await wrapper.find("[data-testid='settlement'] input").setValue("5,5");
+    await settle();
+    await wrapper.find("[data-testid='settlement-save']").trigger("click");
+    await settle();
+    expect(calls.find((call) => call.method === "POST")).toEqual({ method: "POST", path: "payroll/runs/7/leave-payout/", body: { leave_days: "5.50" } });
+  });
+
+  it("says a finalized one's days, and what a leaver owes", async () => {
+    stub({});
+    const SettlementCard = (await import("../components/SettlementCard.vue")).default;
+    const app = await testApp("/c/1/payroll/runs/7");
+    const owes = final({ status: "finalized", leave_days: "5.50", totals: { currency: "UZS", people: 1, net: "-2400000.00" } });
+    mountWithProviders(SettlementCard, { plugins: app.plugins, props: { run: owes } });
+    await settle();
+    expect(document.querySelector('[data-testid="settlement-days"]')?.textContent).toContain("5.5");
+    expect(document.querySelector('[data-testid="settlement-owes"]')?.textContent).toContain("2,400,000");
+    expect(document.querySelector('[data-testid="settlement-save"]')).toBeNull();
+  });
+});

@@ -164,6 +164,13 @@ def advance_left(advance: Advance) -> Decimal:
     return advance.amount - repaid
 
 
+def advance_left_of(advance: Advance) -> Decimal:
+    """`advance_left` from prefetched repayments (a final settlement takes all of it)."""
+    if advance.status != Advance.Status.PAID:
+        return ZERO
+    return max(ZERO, advance.amount - sum((r.amount for r in advance.repayments.all()), ZERO))
+
+
 def advance_cap(membership: Membership, *, on: date | None = None) -> dict:
     """How much of an advance the person may still ask for: `advance_cap_percent` of a
     month's pay, less what is asked, approved or paid and not yet paid back."""

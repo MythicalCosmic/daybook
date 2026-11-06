@@ -34,7 +34,8 @@ const person = computed({ get: () => (typeof model.value === "number" ? model.va
     <SelectBox v-else-if="field.kind === 'choice'" v-model="choice" :options="choices" />
     <DatePicker v-else-if="field.kind === 'date'" v-model="day" />
     <MoneyInput v-else-if="field.kind === 'money'" v-model="money" />
-    <NumberInput v-else-if="field.kind === 'number'" v-model="number" />
+    <!-- Counts may be fractions (5.5 unused leave days): to the hundredth. -->
+    <NumberInput v-else-if="field.kind === 'number'" v-model="number" :min="0" :decimals="2" />
     <PersonPicker v-else-if="field.kind === 'member'" v-model="person" :exclude="exclude" />
     <TextInput v-else v-model="text" />
   </FormField>

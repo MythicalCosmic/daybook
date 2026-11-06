@@ -97,6 +97,9 @@ export const payrollApi = {
   runAction: (cid: number, id: number, action: "calculate" | "finalize" | "reopen" | "cancel" | "publish", body: Record<string, unknown> = {}) =>
     http.post<Run>(path(cid, `runs/${id}/${action}/`), body),
   markPaid: (cid: number, id: number, input: MarkPaidInput) => http.post<Run>(path(cid, `runs/${id}/mark-paid/`), input, { toast: false }),
+  /** A draft final settlement's unused leave days ("5.5"); the run comes back calculated again. */
+  setLeavePayout: (cid: number, id: number, leaveDays: string) =>
+    http.post<Run>(path(cid, `runs/${id}/leave-payout/`), { leave_days: leaveDays }, { toast: false }),
   payslips: (cid: number, runId: number, signal?: AbortSignal) => http.get<Page<Payslip> | Payslip[]>(path(cid, `runs/${runId}/payslips/`), { page_size: 200 }, { signal }),
   /**
    * One person's payslips of the last `months` runs. There is no list by person on the server

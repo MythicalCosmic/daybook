@@ -8,7 +8,9 @@ automatically). Last month's payroll is finalized, published and paid (a few peo
 tapped "I received it"); this month's is a draft. Bonuses and fines: an approved bonus and fine
 last month, and this month an approved bonus, a proposed fine and a disputed one. Jasur's
 advance is repaid over two months, Alisher's card advance (from the finance demo) comes off this
-month's pay, and Kamola's request waits for a decision.
+month's pay, and Kamola's request waits for a decision. Nodira resigned: her final payslip pays
+her days through the last one and 9 unused leave days, and takes her advance back in full; it is
+finalized and paid when she left last month (a draft while her month still runs).
 
 The finance demo books each month's salaries straight into the ledger; once payroll books a
 month, the demo voids those rows for it, so the books carry each salary once.
@@ -105,6 +107,7 @@ class Story:
         self.newcomers()
         self.raise_()
         self.advances()
+        self.leaver()
         self.last_month_adjustments()
         self.last_month_run()
         self.this_month_adjustments()
@@ -221,6 +224,58 @@ class Story:
             with moment(self.now - timedelta(hours=3)):
                 services.request_advance(
                     kamola, by=kamola, amount=D("500000"), reason="Ijara to‘lovi uchun"
+                )
+
+    def leaver(self) -> None:
+        """Nodira's final settlement (§3.17): an advance paid ten days before she left comes off
+        in full, 9 unused leave days are paid out."""
+        from apps.members.models import Membership
+
+        nodira = self.member("nodira")
+        if nodira is None or nodira.status != Membership.Status.LEFT:
+            return
+        left_on = self.plan.day(-demo_plan.LEFT_DAYS_AGO)
+        account = self.payout_account(D("800000"))
+        if account is not None:
+            given = left_on - timedelta(days=10)
+            nodira.status = Membership.Status.APPROVED  # as she was then (not saved)
+            try:
+                with moment(self.at(given, 10)):
+                    row = services.create_advance(
+                        nodira,
+                        by=self.owner,
+                        amount=D("800000"),
+                        installments=2,
+                        first_period=periods.first_day(given),
+                        reason="Oilaviy tadbir uchun",
+                    )
+                with moment(self.at(given, 11)):
+                    services.pay_advance(row, by=self.owner, account=account, method="cash")
+            except DomainError as exc:
+                logger.warning("Demo advance of the leaver not given: %s", exc)
+            finally:
+                nodira.status = Membership.Status.LEFT
+        try:
+            with moment(self.at(left_on + timedelta(days=1), 10)):
+                run = services.create_final_run(nodira, by=self.owner, leave_days=D("9"))
+        except DomainError as exc:
+            logger.warning("Demo final payslip not prepared: %s", exc)
+            return
+        if run.period != self.last_month or not run.payslips.exists():
+            return
+        try:
+            with transaction.atomic(), moment(self.at(left_on + timedelta(days=1), 15)):
+                run = services.finalize_run(run, by=self.owner)
+                services.publish(run, by=self.owner)
+        except DomainError as exc:
+            logger.warning("Demo final payslip stays a draft: %s", exc)
+            return
+        payslip = run.payslips.get()
+        account = self.payout_account(max(payslip.net, D(0)))
+        if account is not None:
+            with moment(self.at(left_on + timedelta(days=1), 17)):
+                services.mark_paid(
+                    run, by=self.owner, payslip_ids=[payslip.pk], account=account, method="cash"
                 )
 
     def adopt_card_advance(self) -> None:

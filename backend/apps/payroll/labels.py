@@ -41,6 +41,17 @@ def _days(count) -> str:
     return ngettext("%(count)s day", "%(count)s days", count) % {"count": count}
 
 
+def _leave_days(value) -> str:
+    """5.50 → "5,5 days" (a whole day count takes its plural form, a fraction the "2" form:
+    "5,5 дня")."""
+    try:
+        days = Decimal(str(value or "0"))
+    except Exception:
+        days = Decimal(0)
+    count = int(days) if days == days.to_integral_value() else 2
+    return ngettext("%(days)s day", "%(days)s days", count) % {"days": _number(days)}
+
+
 def _leave_kind(kind: str) -> str:
     return {
         "annual": _("Annual leave"),
@@ -127,7 +138,11 @@ def line_label(line: PayslipLine) -> str:
             }
         return text
     if code == "advance":
+        if params.get("in_full"):
+            return _("Advance deducted in full")
         return _("Advance repaid")
+    if code == "leave_payout":
+        return _("Unused leave paid out: %(days)s") % {"days": _leave_days(params.get("days"))}
     if code == "reimbursement":
         if params.get("what"):
             return _("Expenses paid back: %(what)s") % {"what": params["what"]}
@@ -188,4 +203,45 @@ def warning_text(warning: dict) -> str:
         return _("The pay of %(name)s is below zero: lower a deduction.") % {"name": name}
     if code == "no_scheduled_days":
         return _("%(name)s has no working days this month: paid by calendar days.") % {"name": name}
+    if code == "owes":
+        return _(
+            "%(name)s owes %(amount)s after the final settlement: it stays as a debt in Finance."
+        ) % {"name": name, "amount": _warning_money(warning)}
+    if code == "leave_no_basis":
+        return _(
+            "%(name)s has no pay history or monthly pay to work out a leave day: add the unused "
+            "leave as a line by hand."
+        ) % {"name": name}
+    if code == "leave_current_pay":
+        return _(
+            "%(name)s has less than a full month of pay history: a leave day is their monthly "
+            "pay over the month's days."
+        ) % {"name": name}
+    if code == "after_regular":
+        return _(
+            "The %(month)s payroll had paid the month of %(name)s already: this payslip pays the "
+            "unused leave and what is still open."
+        ) % {"name": name, "month": _warning_month(warning)}
+    if code == "paid_after_last_day":
+        return _(
+            "The %(month)s payroll paid %(name)s %(amount)s for days after their last day. Add a "
+            "line by hand if it should be paid back."
+        ) % {"name": name, "month": _warning_month(warning), "amount": _warning_money(warning)}
     return code or ""
+
+
+def _warning_money(warning: dict) -> str:
+    try:
+        amount = Decimal(str(warning.get("amount") or "0"))
+    except Exception:
+        amount = Decimal(0)
+    return queries.money_text(amount, warning.get("currency") or "UZS")
+
+
+def _warning_month(warning: dict) -> str:
+    from datetime import date
+
+    try:
+        return queries.month_label(date.fromisoformat(warning.get("month") or ""))
+    except ValueError:
+        return ""

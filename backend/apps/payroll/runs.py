@@ -289,6 +289,8 @@ def _store(run: PayrollRun, result: calculator.Result, payslip: Payslip | None, 
 
 
 def _calculate(run: PayrollRun, *, by, member_ids=None) -> PayrollRun:
+    if run.is_final:
+        return _calculate_final(run, by=by)
     company = run.company
     if member_ids is None:
         rules.evaluate_monthly(company, run.period, by=by)
@@ -296,10 +298,11 @@ def _calculate(run: PayrollRun, *, by, member_ids=None) -> PayrollRun:
     inputs, people = calculator.gather(
         company, run.period, usd_rate=run.usd_rate, member_ids=member_ids
     )
-    # People settled by a final run of that month are paid there, not here.
+    # People settled by a final run of that month are paid there, not here (unless this run
+    # had paid their month already when they left: then the final run pays only the rest).
     finals = set(
         PayrollRun.objects.for_company(company)
-        .filter(kind=PayrollRun.Kind.FINAL, period=run.period)
+        .filter(kind=PayrollRun.Kind.FINAL, period=run.period, after_regular=False)
         .exclude(status=Status.CANCELLED)
         .values_list("membership_id", flat=True)
     )
@@ -331,6 +334,41 @@ def _calculate(run: PayrollRun, *, by, member_ids=None) -> PayrollRun:
     }
     if member_ids is None:
         run.warnings = _warnings(run, inputs, people, results, members)
+    run.calculated_at = timezone.now()
+    run.totals = _totals(run)
+    run.save(update_fields=["usd_rate", "warnings", "calculated_at", "totals", "updated_at"])
+    return run
+
+
+def _calculate_final(run: PayrollRun, *, by) -> PayrollRun:
+    """A final settlement's one payslip (`apps.payroll.settlement`): the month through the last
+    day, the unused leave, every advance left; monthly rules are not evaluated for it."""
+    from apps.payroll import settlement
+
+    company = run.company
+    member = run.membership
+    run.usd_rate = _usd_rate(run)
+    terms = settlement.terms_for(run)
+    inputs, people = calculator.gather(
+        company,
+        run.period,
+        usd_rate=run.usd_rate,
+        member_ids=[member.pk],
+        last_day=run.last_day,
+        advances_in_full=True,
+        unpaid_only=run.after_regular,
+    )
+    payslip = run.payslips.filter(membership=member).first()
+    result = None
+    if people:
+        manual = list(payslip.lines.filter(kind=Kind.MANUAL)) if payslip is not None else []
+        result = calculator.compute(people[0], inputs, manual_lines=manual, settlement=terms)
+    if result is None:
+        if payslip is not None:
+            payslip.delete()
+    else:
+        _store(run, result, payslip, by)
+    run.warnings = settlement.warnings(run, inputs, people, result, terms)
     run.calculated_at = timezone.now()
     run.totals = _totals(run)
     run.save(update_fields=["usd_rate", "warnings", "calculated_at", "totals", "updated_at"])
@@ -374,13 +412,28 @@ def finalize_run(run: PayrollRun, *, by: Membership | None) -> PayrollRun:
     payslips = list(run.payslips.select_related("membership__home_branch", "run"))
     if not payslips:
         raise DomainError(_("There is nobody to pay in this payroll."))
-    below = [p for p in payslips if p.net < 0]
-    if below:
-        raise DomainError(
-            _("The pay of %(names)s is below zero: lower a deduction first.")
-            % {"names": ", ".join(str(p.membership) for p in below)}
-        )
+    if run.is_final:
+        # A final payslip may end below zero because every advance left is deducted: the
+        # rest stays owed on the advance. Its pay itself never goes below zero.
+        below = [p for p in payslips if finance_bridge.accrued_amount(p) < 0]
+        if below:
+            raise DomainError(
+                _(
+                    "The deductions on the final payslip of %(names)s are more than the pay: "
+                    "lower a line added by hand."
+                )
+                % {"names": ", ".join(str(p.membership) for p in below)}
+            )
+    else:
+        below = [p for p in payslips if p.net < 0]
+        if below:
+            raise DomainError(
+                _("The pay of %(names)s is below zero: lower a deduction first.")
+                % {"names": ", ".join(str(p.membership) for p in below)}
+            )
     start, end = periods.bounds(run.period)
+    if run.is_final and run.last_day is not None:
+        end = run.last_day
     from apps.payroll.services import lock_pay
 
     for payslip in payslips:
@@ -389,12 +442,12 @@ def finalize_run(run: PayrollRun, *, by: Membership | None) -> PayrollRun:
         Adjustment.objects.filter(
             pk__in=[line.adjustment_id for line in lines if line.adjustment_id]
         ).update(payslip=payslip)
-        for line in lines:
-            if line.kind == Kind.ADVANCE and line.advance_id:
+        for line, taken in finance_bridge.advance_offsets(payslip, lines):
+            if taken > 0:
                 AdvanceRepayment.objects.create(
                     advance_id=line.advance_id,
-                    amount=-line.amount,
-                    paid_on=end,
+                    amount=taken,
+                    paid_on=finance_bridge.booked_on(run),
                     payslip_line=line,
                     created_by=by.user if by is not None else None,
                 )
@@ -440,7 +493,8 @@ def reopen_run(run: PayrollRun, *, by: Membership | None, reason: str = "") -> P
         period__gt=run.period,
         status__in=(Status.FINALIZED, Status.PAID),
     )
-    if later.exists():
+    # A final settlement is nobody else's month: a later month doesn't hold it.
+    if not run.is_final and later.exists():
         raise DomainError(_("A later month is finalized: reopen that one first."))
     finance_bridge.unbook_run(run, by=by)
     payslips = list(run.payslips.all())

@@ -14,7 +14,7 @@ import IconButton from "@/components/IconButton.vue";
 import MoneyText from "@/components/MoneyText.vue";
 import { useFormat } from "@/lib/useFormat";
 
-import { isManualLine, lineGroups, lineHow, quantityText } from "../lib";
+import { isManualLine, lineGroups, lineHow, lineNote, quantityText } from "../lib";
 import type { PayslipLine } from "../types";
 import PayAmount from "./PayAmount.vue";
 
@@ -51,6 +51,11 @@ function how(line: PayslipLine): string | null {
 }
 
 const kindLabel = (line: PayslipLine) => (te(`payroll.lineKind.${line.kind}`) ? t(`payroll.lineKind.${line.kind}`) : null);
+/** Where a final payslip's leave payout and in-full advance come from. */
+function note(line: PayslipLine): string | null {
+  const found = lineNote(line);
+  return found ? t(found.key, found.values) : null;
+}
 </script>
 
 <template>
@@ -65,6 +70,7 @@ const kindLabel = (line: PayslipLine) => (te(`payroll.lineKind.${line.kind}`) ? 
           <div class="min-w-0 flex-1">
             <p class="text-sm font-medium leading-5 text-fg">{{ line.label || kindLabel(line) }}</p>
             <p v-if="how(line)" class="mt-0.5 text-xs leading-4 tabular-nums text-muted">{{ how(line) }}</p>
+            <p v-if="note(line)" class="mt-0.5 text-xs leading-4 text-muted" data-testid="line-note">{{ note(line) }}</p>
           </div>
           <span class="shrink-0 pt-px text-sm font-semibold tabular-nums"><MoneyText :value="line.amount" :currency="currency" colored /></span>
           <IconButton
