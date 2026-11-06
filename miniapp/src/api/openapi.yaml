@@ -861,6 +861,143 @@ paths:
               schema:
                 $ref: '#/components/schemas/AgendaAttendee'
           description: ''
+  /api/v1/companies/{company_id}/finance/categories/:
+    get:
+      operationId: v1_companies_finance_categories_list
+      description: The expense categories a person may claim (what the system books
+        itself is left out).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClaimCategory'
+          description: ''
+  /api/v1/companies/{company_id}/finance/claims/:
+    get:
+      operationId: v1_companies_finance_claims_list
+      description: My expense claims, newest first; POST submits one (multipart, with
+        receipts).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: status
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Claim'
+          description: ''
+    post:
+      operationId: v1_companies_finance_claims_create
+      description: My expense claims, newest first; POST submits one (multipart, with
+        receipts).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClaimCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ClaimCreateRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Claim'
+          description: ''
+  /api/v1/companies/{company_id}/finance/claims/{id}/cancel/:
+    post:
+      operationId: v1_companies_finance_claims_cancel_create
+      description: Take back my claim while nobody has decided it.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Claim'
+          description: ''
+  /api/v1/companies/{company_id}/finance/wallet/:
+    get:
+      operationId: v1_companies_finance_wallet_retrieve
+      description: Company cash I hold and what the company owes me back.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wallet'
+          description: ''
   /api/v1/companies/{company_id}/holidays/:
     get:
       operationId: v1_companies_holidays_list
@@ -3687,6 +3824,49 @@ paths:
               schema:
                 $ref: '#/components/schemas/Task'
           description: ''
+  /api/v1/companies/{company_id}/tasks/{id}/recheck/:
+    post:
+      operationId: v1_companies_tasks_recheck_create
+      description: |-
+        A second measurement of a finished readings task, within two hours (after the
+        vaccines were moved): back in range, the alert about it says so.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecheckRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RecheckRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RecheckRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+          description: ''
   /api/v1/companies/{company_id}/tasks/{id}/reopen/:
     post:
       operationId: v1_companies_tasks_reopen_create
@@ -4506,6 +4686,7 @@ components:
       - confirmed
       - returned
       - commented
+      - covered
       type: string
       description: |-
         * `assigned` - Gave you a task
@@ -4514,6 +4695,7 @@ components:
         * `confirmed` - Checked your task
         * `returned` - Sent a task back
         * `commented` - Commented on a task
+        * `covered` - Did a shared routine for everyone
     Adjustment:
       type: object
       description: Drops `amount_fields` from the output unless the context's `show_amounts`
@@ -5590,6 +5772,176 @@ components:
           type: boolean
       required:
       - is_done
+    Claim:
+      type: object
+      description: An expense claim, with what the viewer may do with it (`context["membership"]`).
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        member:
+          allOf:
+          - $ref: '#/components/schemas/PlanningPersonRef'
+          readOnly: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        currency:
+          $ref: '#/components/schemas/CurrencyEnum'
+        category:
+          allOf:
+          - $ref: '#/components/schemas/PlanningCategoryRef'
+          readOnly: true
+        spent_on:
+          type: string
+          format: date
+        description:
+          type: string
+          maxLength: 300
+        paid_from:
+          $ref: '#/components/schemas/FinanceClaimPaidFromEnum'
+        status:
+          type: string
+          readOnly: true
+        status_label:
+          type: string
+          readOnly: true
+        branch:
+          allOf:
+          - $ref: '#/components/schemas/FinanceRef'
+          nullable: true
+          readOnly: true
+        receipts:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClaimReceipt'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        decided_by:
+          allOf:
+          - $ref: '#/components/schemas/PlanningPersonRef'
+          nullable: true
+          readOnly: true
+        decided_at:
+          type: string
+          format: date-time
+          nullable: true
+        reject_reason:
+          type: string
+          maxLength: 300
+        reimburse_via:
+          type: string
+          nullable: true
+          readOnly: true
+        transaction_id:
+          type: integer
+          readOnly: true
+          nullable: true
+        debt_id:
+          type: integer
+          readOnly: true
+          nullable: true
+        can_decide:
+          type: boolean
+          readOnly: true
+        can_pay:
+          type: boolean
+          readOnly: true
+        can_cancel:
+          type: boolean
+          readOnly: true
+      required:
+      - amount
+      - branch
+      - can_cancel
+      - can_decide
+      - can_pay
+      - category
+      - created_at
+      - debt_id
+      - decided_by
+      - id
+      - member
+      - paid_from
+      - receipts
+      - reimburse_via
+      - spent_on
+      - status
+      - status_label
+      - transaction_id
+    ClaimCategory:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        parent_id:
+          type: integer
+          nullable: true
+        icon:
+          type: string
+        color:
+          type: string
+      required:
+      - color
+      - icon
+      - id
+      - name
+      - parent_id
+    ClaimCreateRequest:
+      type: object
+      properties:
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        category:
+          type: integer
+        spent_on:
+          type: string
+          format: date
+        description:
+          type: string
+          maxLength: 300
+        paid_from:
+          $ref: '#/components/schemas/FinanceClaimPaidFromEnum'
+        receipts:
+          type: array
+          items:
+            type: string
+            format: binary
+          maxItems: 5
+      required:
+      - amount
+      - category
+      - paid_from
+      - spent_on
+    ClaimReceipt:
+      type: object
+      properties:
+        id:
+          type: integer
+        url:
+          type: string
+        thumb_url:
+          type: string
+          nullable: true
+        content_type:
+          type: string
+        is_image:
+          type: boolean
+      required:
+      - content_type
+      - id
+      - is_image
+      - thumb_url
+      - url
     CloseRequest:
       type: object
       properties:
@@ -5707,6 +6059,7 @@ components:
       - payroll
       - ai
       - recognition
+      - assets
       type: string
       description: |-
         * `finance` - Finance
@@ -5717,6 +6070,7 @@ components:
         * `payroll` - Payroll
         * `ai` - AI assistant
         * `recognition` - Recognition
+        * `assets` - Assets and equipment
     Company:
       type: object
       properties:
@@ -5769,6 +6123,18 @@ components:
           type: string
           format: binary
           nullable: true
+        readings:
+          type: object
+          additionalProperties:
+            type: string
+            maxLength: 20
+          description: 'For a readings task: a value per key of its readings ({"t":
+            "5,2"}).'
+        reading_note:
+          type: string
+          default: ''
+          description: 'What was done about a value out of range: needed then.'
+          maxLength: 300
     ConfirmManyRequest:
       type: object
       properties:
@@ -6001,6 +6367,40 @@ components:
           type: string
       required:
       - id
+      - name
+    FinanceClaimPaidFromEnum:
+      enum:
+      - own_money
+      - held_cash
+      type: string
+      description: |-
+        * `own_money` - My own money
+        * `held_cash` - Company cash I hold
+    FinanceRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
+    HeldAccount:
+      type: object
+      properties:
+        account_id:
+          type: integer
+        name:
+          type: string
+        balance:
+          type: string
+        currency:
+          type: string
+      required:
+      - account_id
+      - balance
+      - currency
       - name
     Holiday:
       type: object
@@ -9141,6 +9541,44 @@ components:
       - photo_url
       - position
       - status
+    PlanningCategoryRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        kind:
+          type: string
+        color:
+          type: string
+        parent_id:
+          type: integer
+          nullable: true
+        parent_name:
+          type: string
+          nullable: true
+      required:
+      - color
+      - id
+      - kind
+      - name
+      - parent_id
+      - parent_name
+    PlanningPersonRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        photo_url:
+          type: string
+          nullable: true
+      required:
+      - id
+      - name
+      - photo_url
     Position:
       type: object
       properties:
@@ -9866,12 +10304,14 @@ components:
       - photo
       - text
       - any
+      - readings
       type: string
       description: |-
         * `none` - Not needed
         * `photo` - Photo
         * `text` - Text report
         * `any` - Photo or text report
+        * `readings` - Readings
     ReasonCodeEnum:
       enum:
       - no_stock
@@ -9886,6 +10326,21 @@ components:
         * `broken` - Equipment broken
         * `not_mine` - Not my task
         * `other` - Another reason
+    RecheckRequest:
+      type: object
+      properties:
+        readings:
+          type: object
+          additionalProperties:
+            type: string
+            maxLength: 20
+          description: The new value of each key measured again.
+        note:
+          type: string
+          default: ''
+          maxLength: 300
+      required:
+      - readings
     RecordOut:
       type: object
       properties:
@@ -10671,6 +11126,21 @@ components:
           - $ref: '#/components/schemas/MemberBrief'
           nullable: true
           readOnly: true
+        readings:
+          type: array
+          items:
+            $ref: '#/components/schemas/TasksReadingSpec'
+          readOnly: true
+        readings_taken:
+          type: array
+          items:
+            $ref: '#/components/schemas/TasksReadingTaken'
+          readOnly: true
+        recheck_until:
+          type: string
+          format: date-time
+          nullable: true
+          readOnly: true
         created_at:
           type: string
           format: date-time
@@ -10701,6 +11171,9 @@ components:
       - proof_photo
       - proof_text
       - proof_thumb
+      - readings
+      - readings_taken
+      - recheck_until
       - reminder
       - repeat_weekdays
       - returned_by
@@ -11003,6 +11476,93 @@ components:
       required:
       - due_time
       - title
+    TasksReadingPerson:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
+    TasksReadingSpec:
+      type: object
+      description: One number a readings task asks for, with its allowed range (PLAN-OWNER
+        §14.10).
+      properties:
+        key:
+          type: string
+          description: One letter, a to z.
+        label:
+          type: string
+        unit:
+          type: string
+        min:
+          type: string
+          nullable: true
+          description: 'Decimal string ("2.0"); null: none.'
+        max:
+          type: string
+          nullable: true
+          description: 'Decimal string ("8.0"); null: none.'
+        critical:
+          type: boolean
+      required:
+      - critical
+      - key
+      - label
+      - max
+      - min
+      - unit
+    TasksReadingTaken:
+      type: object
+      description: A value typed in for a readings task, with the range it was held
+        to.
+      properties:
+        id:
+          type: integer
+        key:
+          type: string
+        label:
+          type: string
+        unit:
+          type: string
+        value:
+          type: string
+          description: Decimal string ("5.2").
+        min:
+          type: string
+          nullable: true
+        max:
+          type: string
+          nullable: true
+        in_range:
+          type: boolean
+        note:
+          type: string
+        is_recheck:
+          type: boolean
+        recorded_at:
+          type: string
+          format: date-time
+        recorded_by:
+          allOf:
+          - $ref: '#/components/schemas/TasksReadingPerson'
+          nullable: true
+      required:
+      - id
+      - in_range
+      - is_recheck
+      - key
+      - label
+      - max
+      - min
+      - note
+      - recorded_at
+      - recorded_by
+      - unit
+      - value
     TeamMember:
       type: object
       properties:
@@ -11196,6 +11756,32 @@ components:
           type: integer
       required:
       - updated
+    Wallet:
+      type: object
+      properties:
+        currency:
+          type: string
+        held:
+          type: array
+          items:
+            $ref: '#/components/schemas/HeldAccount'
+        held_total:
+          type: string
+        owed_to_me:
+          type: string
+        approval_threshold:
+          type: string
+          nullable: true
+        receipt_required_over:
+          type: string
+          nullable: true
+      required:
+      - approval_threshold
+      - currency
+      - held
+      - held_total
+      - owed_to_me
+      - receipt_required_over
     WeekdayEnum:
       enum:
       - 0

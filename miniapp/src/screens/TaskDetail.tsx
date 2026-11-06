@@ -869,7 +869,8 @@ function ActionBar({ task, isMine }: { task: Task; isMine: boolean }) {
   let secondary: BottomAction | undefined;
   if (task.actions.includes("confirm")) {
     primary = { text: t("detail.confirm"), icon: Check, onClick: confirm };
-  } else if (task.actions.includes("complete")) {
+  } else if (task.actions.includes("complete") && (task.proof as string) !== "readings") {
+    // A readings task is completed by its readings block ("Save and complete"), not from here.
     primary = {
       text: task.status === "returned" ? t("detail.sendAgain") : t("detail.markDone"),
       icon: Check,

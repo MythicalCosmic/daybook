@@ -528,6 +528,162 @@ paths:
               schema:
                 $ref: '#/components/schemas/AITurnStarted'
           description: ''
+  /api/v1/owner/companies/{company_id}/ai/custom-agents/:
+    get:
+      operationId: companies_ai_custom_agents_list
+      description: |-
+        GET: the company's own agents as the agents list shows them. POST: a new one
+        (ai.configure), switched on; it reads with the creator's rights.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AIAgent'
+          description: ''
+    post:
+      operationId: companies_ai_custom_agents_create
+      description: |-
+        GET: the company's own agents as the agents list shows them. POST: a new one
+        (ai.configure), switched on; it reads with the creator's rights.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AICustomAgentWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AICustomAgentWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AICustomAgentWriteRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIAgent'
+          description: ''
+  /api/v1/owner/companies/{company_id}/ai/custom-agents/{agent_id}/:
+    patch:
+      operationId: companies_ai_custom_agents_partial_update
+      parameters:
+      - in: path
+        name: agent_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAICustomAgentWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAICustomAgentWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAICustomAgentWriteRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIAgent'
+          description: ''
+    delete:
+      operationId: companies_ai_custom_agents_destroy
+      parameters:
+      - in: path
+        name: agent_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/ai/custom-agents/options/:
+    get:
+      operationId: companies_ai_custom_agents_options_retrieve
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AICustomOptions'
+          description: ''
+  /api/v1/owner/companies/{company_id}/ai/custom-agents/templates/:
+    get:
+      operationId: companies_ai_custom_agents_templates_list
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AICustomTemplate'
+          description: ''
   /api/v1/owner/companies/{company_id}/ai/settings/:
     get:
       operationId: companies_ai_settings_retrieve
@@ -1274,6 +1430,1328 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AnnouncementsStats'
+          description: ''
+  /api/v1/owner/companies/{company_id}/assets/categories/:
+    get:
+      operationId: companies_assets_categories_list
+      description: 403 while the assets module is switched off for the company.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAssetsCategoryList'
+          description: ''
+    post:
+      operationId: companies_assets_categories_create
+      description: 403 while the assets module is switched off for the company.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssetsCategoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AssetsCategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AssetsCategoryRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetsCategory'
+          description: ''
+  /api/v1/owner/companies/{company_id}/assets/categories/{id}/:
+    patch:
+      operationId: companies_assets_categories_partial_update
+      description: 403 while the assets module is switched off for the company.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this asset category.
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAssetsCategoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAssetsCategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAssetsCategoryRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetsCategory'
+          description: ''
+    delete:
+      operationId: companies_assets_categories_destroy
+      description: 403 while the assets module is switched off for the company.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this asset category.
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/assets/counts/:
+    get:
+      operationId: companies_assets_counts_list
+      description: 403 while the assets module is switched off for the company.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AssetsCount'
+          description: ''
+    post:
+      operationId: companies_assets_counts_create
+      description: 403 while the assets module is switched off for the company.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssetsCountStartRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AssetsCountStartRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AssetsCountStartRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetsCount'
+          description: ''
+  /api/v1/owner/companies/{company_id}/assets/counts/{count_id}/:
+    get:
+      operationId: companies_assets_counts_retrieve
+      description: 403 while the assets module is switched off for the company.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: count_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetsCount'
+          description: ''
+  /api/v1/owner/companies/{company_id}/assets/counts/{count_id}/close/:
+    post:
+      operationId: companies_assets_counts_close_create
+      description: 403 while the assets module is switched off for the company.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: count_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetsCount'
+          description: ''
+  /api/v1/owner/companies/{company_id}/assets/counts/{count_id}/lines/{line_id}/:
+    post:
+      operationId: companies_assets_counts_lines_create
+      description: 403 while the assets module is switched off for the company.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: count_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: line_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssetsCountMarkRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AssetsCountMarkRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AssetsCountMarkRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetsCount'
+          description: ''
+  /api/v1/owner/companies/{company_id}/assets/custody/:
+    get:
+      operationId: companies_assets_custody_list
+      description: 403 while the assets module is switched off for the company.
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: One branch (in scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AssetsCustody'
+          description: ''
+  /api/v1/owner/companies/{company_id}/assets/depreciation/:
+    get:
+      operationId: companies_assets_depreciation_retrieve
+      description: 403 while the assets module is switched off for the company.
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: One branch (in scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: group
+        schema:
+          type: string
+          enum:
+          - branch
+          - category
+      - in: query
+        name: year
+        schema:
+          type: integer
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetsDepreciationReport'
+          description: ''
+  /api/v1/owner/companies/{company_id}/assets/files/{file_id}/:
+    delete:
+      operationId: companies_assets_files_destroy
+      description: 403 while the assets module is switched off for the company.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: file_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/assets/items/:
+    get:
+      operationId: companies_assets_items_list
+      description: 403 while the assets module is switched off for the company.
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: One branch (in scope).
+      - in: query
+        name: category
+        schema:
+          type: integer
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: custodian
+        schema:
+          type: integer
+      - in: query
+        name: disposed
+        schema:
+          type: boolean
+        description: Include disposed assets.
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: q
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAssetsRowList'
+          description: ''
+    post:
+      operationId: companies_assets_items_create
+      description: 403 while the assets module is switched off for the company.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssetsWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AssetsWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AssetsWriteRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetsDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/assets/items/{id}/:
+    get:
+      operationId: companies_assets_items_retrieve
+      description: 403 while the assets module is switched off for the company.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this asset.
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetsDetail'
+          description: ''
+    patch:
+      operationId: companies_assets_items_partial_update
+      description: 403 while the assets module is switched off for the company.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this asset.
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAssetsWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAssetsWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAssetsWriteRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetsDetail'
+          description: ''
+    delete:
+      operationId: companies_assets_items_destroy
+      description: 403 while the assets module is switched off for the company.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this asset.
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/assets/items/{id}/addition/:
+    post:
+      operationId: companies_assets_items_addition_create
+      description: 403 while the assets module is switched off for the company.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this asset.
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssetsAdditionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AssetsAdditionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AssetsAdditionRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetsDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/assets/items/{id}/dispose/:
+    post:
+      operationId: companies_assets_items_dispose_create
+      description: 403 while the assets module is switched off for the company.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this asset.
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssetsDisposeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AssetsDisposeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AssetsDisposeRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetsDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/assets/items/{id}/estimate/:
+    post:
+      operationId: companies_assets_items_estimate_create
+      description: 403 while the assets module is switched off for the company.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this asset.
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssetsEstimateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AssetsEstimateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AssetsEstimateRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetsDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/assets/items/{id}/files/:
+    post:
+      operationId: companies_assets_items_files_create
+      description: 403 while the assets module is switched off for the company.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this asset.
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssetsFileUploadRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AssetsFileUploadRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AssetsFileUploadRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetsDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/assets/items/{id}/in-service/:
+    post:
+      operationId: companies_assets_items_in_service_create
+      description: 403 while the assets module is switched off for the company.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this asset.
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssetsDayRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AssetsDayRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AssetsDayRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetsDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/assets/items/{id}/issue/:
+    post:
+      operationId: companies_assets_items_issue_create
+      description: 403 while the assets module is switched off for the company.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this asset.
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssetsIssueRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AssetsIssueRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AssetsIssueRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetsDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/assets/items/{id}/move/:
+    post:
+      operationId: companies_assets_items_move_create
+      description: 403 while the assets module is switched off for the company.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this asset.
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssetsMoveRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AssetsMoveRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AssetsMoveRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetsDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/assets/items/{id}/repair/:
+    post:
+      operationId: companies_assets_items_repair_create
+      description: 403 while the assets module is switched off for the company.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this asset.
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssetsRepairRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AssetsRepairRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AssetsRepairRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetsDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/assets/items/{id}/resume/:
+    post:
+      operationId: companies_assets_items_resume_create
+      description: 403 while the assets module is switched off for the company.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this asset.
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssetsDayRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AssetsDayRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AssetsDayRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetsDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/assets/items/{id}/return/:
+    post:
+      operationId: companies_assets_items_return_create
+      description: 403 while the assets module is switched off for the company.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this asset.
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssetsReturnRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AssetsReturnRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AssetsReturnRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetsDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/assets/items/{id}/service/:
+    post:
+      operationId: companies_assets_items_service_create
+      description: 403 while the assets module is switched off for the company.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this asset.
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssetsServiceRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AssetsServiceRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AssetsServiceRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetsDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/assets/items/{id}/status/:
+    post:
+      operationId: companies_assets_items_status_create
+      description: 403 while the assets module is switched off for the company.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this asset.
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssetsStatusRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AssetsStatusRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AssetsStatusRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetsDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/assets/items/{id}/suspend/:
+    post:
+      operationId: companies_assets_items_suspend_create
+      description: 403 while the assets module is switched off for the company.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this asset.
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssetsDayRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AssetsDayRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AssetsDayRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetsDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/assets/items/{id}/usage/:
+    post:
+      operationId: companies_assets_items_usage_create
+      description: 403 while the assets module is switched off for the company.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this asset.
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssetsUsageRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AssetsUsageRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AssetsUsageRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetsDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/assets/items/{id}/verification/:
+    post:
+      operationId: companies_assets_items_verification_create
+      description: 403 while the assets module is switched off for the company.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this asset.
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssetsVerificationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AssetsVerificationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AssetsVerificationRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetsDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/assets/items/{id}/write-down/:
+    post:
+      operationId: companies_assets_items_write_down_create
+      description: 403 while the assets module is switched off for the company.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this asset.
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssetsAmountRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AssetsAmountRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AssetsAmountRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetsDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/assets/movement/:
+    get:
+      operationId: companies_assets_movement_retrieve
+      description: 403 while the assets module is switched off for the company.
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: One branch (in scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: from
+        schema:
+          type: string
+        description: YYYY-MM-DD
+      - in: query
+        name: to
+        schema:
+          type: string
+        description: YYYY-MM-DD
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetsMovement'
+          description: ''
+  /api/v1/owner/companies/{company_id}/assets/planning/:
+    get:
+      operationId: companies_assets_planning_retrieve
+      description: 403 while the assets module is switched off for the company.
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: One branch (in scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetsPlanning'
+          description: ''
+  /api/v1/owner/companies/{company_id}/assets/purchases/:
+    get:
+      operationId: companies_assets_purchases_list
+      description: 403 while the assets module is switched off for the company.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AssetsPurchase'
+          description: ''
+  /api/v1/owner/companies/{company_id}/assets/settings/:
+    get:
+      operationId: companies_assets_settings_retrieve
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetsSettings'
+          description: ''
+    patch:
+      operationId: companies_assets_settings_partial_update
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAssetsSettingsRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAssetsSettingsRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAssetsSettingsRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetsSettings'
+          description: ''
+  /api/v1/owner/companies/{company_id}/assets/summary/:
+    get:
+      operationId: companies_assets_summary_retrieve
+      description: 403 while the assets module is switched off for the company.
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: One branch (in scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetsSummary'
           description: ''
   /api/v1/owner/companies/{company_id}/attendance/board/:
     get:
@@ -3930,6 +5408,159 @@ paths:
               schema:
                 $ref: '#/components/schemas/FinanceStatement'
           description: ''
+  /api/v1/owner/companies/{company_id}/finance/budgets/:
+    get:
+      operationId: companies_finance_budgets_retrieve
+      description: Budgets against actual spending for a month; PUT sets or removes
+        them.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: month
+        schema:
+          type: string
+        description: YYYY-MM, default this month
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BudgetMonth'
+          description: ''
+    put:
+      operationId: companies_finance_budgets_update
+      description: Budgets against actual spending for a month; PUT sets or removes
+        them.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BudgetPutRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BudgetPutRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BudgetPutRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BudgetMonth'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/budgets/copy/:
+    get:
+      operationId: companies_finance_budgets_copy_retrieve
+      description: Copy the previous month's budgets into a month (categories without
+        one only).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: month
+        schema:
+          type: string
+        description: YYYY-MM, default this month
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BudgetMonth'
+          description: ''
+    post:
+      operationId: companies_finance_budgets_copy_create
+      description: Copy the previous month's budgets into a month (categories without
+        one only).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BudgetCopyRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BudgetCopyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BudgetCopyRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BudgetMonth'
+          description: ''
+    put:
+      operationId: companies_finance_budgets_copy_update
+      description: Copy the previous month's budgets into a month (categories without
+        one only).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BudgetPutRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BudgetPutRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BudgetPutRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BudgetMonth'
+          description: ''
   /api/v1/owner/companies/{company_id}/finance/categories/:
     get:
       operationId: companies_finance_categories_list
@@ -4138,6 +5769,185 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/CategoryNode'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/claims/:
+    get:
+      operationId: companies_finance_claims_list
+      description: 'Expense claims: the approvers'' queue, decisions and paying back
+        in cash.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: member
+        schema:
+          type: integer
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: status
+        schema:
+          type: string
+        description: submitted (default), approved, paid, …, all
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedClaimList'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/claims/{id}/:
+    get:
+      operationId: companies_finance_claims_retrieve
+      description: 'Expense claims: the approvers'' queue, decisions and paying back
+        in cash.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Claim'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/claims/{id}/approve/:
+    post:
+      operationId: companies_finance_claims_approve_create
+      description: 'Expense claims: the approvers'' queue, decisions and paying back
+        in cash.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Claim'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/claims/{id}/pay/:
+    post:
+      operationId: companies_finance_claims_pay_create
+      description: 'Expense claims: the approvers'' queue, decisions and paying back
+        in cash.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimPayRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ClaimPayRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClaimPayRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Claim'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/claims/{id}/reject/:
+    post:
+      operationId: companies_finance_claims_reject_create
+      description: 'Expense claims: the approvers'' queue, decisions and paying back
+        in cash.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimRejectRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ClaimRejectRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClaimRejectRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Claim'
           description: ''
   /api/v1/owner/companies/{company_id}/finance/counterparties/:
     get:
@@ -4512,6 +6322,45 @@ paths:
               schema:
                 $ref: '#/components/schemas/Debt'
           description: ''
+  /api/v1/owner/companies/{company_id}/finance/debts/{id}/credit/:
+    post:
+      operationId: companies_finance_debts_credit_create
+      description: 'A credit note: settle part of a debt without money (a payable''s
+        cost goes down).'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreditRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreditRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreditRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+          description: ''
   /api/v1/owner/companies/{company_id}/finance/debts/{id}/installments/:
     put:
       operationId: companies_finance_debts_installments_update
@@ -4716,6 +6565,62 @@ paths:
               schema:
                 $ref: '#/components/schemas/FinanceOverview'
           description: ''
+  /api/v1/owner/companies/{company_id}/finance/payables/:
+    get:
+      operationId: companies_finance_payables_retrieve
+      description: Open payables to distributors and other parties, grouped, overdue
+        first.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payables'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/payables/pay/:
+    post:
+      operationId: companies_finance_payables_pay_create
+      description: 'Pay several payables from one account: one ledger row and audit
+        row per debt.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayablesPayRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PayablesPayRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayablesPayRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayablesPaid'
+          description: ''
   /api/v1/owner/companies/{company_id}/finance/rates/:
     get:
       operationId: companies_finance_rates_retrieve
@@ -4854,6 +6759,328 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FinanceReceipt'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/recurring/:
+    get:
+      operationId: companies_finance_recurring_list
+      description: 'Recurring payments: bills to pay (reminders) and automatic posts,
+        with the tax calendar.'
+      parameters:
+      - in: query
+        name: active
+        schema:
+          type: string
+        description: true (default), false or all
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: kind
+        schema:
+          type: string
+      - in: query
+        name: mode
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: tax
+        schema:
+          type: boolean
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRecurringRuleList'
+          description: ''
+    post:
+      operationId: companies_finance_recurring_create
+      description: 'Recurring payments: bills to pay (reminders) and automatic posts,
+        with the tax calendar.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecurringRuleWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RecurringRuleWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RecurringRuleWriteRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecurringRule'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/recurring/{id}/:
+    get:
+      operationId: companies_finance_recurring_retrieve
+      description: 'Recurring payments: bills to pay (reminders) and automatic posts,
+        with the tax calendar.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecurringRule'
+          description: ''
+    patch:
+      operationId: companies_finance_recurring_partial_update
+      description: 'Recurring payments: bills to pay (reminders) and automatic posts,
+        with the tax calendar.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedRecurringRuleWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedRecurringRuleWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedRecurringRuleWriteRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecurringRule'
+          description: ''
+    delete:
+      operationId: companies_finance_recurring_destroy
+      description: 'Recurring payments: bills to pay (reminders) and automatic posts,
+        with the tax calendar.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/finance/recurring/{id}/pay/:
+    post:
+      operationId: companies_finance_recurring_pay_create
+      description: 'Recurring payments: bills to pay (reminders) and automatic posts,
+        with the tax calendar.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecurringPayRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RecurringPayRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RecurringPayRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecurringPayment'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/recurring/{id}/run-now/:
+    post:
+      operationId: companies_finance_recurring_run_now_create
+      description: 'Recurring payments: bills to pay (reminders) and automatic posts,
+        with the tax calendar.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecurringPayment'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/recurring/{id}/skip/:
+    post:
+      operationId: companies_finance_recurring_skip_create
+      description: 'Recurring payments: bills to pay (reminders) and automatic posts,
+        with the tax calendar.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecurringRule'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/recurring/templates/:
+    get:
+      operationId: companies_finance_recurring_templates_list
+      description: 'The tax calendar: one template set per tax regime, the company''s
+        own first.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TemplateSet'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/recurring/templates/{key}/apply/:
+    post:
+      operationId: companies_finance_recurring_templates_apply_create
+      description: Add a regime's tax calendar as editable recurring bills (what is
+        there already stays).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: key
+        schema:
+          type: string
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RecurringRule'
           description: ''
   /api/v1/owner/companies/{company_id}/finance/reports/balances/:
     get:
@@ -5006,6 +7233,34 @@ paths:
               schema:
                 $ref: '#/components/schemas/FinanceAging'
           description: ''
+  /api/v1/owner/companies/{company_id}/finance/reports/forecast/:
+    get:
+      operationId: companies_finance_reports_forecast_retrieve
+      description: |-
+        The cash balance day by day for 30, 60 or 90 days, its low point and the first day it
+        goes below zero.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: days
+        schema:
+          type: integer
+        description: 30, 60 or 90 (1–120)
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forecast'
+          description: ''
   /api/v1/owner/companies/{company_id}/finance/reports/pnl/:
     get:
       operationId: companies_finance_reports_pnl_retrieve
@@ -5141,6 +7396,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FinanceSettings'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/tax-summary/:
+    get:
+      operationId: companies_finance_tax_summary_retrieve
+      description: This year's turnover against the turnover-tax threshold, and the
+        tax regime (§14.8).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaxSummary'
           description: ''
   /api/v1/owner/companies/{company_id}/finance/transactions/:
     get:
@@ -5674,6 +7951,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Transfer'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/upcoming/:
+    get:
+      operationId: companies_finance_upcoming_retrieve
+      description: Bills, taxes, payables, receivables and pay due in the next days,
+        overdue first.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: days
+        schema:
+          type: integer
+        description: 1–120, default 30
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Upcoming'
           description: ''
   /api/v1/owner/companies/{company_id}/groups/:
     get:
@@ -14766,6 +17070,45 @@ paths:
               schema:
                 $ref: '#/components/schemas/RoutinePreview'
           description: ''
+  /api/v1/owner/companies/{company_id}/routines/{id}/readings/:
+    get:
+      operationId: companies_routines_readings_retrieve
+      description: |-
+        The routine's journal: every value taken (first measurements and rechecks, who,
+        note), a series per key for the chart (each day's first value), and missed days.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: from
+        schema:
+          type: string
+        description: 'Company-local day. Default: 30 days ago.'
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task template.
+        required: true
+      - in: query
+        name: to
+        schema:
+          type: string
+        description: 'Company-local day. Default: today.'
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoutineReadings'
+          description: ''
   /api/v1/owner/companies/{company_id}/routines/day/:
     get:
       operationId: companies_routines_day_retrieve
@@ -14848,6 +17191,185 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RoutineHistory'
+          description: ''
+  /api/v1/owner/companies/{company_id}/routines/readings/pdf/:
+    get:
+      operationId: companies_routines_readings_pdf_retrieve
+      description: |-
+        The branch's temperature and humidity log of a month as a PDF, in your language: a
+        short-lived link to it.
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: month
+        schema:
+          type: string
+        description: YYYY-MM
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoutineReadingsPdf'
+          description: ''
+  /api/v1/owner/companies/{company_id}/routines/readings/today/:
+    get:
+      operationId: companies_routines_readings_today_retrieve
+      description: |-
+        Today's excursions (and whether a recheck brought them back) and missed readings in
+        your branches: the Overview widget.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadingsToday'
+          description: ''
+  /api/v1/owner/companies/{company_id}/routines/settings/:
+    get:
+      operationId: companies_routines_settings_retrieve
+      description: |-
+        Settings → Routines (PLAN-OWNER §14.10): the storage preset's ranges and reading times.
+        Anyone in the dashboard reads them (the preset dialog starts from them); company.settings
+        changes them, audited.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoutinesSettings'
+          description: ''
+    patch:
+      operationId: companies_routines_settings_partial_update
+      description: |-
+        Settings → Routines (PLAN-OWNER §14.10): the storage preset's ranges and reading times.
+        Anyone in the dashboard reads them (the preset dialog starts from them); company.settings
+        changes them, audited.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedRoutinesSettingsRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedRoutinesSettingsRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedRoutinesSettingsRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoutinesSettings'
+          description: ''
+  /api/v1/owner/companies/{company_id}/routines/storage-preset/:
+    get:
+      operationId: companies_routines_storage_preset_retrieve
+      description: |-
+        The storage preset (PLAN-OWNER §14.10): GET the dialog's defaults for a branch (the
+        company's ranges and times, every position at the branch), POST to make the branch's
+        fridge and room readings and hygiene routines as shared routines. tasks.templates.
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoragePresetDefaults'
+          description: ''
+    post:
+      operationId: companies_routines_storage_preset_create
+      description: |-
+        The storage preset (PLAN-OWNER §14.10): GET the dialog's defaults for a branch (the
+        company's ranges and times, every position at the branch), POST to make the branch's
+        fridge and room readings and hygiene routines as shared routines. tasks.templates.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoragePresetRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StoragePresetRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StoragePresetRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoutineStoragePresetResult'
           description: ''
   /api/v1/owner/companies/{company_id}/routines/to-confirm/:
     get:
@@ -18304,9 +20826,15 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AIAgentField'
+        custom:
+          allOf:
+          - $ref: '#/components/schemas/AICustomAgent'
+          nullable: true
+          description: An agent an owner made (custom_<id>); null for a built-in one.
       required:
       - available
       - config
+      - custom
       - description
       - enabled
       - fields
@@ -18410,6 +20938,11 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AIAgentField'
+        custom:
+          allOf:
+          - $ref: '#/components/schemas/AICustomAgent'
+          nullable: true
+          description: An agent an owner made (custom_<id>); null for a built-in one.
         runs:
           type: array
           items:
@@ -18449,6 +20982,7 @@ components:
       - available
       - calls
       - config
+      - custom
       - description
       - enabled
       - fields
@@ -18830,6 +21364,292 @@ components:
       - assignee_name
       - id
       - title
+    AICustomAgent:
+      type: object
+      description: 'An agent an owner made: what it does, when, for whom and what
+        it may read.'
+      properties:
+        id:
+          type: integer
+        job:
+          type: string
+          description: What it should do, in the owner's words.
+        color:
+          $ref: '#/components/schemas/AiCustomAgentColorEnum'
+        template:
+          type: string
+          description: The template it started from.
+        frequency:
+          $ref: '#/components/schemas/AiCustomAgentFrequencyEnum'
+        at:
+          type: string
+          description: HH:MM in the company's timezone.
+        weekday:
+          type: integer
+          nullable: true
+          description: 'Weekly: 0 = Monday.'
+        month_day:
+          type: integer
+          nullable: true
+          description: 'Monthly: 1 to 28.'
+        recipients:
+          $ref: '#/components/schemas/AiCustomAgentRecipientsEnum'
+        people:
+          type: array
+          items:
+            $ref: '#/components/schemas/AICustomPerson'
+        group:
+          allOf:
+          - $ref: '#/components/schemas/AICustomGroup'
+          nullable: true
+        domains:
+          type: array
+          items:
+            $ref: '#/components/schemas/AICustomDomain'
+        run_as:
+          allOf:
+          - $ref: '#/components/schemas/AICustomPerson'
+          description: Whose rights it reads with ('me').
+        created_by:
+          allOf:
+          - $ref: '#/components/schemas/AICustomPerson'
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        paused_reason:
+          type: string
+          description: 'Why it switched itself off: "", "left" or "no_access".'
+        paused_text:
+          type: string
+        last_report:
+          type: string
+          nullable: true
+          description: 'What it last wrote: only for its owner and the people it goes
+            to (else null).'
+        last_report_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - at
+      - color
+      - created_at
+      - created_by
+      - domains
+      - frequency
+      - group
+      - id
+      - job
+      - last_report
+      - last_report_at
+      - month_day
+      - paused_reason
+      - paused_text
+      - people
+      - recipients
+      - run_as
+      - template
+      - weekday
+    AICustomAgentWriteRequest:
+      type: object
+      description: |-
+        The New agent form (or the fields that change). The rules and their translated messages
+        are apps.ai.agents.custom.clean's.
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        job:
+          type: string
+          maxLength: 4000
+        color:
+          type: string
+          maxLength: 16
+        template:
+          type: string
+          maxLength: 32
+        frequency:
+          type: string
+          minLength: 1
+          description: daily, weekdays, weekly, monthly
+        at:
+          type: string
+          minLength: 1
+          description: HH:MM in the company's timezone.
+        weekday:
+          type: integer
+          nullable: true
+        month_day:
+          type: integer
+          nullable: true
+        recipients:
+          type: string
+          minLength: 1
+          description: me, people or group
+        people:
+          type: array
+          items:
+            type: integer
+        group:
+          type: integer
+          nullable: true
+        domains:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 32
+    AICustomDomain:
+      type: object
+      properties:
+        key:
+          type: string
+          description: A tool domain (apps.ai.tools.registry).
+        label:
+          type: string
+      required:
+      - key
+      - label
+    AICustomDomainOption:
+      type: object
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        available:
+          type: boolean
+          description: Whether the asker may read it.
+        reason:
+          type: string
+          description: '"", "switch_off" (Settings → AI) or "no_access".'
+        feature:
+          type: string
+          nullable: true
+          description: Its module, when it has one.
+      required:
+      - available
+      - feature
+      - key
+      - label
+      - reason
+    AICustomGroup:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+      required:
+      - id
+      - title
+    AICustomOptions:
+      type: object
+      properties:
+        domains:
+          type: array
+          items:
+            $ref: '#/components/schemas/AICustomDomainOption'
+        groups:
+          type: array
+          items:
+            $ref: '#/components/schemas/AICustomGroup'
+          description: Linked Telegram groups.
+        people:
+          type: array
+          items:
+            $ref: '#/components/schemas/AICustomRecipient'
+          description: 'Who can get it: approved, with the bot started.'
+        max_agents:
+          type: integer
+        live:
+          type: integer
+          description: How many the company has now.
+        run_now_left:
+          type: integer
+          description: '"Run now"s left today, for all of them.'
+        me:
+          $ref: '#/components/schemas/AICustomPerson'
+      required:
+      - domains
+      - groups
+      - live
+      - max_agents
+      - me
+      - people
+      - run_now_left
+    AICustomPerson:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
+    AICustomRecipient:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        position:
+          type: string
+        photo:
+          type: string
+          nullable: true
+      required:
+      - id
+      - name
+      - photo
+      - position
+    AICustomTemplate:
+      type: object
+      properties:
+        key:
+          type: string
+        name:
+          type: string
+        job:
+          type: string
+        frequency:
+          $ref: '#/components/schemas/AiCustomAgentFrequencyEnum'
+        at:
+          type: string
+        weekday:
+          type: integer
+          nullable: true
+        month_day:
+          type: integer
+          nullable: true
+        domains:
+          type: array
+          items:
+            type: string
+        color:
+          $ref: '#/components/schemas/AiCustomAgentColorEnum'
+        icon:
+          type: string
+          description: A lucide icon name.
+        needs:
+          type: string
+          nullable: true
+          description: The module it is about.
+      required:
+      - at
+      - color
+      - domains
+      - frequency
+      - icon
+      - job
+      - key
+      - month_day
+      - name
+      - needs
+      - weekday
     AIDraft:
       type: object
       description: One voice note or typed instruction and the tasks it became.
@@ -19967,6 +22787,48 @@ components:
         * `blocked` - blocked
         * `budget_reached` - budget_reached
         * `unavailable` - unavailable
+    AiCustomAgentColorEnum:
+      enum:
+      - sky
+      - rose
+      - indigo
+      - lime
+      - amber
+      - plum
+      - aqua
+      - slate
+      type: string
+      description: |-
+        * `sky` - Sky
+        * `rose` - Rose
+        * `indigo` - Indigo
+        * `lime` - Lime
+        * `amber` - Amber
+        * `plum` - Plum
+        * `aqua` - Aqua
+        * `slate` - Slate
+    AiCustomAgentFrequencyEnum:
+      enum:
+      - daily
+      - weekdays
+      - weekly
+      - monthly
+      type: string
+      description: |-
+        * `daily` - Every day
+        * `weekdays` - Workdays
+        * `weekly` - Once a week
+        * `monthly` - Once a month
+    AiCustomAgentRecipientsEnum:
+      enum:
+      - me
+      - people
+      - group
+      type: string
+      description: |-
+        * `me` - Me
+        * `people` - Chosen people
+        * `group` - A Telegram group
     AiDraftPriorityEnum:
       enum:
       - normal
@@ -20182,6 +23044,1707 @@ components:
             type: integer
         home_branch_id:
           type: integer
+          nullable: true
+    AssetsAdditionRequest:
+      type: object
+      properties:
+        'on':
+          type: string
+          format: date
+        note:
+          type: string
+          maxLength: 500
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        purchase:
+          type: integer
+          nullable: true
+      required:
+      - amount
+      - 'on'
+    AssetsAmountRequest:
+      type: object
+      properties:
+        'on':
+          type: string
+          format: date
+        note:
+          type: string
+          maxLength: 500
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+      required:
+      - amount
+      - 'on'
+    AssetsAssignment:
+      type: object
+      properties:
+        id:
+          type: integer
+        person:
+          $ref: '#/components/schemas/AssetsRef'
+        issued_on:
+          type: string
+          format: date
+        condition_out:
+          type: string
+        note_out:
+          type: string
+        acknowledged_at:
+          type: string
+          format: date-time
+          nullable: true
+        returned_on:
+          type: string
+          format: date
+          nullable: true
+        condition_in:
+          type: string
+        note_in:
+          type: string
+      required:
+      - acknowledged_at
+      - condition_in
+      - condition_out
+      - id
+      - issued_on
+      - note_in
+      - note_out
+      - person
+      - returned_on
+    AssetsCategory:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        kind:
+          $ref: '#/components/schemas/AssetsCategoryKindEnum'
+        life_months:
+          type: integer
+          minimum: 1
+          nullable: true
+        method:
+          $ref: '#/components/schemas/AssetsMethodEnum'
+        salvage_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        tax_group:
+          type: string
+          maxLength: 8
+        tax_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          nullable: true
+        service_months:
+          type: integer
+          nullable: true
+        verify_months:
+          type: integer
+          nullable: true
+        icon:
+          type: string
+          maxLength: 40
+        order:
+          type: integer
+        is_active:
+          type: boolean
+        system_code:
+          type: string
+          readOnly: true
+        assets:
+          type: integer
+          readOnly: true
+      required:
+      - assets
+      - id
+      - name
+      - system_code
+    AssetsCategoryKindEnum:
+      enum:
+      - fixed
+      - intangible
+      - low_value
+      type: string
+      description: |-
+        * `fixed` - Fixed asset
+        * `intangible` - Intangible asset
+        * `low_value` - Low-value item
+    AssetsCategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        kind:
+          $ref: '#/components/schemas/AssetsCategoryKindEnum'
+        life_months:
+          type: integer
+          minimum: 1
+          nullable: true
+        method:
+          $ref: '#/components/schemas/AssetsMethodEnum'
+        salvage_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        tax_group:
+          type: string
+          maxLength: 8
+        tax_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          nullable: true
+        service_months:
+          type: integer
+          nullable: true
+        verify_months:
+          type: integer
+          nullable: true
+        icon:
+          type: string
+          maxLength: 40
+        order:
+          type: integer
+        is_active:
+          type: boolean
+      required:
+      - name
+    AssetsConditionEnum:
+      enum:
+      - new
+      - good
+      - worn
+      - damaged
+      type: string
+      description: |-
+        * `new` - New
+        * `good` - Good
+        * `worn` - Worn
+        * `damaged` - Damaged
+    AssetsCount:
+      type: object
+      properties:
+        id:
+          type: integer
+        branch:
+          allOf:
+          - $ref: '#/components/schemas/AssetsRef'
+          nullable: true
+        status:
+          $ref: '#/components/schemas/AssetsCountStatusEnum'
+        started_on:
+          type: string
+          format: date
+        closed_at:
+          type: string
+          format: date-time
+          nullable: true
+        note:
+          type: string
+        totals:
+          type: object
+          additionalProperties:
+            type: integer
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssetsCountLine'
+      required:
+      - branch
+      - closed_at
+      - id
+      - note
+      - started_on
+      - status
+      - totals
+    AssetsCountLine:
+      type: object
+      properties:
+        id:
+          type: integer
+        asset:
+          $ref: '#/components/schemas/AssetsRef'
+        number:
+          type: string
+        result:
+          $ref: '#/components/schemas/AssetsCountResultEnum'
+        note:
+          type: string
+        checked_by:
+          allOf:
+          - $ref: '#/components/schemas/AssetsRef'
+          nullable: true
+        checked_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - asset
+      - checked_at
+      - checked_by
+      - id
+      - note
+      - number
+      - result
+    AssetsCountMarkRequest:
+      type: object
+      properties:
+        result:
+          $ref: '#/components/schemas/AssetsCountResultEnum'
+        note:
+          type: string
+          maxLength: 300
+      required:
+      - result
+    AssetsCountResultEnum:
+      enum:
+      - pending
+      - found
+      - damaged
+      - missing
+      type: string
+      description: |-
+        * `pending` - Not checked yet
+        * `found` - Found
+        * `damaged` - Found damaged
+        * `missing` - Missing
+    AssetsCountStartRequest:
+      type: object
+      properties:
+        branch:
+          type: integer
+          nullable: true
+        note:
+          type: string
+          maxLength: 300
+    AssetsCountStatusEnum:
+      enum:
+      - open
+      - closed
+      type: string
+      description: |-
+        * `open` - In progress
+        * `closed` - Closed
+    AssetsCustody:
+      type: object
+      properties:
+        person:
+          $ref: '#/components/schemas/AssetsRef'
+        value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        unconfirmed:
+          type: integer
+        assets:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssetsRow'
+      required:
+      - assets
+      - person
+      - unconfirmed
+      - value
+    AssetsDayRequest:
+      type: object
+      properties:
+        'on':
+          type: string
+          format: date
+        note:
+          type: string
+          maxLength: 500
+      required:
+      - 'on'
+    AssetsDepreciationReport:
+      type: object
+      properties:
+        year:
+          type: integer
+        group:
+          $ref: '#/components/schemas/AssetsReportGroupEnum'
+        months:
+          type: array
+          items:
+            type: string
+            format: date
+        posted_through:
+          type: string
+          format: date
+        groups:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssetsReportGroup'
+        totals:
+          type: array
+          items:
+            type: string
+            format: decimal
+            pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        tax:
+          type: array
+          items:
+            type: string
+            format: decimal
+            pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        tax_total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+      required:
+      - group
+      - groups
+      - months
+      - posted_through
+      - tax
+      - tax_total
+      - total
+      - totals
+      - year
+    AssetsDetail:
+      type: object
+      properties:
+        asset:
+          $ref: '#/components/schemas/AssetsRow'
+        serial:
+          type: string
+        notes:
+          type: string
+        purchased_on:
+          type: string
+          format: date
+          nullable: true
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        price_currency:
+          type: string
+        price_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,6})?$
+        life_months:
+          type: integer
+          nullable: true
+        method:
+          $ref: '#/components/schemas/AssetsMethodEnum'
+        declining_factor:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+        total_units:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          nullable: true
+        unit:
+          type: string
+        opening_accumulated:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        books_depreciation:
+          type: boolean
+        booked:
+          type: boolean
+          description: 'Some of it is in Finance: facts are history.'
+        supplier:
+          allOf:
+          - $ref: '#/components/schemas/AssetsRef'
+          nullable: true
+        supplier_name:
+          type: string
+        purchase:
+          allOf:
+          - $ref: '#/components/schemas/AssetsPurchaseRef'
+          nullable: true
+        responsible:
+          allOf:
+          - $ref: '#/components/schemas/AssetsRef'
+          nullable: true
+        warranty_until:
+          type: string
+          format: date
+          nullable: true
+        insurance_until:
+          type: string
+          format: date
+          nullable: true
+        service_months:
+          type: integer
+          nullable: true
+        next_service_on:
+          type: string
+          format: date
+          nullable: true
+        verify_months:
+          type: integer
+          nullable: true
+        next_verification_on:
+          type: string
+          format: date
+          nullable: true
+        disposed_on:
+          type: string
+          format: date
+          nullable: true
+        disposal:
+          type: string
+        disposal_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        disposal_reason:
+          type: string
+        qr_link:
+          type: string
+        values:
+          $ref: '#/components/schemas/AssetsValues'
+        schedule:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssetsMonth'
+        tax:
+          allOf:
+          - $ref: '#/components/schemas/AssetsTaxBook'
+          nullable: true
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssetsEvent'
+        assignments:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssetsAssignment'
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssetsFile'
+      required:
+      - asset
+      - assignments
+      - booked
+      - books_depreciation
+      - declining_factor
+      - disposal
+      - disposal_amount
+      - disposal_reason
+      - disposed_on
+      - events
+      - files
+      - insurance_until
+      - life_months
+      - method
+      - next_service_on
+      - next_verification_on
+      - notes
+      - opening_accumulated
+      - price
+      - price_currency
+      - price_rate
+      - purchase
+      - purchased_on
+      - qr_link
+      - responsible
+      - schedule
+      - serial
+      - service_months
+      - supplier
+      - supplier_name
+      - tax
+      - total_units
+      - unit
+      - values
+      - verify_months
+      - warranty_until
+    AssetsDisposalEnum:
+      enum:
+      - sold
+      - written_off
+      - lost
+      - donated
+      type: string
+      description: |-
+        * `sold` - Sold
+        * `written_off` - Written off (broken, worn out)
+        * `lost` - Lost or stolen
+        * `donated` - Given away
+    AssetsDisposeRequest:
+      type: object
+      properties:
+        'on':
+          type: string
+          format: date
+        kind:
+          $ref: '#/components/schemas/AssetsDisposalEnum'
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        account:
+          type: integer
+          nullable: true
+        reason:
+          type: string
+          maxLength: 300
+      required:
+      - kind
+      - 'on'
+    AssetsDue:
+      type: object
+      properties:
+        what:
+          $ref: '#/components/schemas/AssetsUpkeepEnum'
+        day:
+          type: string
+          format: date
+      required:
+      - day
+      - what
+    AssetsEstimateRequest:
+      type: object
+      properties:
+        'on':
+          type: string
+          format: date
+        note:
+          type: string
+          maxLength: 500
+        life_months:
+          type: integer
+          minimum: 1
+          nullable: true
+        salvage_value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        method:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/AssetsMethodEnum'
+          - $ref: '#/components/schemas/NullEnum'
+      required:
+      - 'on'
+    AssetsEvent:
+      type: object
+      properties:
+        id:
+          type: integer
+        kind:
+          $ref: '#/components/schemas/AssetsEventKindEnum'
+        'on':
+          type: string
+          format: date
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        units:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          nullable: true
+        from_branch:
+          allOf:
+          - $ref: '#/components/schemas/AssetsRef'
+          nullable: true
+        to_branch:
+          allOf:
+          - $ref: '#/components/schemas/AssetsRef'
+          nullable: true
+        person:
+          allOf:
+          - $ref: '#/components/schemas/AssetsRef'
+          nullable: true
+        note:
+          type: string
+        details:
+          type: object
+          additionalProperties: {}
+        by:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+      required:
+      - amount
+      - by
+      - created_at
+      - details
+      - from_branch
+      - id
+      - kind
+      - note
+      - 'on'
+      - person
+      - to_branch
+      - units
+    AssetsEventKindEnum:
+      enum:
+      - created
+      - in_service
+      - moved
+      - issued
+      - returned
+      - repair
+      - service
+      - verification
+      - addition
+      - impairment
+      - estimate
+      - suspended
+      - resumed
+      - usage
+      - problem
+      - counted
+      - disposed
+      - note
+      type: string
+      description: |-
+        * `created` - Added
+        * `in_service` - Put into service
+        * `moved` - Moved
+        * `issued` - Given to someone
+        * `returned` - Returned
+        * `repair` - Repaired
+        * `service` - Serviced
+        * `verification` - Instrument check
+        * `addition` - Improvement added to its cost
+        * `impairment` - Value written down
+        * `estimate` - Useful life or residual value changed
+        * `suspended` - Mothballed
+        * `resumed` - Back in use
+        * `usage` - Units of output recorded
+        * `problem` - Problem reported
+        * `counted` - Found in a count
+        * `disposed` - Disposed of
+        * `note` - Note
+    AssetsFile:
+      type: object
+      properties:
+        id:
+          type: integer
+        kind:
+          $ref: '#/components/schemas/AssetsFileKindEnum'
+        label:
+          type: string
+        url:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+      required:
+      - created_at
+      - id
+      - kind
+      - label
+      - url
+    AssetsFileKindEnum:
+      enum:
+      - photo
+      - document
+      type: string
+      description: |-
+        * `photo` - Photo
+        * `document` - Document
+    AssetsFileUploadRequest:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+        kind:
+          $ref: '#/components/schemas/AssetsFileKindEnum'
+        label:
+          type: string
+          maxLength: 120
+      required:
+      - file
+      - kind
+    AssetsIssueRequest:
+      type: object
+      properties:
+        'on':
+          type: string
+          format: date
+        note:
+          type: string
+          maxLength: 500
+        person:
+          type: integer
+        condition:
+          $ref: '#/components/schemas/AssetsConditionEnum'
+      required:
+      - 'on'
+      - person
+    AssetsMethodEnum:
+      enum:
+      - straight_line
+      - declining
+      - sum_of_years
+      - units
+      - none
+      type: string
+      description: |-
+        * `straight_line` - Straight line (equal monthly amounts)
+        * `declining` - Declining balance (double rate)
+        * `sum_of_years` - Sum of the years' digits
+        * `units` - By units of output
+        * `none` - Not depreciated
+    AssetsMonth:
+      type: object
+      properties:
+        month:
+          type: string
+          format: date
+        opening:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        closing:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        accumulated:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        state:
+          $ref: '#/components/schemas/AssetsMonthStateEnum'
+        notes:
+          type: array
+          items:
+            type: string
+        transaction_id:
+          type: integer
+          nullable: true
+      required:
+      - accumulated
+      - amount
+      - closing
+      - month
+      - notes
+      - opening
+      - state
+      - transaction_id
+    AssetsMonthStateEnum:
+      enum:
+      - opening
+      - booked
+      - posted
+      - planned
+      type: string
+      description: |-
+        * `opening` - opening
+        * `booked` - booked
+        * `posted` - posted
+        * `planned` - planned
+    AssetsMoveRequest:
+      type: object
+      properties:
+        'on':
+          type: string
+          format: date
+        note:
+          type: string
+          maxLength: 500
+        branch:
+          type: integer
+          nullable: true
+      required:
+      - branch
+      - 'on'
+    AssetsMovement:
+      type: object
+      properties:
+        start:
+          type: string
+          format: date
+        end:
+          type: string
+          format: date
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssetsMovementLine'
+        total:
+          $ref: '#/components/schemas/AssetsMovementLine'
+      required:
+      - end
+      - lines
+      - start
+      - total
+    AssetsMovementLine:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        open_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        open_depreciation:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        open_book:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        in_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        out_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        out_depreciation:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        depreciation:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        written_down:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        close_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        close_depreciation:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        close_book:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+      required:
+      - close_book
+      - close_cost
+      - close_depreciation
+      - depreciation
+      - in_cost
+      - open_book
+      - open_cost
+      - open_depreciation
+      - out_cost
+      - out_depreciation
+      - written_down
+    AssetsPlanAsset:
+      type: object
+      properties:
+        asset:
+          $ref: '#/components/schemas/AssetsRow'
+        end_month:
+          type: string
+          format: date
+        estimate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        repairs:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        replacement:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        share:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+      required:
+      - asset
+    AssetsPlanning:
+      type: object
+      properties:
+        replacements:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssetsPlanAsset'
+        quarters:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssetsQuarter'
+        replacement_total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        repairs:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssetsPlanAsset'
+        idle:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssetsRow'
+        idle_value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        free:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssetsRow'
+        upkeep:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssetsUpkeep'
+        unconfirmed:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssetsUnconfirmed'
+        inflation:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+      required:
+      - free
+      - idle
+      - idle_value
+      - inflation
+      - quarters
+      - repairs
+      - replacement_total
+      - replacements
+      - unconfirmed
+      - upkeep
+    AssetsPurchase:
+      type: object
+      properties:
+        id:
+          type: integer
+        occurred_on:
+          type: string
+          format: date
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        currency:
+          type: string
+        base_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        category:
+          type: string
+          nullable: true
+        counterparty:
+          allOf:
+          - $ref: '#/components/schemas/AssetsRef'
+          nullable: true
+        branch:
+          allOf:
+          - $ref: '#/components/schemas/AssetsRef'
+          nullable: true
+        account:
+          type: string
+          nullable: true
+        description:
+          type: string
+      required:
+      - account
+      - amount
+      - base_amount
+      - branch
+      - category
+      - counterparty
+      - currency
+      - description
+      - id
+      - occurred_on
+    AssetsPurchaseRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        occurred_on:
+          type: string
+          format: date
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        currency:
+          type: string
+        description:
+          type: string
+        account:
+          type: string
+          nullable: true
+        capitalized:
+          type: boolean
+      required:
+      - account
+      - amount
+      - capitalized
+      - currency
+      - description
+      - id
+      - occurred_on
+    AssetsQuarter:
+      type: object
+      properties:
+        quarter:
+          type: string
+        count:
+          type: integer
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+      required:
+      - amount
+      - count
+      - quarter
+    AssetsRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
+    AssetsRepairRequest:
+      type: object
+      properties:
+        'on':
+          type: string
+          format: date
+        note:
+          type: string
+          maxLength: 500
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        improves:
+          type: boolean
+          default: false
+      required:
+      - 'on'
+    AssetsReportGroup:
+      type: object
+      properties:
+        id:
+          type: integer
+          nullable: true
+        name:
+          type: string
+        amounts:
+          type: array
+          items:
+            type: string
+            format: decimal
+            pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        assets:
+          type: integer
+      required:
+      - amounts
+      - assets
+      - id
+      - name
+      - total
+    AssetsReportGroupEnum:
+      enum:
+      - category
+      - branch
+      type: string
+      description: |-
+        * `category` - category
+        * `branch` - branch
+    AssetsReturnRequest:
+      type: object
+      properties:
+        'on':
+          type: string
+          format: date
+        note:
+          type: string
+          maxLength: 500
+        condition:
+          $ref: '#/components/schemas/AssetsConditionEnum'
+      required:
+      - 'on'
+    AssetsRow:
+      type: object
+      properties:
+        id:
+          type: integer
+        number:
+          type: string
+        name:
+          type: string
+        model:
+          type: string
+        category:
+          $ref: '#/components/schemas/AssetsRef'
+        category_kind:
+          $ref: '#/components/schemas/AssetsCategoryKindEnum'
+        icon:
+          type: string
+        branch:
+          allOf:
+          - $ref: '#/components/schemas/AssetsRef'
+          nullable: true
+        status:
+          $ref: '#/components/schemas/AssetsStatusEnum'
+        condition:
+          $ref: '#/components/schemas/AssetsConditionEnum'
+        cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        accumulated:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        book_value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        monthly:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        in_service_on:
+          type: string
+          format: date
+          nullable: true
+        custodian:
+          allOf:
+          - $ref: '#/components/schemas/AssetsRef'
+          nullable: true
+        next_due:
+          allOf:
+          - $ref: '#/components/schemas/AssetsDue'
+          nullable: true
+        photo_url:
+          type: string
+          nullable: true
+      required:
+      - accumulated
+      - book_value
+      - branch
+      - category
+      - category_kind
+      - condition
+      - cost
+      - custodian
+      - icon
+      - id
+      - in_service_on
+      - model
+      - monthly
+      - name
+      - next_due
+      - number
+      - photo_url
+      - status
+    AssetsServiceRequest:
+      type: object
+      properties:
+        'on':
+          type: string
+          format: date
+        note:
+          type: string
+          maxLength: 500
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+      required:
+      - 'on'
+    AssetsSettings:
+      type: object
+      properties:
+        start_rule:
+          $ref: '#/components/schemas/AssetsStartRuleEnum'
+        number_prefix:
+          type: string
+          maxLength: 8
+        next_number:
+          type: integer
+          minimum: 1
+        capitalization_threshold:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        replacement_inflation:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        tax_book:
+          type: boolean
+        remind_days:
+          type: integer
+          maximum: 180
+          minimum: 1
+        tax_groups:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssetsTaxGroup'
+          readOnly: true
+        locked_rule:
+          type: boolean
+          readOnly: true
+      required:
+      - locked_rule
+      - next_number
+      - number_prefix
+      - remind_days
+      - replacement_inflation
+      - start_rule
+      - tax_book
+      - tax_groups
+    AssetsStartRuleEnum:
+      enum:
+      - next_month
+      - daily
+      type: string
+      description: |-
+        * `next_month` - From the 1st of the month after it is put into service
+        * `daily` - From the day it is put into service
+    AssetsStatusEnum:
+      enum:
+      - in_use
+      - in_storage
+      - repair
+      - suspended
+      - disposed
+      type: string
+      description: |-
+        * `in_use` - In use
+        * `in_storage` - In storage
+        * `repair` - Under repair
+        * `suspended` - Mothballed
+        * `disposed` - Disposed of
+    AssetsStatusRequest:
+      type: object
+      properties:
+        'on':
+          type: string
+          format: date
+        note:
+          type: string
+          maxLength: 500
+        status:
+          $ref: '#/components/schemas/AssetsWritableStatusEnum'
+      required:
+      - 'on'
+      - status
+    AssetsSummary:
+      type: object
+      properties:
+        count:
+          type: integer
+        cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        accumulated:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        book:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        this_month:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        this_year:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        fully_depreciated:
+          type: integer
+        upkeep_due:
+          type: integer
+        low_value:
+          type: integer
+      required:
+      - accumulated
+      - book
+      - cost
+      - count
+      - fully_depreciated
+      - low_value
+      - this_month
+      - this_year
+      - upkeep_due
+    AssetsTaxBook:
+      type: object
+      properties:
+        rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        group:
+          type: string
+        monthly:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        accumulated:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        book:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        end_month:
+          type: string
+          format: date
+          nullable: true
+        difference:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+      required:
+      - accumulated
+      - book
+      - difference
+      - end_month
+      - group
+      - monthly
+      - rate
+    AssetsTaxGroup:
+      type: object
+      properties:
+        code:
+          type: string
+        rate:
+          type: string
+        label:
+          type: string
+      required:
+      - code
+      - label
+      - rate
+    AssetsTaxGroupRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+        rate:
+          type: string
+          minLength: 1
+        label:
+          type: string
+          minLength: 1
+      required:
+      - code
+      - label
+      - rate
+    AssetsUnconfirmed:
+      type: object
+      properties:
+        asset:
+          $ref: '#/components/schemas/AssetsRef'
+        person:
+          $ref: '#/components/schemas/AssetsRef'
+        issued_on:
+          type: string
+          format: date
+      required:
+      - asset
+      - issued_on
+      - person
+    AssetsUpkeep:
+      type: object
+      properties:
+        asset:
+          $ref: '#/components/schemas/AssetsRow'
+        what:
+          $ref: '#/components/schemas/AssetsUpkeepEnum'
+        day:
+          type: string
+          format: date
+        overdue:
+          type: boolean
+      required:
+      - asset
+      - day
+      - overdue
+      - what
+    AssetsUpkeepEnum:
+      enum:
+      - service
+      - verification
+      - warranty
+      - insurance
+      type: string
+      description: |-
+        * `service` - service
+        * `verification` - verification
+        * `warranty` - warranty
+        * `insurance` - insurance
+    AssetsUsageRequest:
+      type: object
+      properties:
+        'on':
+          type: string
+          format: date
+        units:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+      required:
+      - 'on'
+      - units
+    AssetsValues:
+      type: object
+      properties:
+        cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        added:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        written_down:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        accumulated:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        book:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        salvage_value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        monthly_now:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        months_used:
+          type: integer
+        months_left:
+          type: integer
+          nullable: true
+        end_month:
+          type: string
+          format: date
+          nullable: true
+        fully_depreciated:
+          type: boolean
+      required:
+      - accumulated
+      - added
+      - book
+      - cost
+      - end_month
+      - fully_depreciated
+      - monthly_now
+      - months_left
+      - months_used
+      - salvage_value
+      - written_down
+    AssetsVerificationRequest:
+      type: object
+      properties:
+        'on':
+          type: string
+          format: date
+        note:
+          type: string
+          maxLength: 500
+        valid_until:
+          type: string
+          format: date
+          nullable: true
+      required:
+      - 'on'
+    AssetsWritableStatusEnum:
+      enum:
+      - in_use
+      - in_storage
+      - repair
+      type: string
+      description: |-
+        * `in_use` - In use
+        * `in_storage` - In storage
+        * `repair` - Under repair
+    AssetsWriteRequest:
+      type: object
+      description: Create and correct an asset. Ids for category, branch, supplier,
+        purchase, people.
+      properties:
+        category:
+          type: integer
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        number:
+          type: string
+          maxLength: 24
+        model:
+          type: string
+          maxLength: 80
+        serial:
+          type: string
+          maxLength: 64
+        notes:
+          type: string
+          maxLength: 4000
+        condition:
+          $ref: '#/components/schemas/AssetsConditionEnum'
+        status:
+          $ref: '#/components/schemas/AssetsWritableStatusEnum'
+        branch:
+          type: integer
+          nullable: true
+        purchased_on:
+          type: string
+          format: date
+          nullable: true
+        in_service_on:
+          type: string
+          format: date
+          nullable: true
+        cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        price_currency:
+          $ref: '#/components/schemas/CurrencyEnum'
+        price_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,6})?$
+          nullable: true
+        salvage_value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        life_months:
+          type: integer
+          minimum: 1
+          nullable: true
+        method:
+          $ref: '#/components/schemas/AssetsMethodEnum'
+        declining_factor:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+        total_units:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          nullable: true
+        unit:
+          type: string
+          maxLength: 16
+        opening_accumulated:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        books_depreciation:
+          type: boolean
+        supplier:
+          type: integer
+          nullable: true
+        supplier_name:
+          type: string
+          maxLength: 120
+        purchase_transaction:
+          type: integer
+          nullable: true
+        custodian:
+          type: integer
+          nullable: true
+        responsible:
+          type: integer
+          nullable: true
+        warranty_until:
+          type: string
+          format: date
+          nullable: true
+        insurance_until:
+          type: string
+          format: date
+          nullable: true
+        service_months:
+          type: integer
+          nullable: true
+        next_service_on:
+          type: string
+          format: date
+          nullable: true
+        verify_months:
+          type: integer
+          nullable: true
+        next_verification_on:
+          type: string
+          format: date
           nullable: true
     AssignRequest:
       type: object
@@ -20866,6 +25429,88 @@ components:
       - name
       - opens_at
       - status
+    BudgetCopyRequest:
+      type: object
+      properties:
+        month:
+          type: string
+          minLength: 1
+          pattern: ^\d{4}-(0[1-9]|1[0-2])$
+      required:
+      - month
+    BudgetInputRowRequest:
+      type: object
+      properties:
+        category:
+          type: integer
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+      required:
+      - category
+    BudgetMonth:
+      type: object
+      properties:
+        month:
+          type: string
+        currency:
+          type: string
+        days_left:
+          type: integer
+        days_in_month:
+          type: integer
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/BudgetRow'
+        totals:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+      - currency
+      - days_in_month
+      - days_left
+      - month
+      - rows
+      - totals
+    BudgetPutRequest:
+      type: object
+      properties:
+        month:
+          type: string
+          minLength: 1
+          pattern: ^\d{4}-(0[1-9]|1[0-2])$
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/BudgetInputRowRequest'
+      required:
+      - month
+      - rows
+    BudgetRow:
+      type: object
+      properties:
+        category:
+          $ref: '#/components/schemas/PlanningCategoryRef'
+        budget:
+          type: string
+          nullable: true
+        actual:
+          type: string
+        share:
+          type: string
+          nullable: true
+        status:
+          type: string
+      required:
+      - actual
+      - budget
+      - category
+      - share
+      - status
     BulkDecisionRequest:
       type: object
       properties:
@@ -21114,6 +25759,148 @@ components:
       - id
       - is_done
       - text
+    Claim:
+      type: object
+      description: An expense claim, with what the viewer may do with it (`context["membership"]`).
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        member:
+          allOf:
+          - $ref: '#/components/schemas/PlanningPersonRef'
+          readOnly: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        currency:
+          $ref: '#/components/schemas/CurrencyEnum'
+        category:
+          allOf:
+          - $ref: '#/components/schemas/PlanningCategoryRef'
+          readOnly: true
+        spent_on:
+          type: string
+          format: date
+        description:
+          type: string
+          maxLength: 300
+        paid_from:
+          $ref: '#/components/schemas/FinanceClaimPaidFromEnum'
+        status:
+          type: string
+          readOnly: true
+        status_label:
+          type: string
+          readOnly: true
+        branch:
+          allOf:
+          - $ref: '#/components/schemas/FinanceRef'
+          nullable: true
+          readOnly: true
+        receipts:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClaimReceipt'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        decided_by:
+          allOf:
+          - $ref: '#/components/schemas/PlanningPersonRef'
+          nullable: true
+          readOnly: true
+        decided_at:
+          type: string
+          format: date-time
+          nullable: true
+        reject_reason:
+          type: string
+          maxLength: 300
+        reimburse_via:
+          type: string
+          nullable: true
+          readOnly: true
+        transaction_id:
+          type: integer
+          readOnly: true
+          nullable: true
+        debt_id:
+          type: integer
+          readOnly: true
+          nullable: true
+        can_decide:
+          type: boolean
+          readOnly: true
+        can_pay:
+          type: boolean
+          readOnly: true
+        can_cancel:
+          type: boolean
+          readOnly: true
+      required:
+      - amount
+      - branch
+      - can_cancel
+      - can_decide
+      - can_pay
+      - category
+      - created_at
+      - debt_id
+      - decided_by
+      - id
+      - member
+      - paid_from
+      - receipts
+      - reimburse_via
+      - spent_on
+      - status
+      - status_label
+      - transaction_id
+    ClaimPayRequest:
+      type: object
+      properties:
+        account:
+          type: integer
+        paid_on:
+          type: string
+          format: date
+          nullable: true
+      required:
+      - account
+    ClaimReceipt:
+      type: object
+      properties:
+        id:
+          type: integer
+        url:
+          type: string
+        thumb_url:
+          type: string
+          nullable: true
+        content_type:
+          type: string
+        is_image:
+          type: boolean
+      required:
+      - content_type
+      - id
+      - is_image
+      - thumb_url
+      - url
+    ClaimRejectRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 300
+      required:
+      - reason
     CodeEnum:
       enum:
       - present
@@ -21202,6 +25989,7 @@ components:
       - payroll
       - ai
       - recognition
+      - assets
       type: string
       description: |-
         * `finance` - Finance
@@ -21212,6 +26000,7 @@ components:
         * `payroll` - Payroll
         * `ai` - AI assistant
         * `recognition` - Recognition
+        * `assets` - Assets and equipment
     CompaniesInviteCompany:
       type: object
       properties:
@@ -21717,6 +26506,24 @@ components:
       - id
       - name
       - slug
+    CreditRequest:
+      type: object
+      properties:
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 300
+        credited_on:
+          type: string
+          format: date
+          nullable: true
+      required:
+      - amount
+      - reason
     CurrencyCodeEnum:
       enum:
       - UZS
@@ -22548,6 +27355,14 @@ components:
       required:
       - previous_same_days
       - series
+    FinanceClaimPaidFromEnum:
+      enum:
+      - own_money
+      - held_cash
+      type: string
+      description: |-
+        * `own_money` - My own money
+        * `held_cash` - Company cash I hold
     FinanceCounterpartyKindEnum:
       enum:
       - customer
@@ -22849,6 +27664,36 @@ components:
       - is_image
       - thumb_url
       - url
+    FinanceRecurringFrequencyEnum:
+      enum:
+      - weekly
+      - monthly
+      - quarterly
+      - yearly
+      type: string
+      description: |-
+        * `weekly` - Weekly
+        * `monthly` - Monthly
+        * `quarterly` - Quarterly
+        * `yearly` - Yearly
+    FinanceRecurringModeEnum:
+      enum:
+      - bill
+      - auto
+      type: string
+      description: |-
+        * `bill` - Reminder: pay it yourself
+        * `auto` - Posted automatically
+    FinanceRecurringOnHolidayEnum:
+      enum:
+      - before
+      - after
+      - keep
+      type: string
+      description: |-
+        * `before` - The working day before
+        * `after` - The working day after
+        * `keep` - Keep the day
     FinanceRef:
       type: object
       properties:
@@ -22916,12 +27761,47 @@ components:
         can_reopen:
           type: boolean
           readOnly: true
+        tax_regime:
+          allOf:
+          - $ref: '#/components/schemas/FinanceTaxRegimeEnum'
+          description: |-
+            Which tax the company pays on its sales.
+
+            * `turnover` - Turnover tax
+            * `vat` - VAT 12 %
+            * `vat_simplified` - Simplified VAT 6 %
+        vat_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          readOnly: true
+        turnover_threshold:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: Turnover above which the turnover tax no longer applies, in
+            base calculation values. Confirm with your accountant.
+        base_value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        tax_regime_set:
+          type: boolean
+          readOnly: true
+        payroll_on:
+          type: boolean
+          readOnly: true
       required:
       - approval_threshold
       - base_currency
+      - base_value
       - can_reopen
       - large_expense_alert
+      - payroll_on
       - receipt_required_over
+      - tax_regime_set
+      - vat_percent
     FinanceStatement:
       type: object
       properties:
@@ -22964,6 +27844,16 @@ components:
       - pending
       - to
       - today
+    FinanceTaxRegimeEnum:
+      enum:
+      - turnover
+      - vat
+      - vat_simplified
+      type: string
+      description: |-
+        * `turnover` - Turnover tax
+        * `vat` - VAT 12 %
+        * `vat_simplified` - Simplified VAT 6 %
     FinanceTransactionKindEnum:
       enum:
       - income
@@ -22975,6 +27865,7 @@ components:
       - fx
       - owner
       - opening
+      - non_cash
       type: string
       description: |-
         * `income` - Income
@@ -22986,6 +27877,7 @@ components:
         * `fx` - Exchange difference
         * `owner` - Owner contribution or draw
         * `opening` - Opening balance
+        * `non_cash` - Non-cash cost
     FinanceTransactionStatusEnum:
       enum:
       - pending
@@ -23024,6 +27916,67 @@ components:
             $ref: '#/components/schemas/PaymentLineRequest'
       required:
       - reason
+    Forecast:
+      type: object
+      properties:
+        today:
+          type: string
+          format: date
+        days:
+          type: integer
+        currency:
+          type: string
+        start:
+          type: string
+        end:
+          type: string
+        points:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        low:
+          type: object
+          additionalProperties: {}
+        below_zero_on:
+          type: string
+          format: date
+          nullable: true
+        basis:
+          type: object
+          additionalProperties: {}
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/ForecastEvent'
+      required:
+      - basis
+      - below_zero_on
+      - currency
+      - days
+      - end
+      - events
+      - low
+      - points
+      - start
+      - today
+    ForecastEvent:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        title:
+          type: string
+        amount:
+          type: string
+        direction:
+          type: string
+      required:
+      - amount
+      - date
+      - direction
+      - title
     GiveTodayInputRequest:
       type: object
       properties:
@@ -27443,6 +32396,52 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AnnouncementsReceipt'
+    PaginatedAssetsCategoryList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssetsCategory'
+    PaginatedAssetsRowList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssetsRow'
     PaginatedAuditRecordList:
       type: object
       required:
@@ -27466,6 +32465,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AuditRecord'
+    PaginatedClaimList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Claim'
     PaginatedCompensationList:
       type: object
       required:
@@ -28018,6 +33040,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/RecordRow'
+    PaginatedRecurringRuleList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecurringRule'
     PaginatedRunList:
       type: object
       required:
@@ -28261,6 +33306,55 @@ components:
         instructions:
           type: string
           maxLength: 1000
+    PatchedAICustomAgentWriteRequest:
+      type: object
+      description: |-
+        The New agent form (or the fields that change). The rules and their translated messages
+        are apps.ai.agents.custom.clean's.
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        job:
+          type: string
+          maxLength: 4000
+        color:
+          type: string
+          maxLength: 16
+        template:
+          type: string
+          maxLength: 32
+        frequency:
+          type: string
+          minLength: 1
+          description: daily, weekdays, weekly, monthly
+        at:
+          type: string
+          minLength: 1
+          description: HH:MM in the company's timezone.
+        weekday:
+          type: integer
+          nullable: true
+        month_day:
+          type: integer
+          nullable: true
+        recipients:
+          type: string
+          minLength: 1
+          description: me, people or group
+        people:
+          type: array
+          items:
+            type: integer
+        group:
+          type: integer
+          nullable: true
+        domains:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 32
     PatchedAISettingsRequest:
       type: object
       properties:
@@ -28389,6 +33483,195 @@ components:
         expires_at:
           type: string
           format: date-time
+          nullable: true
+    PatchedAssetsCategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        kind:
+          $ref: '#/components/schemas/AssetsCategoryKindEnum'
+        life_months:
+          type: integer
+          minimum: 1
+          nullable: true
+        method:
+          $ref: '#/components/schemas/AssetsMethodEnum'
+        salvage_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        tax_group:
+          type: string
+          maxLength: 8
+        tax_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          nullable: true
+        service_months:
+          type: integer
+          nullable: true
+        verify_months:
+          type: integer
+          nullable: true
+        icon:
+          type: string
+          maxLength: 40
+        order:
+          type: integer
+        is_active:
+          type: boolean
+    PatchedAssetsSettingsRequest:
+      type: object
+      properties:
+        start_rule:
+          $ref: '#/components/schemas/AssetsStartRuleEnum'
+        number_prefix:
+          type: string
+          minLength: 1
+          maxLength: 8
+        next_number:
+          type: integer
+          minimum: 1
+        capitalization_threshold:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        replacement_inflation:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        tax_book:
+          type: boolean
+        remind_days:
+          type: integer
+          maximum: 180
+          minimum: 1
+    PatchedAssetsWriteRequest:
+      type: object
+      description: Create and correct an asset. Ids for category, branch, supplier,
+        purchase, people.
+      properties:
+        category:
+          type: integer
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        number:
+          type: string
+          maxLength: 24
+        model:
+          type: string
+          maxLength: 80
+        serial:
+          type: string
+          maxLength: 64
+        notes:
+          type: string
+          maxLength: 4000
+        condition:
+          $ref: '#/components/schemas/AssetsConditionEnum'
+        status:
+          $ref: '#/components/schemas/AssetsWritableStatusEnum'
+        branch:
+          type: integer
+          nullable: true
+        purchased_on:
+          type: string
+          format: date
+          nullable: true
+        in_service_on:
+          type: string
+          format: date
+          nullable: true
+        cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        price_currency:
+          $ref: '#/components/schemas/CurrencyEnum'
+        price_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,6})?$
+          nullable: true
+        salvage_value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        life_months:
+          type: integer
+          minimum: 1
+          nullable: true
+        method:
+          $ref: '#/components/schemas/AssetsMethodEnum'
+        declining_factor:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+        total_units:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          nullable: true
+        unit:
+          type: string
+          maxLength: 16
+        opening_accumulated:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        books_depreciation:
+          type: boolean
+        supplier:
+          type: integer
+          nullable: true
+        supplier_name:
+          type: string
+          maxLength: 120
+        purchase_transaction:
+          type: integer
+          nullable: true
+        custodian:
+          type: integer
+          nullable: true
+        responsible:
+          type: integer
+          nullable: true
+        warranty_until:
+          type: string
+          format: date
+          nullable: true
+        insurance_until:
+          type: string
+          format: date
+          nullable: true
+        service_months:
+          type: integer
+          nullable: true
+        next_service_on:
+          type: string
+          format: date
+          nullable: true
+        verify_months:
+          type: integer
+          nullable: true
+        next_verification_on:
+          type: string
+          format: date
           nullable: true
     PatchedAttendanceSettingsRequest:
       type: object
@@ -29553,6 +34836,71 @@ components:
           type: string
           minLength: 1
           maxLength: 300
+    PatchedRecurringRuleWriteRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/FinanceCategoryKindEnum'
+          default: expense
+        mode:
+          allOf:
+          - $ref: '#/components/schemas/FinanceRecurringModeEnum'
+          default: bill
+        frequency:
+          $ref: '#/components/schemas/FinanceRecurringFrequencyEnum'
+        interval:
+          type: integer
+          maximum: 24
+          minimum: 1
+          default: 1
+        day:
+          type: integer
+          maximum: 31
+          minimum: 1
+        on_holiday:
+          allOf:
+          - $ref: '#/components/schemas/FinanceRecurringOnHolidayEnum'
+          default: before
+        category:
+          type: integer
+        counterparty:
+          type: integer
+          nullable: true
+        account:
+          type: integer
+          nullable: true
+        branch:
+          type: integer
+          nullable: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        amount_varies:
+          type: boolean
+          default: false
+        starts_on:
+          type: string
+          format: date
+        ends_on:
+          type: string
+          format: date
+          nullable: true
+        remind_days_before:
+          type: integer
+          maximum: 30
+          minimum: 0
+          default: 3
+        payer:
+          type: integer
+          nullable: true
+        is_active:
+          type: boolean
     PatchedRegisterRequest:
       type: object
       properties:
@@ -29614,6 +34962,19 @@ components:
           minimum: 0
         proof:
           $ref: '#/components/schemas/ProofEnum'
+        readings:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          description: 'With proof=readings: 1 to 3 specs {key, label, unit, min,
+            max, critical}; a spec without a key gets the next free letter. Empty
+            otherwise.'
+          maxItems: 3
+        shared:
+          type: boolean
+          description: 'One of us does it: the first to finish closes the others''
+            copies of that day at the same branch.'
         needs_confirmation:
           type: boolean
           nullable: true
@@ -29642,6 +35003,41 @@ components:
         escalate_to_id:
           type: integer
           nullable: true
+    PatchedRoutinesSettingsRequest:
+      type: object
+      description: |-
+        Settings → Routines (PLAN-OWNER §14.10, §14.21): what the storage preset starts from,
+        the fridge and room ranges (°C), the humidity maximum (%) and the reading times. Each
+        routine the preset makes keeps its own copy, editable on the routine.
+      properties:
+        storage_fridge_min:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,1})?$
+        storage_fridge_max:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,1})?$
+        storage_room_min:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,1})?$
+        storage_room_max:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,1})?$
+        storage_humidity_max:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,1})?$
+        storage_times:
+          type: array
+          items:
+            type: string
+            format: time
+          description: When the storage readings are taken (HH:MM, company time).
+          maxItems: 4
+          minItems: 1
     PatchedSalesSettingsRequest:
       type: object
       properties:
@@ -29771,6 +35167,20 @@ components:
           nullable: true
         reimburse_via:
           $ref: '#/components/schemas/FinanceReimburseViaEnum'
+        tax_regime:
+          $ref: '#/components/schemas/FinanceTaxRegimeEnum'
+        vat_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        turnover_threshold:
+          type: integer
+          maximum: 1000000000
+          minimum: 0
+        base_value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
     PatchedShiftPatchRequest:
       type: object
       properties:
@@ -29906,6 +35316,71 @@ components:
           pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
         account:
           type: integer
+    Payables:
+      type: object
+      properties:
+        today:
+          type: string
+          format: date
+        currency:
+          type: string
+        groups:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        totals:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+      - currency
+      - groups
+      - today
+      - totals
+    PayablesPaid:
+      type: object
+      properties:
+        paid:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        warnings:
+          type: array
+          items:
+            type: string
+      required:
+      - paid
+      - warnings
+    PayablesPayDebtRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+      required:
+      - amount
+      - id
+    PayablesPayRequest:
+      type: object
+      properties:
+        account:
+          type: integer
+        paid_on:
+          type: string
+          format: date
+        debts:
+          type: array
+          items:
+            $ref: '#/components/schemas/PayablesPayDebtRequest'
+      required:
+      - account
+      - debts
+      - paid_on
     PaymentLineRequest:
       type: object
       properties:
@@ -31686,6 +37161,44 @@ components:
           format: date-time
       required:
       - pinned_until
+    PlanningCategoryRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        kind:
+          type: string
+        color:
+          type: string
+        parent_id:
+          type: integer
+          nullable: true
+        parent_name:
+          type: string
+          nullable: true
+      required:
+      - color
+      - id
+      - kind
+      - name
+      - parent_id
+      - parent_name
+    PlanningPersonRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        photo_url:
+          type: string
+          nullable: true
+      required:
+      - id
+      - name
+      - photo_url
     Policy:
       type: object
       properties:
@@ -33531,12 +39044,14 @@ components:
       - photo
       - text
       - any
+      - readings
       type: string
       description: |-
         * `none` - Not needed
         * `photo` - Photo
         * `text` - Text report
         * `any` - Photo or text report
+        * `readings` - Readings
     Pulse:
       type: object
       properties:
@@ -33680,6 +39195,35 @@ components:
         * `cbu` - cbu
         * `manual` - manual
         * `company` - company
+    ReadingsToday:
+      type: object
+      properties:
+        day:
+          type: string
+          format: date
+        set_up:
+          type: boolean
+          description: The company has a readings routine running.
+        taken:
+          type: integer
+        excursions:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          description: Reading rows, with back_in_range_at.
+        missed:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          description: '{task_id, routine, branch, due_at, assignee}'
+      required:
+      - day
+      - excursions
+      - missed
+      - set_up
+      - taken
     ReasonCodeEnum:
       enum:
       - no_stock
@@ -34116,6 +39660,226 @@ components:
       - shift_id
       - status
       - worked_minutes
+    RecurringPayRequest:
+      type: object
+      properties:
+        account:
+          type: integer
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        paid_on:
+          type: string
+          format: date
+          nullable: true
+      required:
+      - account
+    RecurringPayment:
+      type: object
+      properties:
+        rule:
+          $ref: '#/components/schemas/RecurringRule'
+        transaction_id:
+          type: integer
+          nullable: true
+      required:
+      - rule
+      - transaction_id
+    RecurringRule:
+      type: object
+      description: A recurring payment, its open occurrence (after the holiday move)
+        and the next three.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        kind:
+          $ref: '#/components/schemas/FinanceCategoryKindEnum'
+        mode:
+          $ref: '#/components/schemas/FinanceRecurringModeEnum'
+        frequency:
+          $ref: '#/components/schemas/FinanceRecurringFrequencyEnum'
+        interval:
+          type: integer
+          maximum: 32767
+          minimum: 0
+          description: Every how many periods.
+        day:
+          type: integer
+          maximum: 32767
+          minimum: 0
+          description: 'Weekly: 1 (Monday) to 7 (Sunday). Otherwise the day of the
+            month, 1 to 31.'
+        on_holiday:
+          $ref: '#/components/schemas/FinanceRecurringOnHolidayEnum'
+        category:
+          allOf:
+          - $ref: '#/components/schemas/PlanningCategoryRef'
+          readOnly: true
+        counterparty:
+          allOf:
+          - $ref: '#/components/schemas/FinanceRef'
+          nullable: true
+          readOnly: true
+        account:
+          allOf:
+          - $ref: '#/components/schemas/FinanceAccountRef'
+          nullable: true
+          readOnly: true
+        branch:
+          allOf:
+          - $ref: '#/components/schemas/FinanceRef'
+          nullable: true
+          readOnly: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        currency:
+          $ref: '#/components/schemas/CurrencyEnum'
+        amount_varies:
+          type: boolean
+          description: The amount changes every time (utilities, taxes).
+        starts_on:
+          type: string
+          format: date
+        ends_on:
+          type: string
+          format: date
+          nullable: true
+        next_due_on:
+          type: string
+          format: date
+          nullable: true
+          readOnly: true
+        overdue:
+          type: boolean
+          readOnly: true
+        remind_days_before:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        payer:
+          allOf:
+          - $ref: '#/components/schemas/PlanningPersonRef'
+          nullable: true
+          readOnly: true
+        template_key:
+          type: string
+          description: Set on rules made from a tax calendar template.
+          maxLength: 32
+        is_tax:
+          type: boolean
+          readOnly: true
+        is_active:
+          type: boolean
+        last_done_on:
+          type: string
+          format: date
+          nullable: true
+          description: The last occurrence paid, posted or skipped.
+        upcoming:
+          type: array
+          items:
+            type: string
+            format: date
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - account
+      - amount
+      - branch
+      - category
+      - counterparty
+      - created_at
+      - id
+      - is_tax
+      - name
+      - next_due_on
+      - overdue
+      - payer
+      - starts_on
+      - upcoming
+    RecurringRuleWriteRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/FinanceCategoryKindEnum'
+          default: expense
+        mode:
+          allOf:
+          - $ref: '#/components/schemas/FinanceRecurringModeEnum'
+          default: bill
+        frequency:
+          $ref: '#/components/schemas/FinanceRecurringFrequencyEnum'
+        interval:
+          type: integer
+          maximum: 24
+          minimum: 1
+          default: 1
+        day:
+          type: integer
+          maximum: 31
+          minimum: 1
+        on_holiday:
+          allOf:
+          - $ref: '#/components/schemas/FinanceRecurringOnHolidayEnum'
+          default: before
+        category:
+          type: integer
+        counterparty:
+          type: integer
+          nullable: true
+        account:
+          type: integer
+          nullable: true
+        branch:
+          type: integer
+          nullable: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        amount_varies:
+          type: boolean
+          default: false
+        starts_on:
+          type: string
+          format: date
+        ends_on:
+          type: string
+          format: date
+          nullable: true
+        remind_days_before:
+          type: integer
+          maximum: 30
+          minimum: 0
+          default: 3
+        payer:
+          type: integer
+          nullable: true
+        is_active:
+          type: boolean
+      required:
+      - category
+      - day
+      - frequency
+      - name
+      - starts_on
     Register:
       type: object
       properties:
@@ -34658,6 +40422,16 @@ components:
           allOf:
           - $ref: '#/components/schemas/ProofEnum'
           readOnly: true
+        readings:
+          type: array
+          items:
+            $ref: '#/components/schemas/TasksReadingSpec'
+          readOnly: true
+        shared:
+          type: boolean
+          readOnly: true
+          description: 'One of us does it: the first person to finish closes everyone
+            else''s copy of that day at the same branch.'
         needs_confirmation:
           type: boolean
           readOnly: true
@@ -34733,7 +40507,9 @@ components:
       - onboarding
       - positions
       - proof
+      - readings
       - reminder_policy
+      - shared
       - starts_on
       - stats
       - title
@@ -34892,6 +40668,71 @@ components:
       - next_run
       - people
       - reason
+    RoutineReadings:
+      type: object
+      properties:
+        range:
+          type: object
+          additionalProperties: {}
+        specs:
+          type: array
+          items:
+            $ref: '#/components/schemas/TasksReadingSpec'
+        totals:
+          type: object
+          additionalProperties: {}
+          description: taken, excursions, rechecks, missed
+        series:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          description: '{"date", <key>: the day''s first value or null}: the analytics
+            shape.'
+        missed:
+          type: array
+          items:
+            type: string
+            format: date
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/TasksReadingRow'
+      required:
+      - missed
+      - range
+      - rows
+      - series
+      - specs
+      - totals
+    RoutineReadingsPdf:
+      type: object
+      properties:
+        url:
+          type: string
+        name:
+          type: string
+        expires_in:
+          type: integer
+      required:
+      - expires_in
+      - name
+      - url
+    RoutineStoragePresetResult:
+      type: object
+      properties:
+        created:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        existing:
+          type: array
+          items:
+            type: string
+      required:
+      - created
+      - existing
     RoutineToConfirm:
       type: object
       properties:
@@ -34964,6 +40805,19 @@ components:
           minimum: 0
         proof:
           $ref: '#/components/schemas/ProofEnum'
+        readings:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          description: 'With proof=readings: 1 to 3 specs {key, label, unit, min,
+            max, critical}; a spec without a key gets the next free letter. Empty
+            otherwise.'
+          maxItems: 3
+        shared:
+          type: boolean
+          description: 'One of us does it: the first to finish closes the others''
+            copies of that day at the same branch.'
         needs_confirmation:
           type: boolean
           nullable: true
@@ -34992,6 +40846,41 @@ components:
         escalate_to_id:
           type: integer
           nullable: true
+    RoutinesSettings:
+      type: object
+      description: |-
+        Settings → Routines (PLAN-OWNER §14.10, §14.21): what the storage preset starts from,
+        the fridge and room ranges (°C), the humidity maximum (%) and the reading times. Each
+        routine the preset makes keeps its own copy, editable on the routine.
+      properties:
+        storage_fridge_min:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,1})?$
+        storage_fridge_max:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,1})?$
+        storage_room_min:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,1})?$
+        storage_room_max:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,1})?$
+        storage_humidity_max:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,1})?$
+        storage_times:
+          type: array
+          items:
+            type: string
+            format: time
+          description: When the storage readings are taken (HH:MM, company time).
+          maxItems: 4
+          minItems: 1
     Rule:
       type: object
       description: Drops `amount_fields` from the output unless the context's `show_amounts`
@@ -36374,6 +42263,70 @@ components:
       - label
       - type
       - url
+    StoragePresetDefaults:
+      type: object
+      properties:
+        branch:
+          $ref: '#/components/schemas/TasksBranchRef'
+        fridges:
+          type: integer
+        times:
+          type: array
+          items:
+            type: string
+        positions:
+          type: array
+          items:
+            $ref: '#/components/schemas/NamedRef'
+          description: Every position at the branch.
+        fridge:
+          type: object
+          additionalProperties: {}
+          description: '{"min": "2.0", "max": "8.0"}'
+        room:
+          type: object
+          additionalProperties: {}
+          description: '{"min": "15.0", "max": "25.0"}'
+        humidity_max:
+          type: string
+        existing:
+          type: integer
+          description: Readings routines the branch already has.
+      required:
+      - branch
+      - existing
+      - fridge
+      - fridges
+      - humidity_max
+      - positions
+      - room
+      - times
+    StoragePresetRequest:
+      type: object
+      properties:
+        branch:
+          type: integer
+        fridges:
+          type: integer
+          maximum: 5
+          minimum: 0
+          default: 1
+        positions:
+          type: array
+          items:
+            type: integer
+          description: 'Positions who take the readings; empty: every position at
+            the branch.'
+        times:
+          type: array
+          items:
+            type: string
+            format: time
+          description: 'Reading times (HH:MM); default: the company''s storage times.'
+          maxItems: 4
+          minItems: 1
+      required:
+      - branch
     StreamItem:
       type: object
       properties:
@@ -36795,6 +42748,11 @@ components:
           - $ref: '#/components/schemas/TaskExtension'
           nullable: true
           readOnly: true
+        readings:
+          type: array
+          items:
+            $ref: '#/components/schemas/TasksReadingSpec'
+          readOnly: true
         description:
           type: string
           readOnly: true
@@ -36832,6 +42790,16 @@ components:
           readOnly: true
           nullable: true
           description: When a manager last pressed "Nudge now".
+        readings_taken:
+          type: array
+          items:
+            $ref: '#/components/schemas/TasksReadingTaken'
+          readOnly: true
+        recheck_until:
+          type: string
+          format: date-time
+          nullable: true
+          readOnly: true
       required:
       - accept_with_proof
       - accepted_automatically
@@ -36864,6 +42832,9 @@ components:
       - proof_photo
       - proof_text
       - proof_thumb
+      - readings
+      - readings_taken
+      - recheck_until
       - reminders
       - reward
       - routine
@@ -37211,11 +43182,21 @@ components:
           - $ref: '#/components/schemas/TaskExtension'
           nullable: true
           readOnly: true
+        readings:
+          type: array
+          items:
+            $ref: '#/components/schemas/TasksReadingSpec'
+          readOnly: true
         description:
           type: string
           readOnly: true
         proof_text:
           type: string
+          readOnly: true
+        readings_taken:
+          type: array
+          items:
+            $ref: '#/components/schemas/TasksReadingTaken'
           readOnly: true
       required:
       - accept_with_proof
@@ -37244,6 +43225,8 @@ components:
       - proof_photo
       - proof_text
       - proof_thumb
+      - readings
+      - readings_taken
       - reward
       - routine
       - seen_at
@@ -37388,6 +43371,11 @@ components:
           - $ref: '#/components/schemas/TaskExtension'
           nullable: true
           readOnly: true
+        readings:
+          type: array
+          items:
+            $ref: '#/components/schemas/TasksReadingSpec'
+          readOnly: true
       required:
       - accept_with_proof
       - accepted_automatically
@@ -37413,6 +43401,7 @@ components:
       - proof
       - proof_photo
       - proof_thumb
+      - readings
       - reward
       - routine
       - seen_at
@@ -37594,6 +43583,162 @@ components:
       - name
       - photo_url
       - position
+    TasksReadingPerson:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
+    TasksReadingRow:
+      type: object
+      description: A value typed in for a readings task, with the range it was held
+        to.
+      properties:
+        id:
+          type: integer
+        key:
+          type: string
+        label:
+          type: string
+        unit:
+          type: string
+        value:
+          type: string
+          description: Decimal string ("5.2").
+        min:
+          type: string
+          nullable: true
+        max:
+          type: string
+          nullable: true
+        in_range:
+          type: boolean
+        note:
+          type: string
+        is_recheck:
+          type: boolean
+        recorded_at:
+          type: string
+          format: date-time
+        recorded_by:
+          allOf:
+          - $ref: '#/components/schemas/TasksReadingPerson'
+          nullable: true
+        task_id:
+          type: integer
+        day:
+          type: string
+          format: date
+        time:
+          type: string
+        branch:
+          allOf:
+          - $ref: '#/components/schemas/TasksBranchRef'
+          nullable: true
+        routine:
+          type: object
+          additionalProperties: {}
+          nullable: true
+          description: '{id, title}'
+      required:
+      - branch
+      - day
+      - id
+      - in_range
+      - is_recheck
+      - key
+      - label
+      - max
+      - min
+      - note
+      - recorded_at
+      - recorded_by
+      - routine
+      - task_id
+      - time
+      - unit
+      - value
+    TasksReadingSpec:
+      type: object
+      description: One number a readings task asks for, with its allowed range (PLAN-OWNER
+        §14.10).
+      properties:
+        key:
+          type: string
+          description: One letter, a to z.
+        label:
+          type: string
+        unit:
+          type: string
+        min:
+          type: string
+          nullable: true
+          description: 'Decimal string ("2.0"); null: none.'
+        max:
+          type: string
+          nullable: true
+          description: 'Decimal string ("8.0"); null: none.'
+        critical:
+          type: boolean
+      required:
+      - critical
+      - key
+      - label
+      - max
+      - min
+      - unit
+    TasksReadingTaken:
+      type: object
+      description: A value typed in for a readings task, with the range it was held
+        to.
+      properties:
+        id:
+          type: integer
+        key:
+          type: string
+        label:
+          type: string
+        unit:
+          type: string
+        value:
+          type: string
+          description: Decimal string ("5.2").
+        min:
+          type: string
+          nullable: true
+        max:
+          type: string
+          nullable: true
+        in_range:
+          type: boolean
+        note:
+          type: string
+        is_recheck:
+          type: boolean
+        recorded_at:
+          type: string
+          format: date-time
+        recorded_by:
+          allOf:
+          - $ref: '#/components/schemas/TasksReadingPerson'
+          nullable: true
+      required:
+      - id
+      - in_range
+      - is_recheck
+      - key
+      - label
+      - max
+      - min
+      - note
+      - recorded_at
+      - recorded_by
+      - unit
+      - value
     TasksReasonRequest:
       type: object
       properties:
@@ -37625,6 +43770,42 @@ components:
           minimum: 4
           nullable: true
           description: 'Hours; null: never.'
+    TaxSummary:
+      type: object
+      description: 'The turnover-tax tile: this year''s turnover against the threshold.'
+      properties:
+        regime:
+          type: string
+        vat_percent:
+          type: string
+        year:
+          type: integer
+        currency:
+          type: string
+        turnover:
+          type: string
+        threshold:
+          type: string
+        threshold_values:
+          type: integer
+        base_value:
+          type: string
+        share:
+          type: string
+          nullable: true
+        over:
+          type: boolean
+      required:
+      - base_value
+      - currency
+      - over
+      - regime
+      - share
+      - threshold
+      - threshold_values
+      - turnover
+      - vat_percent
+      - year
     TelegramLoginRequest:
       type: object
       properties:
@@ -37673,6 +43854,32 @@ components:
       - is_active
       - name
       - starts_at
+    TemplateItem:
+      type: object
+      properties:
+        template_key:
+          type: string
+        name:
+          type: string
+        frequency:
+          type: string
+        day:
+          type: integer
+        category_code:
+          type: string
+        applied:
+          type: boolean
+        rule_id:
+          type: integer
+          nullable: true
+      required:
+      - applied
+      - category_code
+      - day
+      - frequency
+      - name
+      - rule_id
+      - template_key
     TemplateRequest:
       type: object
       properties:
@@ -37705,6 +43912,27 @@ components:
       - ends_at
       - name
       - starts_at
+    TemplateSet:
+      type: object
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        current:
+          type: boolean
+        note:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/TemplateItem'
+      required:
+      - current
+      - items
+      - key
+      - label
+      - note
     TimeOffStatusEnum:
       enum:
       - pending
@@ -38216,6 +44444,77 @@ components:
       type: string
       description: "* `` - \n* `needs_claude` - needs_claude\n* `needs_speech` - needs_speech\n*
         `ai_off` - ai_off"
+    Upcoming:
+      type: object
+      properties:
+        today:
+          type: string
+          format: date
+        days:
+          type: integer
+        currency:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/UpcomingItem'
+        totals:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+      - currency
+      - days
+      - items
+      - today
+      - totals
+    UpcomingItem:
+      type: object
+      properties:
+        key:
+          type: string
+        kind:
+          type: string
+        title:
+          type: string
+        subtitle:
+          type: string
+        date:
+          type: string
+          format: date
+        amount:
+          type: string
+          nullable: true
+        currency:
+          type: string
+        direction:
+          type: string
+        overdue:
+          type: boolean
+        estimate:
+          type: boolean
+        rule_id:
+          type: integer
+          nullable: true
+        debt_id:
+          type: integer
+          nullable: true
+        url:
+          type: string
+      required:
+      - amount
+      - currency
+      - date
+      - debt_id
+      - direction
+      - estimate
+      - key
+      - kind
+      - overdue
+      - rule_id
+      - subtitle
+      - title
+      - url
     Updated:
       type: object
       properties:

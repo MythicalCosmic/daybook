@@ -173,6 +173,25 @@ def _tasks(data: dict, currency: str) -> tuple[str, list[str]]:
             )
             for task in worst
         ]
+    # Storage readings (fridges, the room): what was out of range today and what nobody took.
+    excursions = [item for item in data.get("excursions") or [] if isinstance(item, dict)]
+    if excursions:
+        lines.append(_("Readings out of range: %(count)d") % {"count": len(excursions)})
+        for item in excursions[:3]:
+            value = " ".join(str(part) for part in (item.get("value"), item.get("unit")) if part)
+            line = " · ".join(
+                part for part in (item.get("label"), value, item.get("branch")) if part
+            )
+            if item.get("back_in_range"):
+                line += " · " + _("back in range")
+            lines.append("    " + line)
+    missed = [item for item in data.get("missed_readings") or [] if isinstance(item, dict)]
+    if missed:
+        lines.append(_("Readings not taken: %(count)d") % {"count": len(missed)})
+        lines += [
+            "    " + " · ".join(part for part in (item.get("routine"), item.get("branch")) if part)
+            for item in missed[:3]
+        ]
     return _("Tasks"), lines
 
 

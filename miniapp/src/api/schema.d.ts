@@ -464,6 +464,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/companies/{company_id}/finance/categories/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The expense categories a person may claim (what the system books itself is left out). */
+        get: operations["v1_companies_finance_categories_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/finance/claims/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description My expense claims, newest first; POST submits one (multipart, with receipts). */
+        get: operations["v1_companies_finance_claims_list"];
+        put?: never;
+        /** @description My expense claims, newest first; POST submits one (multipart, with receipts). */
+        post: operations["v1_companies_finance_claims_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/finance/claims/{id}/cancel/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Take back my claim while nobody has decided it. */
+        post: operations["v1_companies_finance_claims_cancel_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/finance/wallet/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Company cash I hold and what the company owes me back. */
+        get: operations["v1_companies_finance_wallet_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/companies/{company_id}/holidays/": {
         parameters: {
             query?: never;
@@ -1690,6 +1759,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/companies/{company_id}/tasks/{id}/recheck/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description A second measurement of a finished readings task, within two hours (after the
+         *     vaccines were moved): back in range, the alert about it says so.
+         */
+        post: operations["v1_companies_tasks_recheck_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/companies/{company_id}/tasks/{id}/reopen/": {
         parameters: {
             query?: never;
@@ -2066,9 +2155,10 @@ export interface components {
          *     * `confirmed` - Checked your task
          *     * `returned` - Sent a task back
          *     * `commented` - Commented on a task
+         *     * `covered` - Did a shared routine for everyone
          * @enum {string}
          */
-        ActivityKindEnum: "assigned" | "review" | "completed" | "confirmed" | "returned" | "commented";
+        ActivityKindEnum: "assigned" | "review" | "completed" | "confirmed" | "returned" | "commented" | "covered";
         /** @description Drops `amount_fields` from the output unless the context's `show_amounts` is true. */
         Adjustment: {
             readonly id: number;
@@ -2534,6 +2624,59 @@ export interface components {
         ChecklistToggleRequest: {
             is_done: boolean;
         };
+        /** @description An expense claim, with what the viewer may do with it (`context["membership"]`). */
+        Claim: {
+            readonly id: number;
+            readonly member: components["schemas"]["PlanningPersonRef"];
+            /** Format: decimal */
+            readonly amount: string;
+            currency?: components["schemas"]["CurrencyEnum"];
+            readonly category: components["schemas"]["PlanningCategoryRef"];
+            /** Format: date */
+            spent_on: string;
+            description?: string;
+            paid_from: components["schemas"]["FinanceClaimPaidFromEnum"];
+            readonly status: string;
+            readonly status_label: string;
+            readonly branch: components["schemas"]["FinanceRef"] | null;
+            readonly receipts: components["schemas"]["ClaimReceipt"][];
+            /** Format: date-time */
+            readonly created_at: string;
+            readonly decided_by: components["schemas"]["PlanningPersonRef"] | null;
+            /** Format: date-time */
+            decided_at?: string | null;
+            reject_reason?: string;
+            readonly reimburse_via: string | null;
+            readonly transaction_id: number | null;
+            readonly debt_id: number | null;
+            readonly can_decide: boolean;
+            readonly can_pay: boolean;
+            readonly can_cancel: boolean;
+        };
+        ClaimCategory: {
+            id: number;
+            name: string;
+            parent_id: number | null;
+            icon: string;
+            color: string;
+        };
+        ClaimCreateRequest: {
+            /** Format: decimal */
+            amount: string;
+            category: number;
+            /** Format: date */
+            spent_on: string;
+            description?: string;
+            paid_from: components["schemas"]["FinanceClaimPaidFromEnum"];
+            receipts?: string[];
+        };
+        ClaimReceipt: {
+            id: number;
+            url: string;
+            thumb_url: string | null;
+            content_type: string;
+            is_image: boolean;
+        };
         CloseRequest: {
             payments: unknown;
             closing_count?: unknown;
@@ -2589,9 +2732,10 @@ export interface components {
          *     * `payroll` - Payroll
          *     * `ai` - AI assistant
          *     * `recognition` - Recognition
+         *     * `assets` - Assets and equipment
          * @enum {string}
          */
-        CompaniesFeatureEnum: "finance" | "sales" | "stock" | "attendance" | "hr" | "payroll" | "ai" | "recognition";
+        CompaniesFeatureEnum: "finance" | "sales" | "stock" | "attendance" | "hr" | "payroll" | "ai" | "recognition" | "assets";
         Company: {
             readonly id: number;
             readonly name: string;
@@ -2615,6 +2759,15 @@ export interface components {
             proof_text: string;
             /** Format: binary */
             proof_photo?: string | null;
+            /** @description For a readings task: a value per key of its readings ({"t": "5,2"}). */
+            readings?: {
+                [key: string]: string;
+            };
+            /**
+             * @description What was done about a value out of range: needed then.
+             * @default
+             */
+            reading_note: string;
         };
         ConfirmManyRequest: {
             ids: number[];
@@ -2717,6 +2870,22 @@ export interface components {
         FeedAuthor: {
             id: number;
             name: string;
+        };
+        /**
+         * @description * `own_money` - My own money
+         *     * `held_cash` - Company cash I hold
+         * @enum {string}
+         */
+        FinanceClaimPaidFromEnum: "own_money" | "held_cash";
+        FinanceRef: {
+            id: number;
+            name: string;
+        };
+        HeldAccount: {
+            account_id: number;
+            name: string;
+            balance: string;
+            currency: string;
         };
         Holiday: {
             readonly id: number;
@@ -3987,6 +4156,19 @@ export interface components {
             home_branch: components["schemas"]["AttendanceRef"] | null;
             status: string;
         };
+        PlanningCategoryRef: {
+            id: number;
+            name: string;
+            kind: string;
+            color: string;
+            parent_id: number | null;
+            parent_name: string | null;
+        };
+        PlanningPersonRef: {
+            id: number;
+            name: string;
+            photo_url: string | null;
+        };
         Position: {
             readonly id: number;
             readonly name: string;
@@ -4269,9 +4451,10 @@ export interface components {
          *     * `photo` - Photo
          *     * `text` - Text report
          *     * `any` - Photo or text report
+         *     * `readings` - Readings
          * @enum {string}
          */
-        ProofEnum: "none" | "photo" | "text" | "any";
+        ProofEnum: "none" | "photo" | "text" | "any" | "readings";
         /**
          * @description * `no_stock` - Out of stock
          *     * `no_access` - No access
@@ -4281,6 +4464,14 @@ export interface components {
          * @enum {string}
          */
         ReasonCodeEnum: "no_stock" | "no_access" | "broken" | "not_mine" | "other";
+        RecheckRequest: {
+            /** @description The new value of each key measured again. */
+            readings: {
+                [key: string]: string;
+            };
+            /** @default  */
+            note: string;
+        };
         RecordOut: {
             id: number;
             member_id: number;
@@ -4606,6 +4797,10 @@ export interface components {
             readonly extension: components["schemas"]["TaskExtension"] | null;
             readonly returned_reason: string | null;
             readonly returned_by: components["schemas"]["MemberBrief"] | null;
+            readonly readings: components["schemas"]["TasksReadingSpec"][];
+            readonly readings_taken: components["schemas"]["TasksReadingTaken"][];
+            /** Format: date-time */
+            readonly recheck_until: string | null;
             /** Format: date-time */
             readonly created_at: string;
         };
@@ -4748,6 +4943,39 @@ export interface components {
             needs_confirmation?: boolean | null;
             is_active?: boolean;
         };
+        TasksReadingPerson: {
+            id: number;
+            name: string;
+        };
+        /** @description One number a readings task asks for, with its allowed range (PLAN-OWNER §14.10). */
+        TasksReadingSpec: {
+            /** @description One letter, a to z. */
+            key: string;
+            label: string;
+            unit: string;
+            /** @description Decimal string ("2.0"); null: none. */
+            min: string | null;
+            /** @description Decimal string ("8.0"); null: none. */
+            max: string | null;
+            critical: boolean;
+        };
+        /** @description A value typed in for a readings task, with the range it was held to. */
+        TasksReadingTaken: {
+            id: number;
+            key: string;
+            label: string;
+            unit: string;
+            /** @description Decimal string ("5.2"). */
+            value: string;
+            min: string | null;
+            max: string | null;
+            in_range: boolean;
+            note: string;
+            is_recheck: boolean;
+            /** Format: date-time */
+            recorded_at: string;
+            recorded_by: components["schemas"]["TasksReadingPerson"] | null;
+        };
         TeamMember: {
             id: number;
             name: string;
@@ -4830,6 +5058,14 @@ export interface components {
         TimeOffStatusEnum: "pending" | "approved" | "rejected" | "cancelled";
         Updated: {
             updated: number;
+        };
+        Wallet: {
+            currency: string;
+            held: components["schemas"]["HeldAccount"][];
+            held_total: string;
+            owed_to_me: string;
+            approval_threshold: string | null;
+            receipt_required_over: string | null;
         };
         /**
          * @description * `0` - Monday
@@ -5554,6 +5790,120 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AgendaAttendee"];
+                };
+            };
+        };
+    };
+    v1_companies_finance_categories_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimCategory"][];
+                };
+            };
+        };
+    };
+    v1_companies_finance_claims_list: {
+        parameters: {
+            query?: {
+                status?: string;
+            };
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Claim"][];
+                };
+            };
+        };
+    };
+    v1_companies_finance_claims_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["ClaimCreateRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ClaimCreateRequest"];
+                "application/json": components["schemas"]["ClaimCreateRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Claim"];
+                };
+            };
+        };
+    };
+    v1_companies_finance_claims_cancel_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Claim"];
+                };
+            };
+        };
+    };
+    v1_companies_finance_wallet_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Wallet"];
                 };
             };
         };
@@ -7762,6 +8112,35 @@ export interface operations {
                 "application/json": components["schemas"]["ExtensionDecideRequest"];
                 "application/x-www-form-urlencoded": components["schemas"]["ExtensionDecideRequest"];
                 "multipart/form-data": components["schemas"]["ExtensionDecideRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Task"];
+                };
+            };
+        };
+    };
+    v1_companies_tasks_recheck_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: string;
+                /** @description A unique integer value identifying this task. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecheckRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["RecheckRequest"];
+                "multipart/form-data": components["schemas"]["RecheckRequest"];
             };
         };
         responses: {

@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-07 01:25+0500\n"
+"POT-Creation-Date: 2026-11-07 01:27+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -17341,6 +17341,20 @@ msgstr "Вовремя за 7 дней: %(percent)s%%"
 #: owner_bot/ownerbot/brief.py
 msgid "Most overdue:"
 msgstr "Больше всего просрочены:"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "Readings out of range: %(count)d"
+msgstr "Показания вне нормы: %(count)d"
+
+#: owner_bot/ownerbot/brief.py
+msgid "back in range"
+msgstr "снова в норме"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "Readings not taken: %(count)d"
+msgstr "Не снятые показания: %(count)d"
 
 #: owner_bot/ownerbot/brief.py
 #, python-format
