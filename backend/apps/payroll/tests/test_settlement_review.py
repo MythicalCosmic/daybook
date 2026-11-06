@@ -11,7 +11,7 @@ from apps.finance.models import CompanyRate, Debt
 from apps.inbox.models import Notification
 from apps.members.models import AccessRole
 from apps.members.permissions import Perm
-from apps.payroll import finance_bridge, providers, queries, services
+from apps.payroll import finance_bridge, providers, queries, services, settlement
 from apps.payroll.models import Advance, PayrollRun, PayslipLine
 from apps.payroll.tests.conftest import OCTOBER, local
 from apps.payroll.tests.test_settlement import HIRED, LAST_DAY, give_advance, history, leave
@@ -201,6 +201,22 @@ def test_what_october_paid_after_the_last_day_can_be_taken_back(shop, team, free
         membership=staff.ali, direction=Debt.Direction.RECEIVABLE, status=Debt.Status.OPEN
     )
     assert sum(debt.amount - debt.paid for debt in owed) == D("264516.13")
+
+
+def test_ten_paid_days_read_10_on_the_payslip_and_in_the_wizard(shop, team, freeze):
+    """Tuesday 13 October as the last day: 10 paid days of 26. `Decimal.normalize()` wrote
+    them "1E+1" on the PDF and in the wizard's step."""
+    from apps.payroll import payslip_pdf
+
+    staff = team
+    freeze(local(date(2026, 10, 13), 10))
+    step = settlement.offboard_step(staff.ali)
+    assert "Pay for 10 of 26 working days: 2 000 000" in " ".join(step.lines).replace("\xa0", " ")
+
+    leave(staff.ali)
+    run = services.create_final_run(staff.ali, by=staff.accountant, last_day=date(2026, 10, 13))
+    facts = payslip_pdf.context(run.payslips.get())["facts"]
+    assert "Working days: 26" in facts and "Paid days: 10" in facts
 
 
 # What the review checked and found sound, pinned so it stays that way ----------------------

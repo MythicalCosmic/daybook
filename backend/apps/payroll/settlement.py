@@ -419,7 +419,7 @@ def offboard_step(membership: Membership) -> OffboardStep:
                 lines.append(
                     _("Pay for %(paid)s of %(scheduled)s working days: %(amount)s")
                     % {
-                        "paid": result.paid_days.normalize(),
+                        "paid": f"{result.paid_days.normalize():f}",
                         "scheduled": result.scheduled_days,
                         "amount": money(base),
                     }
