@@ -58,8 +58,16 @@ const groups = computed(() => {
 function tone(row: Permit): "danger" | "warning" | "success" | "neutral" {
   if (row.days_left === null) return "neutral";
   if (row.days_left < 0) return "danger";
-  if (row.days_left <= Math.min(row.remind_days, 30)) return "warning";
+  // The same line as the "ending soon" group, so a pill never reads green under that heading.
+  if (row.days_left <= row.remind_days) return "warning";
   return "success";
+}
+
+/** Kind · number · issuer · branch, without the kind when the name already says it. */
+function details(row: Permit): string {
+  const kind = t(`assets.permitKind.${row.kind}`);
+  const parts = [row.name.trim() === kind ? "" : kind, row.number, row.issuer, row.branch_name ?? t("assets.form.companyLevel")];
+  return parts.filter(Boolean).join(" · ");
 }
 
 function left(row: Permit): string {
@@ -188,7 +196,7 @@ async function upload(event: Event): Promise<void> {
             <div class="min-w-0 flex-1">
               <p class="truncate font-medium text-fg">{{ row.name }}</p>
               <p class="truncate text-xs text-muted">
-                {{ [t(`assets.permitKind.${row.kind}`), row.number, row.issuer, row.branch_name ?? t("assets.form.companyLevel")].filter(Boolean).join(" · ") }}
+                {{ details(row) }}
               </p>
             </div>
             <StatusPill size="sm" :tone="tone(row)" :label="left(row)" />
