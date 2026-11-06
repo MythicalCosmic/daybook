@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-07 01:09+0500\n"
+"POT-Creation-Date: 2026-11-07 01:23+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -466,6 +466,376 @@ msgstr "Стоимость (USD)"
 msgid "AI usage: %(usd)s USD"
 msgstr "Расход AI: %(usd)s USD"
 
+#: backend/apps/ai/agents/custom.py
+#, python-format
+msgid "Sent the report. To: %(to)s"
+msgstr "Отчёт отправлен. Кому: %(to)s"
+
+#: backend/apps/ai/agents/custom.py
+#, python-format
+msgid "Posted the report in the group: %(group)s"
+msgstr "Отчёт отправлен в группу: %(group)s"
+
+#: backend/apps/ai/agents/custom.py
+msgid "Nothing sent: AI isn't available right now"
+msgstr "Ничего не отправлено: AI сейчас недоступен"
+
+#: backend/apps/ai/agents/custom.py
+msgid "Nothing sent: this month's AI budget is spent"
+msgstr "Ничего не отправлено: бюджет AI на этот месяц исчерпан"
+
+#: backend/apps/ai/agents/custom.py
+msgid "Nothing sent: nothing it may read is switched on"
+msgstr ""
+"Ничего не отправлено: ни один из разделов, которые он может читать, не "
+"включён"
+
+#: backend/apps/ai/agents/custom.py
+msgid "Nothing sent: nobody it writes to can get Telegram messages"
+msgstr ""
+"Ничего не отправлено: никто из получателей не может получать сообщения в "
+"Telegram"
+
+#: backend/apps/ai/agents/custom.py
+#, python-format
+msgid "Skipped the %(time)s report: it was more than two hours late"
+msgstr "Отчёт на %(time)s пропущен: опоздание больше двух часов"
+
+#: backend/apps/ai/agents/custom.py
+#, python-format
+msgid "Paused itself: %(name)s no longer works here"
+msgstr "Приостановился: %(name)s здесь больше не работает"
+
+#: backend/apps/ai/agents/custom.py
+#, python-format
+msgid "Paused itself: %(name)s can no longer use AI or the dashboard"
+msgstr ""
+"Приостановился: %(name)s больше не может пользоваться AI или панелью "
+"управления"
+
+#: backend/apps/ai/agents/custom.py backend/apps/ai/models.py
+#: backend/apps/tasks/hooks.py owner_bot/ownerbot/brief.py
+msgid "Tasks"
+msgstr "Задачи"
+
+#: backend/apps/ai/agents/custom.py backend/apps/reports/hooks.py
+msgid "Team results"
+msgstr "Итоги команды"
+
+#: backend/apps/ai/agents/custom.py
+msgid "People and time off"
+msgstr "Сотрудники и отпуска"
+
+#: backend/apps/ai/agents/custom.py backend/apps/companies/models.py
+#: owner_bot/ownerbot/brief.py
+msgid "Attendance"
+msgstr "Посещаемость"
+
+#: backend/apps/ai/agents/custom.py backend/apps/companies/models.py
+msgid "Sales and cash"
+msgstr "Продажи и касса"
+
+#: backend/apps/ai/agents/custom.py backend/apps/companies/models.py
+#: owner_bot/ownerbot/brief.py
+msgid "Finance"
+msgstr "Финансы"
+
+#: backend/apps/ai/agents/custom.py
+msgid "HR and documents"
+msgstr "Кадры и документы"
+
+#: backend/apps/ai/agents/custom.py backend/apps/companies/models.py
+msgid "Payroll"
+msgstr "Зарплата"
+
+#: backend/apps/ai/agents/custom.py
+msgid "Projects"
+msgstr "Проекты"
+
+#: backend/apps/ai/agents/custom.py
+msgid "Calendar"
+msgstr "Календарь"
+
+#: backend/apps/ai/agents/custom.py
+msgid "Announcements"
+msgstr "Объявления"
+
+#: backend/apps/ai/agents/custom.py
+msgid "Knowledge base"
+msgstr "База знаний"
+
+#: backend/apps/ai/agents/custom.py backend/apps/tasks/models.py
+msgid "Monday"
+msgstr "Понедельник"
+
+#: backend/apps/ai/agents/custom.py backend/apps/tasks/models.py
+msgid "Tuesday"
+msgstr "Вторник"
+
+#: backend/apps/ai/agents/custom.py backend/apps/tasks/models.py
+msgid "Wednesday"
+msgstr "Среда"
+
+#: backend/apps/ai/agents/custom.py backend/apps/tasks/models.py
+msgid "Thursday"
+msgstr "Четверг"
+
+#: backend/apps/ai/agents/custom.py backend/apps/tasks/models.py
+msgid "Friday"
+msgstr "Пятница"
+
+#: backend/apps/ai/agents/custom.py backend/apps/tasks/models.py
+msgid "Saturday"
+msgstr "Суббота"
+
+#: backend/apps/ai/agents/custom.py backend/apps/tasks/models.py
+msgid "Sunday"
+msgstr "Воскресенье"
+
+#: backend/apps/ai/agents/custom.py
+msgid "Writes and sends the report"
+msgstr "Напишет и отправит отчёт"
+
+#: backend/apps/ai/agents/custom.py
+msgid "The report it writes"
+msgstr "Отчёт, который он пишет"
+
+#: backend/apps/ai/agents/custom.py
+msgid "The same report in another language"
+msgstr "Тот же отчёт на другом языке"
+
+#: backend/apps/ai/agents/custom.py backend/apps/ai/agents/hr_assistant.py
+#: backend/apps/ai/agents/morning_plan.py
+#, python-format
+msgid "Workdays at %(time)s"
+msgstr "По рабочим дням в %(time)s"
+
+#: backend/apps/ai/agents/custom.py
+#, python-format
+msgid "Every week: %(day)s at %(time)s"
+msgstr "Каждую неделю: %(day)s, в %(time)s"
+
+#: backend/apps/ai/agents/custom.py
+#, python-format
+msgid "Every month: day %(day)s at %(time)s"
+msgstr "Каждый месяц: число %(day)s, в %(time)s"
+
+#: backend/apps/ai/agents/custom.py
+#, python-format
+msgid "Every day at %(time)s"
+msgstr "Каждый день в %(time)s"
+
+#: backend/apps/ai/agents/custom.py
+msgid "The report in the Telegram group"
+msgstr "Отчёт в Telegram-группе"
+
+#: backend/apps/ai/agents/custom.py
+#, python-format
+msgid "The report for %(count)s person"
+msgid_plural "The report for %(count)s people"
+msgstr[0] "Отчёт для %(count)s человека"
+msgstr[1] "Отчёт для %(count)s человек"
+msgstr[2] "Отчёт для %(count)s человек"
+
+#: backend/apps/ai/agents/custom.py
+msgid "Sample report (demo mode)."
+msgstr "Пример отчёта (демо-режим)."
+
+#: backend/apps/ai/agents/custom.py
+#, python-format
+msgid "%(count)s task is late right now."
+msgid_plural "%(count)s tasks are late right now."
+msgstr[0] "Сейчас просрочена %(count)s задача."
+msgstr[1] "Сейчас просрочены %(count)s задачи."
+msgstr[2] "Сейчас просрочено %(count)s задач."
+
+#: backend/apps/ai/agents/custom.py
+msgid "With Claude connected, this agent writes the report you asked for."
+msgstr "С подключённым Claude этот агент напишет отчёт, который вы описали."
+
+#: backend/apps/ai/agents/custom.py
+msgid "Give it a name."
+msgstr "Дайте ему название."
+
+#: backend/apps/ai/agents/custom.py backend/apps/ai/services.py
+#, python-format
+msgid "At most %(max)d characters."
+msgstr "Не больше %(max)d символов."
+
+#: backend/apps/ai/agents/custom.py
+msgid "Write what it should do, in a sentence or more."
+msgstr "Опишите, что он должен делать, хотя бы одним предложением."
+
+#: backend/apps/ai/agents/custom.py
+msgid "Pick one of the colours."
+msgstr "Выберите один из цветов."
+
+#: backend/apps/ai/agents/custom.py
+msgid "Pick how often it runs."
+msgstr "Выберите, как часто он работает."
+
+#: backend/apps/ai/agents/custom.py backend/apps/ai/agents/registry.py
+msgid "Enter a time as HH:MM."
+msgstr "Введите время как ЧЧ:ММ."
+
+#: backend/apps/ai/agents/custom.py backend/apps/projects/services.py
+msgid "Pick a day of the week."
+msgstr "Выберите день недели."
+
+#: backend/apps/ai/agents/custom.py
+msgid "Pick a day from 1 to 28."
+msgstr "Выберите число от 1 до 28."
+
+#: backend/apps/ai/agents/custom.py
+msgid "Choose who gets it."
+msgstr "Выберите, кто его получит."
+
+#: backend/apps/ai/agents/custom.py
+msgid "Choose a Telegram group the bot is in."
+msgstr "Выберите Telegram-группу, в которой есть бот."
+
+#: backend/apps/ai/agents/custom.py
+msgid "Choose people from the team."
+msgstr "Выберите сотрудников из команды."
+
+#: backend/apps/ai/agents/custom.py
+#, python-format
+msgid "At most %(max)d people."
+msgstr "Не больше %(max)d человек."
+
+#: backend/apps/ai/agents/custom.py
+msgid "Someone you chose hasn't started the bot, so they can't get it."
+msgstr "Кто-то из выбранных не запускал бота, поэтому не сможет его получить."
+
+#: backend/apps/ai/agents/custom.py
+msgid "Choose what it may read."
+msgstr "Выберите, что он может читать."
+
+#: backend/apps/ai/agents/custom.py
+msgid "It can only read what is switched on here."
+msgstr "Он может читать только то, что здесь включено."
+
+#: backend/apps/ai/agents/custom.py
+#, python-format
+msgid "You can't read %(what)s yourself, so it can't either."
+msgstr "Вы сами не можете читать этот раздел, значит не может и он: %(what)s"
+
+#: backend/apps/ai/agents/custom_templates.py
+msgid "Evening report"
+msgstr "Вечерний отчёт"
+
+#: backend/apps/ai/agents/custom_templates.py
+msgid ""
+"Every workday evening, sum up the day in a few lines: how many tasks were "
+"done and how many are late (name the late ones and whose they are), who came "
+"to work late today, and today's sales at each pharmacy compared with the "
+"same weekday last week. Put anything unusual first."
+msgstr ""
+"Каждый рабочий вечер подведи итоги дня в нескольких строках: сколько задач "
+"выполнено и сколько просрочено (назови просроченные и чьи они), кто сегодня "
+"опоздал на работу и как прошли сегодняшние продажи каждой аптеки по "
+"сравнению с тем же днём прошлой недели. Необычное — в начале."
+
+#: backend/apps/ai/agents/custom_templates.py
+msgid "Monday: the best of last week"
+msgstr "Понедельник: лучшие за прошлую неделю"
+
+#: backend/apps/ai/agents/custom_templates.py
+msgid ""
+"Every Monday morning: who did best last week (tasks done on time, coming to "
+"work on time, and for cashiers their sales) and who needs help, with one or "
+"two reasons for each. Name at most three people in each group."
+msgstr ""
+"Каждый понедельник утром: кто лучше всех работал на прошлой неделе (задачи в "
+"срок, приход на работу вовремя, а у кассиров — продажи) и кому нужна помощь, "
+"с одной-двумя причинами для каждого. В каждой группе — не больше трёх "
+"человек."
+
+#: backend/apps/ai/agents/custom_templates.py
+msgid "Who is at work at 10:00"
+msgstr "Кто на работе в 10:00"
+
+#: backend/apps/ai/agents/custom_templates.py
+msgid ""
+"Every workday at 10:00: who has not come to work yet, who came late today, "
+"and which pharmacy is short of people right now. If everyone is in, say so "
+"in one line."
+msgstr ""
+"Каждый рабочий день в 10:00: кто ещё не пришёл на работу, кто сегодня "
+"опоздал и в какой аптеке сейчас не хватает людей. Если все на месте — скажи "
+"об этом одной строкой."
+
+#: backend/apps/ai/agents/custom_templates.py
+msgid "Last week's biggest expenses"
+msgstr "Крупнейшие расходы прошлой недели"
+
+#: backend/apps/ai/agents/custom_templates.py
+msgid ""
+"Every Monday: last week's biggest expenses by category and the five largest "
+"payments, compared with a usual week (the average of the four weeks before). "
+"Say which expense grew the most, and by how much."
+msgstr ""
+"Каждый понедельник: крупнейшие расходы прошлой недели по категориям и пять "
+"самых больших платежей в сравнении с обычной неделей (среднее за четыре "
+"недели до неё). Скажи, какой расход вырос сильнее всего и на сколько."
+
+#: backend/apps/ai/agents/custom_templates.py
+msgid "The month in short"
+msgstr "Месяц вкратце"
+
+#: backend/apps/ai/agents/custom_templates.py
+msgid ""
+"On the 1st of each month: last month in short. Sales and profit, the biggest "
+"expenses, how many tasks the team did on time, and what changed most from "
+"the month before. Five to eight lines."
+msgstr ""
+"1-го числа каждого месяца: прошлый месяц вкратце. Продажи и прибыль, "
+"крупнейшие расходы, сколько задач команда выполнила в срок и что изменилось "
+"сильнее всего по сравнению с позапрошлым месяцем. От пяти до восьми строк."
+
+#: backend/apps/ai/agents/custom_templates.py
+msgid "Documents expiring in 30 days"
+msgstr "Документы, истекающие за 30 дней"
+
+#: backend/apps/ai/agents/custom_templates.py
+msgid ""
+"Every Monday: the staff documents, certificates and contracts that expire in "
+"the next 30 days or have already expired, whose they are and the date, the "
+"most urgent first. If nothing expires, say so in one line."
+msgstr ""
+"Каждый понедельник: документы, сертификаты и договоры сотрудников, срок "
+"которых истекает в ближайшие 30 дней или уже истёк, — чьи они и дата, самые "
+"срочные первыми. Если ничего не истекает — скажи об этом одной строкой."
+
+#: backend/apps/ai/agents/custom_templates.py
+msgid "A pharmacy sold less than usual"
+msgstr "Аптека продала меньше обычного"
+
+#: backend/apps/ai/agents/custom_templates.py
+msgid ""
+"Every evening, compare today's sales at each pharmacy with its usual for "
+"this weekday (the average of the last four same weekdays). Name every "
+"pharmacy that sold more than 15 percent below its usual, with both numbers. "
+"If all are as usual, say so in one line."
+msgstr ""
+"Каждый вечер сравни сегодняшние продажи каждой аптеки с её обычными для "
+"этого дня недели (среднее за последние четыре таких дня). Назови каждую "
+"аптеку, которая продала больше чем на 15 процентов меньше обычного, с обеими "
+"цифрами. Если всё как обычно — скажи об этом одной строкой."
+
+#: backend/apps/ai/agents/custom_templates.py
+msgid "Late work every morning"
+msgstr "Просроченные задачи каждое утро"
+
+#: backend/apps/ai/agents/custom_templates.py
+msgid ""
+"Every workday at 9:00: the tasks that are late, grouped by person with the "
+"oldest first, and who has the most. Say how many there are in all in the "
+"first line."
+msgstr ""
+"Каждый рабочий день в 9:00: просроченные задачи по людям, самые старые "
+"первыми, и у кого их больше всего. В первой строке — сколько их всего."
+
 #: backend/apps/ai/agents/deadline_watcher.py
 #, python-format
 msgid "Every 30 minutes, %(start)s–%(end)s"
@@ -516,12 +886,6 @@ msgstr "Проверит просроченные задачи"
 #, python-format
 msgid "Told %(to)s that «%(task)s» is late (%(assignee)s)"
 msgstr "%(to)s: сообщено, что «%(task)s» опаздывает (%(assignee)s)"
-
-#: backend/apps/ai/agents/hr_assistant.py
-#: backend/apps/ai/agents/morning_plan.py
-#, python-format
-msgid "Workdays at %(time)s"
-msgstr "По рабочим дням в %(time)s"
 
 #: backend/apps/ai/agents/hr_assistant.py
 msgid "Payroll check before pay day"
@@ -797,10 +1161,6 @@ msgid "At most %(max)s."
 msgstr "Не больше %(max)s."
 
 #: backend/apps/ai/agents/registry.py
-msgid "Enter a time as HH:MM."
-msgstr "Введите время как ЧЧ:ММ."
-
-#: backend/apps/ai/agents/registry.py
 msgid "Pick one of the options."
 msgstr "Выберите один из вариантов."
 
@@ -909,6 +1269,14 @@ msgstr "Изменил настройки AI"
 msgid "Changed an AI agent"
 msgstr "Изменил AI-агента"
 
+#: backend/apps/ai/audit_actions.py
+msgid "Created an AI agent"
+msgstr "Создал AI-агента"
+
+#: backend/apps/ai/audit_actions.py
+msgid "Deleted an AI agent"
+msgstr "Удалил AI-агента"
+
 #: backend/apps/ai/bot_messages.py
 msgid "Listening…"
 msgstr "Слушаю…"
@@ -990,8 +1358,9 @@ msgstr[2] "Создать %(count)s задач"
 msgstr[3] "Создать %(count)s задачи"
 
 #: backend/apps/ai/bot_messages.py backend/apps/announcements/bot_messages.py
-#: backend/apps/attendance/bot_messages.py backend/apps/tasks/bot_messages.py
-#: employee_bot/bot/handlers/member/tasks.py owner_bot/ownerbot/bot_messages.py
+#: backend/apps/attendance/bot_messages.py backend/apps/finance/bot_messages.py
+#: backend/apps/tasks/bot_messages.py employee_bot/bot/handlers/member/tasks.py
+#: owner_bot/ownerbot/bot_messages.py
 msgid "Cancel"
 msgstr "Отмена"
 
@@ -1372,11 +1741,6 @@ msgstr "Платформа отключила AI для этой компани�
 msgid "AI settings"
 msgstr "Настройки AI"
 
-#: backend/apps/ai/models.py backend/apps/tasks/hooks.py
-#: owner_bot/ownerbot/brief.py
-msgid "Tasks"
-msgstr "Задачи"
-
 #: backend/apps/ai/models.py backend/apps/signin/models.py
 msgid "Employee bot"
 msgstr "Бот для сотрудников"
@@ -1386,12 +1750,12 @@ msgid "Owner bot"
 msgstr "Бот для владельцев"
 
 #: backend/apps/ai/models.py backend/apps/attendance/models.py
-#: backend/apps/sales/models.py
+#: backend/apps/finance/models.py backend/apps/sales/models.py
 msgid "Mini app"
 msgstr "Мини-приложение"
 
-#: backend/apps/ai/models.py backend/apps/sales/models.py
-#: owner_bot/ownerbot/commands.py
+#: backend/apps/ai/models.py backend/apps/finance/models.py
+#: backend/apps/sales/models.py owner_bot/ownerbot/commands.py
 msgid "Dashboard"
 msgstr "Панель управления"
 
@@ -1450,6 +1814,99 @@ msgstr "Выполняется"
 #: backend/apps/tasks/bot_messages.py backend/apps/tasks/services.py
 msgid "Done"
 msgstr "Готово"
+
+#: backend/apps/ai/models.py backend/apps/payroll/models.py
+#: backend/apps/tasks/models.py
+msgid "Every day"
+msgstr "Каждый день"
+
+#: backend/apps/ai/models.py
+msgid "Workdays"
+msgstr "По рабочим дням"
+
+#: backend/apps/ai/models.py
+msgid "Once a week"
+msgstr "Раз в неделю"
+
+#: backend/apps/ai/models.py backend/apps/payroll/models.py
+msgid "Once a month"
+msgstr "Раз в месяц"
+
+#: backend/apps/ai/models.py backend/apps/tasks/bot_messages.py
+msgid "Me"
+msgstr "Себе"
+
+#: backend/apps/ai/models.py
+msgid "Chosen people"
+msgstr "Выбранным сотрудникам"
+
+#: backend/apps/ai/models.py
+msgid "A Telegram group"
+msgstr "В Telegram-группу"
+
+#: backend/apps/ai/models.py
+msgid "Sky"
+msgstr "Небесный"
+
+#: backend/apps/ai/models.py
+msgid "Rose"
+msgstr "Розовый"
+
+#: backend/apps/ai/models.py
+msgid "Indigo"
+msgstr "Индиго"
+
+#: backend/apps/ai/models.py
+msgid "Lime"
+msgstr "Лаймовый"
+
+#: backend/apps/ai/models.py
+msgid "Amber"
+msgstr "Янтарный"
+
+#: backend/apps/ai/models.py
+msgid "Plum"
+msgstr "Сливовый"
+
+#: backend/apps/ai/models.py
+msgid "Aqua"
+msgstr "Бирюзовый"
+
+#: backend/apps/ai/models.py
+msgid "Slate"
+msgstr "Серый"
+
+#: backend/apps/ai/models.py
+msgid "Not paused"
+msgstr "Не приостановлен"
+
+#: backend/apps/ai/models.py
+msgid "Its owner no longer works here"
+msgstr "Его владелец здесь больше не работает"
+
+#: backend/apps/ai/models.py
+msgid "Its owner can't use AI or the dashboard any more"
+msgstr "Его владелец больше не может пользоваться AI или панелью управления"
+
+#: backend/apps/ai/models.py
+msgid "What it should do, in the owner's words."
+msgstr "Что он должен делать, словами владельца."
+
+#: backend/apps/ai/models.py
+msgid "When it runs, in the company's timezone."
+msgstr "Когда он работает, по часовому поясу компании."
+
+#: backend/apps/ai/models.py
+msgid "For weekly: 0 = Monday."
+msgstr "Для еженедельного: 0 = понедельник."
+
+#: backend/apps/ai/models.py
+msgid "For monthly: the day of the month."
+msgstr "Для ежемесячного: число месяца."
+
+#: backend/apps/ai/models.py
+msgid "Whose rights it reads with; who 'me' is."
+msgstr "С чьими правами он читает; кто такой «мне»."
 
 #: backend/apps/ai/models.py backend/apps/announcements/models.py
 #: backend/apps/attendance/models.py backend/apps/attendance/services.py
@@ -1535,9 +1992,8 @@ msgid "This agent works by fixed rules: it has no instructions."
 msgstr "Этот агент работает по твёрдым правилам: указания ему не нужны."
 
 #: backend/apps/ai/services.py
-#, python-format
-msgid "At most %(max)d characters."
-msgstr "Не больше %(max)d символов."
+msgid "Change what this agent does in its job."
+msgstr "Измените, что делает этот агент, в его задании."
 
 #: backend/apps/ai/services.py
 msgid "This agent needs Claude: add ANTHROPIC_API_KEY on the server."
@@ -1554,6 +2010,28 @@ msgstr "Этот агент работает сам, когда что-то пр
 #: backend/apps/ai/services.py
 msgid "Turn AI on first."
 msgstr "Сначала включите AI."
+
+#: backend/apps/ai/services.py
+msgid "It is already at work: its report is on the way."
+msgstr "Он уже работает: отчёт в пути."
+
+#: backend/apps/ai/services.py
+#, python-format
+msgid ""
+"That's all the runs for today (%(limit)s). The schedule goes on as usual."
+msgstr ""
+"На сегодня запуски закончились (%(limit)s). Расписание работает как обычно."
+
+#: backend/apps/ai/services.py
+msgid "You can't use AI, so an agent can't read for you."
+msgstr "У вас нет права пользоваться AI, поэтому агент не может читать за вас."
+
+#: backend/apps/ai/services.py
+#, python-format
+msgid "You can have %(max)s agents of your own. Delete one to make another."
+msgstr ""
+"Можно иметь не больше %(max)s своих агентов. Удалите одного, чтобы создать "
+"нового."
 
 #: backend/apps/announcements/admin.py backend/apps/finance/models.py
 msgid "Read"
@@ -1800,6 +2278,7 @@ msgstr "Срок действия должен заканчиваться пос
 
 #: backend/apps/announcements/services.py backend/apps/attendance/api.py
 #: backend/apps/attendance/services.py backend/apps/console/base.py
+#: backend/apps/finance/api.py backend/apps/finance/claims.py
 #: backend/apps/hr/services.py backend/apps/inbox/services.py
 #: backend/apps/knowledge/owner_api.py backend/apps/lifecycle/services.py
 #: backend/apps/members/departments.py backend/apps/members/join_links.py
@@ -2242,8 +2721,8 @@ msgstr "Найдено при инвентаризации"
 msgid "Note"
 msgstr "Заметка"
 
-#: backend/apps/assets/models.py backend/apps/payroll/models.py
-#: backend/apps/sales/models.py
+#: backend/apps/assets/models.py backend/apps/finance/models.py
+#: backend/apps/payroll/models.py backend/apps/sales/models.py
 msgid "The first day of the month."
 msgstr "Первое число месяца."
 
@@ -2370,7 +2849,9 @@ msgid "That purchase isn't yours."
 msgstr "Эта покупка не ваша."
 
 #: backend/apps/assets/owner_api.py backend/apps/finance/owner_api.py
-#: backend/apps/finance/owner_serializers.py backend/apps/finance/services.py
+#: backend/apps/finance/owner_serializers.py
+#: backend/apps/finance/planning_api.py backend/apps/finance/recurring.py
+#: backend/apps/finance/services.py
 msgid "Pick a category."
 msgstr "Выберите категорию."
 
@@ -2971,7 +3452,8 @@ msgstr "Выберите результат из списка."
 msgid "Not found in the count of %(day)s."
 msgstr "Не найдено при инвентаризации %(day)s."
 
-#: backend/apps/attendance/actions.py backend/apps/payroll/actions.py
+#: backend/apps/attendance/actions.py backend/apps/finance/claims.py
+#: backend/apps/finance/reminders.py backend/apps/payroll/actions.py
 msgid "This isn't available any more."
 msgstr "Это больше недоступно."
 
@@ -3036,8 +3518,8 @@ msgid "Give a day as YYYY-MM-DD."
 msgstr "Укажите день в формате YYYY-MM-DD."
 
 #: backend/apps/attendance/api.py backend/apps/attendance/owner_api.py
-#: backend/apps/payroll/api.py backend/apps/payroll/owner_api.py
-#: backend/apps/payroll/periods.py
+#: backend/apps/finance/budgets.py backend/apps/payroll/api.py
+#: backend/apps/payroll/owner_api.py backend/apps/payroll/periods.py
 msgid "Give a month as YYYY-MM."
 msgstr "Укажите месяц в формате YYYY-MM."
 
@@ -3531,7 +4013,7 @@ msgstr "настройки посещаемости"
 msgid "Earlier than the start: the shift ends the next day."
 msgstr "Если раньше начала, смена заканчивается на следующий день."
 
-#: backend/apps/attendance/models.py
+#: backend/apps/attendance/models.py backend/apps/finance/models.py
 msgid "Weekly"
 msgstr "Недельный"
 
@@ -3616,10 +4098,10 @@ msgid "Waiting for approval"
 msgstr "Ждёт одобрения"
 
 #: backend/apps/attendance/models.py backend/apps/attendance/services.py
-#: backend/apps/members/models.py backend/apps/members/providers.py
-#: backend/apps/members/services.py backend/apps/signin/models.py
-#: backend/apps/timeoff/models.py backend/apps/timeoff/providers.py
-#: backend/apps/timeoff/services.py
+#: backend/apps/finance/models.py backend/apps/members/models.py
+#: backend/apps/members/providers.py backend/apps/members/services.py
+#: backend/apps/signin/models.py backend/apps/timeoff/models.py
+#: backend/apps/timeoff/providers.py backend/apps/timeoff/services.py
 #: employee_bot/bot/handlers/admin/approvals.py
 msgid "Approved"
 msgstr "Одобрено"
@@ -3702,18 +4184,20 @@ msgid "Edited by a manager"
 msgstr "Изменено руководителем"
 
 #: backend/apps/attendance/notify.py backend/apps/attendance/providers.py
-#: backend/apps/members/bot_messages.py backend/apps/members/notifications.py
-#: backend/apps/members/providers.py backend/apps/payroll/notify.py
-#: backend/apps/payroll/providers.py backend/apps/timeoff/bot_messages.py
-#: backend/apps/timeoff/notifications.py backend/apps/timeoff/providers.py
+#: backend/apps/finance/claims.py backend/apps/members/bot_messages.py
+#: backend/apps/members/notifications.py backend/apps/members/providers.py
+#: backend/apps/payroll/notify.py backend/apps/payroll/providers.py
+#: backend/apps/timeoff/bot_messages.py backend/apps/timeoff/notifications.py
+#: backend/apps/timeoff/providers.py
 msgid "Approve"
 msgstr "Одобрить"
 
 #: backend/apps/attendance/notify.py backend/apps/attendance/providers.py
-#: backend/apps/members/bot_messages.py backend/apps/members/notifications.py
-#: backend/apps/members/providers.py backend/apps/payroll/notify.py
-#: backend/apps/payroll/providers.py backend/apps/timeoff/bot_messages.py
-#: backend/apps/timeoff/notifications.py backend/apps/timeoff/providers.py
+#: backend/apps/finance/claims.py backend/apps/members/bot_messages.py
+#: backend/apps/members/notifications.py backend/apps/members/providers.py
+#: backend/apps/payroll/notify.py backend/apps/payroll/providers.py
+#: backend/apps/timeoff/bot_messages.py backend/apps/timeoff/notifications.py
+#: backend/apps/timeoff/providers.py
 msgid "Reject"
 msgstr "Отклонить"
 
@@ -4565,29 +5049,13 @@ msgstr "Включённые модули"
 msgid "Unknown timezone: %(value)s"
 msgstr "Неизвестный часовой пояс: %(value)s"
 
-#: backend/apps/companies/models.py owner_bot/ownerbot/brief.py
-msgid "Finance"
-msgstr "Финансы"
-
-#: backend/apps/companies/models.py
-msgid "Sales and cash"
-msgstr "Продажи и касса"
-
 #: backend/apps/companies/models.py
 msgid "Stock"
 msgstr "Склад"
 
-#: backend/apps/companies/models.py owner_bot/ownerbot/brief.py
-msgid "Attendance"
-msgstr "Посещаемость"
-
 #: backend/apps/companies/models.py backend/apps/hr/providers.py
 msgid "HR"
 msgstr "Кадры"
-
-#: backend/apps/companies/models.py
-msgid "Payroll"
-msgstr "Зарплата"
 
 #: backend/apps/companies/models.py
 msgid "AI assistant"
@@ -5027,6 +5495,41 @@ msgstr ""
 "Открытые долги (насия): кто должен нам, кому должны мы, сроки погашения и "
 "дни просрочки"
 
+#: backend/apps/finance/ai_tools.py
+msgid ""
+"Payments coming up: bills, taxes, distributor payables, money owed to us, pay"
+msgstr ""
+"Предстоящие платежи: счета, налоги, долги дистрибьюторам, долги нам, зарплата"
+
+#: backend/apps/finance/ai_tools.py
+msgid "Budgets against actual spending by category for a month"
+msgstr "Бюджеты и фактические расходы по категориям за месяц"
+
+#: backend/apps/finance/ai_tools.py
+msgid "What we owe distributors and other suppliers, by party and due date"
+msgstr ""
+"Наши долги дистрибьюторам и другим поставщикам по контрагентам и срокам"
+
+#: backend/apps/finance/api.py
+msgid "Finance isn't switched on for this company."
+msgstr "Для этой компании финансы не включены."
+
+#: backend/apps/finance/api.py backend/apps/finance/planning_api.py
+#: backend/apps/projects/services.py
+msgid "Unknown status."
+msgstr "Неизвестный статус."
+
+#: backend/apps/finance/api.py backend/apps/finance/claims.py
+#: backend/apps/finance/services.py
+#, python-format
+msgid "Attach at most %(n)s receipts."
+msgstr "Чеков можно приложить не больше %(n)s."
+
+#: backend/apps/finance/api.py backend/apps/finance/claims.py
+#: backend/apps/finance/services.py backend/apps/projects/services.py
+msgid "Pick an expense category."
+msgstr "Выберите категорию расхода."
+
 #: backend/apps/finance/audit_actions.py
 msgid "Added a money account"
 msgstr "Добавлен денежный счёт"
@@ -5159,6 +5662,66 @@ msgstr "Изменены настройки финансов"
 msgid "Corrected balances from the ledger"
 msgstr "Остатки исправлены по проводкам"
 
+#: backend/apps/finance/audit_actions.py
+msgid "Recorded a credit note on a debt"
+msgstr "Оформил кредит-ноту по долгу"
+
+#: backend/apps/finance/audit_actions.py
+msgid "Added a recurring payment"
+msgstr "Добавил регулярный платёж"
+
+#: backend/apps/finance/audit_actions.py
+msgid "Changed a recurring payment"
+msgstr "Изменил регулярный платёж"
+
+#: backend/apps/finance/audit_actions.py
+msgid "Switched off a recurring payment"
+msgstr "Отключил регулярный платёж"
+
+#: backend/apps/finance/audit_actions.py
+msgid "Paid a recurring bill"
+msgstr "Оплатил регулярный счёт"
+
+#: backend/apps/finance/audit_actions.py
+msgid "Skipped a recurring payment"
+msgstr "Пропустил регулярный платёж"
+
+#: backend/apps/finance/audit_actions.py
+msgid "Posted a recurring payment early"
+msgstr "Провёл регулярный платёж досрочно"
+
+#: backend/apps/finance/audit_actions.py
+msgid "Added the tax calendar"
+msgstr "Добавил налоговый календарь"
+
+#: backend/apps/finance/audit_actions.py
+msgid "Set budgets"
+msgstr "Задал бюджеты"
+
+#: backend/apps/finance/audit_actions.py
+msgid "Copied last month's budgets"
+msgstr "Скопировал бюджеты прошлого месяца"
+
+#: backend/apps/finance/audit_actions.py
+msgid "Submitted an expense claim"
+msgstr "Подал заявку на возмещение расходов"
+
+#: backend/apps/finance/audit_actions.py
+msgid "Approved an expense claim"
+msgstr "Утвердил заявку на возмещение расходов"
+
+#: backend/apps/finance/audit_actions.py
+msgid "Rejected an expense claim"
+msgstr "Отклонил заявку на возмещение расходов"
+
+#: backend/apps/finance/audit_actions.py
+msgid "Paid back an expense claim"
+msgstr "Возместил расходы по заявке"
+
+#: backend/apps/finance/audit_actions.py
+msgid "Cancelled an expense claim"
+msgstr "Отменил заявку на возмещение расходов"
+
 #: backend/apps/finance/bot_messages.py
 #, python-format
 msgid "Big expense: %(amount)s · %(category)s"
@@ -5168,6 +5731,81 @@ msgstr "Крупный расход: %(amount)s · %(category)s"
 #, python-format
 msgid "%(person)s recorded it on %(account)s."
 msgstr "%(person)s: записано на счёт «%(account)s»."
+
+#: backend/apps/finance/bot_messages.py
+msgid ""
+"Send a photo of the receipt, or type the amount you spent, for example: "
+"450000. Send /cancel to stop."
+msgstr ""
+"Пришлите фото чека или напишите потраченную сумму, например: 450000. Чтобы "
+"остановить, отправьте /cancel."
+
+#: backend/apps/finance/bot_messages.py
+msgid "Expense claims aren't switched on for you."
+msgstr "Заявки на возмещение расходов для вас не включены."
+
+#: backend/apps/finance/bot_messages.py
+msgid "How much did you spend? Type the amount, for example: 450000."
+msgstr "Сколько вы потратили? Напишите сумму, например: 450000."
+
+#: backend/apps/finance/bot_messages.py
+msgid ""
+"That doesn't look like an amount. Type digits only, for example: 450000."
+msgstr "Это не похоже на сумму. Напишите только цифры, например: 450000."
+
+#: backend/apps/finance/bot_messages.py
+msgid "What was it for? Pick a category."
+msgstr "На что потрачено? Выберите категорию."
+
+#: backend/apps/finance/bot_messages.py
+msgid "There are no expense categories yet. Ask your manager to add them."
+msgstr "Категорий расходов пока нет. Попросите руководителя их добавить."
+
+#: backend/apps/finance/bot_messages.py
+msgid "Where did the money come from?"
+msgstr "Откуда взяты деньги?"
+
+#: backend/apps/finance/bot_messages.py backend/apps/finance/models.py
+msgid "My own money"
+msgstr "Мои личные деньги"
+
+#: backend/apps/finance/bot_messages.py
+#, python-format
+msgid "Company cash I hold (%(amount)s)"
+msgstr "Деньги компании у меня на руках (%(amount)s)"
+
+#: backend/apps/finance/bot_messages.py
+#, python-format
+msgid "Paid from: %(source)s"
+msgstr "Оплачено из: %(source)s"
+
+#: backend/apps/finance/bot_messages.py
+msgid "Submit"
+msgstr "Отправить"
+
+#: backend/apps/finance/bot_messages.py
+msgid "Change amount"
+msgstr "Изменить сумму"
+
+#: backend/apps/finance/bot_messages.py
+msgid "Change category"
+msgstr "Изменить категорию"
+
+#: backend/apps/finance/bot_messages.py
+msgid "Cancelled. Nothing was sent."
+msgstr "Отменено. Ничего не отправлено."
+
+#: backend/apps/finance/bot_messages.py
+msgid "Sent for approval. You'll hear when it is decided."
+msgstr "Отправлено на утверждение. Мы сообщим, когда будет решение."
+
+#: backend/apps/finance/bot_messages.py
+msgid "Recorded. No approval was needed for this amount."
+msgstr "Записано. Для этой суммы утверждение не требовалось."
+
+#: backend/apps/finance/bot_messages.py
+msgid "This expense was already sent or cancelled. Start again with /expense."
+msgstr "Этот расход уже отправлен или отменён. Начните заново с /expense."
 
 #: backend/apps/finance/bot_messages.py backend/apps/finance/hooks.py
 msgid "Balances were corrected from the ledger"
@@ -5181,6 +5819,114 @@ msgid ""
 msgstr ""
 "Ночная проверка нашла расхождения с проводками и исправила их: остатков на "
 "счетах — %(accounts)s, сумм долгов — %(debts)s."
+
+#: backend/apps/finance/budgets.py
+msgid "Budgets are set on expense categories."
+msgstr "Бюджеты задаются для категорий расходов."
+
+#: backend/apps/finance/budgets.py
+#, python-format
+msgid "Budget %(budget)s."
+msgstr "Бюджет: %(budget)s."
+
+#: backend/apps/finance/budgets.py
+#, python-format
+msgid ""
+"%(category)s: %(percent)s%% of the %(month)s budget used, %(days)s days left"
+msgstr ""
+"%(category)s: использовано %(percent)s%% бюджета на %(month)s, осталось "
+"дней: %(days)s"
+
+#: backend/apps/finance/budgets.py
+#, python-format
+msgid "%(category)s: %(percent)s%% of the %(month)s budget used"
+msgstr "%(category)s: использовано %(percent)s%% бюджета на %(month)s"
+
+#: backend/apps/finance/claims.py backend/apps/payroll/api.py
+msgid "Your access is paused."
+msgstr "Ваш доступ приостановлен."
+
+#: backend/apps/finance/claims.py
+msgid "Pick another category: this one is booked by the system."
+msgstr "Выберите другую категорию: в эту записывает система."
+
+#: backend/apps/finance/claims.py backend/apps/finance/owner_api.py
+msgid "Pick today or an earlier day."
+msgstr "Выберите сегодняшнюю или более раннюю дату."
+
+#: backend/apps/finance/claims.py backend/apps/finance/services.py
+#, python-format
+msgid "Expenses over %(limit)s need a receipt: attach a photo or a PDF."
+msgstr "Для расходов больше %(limit)s нужен чек: приложите фото или PDF."
+
+#: backend/apps/finance/claims.py
+#, python-format
+msgid "You hold %(held)s of company cash: that's less than this expense."
+msgstr "У вас на руках %(held)s денег компании: это меньше этого расхода."
+
+#: backend/apps/finance/claims.py
+msgid "Nobody approves their own expenses."
+msgstr "Никто не утверждает собственные расходы."
+
+#: backend/apps/finance/claims.py
+msgid "This expense was already decided."
+msgstr "По этому расходу уже принято решение."
+
+#: backend/apps/finance/claims.py
+msgid "Someone else pays back your own expenses."
+msgstr "Ваши собственные расходы возмещает другой сотрудник."
+
+#: backend/apps/finance/claims.py
+msgid "Only an approved expense paid from own money is paid back."
+msgstr "Возмещается только утверждённый расход, оплаченный из личных денег."
+
+#: backend/apps/finance/claims.py
+msgid "This expense isn't waiting to be paid back."
+msgstr "Этот расход не ожидает возмещения."
+
+#: backend/apps/finance/claims.py
+msgid "Only the person who claimed it can cancel it."
+msgstr "Отменить может только тот, кто подал заявку."
+
+#: backend/apps/finance/claims.py
+msgid "Cancelled by the person who claimed it."
+msgstr "Отменено тем, кто подал заявку."
+
+#: backend/apps/finance/claims.py
+#, python-format
+msgid "%(name)s · %(amount)s · %(category)s"
+msgstr "%(name)s · %(amount)s · %(category)s"
+
+#: backend/apps/finance/claims.py
+#, python-format
+msgid "Your expense of %(amount)s was not approved"
+msgstr "Ваш расход на %(amount)s не утверждён"
+
+#: backend/apps/finance/claims.py
+#, python-format
+msgid "Your expense of %(amount)s was paid back"
+msgstr "Ваш расход на %(amount)s возмещён"
+
+#: backend/apps/finance/claims.py
+#, python-format
+msgid "Your expense of %(amount)s is approved"
+msgstr "Ваш расход на %(amount)s утверждён"
+
+#: backend/apps/finance/claims.py
+msgid "It will be paid back with your next pay."
+msgstr "Его возместят со следующей зарплатой."
+
+#: backend/apps/finance/claims.py
+msgid "It will be paid back in cash."
+msgstr "Его возместят наличными."
+
+#: backend/apps/finance/claims.py
+msgid "Expense approved."
+msgstr "Расход утверждён."
+
+#: backend/apps/finance/claims.py
+msgid "Expense rejected."
+msgstr "Расход отклонён."
 
 #: backend/apps/finance/defaults.py backend/apps/groups/models.py
 #: backend/apps/sales/hooks.py owner_bot/ownerbot/brief.py
@@ -5200,8 +5946,8 @@ msgid "Other income"
 msgstr "Прочие доходы"
 
 #: backend/apps/finance/defaults.py
-msgid "Goods for sale"
-msgstr "Товары для продажи"
+msgid "Medicines and goods"
+msgstr "Препараты и товары"
 
 #: backend/apps/finance/defaults.py
 msgid "Rent"
@@ -5254,6 +6000,26 @@ msgstr "Курсовые разницы"
 #: backend/apps/finance/defaults.py
 msgid "Other expenses"
 msgstr "Прочие расходы"
+
+#: backend/apps/finance/defaults.py
+msgid "Marketing bonuses"
+msgstr "Маркетинговые бонусы"
+
+#: backend/apps/finance/defaults.py
+msgid "Insurance fund reimbursements"
+msgstr "Возмещения страхового фонда"
+
+#: backend/apps/finance/defaults.py
+msgid "Licences and certificates"
+msgstr "Лицензии и сертификаты"
+
+#: backend/apps/finance/defaults.py
+msgid "Destruction services"
+msgstr "Услуги по уничтожению"
+
+#: backend/apps/finance/defaults.py
+msgid "Instrument checks"
+msgstr "Поверка приборов"
 
 #: backend/apps/finance/defaults.py
 msgid "Fixed assets written off"
@@ -5451,6 +6217,38 @@ msgstr "Мы должны"
 msgid "Net position"
 msgstr "Итого с учётом долгов"
 
+#: backend/apps/finance/exporters.py
+msgid "Parent category"
+msgstr "Родительская категория"
+
+#: backend/apps/finance/exporters.py
+msgid "Budget"
+msgstr "Бюджет"
+
+#: backend/apps/finance/exporters.py
+msgid "Actual"
+msgstr "Факт"
+
+#: backend/apps/finance/exporters.py
+msgid "Used, %"
+msgstr "Использовано, %"
+
+#: backend/apps/finance/exporters.py
+msgid "No budget"
+msgstr "Без бюджета"
+
+#: backend/apps/finance/exporters.py
+msgid "Within budget"
+msgstr "В рамках бюджета"
+
+#: backend/apps/finance/exporters.py
+msgid "Over 80 %"
+msgstr "Больше 80 %"
+
+#: backend/apps/finance/exporters.py
+msgid "Over budget"
+msgstr "Бюджет превышен"
+
 #: backend/apps/finance/filters.py
 msgid "A day like 2026-10-20."
 msgstr "Дата в формате 2026-10-20."
@@ -5482,6 +6280,18 @@ msgid "Demo data"
 msgstr "Демо-данные"
 
 #: backend/apps/finance/hooks.py
+msgid "Recurring payment"
+msgstr "Регулярный платёж"
+
+#: backend/apps/finance/hooks.py
+msgid "Expense claim"
+msgstr "Заявка на возмещение расходов"
+
+#: backend/apps/finance/hooks.py
+msgid "Expense claims to approve"
+msgstr "Расходы сотрудников на утверждение"
+
+#: backend/apps/finance/hooks.py
 msgid "Debt due dates"
 msgstr "Сроки погашения долгов"
 
@@ -5496,6 +6306,18 @@ msgid ""
 msgstr ""
 "Укажите, сколько денег сегодня в каждой кассе, на каждом банковском счёте и "
 "карте и кто кому сколько должен, чтобы все отчёты начинались с верных цифр."
+
+#: backend/apps/finance/hooks.py
+msgid "Which tax do you pay?"
+msgstr "Какой налог вы платите?"
+
+#: backend/apps/finance/hooks.py
+msgid ""
+"Turnover tax, VAT 12 % or simplified VAT 6 %. Sales lines, the tax calendar "
+"and the turnover tile follow it. Confirm with your accountant."
+msgstr ""
+"Налог с оборота, НДС 12 % или упрощённый НДС 6 %. От этого зависят строки "
+"продаж, налоговый календарь и показатель оборота. Уточните у бухгалтера."
 
 #: backend/apps/finance/hooks.py
 msgid "Finance categories"
@@ -5526,8 +6348,28 @@ msgid "Debts"
 msgstr "Долги"
 
 #: backend/apps/finance/hooks.py
+msgid "Budgets"
+msgstr "Бюджеты"
+
+#: backend/apps/finance/hooks.py
 msgid "A big expense was recorded"
 msgstr "Записан крупный расход"
+
+#: backend/apps/finance/hooks.py
+msgid "Your expense claims"
+msgstr "Ваши заявки на возмещение расходов"
+
+#: backend/apps/finance/hooks.py
+msgid "Bills and taxes due"
+msgstr "Счета и налоги к оплате"
+
+#: backend/apps/finance/hooks.py
+msgid "Overdue debts you are responsible for"
+msgstr "Просроченные долги, за которые вы отвечаете"
+
+#: backend/apps/finance/hooks.py
+msgid "Budget alerts"
+msgstr "Предупреждения по бюджету"
 
 #: backend/apps/finance/models.py backend/apps/finance/services.py
 msgid "A colour like #1f8a70."
@@ -5548,6 +6390,18 @@ msgstr "Со следующей зарплатой"
 #: backend/apps/finance/models.py
 msgid "In cash by whoever approves"
 msgstr "Наличными, выдаёт тот, кто одобрил"
+
+#: backend/apps/finance/models.py backend/apps/finance/tax_calendar.py
+msgid "Turnover tax"
+msgstr "Налог с оборота"
+
+#: backend/apps/finance/models.py
+msgid "VAT 12 %"
+msgstr "НДС 12 %"
+
+#: backend/apps/finance/models.py
+msgid "Simplified VAT 6 %"
+msgstr "Упрощённый НДС 6 %"
 
 #: backend/apps/finance/models.py
 msgid "Nothing dated on or before this day can be added, edited or voided."
@@ -5580,6 +6434,30 @@ msgstr ""
 msgid "How approved \"paid from my own money\" claims are paid back."
 msgstr ""
 "Как возвращаются деньги по одобренным заявкам «оплатил из своих денег»."
+
+#: backend/apps/finance/models.py
+msgid "Which tax the company pays on its sales."
+msgstr "Какой налог компания платит с продаж."
+
+#: backend/apps/finance/models.py
+msgid "The VAT rate on sales: 12 for VAT, 6 for simplified VAT, 0 otherwise."
+msgstr "Ставка НДС с продаж: 12 для НДС, 6 для упрощённого НДС, иначе 0."
+
+#: backend/apps/finance/models.py
+msgid ""
+"Turnover above which the turnover tax no longer applies, in base calculation "
+"values. Confirm with your accountant."
+msgstr ""
+"Оборот, выше которого налог с оборота больше не применяется, в базовых "
+"расчётных величинах (БРВ). Уточните у бухгалтера."
+
+#: backend/apps/finance/models.py
+msgid "One base calculation value in so'm. Confirm with your accountant."
+msgstr "Одна базовая расчётная величина в сумах. Уточните у бухгалтера."
+
+#: backend/apps/finance/models.py
+msgid "When someone confirmed the tax regime."
+msgstr "Когда подтвердили налоговый режим."
 
 #: backend/apps/finance/models.py
 msgid "UZS per 1 unit of the currency."
@@ -5881,6 +6759,94 @@ msgstr "Уменьшенная копия изображения (400 px); дл�
 msgid "In the debt's currency."
 msgstr "В валюте долга."
 
+#: backend/apps/finance/models.py
+msgid "Reminder: pay it yourself"
+msgstr "Напоминание: оплатить самому"
+
+#: backend/apps/finance/models.py
+msgid "Posted automatically"
+msgstr "Проводится автоматически"
+
+#: backend/apps/finance/models.py
+msgid "Monthly"
+msgstr "Ежемесячно"
+
+#: backend/apps/finance/models.py
+msgid "Quarterly"
+msgstr "Ежеквартально"
+
+#: backend/apps/finance/models.py
+msgid "Yearly"
+msgstr "Ежегодно"
+
+#: backend/apps/finance/models.py
+msgid "The working day before"
+msgstr "Предыдущий рабочий день"
+
+#: backend/apps/finance/models.py
+msgid "The working day after"
+msgstr "Следующий рабочий день"
+
+#: backend/apps/finance/models.py
+msgid "Keep the day"
+msgstr "Не переносить"
+
+#: backend/apps/finance/models.py
+msgid "Every how many periods."
+msgstr "Раз во сколько периодов."
+
+#: backend/apps/finance/models.py
+msgid ""
+"Weekly: 1 (Monday) to 7 (Sunday). Otherwise the day of the month, 1 to 31."
+msgstr ""
+"Еженедельно: от 1 (понедельник) до 7 (воскресенье). Иначе число месяца, от 1 "
+"до 31."
+
+#: backend/apps/finance/models.py
+msgid "Where an automatic rule posts; the usual account of a bill."
+msgstr "Счёт для автоматического платежа; обычный счёт оплаты."
+
+#: backend/apps/finance/models.py
+msgid "The usual amount; an estimate when it varies."
+msgstr "Обычная сумма; если меняется, ориентировочная."
+
+#: backend/apps/finance/models.py
+msgid "The amount changes every time (utilities, taxes)."
+msgstr "Сумма каждый раз разная (коммунальные услуги, налоги)."
+
+#: backend/apps/finance/models.py
+msgid ""
+"The scheduled day of the open occurrence; empty once the rule has ended."
+msgstr "Плановый день открытого платежа; пусто, когда правило закончилось."
+
+#: backend/apps/finance/models.py
+msgid "Who is reminded to pay it."
+msgstr "Кому напоминать об оплате."
+
+#: backend/apps/finance/models.py
+msgid "Set on rules made from a tax calendar template."
+msgstr "Заполняется у платежей из шаблона налогового календаря."
+
+#: backend/apps/finance/models.py
+msgid "The last occurrence paid, posted or skipped."
+msgstr "Последний оплаченный, проведённый или пропущенный платёж."
+
+#: backend/apps/finance/models.py
+msgid "In the base currency."
+msgstr "В базовой валюте."
+
+#: backend/apps/finance/models.py
+msgid "Company cash I hold"
+msgstr "Деньги компании у меня на руках"
+
+#: backend/apps/finance/models.py
+msgid "Paid back"
+msgstr "Возмещено"
+
+#: backend/apps/finance/models.py
+msgid "Telegram bot"
+msgstr "Telegram-бот"
+
 #: backend/apps/finance/owner_api.py
 msgid "The finance module is off for this company."
 msgstr "Модуль «Финансы» для этой компании выключен."
@@ -5904,10 +6870,6 @@ msgstr "Выберите один из ваших филиалов."
 #: backend/apps/finance/owner_api.py
 msgid "Pick a project."
 msgstr "Выберите проект."
-
-#: backend/apps/finance/owner_api.py
-msgid "Pick today or an earlier day."
-msgstr "Выберите сегодняшнюю или более раннюю дату."
 
 #: backend/apps/finance/owner_api.py backend/apps/finance/services.py
 #, python-format
@@ -6008,6 +6970,70 @@ msgstr "Выберите, кто должен или кому должны: ко
 msgid "Pick the account."
 msgstr "Выберите счёт."
 
+#: backend/apps/finance/payables.py
+#, python-format
+msgid ""
+"Goods with marking are paid to the distributor by bank transfer only: "
+"%(account)s is cash."
+msgstr ""
+"Маркированный товар оплачивается дистрибьютору только банковским переводом: "
+"%(account)s — наличные."
+
+#: backend/apps/finance/payables.py
+#: backend/apps/finance/planning_serializers.py
+msgid "Pick at least one debt."
+msgstr "Выберите хотя бы один долг."
+
+#: backend/apps/finance/payables.py
+msgid "Only debts the company owes are paid here."
+msgstr "Здесь оплачиваются только долги компании."
+
+#: backend/apps/finance/planning.py
+msgid "Pay and expenses owed to the team"
+msgstr "Зарплата и расходы к выплате сотрудникам"
+
+#: backend/apps/finance/planning.py
+#, python-format
+msgid "%(count)s person"
+msgid_plural "%(count)s people"
+msgstr[0] "%(count)s человек"
+msgstr[1] "%(count)s человека"
+msgstr[2] "%(count)s человек"
+
+#: backend/apps/finance/planning_api.py
+msgid "Give a number of days."
+msgstr "Укажите число дней."
+
+#: backend/apps/finance/planning_api.py
+#, python-format
+msgid "From 1 to %(max)s days."
+msgstr "От 1 до %(max)s дней."
+
+#: backend/apps/finance/planning_api.py
+msgid "One of these debts is paid already or isn't yours to pay."
+msgstr "Один из этих долгов уже оплачен или недоступен вам для оплаты."
+
+#: backend/apps/finance/planning_api.py
+#, python-format
+msgid "Pay %(party)s from an account in %(currency)s."
+msgstr "Оплатите %(party)s со счёта в %(currency)s."
+
+#: backend/apps/finance/planning_api.py
+msgid "Pick a person."
+msgstr "Выберите сотрудника."
+
+#: backend/apps/finance/planning_api.py
+msgid "This expense isn't waiting to be paid back in cash."
+msgstr "Этот расход не ожидает возмещения наличными."
+
+#: backend/apps/finance/planning_serializers.py
+msgid "Pay at most 100 debts at once."
+msgstr "Оплачивайте не больше 100 долгов за раз."
+
+#: backend/apps/finance/planning_serializers.py
+msgid "Each debt only once."
+msgstr "Каждый долг только один раз."
+
 #: backend/apps/finance/providers.py
 #, python-format
 msgid "INN %(tin)s"
@@ -6076,6 +7102,159 @@ msgstr "Передано при увольнении"
 msgid ""
 "There is no exchange rate for %(currency)s yet. Enter today's rate first."
 msgstr "Курса для %(currency)s пока нет. Сначала введите курс на сегодня."
+
+#: backend/apps/finance/recurring.py
+msgid "This payment is posted automatically: run it instead."
+msgstr "Этот платёж проводится автоматически: проведите его сейчас."
+
+#: backend/apps/finance/recurring.py
+msgid "A bill is paid with the amount you paid, not run."
+msgstr ""
+"Счёт оплачивается на сумму, которую вы заплатили, а не проводится "
+"автоматически."
+
+#: backend/apps/finance/recurring.py
+msgid "Pick the account it is posted on."
+msgstr "Выберите счёт для проведения."
+
+#: backend/apps/finance/recurring.py
+msgid "This recurring payment is switched off."
+msgstr "Этот регулярный платёж отключён."
+
+#: backend/apps/finance/recurring.py
+msgid "This recurring payment has ended."
+msgstr "Этот регулярный платёж завершён."
+
+#: backend/apps/finance/recurring.py
+msgid "Give it a name, like Rent."
+msgstr "Дайте название, например: Аренда."
+
+#: backend/apps/finance/recurring.py
+msgid "Repeat every 1 to 24 periods."
+msgstr "Повтор раз в 1–24 периода."
+
+#: backend/apps/finance/recurring.py
+msgid "Pick a weekday from 1 (Monday) to 7 (Sunday)."
+msgstr "Выберите день недели от 1 (понедельник) до 7 (воскресенье)."
+
+#: backend/apps/finance/recurring.py
+msgid "Pick a day of the month from 1 to 31."
+msgstr "Выберите число месяца от 1 до 31."
+
+#: backend/apps/finance/recurring.py
+msgid "Remind 0 to 30 days before."
+msgstr "Напоминать за 0–30 дней."
+
+#: backend/apps/finance/recurring.py
+msgid "An automatic payment needs the account it is posted on."
+msgstr "Для автоматического платежа нужен счёт."
+
+#: backend/apps/finance/recurring.py
+msgid "An automatic payment needs a fixed amount."
+msgstr "Для автоматического платежа нужна фиксированная сумма."
+
+#: backend/apps/finance/recurring.py
+msgid "Pick the day it starts."
+msgstr "Выберите дату начала."
+
+#: backend/apps/finance/recurring.py
+msgid "It can't end before it starts."
+msgstr "Дата окончания не может быть раньше начала."
+
+#: backend/apps/finance/recurring.py backend/apps/tasks/services.py
+msgid "Pick someone who works here."
+msgstr "Выберите того, кто здесь работает."
+
+#: backend/apps/finance/recurring.py backend/apps/payroll/finance_bridge.py
+msgid "Tax office"
+msgstr "Налоговая инспекция"
+
+#: backend/apps/finance/recurring.py backend/apps/payroll/finance_bridge.py
+msgid "Add the tax office to the counterparties first."
+msgstr "Сначала добавьте налоговую инспекцию в контрагенты."
+
+#: backend/apps/finance/reminders.py
+#, python-format
+msgid "overdue since %(date)s"
+msgstr "просрочено с %(date)s"
+
+#: backend/apps/finance/reminders.py
+msgid "due today"
+msgstr "срок сегодня"
+
+#: backend/apps/finance/reminders.py
+msgid "due tomorrow"
+msgstr "срок завтра"
+
+#: backend/apps/finance/reminders.py
+#, python-format
+msgid "due %(date)s"
+msgstr "срок %(date)s"
+
+#: backend/apps/finance/reminders.py
+msgid "It couldn't be posted automatically. Check the account."
+msgstr "Не удалось провести автоматически. Проверьте счёт."
+
+#: backend/apps/finance/reminders.py
+msgid "The amount varies: enter what you paid when you pay it."
+msgstr "Сумма меняется: при оплате укажите, сколько заплатили."
+
+#: backend/apps/finance/reminders.py
+#, python-format
+msgid "Paid from %(account)s"
+msgstr "Оплачено со счёта %(account)s"
+
+#: backend/apps/finance/reminders.py
+msgid "Tomorrow"
+msgstr "Завтра"
+
+#: backend/apps/finance/reminders.py
+#, python-format
+msgid "Owed to us: %(party)s"
+msgstr "Нам должны: %(party)s"
+
+#: backend/apps/finance/reminders.py
+#, python-format
+msgid "We owe: %(party)s"
+msgstr "Мы должны: %(party)s"
+
+#: backend/apps/finance/reminders.py
+#, python-format
+msgid "%(days)s day overdue"
+msgid_plural "%(days)s days overdue"
+msgstr[0] "просрочено на %(days)s день"
+msgstr[1] "просрочено на %(days)s дня"
+msgstr[2] "просрочено на %(days)s дней"
+
+#: backend/apps/finance/reminders.py
+#, python-format
+msgid "%(count)s debt you look after is due or overdue"
+msgid_plural "%(count)s debts you look after are due or overdue"
+msgstr[0] "%(count)s долг под вашим контролем: срок наступил или прошёл"
+msgstr[1] "%(count)s долга под вашим контролем: срок наступил или прошёл"
+msgstr[2] "%(count)s долгов под вашим контролем: срок наступил или прошёл"
+
+#: backend/apps/finance/reminders.py
+msgid "Already paid."
+msgstr "Уже оплачено."
+
+#: backend/apps/finance/reminders.py
+msgid "Open the dashboard to enter the amount."
+msgstr "Откройте панель управления, чтобы ввести сумму."
+
+#: backend/apps/finance/reminders.py
+#, python-format
+msgid "You can't record payments on %(account)s."
+msgstr "Вы не можете записывать платежи на счёт %(account)s."
+
+#: backend/apps/finance/reminders.py
+#, python-format
+msgid "Paid from %(account)s."
+msgstr "Оплачено со счёта %(account)s."
+
+#: backend/apps/finance/reminders.py
+msgid "I'll remind you tomorrow."
+msgstr "Напомню завтра."
 
 #: backend/apps/finance/services.py
 msgid "Give the account a name."
@@ -6234,6 +7413,10 @@ msgid "A debt can't be written off before the day it was issued."
 msgstr "Долг нельзя списать раньше даты его возникновения."
 
 #: backend/apps/finance/services.py
+msgid "A debt can't be credited before the day it was issued."
+msgstr "Нельзя оформить кредит-ноту раньше даты возникновения долга."
+
+#: backend/apps/finance/services.py
 msgid "This debt is already cancelled."
 msgstr "Этот долг уже отменён."
 
@@ -6356,16 +7539,6 @@ msgid "Another counterparty already has this phone or taxpayer number."
 msgstr "Этот номер телефона или ИНН уже есть у другого контрагента."
 
 #: backend/apps/finance/services.py
-#, python-format
-msgid "Attach at most %(n)s receipts."
-msgstr "Чеков можно приложить не больше %(n)s."
-
-#: backend/apps/finance/services.py
-#, python-format
-msgid "Expenses over %(limit)s need a receipt: attach a photo or a PDF."
-msgstr "Для расходов больше %(limit)s нужен чек: приложите фото или PDF."
-
-#: backend/apps/finance/services.py
 msgid "A void or rejected entry can't be changed."
 msgstr "Аннулированную или отклонённую проводку нельзя изменить."
 
@@ -6430,6 +7603,14 @@ msgid "Only an owner can reopen a closed period."
 msgstr "Открыть закрытый период заново может только владелец."
 
 #: backend/apps/finance/services.py
+msgid "Enter a whole number of base values."
+msgstr "Введите целое число базовых расчётных величин."
+
+#: backend/apps/finance/services.py
+msgid "Enter a percentage from 0 to 100."
+msgstr "Введите процент от 0 до 100."
+
+#: backend/apps/finance/services.py
 msgid "Everything in a ledger entry must belong to the same company."
 msgstr "Всё в проводке должно относиться к одной компании."
 
@@ -6478,10 +7659,6 @@ msgstr "Для сумм в базовой валюте курс не нужен.
 msgid "Pick an income category."
 msgstr "Выберите категорию дохода."
 
-#: backend/apps/finance/services.py backend/apps/projects/services.py
-msgid "Pick an expense category."
-msgstr "Выберите категорию расхода."
-
 #: backend/apps/finance/services.py
 #, python-format
 msgid "Not enough money on %(account)s: %(balance)s left."
@@ -6491,6 +7668,38 @@ msgstr "На счёте «%(account)s» недостаточно денег: о�
 #, python-format
 msgid "This debt is reserved by %(source)s #%(id)s."
 msgstr "Этот долг зарезервирован: %(source)s #%(id)s."
+
+#: backend/apps/finance/tax_calendar.py
+msgid "VAT (QQS)"
+msgstr "НДС"
+
+#: backend/apps/finance/tax_calendar.py
+msgid "Simplified VAT"
+msgstr "Упрощённый НДС"
+
+#: backend/apps/finance/tax_calendar.py
+msgid "Profit tax"
+msgstr "Налог на прибыль"
+
+#: backend/apps/finance/tax_calendar.py
+msgid "Personal income tax (JShDS)"
+msgstr "НДФЛ"
+
+#: backend/apps/finance/tax_calendar.py
+msgid "Pension contributions (INPS)"
+msgstr "Пенсионные взносы (ИНПС)"
+
+#: backend/apps/finance/tax_calendar.py backend/apps/payroll/finance_bridge.py
+msgid "Social tax"
+msgstr "Социальный налог"
+
+#: backend/apps/finance/tax_calendar.py
+msgid "Typical due days; confirm them with your accountant."
+msgstr "Типичные сроки уплаты; уточните их у бухгалтера."
+
+#: backend/apps/finance/tax_calendar.py
+msgid "There is no tax calendar for that regime."
+msgstr "Для этого режима нет налогового календаря."
 
 #: backend/apps/groups/bot_messages.py
 #, python-format
@@ -9494,10 +10703,6 @@ msgstr ""
 msgid "Payroll isn't switched on for this company."
 msgstr "Раздел зарплаты в этой компании выключен."
 
-#: backend/apps/payroll/api.py
-msgid "Your access is paused."
-msgstr "Ваш доступ приостановлен."
-
 #: backend/apps/payroll/audit_actions.py
 msgid "Changed payroll settings"
 msgstr "Изменены настройки зарплаты"
@@ -9704,24 +10909,12 @@ msgstr ""
 "зарплату."
 
 #: backend/apps/payroll/finance_bridge.py
-msgid "Tax office"
-msgstr "Налоговая инспекция"
-
-#: backend/apps/payroll/finance_bridge.py
-msgid "Add the tax office to the counterparties first."
-msgstr "Сначала добавьте налоговую инспекцию в контрагенты."
-
-#: backend/apps/payroll/finance_bridge.py
 msgid "Income tax and pension withheld"
 msgstr "Удержанные НДФЛ и пенсионный взнос"
 
 #: backend/apps/payroll/finance_bridge.py
 msgid "Income tax and pension on pay"
 msgstr "НДФЛ и пенсионный взнос сверх оплаты"
-
-#: backend/apps/payroll/finance_bridge.py
-msgid "Social tax"
-msgstr "Социальный налог"
 
 #: backend/apps/payroll/finance_bridge.py
 msgid ""
@@ -10207,14 +11400,6 @@ msgstr "Фиксированная сумма"
 #: backend/apps/payroll/models.py
 msgid "Percent"
 msgstr "Процент"
-
-#: backend/apps/payroll/models.py backend/apps/tasks/models.py
-msgid "Every day"
-msgstr "Каждый день"
-
-#: backend/apps/payroll/models.py
-msgid "Once a month"
-msgstr "Раз в месяц"
 
 #: backend/apps/payroll/models.py
 msgid "Per unit: this many units a month are free."
@@ -11559,10 +12744,6 @@ msgid "Unknown visibility."
 msgstr "Неизвестная настройка видимости."
 
 #: backend/apps/projects/services.py
-msgid "Unknown status."
-msgstr "Неизвестный статус."
-
-#: backend/apps/projects/services.py
 msgid "Unknown priority."
 msgstr "Неизвестный приоритет."
 
@@ -11778,10 +12959,6 @@ msgstr "В новой доске должно быть минимум две к�
 #: backend/apps/projects/services.py
 msgid "A board starts with at most 12 lists."
 msgstr "В новой доске может быть не больше 12 колонок."
-
-#: backend/apps/projects/services.py
-msgid "Pick a day of the week."
-msgstr "Выберите день недели."
 
 #: backend/apps/projects/services.py
 msgid "Between 1 and 90 days."
@@ -12069,10 +13246,6 @@ msgstr "Все мои задачи"
 #: backend/apps/reports/digest.py
 msgid "Open the app"
 msgstr "Открыть приложение"
-
-#: backend/apps/reports/hooks.py
-msgid "Team results"
-msgstr "Итоги команды"
 
 #: backend/apps/reports/hooks.py
 msgid "On time"
@@ -13771,10 +14944,6 @@ msgid "Yes, cancel the task"
 msgstr "Да, отменить задачу"
 
 #: backend/apps/tasks/bot_messages.py
-msgid "Me"
-msgstr "Себе"
-
-#: backend/apps/tasks/bot_messages.py
 msgctxt "page"
 msgid "Previous"
 msgstr "Предыдущие"
@@ -14216,34 +15385,6 @@ msgstr "Срок прежний"
 #: backend/apps/tasks/inbox_actions.py
 msgid "This task no longer exists."
 msgstr "Этой задачи больше нет."
-
-#: backend/apps/tasks/models.py
-msgid "Monday"
-msgstr "Понедельник"
-
-#: backend/apps/tasks/models.py
-msgid "Tuesday"
-msgstr "Вторник"
-
-#: backend/apps/tasks/models.py
-msgid "Wednesday"
-msgstr "Среда"
-
-#: backend/apps/tasks/models.py
-msgid "Thursday"
-msgstr "Четверг"
-
-#: backend/apps/tasks/models.py
-msgid "Friday"
-msgstr "Пятница"
-
-#: backend/apps/tasks/models.py
-msgid "Saturday"
-msgstr "Суббота"
-
-#: backend/apps/tasks/models.py
-msgid "Sunday"
-msgstr "Воскресенье"
 
 #: backend/apps/tasks/models.py
 msgid "Not needed"
@@ -14823,10 +15964,6 @@ msgstr "Выберите от 0 до 90 дней."
 #: backend/apps/tasks/services.py
 msgid "Pick one of your branches for this routine."
 msgstr "Выберите для этой регулярной задачи один из ваших филиалов."
-
-#: backend/apps/tasks/services.py
-msgid "Pick someone who works here."
-msgstr "Выберите того, кто здесь работает."
 
 #: backend/apps/tasks/services.py
 msgid "Pick the time it's due."
