@@ -394,3 +394,25 @@ def confirmers(task: Task) -> list[Membership]:
         .prefetch_related("branches")
     )
     return [member for member in candidates if allows(branch_ids(member), task.branch_id)]
+
+
+# Storage readings (PLAN-OWNER §14.10): the contract N's inspection pack calls ---------------
+
+
+def readings_journal(
+    company, start: date, end: date, *, branch_ids: list[int] | None, template_id=None
+) -> list[dict]:
+    """The company's temperature and humidity readings from `start` to `end` (company-local
+    days, both included) as journal rows (date, time, value, range, who, note, recheck), in the
+    branch scope; `template_id` narrows them to one routine."""
+    from apps.tasks import journal
+
+    return journal.journal_rows(company, start, end, branch_ids=branch_ids, template_id=template_id)
+
+
+def readings_pdf(branch, month: date, *, language: str) -> bytes:
+    """The branch's temperature and humidity log of `month` as a PDF: every readings routine of
+    the branch grouped by instrument, a signature line per day."""
+    from apps.tasks import journal
+
+    return journal.render(branch, month, language=language)

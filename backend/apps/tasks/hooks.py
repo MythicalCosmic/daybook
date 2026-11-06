@@ -6,12 +6,13 @@ from django.utils.translation import gettext_lazy as _
 
 from apps.audit import registry as audit_registry
 from apps.console import pulse, registry
+from apps.core.files import register_file_check
 from apps.exports.registry import Column, register_exporter
 from apps.inbox.registry import register_action, register_kind
 from apps.members.permissions import Perm
 from apps.members.scope import branch_ids
 from apps.members.signals import member_approved
-from apps.tasks import feeds, inbox_actions, queries
+from apps.tasks import feeds, inbox_actions, journal, queries
 from apps.tasks import tasks as jobs
 from apps.tasks.audit_actions import TasksAction
 from apps.tasks.models import Task, TaskTemplate
@@ -44,6 +45,16 @@ register_kind(
     audience="employee",
     default_telegram=True,
 )
+# Storage readings (PLAN-OWNER §14.10): a fridge or the room out of its range tells whoever
+# looks after storage at once (critical when the reading's spec says so).
+register_kind(
+    "tasks.reading_out_of_range",
+    label=_("A storage reading out of range"),
+    audience="owner",
+    default_telegram=True,
+    severity="warning",
+)
+register_file_check("tasks.readings_pdf", journal.pdf_check)
 
 
 def _task_in_scope(member, task_id: int) -> bool:
@@ -78,6 +89,10 @@ registry.register_pulse(
     "tasks.routine_review", perm=Perm.TASKS_CONFIRM, count=queries.routine_review_count
 )
 registry.register_pulse("tasks.late_now", perm=Perm.TASKS_VIEW_ALL, count=queries.late_now_count)
+# Today's storage readings still out of range (Routines → Today).
+registry.register_pulse(
+    "tasks.readings_alerts", perm=Perm.TASKS_VIEW_ALL, count=feeds.readings_alerts
+)
 # Version keys: any task (or routine) changed, so open dashboards refetch.
 registry.register_pulse("tasks.tasks", perm=None, count=None)
 registry.register_pulse("tasks.routines", perm=Perm.TASKS_TEMPLATES, count=None)
@@ -120,6 +135,25 @@ register_exporter(
         Column("reward", _("Reward"), "money"),
     ],
     rows=feeds.export_rows,
+)
+register_exporter(
+    "tasks.readings",
+    perm=Perm.TASKS_VIEW_ALL,
+    label=_("Storage readings"),
+    columns=feeds.READINGS_COLUMNS,
+    rows=feeds.readings_export_rows,
+)
+# "Get started": the temperature and humidity journal, filled by routines (§14.10).
+registry.register_setup_step(
+    "tasks.storage",
+    perm=Perm.TASKS_TEMPLATES,
+    order=50,
+    label=_("Set up fridge and room readings"),
+    description=_(
+        "Fridge and room temperature and humidity, twice a day: the monthly log fills itself."
+    ),
+    url="routines?storage=1",
+    done=feeds.storage_set_up,
 )
 
 

@@ -25,7 +25,7 @@ from apps.members.models import Membership, Position
 from apps.members.permissions import Perm
 from apps.members.scope import restrict
 from apps.reminders.models import ReminderPolicy
-from apps.tasks import conf, dashboard, generation, queries, services
+from apps.tasks import conf, dashboard, generation, journal, presets, queries, services
 from apps.tasks.api import (
     BlockerResolveSerializer,
     ExtensionDecideSerializer,
@@ -42,10 +42,15 @@ from apps.tasks.owner_serializers import (
     CommentSerializer,
     GiveTodayInputSerializer,
     MoveSerializer,
+    ReadingsTodaySerializer,
     ReasonSerializer,
     ReassignSerializer,
+    RoutineReadingsSerializer,
     RoutineSerializer,
+    RoutinesSettingsSerializer,
     RoutineWriteSerializer,
+    StoragePresetDefaultsSerializer,
+    StoragePresetSerializer,
     TaskCreateSerializer,
     TaskDetailSerializer,
     TaskReviewSerializer,
@@ -714,6 +719,26 @@ class TasksSettingsView(OwnerAPIView):
         return Response(TasksSettingsSerializer(row).data)
 
 
+class RoutinesSettingsView(OwnerAPIView):
+    """Settings → Routines (PLAN-OWNER §14.10): the storage preset's ranges and reading times.
+    Anyone in the dashboard reads them (the preset dialog starts from them); company.settings
+    changes them, audited."""
+
+    perm = None
+    perms_by_action = {"patch": Perm.COMPANY_SETTINGS}
+
+    @extend_schema(responses=RoutinesSettingsSerializer)
+    def get(self, request, company_id):
+        return Response(RoutinesSettingsSerializer(conf.get_settings(self.company)).data)
+
+    @extend_schema(request=RoutinesSettingsSerializer, responses=RoutinesSettingsSerializer)
+    def patch(self, request, company_id):
+        data = RoutinesSettingsSerializer(data=request.data, partial=True)
+        data.is_valid(raise_exception=True)
+        row = services.update_settings(self.company, by=self.membership, **data.validated_data)
+        return Response(RoutinesSettingsSerializer(row).data)
+
+
 class ProofWallView(OwnerAPIView):
     """Today's (or a day's) proof photos, newest first, to group by branch and routine."""
 
@@ -745,6 +770,10 @@ class ProofWallView(OwnerAPIView):
         )
 
 
+# The temperature and humidity log: whoever sees everyone's work or plans routines.
+READINGS_VIEW = AnyOf(Perm.TASKS_VIEW_ALL, Perm.TASKS_TEMPLATES)
+
+
 class RoutineViewSet(
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
@@ -762,6 +791,9 @@ class RoutineViewSet(
         "day": Perm.TASKS_VIEW_ALL,
         "history": Perm.TASKS_VIEW_ALL,
         "to_confirm": Perm.TASKS_CONFIRM,
+        "readings": READINGS_VIEW,
+        "readings_pdf": READINGS_VIEW,
+        "readings_today": Perm.TASKS_VIEW_ALL,
     }
     pagination_class = None
 
@@ -985,6 +1017,70 @@ class RoutineViewSet(
         data["people"] = [row | {"member": person(row["member"])} for row in data["people"]]
         return Response({"range": {"from": start, "to": end}, **data})
 
+    # Storage readings (PLAN-OWNER §14.10) ---------------------------------------------------
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter("from", description="Company-local day. Default: 30 days ago."),
+            OpenApiParameter("to", description="Company-local day. Default: today."),
+        ],
+        responses=RoutineReadingsSerializer,
+    )
+    @action(detail=True, methods=["get"])
+    def readings(self, request, company_id, pk):
+        """The routine's journal: every value taken (first measurements and rechecks, who,
+        note), a series per key for the chart (each day's first value), and missed days."""
+        template = self.get_object()
+        params = request.query_params
+        today = queries.company_today(self.company)
+        if params.get("from") or params.get("to"):
+            start, end = _range(params, max_days=92)
+        else:
+            start, end = today - timedelta(days=29), today
+        return Response(
+            RoutineReadingsSerializer(
+                journal.routine_journal(template, start, end, timezone.now())
+            ).data
+        )
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter("branch", int, required=True),
+            OpenApiParameter("month", required=True, description="YYYY-MM"),
+        ],
+        responses=inline_serializer(
+            "RoutineReadingsPdf",
+            {
+                "url": serializers.CharField(),
+                "name": serializers.CharField(),
+                "expires_in": serializers.IntegerField(),
+            },
+        ),
+    )
+    @action(detail=False, methods=["get"], url_path="readings/pdf")
+    def readings_pdf(self, request, company_id):
+        """The branch's temperature and humidity log of a month as a PDF, in your language: a
+        short-lived link to it."""
+        params = request.query_params
+        try:
+            branch_id = int(params.get("branch", ""))
+        except ValueError:
+            raise exceptions.ValidationError({"branch": [_("Pick a branch.")]}) from None
+        scope = self.branch_scope
+        branch = Branch.objects.filter(company=self.company, pk=branch_id).first()
+        if branch is None or (scope is not None and branch.pk not in scope):
+            raise exceptions.NotFound()
+        month = _month(params.get("month"))
+        return Response(journal.pdf_link(branch, month, request))
+
+    @extend_schema(responses=ReadingsTodaySerializer)
+    @action(detail=False, methods=["get"], url_path="readings/today")
+    def readings_today(self, request, company_id):
+        """Today's excursions (and whether a recheck brought them back) and missed readings in
+        your branches: the Overview widget."""
+        data = journal.today(self.company, timezone.now(), branch_ids=self.branch_scope)
+        return Response(ReadingsTodaySerializer(data).data)
+
     # Routine work (the Routines page) ------------------------------------------------------
 
     @extend_schema(
@@ -1131,6 +1227,100 @@ class RoutineViewSet(
                 }
             )
         return Response({"count": sum(len(group["items"]) for group in groups), "groups": groups})
+
+
+class StoragePresetView(OwnerAPIView):
+    """The storage preset (PLAN-OWNER §14.10): GET the dialog's defaults for a branch (the
+    company's ranges and times, every position at the branch), POST to make the branch's
+    fridge and room readings and hygiene routines as shared routines. tasks.templates."""
+
+    perm = Perm.TASKS_TEMPLATES
+
+    def _branch(self, branch_id) -> Branch:
+        scope = self.branch_scope
+        branch = Branch.objects.filter(company=self.company, pk=branch_id).first()
+        if branch is None or (scope is not None and branch.pk not in scope):
+            raise exceptions.NotFound()
+        return branch
+
+    @extend_schema(
+        parameters=[OpenApiParameter("branch", int, required=True)],
+        responses=StoragePresetDefaultsSerializer,
+    )
+    def get(self, request, company_id):
+        try:
+            branch_id = int(request.query_params.get("branch", ""))
+        except ValueError:
+            raise exceptions.ValidationError({"branch": [_("Pick a branch.")]}) from None
+        branch = self._branch(branch_id)
+        settings = conf.get_settings(self.company)
+        plain = journal.plain_value
+        return Response(
+            {
+                "branch": {"id": branch.pk, "name": branch.name, "code": branch.code},
+                "fridges": 1,
+                "times": [moment.strftime("%H:%M") for moment in settings.storage_times],
+                "positions": [
+                    {"id": position.pk, "name": position.name}
+                    for position in presets.default_positions(branch)
+                ],
+                "fridge": {
+                    "min": plain(settings.storage_fridge_min),
+                    "max": plain(settings.storage_fridge_max),
+                },
+                "room": {
+                    "min": plain(settings.storage_room_min),
+                    "max": plain(settings.storage_room_max),
+                },
+                "humidity_max": plain(settings.storage_humidity_max),
+                "existing": journal.reading_routines(self.company.pk, [branch.pk]).count(),
+            }
+        )
+
+    @extend_schema(
+        request=StoragePresetSerializer,
+        responses={
+            201: inline_serializer(
+                "RoutineStoragePresetResult",
+                {
+                    "created": serializers.ListField(child=serializers.DictField()),
+                    "existing": serializers.ListField(child=serializers.CharField()),
+                },
+            )
+        },
+    )
+    def post(self, request, company_id):
+        data = StoragePresetSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        values = data.validated_data
+        branch = self._branch(values["branch"])
+        ids = set(values["positions"])
+        positions = list(Position.objects.for_company(self.company).filter(pk__in=ids))
+        if len(positions) != len(ids):
+            raise DomainError(_("That isn't part of your company."))
+        with transaction.atomic():
+            result = presets.apply_storage_preset(
+                branch,
+                by=self.membership,
+                fridges=values["fridges"],
+                positions=positions,
+                times=values.get("times"),
+            )
+        return Response(
+            {
+                "created": [routine_ref(template) for template in result.created],
+                "existing": result.existing,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+def _month(value: str | None) -> date:
+    """`YYYY-MM` (or a day of it) as the month's first day."""
+    try:
+        return datetime.strptime((value or "")[:7], "%Y-%m").date()
+    except ValueError:
+        raise exceptions.ValidationError({"month": [_("Give the month as YYYY-MM.")]}) from None
 
 
 def _one(queryset, pk):

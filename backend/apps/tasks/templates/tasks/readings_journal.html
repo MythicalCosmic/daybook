@@ -1,0 +1,76 @@
+{% extends "core/base_print.html" %}{% load i18n %}
+{% block style %}
+.journal + .journal { page-break-before: always; }
+.journal-facts { display: grid; grid-template-columns: auto 1fr; column-gap: 4mm; row-gap: 1mm; margin: 0 0 5mm; font-size: 9pt; }
+.journal-facts dt { color: #6b6b6b; }
+.journal-facts dd { margin: 0; }
+.journal table { font-size: 8.5pt; }
+.journal th, .journal td { padding: 1.4mm 1.6mm; }
+.journal td.day { white-space: nowrap; font-weight: 700; }
+.journal tr.day-start td { border-top: 0.8pt solid #9a9a9a; }
+.journal td.sign { width: 24mm; border-left: 0.4pt solid #dcdcdc; }
+.journal td.time { white-space: nowrap; }
+.out { color: #a33a2a; font-weight: 700; }
+.recheck { color: #1f6f5c; font-weight: 700; }
+.none { color: #8e8579; font-style: italic; }
+.journal-note { font-size: 8pt; color: #555; margin-top: 3mm; }
+{% endblock %}
+{% block header_details %}<div class="small muted">{{ branch }} · {{ month }}</div>{% endblock %}
+{% block content %}
+{% if empty %}
+<h1>{{ title }}</h1>
+<p class="muted">{% translate "This branch has no readings routines yet." %}</p>
+{% endif %}
+{% for section in sections %}
+<section class="journal">
+  <h1>{{ title }}</h1>
+  <dl class="journal-facts">
+    <dt>{% translate "Branch" %}</dt><dd>{{ branch }}</dd>
+    <dt>{% translate "Month" %}</dt><dd>{{ month }}</dd>
+    <dt>{% translate "Instrument" %}</dt><dd>{{ section.label }}{% if section.unit %}, {{ section.unit }}{% endif %}</dd>
+    {% if section.ranges %}<dt>{% translate "Allowed" %}</dt><dd>{{ section.ranges }}</dd>{% endif %}
+    <dt>{% translate "Out of range" %}</dt><dd>{{ section.excursions }}</dd>
+  </dl>
+  <table>
+    <thead>
+      <tr>
+        <th>{% translate "Date" %}</th>
+        <th>{% translate "Time" %}</th>
+        <th class="num">{% translate "Value" %}</th>
+        <th>{% translate "Allowed" %}</th>
+        <th>{% translate "Taken by" %}</th>
+        <th>{% translate "Note" %}</th>
+        <th>{% translate "Signature" %}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for day in section.days %}
+        {% if day.entries %}
+          {% for entry in day.entries %}
+          <tr{% if forloop.first %} class="day-start"{% endif %}>
+            {% if forloop.first %}<td class="day" rowspan="{{ day.rows }}">{{ day.date }}</td>{% endif %}
+            <td class="time">{{ entry.time }}{% if entry.recheck %} <span class="recheck">{% translate "recheck" %}</span>{% endif %}</td>
+            <td class="num{% if not entry.in_range %} out{% endif %}">{{ entry.value }}</td>
+            <td>{{ entry.range }}</td>
+            <td>{{ entry.who }}</td>
+            <td>{{ entry.note }}</td>
+            {% if forloop.first %}<td class="sign" rowspan="{{ day.rows }}"></td>{% endif %}
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr class="day-start">
+            <td class="day">{{ day.date }}</td>
+            <td class="none" colspan="5">{% translate "No reading" %}</td>
+            <td class="sign"></td>
+          </tr>
+        {% endif %}
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="journal-note">{% translate "Values out of range are in bold. A recheck is the second measurement after something was done about it." %}</p>
+  <div class="signatures">
+    <div class="signature">{% translate "Head of pharmacy" %}</div>
+  </div>
+</section>
+{% endfor %}
+{% endblock %}

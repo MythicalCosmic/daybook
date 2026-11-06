@@ -10,11 +10,16 @@ from apps.core.money import MoneySerializerField
 from apps.members.models import Membership
 from apps.reminders.policies import escalation_recipients, policy_for
 from apps.tasks import generation, rules, services
+from apps.tasks import readings as reading_specs
 from apps.tasks.api import (
+    ReadingSpecSerializer,
+    ReadingTakenSerializer,
     TaskBlockerSerializer,
     TaskExtensionSerializer,
     blocker_of,
     extension_of,
+    readings_taken,
+    recheck_until,
 )
 from apps.tasks.conf import REVIEW_RULE_HELP
 from apps.tasks.models import ChecklistItem, Proof, Task, TaskComment, TasksSettings, TaskTemplate
@@ -93,6 +98,7 @@ class TaskRowSerializer(serializers.ModelSerializer):
     blocker = serializers.SerializerMethodField()
     extension = serializers.SerializerMethodField()
     accepted_automatically = serializers.SerializerMethodField()
+    readings = ReadingSpecSerializer(many=True, read_only=True)
 
     class Meta:
         model = Task
@@ -127,6 +133,7 @@ class TaskRowSerializer(serializers.ModelSerializer):
             "seen_at",
             "blocker",
             "extension",
+            "readings",
         )
         read_only_fields = fields
 
@@ -204,9 +211,15 @@ class TaskReviewSerializer(TaskRowSerializer):
     """A card of the reviews queue: the row plus what was written and reported. No comments or
     reminder plan, so the queue answers in a fixed number of queries."""
 
+    readings_taken = serializers.SerializerMethodField()
+
     class Meta(TaskRowSerializer.Meta):
-        fields = (*TaskRowSerializer.Meta.fields, "description", "proof_text")
+        fields = (*TaskRowSerializer.Meta.fields, "description", "proof_text", "readings_taken")
         read_only_fields = fields
+
+    @extend_schema_field(ReadingTakenSerializer(many=True))
+    def get_readings_taken(self, task: Task) -> list[dict]:
+        return readings_taken(task)
 
 
 class ChecklistRowSerializer(serializers.ModelSerializer):
@@ -251,6 +264,8 @@ class TaskDetailSerializer(TaskRowSerializer):
     comments = serializers.SerializerMethodField()
     reminders = serializers.SerializerMethodField()
     actions = serializers.SerializerMethodField()
+    readings_taken = serializers.SerializerMethodField()
+    recheck_until = serializers.SerializerMethodField()
 
     class Meta(TaskRowSerializer.Meta):
         fields = (
@@ -263,8 +278,19 @@ class TaskDetailSerializer(TaskRowSerializer):
             "reminders",
             "actions",
             "last_nudged_at",
+            "readings_taken",
+            "recheck_until",
         )
         read_only_fields = fields
+
+    @extend_schema_field(ReadingTakenSerializer(many=True))
+    def get_readings_taken(self, task: Task) -> list[dict]:
+        """The values typed in (first measurements and rechecks) of a readings task."""
+        return readings_taken(task)
+
+    @extend_schema_field(serializers.DateTimeField(allow_null=True))
+    def get_recheck_until(self, task: Task):
+        return recheck_until(task)
 
     @extend_schema_field(PersonRefSerializer(allow_null=True))
     def get_confirmed_by(self, task: Task) -> dict | None:
@@ -441,6 +467,7 @@ class RoutineTodaySerializer(serializers.Serializer):
 
 
 class RoutineSerializer(serializers.ModelSerializer):
+    readings = ReadingSpecSerializer(many=True, read_only=True)
     branch = serializers.SerializerMethodField()
     assignees = serializers.SerializerMethodField()
     positions = serializers.SerializerMethodField()
@@ -463,6 +490,8 @@ class RoutineSerializer(serializers.ModelSerializer):
             "onboarding",
             "due_after_days",
             "proof",
+            "readings",
+            "shared",
             "needs_confirmation",
             "accept_with_proof",
             "checklist",
@@ -535,6 +564,18 @@ class RoutineWriteSerializer(serializers.Serializer):
     onboarding = serializers.BooleanField(required=False)
     due_after_days = serializers.IntegerField(min_value=0, max_value=90, required=False)
     proof = serializers.ChoiceField(Proof.choices, required=False)
+    readings = serializers.ListField(
+        child=serializers.DictField(),
+        required=False,
+        max_length=reading_specs.MAX_SPECS,
+        help_text="With proof=readings: 1 to 3 specs {key, label, unit, min, max, critical}; a "
+        "spec without a key gets the next free letter. Empty otherwise.",
+    )
+    shared = serializers.BooleanField(
+        required=False,
+        help_text="One of us does it: the first to finish closes the others' copies of that day "
+        "at the same branch.",
+    )
     needs_confirmation = serializers.BooleanField(
         allow_null=True,
         required=False,
@@ -570,6 +611,8 @@ def routine_ref(template: TaskTemplate) -> dict:
         "proof": template.proof,
         "needs_confirmation": template.needs_confirmation,
         "is_active": template.is_active,
+        "shared": template.shared,
+        "readings": template.readings,
     }
 
 
@@ -595,6 +638,8 @@ def run_row(task: Task, state: str, member: Membership) -> dict:
         "proof_photo": file_url(task.proof_photo),
         "checklist": {"done": sum(item.is_done for item in items), "total": len(items)},
         "can_confirm": task.status == Task.Status.REVIEW and rules.can_review(task, member),
+        "readings": task.readings,
+        "readings_taken": readings_taken(task),
     }
 
 
@@ -617,3 +662,117 @@ class TasksSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = TasksSettings
         fields = ("on_finish", "auto_accept_after_hours")
+
+
+def _range_field() -> serializers.DecimalField:
+    return serializers.DecimalField(
+        max_digits=5,
+        decimal_places=1,
+        min_value=-50,
+        max_value=100,
+        required=False,
+        coerce_to_string=True,
+    )
+
+
+class RoutinesSettingsSerializer(serializers.ModelSerializer):
+    """Settings → Routines (PLAN-OWNER §14.10, §14.21): what the storage preset starts from,
+    the fridge and room ranges (°C), the humidity maximum (%) and the reading times. Each
+    routine the preset makes keeps its own copy, editable on the routine."""
+
+    storage_fridge_min = _range_field()
+    storage_fridge_max = _range_field()
+    storage_room_min = _range_field()
+    storage_room_max = _range_field()
+    storage_humidity_max = serializers.DecimalField(
+        max_digits=5,
+        decimal_places=1,
+        min_value=0,
+        max_value=100,
+        required=False,
+        coerce_to_string=True,
+    )
+    storage_times = serializers.ListField(
+        child=serializers.TimeField(format="%H:%M"),
+        required=False,
+        min_length=1,
+        max_length=4,
+        help_text="When the storage readings are taken (HH:MM, company time).",
+    )
+
+    class Meta:
+        model = TasksSettings
+        fields = (
+            "storage_fridge_min",
+            "storage_fridge_max",
+            "storage_room_min",
+            "storage_room_max",
+            "storage_humidity_max",
+            "storage_times",
+        )
+
+
+# Storage readings (PLAN-OWNER §14.10) ------------------------------------------------------
+
+
+class StoragePresetSerializer(serializers.Serializer):
+    branch = serializers.IntegerField()
+    fridges = serializers.IntegerField(min_value=0, max_value=5, default=1)
+    positions = serializers.ListField(
+        child=serializers.IntegerField(),
+        default=list,
+        help_text="Positions who take the readings; empty: every position at the branch.",
+    )
+    times = serializers.ListField(
+        child=serializers.TimeField(),
+        required=False,
+        min_length=1,
+        max_length=4,
+        help_text="Reading times (HH:MM); default: the company's storage times.",
+    )
+
+
+class StoragePresetDefaultsSerializer(serializers.Serializer):
+    branch = BranchRefSerializer()
+    fridges = serializers.IntegerField()
+    times = serializers.ListField(child=serializers.CharField())
+    positions = NamedRefSerializer(many=True, help_text="Every position at the branch.")
+    fridge = serializers.DictField(help_text='{"min": "2.0", "max": "8.0"}')
+    room = serializers.DictField(help_text='{"min": "15.0", "max": "25.0"}')
+    humidity_max = serializers.CharField()
+    existing = serializers.IntegerField(help_text="Readings routines the branch already has.")
+
+
+class ReadingRowSerializer(ReadingTakenSerializer):
+    task_id = serializers.IntegerField()
+    day = serializers.DateField()
+    time = serializers.CharField()
+    branch = BranchRefSerializer(allow_null=True)
+    routine = serializers.DictField(allow_null=True, help_text="{id, title}")
+
+    class Meta:
+        ref_name = "TasksReadingRow"
+
+
+class RoutineReadingsSerializer(serializers.Serializer):
+    range = serializers.DictField()
+    specs = ReadingSpecSerializer(many=True)
+    totals = serializers.DictField(help_text="taken, excursions, rechecks, missed")
+    series = serializers.ListField(
+        child=serializers.DictField(),
+        help_text='{"date", <key>: the day\'s first value or null}: the analytics shape.',
+    )
+    missed = serializers.ListField(child=serializers.DateField())
+    rows = ReadingRowSerializer(many=True)
+
+
+class ReadingsTodaySerializer(serializers.Serializer):
+    day = serializers.DateField()
+    set_up = serializers.BooleanField(help_text="The company has a readings routine running.")
+    taken = serializers.IntegerField()
+    excursions = serializers.ListField(
+        child=serializers.DictField(), help_text="Reading rows, with back_in_range_at."
+    )
+    missed = serializers.ListField(
+        child=serializers.DictField(), help_text="{task_id, routine, branch, due_at, assignee}"
+    )

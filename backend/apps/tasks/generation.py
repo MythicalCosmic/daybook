@@ -209,6 +209,8 @@ def build_tasks(
             created_by=created_by,
             due_at=due_at,
             proof=template.proof,
+            # A copy: editing the routine later never changes what this day's run asks for.
+            readings=[dict(spec) for spec in template.readings or ()],
             needs_confirmation=template.needs_confirmation,
             accept_with_proof=template.accept_with_proof,
             reminder_policy=template.reminder_policy,

@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 from django.core.exceptions import PermissionDenied
 from django.core.files import File
 from django.db import IntegrityError, transaction
-from django.utils import timezone
+from django.utils import timezone, translation
 from django.utils.translation import gettext as _
 
 from apps.audit import services as audit
@@ -25,6 +25,7 @@ from apps.reminders.models import ReminderPolicy
 from apps.reminders.policies import escalation_recipients, policy_for
 from apps.reminders.schedule import first_reminder_at
 from apps.tasks import conf, dates, generation, queries, rules, signals, visibility
+from apps.tasks import readings as reading_specs
 from apps.tasks import tasks as jobs
 from apps.tasks.audit_actions import TasksAction
 from apps.tasks.models import (
@@ -35,6 +36,7 @@ from apps.tasks.models import (
     Repeat,
     Task,
     TaskComment,
+    TaskReading,
     TasksSettings,
     TaskTemplate,
     Weekday,
@@ -106,6 +108,8 @@ def create_task(
             raise DomainError(_("Pick a time for a repeating task."))
     if reward is not None and for_self:
         raise DomainError(_("A reward is for work you give to someone else."))
+    if proof == Proof.READINGS:
+        raise DomainError(_("Readings are taken on routines: set one up under Routines."))
 
     task = Task(
         company_id=by.company_id,
@@ -186,14 +190,27 @@ def start_task(task: Task, *, by: Membership) -> Task:
 
 @transaction.atomic
 def complete_task(
-    task: Task, *, by: Membership, proof_text: str = "", proof_photo: File | None = None
+    task: Task,
+    *,
+    by: Membership,
+    proof_text: str = "",
+    proof_photo: File | None = None,
+    readings: dict | None = None,
+    reading_note: str = "",
 ) -> Task:
+    """Finish a task. A readings task (`proof=readings`) needs a value for each of its specs
+    (`readings`: key → "5,2"), and `reading_note` when one is out of range; each value is kept
+    as a `TaskReading`, and one out of range tells the people who look after storage at once.
+    A shared routine's first completion closes the others' copies of that day at the branch."""
     task = _lock(task)
     _ensure_assignee(task, by)
     if not task.is_open:
         raise DomainError(_already(task))
     proof_text = proof_text.strip()
-    if problem := _missing_proof(task.proof, proof_text, proof_photo):
+    taken = []
+    if task.proof == Proof.READINGS:
+        taken = reading_specs.take(task.readings, readings, reading_note)
+    elif problem := _missing_proof(task.proof, proof_text, proof_photo):
         raise DomainError(problem)
 
     task.proof_text = proof_text
@@ -204,12 +221,16 @@ def complete_task(
         task.proof_thumb = ""  # the old preview, if any, belongs to the old photo
         transaction.on_commit(partial(jobs.make_proof_thumb.delay, task.pk))
     task.completed_at = timezone.now()
-    needs_review = _needs_review(task, proof_text, proof_photo)
+    needs_review = _needs_review(task, proof_text, proof_photo, bool(taken))
     task.status = Task.Status.REVIEW if needs_review else Task.Status.DONE
     task.next_reminder_at = None
     _clear_blocker(task, by, outcome=_("Done"))
     _clear_extension(task, by, outcome=_("Done"))
     task.save()
+    if taken:
+        _record_readings(task, taken, by=by, note=reading_note, at=task.completed_at)
+    if task.template_id and task.template.shared:
+        _close_shared_copies(task, by)
     if task.status == Task.Status.REVIEW:
         _add_to_feed(Activity.Kind.REVIEW, task, queries.reviewers(task), by)
     elif task.kind == Task.Kind.ASSIGNED:
@@ -262,6 +283,10 @@ def reopen_task(task: Task, *, by: Membership) -> Task:
         kind__in=(Activity.Kind.REVIEW, Activity.Kind.COMPLETED),
         created_at__gte=completed_at,
     ).delete()
+    if task.proof == Proof.READINGS:
+        _withdraw_readings(task, by)
+    if task.template_id and task.template.shared:
+        _reopen_shared_copies(task, by, since=completed_at)
     _audit(TasksAction.REOPENED, task, by)
     _refresh_copies(task)
     return task
@@ -1003,6 +1028,8 @@ TEMPLATE_FIELDS = frozenset(
         "due_after_days",
         "assignees",
         "positions",
+        "readings",
+        "shared",
     }
 )
 
@@ -1162,6 +1189,9 @@ def _ensure_template_in_scope(template: TaskTemplate, by: Membership) -> None:
 
 
 def _apply_template(template: TaskTemplate, by: Membership, fields: dict) -> None:
+    specs_given = "readings" in fields
+    if specs_given:
+        template.readings = reading_specs.clean_specs(fields.pop("readings"))
     if not template.pk or "needs_confirmation" in fields:
         # A new routine, or None sent, follows the company's rule; True or False is its own.
         template.needs_confirmation, template.accept_with_proof = conf.review_rule(
@@ -1204,6 +1234,24 @@ def _apply_template(template: TaskTemplate, by: Membership, fields: dict) -> Non
         raise DomainError(_("Pick the time it's due."))
     if template.onboarding:
         template.personal = False
+    _check_readings(template, specs_given=specs_given)
+
+
+def _check_readings(template: TaskTemplate, *, specs_given: bool) -> None:
+    """A readings routine asks for 1 to 3 numbers (PLAN-OWNER §14.10); nothing else carries
+    specs, and neither onboarding nor someone's own repeating task takes readings or is
+    shared. A routine moved off the readings proof drops its specs (its tasks keep theirs)."""
+    asks = template.proof == Proof.READINGS
+    if (asks or template.readings) and (template.onboarding or template.personal):
+        raise DomainError(_("Readings are taken on routines, not on onboarding or personal tasks."))
+    if asks and not template.readings:
+        raise DomainError(_("Add at least one reading: what is measured and its allowed values."))
+    if not asks and template.readings:
+        if specs_given:
+            raise DomainError(_("Pick the Readings proof to ask for readings."))
+        template.readings = []
+    if template.shared and (template.onboarding or template.personal):
+        raise DomainError(_("Only routines can be shared by a team."))
 
 
 def _set_template_people(template, by, assignees, positions) -> None:
@@ -1343,13 +1391,15 @@ def _reminders_left(task: Task) -> bool:
     return policy.max_reminders == 0 or task.reminders_sent < policy.max_reminders
 
 
-def _needs_review(task: Task, proof_text: str, proof_photo: File | None) -> bool:
+def _needs_review(
+    task: Task, proof_text: str, proof_photo: File | None, with_readings: bool = False
+) -> bool:
     """Whether finished work waits for a check: only when its giver (or the company's rule)
-    asked for one, and not when the rule accepts it with the photo or text proof it came
-    with (PLAN-OWNER §15.3)."""
+    asked for one, and not when the rule accepts it with the photo, text or readings proof it
+    came with (PLAN-OWNER §15.3)."""
     if not task.needs_confirmation:
         return False
-    return not (task.accept_with_proof and (proof_text or proof_photo is not None))
+    return not (task.accept_with_proof and (proof_text or proof_photo is not None or with_readings))
 
 
 def _missing_proof(proof: str, text: str, photo: File | None) -> str | None:
@@ -1452,17 +1502,278 @@ def _ensure_registered(member: Membership) -> None:
         raise PermissionDenied(_("Finish registration first."))
 
 
+# Storage readings (PLAN-OWNER §14.10) -----------------------------------------------------
+
+READING_ALERT = "tasks.reading_out_of_range"
+READINGS_PULSE = "tasks.readings_alerts"
+
+
+@transaction.atomic
+def recheck(task: Task, *, by: Membership, readings: dict, note: str = "") -> Task:
+    """The second measurement after something was done about a value out of range (the
+    vaccines moved to the spare fridge): within `RECHECK_WINDOW` of the completion, by whoever
+    took the readings or someone who answers for the task. Each value is kept as a recheck;
+    once every value is back in range the alert about it says so ("Back in range at 10:42")."""
+    task = _lock(task)
+    if task.proof != Proof.READINGS or not task.readings:
+        raise DomainError(_("This task doesn't take readings."))
+    if not (rules.is_assignee(task, by) or can_decide(task, by)):
+        raise PermissionDenied(
+            _("Only the person who took the readings, or a manager, can take them again.")
+        )
+    if task.status not in (Task.Status.DONE, Task.Status.REVIEW) or task.completed_at is None:
+        raise DomainError(_("Take the readings first: this task isn't finished."))
+    now = timezone.now()
+    if now - task.completed_at > reading_specs.RECHECK_WINDOW:
+        raise DomainError(_("Too late for a recheck: it's been more than 2 hours."))
+    taken = reading_specs.take(task.readings, readings, note, recheck=True)
+    was_out = reading_specs.excursion_open(task.readings_taken.all())
+    _record_readings(task, taken, by=by, note=note, at=now, recheck=True)
+    audit.record(
+        TasksAction.RECHECKED,
+        company_id=task.company_id,
+        actor=by.user,
+        target=task,
+        readings={row["spec"]["key"]: reading_specs.plain(row["value"]) for row in taken},
+    )
+    if was_out and not reading_specs.excursion_open(task.readings_taken.all()):
+        moment = timezone.localtime(now, ZoneInfo(task.company.timezone)).strftime("%H:%M")
+        inbox.settle(
+            task,
+            outcome=lambda person: _("Back in range at %(time)s") % {"time": moment},
+            by=by,
+            kind=READING_ALERT,
+        )
+    transaction.on_commit(partial(pulse.bump, task.company_id, READINGS_PULSE, "tasks.tasks"))
+    _refresh_copies(task)
+    return task
+
+
+def _record_readings(
+    task: Task, taken: list[dict], *, by: Membership, note: str, at: datetime, recheck=False
+) -> list[TaskReading]:
+    """Keep what was typed as the task's readings; a first measurement out of range tells the
+    people who look after storage (`_alert_out_of_range`)."""
+    note = (note or "").strip()[: reading_specs.NOTE_MAX]
+    rows = TaskReading.objects.bulk_create(
+        TaskReading(
+            company_id=task.company_id,
+            task=task,
+            template_id=task.template_id,
+            branch_id=task.branch_id,
+            key=row["spec"]["key"],
+            label=row["spec"]["label"][: reading_specs.LABEL_MAX],
+            unit=row["spec"].get("unit", "")[: reading_specs.UNIT_MAX],
+            value=row["value"],
+            min=reading_specs.spec_range(row["spec"])[0],
+            max=reading_specs.spec_range(row["spec"])[1],
+            in_range=row["in_range"],
+            note=note if not row["in_range"] or recheck else "",
+            is_recheck=recheck,
+            recorded_by=by,
+            recorded_at=at,
+        )
+        for row in taken
+    )
+    if not recheck and any(not row.in_range for row in rows):
+        _alert_out_of_range(task, rows, by)
+        transaction.on_commit(partial(pulse.bump, task.company_id, READINGS_PULSE))
+    return rows
+
+
+def reading_alert_recipients(task: Task) -> list[Membership]:
+    """Who hears about a value out of range: the routine's escalation contact, else whoever
+    may confirm tasks at the task's branch; and the owners, always. Never the person who took
+    it."""
+    approved = Membership.Status.APPROVED
+    if task.escalate_to_id and task.escalate_to.status == approved:
+        people = [task.escalate_to]
+    else:
+        people = queries.confirmers(task)
+    owners = Membership.objects.filter(
+        company_id=task.company_id, status=approved, role__is_owner=True
+    ).select_related("user", "role", "company")
+    found = {person.pk: person for person in [*people, *owners]}
+    found.pop(task.assignee_id, None)
+    return list(found.values())
+
+
+def _alert_out_of_range(task: Task, rows: list[TaskReading], by: Membership) -> None:
+    """One alert per completion (its dedupe key): critical when a spec out of range says so."""
+    out = [row for row in rows if not row.in_range]
+    specs = {spec["key"]: spec for spec in task.readings}
+    critical = any(specs.get(row.key, {}).get("critical") for row in out)
+    recipients = reading_alert_recipients(task)
+    if not recipients:
+        return
+    tz = ZoneInfo(task.company.timezone)
+    moment = timezone.localtime(out[0].recorded_at, tz).strftime("%H:%M")
+    first = out[0]
+
+    def title(person: Membership) -> str:
+        return _("Out of range: %(label)s %(value)s") % {
+            "label": first.label,
+            "value": reading_specs.value_text(first.value, first.unit),
+        }
+
+    def body(person: Membership) -> str:
+        lines = [f"«{task.title}»"]
+        if task.branch_id:
+            lines.append(_("Branch: %(branch)s") % {"branch": task.branch.name})
+        for row in out:
+            lines.append(
+                _("%(label)s: %(value)s, allowed %(range)s")
+                % {
+                    "label": row.label,
+                    "value": reading_specs.value_text(row.value, row.unit),
+                    "range": reading_specs.range_text(row.min, row.max, row.unit),
+                }
+            )
+        if first.note:
+            lines.append(_("What was done: %(note)s") % {"note": first.note})
+        lines.append(_("Taken by: %(name)s, %(time)s") % {"name": by, "time": moment})
+        return "\n".join(lines)
+
+    url = (
+        f"/c/{task.company_id}/routines/{task.template_id}"
+        if task.template_id
+        else f"/c/{task.company_id}/tasks?task={task.pk}"
+    )
+    inbox.notify(
+        recipients,
+        READING_ALERT,
+        title=title,
+        body=body,
+        url=url,
+        app_screen=f"task:{task.pk}",
+        target=task,
+        actor=by,
+        severity="critical" if critical else "warning",
+        data={
+            "readings": [
+                {
+                    "key": row.key,
+                    "label": row.label,
+                    "value": reading_specs.plain(row.value),
+                    "unit": row.unit,
+                    "min": reading_specs.plain(row.min),
+                    "max": reading_specs.plain(row.max),
+                }
+                for row in out
+            ],
+            "branch_id": task.branch_id,
+            "template_id": task.template_id,
+        },
+        dedupe_key=f"{READING_ALERT}:{task.pk}:{task.completed_at.isoformat()}",
+    )
+
+
+def _withdraw_readings(task: Task, by: Membership) -> None:
+    """An undone Done takes its readings with it (they are typed again); an alert they raised
+    says so."""
+    if not TaskReading.objects.filter(task=task).delete()[0]:
+        return
+    inbox.settle(
+        task,
+        outcome=_("Undone: the readings will be entered again"),
+        by=by,
+        kind=READING_ALERT,
+    )
+    transaction.on_commit(partial(pulse.bump, task.company_id, READINGS_PULSE))
+
+
+def _close_shared_copies(task: Task, by: Membership) -> None:
+    """ "One of us does it": the routine's other open copies of that day at the same branch close
+    (cancelled, so no KPI counts them and nobody is chased), each with a feed entry saying who
+    did it, and their chat cards are drawn again."""
+    others = list(
+        Task.objects.select_for_update(of=("self",))
+        .filter(
+            company_id=task.company_id,
+            template_id=task.template_id,
+            for_date=task.for_date,
+            branch_id=task.branch_id,
+            status__in=Task.OPEN_STATUSES,
+        )
+        .exclude(pk=task.pk)
+        .select_related("assignee__user")
+    )
+    if not others:
+        return
+    for other in others:
+        other.status = Task.Status.CANCELLED
+        other.next_reminder_at = None
+        _clear_blocker(other, by, outcome=_("Done by a colleague"))
+        _clear_extension(other, by, outcome=_("Done by a colleague"))
+        other.save()
+    entries = []
+    for other in others:
+        with translation.override(other.assignee.user.language):
+            text = _("Done by %(name)s") % {"name": by}
+        entries.append(
+            Activity(
+                company_id=task.company_id,
+                recipient=other.assignee,
+                actor=by,
+                kind=Activity.Kind.COVERED,
+                task=other,
+                text=text[:300],
+            )
+        )
+    Activity.objects.bulk_create(entries)
+    for other in others:
+        _refresh_copies(other)
+
+
+def _reopen_shared_copies(task: Task, by: Membership, *, since: datetime) -> None:
+    """Undo of a shared routine's run: the copies that run closed are open again."""
+    entries = Activity.objects.filter(
+        company_id=task.company_id,
+        kind=Activity.Kind.COVERED,
+        actor=by,
+        created_at__gte=since,
+        task__template_id=task.template_id,
+        task__for_date=task.for_date,
+    )
+    copies = list(
+        Task.objects.select_for_update(of=("self",))
+        .filter(pk__in=list(entries.values_list("task_id", flat=True)))
+        .filter(status=Task.Status.CANCELLED)
+        .select_related("company", "reminder_policy", "template__reminder_policy")
+    )
+    entries.delete()
+    for copy in copies:
+        copy.status = Task.Status.IN_PROGRESS if copy.started_at else Task.Status.TODO
+        copy.next_reminder_at = _resume_reminders_at(copy)
+        copy.save()
+        _refresh_copies(copy)
+
+
 # The company's rules for finished work (PLAN-OWNER §15.3) ----------------------------------
 
-SETTINGS_FIELDS = frozenset({"on_finish", "auto_accept_after_hours"})
+FINISH_FIELDS = frozenset({"on_finish", "auto_accept_after_hours"})
+# The storage preset's defaults (Settings → Routines, PLAN-OWNER §14.10).
+STORAGE_FIELDS = frozenset(
+    {
+        "storage_fridge_min",
+        "storage_fridge_max",
+        "storage_room_min",
+        "storage_room_max",
+        "storage_humidity_max",
+        "storage_times",
+    }
+)
+SETTINGS_FIELDS = FINISH_FIELDS | STORAGE_FIELDS
+MAX_STORAGE_TIMES = 4
 # Overdue reviews one run accepts per company; the next run takes the rest.
 AUTO_ACCEPT_BATCH = 200
 
 
 @transaction.atomic
 def update_settings(company, *, by: Membership, **changes) -> TasksSettings:
-    """ "When someone finishes a task" and the wait after which work nobody reviewed is
-    accepted. Needs company.settings; what changed is audited."""
+    """ "When someone finishes a task", the wait after which work nobody reviewed is accepted,
+    and the storage preset's ranges and reading times. Needs company.settings; what changed is
+    audited."""
     if not by.has_perm(Perm.COMPANY_SETTINGS):
         raise PermissionDenied(_("You can't change the company's settings."))
     if unknown := changes.keys() - SETTINGS_FIELDS:
@@ -1476,19 +1787,55 @@ def update_settings(company, *, by: Membership, **changes) -> TasksSettings:
         raise DomainError(
             _("Pick between %(low)d and %(high)d hours.") % {"low": low, "high": high}
         )
-    before = {name: getattr(row, name) for name in changes}
+    if "storage_times" in changes:
+        changes["storage_times"] = storage_times(changes["storage_times"])
+    before = {name: audit.plain(getattr(row, name)) for name in changes}
     for name, value in changes.items():
         setattr(row, name, value)
+    if changes.keys() & STORAGE_FIELDS:
+        _check_storage(row)
     row.save()
-    if changed := audit.diff(before, {name: getattr(row, name) for name in changes}):
-        audit.record(
-            TasksAction.SETTINGS_CHANGED,
-            company_id=row.company_id,
-            actor=by.user,
-            target=row,
-            changes=changed,
+    after = {name: audit.plain(getattr(row, name)) for name in changes}
+    for action, fields in (
+        (TasksAction.SETTINGS_CHANGED, FINISH_FIELDS),
+        (TasksAction.STORAGE_SETTINGS_CHANGED, STORAGE_FIELDS),
+    ):
+        part = [name for name in changes if name in fields]
+        changed = audit.diff(
+            {name: before[name] for name in part}, {name: after[name] for name in part}
         )
+        if changed:
+            audit.record(
+                action, company_id=row.company_id, actor=by.user, target=row, changes=changed
+            )
     return row
+
+
+def storage_times(values) -> list:
+    """Reading times as the settings and the preset keep them: 1 to `MAX_STORAGE_TIMES`
+    distinct times of day, in order."""
+    times = sorted({value.replace(second=0, microsecond=0) for value in values or ()})
+    if not times:
+        raise DomainError(_("Pick at least one time for the readings."))
+    if len(times) > MAX_STORAGE_TIMES:
+        raise DomainError(
+            _("Take readings at most %(max)d times a day.") % {"max": MAX_STORAGE_TIMES}
+        )
+    return times
+
+
+def _check_storage(row: TasksSettings) -> None:
+    for low, high in (
+        (row.storage_fridge_min, row.storage_fridge_max),
+        (row.storage_room_min, row.storage_room_max),
+    ):
+        for value in (low, high):
+            if not reading_specs.is_plausible(Decimal(value)):
+                raise DomainError(_("Allowed values go from −50 to 100."))
+        if Decimal(low) > Decimal(high):
+            raise DomainError(_("The lowest allowed value can't be above the highest."))
+    if not Decimal(0) <= Decimal(row.storage_humidity_max) <= Decimal(100):
+        raise DomainError(_("Humidity goes from 0 to 100 %."))
 
 
 def accept_overdue_reviews(now: datetime | None = None) -> int:
