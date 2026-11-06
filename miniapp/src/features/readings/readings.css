@@ -1,0 +1,158 @@
+/* Storage readings on the task screen: the value fields with their unit, the range state as it's
+   typed, and the list of what was taken. The app's own tokens: sage in range, terracotta out. */
+
+.rdg {
+  gap: var(--space-3);
+}
+
+.rdg-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.rdg-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rdg-input {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.rdg-input .input {
+  width: 100%;
+  padding-right: 60px;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.rdg-input .rdg-input--out {
+  border-color: var(--color-accent-600);
+}
+
+.rdg-unit {
+  position: absolute;
+  right: 20px;
+  color: var(--muted);
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.rdg-state,
+.rdg-row-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.rdg-state--in {
+  color: var(--color-accent-2-800);
+}
+
+.rdg-state--out {
+  color: var(--color-accent-800);
+}
+
+.rdg-hint {
+  font-size: 13.5px;
+  color: var(--muted);
+}
+
+.rdg-problem {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-accent-800);
+}
+
+.rdg-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.rdg-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--color-divider);
+}
+
+.rdg-row:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.rdg-row--recheck {
+  padding-left: 12px;
+}
+
+.rdg-row-main,
+.rdg-row-side {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rdg-row-side {
+  align-items: flex-end;
+  text-align: right;
+  flex: none;
+}
+
+.rdg-row-label {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+}
+
+.rdg-note {
+  font-size: 14px;
+  white-space: pre-wrap;
+}
+
+.rdg-value {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.rdg-value--out {
+  color: var(--color-accent-800);
+}
+
+.rdg-range {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.rdg-recheck-offer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.rdg-recheck {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-divider);
+}
+
+.rdg-recheck-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}

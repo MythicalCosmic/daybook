@@ -7,7 +7,8 @@ import type { BranchRef, Money } from "@/api/types";
 export type TaskStatus = "todo" | "in_progress" | "review" | "returned" | "done" | "cancelled";
 export type TaskKind = "daily" | "assigned" | "personal";
 export type TaskPriority = "low" | "normal" | "high" | "urgent";
-export type ProofKind = "none" | "photo" | "text" | "any";
+/** "readings": numbers within an allowed range, typed in when a routine's run is done (§14.10). */
+export type ProofKind = "none" | "photo" | "text" | "any" | "readings";
 /** Board columns: To do, In progress, Waiting, Sent back, Done. */
 export type BoardColumnId = "todo" | "in_progress" | "review" | "returned" | "done";
 export type TaskAction = "start" | "complete" | "confirm" | "return" | "edit" | "cancel" | "reassign" | "nudge" | "comment";
@@ -40,6 +41,39 @@ export interface TaskExtension {
 }
 
 /**
+ * One number a readings task asks for (PLAN-OWNER §14.10, `TasksReadingSpec`): a fridge's
+ * temperature, the room's humidity. Bounds are decimal strings ("2.0"); null: none on that side.
+ */
+export interface ReadingSpec {
+  key: string;
+  label: string;
+  unit: string;
+  min: string | null;
+  max: string | null;
+  /** Out of range, the alert about it is critical. */
+  critical: boolean;
+}
+
+/** A value typed in for a readings task, held to the range it had then (`TasksReadingTaken`). */
+export interface ReadingTaken {
+  id: number;
+  key: string;
+  label: string;
+  unit: string;
+  /** Decimal string ("5.2"). */
+  value: string;
+  min: string | null;
+  max: string | null;
+  in_range: boolean;
+  /** What was done about it: there when a value was out of range, and on rechecks. */
+  note: string;
+  /** The second measurement after something was done about a value out of range. */
+  is_recheck: boolean;
+  recorded_at: string;
+  recorded_by: { id: number; name: string } | null;
+}
+
+/**
  * Fields the backend adds tonight (contracts 7, 8, 10). Optional: an older backend leaves them
  * out, and the drawer and the table then simply don't show them.
  */
@@ -48,6 +82,8 @@ export interface TaskExtras {
   extension?: TaskExtension | null;
   /** When the assignee first opened it (the app's task screen or the bot card). */
   seen_at?: string | null;
+  /** What a readings task asks for (copied from its routine when the task was made). */
+  readings?: ReadingSpec[];
 }
 
 export interface TaskRow extends TaskExtras {
@@ -118,6 +154,8 @@ export interface ReminderPlan {
 export interface TaskReview extends TaskRow {
   description: string;
   proof_text: string;
+  /** The values typed in, for a readings task. */
+  readings_taken?: ReadingTaken[];
 }
 
 export interface TaskDetail extends TaskRow {
@@ -129,6 +167,40 @@ export interface TaskDetail extends TaskRow {
   reminders: ReminderPlan | null;
   actions: TaskAction[];
   last_nudged_at: string | null;
+  /** A readings task's values, first measurements and rechecks, in time order. */
+  readings_taken?: ReadingTaken[];
+  /** A finished readings task takes a second measurement until then (null: no more). */
+  recheck_until?: string | null;
+}
+
+/** A reading as the journal lists it (`TasksReadingRow`): the value, where and for which routine. */
+export interface ReadingRow extends ReadingTaken {
+  task_id: number;
+  /** Company-local day and time it was taken. */
+  day: string;
+  time: string;
+  branch: BranchRef | null;
+  routine: { id: number; title: string } | null;
+}
+
+/** Today's storage readings (`routines/readings/today/`): the Overview card. */
+export interface ReadingsToday {
+  day: string;
+  /** The company has a readings routine running; until then the card shows nothing. */
+  set_up: boolean;
+  /** First measurements taken today. */
+  taken: number;
+  /** Values out of range today; `back_in_range_at` when a recheck brought one back. */
+  excursions: Array<ReadingRow & { back_in_range_at: string | null }>;
+  /** Readings due by now that nobody took (a shared routine's copies count once). */
+  missed: Array<{
+    task_id: number;
+    routine: { id: number; title: string };
+    branch: BranchRef | null;
+    due_at: string;
+    /** The person, unless the routine is shared ("one of us does it"). */
+    assignee: string | null;
+  }>;
 }
 
 export interface TaskTimelineEntry {

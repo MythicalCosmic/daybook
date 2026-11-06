@@ -377,5 +377,22 @@
   "tasks.reviews.rule.proof": "Kompaniya qoidasi: rasm yoki hisobot bilan bajarilgan ish avtomatik qabul qilinadi, qolgani shu yerga keladi.",
   "tasks.reviews.rule.ask": "Kompaniya qoidasi: har bir bajarilgan vazifa shu yerda tekshiruvni kutadi.",
   "tasks.reviews.ruleWait": "{n} soat ichida hech kim tekshirmasa, ish avtomatik qabul qilinadi.",
-  "tasks.reviews.ruleLink": "O‘zgartirish"
+  "tasks.reviews.ruleLink": "O‘zgartirish",
+  "tasks.proof.readings": "Ko‘rsatkichlar",
+  "tasks.readings.title": "Ko‘rsatkichlar",
+  "tasks.readings.allowed": "Ruxsat etilgan: {range}",
+  "tasks.readings.noRange": "Istalgan qiymat",
+  "tasks.readings.critical": "Muhim",
+  "tasks.readings.criticalHint": "Me’yordan chiqsa, bu haqdagi ogohlantirish muhim bo‘ladi",
+  "tasks.readings.inRange": "Me’yorda",
+  "tasks.readings.outOfRange": "Me’yordan chiqdi",
+  "tasks.readings.recheck": "Qayta o‘lchash",
+  "tasks.readings.notTaken": "Hali o‘lchanmagan",
+  "tasks.readings.recheckUntil": "Qayta o‘lchash muddati: {time}",
+  "tasks.widget.readings": "Bugungi saqlash ko‘rsatkichlari",
+  "tasks.widget.readingsLink": "Bugungi muntazam vazifalar",
+  "tasks.widget.readingsOk": "Barcha ko‘rsatkichlar me’yorda",
+  "tasks.widget.readingsTaken": "Bugun o‘lchandi: {n}",
+  "tasks.widget.readingsMissed": "O‘lchanmagan",
+  "tasks.widget.backInRange": "Me’yorga qaytdi: {time}"
 }

@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo
 from django.db.models import Count, Q
 from django.utils import timezone
 from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy as _l
 from django.utils.translation import ngettext
 
 from apps.audit import services as audit
@@ -18,8 +19,8 @@ from apps.console.registry import CalendarItem, QueueAction, QueueItem, SearchHi
 from apps.members.models import Membership, Position
 from apps.members.scope import branch_ids
 from apps.reminders.models import ReminderPolicy
-from apps.tasks import dashboard, queries
-from apps.tasks.models import Task, TaskTemplate
+from apps.tasks import dashboard, journal, queries
+from apps.tasks.models import Proof, Task, TaskReading, TaskTemplate
 
 SHARED = (Task.Kind.DAILY, Task.Kind.ASSIGNED)
 # The `tasks.due` calendar's colour on a day without late work (the dashboard's chip uses it too).
@@ -183,7 +184,7 @@ def brief(company, day: date, now: datetime, scope: list[int] | None) -> dict | 
     on_time = sum(row["on_time"] for row in week)
     counted = sum(row["total"] for row in week)
     worst = late.select_related("assignee__user", "branch").order_by("due_at")[:5]
-    return {
+    section = {
         "done": totals["done"],
         "total": totals["total"],
         "late": late.count(),
@@ -200,6 +201,113 @@ def brief(company, day: date, now: datetime, scope: list[int] | None) -> dict | 
             for task in worst
         ],
     }
+    return section | readings_brief(company, now, scope)
+
+
+def readings_brief(company, now: datetime, scope: list[int] | None) -> dict:
+    """Storage readings in the brief (PLAN-OWNER §14.10): today's values out of range and the
+    readings missed so far; nothing while the company has no readings routine."""
+    today = journal.today(company, now, branch_ids=scope)
+    if not today["set_up"]:
+        return {}
+    return {
+        "excursions": [
+            {
+                "label": item["label"],
+                "value": item["value"],
+                "unit": item["unit"],
+                "branch": item["branch"]["name"] if item["branch"] else None,
+                "back_in_range": item["back_in_range_at"] is not None,
+            }
+            for item in today["excursions"]
+        ],
+        "missed_readings": [
+            {
+                "routine": item["routine"]["title"],
+                "branch": item["branch"]["name"] if item["branch"] else None,
+                "due_at": item["due_at"].isoformat(),
+            }
+            for item in today["missed"]
+        ],
+    }
+
+
+# Storage readings (PLAN-OWNER §14.10) ------------------------------------------------------
+
+
+def readings_alerts(member: Membership) -> int:
+    """The sidebar badge: today's values still out of range in the member's branches."""
+    return journal.open_excursions(member.company, timezone.now(), branch_ids=branch_ids(member))
+
+
+def storage_set_up(company) -> bool:
+    """The "Get started" step: the company takes readings on at least one running routine."""
+    return TaskTemplate.objects.filter(
+        company=company, proof=Proof.READINGS, is_active=True, personal=False, onboarding=False
+    ).exists()
+
+
+READINGS_COLUMNS = [
+    ("recorded_at", _l("Taken"), "datetime"),
+    ("branch", _l("Branch")),
+    ("routine", _l("Routine")),
+    ("label", _l("Instrument")),
+    ("value", _l("Value"), "number"),
+    ("unit", _l("Unit")),
+    ("min", _l("Lowest allowed"), "number"),
+    ("max", _l("Highest allowed"), "number"),
+    ("in_range", _l("In range"), "bool"),
+    ("recheck", _l("Recheck"), "bool"),
+    ("note", _l("Note")),
+    ("recorded_by", _l("Taken by")),
+]
+
+
+def readings_export_rows(member: Membership, params: dict):
+    """The readings log as the routines journal shows it: `from` and `to` (company days,
+    default the last 30), `branch` and `routine` narrow it; branch scope applies."""
+    params = _Params(params)
+    today = queries.company_today(member.company)
+    start = _parse_day(params.get("from")) or today - timedelta(days=29)
+    end = _parse_day(params.get("to")) or today
+    scope = branch_ids(member)
+    picked = [int(value) for value in params.getlist("branch") if value.isdigit()]
+    if picked:
+        scope = [pk for pk in picked if scope is None or pk in scope]
+    routine = params.get("routine")
+    rows = journal.readings_in(
+        member.company,
+        start,
+        end,
+        branch_ids=scope,
+        template_id=int(routine) if routine and str(routine).isdigit() else None,
+    )
+    for reading in rows.iterator(chunk_size=500):
+        yield _reading_row(reading)
+
+
+def _reading_row(reading: TaskReading) -> dict:
+    return {
+        "recorded_at": reading.recorded_at,
+        "branch": reading.branch.name if reading.branch_id else "",
+        "routine": reading.template.title if reading.template_id else "",
+        "label": reading.label,
+        "value": reading.value,
+        "unit": reading.unit,
+        "min": reading.min,
+        "max": reading.max,
+        "in_range": reading.in_range,
+        "recheck": reading.is_recheck,
+        "note": reading.note,
+        "recorded_by": str(reading.recorded_by) if reading.recorded_by_id else "",
+    }
+
+
+def _parse_day(value) -> date | None:
+    try:
+        return date.fromisoformat(str(value)) if value else None
+    except ValueError:
+        return None
 
 
 def company_facts(company, period, member: Membership) -> dict:
@@ -302,6 +410,8 @@ def _copy_templates(source, target, by: Membership, *, onboarding: bool) -> int:
             weekdays=template.weekdays,
             due_time=template.due_time,
             proof=template.proof,
+            readings=template.readings,
+            shared=template.shared,
             needs_confirmation=template.needs_confirmation,
             accept_with_proof=template.accept_with_proof,
             is_active=template.is_active and (bool(matched) or onboarding),

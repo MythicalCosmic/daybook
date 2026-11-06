@@ -377,5 +377,22 @@
   "tasks.reviews.rule.proof": "Правило компании: работа с фото или отчётом принимается автоматически, остальная попадает сюда.",
   "tasks.reviews.rule.ask": "Правило компании: каждая выполненная задача ждёт здесь проверки.",
   "tasks.reviews.ruleWait": "Если никто не проверит за {n} ч, работа будет принята автоматически.",
-  "tasks.reviews.ruleLink": "Изменить"
+  "tasks.reviews.ruleLink": "Изменить",
+  "tasks.proof.readings": "Показания",
+  "tasks.readings.title": "Показания",
+  "tasks.readings.allowed": "Норма: {range}",
+  "tasks.readings.noRange": "Любое значение",
+  "tasks.readings.critical": "Критично",
+  "tasks.readings.criticalHint": "Вне нормы оповещение об этом будет критичным",
+  "tasks.readings.inRange": "В норме",
+  "tasks.readings.outOfRange": "Вне нормы",
+  "tasks.readings.recheck": "Повторный замер",
+  "tasks.readings.notTaken": "Ещё не измерено",
+  "tasks.readings.recheckUntil": "Повторный замер возможен до {time}",
+  "tasks.widget.readings": "Показания хранения сегодня",
+  "tasks.widget.readingsLink": "Регулярные задачи сегодня",
+  "tasks.widget.readingsOk": "Все показания в норме",
+  "tasks.widget.readingsTaken": "Снято сегодня: {n}",
+  "tasks.widget.readingsMissed": "Не сняты",
+  "tasks.widget.backInRange": "Вернулось в норму в {time}"
 }

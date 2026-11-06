@@ -15,15 +15,27 @@ from decimal import Decimal
 
 from django.core.files.base import ContentFile
 from django.db.models import DateTimeField, ExpressionWrapper, F, OuterRef, Subquery
+from django.utils import translation
+from django.utils.translation import gettext as _
 from PIL import Image, ImageDraw, ImageFilter
 
 from apps.audit import services as audit
 from apps.audit.models import AuditLog
-from apps.core import demo_plan, uploads
+from apps.core import demo_plan, demo_time, uploads
 from apps.members.models import Membership
 from apps.reminders.models import ReminderLog, ReminderPolicy, ReminderText
+from apps.tasks import presets, services
+from apps.tasks import readings as reading_specs
 from apps.tasks.audit_actions import TasksAction
-from apps.tasks.models import Activity, ChecklistItem, Proof, Task, TaskComment, TaskTemplate
+from apps.tasks.models import (
+    Activity,
+    ChecklistItem,
+    Proof,
+    Task,
+    TaskComment,
+    TaskReading,
+    TaskTemplate,
+)
 
 HISTORY_DAYS = 60  # two months: the reports compare a month with the one before
 STREAK_DAYS = 14  # Alisher's routines of the last two weeks were all done in time
@@ -33,6 +45,16 @@ PALETTES = [
     ((244, 242, 238), [(255, 255, 255), (63, 138, 131), (209, 160, 64), (74, 106, 138)]),
     ((236, 241, 246), [(250, 250, 250), (90, 150, 110), (210, 90, 80), (70, 110, 170)]),
 ]
+# The storage preset at both pharmacies (§14.10): Yunusobod, open around the clock, keeps two.
+STORAGE_FRIDGES = {"C": 1, "Y": 2}
+# The month's two excursions and what was done about them; the fridge one got its recheck.
+FRIDGE_EXCURSION = (
+    9,  # days ago
+    "8.9",
+    "Eshik zich yopilmagan edi: vaksinalar 1-muzlatgichga o‘tkazildi, eshik yopildi.",
+    "5.6",  # 35 minutes later
+)
+HUMIDITY_EXCURSION = (23, "64", "Konditsioner quritish rejimiga qo‘yildi, xona shamollatildi.")
 COLD_CHAIN = (
     "Sovuq zanjir: muzlatgichda +2…+8\u00a0°C bo‘lishi kerak. Termometrdagi raqamni yozing; "
     "chegaradan chiqsa, darhol mudirga xabar bering va dorilarni zaxira muzlatgichga o‘tkazing."
@@ -122,22 +144,11 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
         description="Kunduzgi farmatsevtdan kassani, muzlatgichni va retseptlar jurnalini oling.",
         checklist=["Kassa qoldig‘i", "Muzlatgich harorati", "Retseptlar jurnali"],
     )
-    fridge_morning = adopt(
-        demo_plan.FRIDGE_MORNING,
-        time(9, 0),
-        who=openers + days,
-        proof=Proof.TEXT,
-        reminder_policy=strict,
-        description=COLD_CHAIN,
-    )
-    fridge_evening = adopt(
-        demo_plan.FRIDGE_EVENING,
-        time(20, 30),
-        who=closers + nights,
-        proof=Proof.TEXT,
-        reminder_policy=strict,
-        description=COLD_CHAIN,
-    )
+    # The fridges are read through the storage preset's readings routines (`_storage`): the
+    # core demo's typed-in fridge routines are the paper way it replaced, paused.
+    TaskTemplate.objects.filter(
+        company=company, title__in=(demo_plan.FRIDGE_MORNING, demo_plan.FRIDGE_EVENING)
+    ).update(is_active=False)
     cash_report = adopt(
         demo_plan.CASH_REPORT,
         time(21, 45),
@@ -316,14 +327,6 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
         (handover, "kamola", 0.8),
         (night_handover, "nigora", 0.95),
         (night_handover, "dilshod", 0.9),
-        (fridge_morning, "worker", 0.8),
-        (fridge_morning, "gulnora", 0.9),
-        (fridge_morning, "shahzoda", 0.93),
-        (fridge_morning, "kamola", 0.85),
-        (fridge_evening, "madina", 0.93),
-        (fridge_evening, "sardor", 0.88),
-        (fridge_evening, "nigora", 1.0),
-        (fridge_evening, "dilshod", 0.9),
         (cash_report, "madina", 0.9),
         (cash_report, "sardor", 0.85),
         (day_cash, "shahzoda", 0.9),
@@ -392,6 +395,7 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
             _photo(task, SCENES.get(task.title, "shelf"), rng)
 
     _today(company, story, plan, now, rng)
+    _storage(company, story, now, rng, strict)
     _given(company, story, people, now, rng, strict)
 
 
@@ -400,8 +404,9 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
 
 def _today(company, story, plan, now, rng) -> None:
     """Today's routine tasks of the people working today, made at midnight like daily
-    generation: done by now when their time has passed, except Alisher's morning fridge reading
-    and the courier's deliveries, which run late. The core demo's own tasks stay as they are."""
+    generation: done by now when their time has passed, except the courier's deliveries, which
+    run late (Alisher's late fridge reading is `_storage`'s). The core demo's own tasks stay as
+    they are."""
     today = story.today
     start_of_day = min(now - timedelta(minutes=10), story.at(today, time(0, 5)))
     for template, key, _on_time in plan:
@@ -412,10 +417,7 @@ def _today(company, story, plan, now, rng) -> None:
             continue
         due = story.at(today, template.due_time)
         status, completed, fields = Task.Status.TODO, None, {}
-        late = (template.title, key) in (
-            (demo_plan.FRIDGE_MORNING, "worker"),
-            (demo_plan.DELIVERIES, "jasur"),
-        )
+        late = (template.title, key) == (demo_plan.DELIVERIES, "jasur")
         if due < now and late:
             fields = {"reminders_sent": 3, "escalated_at": due + timedelta(minutes=50)}
             if fields["escalated_at"] > now:
@@ -463,6 +465,342 @@ def _today(company, story, plan, now, rng) -> None:
             if fields.get("escalated_at"):
                 escalate = task.escalate_to or story.member("manager")
                 _log(task, ReminderLog.Kind.ESCALATION, 3, escalate, fields["escalated_at"])
+
+
+# Storage readings (PLAN-OWNER §14.10) -----------------------------------------------------
+
+
+def _storage(company, story, now, rng, strict) -> None:
+    """The storage preset at both pharmacies, set up just before the history starts, and 60
+    days of fridge and room readings taken by whoever was at the counter at that time (one of
+    us does it): two excursions with what was done about them, one recheck back in range. Today
+    every run is in its state: taken (the colleagues' copies closed), still ahead, and Alisher's
+    morning fridge reading at Chilonzor, late."""
+    owner = story.member("owner")
+    if owner is None:
+        return
+    fridges: dict[int, tuple] = {}
+    for code, count in STORAGE_FRIDGES.items():
+        branch = story.branches[code]
+        known = fridges.get(branch.pk, (branch, 0))[1]
+        fridges[branch.pk] = (branch, max(count, known))
+    set_up_at = story.at(story.today - timedelta(days=HISTORY_DAYS + 5), time(18, 0))
+    made: list[TaskTemplate] = []
+    for branch, count in fridges.values():
+        positions = _qualified(story, branch) or presets.default_positions(branch)
+        if not positions:
+            continue
+        with demo_time.moment(set_up_at):
+            made += presets.apply_storage_preset(
+                branch, by=owner, fridges=count, positions=positions
+            ).created
+    if not made:
+        return
+    times = sorted({template.due_time for template in made if template.proof == Proof.READINGS})
+    for template in made:
+        if template.proof == Proof.READINGS and len(template.readings) == 1:
+            # The cold chain's rules, in the pharmacy's own words, and the strict reminders.
+            template.description = COLD_CHAIN
+            template.reminder_policy = strict
+            template.save(update_fields=["description", "reminder_policy", "updated_at"])
+    # The pharmacies already wash and quartz the floors every evening ("Nam tozalash va
+    # kvarslash"): the preset's plain wet cleaning was paused the next morning.
+    for template in made:
+        plain_cleaning = (
+            template.proof == Proof.NONE
+            and len(template.weekdays) == 7
+            and template.due_time == times[-1]
+        )
+        if plain_cleaning:
+            with demo_time.moment(set_up_at + timedelta(hours=15)):
+                services.update_template(template, by=owner, is_active=False)
+    running = list(
+        TaskTemplate.objects.filter(pk__in=[t.pk for t in made], is_active=True)
+        .select_related("reminder_policy", "escalate_to", "created_by")
+        .prefetch_related("positions")
+        .order_by("pk")
+    )
+    _readings_history(company, story, now, rng, running)
+
+
+def _qualified(story, branch) -> list:
+    """The positions of the branch's pharmacists (they take the readings)."""
+    found = {}
+    for key, member in story.members().items():
+        person = story.cast.get(key)
+        if (
+            person is not None
+            and person.position in demo_plan.QUALIFIED
+            and member.home_branch_id == branch.pk
+            and member.position_id
+            and member.status == Membership.Status.APPROVED
+        ):
+            found[member.position_id] = member.position
+    return list(found.values())
+
+
+def _there(story, key: str, day, due) -> bool:
+    """`key` is at work in the half hour before the reading is due, so it can be taken in time:
+    Yunusobod's 20:00 reading is the day pharmacist's, before the night shift comes in."""
+    hours = story.hours(key, day)
+    return hours is not None and hours[0] < due and hours[1] > due - timedelta(minutes=30)
+
+
+def _readings_history(company, story, now, rng, routines: list[TaskTemplate]) -> None:
+    today = story.today
+    members = story.members()
+    position_ids = {
+        template.pk: {position.pk for position in template.positions.all()} for template in routines
+    }
+    runs: dict[int, list[tuple]] = {}
+    for template in routines:
+        keys = [
+            key
+            for key, member in members.items()
+            if member.status == Membership.Status.APPROVED
+            and member.home_branch_id == template.branch_id
+            and member.position_id in position_ids[template.pk]
+        ]
+        days = []
+        for days_ago in range(HISTORY_DAYS, -1, -1):
+            day = today - timedelta(days=days_ago)
+            if not template.is_due_on(day):
+                continue
+            due = story.at(day, template.due_time)
+            there = [key for key in keys if _there(story, key, day, due)]
+            if there:
+                days.append((day, due, there))
+        runs[template.pk] = days
+    excursions = _excursion_days(story, routines, runs)
+    start_of_day = min(now - timedelta(minutes=10), story.at(today, time(0, 5)))
+    late_scene = _late_scene(story, routines, runs, now)
+
+    tasks: list[Task] = []
+    values: dict[int, list[tuple]] = {}  # index in `tasks` -> [(spec, value, note, recheck)]
+    covered: list[tuple[int, int]] = []  # (closed copy, the run that closed it), indexes
+    for template in routines:
+        for day, due, there in runs[template.pk]:
+            if day == today and (due > now or template.pk == late_scene):
+                for key in there:
+                    tasks.append(_run(company, template, members[key], day, due, None))
+                continue
+            doer = rng.choice(there)
+            on_time = rng.random() < 0.9
+            moment = due - timedelta(minutes=rng.randint(2, 25))
+            if not on_time:
+                moment = due + timedelta(minutes=rng.randint(10, 70))
+            completed = min(story.at_work(doer, day, moment), now - timedelta(minutes=3))
+            tasks.append(_run(company, template, members[doer], day, due, completed))
+            index = len(tasks) - 1
+            if template.proof == Proof.READINGS:
+                planned = excursions.get((template.pk, day))
+                values[index] = [_taken(spec, rng, planned) for spec in template.readings]
+            if day == today:
+                for key in there:
+                    if key != doer:
+                        tasks.append(
+                            _run(company, template, members[key], day, due, None, closed=True)
+                        )
+                        covered.append((len(tasks) - 1, index))
+    Task.objects.bulk_create(tasks)
+    # Made the evening before (today's: at midnight), like daily generation does.
+    Task.objects.filter(pk__in=[task.pk for task in tasks if task.for_date != today]).update(
+        created_at=F("due_at") - timedelta(hours=8)
+    )
+    Task.objects.filter(pk__in=[task.pk for task in tasks if task.for_date == today]).update(
+        created_at=start_of_day
+    )
+    rows = []
+    for index, taken in values.items():
+        task = tasks[index]
+        for spec, value, note, recheck in taken:
+            low, high = reading_specs.spec_range(spec)
+            rows.append(_reading_row(task, spec, value, note, task.completed_at, low, high))
+            if recheck is not None:
+                again = task.completed_at + timedelta(minutes=35)
+                rows.append(
+                    _reading_row(task, spec, recheck, "", again, low, high, is_recheck=True)
+                )
+    made = TaskReading.objects.bulk_create(rows)
+    TaskReading.objects.filter(pk__in=[reading.pk for reading in made]).update(
+        created_at=F("recorded_at")
+    )
+    entries = []
+    for closed, done in covered:
+        copy, run = tasks[closed], tasks[done]
+        with translation.override(copy.assignee.user.language):
+            text = _("Done by %(name)s") % {"name": run.assignee}
+        entries.append(
+            Activity(
+                company=company,
+                recipient=copy.assignee,
+                actor=run.assignee,
+                kind=Activity.Kind.COVERED,
+                task=copy,
+                text=text,
+            )
+        )
+    for entry, (_closed, done) in zip(Activity.objects.bulk_create(entries), covered, strict=True):
+        Activity.objects.filter(pk=entry.pk).update(created_at=tasks[done].completed_at)
+    _late_reminders(story, tasks, late_scene, now)
+
+
+def _run(company, template, member, day, due, completed, *, closed=False) -> Task:
+    """One person's copy of a storage routine on `day`: taken at `completed`, closed by a
+    colleague's run (`closed`), or still open."""
+    if closed:
+        status = Task.Status.CANCELLED
+    elif completed is not None:
+        status = Task.Status.DONE
+    else:
+        status = Task.Status.TODO
+    return Task(
+        company=company,
+        kind=Task.Kind.DAILY,
+        template=template,
+        for_date=day,
+        title=template.title,
+        description=template.description,
+        assignee=member,
+        created_by=template.created_by,
+        due_at=due,
+        status=status,
+        completed_at=completed,
+        confirmed_at=completed + timedelta(minutes=20)
+        if completed and template.needs_confirmation
+        else None,
+        proof=template.proof,
+        readings=[dict(spec) for spec in template.readings],
+        needs_confirmation=template.needs_confirmation,
+        reminder_policy=template.reminder_policy,
+        escalate_to=template.escalate_to,
+        branch_id=member.home_branch_id,
+    )
+
+
+def _taken(spec: dict, rng: random.Random, planned) -> tuple:
+    """(spec, value, note, recheck value) of one reading: inside the range, unless this run is
+    one of the month's excursions."""
+    if planned is not None and planned[0] == spec["key"]:
+        _key, value, note, recheck = planned
+        return spec, Decimal(value), note, Decimal(recheck) if recheck else None
+    if spec.get("unit") == "%":
+        value = Decimal(rng.randint(38, 55))
+    elif spec.get("critical"):
+        value = Decimal(rng.randint(35, 65)) / 10
+    else:
+        value = Decimal(rng.randint(190, 235)) / 10
+    return spec, value, "", None
+
+
+def _reading_row(task, spec, value, note, at, low, high, *, is_recheck=False) -> TaskReading:
+    return TaskReading(
+        company_id=task.company_id,
+        task=task,
+        template_id=task.template_id,
+        branch_id=task.branch_id,
+        key=spec["key"],
+        label=spec["label"],
+        unit=spec.get("unit", ""),
+        value=value,
+        min=low,
+        max=high,
+        in_range=reading_specs.in_range(value, low, high),
+        note=note,
+        is_recheck=is_recheck,
+        recorded_by=task.assignee,
+        recorded_at=at,
+    )
+
+
+def _excursion_days(story, routines, runs) -> dict[tuple[int, object], tuple]:
+    """{(routine, day): (key, value, note, recheck)} for the month's two excursions: Yunusobod's
+    second fridge one evening, Chilonzor's room humidity one morning, on the nearest day
+    somebody was there."""
+    found = {}
+    yunusobod, chilonzor = story.branches["Y"].pk, story.branches["C"].pk
+    evening = max(template.due_time for template in routines if template.proof == Proof.READINGS)
+    morning = min(template.due_time for template in routines if template.proof == Proof.READINGS)
+    fridges = [
+        template
+        for template in routines
+        if template.branch_id == yunusobod
+        and template.proof == Proof.READINGS
+        and len(template.readings) == 1
+        and template.due_time == evening
+    ]
+    rooms = [
+        template
+        for template in routines
+        if template.branch_id == chilonzor
+        and template.proof == Proof.READINGS
+        and len(template.readings) == 2
+        and template.due_time == morning
+    ]
+    days_ago, value, note, recheck = FRIDGE_EXCURSION
+    if fridges:
+        day = _nearest(story, runs[fridges[-1].pk], days_ago)
+        if day is not None:
+            found[(fridges[-1].pk, day)] = ("t", value, note, recheck)
+    days_ago, value, note = HUMIDITY_EXCURSION
+    if rooms:
+        day = _nearest(story, runs[rooms[0].pk], days_ago)
+        if day is not None:
+            found[(rooms[0].pk, day)] = ("h", value, note, None)
+    return found
+
+
+def _nearest(story, days: list[tuple], days_ago: int):
+    """The past day with a run nearest `days_ago` days back."""
+    past = [day for day, _due, _there in days if day < story.today]
+    if not past:
+        return None
+    target = story.today - timedelta(days=days_ago)
+    return min(past, key=lambda day: (abs((day - target).days), day))
+
+
+def _late_scene(story, routines, runs, now) -> int | None:
+    """Alisher's morning fridge reading at Chilonzor, today, when it's past due and he's in."""
+    chilonzor = story.branches["C"].pk
+    for template in routines:
+        if (
+            template.branch_id == chilonzor
+            and template.proof == Proof.READINGS
+            and len(template.readings) == 1
+        ):
+            for day, due, there in runs[template.pk]:
+                if day == story.today and due < now and "worker" in there:
+                    return template.pk
+            return None
+    return None
+
+
+def _late_reminders(story, tasks: list[Task], late_scene: int | None, now) -> None:
+    if late_scene is None:
+        return
+    worker = story.member("worker")
+    late = next(
+        (
+            task
+            for task in tasks
+            if task.template_id == late_scene and task.assignee_id == worker.pk
+        ),
+        None,
+    )
+    if late is None or late.status != Task.Status.TODO:
+        return
+    escalated = late.due_at + timedelta(minutes=50)
+    sent = 3 if escalated <= now else 1
+    fields = {"reminders_sent": sent, "escalated_at": escalated if sent == 3 else None}
+    Task.objects.filter(pk=late.pk).update(**fields)
+    for step in range(1, sent + 1):
+        moment = late.due_at + timedelta(minutes=15 * step)
+        if moment <= now:
+            _log(late, ReminderLog.Kind.REMINDER, step, worker, moment)
+    if sent == 3:
+        escalate = late.escalate_to or story.member("manager")
+        if escalate is not None:
+            _log(late, ReminderLog.Kind.ESCALATION, 3, escalate, escalated)
 
 
 # Given by hand -----------------------------------------------------------------------------
@@ -723,10 +1061,8 @@ def _given(company, story, people, now, rng, strict) -> None:
 
     # A heads-up before a fridge reading, and the person who blocked the bot two days ago.
     first_reading = (
-        Task.objects.filter(
-            company=company, for_date=today, template__title=demo_plan.FRIDGE_MORNING
-        )
-        .order_by("pk")
+        Task.objects.filter(company=company, for_date=today, proof=Proof.READINGS)
+        .order_by("due_at", "pk")
         .first()
     )
     if first_reading is not None:

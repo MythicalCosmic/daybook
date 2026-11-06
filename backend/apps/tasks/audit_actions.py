@@ -18,3 +18,9 @@ class TasksAction(models.TextChoices):
     EXTENSION_DECIDED = "tasks.extension_decided", _("Decided about more time for a task")
     AUTO_ACCEPTED = "tasks.auto_accepted", _("Accepted automatically: nobody reviewed it in time")
     SETTINGS_CHANGED = "tasks.settings_changed", _("Changed the rules for finished tasks")
+    STORAGE_SETTINGS_CHANGED = (
+        "tasks.storage_settings_changed",
+        _("Changed the storage reading ranges and times"),
+    )
+    STORAGE_PRESET = "tasks.storage_preset", _("Set up storage readings for a branch")
+    RECHECKED = "tasks.rechecked", _("Took a reading again")

@@ -26,6 +26,7 @@ import { useCompanyStore } from "@/stores/company";
 
 import { useConfirmRuns, useSendBackRun, useToConfirm } from "../api";
 import RoutinesHeader from "../components/RoutinesHeader.vue";
+import RunReadings from "../components/RunReadings.vue";
 import type { ConfirmGroup, RoutineRun } from "../types";
 
 const { t } = useI18n();
@@ -171,7 +172,9 @@ const photo = (run: RoutineRun, group: ConfirmGroup) => ({
                   </p>
                 </div>
               </div>
-              <p v-if="run.proof_thumb && run.proof_text" class="line-clamp-2 rounded-[8px] bg-surface-2 px-2.5 py-1.5 text-sm text-fg">{{ run.proof_text }}</p>
+              <!-- A readings run's proof is its values (PLAN-OWNER §14.10). -->
+              <RunReadings v-if="run.readings_taken?.length" :readings="run.readings_taken" />
+              <p v-else-if="run.proof_thumb && run.proof_text" class="line-clamp-2 rounded-[8px] bg-surface-2 px-2.5 py-1.5 text-sm text-fg">{{ run.proof_text }}</p>
               <blockquote v-else-if="run.proof_text" class="line-clamp-3 rounded-[8px] border-l-[3px] border-primary bg-surface-2 px-2.5 py-1.5 text-sm text-fg">{{ run.proof_text }}</blockquote>
               <p v-else-if="!run.proof_thumb" :class="['inline-flex items-center gap-1 text-xs', run.proof === 'none' ? 'text-subtle' : 'font-medium text-warning']" data-testid="run-no-proof">
                 <FileText :size="13" aria-hidden="true" />{{ run.proof === "none" ? t("routines.confirm.noProof") : t("routines.confirm.noPhoto") }}

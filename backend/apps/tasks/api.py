@@ -27,6 +27,7 @@ from apps.members.permissions import Perm
 from apps.reminders.models import ReminderLog
 from apps.reminders.policies import escalation_recipients, policy_for
 from apps.tasks import conf, dashboard, dates, queries, quickadd, rules, services, stats
+from apps.tasks import readings as reading_specs
 from apps.tasks.conf import REVIEW_RULE_HELP
 from apps.tasks.models import (
     Activity,
@@ -65,6 +66,69 @@ class ReminderInfoSerializer(serializers.Serializer):
         child=serializers.DateTimeField(),
         help_text="When the reminders the assignee got went out, oldest first.",
     )
+
+
+class ReadingSpecSerializer(serializers.Serializer):
+    """One number a readings task asks for, with its allowed range (PLAN-OWNER §14.10)."""
+
+    key = serializers.CharField(help_text="One letter, a to z.")
+    label = serializers.CharField()
+    unit = serializers.CharField(allow_blank=True)
+    min = serializers.CharField(allow_null=True, help_text='Decimal string ("2.0"); null: none.')
+    max = serializers.CharField(allow_null=True, help_text='Decimal string ("8.0"); null: none.')
+    critical = serializers.BooleanField()
+
+    class Meta:
+        ref_name = "TasksReadingSpec"
+
+
+class ReadingPersonSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+
+    class Meta:
+        ref_name = "TasksReadingPerson"
+
+
+class ReadingTakenSerializer(serializers.Serializer):
+    """A value typed in for a readings task, with the range it was held to."""
+
+    id = serializers.IntegerField()
+    key = serializers.CharField()
+    label = serializers.CharField()
+    unit = serializers.CharField(allow_blank=True)
+    value = serializers.CharField(help_text='Decimal string ("5.2").')
+    min = serializers.CharField(allow_null=True)
+    max = serializers.CharField(allow_null=True)
+    in_range = serializers.BooleanField()
+    note = serializers.CharField(allow_blank=True)
+    is_recheck = serializers.BooleanField()
+    recorded_at = serializers.DateTimeField()
+    recorded_by = ReadingPersonSerializer(allow_null=True)
+
+    class Meta:
+        ref_name = "TasksReadingTaken"
+
+
+def readings_taken(task: Task) -> list[dict]:
+    """The values typed in for a readings task, first measurements and rechecks in time order.
+    Other tasks have none, and cost no query."""
+    if task.proof != Proof.READINGS:
+        return []
+    rows = sorted(task.readings_taken.all(), key=lambda row: (row.recorded_at, row.pk))
+    return [reading_specs.taken_row(row) for row in rows]
+
+
+def recheck_until(task: Task):
+    """Until when a finished readings task takes a second measurement, or None."""
+    if (
+        task.proof != Proof.READINGS
+        or task.status not in (Task.Status.DONE, Task.Status.REVIEW)
+        or task.completed_at is None
+    ):
+        return None
+    until = task.completed_at + reading_specs.RECHECK_WINDOW
+    return until if until > timezone.now() else None
 
 
 class TaskCardSerializer(serializers.Serializer):
@@ -122,6 +186,9 @@ class TaskSerializer(serializers.ModelSerializer):
     returned_reason = serializers.SerializerMethodField()
     returned_by = serializers.SerializerMethodField()
     accepted_automatically = serializers.SerializerMethodField()
+    readings = ReadingSpecSerializer(many=True, read_only=True)
+    readings_taken = serializers.SerializerMethodField()
+    recheck_until = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
@@ -161,6 +228,9 @@ class TaskSerializer(serializers.ModelSerializer):
             "extension",
             "returned_reason",
             "returned_by",
+            "readings",
+            "readings_taken",
+            "recheck_until",
             "created_at",
         )
         read_only_fields = fields
@@ -170,6 +240,16 @@ class TaskSerializer(serializers.ModelSerializer):
         company's rule took its proof), or after the company's wait (`confirmed_at` is then
         when). The person who did it reads "Accepted"."""
         return rules.accepted_automatically(task)
+
+    @extend_schema_field(ReadingTakenSerializer(many=True))
+    def get_readings_taken(self, task: Task) -> list[dict]:
+        """The values typed in for a readings task (`proof=readings`), rechecks included."""
+        return readings_taken(task)
+
+    @extend_schema_field(serializers.DateTimeField(allow_null=True))
+    def get_recheck_until(self, task: Task):
+        """A finished readings task takes a second measurement (`recheck/`) until then."""
+        return recheck_until(task)
 
     @extend_schema_field(serializers.CharField(allow_null=True))
     def get_returned_reason(self, task: Task) -> str | None:
@@ -360,9 +440,27 @@ class TaskUpdateSerializer(serializers.Serializer):
     priority = serializers.ChoiceField(Task.Priority.choices, required=False)
 
 
+class ReadingValuesField(serializers.DictField):
+    """`{"t": "5,2", "h": "48"}`: a value per key of the task's readings. A decimal comma or
+    point, as typed; numbers are taken too."""
+
+    def __init__(self, **kwargs):
+        super().__init__(child=serializers.CharField(allow_blank=True, max_length=20), **kwargs)
+
+
 class CompleteSerializer(serializers.Serializer):
     proof_text = serializers.CharField(allow_blank=True, default="")
     proof_photo = serializers.FileField(required=False, allow_null=True)
+    readings = ReadingValuesField(
+        required=False,
+        help_text='For a readings task: a value per key of its readings ({"t": "5,2"}).',
+    )
+    reading_note = serializers.CharField(
+        allow_blank=True,
+        default="",
+        max_length=reading_specs.NOTE_MAX,
+        help_text="What was done about a value out of range: needed then.",
+    )
 
     def validate_proof_photo(self, photo):
         """Decoded and re-encoded as a JPEG with a server-chosen name; anything that isn't a
@@ -373,6 +471,11 @@ class CompleteSerializer(serializers.Serializer):
             return uploads.sanitize_image(photo, max_bytes=MAX_PHOTO_BYTES)
         except uploads.InvalidUpload as exc:
             raise serializers.ValidationError(str(exc)) from exc
+
+
+class RecheckSerializer(serializers.Serializer):
+    readings = ReadingValuesField(help_text="The new value of each key measured again.")
+    note = serializers.CharField(allow_blank=True, default="", max_length=reading_specs.NOTE_MAX)
 
 
 class ReturnSerializer(serializers.Serializer):
@@ -643,6 +746,19 @@ class TaskViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
             by=self.membership,
             proof_text=data["proof_text"],
             proof_photo=data.get("proof_photo"),
+            readings=data.get("readings"),
+            reading_note=data["reading_note"],
+        )
+        return self._respond(task)
+
+    @extend_schema(request=RecheckSerializer, responses=TaskSerializer)
+    @action(detail=True, methods=["post"])
+    def recheck(self, request, company_id, pk):
+        """A second measurement of a finished readings task, within two hours (after the
+        vaccines were moved): back in range, the alert about it says so."""
+        data = self._validated(RecheckSerializer)
+        task = services.recheck(
+            self.get_object(), by=self.membership, readings=data["readings"], note=data["note"]
         )
         return self._respond(task)
 
@@ -846,6 +962,13 @@ class TaskTemplateSerializer(serializers.ModelSerializer):
 
     def validate_weekdays(self, weekdays):
         return sorted(set(weekdays))
+
+    def validate_proof(self, proof):
+        """Readings need their specs, which only the dashboard's routine editor sets."""
+        instance = self.instance
+        if proof == Proof.READINGS and not (instance and instance.proof == Proof.READINGS):
+            raise serializers.ValidationError(_("Readings routines are set up in the dashboard."))
+        return proof
 
 
 class TaskTemplateViewSet(viewsets.ModelViewSet):

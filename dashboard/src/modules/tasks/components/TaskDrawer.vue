@@ -8,8 +8,11 @@
  * Tonight's contracts: "Can't do it" shows its reason with Give to someone else / New time / Cancel
  * (7), "Need more time" with Approve / Decline (8), when the assignee first saw it (10), and the
  * comment box tells @mentioned people in Telegram (5). Each shows only once the backend sends it.
+ *
+ * A readings task (PLAN-OWNER §14.10) shows what it asks for, each with its allowed range, and the
+ * values typed in: in range or out of it, who and when, the note and any recheck.
  */
-import { Ban, BellRing, CalendarClock, Check, CircleCheck, Ellipsis, Eye, EyeOff, FolderKanban, Gift, Hourglass, Link2, MessageSquare, Pencil, Repeat, RotateCcw, UserRoundCog, X } from "@lucide/vue";
+import { Ban, BellRing, CalendarClock, Check, CircleCheck, Ellipsis, Eye, EyeOff, FolderKanban, Gift, Hourglass, Link2, MessageSquare, Pencil, Repeat, RotateCcw, TriangleAlert, UserRoundCog, X } from "@lucide/vue";
 import { useQueryClient } from "@tanstack/vue-query";
 import { computed, nextTick, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
@@ -51,6 +54,7 @@ import { useCompanyStore } from "@/stores/company";
 
 import { tasksApi, taskKeys, useRefreshTasks, useTaskDetail, useTaskMutation, useTaskOptions } from "../api";
 import { cardKey, highlightMentions, isUnseen, lateness, minutesBetween, reminderLag, zonedParts } from "../meta";
+import { rangeText, readingGroups, valueText } from "../readings";
 import type { BlockerAction, TaskDetail, TaskPriority, TaskUpdateInput } from "../types";
 import { PRIORITIES } from "../types";
 import CommentBox, { type MentionPerson } from "./CommentBox.vue";
@@ -165,6 +169,18 @@ async function onExtension(approve: boolean): Promise<void> {
 const untilLabel = (iso: string) => (zonedDay(iso, company.timezone) === todayIn(company.timezone) ? fmt.instant(iso, "time") : fmt.instant(iso, "short"));
 /** The giver decides when they may change the deadline (the server checks again). */
 const canDecide = computed(() => can("edit") || can("reassign"));
+
+// Readings (PLAN-OWNER §14.10): what a readings task asks for, and what was typed in -----------
+const readings = computed(() => {
+  const current = task.value;
+  if (!current || current.proof !== "readings") return [];
+  return readingGroups(current.readings, current.readings_taken).map((group) => ({ ...group, range: rangeText(group.min, group.max, group.unit, fmt.number) }));
+});
+/** A value still out of range and time for the second measurement: say until when it may come. */
+const recheckUntil = computed(() => {
+  const until = task.value?.recheck_until;
+  return until && readings.value.some((group) => group.open) && new Date(until).getTime() > now.value ? until : null;
+});
 
 async function onNudge(): Promise<void> {
   const current = task.value;
@@ -529,6 +545,39 @@ const formatAudit = (field: string, value: unknown) => {
           <ProofThumb :src="task.proof_photo" :images="proofImages" size="fill" :label="task.completed_at ? fmt.instant(task.completed_at, 'time') : undefined" />
         </div>
         <blockquote v-if="task.proof_text" class="rounded-[10px] border-l-[3px] border-primary bg-surface-2 px-3 py-2 text-sm text-fg">{{ task.proof_text }}</blockquote>
+      </section>
+
+      <!-- Readings (PLAN-OWNER §14.10): each spec with its range, and the values typed in. -->
+      <section v-if="readings.length" class="flex flex-col gap-3 border-b border-line px-5 py-4" data-testid="readings">
+        <h3 class="text-xs font-semibold uppercase tracking-[0.05em] text-subtle">{{ t("tasks.readings.title") }}</h3>
+        <div v-for="group in readings" :key="group.key" class="flex flex-col gap-1.5" :data-reading="group.key">
+          <div class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <p class="min-w-0 text-sm font-semibold text-fg">{{ group.label }}</p>
+            <p class="text-xs text-muted" data-testid="reading-range">{{ group.range ? t("tasks.readings.allowed", { range: group.range }) : t("tasks.readings.noRange") }}</p>
+            <span v-if="group.critical" class="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] font-medium text-muted" :title="t('tasks.readings.criticalHint')">{{ t("tasks.readings.critical") }}</span>
+          </div>
+          <p v-if="!group.values.length" class="text-sm text-subtle">{{ t("tasks.readings.notTaken") }}</p>
+          <ul v-else class="flex flex-col gap-1.5">
+            <li
+              v-for="reading in group.values"
+              :key="reading.id"
+              :class="['rounded-[10px] border px-3 py-2', reading.in_range ? 'border-line bg-surface-2' : 'border-danger/30 bg-danger-soft']"
+              :data-in-range="String(reading.in_range)"
+              data-testid="reading-value"
+            >
+              <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span :class="['text-base font-semibold tabular-nums', reading.in_range ? 'text-fg' : 'text-danger']">{{ valueText(reading.value, reading.unit, fmt.number) }}</span>
+                <span :class="['inline-flex items-center gap-1 text-xs font-medium', reading.in_range ? 'text-success' : 'text-danger']">
+                  <component :is="reading.in_range ? CircleCheck : TriangleAlert" :size="13" aria-hidden="true" />{{ reading.in_range ? t("tasks.readings.inRange") : t("tasks.readings.outOfRange") }}
+                </span>
+                <span v-if="reading.is_recheck" class="rounded-full bg-info-soft px-2 py-0.5 text-[11px] font-semibold text-info">{{ t("tasks.readings.recheck") }}</span>
+                <span class="ml-auto text-xs text-muted" :title="fmt.instant(reading.recorded_at, 'datetime')">{{ [reading.recorded_by?.name, untilLabel(reading.recorded_at)].filter(Boolean).join(" · ") }}</span>
+              </div>
+              <p v-if="reading.note" class="mt-1 whitespace-pre-line text-sm text-fg">{{ t("tasks.quoted", { text: reading.note }) }}</p>
+            </li>
+          </ul>
+        </div>
+        <p v-if="recheckUntil" class="text-xs text-muted" data-testid="recheck-until">{{ t("tasks.readings.recheckUntil", { time: untilLabel(recheckUntil) }) }}</p>
       </section>
 
       <!-- Details -->

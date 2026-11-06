@@ -1,5 +1,6 @@
 import uuid
-from datetime import date, datetime
+from datetime import date, datetime, time
+from decimal import Decimal
 
 from django.contrib.postgres.fields import ArrayField
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -30,6 +31,9 @@ class Proof(models.TextChoices):
     PHOTO = "photo", _("Photo")
     TEXT = "text", _("Text report")
     ANY = "any", _("Photo or text report")
+    # Numbers within an allowed range (a fridge's temperature, the room's humidity), typed in when
+    # the run is done: only routines ask for them (`TaskTemplate.readings`, PLAN-OWNER §14.10).
+    READINGS = "readings", _("Readings")
 
 
 class Repeat(models.TextChoices):
@@ -119,6 +123,21 @@ class TaskTemplate(TenantModel):
     due_after_days = models.PositiveSmallIntegerField(
         default=1, help_text=_("Onboarding tasks: due this many days after the approval.")
     )
+    readings = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=_(
+            "With the readings proof: 1 to 3 numbers each run asks for, with their allowed range "
+            '(`[{"key": "t", "label", "unit", "min", "max", "critical"}]`).'
+        ),
+    )
+    shared = models.BooleanField(
+        default=False,
+        help_text=_(
+            "One of us does it: the first person to finish closes everyone else's copy of that "
+            "day at the same branch."
+        ),
+    )
 
     class Meta:
         ordering = ["due_time", "title"]
@@ -204,6 +223,14 @@ class Task(TenantModel):
         ),
     )
     proof_text = models.TextField(blank=True)
+    readings = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=_(
+            "The readings its routine asked for, copied when the task was made: editing the "
+            "routine later never changes them."
+        ),
+    )
     proof_photo = models.FileField(upload_to=proof_upload_to, blank=True)
     proof_thumb = models.FileField(
         upload_to=proof_thumb_upload_to,
@@ -343,6 +370,8 @@ class Activity(TenantModel):
         CONFIRMED = "confirmed", _("Checked your task")
         RETURNED = "returned", _("Sent a task back")
         COMMENTED = "commented", _("Commented on a task")
+        # A shared routine ("one of us does it"): a colleague's run closed this person's copy.
+        COVERED = "covered", _("Did a shared routine for everyone")
 
     recipient = models.ForeignKey(Membership, on_delete=models.CASCADE, related_name="activity")
     actor = models.ForeignKey(
@@ -400,9 +429,17 @@ class OnFinish(models.TextChoices):
     ASK = "ask", _("Always ask the person who gave it")
 
 
+def default_storage_times() -> list[time]:
+    """When the storage preset's readings are taken: morning and evening (§14.4 row 29, confirm)."""
+    return [time(9, 0), time(20, 0)]
+
+
 class TasksSettings(models.Model):
     """The company's rules for finished work (`apps.tasks.conf.get_settings`). `on_finish` is
-    the default of new tasks and routines; a task's or routine's own choice wins."""
+    the default of new tasks and routines; a task's or routine's own choice wins.
+
+    The storage fields are what the storage preset starts from (`apps.tasks.presets`): each
+    routine it makes keeps its own copy of the ranges, editable per routine."""
 
     AUTO_ACCEPT_HOURS = (4, 72)
 
@@ -424,9 +461,65 @@ class TasksSettings(models.Model):
         ],
         help_text=_("If nobody reviews it within this many hours, accept it automatically."),
     )
+    storage_fridge_min = models.DecimalField(max_digits=5, decimal_places=1, default=Decimal("2.0"))
+    storage_fridge_max = models.DecimalField(max_digits=5, decimal_places=1, default=Decimal("8.0"))
+    storage_room_min = models.DecimalField(max_digits=5, decimal_places=1, default=Decimal("15.0"))
+    storage_room_max = models.DecimalField(max_digits=5, decimal_places=1, default=Decimal("25.0"))
+    storage_humidity_max = models.DecimalField(
+        max_digits=5, decimal_places=1, default=Decimal("60.0")
+    )
+    storage_times = ArrayField(
+        models.TimeField(),
+        default=default_storage_times,
+        help_text=_("When the storage readings are taken, in the company's timezone."),
+    )
 
     class Meta:
         verbose_name_plural = "tasks settings"
 
     def __str__(self):
         return f"Task settings of {self.company_id}"
+
+
+class TaskReading(TenantModel):
+    """One number typed in for a readings task (a fridge at 5.2 °C): the run's proof, and a row
+    of the branch's temperature and humidity log. The spec's label, unit and range are copied,
+    so the log reads the same after the routine changes. A recheck is the second measurement
+    after something was done about a value out of range."""
+
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="readings_taken")
+    template = models.ForeignKey(
+        TaskTemplate,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="readings_taken",
+    )
+    branch = models.ForeignKey(
+        Branch, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    key = models.CharField(max_length=8)
+    label = models.CharField(max_length=80)
+    unit = models.CharField(max_length=8, blank=True)
+    value = models.DecimalField(max_digits=8, decimal_places=2)
+    min = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    max = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    in_range = models.BooleanField()
+    note = models.CharField(
+        max_length=300, blank=True, help_text=_("What was done about it: needed out of range.")
+    )
+    is_recheck = models.BooleanField(default=False)
+    recorded_by = models.ForeignKey(
+        Membership, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    recorded_at = models.DateTimeField()
+
+    class Meta:
+        ordering = ["recorded_at", "pk"]
+        indexes = [
+            models.Index(fields=["company", "template", "recorded_at"]),
+            models.Index(fields=["company", "branch", "recorded_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.label}: {self.value} {self.unit}".strip()

@@ -6,7 +6,9 @@ from rest_framework.routers import SimpleRouter
 
 from apps.tasks.owner_api import (
     ProofWallView,
+    RoutinesSettingsView,
     RoutineViewSet,
+    StoragePresetView,
     TaskOwnerViewSet,
     TasksSettingsView,
 )
@@ -19,5 +21,12 @@ urlpatterns = [
     path("proofs/", ProofWallView.as_view(), name="owner-task-proofs"),
     # Before the router: "tasks/settings/" isn't a task id.
     path("tasks/settings/", TasksSettingsView.as_view(), name="owner-tasks-settings"),
+    # Before the router too: "routines/storage-preset/" isn't a routine id.
+    path(
+        "routines/storage-preset/",
+        StoragePresetView.as_view(),
+        name="owner-routines-storage-preset",
+    ),
+    path("routines/settings/", RoutinesSettingsView.as_view(), name="owner-routines-settings"),
     *router.urls,
 ]

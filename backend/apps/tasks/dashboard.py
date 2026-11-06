@@ -18,7 +18,7 @@ from apps.members.permissions import Perm
 from apps.members.scope import branch_ids as scope_of
 from apps.reminders.models import ReminderLog
 from apps.tasks import generation, queries, rules
-from apps.tasks.models import Task, TaskTemplate
+from apps.tasks.models import Proof, Task, TaskReading, TaskTemplate
 from apps.timeoff.queries import is_holiday
 
 BOARD_LIMIT = 60
@@ -462,8 +462,20 @@ def run_state(task: Task, now: datetime, day_end: datetime) -> str:
 
 
 def _run_relations(tasks: QuerySet[Task]) -> QuerySet[Task]:
+    readings = TaskReading.objects.select_related("recorded_by__user")
     return tasks.select_related("assignee__user", "assignee__position", "branch").prefetch_related(
-        "checklist"
+        "checklist", Prefetch("readings_taken", queryset=readings)
+    )
+
+
+def _excursions(tasks: list[Task]) -> int:
+    """First measurements out of range among a routine's runs (rechecks aside)."""
+    return sum(
+        1
+        for task in tasks
+        if task.proof == Proof.READINGS
+        for reading in task.readings_taken.all()
+        if not reading.in_range and not reading.is_recheck
     )
 
 
@@ -575,6 +587,7 @@ def routine_day(
         states = [run_state(task, now, day_end) for task in tasks]
         counts = {state: states.count(state) for state in RUN_ORDER}
         counts["skipped"] = len(skipped)
+        counts["excursions"] = _excursions(tasks)
         total = len(tasks) - counts["cancelled"]
         finished = counts["done"] + counts["review"]
         give = None
@@ -609,6 +622,7 @@ def routine_day(
         )
     totals = {state: sum(row["counts"][state] for row in listed) for state in RUN_ORDER}
     totals["skipped"] = sum(row["counts"]["skipped"] for row in listed)
+    totals["excursions"] = sum(row["counts"]["excursions"] for row in listed)
     totals["total"] = sum(row["progress"]["total"] for row in listed)
     totals["finished"] = totals["done"] + totals["review"]
     totals["routines"] = len(listed)

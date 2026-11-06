@@ -2,7 +2,7 @@ from django.contrib import admin
 from unfold.admin import ModelAdmin, TabularInline
 
 from apps.audit.admin import AuditedAdmin
-from apps.tasks.models import ChecklistItem, Task, TaskComment, TaskTemplate
+from apps.tasks.models import ChecklistItem, Task, TaskComment, TaskReading, TaskTemplate
 
 
 @admin.register(TaskTemplate)
@@ -26,6 +26,19 @@ class CommentInline(TabularInline):
     readonly_fields = ("author", "created_at")
 
 
+class ReadingInline(TabularInline):
+    """The values typed in for a readings task: a journal row each, never edited by hand."""
+
+    model = TaskReading
+    extra = 0
+    can_delete = False
+    fields = ("label", "value", "unit", "min", "max", "in_range", "note", "is_recheck")
+    readonly_fields = fields
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
 @admin.register(Task)
 class TaskAdmin(ModelAdmin):
     list_display = ("title", "company", "kind", "assignee", "status", "due_at")
@@ -46,7 +59,7 @@ class TaskAdmin(ModelAdmin):
         "updated_at",
     )
     raw_id_fields = ("assignee",)
-    inlines = (ChecklistInline, CommentInline)
+    inlines = (ChecklistInline, CommentInline, ReadingInline)
 
     def save_model(self, request, obj, form, change):
         if not change:

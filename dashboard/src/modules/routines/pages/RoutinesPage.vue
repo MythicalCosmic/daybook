@@ -5,7 +5,7 @@
  * 14-day sparkline), so routines nobody does stand out. Onboarding (beside it) lists the
  * first-days tasks new people get.
  */
-import { CalendarClock, ChevronRight, Clock, Ellipsis, GraduationCap, ListChecks, Pencil, Plus, Repeat, Store, Trash2, UsersRound } from "@lucide/vue";
+import { CalendarClock, ChevronRight, Clock, Ellipsis, GraduationCap, ListChecks, Pencil, Plus, Repeat, Store, Thermometer, Trash2, UsersRound } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
@@ -31,6 +31,7 @@ import { rs, useRouteState } from "@/lib/useRouteState";
 import { useDeleteRoutine, useRoutines, useToggleActive } from "../api";
 import RoutineEditor from "../components/RoutineEditor.vue";
 import RoutinesHeader from "../components/RoutinesHeader.vue";
+import StoragePresetDialog from "../components/StoragePresetDialog.vue";
 import WeekdayDots from "../components/WeekdayDots.vue";
 import { onTimeShare, runLabel, wholePercent } from "../lib";
 import type { Routine } from "../types";
@@ -87,6 +88,20 @@ function edit(routine: Routine): void {
   editorOpen.value = true;
 }
 useHotkey("n", create, { description: "routines.keys.new", group: "page" });
+// "Set up storage readings" (the storage preset, PLAN-OWNER §14.10); the "Get started" step
+// lands here with `?storage=1`.
+const presetOpen = ref(false);
+const storageParam = useRouteState("storage", rs.boolean(false));
+watch(
+  storageParam,
+  (value) => {
+    if (!value) return;
+    presetOpen.value = true;
+    storageParam.value = false;
+  },
+  { immediate: true },
+);
+
 // The palette's "New routine" lands here with `?new=1`.
 const newParam = useRouteState("new", rs.boolean(false));
 watch(
@@ -165,9 +180,11 @@ function who(routine: Routine): string {
   <div class="flex min-w-0 flex-col gap-5">
     <RoutinesHeader :description="onboarding ? t('routines.onboardingDescription') : t('routines.description')">
       <template #actions>
+        <UiButton v-if="!onboarding" :icon="Thermometer" data-testid="open-preset" @click="presetOpen = true">{{ t("routines.preset.open") }}</UiButton>
         <UiButton variant="primary" :icon="Plus" kbd="N" @click="create">{{ onboarding ? t("routines.newOnboarding") : t("routines.new") }}</UiButton>
       </template>
     </RoutinesHeader>
+    <StoragePresetDialog v-model:open="presetOpen" />
 
     <div class="flex flex-wrap items-center gap-2">
       <SegmentedControl v-model="kind" :options="kinds" :aria-label="t('routines.nav.all')" />

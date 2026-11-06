@@ -22,6 +22,7 @@ from apps.members.bot_messages import BotMessage, miniapp_url, several_companies
 from apps.members.models import Membership
 from apps.reminders.policies import policy_for
 from apps.tasks import dates, rules
+from apps.tasks import readings as reading_specs
 from apps.tasks.callbacks import (
     DueCallback,
     DuePreset,
@@ -174,6 +175,7 @@ def card_text(task: Task, member: Membership, now: datetime, header: str = "") -
         lines.append(_("Proof needed: %(proof)s") % {"proof": task.get_proof_display().lower()})
     if task.proof_text:
         lines.append(_("Report: %(text)s") % {"text": html.quote(task.proof_text)})
+    lines += readings_lines(task)
     if task.blocked_at:
         reason = Task.Blocker(task.blocker).label if task.blocker else ""
         note = f" · {html.quote(task.blocker_note)}" if task.blocker_note else ""
@@ -320,6 +322,70 @@ def proof_prompt(task: Task, member: Membership, now: datetime) -> BotMessage:
         inline_keyboard=[[_button(_("Cancel"), TaskAction.STOP, task.pk)]]
     )
     return f"{card_text(task, member, now)}\n\n<b>{line}</b>", keyboard
+
+
+def readings_lines(task: Task) -> list[str]:
+    """The values typed in for a readings task, a value out of range with its range, rechecks
+    and the note (PLAN-OWNER §14.10). Other tasks: none, and no query."""
+    if task.proof != Proof.READINGS:
+        return []
+    rows = sorted(task.readings_taken.all(), key=lambda row: (row.recorded_at, row.pk))
+    lines = []
+    for row in rows:
+        line = f"{html.quote(row.label)}: {reading_specs.value_text(row.value, row.unit)}"
+        if not row.in_range:
+            allowed = reading_specs.range_text(row.min, row.max, row.unit)
+            line += " · " + _("out of range (%(range)s)") % {"range": allowed}
+        if row.is_recheck:
+            line = _("Recheck: %(reading)s") % {"reading": line}
+        lines.append(line)
+    for note in dict.fromkeys(row.note for row in rows if row.note):
+        lines.append(_("Note: %(note)s") % {"note": html.quote(note)})
+    return lines
+
+
+def reading_question(spec: dict) -> str:
+    """What the bot asks for one value: the label, the unit and the allowed range."""
+    what = html.quote(spec["label"])
+    if spec.get("unit"):
+        what = f"{what}, {html.quote(spec['unit'])}"
+    low, high = reading_specs.spec_range(spec)
+    allowed = reading_specs.range_text(low, high)
+    if not allowed:
+        return f"{what}:"
+    return _("%(what)s, allowed %(range)s:") % {"what": what, "range": allowed}
+
+
+def readings_prompt(task: Task, member: Membership, now: datetime, spec: dict) -> BotMessage:
+    """Done on a readings task: the card asks for the first value; readings are the proof, so
+    no photo is asked for."""
+    line = reading_question(spec)
+    hint = _("Type the number, like 5,2.")
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[[_button(_("Cancel"), TaskAction.STOP, task.pk)]]
+    )
+    return f"{card_text(task, member, now)}\n\n<b>{line}</b>\n{hint}", keyboard
+
+
+def reading_request(task: Task, spec: dict, *, problem: str = "") -> BotMessage:
+    """The next value, as a message of its own (after the person typed the one before), or the
+    same one again with what was wrong."""
+    text = f"<b>{html.quote(display_title(task))}</b>\n{reading_question(spec)}"
+    if problem:
+        text = f"{html.quote(problem)}\n\n{text}"
+    return text, stop_keyboard()
+
+
+def reading_note_request(task: Task, out: list[tuple[dict, object]]) -> BotMessage:
+    """A value out of range: what was done about it."""
+    readings = ", ".join(
+        f"{html.quote(spec['label'])} {reading_specs.value_text(value, spec.get('unit', ''))} "
+        f"({reading_specs.spec_range_text(spec)})"
+        for spec, value in out
+    )
+    text = _("Out of range: %(readings)s.") % {"readings": readings}
+    ask = _("Write what you did about it (for example: moved the medicines to the other fridge).")
+    return f"<b>{text}</b>\n{ask}", stop_keyboard()
 
 
 def proof_request(task: Task) -> BotMessage:
