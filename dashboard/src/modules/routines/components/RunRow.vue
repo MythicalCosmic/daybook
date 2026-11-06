@@ -19,7 +19,8 @@ import { RUN_LOOK, runText } from "../lib";
 import type { RoutineRun } from "../types";
 import RunReadings from "./RunReadings.vue";
 
-const props = withDefaults(defineProps<{ run: RoutineRun; title: string; busy?: boolean }>(), { busy: false });
+/** `shared`: the routine is "one of us does it", so a closed copy was a colleague's doing. */
+const props = withDefaults(defineProps<{ run: RoutineRun; title: string; busy?: boolean; shared?: boolean }>(), { busy: false, shared: false });
 const emit = defineEmits<{ confirm: [run: RoutineRun]; sendBack: [run: RoutineRun] }>();
 
 const { t } = useI18n();
@@ -29,7 +30,7 @@ const company = useCompanyStore();
 const { isPhone } = useBreakpoints();
 const tap = computed(() => (isPhone.value ? "lg" : "sm"));
 const look = computed(() => RUN_LOOK[props.run.state]);
-const text = computed(() => runText(props.run, t, (iso) => fmt.instant(iso, "time")));
+const text = computed(() => (props.shared && props.run.state === "cancelled" ? t("routines.today.covered") : runText(props.run, t, (iso) => fmt.instant(iso, "time"))));
 const tone = computed(
   () =>
     ({

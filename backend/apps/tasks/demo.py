@@ -540,9 +540,10 @@ def _qualified(story, branch) -> list:
 
 
 def _there(story, key: str, day, due) -> bool:
-    """`key` is at work when the reading is due (a night shift starts at its due time)."""
+    """`key` is at work in the half hour before the reading is due, so it can be taken in time:
+    Yunusobod's 20:00 reading is the day pharmacist's, before the night shift comes in."""
     hours = story.hours(key, day)
-    return hours is not None and hours[0] <= due < hours[1]
+    return hours is not None and hours[0] < due and hours[1] > due - timedelta(minutes=30)
 
 
 def _readings_history(company, story, now, rng, routines: list[TaskTemplate]) -> None:

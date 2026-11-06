@@ -381,5 +381,6 @@
   "routines.settings.times": "Время замеров",
   "routines.settings.timesHint": "До 4 раз в день, по времени компании.",
   "routines.settings.saved": "Сохранено",
-  "routines.cmd.storage": "Настроить замеры хранения"
+  "routines.cmd.storage": "Настроить замеры хранения",
+  "routines.today.covered": "Выполнил коллега"
 }

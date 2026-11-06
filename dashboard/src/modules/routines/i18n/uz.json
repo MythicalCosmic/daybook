@@ -381,5 +381,6 @@
   "routines.settings.times": "O‘lchash vaqtlari",
   "routines.settings.timesHint": "Kuniga 4 tagacha, kompaniya vaqti bo‘yicha.",
   "routines.settings.saved": "Saqlandi",
-  "routines.cmd.storage": "Saqlash ko‘rsatkichlarini sozlash"
+  "routines.cmd.storage": "Saqlash ko‘rsatkichlarini sozlash",
+  "routines.today.covered": "Hamkasb bajardi"
 }

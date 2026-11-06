@@ -109,7 +109,16 @@ function give(): void {
     </p>
 
     <ul v-if="runs.length" class="grid gap-2 px-4 pb-4 sm:grid-cols-2 2xl:grid-cols-3">
-      <RunRow v-for="run in runs" :key="run.id" :run="run" :title="routine.title" :busy="busy.has(run.id)" @confirm="emit('confirm', $event)" @send-back="emit('sendBack', $event)" />
+      <RunRow
+        v-for="run in runs"
+        :key="run.id"
+        :run="run"
+        :title="routine.title"
+        :busy="busy.has(run.id)"
+        :shared="routine.shared"
+        @confirm="emit('confirm', $event)"
+        @send-back="emit('sendBack', $event)"
+      />
     </ul>
     <div v-if="hidden > 0" class="-mt-2 px-4 pb-3">
       <UiButton size="sm" variant="ghost" :icon="ChevronDown" @click="expanded = true">{{ t("routines.today.showAll", { n: row.runs.length }) }}</UiButton>

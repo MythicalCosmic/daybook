@@ -381,5 +381,6 @@
   "routines.settings.times": "Reading times",
   "routines.settings.timesHint": "Up to 4 a day, in the company's time.",
   "routines.settings.saved": "Saved",
-  "routines.cmd.storage": "Set up storage readings"
+  "routines.cmd.storage": "Set up storage readings",
+  "routines.today.covered": "Done by a colleague"
 }
