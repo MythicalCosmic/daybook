@@ -584,18 +584,17 @@ class AssetViewSet(ModuleOn, Scope, OwnerViewSet):
     @extend_schema(request=s.DisposeSerializer, responses=s.AssetDetailSerializer)
     @action(detail=True, methods=["post"])
     def dispose(self, request, company_id, pk=None):
-        from apps.finance.models import MoneyAccount
+        from apps.finance import access
 
         def call(asset, data):
             account = None
             if data.get("account"):
+                # The money lands in Finance: only on an account the person may record on there.
                 account = (
-                    MoneyAccount.objects.for_company(self.company)
-                    .filter(pk=data["account"])
-                    .first()
+                    access.recordable_accounts(self.membership).filter(pk=data["account"]).first()
                 )
                 if account is None:
-                    raise ValidationError({"account": [_("Pick an account of this company.")]})
+                    raise ValidationError({"account": [_("Pick one of your accounts.")]})
             services.dispose(
                 asset,
                 by=self.membership,

@@ -264,3 +264,29 @@ def test_a_sale_brings_the_money_in_even_when_the_purchase_was_an_expense(
         "expense": D("0.00"),
         "profit": D("9000000.00"),
     }
+
+
+def test_a_sale_goes_only_to_an_account_the_person_may_record_on(
+    shop, keeper, owner_api, cash, category, chilonzor
+):
+    """The keeper manages Chilonzor's assets but holds no Finance permission: a sale's money
+    can't be put on an account through the assets page either."""
+    fridge = services.create_asset(
+        shop,
+        by=keeper,
+        category=category,
+        name="Muzlatgich",
+        cost=D(8_400_000),
+        life_months=84,
+        branch=chilonzor,
+        in_service_on=date(2026, 9, 10),
+    )
+    reply = owner_api(keeper).post(
+        f"{base(shop)}/items/{fridge.pk}/dispose/",
+        {"on": "2026-11-06", "kind": "sold", "amount": "5000000", "account": cash.pk},
+        format="json",
+    )
+    assert reply.status_code == 400, reply.json()
+    cash.refresh_from_db()
+    assert cash.balance == D("50000000.00")
+    assert not Transaction.objects.filter(company=shop, category__system_code="asset_sale").exists()
