@@ -8,7 +8,7 @@ from django.utils import timezone
 from apps.core import demo_plan
 from apps.reminders.models import ReminderLog, ReminderPolicy
 from apps.tasks import demo
-from apps.tasks.models import Proof, Task, TaskTemplate
+from apps.tasks.models import Activity, Proof, Task, TaskReading, TaskTemplate
 
 pytestmark = pytest.mark.django_db
 
@@ -42,10 +42,13 @@ def test_the_demo_fills_every_page(company, demo_people):
     assert asked.created_at < asked.seen_at < asked.extension_asked_at < timezone.now()
     assert asked.extension_until > asked.due_at
     assert tasks.filter(kind=Task.Kind.ASSIGNED, seen_at__isnull=False).count() >= 3
-    # Fridge readings are written down inside the cold chain's range.
-    readings = tasks.filter(template__title=demo_plan.FRIDGE_EVENING).exclude(proof_text="")
-    assert readings.exists()
-    assert all(2 <= int(task.proof_text.strip("+ °C")) <= 8 for task in readings)
+    # Fridge readings (the storage preset's routines, PLAN-OWNER §14.10) sit inside the cold
+    # chain's range, but for the month's one excursion, with its note and a recheck.
+    fridge = TaskReading.objects.filter(company=company, unit="°C", min=2, max=8)
+    assert fridge.filter(is_recheck=False).count() > 60
+    out = fridge.filter(in_range=False)
+    assert out.count() == 1 and out.get().note
+    assert list(fridge.filter(is_recheck=True).values_list("in_range", flat=True)) == [True]
 
 
 def test_routines_follow_the_rota_and_leave(company, demo_people):
@@ -88,3 +91,29 @@ def test_the_demo_enriches_the_core_demos_routines_instead_of_copying_them(compa
     # Nothing was "created just now": given work was given earlier, routines at midnight.
     recent = timezone.now() - timedelta(minutes=5)
     assert not Task.objects.filter(company=company, created_at__gt=recent).exists()
+
+
+def test_the_storage_preset_runs_at_both_pharmacies(company, demo_people):
+    """Readings routines from the preset, shared, with 60 days of readings: a humidity
+    excursion with what was done, the fridge one with its recheck; today's run of a routine
+    already taken closed the colleagues' copies."""
+    people = demo_people(company)
+    now = timezone.now()
+    demo.seed(company, people, now)
+    story = demo_plan.Plan(company, people, now)
+
+    routines = TaskTemplate.objects.filter(company=company, proof=Proof.READINGS)
+    assert routines.count() >= 4 and all(routine.shared for routine in routines)
+    assert routines.filter(readings__0__critical=True).exists()
+    humidity = TaskReading.objects.filter(company=company, key="h", in_range=False).get()
+    assert humidity.note and humidity.value > humidity.max
+    first = TaskReading.objects.filter(company=company).order_by("recorded_at").first()
+    assert (story.today - timezone.localtime(first.recorded_at, story.zone).date()).days >= 55
+    # Nobody else is chased for a reading a colleague took today.
+    closed = Task.objects.filter(
+        company=company, proof=Proof.READINGS, for_date=story.today, status=Task.Status.CANCELLED
+    )
+    for task in closed:
+        assert Activity.objects.filter(task=task, kind=Activity.Kind.COVERED).exists()
+    # The preset's plain wet cleaning was paused: the pharmacies have their own.
+    assert TaskTemplate.objects.filter(company=company, shared=True, is_active=False).exists()
