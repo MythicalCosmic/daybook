@@ -464,3 +464,18 @@ class TestApi:
             url(shop, f"runs/{regular.pk}/leave-payout/"), {"leave_days": "1"}, format="json"
         )
         assert wrong.status_code == 400
+
+
+def test_the_pdf_of_a_final_payslip_below_zero(shop, team, cash):
+    from apps.payroll import payslip_pdf
+
+    staff = team
+    give_advance(staff, cash, staff.ali, "3000000")
+    leave(staff.ali)
+    run = services.create_final_run(staff.ali, by=staff.accountant, last_day=date(2026, 10, 5))
+    data = payslip_pdf.context(run.payslips.get())
+    assert data["title"].startswith("Final payslip")
+    assert "Last working day: 05.10.2026" in data["facts"]
+    assert data["net_label"] == "They owe the company"
+    assert re.sub(r"\s", "", data["net"]).startswith("2400000")
+    assert data["owes_note"]
