@@ -357,3 +357,29 @@ def test_a_waiting_claim_entry_is_not_voided_from_the_ledger(
     claim.refresh_from_db()
     assert claim.status == "rejected"
     assert claim.transaction.status == Transaction.Status.REJECTED
+
+
+# F8: a bill is paid from an account in its own currency ------------------------------------------
+
+
+def test_a_bill_in_soum_is_not_paid_from_a_dollar_account(fin, boss, kassa, today, owner_api):
+    """The rent (12 000 000 so'm) paid from the dollar safe was booked as $12 000 000: the amount
+    is the rule's, in the rule's currency, but the entry took the account's currency."""
+    from apps.finance.tests.factories import ExchangeRateFactory, MoneyAccountFactory
+
+    ExchangeRateFactory(date=today, rate=Decimal("12800"))
+
+    dollars = MoneyAccountFactory(
+        company=fin, name="Dollar safe", kind="safe", currency="USD", allow_negative=True
+    )
+    bill = rule(fin, boss, day=today.day, starts_on=today)
+    assert bill.currency == "UZS"
+
+    response = owner_api(boss).post(
+        url(fin, f"recurring/{bill.pk}/pay/"), {"account": dollars.pk}, format="json"
+    )
+
+    assert response.status_code == 400, response.content
+    assert booked(bill) == 0
+    dollars.refresh_from_db()
+    assert dollars.balance == Decimal("0.00")

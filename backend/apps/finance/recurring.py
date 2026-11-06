@@ -320,6 +320,13 @@ def pay_occurrence(
             raise DomainError(_("This payment is posted automatically: run it instead."))
         _need_occurrence(rule, occurrence, _("Already paid."))
         _need_open(rule)
+        if account.currency != rule.currency:
+            # The amount is in the rule's currency: from another account it would be booked as
+            # that many dollars (an exchange is a transfer first).
+            raise DomainError(
+                _("%(account)s holds %(currency)s.")
+                % {"account": account, "currency": account.currency}
+            )
         value = services._money(amount if amount not in (None, "") else rule.amount)
         scheduled = rule.next_due_on
         key = scheduled.isoformat()
