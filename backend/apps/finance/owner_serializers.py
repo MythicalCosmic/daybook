@@ -938,6 +938,10 @@ class SettingsSerializer(serializers.ModelSerializer):
     large_expense_alert = money_out(allow_null=True)
     base_currency = serializers.CharField(source="company.base_currency", read_only=True)
     can_reopen = serializers.SerializerMethodField()
+    vat_percent = serializers.DecimalField(max_digits=5, decimal_places=2, read_only=True)
+    base_value = money_out()
+    tax_regime_set = serializers.SerializerMethodField()
+    payroll_on = serializers.SerializerMethodField()
 
     class Meta:
         ref_name = "FinanceSettings"
@@ -951,10 +955,22 @@ class SettingsSerializer(serializers.ModelSerializer):
             "reimburse_via",
             "base_currency",
             "can_reopen",
+            "tax_regime",
+            "vat_percent",
+            "turnover_threshold",
+            "base_value",
+            "tax_regime_set",
+            "payroll_on",
         )
 
     def get_can_reopen(self, row) -> bool:
         return access.is_owner(self.context["membership"])
+
+    def get_tax_regime_set(self, row) -> bool:
+        return row.tax_regime_set_at is not None
+
+    def get_payroll_on(self, row) -> bool:
+        return row.company.has_feature("payroll")
 
 
 class SettingsUpdateSerializer(serializers.Serializer):
@@ -963,6 +979,27 @@ class SettingsUpdateSerializer(serializers.Serializer):
     receipt_required_over = MoneySerializerField(positive=False, required=False, allow_null=True)
     large_expense_alert = MoneySerializerField(positive=False, required=False, allow_null=True)
     reimburse_via = serializers.ChoiceField(FinanceSettings.ReimburseVia.choices, required=False)
+    tax_regime = serializers.ChoiceField(FinanceSettings.TaxRegime.choices, required=False)
+    vat_percent = serializers.DecimalField(
+        max_digits=5, decimal_places=2, min_value=0, max_value=100, required=False
+    )
+    turnover_threshold = serializers.IntegerField(min_value=0, max_value=10**9, required=False)
+    base_value = MoneySerializerField(required=False)
+
+
+class TaxSummarySerializer(serializers.Serializer):
+    """The turnover-tax tile: this year's turnover against the threshold."""
+
+    regime = serializers.CharField()
+    vat_percent = serializers.CharField()
+    year = serializers.IntegerField()
+    currency = serializers.CharField()
+    turnover = serializers.CharField()
+    threshold = serializers.CharField()
+    threshold_values = serializers.IntegerField()
+    base_value = serializers.CharField()
+    share = serializers.CharField(allow_null=True)
+    over = serializers.BooleanField()
 
 
 class LockSerializer(serializers.Serializer):

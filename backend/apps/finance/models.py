@@ -10,10 +10,12 @@ company's base currency) and is frozen on the row when it's posted, together wit
 add up `amount`.
 """
 
+from decimal import Decimal
+
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
-from django.core.validators import RegexValidator
+from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.db import models
 from django.db.models import F, Q
 from django.utils import timezone
@@ -65,6 +67,18 @@ class FinanceSettings(models.Model):
         PAYROLL = "payroll", _("With the next payroll")
         CASH = "cash", _("In cash by whoever approves")
 
+    class TaxRegime(models.TextChoices):
+        TURNOVER = "turnover", _("Turnover tax")
+        VAT = "vat", _("VAT 12 %")
+        VAT_SIMPLIFIED = "vat_simplified", _("Simplified VAT 6 %")
+
+    # The VAT rate each regime implies (the company may set another one).
+    REGIME_VAT = {
+        TaxRegime.TURNOVER: Decimal("0.00"),
+        TaxRegime.VAT: Decimal("12.00"),
+        TaxRegime.VAT_SIMPLIFIED: Decimal("6.00"),
+    }
+
     company = models.OneToOneField(
         Company, on_delete=models.CASCADE, related_name="finance_settings"
     )
@@ -98,6 +112,38 @@ class FinanceSettings(models.Model):
         default=ReimburseVia.PAYROLL,
         help_text=_('How approved "paid from my own money" claims are paid back.'),
     )
+    # The tax regime (docs/PLAN-OWNER.md §14.8, §14.21). Every number below is the company's
+    # own setting; the defaults are what the research note read on 21.10.2026 (confirm).
+    tax_regime = models.CharField(
+        max_length=16,
+        choices=TaxRegime.choices,
+        default=TaxRegime.TURNOVER,
+        help_text=_("Which tax the company pays on its sales."),
+    )
+    vat_percent = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal(0),
+        validators=[MinValueValidator(Decimal(0)), MaxValueValidator(Decimal(100))],
+        help_text=_("The VAT rate on sales: 12 for VAT, 6 for simplified VAT, 0 otherwise."),
+    )
+    turnover_threshold = models.PositiveIntegerField(
+        default=12000,
+        help_text=_(
+            "Turnover above which the turnover tax no longer applies, in base calculation "
+            "values. Confirm with your accountant."
+        ),
+    )
+    base_value = MoneyField(
+        default=Decimal(412000),
+        help_text=_("One base calculation value in so'm. Confirm with your accountant."),
+    )
+    tax_regime_set_at = models.DateTimeField(
+        null=True, blank=True, help_text=_("When someone confirmed the tax regime.")
+    )
+    # Which set of default rows `defaults.ensure` has added (1: the pharmacy categories), so a
+    # category the owner deleted never comes back on the next deploy.
+    defaults_version = models.PositiveSmallIntegerField(default=0, editable=False)
 
     class Meta:
         verbose_name = "finance settings"
@@ -832,6 +878,15 @@ class Receipt(TenantModel):
         blank=True,
         related_name="receipts",
     )
+    # An expense claim's receipts belong to the claim from the start; once the claim is booked
+    # they also point at its ledger row, so the entry shows them.
+    claim = models.ForeignKey(
+        "Claim",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="receipts",
+    )
     file = models.FileField(storage=private_storage, upload_to=private_upload_to("receipts"))
     thumb = models.FileField(
         storage=private_storage,
@@ -885,3 +940,248 @@ class DebtInstallment(models.Model):
 
     def __str__(self):
         return f"{self.due_on}: {self.amount}"
+
+
+class RecurringRule(TenantModel):
+    """A payment that comes back: rent, utilities, internet, a tax (Package I, §3.7).
+
+    A `bill` is a reminder: each occurrence stays open (in Upcoming, and reminded to the payer)
+    until someone pays it, with the real amount, or skips it. An `auto` rule posts itself on
+    its due day on `account`. Occurrences follow `frequency` times `interval` from `starts_on` on
+    `day` (a weekday for weekly rules, else a day of the month, the last day when the month is
+    shorter); one that falls on a company holiday moves to the working day before or after
+    (`on_holiday`).
+
+    `next_due_on` is the scheduled day of the open occurrence, before any holiday move: it is the
+    occurrence's identity, so what it books is idempotent per due date (the ledger source key)
+    even when a holiday added later moves the day it is due.
+    """
+
+    class Mode(models.TextChoices):
+        BILL = "bill", _("Reminder: pay it yourself")
+        AUTO = "auto", _("Posted automatically")
+
+    class Frequency(models.TextChoices):
+        WEEKLY = "weekly", _("Weekly")
+        MONTHLY = "monthly", _("Monthly")
+        QUARTERLY = "quarterly", _("Quarterly")
+        YEARLY = "yearly", _("Yearly")
+
+    class OnHoliday(models.TextChoices):
+        BEFORE = "before", _("The working day before")
+        AFTER = "after", _("The working day after")
+        KEEP = "keep", _("Keep the day")
+
+    company = models.ForeignKey(
+        Company, on_delete=models.PROTECT, related_name="finance_recurring_rules"
+    )
+    name = models.CharField(max_length=100)
+    kind = models.CharField(
+        max_length=8, choices=Category.Kind.choices, default=Category.Kind.EXPENSE
+    )
+    mode = models.CharField(max_length=8, choices=Mode.choices, default=Mode.BILL)
+    frequency = models.CharField(
+        max_length=10, choices=Frequency.choices, default=Frequency.MONTHLY
+    )
+    interval = models.PositiveSmallIntegerField(default=1, help_text=_("Every how many periods."))
+    day = models.PositiveSmallIntegerField(
+        default=1,
+        help_text=_("Weekly: 1 (Monday) to 7 (Sunday). Otherwise the day of the month, 1 to 31."),
+    )
+    on_holiday = models.CharField(max_length=8, choices=OnHoliday.choices, default=OnHoliday.BEFORE)
+    category = models.ForeignKey(Category, on_delete=models.PROTECT, related_name="recurring_rules")
+    counterparty = models.ForeignKey(
+        Counterparty,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="recurring_rules",
+    )
+    account = models.ForeignKey(
+        MoneyAccount,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="recurring_rules",
+        help_text=_("Where an automatic rule posts; the usual account of a bill."),
+    )
+    branch = models.ForeignKey(
+        Branch, on_delete=models.PROTECT, null=True, blank=True, related_name="recurring_rules"
+    )
+    amount = MoneyField(default=0, help_text=_("The usual amount; an estimate when it varies."))
+    currency = CurrencyField()
+    amount_varies = models.BooleanField(
+        default=False, help_text=_("The amount changes every time (utilities, taxes).")
+    )
+    starts_on = models.DateField()
+    ends_on = models.DateField(null=True, blank=True)
+    next_due_on = models.DateField(
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text=_("The scheduled day of the open occurrence; empty once the rule has ended."),
+    )
+    remind_days_before = models.PositiveSmallIntegerField(default=3)
+    payer = models.ForeignKey(
+        Membership,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        help_text=_("Who is reminded to pay it."),
+    )
+    create_task = models.BooleanField(default=False)
+    template_key = models.CharField(
+        max_length=32, blank=True, help_text=_("Set on rules made from a tax calendar template.")
+    )
+    is_active = models.BooleanField(default=True)
+    last_done_on = models.DateField(
+        null=True, blank=True, help_text=_("The last occurrence paid, posted or skipped.")
+    )
+    last_reminded_on = models.DateField(null=True, blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+
+    class Meta:
+        ordering = ["next_due_on", "name", "pk"]
+        indexes = [models.Index(fields=["company", "is_active", "next_due_on"])]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(interval__gte=1), name="finance_recurring_interval_positive"
+            ),
+            models.CheckConstraint(
+                condition=Q(day__gte=1, day__lte=31), name="finance_recurring_day_in_month"
+            ),
+            models.CheckConstraint(
+                condition=Q(amount__gt=0) | Q(amount=0, amount_varies=True),
+                name="finance_recurring_amount",
+            ),
+            models.CheckConstraint(
+                condition=~Q(mode="auto")
+                | Q(account__isnull=False, amount_varies=False, amount__gt=0),
+                name="finance_recurring_auto_needs_account",
+            ),
+            models.CheckConstraint(
+                condition=Q(ends_on__isnull=True) | Q(ends_on__gte=F("starts_on")),
+                name="finance_recurring_ends_after_start",
+            ),
+            models.UniqueConstraint(
+                fields=["company", "template_key"],
+                condition=~Q(template_key="") & Q(is_active=True),
+                name="finance_unique_recurring_template",
+            ),
+        ]
+
+    def __str__(self):
+        return self.name
+
+
+class Budget(TenantModel):
+    """What the company means to spend on an expense category in a month (Package I).
+
+    Actuals come from the profit and loss numbers, so a budget counts what the P&L counts.
+    `alerted_80_at` and `alerted_100_at` make each alert go out once per month and threshold.
+    """
+
+    company = models.ForeignKey(Company, on_delete=models.PROTECT, related_name="finance_budgets")
+    month = models.DateField(help_text=_("The first day of the month."))
+    category = models.ForeignKey(Category, on_delete=models.PROTECT, related_name="budgets")
+    amount = MoneyField(help_text=_("In the base currency."))
+    alerted_80_at = models.DateTimeField(null=True, blank=True)
+    alerted_100_at = models.DateTimeField(null=True, blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+
+    class Meta:
+        ordering = ["-month", "category_id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["company", "month", "category"], name="finance_unique_budget"
+            ),
+            models.CheckConstraint(condition=Q(amount__gt=0), name="finance_budget_positive"),
+        ]
+
+    def __str__(self):
+        return f"{self.month:%Y-%m} {self.category_id}: {self.amount}"
+
+
+class Claim(TenantModel):
+    """An expense someone paid for the company (Package I, §3.7): from their own money (the
+    company owes it back) or from company cash they hold (an expense on their account).
+
+    Booking: own money, on approval, opens a `reimbursement` payable to the person with the
+    expense as its accrual (paid back by payroll or in cash, `FinanceSettings.reimburse_via`);
+    held cash records the expense on the account the person holds, pending until approved.
+    Below `approval_threshold` a claim is booked at once. Nobody approves their own claim.
+    """
+
+    class PaidFrom(models.TextChoices):
+        OWN_MONEY = "own_money", _("My own money")
+        HELD_CASH = "held_cash", _("Company cash I hold")
+
+    class Status(models.TextChoices):
+        SUBMITTED = "submitted", _("Waiting for approval")
+        APPROVED = "approved", _("Approved")
+        REJECTED = "rejected", _("Rejected")
+        PAID = "paid", _("Paid back")
+        CANCELLED = "cancelled", _("Cancelled")
+
+    class Via(models.TextChoices):
+        BOT = "bot", _("Telegram bot")
+        MINIAPP = "miniapp", _("Mini app")
+        DASHBOARD = "dashboard", _("Dashboard")
+
+    company = models.ForeignKey(Company, on_delete=models.PROTECT, related_name="finance_claims")
+    membership = models.ForeignKey(
+        Membership, on_delete=models.PROTECT, related_name="finance_claims"
+    )
+    amount = MoneyField()
+    currency = CurrencyField()
+    category = models.ForeignKey(Category, on_delete=models.PROTECT, related_name="claims")
+    spent_on = models.DateField()
+    description = models.CharField(max_length=300, blank=True)
+    paid_from = models.CharField(max_length=10, choices=PaidFrom.choices)
+    branch = models.ForeignKey(
+        Branch, on_delete=models.PROTECT, null=True, blank=True, related_name="finance_claims"
+    )
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.SUBMITTED)
+    transaction = models.ForeignKey(
+        Transaction, on_delete=models.PROTECT, null=True, blank=True, related_name="claims"
+    )
+    debt = models.ForeignKey(
+        Debt, on_delete=models.PROTECT, null=True, blank=True, related_name="claims"
+    )
+    decided_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    decided_at = models.DateTimeField(null=True, blank=True)
+    reject_reason = models.CharField(max_length=300, blank=True)
+    paid_at = models.DateTimeField(null=True, blank=True)
+    via = models.CharField(max_length=10, choices=Via.choices, default=Via.MINIAPP)
+
+    class Meta:
+        ordering = ["-created_at", "-pk"]
+        indexes = [
+            models.Index(fields=["company", "status"]),
+            models.Index(fields=["membership", "status"]),
+        ]
+        constraints = [
+            models.CheckConstraint(condition=Q(amount__gt=0), name="finance_claim_positive"),
+        ]
+
+    def __str__(self):
+        return f"Claim #{self.pk}: {self.amount} {self.currency}"

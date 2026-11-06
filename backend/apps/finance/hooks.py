@@ -106,6 +106,19 @@ registry.register_setup_step(
     done=providers.opening_balances_done,
     feature=FINANCE,
 )
+registry.register_setup_step(
+    "finance.tax_regime",
+    perm=Perm.FINANCE_MANAGE,
+    order=62,
+    label=_("Which tax do you pay?"),
+    description=_(
+        "Turnover tax, VAT 12 % or simplified VAT 6 %. Sales lines, the tax calendar and the "
+        "turnover tile follow it. Confirm with your accountant."
+    ),
+    url="settings/finance",
+    done=providers.tax_regime_done,
+    feature=FINANCE,
+)
 registry.register_copy_part(
     "finance.categories",
     label=_("Finance categories"),

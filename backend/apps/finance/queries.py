@@ -1280,3 +1280,45 @@ def search_counterparties(rows: QuerySet[Counterparty], q: str, limit: int) -> l
     if len(digits) >= 4:
         query |= Q(phone__contains=digits)
     return list(rows.filter(query).order_by("-is_active", "name")[:limit])
+
+
+# Taxes (Package I) ------------------------------------------------------------------------------
+
+
+def vat_percent(company) -> Decimal:
+    """The VAT rate of the company's tax regime (`FinanceSettings.vat_percent`: 12 for VAT, 6 for
+    simplified VAT, 0 on turnover tax unless the company set another). J2's sales lines use it
+    for products without a rate of their own (§14.7)."""
+    from apps.finance import conf
+
+    return conf.get_settings(company).vat_percent
+
+
+def tax_summary(company, today: date, *, branch_ids) -> dict:
+    """The turnover-tax tile: income booked this calendar year (the P&L's income) against the
+    threshold, `turnover_threshold` base calculation values of `base_value` so'm each (both
+    company settings, defaults from §14.4 row 28, confirm with an accountant)."""
+    from apps.finance import conf
+
+    settings_row = conf.get_settings(company)
+    base = company.base_currency
+    turnover = totals(company, date(today.year, 1, 1), today, branch_ids=branch_ids)["income"]
+    threshold = quantize(settings_row.base_value * settings_row.turnover_threshold)
+    if base != Currency.UZS and threshold:
+        try:
+            threshold = convert(threshold, Currency.UZS, base, rate_for(company, base, today).rate)
+        except DomainError:
+            threshold = ZERO
+    share = (turnover / threshold).quantize(Decimal("0.01")) if threshold > 0 else None
+    return {
+        "regime": settings_row.tax_regime,
+        "vat_percent": str(settings_row.vat_percent),
+        "year": today.year,
+        "currency": base,
+        "turnover": str(turnover),
+        "threshold": str(threshold),
+        "threshold_values": settings_row.turnover_threshold,
+        "base_value": str(settings_row.base_value),
+        "share": str(share) if share is not None else None,
+        "over": threshold > 0 and turnover > threshold,
+    }

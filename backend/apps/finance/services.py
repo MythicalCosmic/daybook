@@ -1181,7 +1181,12 @@ SETTINGS_FIELDS = (
     "receipt_required_over",
     "large_expense_alert",
     "reimburse_via",
+    "tax_regime",
+    "vat_percent",
+    "turnover_threshold",
+    "base_value",
 )
+PERCENT_STEP = Decimal("0.01")
 DEBT_FIELDS = ("due_on", "description", "responsible", "branch")
 BULK_ACTIONS = ("categorize", "void")
 MAX_BULK = 200
@@ -2346,8 +2351,14 @@ def lock_period(company, *, by: Membership, until: date | None) -> FinanceSettin
 
 @transaction.atomic
 def update_settings(company, *, by: Membership, **fields) -> FinanceSettings:
-    """Where rates come from, the approval and receipt thresholds, the large-expense alert and
-    how reimbursements are paid. The period lock has its own service (`lock_period`)."""
+    """Where rates come from, the approval and receipt thresholds, the large-expense alert, how
+    reimbursements are paid and the tax regime. The period lock has its own service
+    (`lock_period`).
+
+    Choosing a tax regime without a VAT rate sets the rate the regime implies (12 % for VAT,
+    6 % for simplified VAT, none for turnover tax); saving the regime confirms it, which ticks
+    the "Which tax do you pay?" step of Get started.
+    """
     _need_actor(by)
     _known(fields, SETTINGS_FIELDS)
     user = _actor(company, by)
@@ -2362,6 +2373,21 @@ def update_settings(company, *, by: Membership, **fields) -> FinanceSettings:
             if value not in FinanceSettings.ReimburseVia.values:
                 raise ValueError(f"Unknown reimbursement route {value!r}.")
             settings_row.reimburse_via = value
+        elif key == "tax_regime":
+            if value not in FinanceSettings.TaxRegime.values:
+                raise ValueError(f"Unknown tax regime {value!r}.")
+            settings_row.tax_regime = value
+            if "vat_percent" not in fields:
+                settings_row.vat_percent = FinanceSettings.REGIME_VAT[value]
+            settings_row.tax_regime_set_at = timezone.now()
+        elif key == "vat_percent":
+            settings_row.vat_percent = _percent(value)
+        elif key == "turnover_threshold":
+            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                raise DomainError(_("Enter a whole number of base values."))
+            settings_row.turnover_threshold = value
+        elif key == "base_value":
+            settings_row.base_value = _money(value)
         else:
             setattr(
                 settings_row,
@@ -2375,6 +2401,16 @@ def update_settings(company, *, by: Membership, **fields) -> FinanceSettings:
     return settings_row
 
 
+def _percent(value) -> Decimal:
+    try:
+        percent = Decimal(str(value)).quantize(PERCENT_STEP)
+    except InvalidOperation, TypeError, ValueError:
+        raise DomainError(_("Enter a percentage from 0 to 100.")) from None
+    if not percent.is_finite() or percent < 0 or percent > 100:
+        raise DomainError(_("Enter a percentage from 0 to 100."))
+    return percent
+
+
 def _settings_snapshot(row: FinanceSettings) -> dict:
     def money(value):
         return str(value) if value is not None else None
@@ -2385,6 +2421,10 @@ def _settings_snapshot(row: FinanceSettings) -> dict:
         "receipt_required_over": money(row.receipt_required_over),
         "large_expense_alert": money(row.large_expense_alert),
         "reimburse_via": row.reimburse_via,
+        "tax_regime": row.tax_regime,
+        "vat_percent": money(row.vat_percent),
+        "turnover_threshold": row.turnover_threshold,
+        "base_value": money(row.base_value),
     }
 
 

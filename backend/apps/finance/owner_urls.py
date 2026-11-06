@@ -47,5 +47,6 @@ urlpatterns = [
     ),
     path("finance/settings/", owner_api.SettingsView.as_view(), name="finance-settings"),
     path("finance/settings/lock/", owner_api.LockView.as_view(), name="finance-settings-lock"),
+    path("finance/tax-summary/", owner_api.TaxSummaryView.as_view(), name="finance-tax-summary"),
     *router.urls,
 ]

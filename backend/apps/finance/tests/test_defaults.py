@@ -9,7 +9,11 @@ pytestmark = pytest.mark.django_db
 
 
 def codes(company):
-    return set(Category.objects.filter(company=company).values_list("system_code", flat=True))
+    return set(
+        Category.objects.filter(company=company)
+        .exclude(system_code="")
+        .values_list("system_code", flat=True)
+    )
 
 
 def test_a_company_gets_the_system_categories_and_two_accounts(company):
@@ -40,7 +44,8 @@ def test_ensure_is_idempotent_and_respects_the_owners_changes(company):
 
     defaults.ensure(company)
 
-    assert Category.objects.filter(company=company).count() == 18
+    # 18 system categories and the 5 plain pharmacy ones.
+    assert Category.objects.filter(company=company).count() == 23
     assert Category.objects.get(company=company, system_code="rent").name == "Ijara"
     assert MoneyAccount.objects.filter(company=company).count() == 2
     assert not MoneyAccount.objects.filter(company=company, name="Cash desk").exists()
@@ -74,7 +79,7 @@ def test_names_are_written_in_the_companys_language(company, monkeypatch):
     with translation.override("en"):
         defaults.ensure(company)
 
-    assert len(seen) == 20
+    assert len(seen) == 25  # 18 system and 5 pharmacy categories, 2 accounts
     assert set(seen) == {"ru"}
 
 

@@ -10,7 +10,8 @@ from django.db import IntegrityError, transaction
 from django.utils import translation
 from django.utils.translation import gettext_lazy as _
 
-from apps.finance.models import Category, MoneyAccount
+from apps.core.settings_rows import get_or_create_for
+from apps.finance.models import Category, FinanceSettings, MoneyAccount
 
 INCOME = Category.Kind.INCOME
 EXPENSE = Category.Kind.EXPENSE
@@ -21,7 +22,7 @@ SYSTEM_CATEGORIES = (
     ("refunds", INCOME, _("Refunds"), False),
     ("cash_surplus", INCOME, _("Cash surplus"), False),
     ("other_income", INCOME, _("Other income"), False),
-    ("goods", EXPENSE, _("Goods for sale"), False),
+    ("goods", EXPENSE, _("Medicines and goods"), False),
     ("rent", EXPENSE, _("Rent"), False),
     ("utilities", EXPENSE, _("Utilities"), False),
     ("salaries", EXPENSE, _("Salaries"), True),
@@ -37,6 +38,18 @@ SYSTEM_CATEGORIES = (
     ("other_expense", EXPENSE, _("Other expenses"), False),
 )
 SYSTEM_CODES = frozenset(code for code, *_rest in SYSTEM_CATEGORIES)
+
+# Plain categories a pharmacy business uses (§14.8): no system code, since no service books
+# into them. Added once per company (`FinanceSettings.defaults_version`), so one an owner
+# deleted or renamed never comes back.
+PHARMACY_CATEGORIES = (
+    (INCOME, _("Marketing bonuses")),
+    (INCOME, _("Insurance fund reimbursements")),
+    (EXPENSE, _("Licences and certificates")),
+    (EXPENSE, _("Destruction services")),
+    (EXPENSE, _("Instrument checks")),
+)
+DEFAULTS_VERSION = 1
 
 DEFAULT_ACCOUNTS = (
     (MoneyAccount.Kind.CASH, _("Cash desk")),
@@ -56,6 +69,7 @@ def ensure(company) -> None:
         for order, (code, kind, name, sensitive) in enumerate(SYSTEM_CATEGORIES):
             if code not in have:
                 _add_system_category(company, code, kind, str(name), order, sensitive)
+        _add_pharmacy_categories(company)
         if not MoneyAccount.objects.filter(company=company).exists():
             for order, (kind, name) in enumerate(DEFAULT_ACCOUNTS):
                 _create_quietly(
@@ -66,6 +80,26 @@ def ensure(company) -> None:
                     currency=company.base_currency,
                     order=order,
                 )
+
+
+def _add_pharmacy_categories(company) -> None:
+    settings_row = (
+        FinanceSettings.objects.select_for_update()
+        .filter(pk=get_or_create_for(FinanceSettings, company).pk)
+        .first()
+    )
+    if settings_row.defaults_version >= DEFAULTS_VERSION:
+        return
+    top = Category.objects.filter(company=company, parent=None)
+    order = len(SYSTEM_CATEGORIES)
+    for kind, name in PHARMACY_CATEGORIES:
+        label = str(name)
+        if top.filter(name=label).exists():
+            continue  # the owner already has one by that name
+        order += 1
+        _create_quietly(Category, company=company, kind=kind, name=label, order=order)
+    settings_row.defaults_version = DEFAULTS_VERSION
+    settings_row.save(update_fields=["defaults_version"])
 
 
 def _add_system_category(company, code, kind, name, order, sensitive) -> None:

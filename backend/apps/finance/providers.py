@@ -15,7 +15,7 @@ from django.utils.translation import gettext as _
 from apps.console.registry import CalendarItem, FieldSpec, OffboardStep, SearchHit
 from apps.core.money import quantize
 from apps.finance import access, display, queries
-from apps.finance.models import Debt, MoneyAccount, Receipt, Transaction
+from apps.finance.models import Debt, FinanceSettings, MoneyAccount, Receipt, Transaction
 from apps.finance.sources import Source
 from apps.members import scope
 from apps.members.models import Membership
@@ -366,6 +366,11 @@ def opening_balances_done(company) -> bool:
         .exclude(status=Debt.Status.CANCELLED)
         .exists()
     )
+
+
+def tax_regime_done(company) -> bool:
+    """ "Which tax do you pay?": done once someone saved the tax regime in the settings."""
+    return FinanceSettings.objects.filter(company=company, tax_regime_set_at__isnull=False).exists()
 
 
 # Private files and record history -------------------------------------------------------------
