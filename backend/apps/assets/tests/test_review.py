@@ -411,3 +411,30 @@ def test_the_tax_book_stops_when_the_asset_leaves(shop, owner, category):
     # 20 % a year on 12 000 000 = 200 000 a month, April … November, then it is gone.
     assert report["tax"][3:] == [D("200000.00")] * 8 + [D("0.00")]
     assert report["tax_total"] == D("1600000.00")
+
+
+def test_a_pending_expense_that_bought_an_asset_is_not_rejected(
+    shop, owner, cash, equipment, chilonzor, category
+):
+    """Like voiding it: the asset would go on depreciating a purchase that never happened."""
+    txn = finance.record_transaction(
+        shop,
+        by=owner,
+        kind="expense",
+        amount=D(3_000_000),
+        occurred_on=date(2026, 11, 2),
+        account=cash,
+        category=equipment,
+        branch=chilonzor,
+        status="pending",
+    )
+    services.create_asset(
+        shop,
+        by=owner,
+        category=category,
+        name="Muzlatgich",
+        purchase_transaction=txn,
+        in_service_on=date(2026, 11, 3),
+    )
+    with pytest.raises(DomainError):
+        finance.reject_transaction(txn, by=owner, reason="Xato")

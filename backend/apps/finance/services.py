@@ -517,6 +517,11 @@ def reject_transaction(txn: Transaction, *, by: Membership, reason: str) -> Tran
     user = _actor(company, by)
     if txn.status != Status.PENDING:
         raise DomainError(_("This entry isn't waiting for approval."))
+    if txn.capitalized:
+        # As with a void: the asset would go on depreciating a purchase that never happened.
+        raise DomainError(
+            _("This expense bought a fixed asset: remove or dispose of the asset first.")
+        )
     txn.status = Status.REJECTED
     txn.voided_by = user
     txn.voided_at = timezone.now()
