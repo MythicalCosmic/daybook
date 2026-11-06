@@ -297,6 +297,82 @@ register_exporter(
 )
 
 
+# Sale lines from the cash-register software (PLAN-OWNER §14.7). Nothing here does anything
+# while a company's sale lines don't come from imports (`SalesSettings.sales_lines`).
+registry.register_pulse("sales.lines", perm=Perm.SALES_VIEW, count=None, feature=FEATURE)
+registry.register_pulse(
+    "sales.unmatched", perm=Perm.SALES_MANAGE, count=queries.unmatched_count, feature=FEATURE
+)
+registry.register_queue(
+    "sales.import_unmatched",
+    perm=Perm.SALES_MANAGE,
+    label=_("Sale lines to match"),
+    count=queries.unmatched_count,
+    items=queries.unmatched_items,
+    feature=FEATURE,
+)
+registry.register_setup_step(
+    "sales.lines",
+    perm=Perm.SALES_MANAGE,
+    order=62,
+    label=_("Where do your sales lines come from?"),
+    description=_(
+        "Import them from your cash-register program for true stock, margins and the legal "
+        "price check, or work without them."
+    ),
+    url="settings/sales",
+    done=queries.lines_told,
+    feature=FEATURE,
+)
+registry.register_brief_section(
+    "sales.lines",
+    perm=Perm.SALES_VIEW,
+    order=21,
+    build=queries.lines_brief_section,
+    feature=FEATURE,
+)
+register_kind(
+    "sales.price_cap_breach",
+    label=_("Prescription medicines sold above the legal price"),
+    audience="owner",
+    default_telegram=True,
+    severity="warning",
+)
+register_kind(
+    "sales.import_failed",
+    label=_("A sale lines import didn't finish"),
+    audience="owner",
+    default_telegram=True,
+    severity="warning",
+)
+register_exporter(
+    "sales.lines",
+    perm=Perm.SALES_VIEW,
+    label=_("Sale lines"),
+    columns=[
+        Column("day", _("Business day"), "date"),
+        Column("sold_at", _("Sold"), "datetime"),
+        Column("branch", _("Branch")),
+        Column("receipt", _("Receipt")),
+        Column("kind", _("Sale or refund")),
+        Column("cashier", _("Cashier")),
+        Column("code", _("Item code")),
+        Column("product", _("Medicine")),
+        Column("series", _("Series")),
+        Column("quantity", _("Parts"), "number"),
+        Column("parts_per_pack", _("Parts per pack"), "number"),
+        Column("pack_price", _("Price per pack"), "money"),
+        Column("total", _("Line total"), "money"),
+        Column("cost", _("Cost"), "money"),
+        Column("cap", _("Legal price cap"), "money"),
+        Column("over_cap", _("Above the cap")),
+        Column("rx_number", _("Prescription")),
+    ],
+    rows=queries.export_lines,
+    feature=FEATURE,
+)
+
+
 # A "Kassa" button in the employee bot's menu for people who run a till.
 def _runs_a_till(member) -> bool:
     return member.company.has_feature(FEATURE) and member.has_perm(Perm.SALES_OPERATE)

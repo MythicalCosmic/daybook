@@ -13,4 +13,9 @@ ENUM_NAME_OVERRIDES = {
     "SalesSaleKindEnum": "apps.sales.models.Sale.Kind",
     "SalesSaleSourceEnum": "apps.sales.models.Sale.Source",
     "SalesCashMovementKindEnum": "apps.sales.models.CashMovement.Kind",
+    "SalesLinesSourceEnum": "apps.sales.models.SalesSettings.Lines",
+    "SalesImportStatusEnum": "apps.sales.models.SalesImport.Status",
+    "SalesImportFileKindEnum": "apps.sales.models.SalesImportProfile.FileKind",
+    "SalesImportUnitEnum": "apps.sales.models.SalesImportProfile.Unit",
+    "SalesSaleLineStatusEnum": "apps.sales.models.SaleLine.Status",
 }

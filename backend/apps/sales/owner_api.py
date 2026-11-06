@@ -849,7 +849,7 @@ class EntryViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, SalesViewSe
             return Sale.objects.none()
         params = self.request.query_params
         rows = (
-            queries.restrict(Sale.objects.for_company(self.company), self.branch_scope)
+            queries.restrict(Sale.objects.money().for_company(self.company), self.branch_scope)
             .select_related("branch", "register", "shift__branch", "cashier", "performed_by")
             .prefetch_related("payments__method")
         )

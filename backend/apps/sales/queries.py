@@ -42,6 +42,7 @@ from apps.sales.models import (
     PaymentMethod,
     Register,
     Sale,
+    SaleLine,
     SalesTarget,
     ShiftPayment,
 )
@@ -549,9 +550,9 @@ def _hours(company, start, end, *, branch_ids, by_weekday: bool) -> tuple[list[d
     cells: dict[tuple[int, int], dict] = defaultdict(lambda: {"net": ZERO, "receipts": Decimal(0)})
     estimated = False
     sales = restrict(
-        Sale.objects.for_company(company).filter(
-            business_day__range=(start, end), voided_at__isnull=True
-        ),
+        Sale.objects.money()
+        .for_company(company)
+        .filter(business_day__range=(start, end), voided_at__isnull=True),
         branch_ids,
     )
     with_receipts = set(sales.exclude(shift__isnull=True).values_list("shift_id", flat=True))
@@ -716,7 +717,7 @@ def _today_net(company, branch_ids: list[int] | None, day: date) -> dict[int, di
         found[shift.branch_id]["net"] += shift.net
         found[shift.branch_id]["receipts"] += shift.receipts
     sales = restrict(
-        Sale.objects.for_company(company).filter(business_day=day, voided_at__isnull=True),
+        Sale.objects.money().for_company(company).filter(business_day=day, voided_at__isnull=True),
         branch_ids,
     ).exclude(shift__status__in=CLOSED_STATUSES)
     for sale in sales.only("branch_id", "total", "kind"):
@@ -1560,12 +1561,237 @@ def _param_day(value) -> date | None:
         return None
 
 
+# Sale lines (§14.7) ---------------------------------------------------------------------
+
+
+def line_facts(company, start: date, end: date, *, branch_ids: list[int] | None) -> QuerySet:
+    """Every matched sale line of `[start, end]` (business days), for J3's analytics and N:
+    each with its batch, cost, cashier, receipt, branch and business day (`sale__…`). Refund
+    lines are on refund receipts (`sale__kind`); void receipts are left out. A line that took
+    stock from two batches is two rows with the same `sale_id` and `line_number`."""
+    rows = SaleLine.objects.filter(
+        sale__company=company,
+        sale__business_day__range=(start, end),
+        sale__voided_at__isnull=True,
+        status=SaleLine.Status.MATCHED,
+    ).select_related("sale__branch", "sale__cashier", "sale__pos_cashier", "product", "batch")
+    if branch_ids is not None:
+        rows = rows.filter(sale__branch_id__in=branch_ids)
+    return rows.order_by("sale__sold_at", "sale_id", "line_number", "pk")
+
+
+def cap_breaches(company, start: date, end: date, *, branch_ids: list[int] | None) -> list[dict]:
+    """Prescription lines sold above their legal price in `[start, end]`: the cap (per pack)
+    is the batch's cost plus the legal markup, never above the reference price
+    (`inventory.queries.price_cap`), as it stood when the line was read."""
+    from apps.sales.lines import pack_price
+
+    rows = (
+        line_facts(company, start, end, branch_ids=branch_ids)
+        .filter(over_cap=True, sale__kind=Sale.Kind.SALE)
+        .order_by("-sale__business_day", "sale__branch_id", "sale__sold_at", "pk")
+    )
+    found = []
+    for line in rows:
+        price = pack_price(line)
+        sale = line.sale
+        found.append(
+            {
+                "id": line.pk,
+                "sale_id": sale.pk,
+                "receipt": sale.number,
+                "day": sale.business_day.isoformat(),
+                "sold_at": local(company, sale.sold_at).isoformat(),
+                "branch": {"id": sale.branch_id, "name": sale.branch.name},
+                "product": {"id": line.product_id, "name": line.product.name},
+                "series": line.batch.series if line.batch_id else line.series,
+                "quantity": str(line.quantity),
+                "parts_per_pack": line.parts_per_pack,
+                "pack_price": m(price),
+                "cap": m(line.cap),
+                "over_by": m(price - line.cap),
+                "total": m(line.total),
+                "cashier": person(sale.cashier),
+            }
+        )
+    return found
+
+
+LINE_FILTERS = ("from", "to", "branch", "status", "rx", "cap", "q", "product", "cashier", "import")
+
+
+def lines_list(company, filters: dict, *, branch_ids: list[int] | None) -> QuerySet:
+    """The Lines page: every line (matched, waiting or skipped) with its receipt, newest
+    first. Filters: from/to (business days), branch (ids), status, rx (prescription items),
+    cap (sold above the legal price), q (name, code or receipt), product, cashier, import."""
+    rows = SaleLine.objects.filter(
+        sale__company=company, sale__voided_at__isnull=True
+    ).select_related("sale__branch", "sale__cashier", "sale__pos_cashier", "product", "batch")
+    if branch_ids is not None:
+        rows = rows.filter(sale__branch_id__in=branch_ids)
+    if start := filters.get("from"):
+        rows = rows.filter(sale__business_day__gte=start)
+    if end := filters.get("to"):
+        rows = rows.filter(sale__business_day__lte=end)
+    if branches := filters.get("branch"):
+        rows = rows.filter(sale__branch_id__in=branches)
+    if (status := filters.get("status")) in SaleLine.Status.values:
+        rows = rows.filter(status=status)
+    if filters.get("rx"):
+        rows = rows.filter(product__rx_required=True)
+    if filters.get("cap"):
+        rows = rows.filter(over_cap=True, sale__kind=Sale.Kind.SALE)
+    if product := filters.get("product"):
+        rows = rows.filter(product_id=product)
+    if cashier := filters.get("cashier"):
+        rows = rows.filter(sale__cashier_id=cashier)
+    if import_id := filters.get("import"):
+        rows = rows.filter(sale__sales_import_id=import_id)
+    if q := (filters.get("q") or "").strip():
+        rows = rows.filter(
+            Q(name__icontains=q)
+            | Q(code=q)
+            | Q(sale__number=q)
+            | Q(product__name__icontains=q)
+            | Q(product__inn__icontains=q)
+        )
+    return rows.order_by("-sale__sold_at", "-sale_id", "line_number", "pk")
+
+
+def unmatched_count(member: Membership) -> int:
+    """Lines waiting for their code to be matched, in the member's branches."""
+    from apps.sales.lines import waiting_count
+
+    if get_settings(member.company).sales_lines != "import":
+        return 0
+    return waiting_count(member.company, branch_ids=scope.branch_ids(member))
+
+
+def unmatched_items(member: Membership, limit: int) -> list[QueueItem]:
+    """Needs you: one item per waiting code (a code sold forty times is one thing to do)."""
+    from apps.sales.lines import codes
+
+    if get_settings(member.company).sales_lines != "import":
+        return []
+    company = member.company
+    found = []
+    for row in codes(company, branch_ids=scope.branch_ids(member), limit=limit):
+        found.append(
+            QueueItem(
+                kind="sales.import_unmatched",
+                id=row["code"],
+                title=_("Match %(code)s · %(name)s") % {"code": row["code"], "name": row["name"]},
+                subtitle=_("%(count)s lines wait for it") % {"count": row["lines"]},
+                created_at=row["last_sold_at"],
+                url=f"/c/{company.pk}/sales/import?tab=match&code={row['code']}",
+                actions=[],
+            )
+        )
+    return found
+
+
+def lines_told(company) -> bool:
+    """The "Get started" step: someone answered where sale lines come from."""
+    settings = get_settings(company)
+    return settings.sales_lines_confirmed_at is not None
+
+
+def lines_brief_section(
+    company, day: date, now: datetime, branch_ids: list[int] | None
+) -> dict | None:
+    """Briefings and `/today`: yesterday's prescription lines above the legal price and the
+    branch-days whose import doesn't match the tills (a gap above 1 %)."""
+    from apps.sales.lines import day_check
+
+    if get_settings(company).sales_lines != "import":
+        return None
+    yesterday = day - timedelta(days=1)
+    breaches = cap_breaches(company, yesterday, yesterday, branch_ids=branch_ids)
+    branches = restrict(
+        Branch.objects.for_company(company).filter(is_active=True), branch_ids, field="id"
+    )
+    checks = [
+        row
+        for row in day_check(company, [(branch.pk, yesterday) for branch in branches])
+        if row["flagged"] and (row["imported"] != "0.00" or row["tills"] not in (None, "0.00"))
+    ]
+    if not breaches and not checks:
+        return None
+    lines = []
+    if breaches:
+        per_branch: dict[str, int] = defaultdict(int)
+        for row in breaches:
+            per_branch[row["branch"]["name"]] += 1
+        lines.append(
+            _("Sold above the legal price yesterday: %(count)s (%(branches)s)")
+            % {
+                "count": len(breaches),
+                "branches": ", ".join(f"{name} {n}" for name, n in sorted(per_branch.items())),
+            }
+        )
+    for row in checks:
+        if row["coverage"] is not None:
+            lines.append(
+                _("The import covers %(percent)s %% of yesterday's tills at %(branch)s")
+                % {"percent": row["coverage"].removesuffix(".0"), "branch": row["branch"]["name"]}
+            )
+        else:
+            lines.append(
+                _("%(branch)s: sale lines imported for yesterday, but the tills have no totals")
+                % {"branch": row["branch"]["name"]}
+            )
+    return {
+        "day": yesterday.isoformat(),
+        "cap_breaches": len(breaches),
+        "day_check": checks,
+        "lines": lines,
+    }
+
+
+def export_lines(member: Membership, params: dict):
+    """The `sales.lines` exporter: matched lines of the range; costs only for finance.view."""
+    from apps.members.permissions import Perm
+    from apps.sales.lines import pack_price
+
+    company = member.company
+    end = _param_day(params.get("to")) or business_day(company)
+    start = _param_day(params.get("from")) or end.replace(day=1)
+    costs = member.has_perm(Perm.FINANCE_VIEW)
+    for line in line_facts(company, start, end, branch_ids=_export_scope(member, params)).iterator(
+        chunk_size=500
+    ):
+        sale = line.sale
+        yield {
+            "day": sale.business_day,
+            "sold_at": sale.sold_at,
+            "branch": sale.branch.name,
+            "receipt": sale.number,
+            "kind": sale.get_kind_display(),
+            "cashier": str(sale.cashier)
+            if sale.cashier_id
+            else (sale.pos_cashier.code if sale.pos_cashier_id else ""),
+            "code": line.code,
+            "product": line.product.name if line.product_id else line.name,
+            "series": line.batch.series if line.batch_id else line.series,
+            "quantity": line.quantity,
+            "parts_per_pack": line.parts_per_pack,
+            "pack_price": pack_price(line),
+            "total": line.total,
+            "cost": line.cost if costs else None,
+            "cap": line.cap,
+            "over_cap": _("Yes") if line.over_cap else "",
+            "rx_number": line.rx_number,
+        }
+
+
 __all__ = [
     "branch_facts",
     "brief_section",
+    "cap_breaches",
     "cash_positions",
     "cashier_scorecard",
     "company_facts",
+    "line_facts",
     "shifts",
     "summary",
     "targets",

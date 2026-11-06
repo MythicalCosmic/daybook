@@ -278,7 +278,7 @@ def day_by_branch(company, day: date) -> list[tuple[Branch, Decimal, int]]:
         )
         net = (totals["sales"] or Decimal(0)) - (totals["refunds"] or Decimal(0))
         receipts = shifts.aggregate(n=Sum("receipts"))["n"] or 0
-        loose = Sale.objects.filter(
+        loose = Sale.objects.money().filter(
             branch=branch, business_day=day, shift__isnull=True, voided_at__isnull=True
         )
         for kind, amount in SalePayment.objects.filter(sale__in=loose).values_list(

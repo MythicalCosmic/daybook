@@ -23,15 +23,16 @@ from django.utils import timezone
 from django.utils.translation import gettext as _
 
 from apps.audit import services as audit
+from apps.companies.models import Branch
 from apps.console import pulse
 from apps.core.exceptions import DomainError
 from apps.core.money import quantize
 from apps.core.signals import send_on_commit
-from apps.core.uploads import sanitize_image
+from apps.core.uploads import accept_document, sanitize_image
 from apps.finance.models import Category, MoneyAccount
 from apps.inbox import services as inbox
 from apps.members.models import Membership
-from apps.sales import alerts, cash, finance_bridge, signals, tasks
+from apps.sales import alerts, cash, finance_bridge, importer, lines, signals, tasks
 from apps.sales.audit_actions import SalesAction
 from apps.sales.conf import get_settings
 from apps.sales.days import business_day
@@ -39,9 +40,12 @@ from apps.sales.models import (
     CashMovement,
     CashShift,
     PaymentMethod,
+    PosCashier,
     Register,
     Sale,
     SalePayment,
+    SalesImport,
+    SalesImportProfile,
     SalesSettings,
     SalesTarget,
     ShiftPayment,
@@ -65,6 +69,8 @@ PULSE_CASH = "sales.cash"
 PULSE_SETUP = "sales.setup"
 PULSE_ENTRIES = "sales.entries"
 PULSE_TARGETS = "sales.targets"
+PULSE_LINES = lines.PULSE_LINES  # the Import and Lines pages
+PULSE_UNMATCHED = lines.PULSE_UNMATCHED  # the match list's badge
 
 
 @dataclass(frozen=True)
@@ -208,6 +214,7 @@ SETTINGS_FIELDS = (
     "big_payout_alert",
     "late_open_minutes",
     "close_alert_minutes",
+    "sales_lines",
 )
 
 
@@ -222,6 +229,16 @@ def update_settings(company, *, by: Membership, **fields) -> SalesSettings:
         raise DomainError(_("Pick a way of recording sales."))
     if fields.get("mode") == SalesSettings.Mode.INVOICES:
         raise DomainError(_("Invoices mode arrives with the invoices module."))
+    if "sales_lines" in fields:
+        if fields["sales_lines"] not in SalesSettings.Lines.values:
+            raise DomainError(_("Pick where your sale lines come from."))
+        if fields["sales_lines"] == SalesSettings.Lines.RECEIPTS:
+            raise DomainError(_("Sale lines typed with each receipt arrive in a later version."))
+        if settings.sales_lines_confirmed_at is None:
+            # Answering the "Get started" question counts even when the answer is the default.
+            settings.sales_lines_confirmed_at = timezone.now()
+            settings.save(update_fields=["sales_lines_confirmed_at", "updated_at"])
+            _bump(company.pk, PULSE_SETUP)
     for key in ("cash_tolerance", "big_payout_alert"):
         if fields.get(key) not in (None, ""):
             fields[key] = money(fields[key], allow_zero=True)
@@ -1235,6 +1252,10 @@ def void_sale(sale: Sale, *, by: Membership, reason: str) -> Sale:
     _need_person(by)
     reason = _reason(reason)
     sale = Sale.objects.select_for_update(of=("self",)).select_related("shift").get(pk=sale.pk)
+    if sale.is_imported:
+        raise DomainError(
+            _("Imported receipts come from the cash-register program: correct them there.")
+        )
     if sale.voided_at is not None:
         raise DomainError(_("This receipt is already void."))
     if sale.shift_id is not None and sale.shift.status != Status.OPEN:
@@ -1252,3 +1273,215 @@ def void_sale(sale: Sale, *, by: Membership, reason: str) -> Sale:
     _record(SalesAction.SALE_VOIDED, sale.company, by, sale, reason=reason)
     _bump(sale.company_id, PULSE_ENTRIES, PULSE_CASH)
     return sale
+
+
+# Sale lines from the cash-register software (§14.7) -----------------------------------
+
+PROFILE_FIELDS = (
+    "name",
+    "file_kind",
+    "encoding",
+    "delimiter",
+    "header_row",
+    "columns",
+    "date_format",
+    "default_unit",
+    "branch",
+    "branch_map",
+    "is_active",
+)
+ENCODINGS = ("", "utf-8", "utf-8-sig", "cp1251", "cp866", "koi8-r", "utf-16")
+
+
+def _profile_values(company, fields: dict, *, current: SalesImportProfile | None) -> dict:
+    """Checked profile fields; the column map is checked against what an import needs."""
+    if unknown := set(fields) - set(PROFILE_FIELDS):
+        raise ValueError(f"Unknown import profile fields: {sorted(unknown)}")
+    values = dict(fields)
+    if "name" in values:
+        name = (values["name"] or "").strip()[:80]
+        if not name:
+            raise DomainError(_("Give the profile a name, e.g. the cash-register program's."))
+        clash = SalesImportProfile.objects.filter(company=company, name__iexact=name)
+        if current is not None:
+            clash = clash.exclude(pk=current.pk)
+        if clash.exists():
+            raise DomainError(_("There is already a profile called %(name)s.") % {"name": name})
+        values["name"] = name
+    if "file_kind" in values and values["file_kind"] not in SalesImportProfile.FileKind.values:
+        raise DomainError(_("Pick CSV or Excel."))
+    if "encoding" in values:
+        values["encoding"] = (values["encoding"] or "").strip().lower()
+        if values["encoding"] not in ENCODINGS:
+            raise DomainError(_("Pick the file's encoding."))
+    if "delimiter" in values:
+        delimiter = values["delimiter"] or ""
+        if delimiter in ("\\t", "tab"):
+            delimiter = "\t"
+        if len(delimiter) > 1:
+            raise DomainError(_("The delimiter is one character, like ; or ,"))
+        values["delimiter"] = delimiter
+    if "header_row" in values:
+        try:
+            values["header_row"] = int(values["header_row"] or 1)
+        except TypeError, ValueError:
+            raise DomainError(_("The header row is a number.")) from None
+        if not 1 <= values["header_row"] <= 50:
+            raise DomainError(_("The header row is between 1 and 50."))
+    if "date_format" in values:
+        values["date_format"] = (values["date_format"] or "").strip()[:32]
+        if values["date_format"] and "%" not in values["date_format"]:
+            raise DomainError(_('A date format looks like "%d.%m.%Y %H:%M".'))
+    if "default_unit" in values and values["default_unit"] not in SalesImportProfile.Unit.values:
+        raise DomainError(_("Pick packs or parts."))
+    if "branch" in values and values["branch"] is not None:
+        _same_company(company, values["branch"])
+    if "branch_map" in values:
+        mapped = values["branch_map"] or {}
+        if not isinstance(mapped, dict):
+            raise DomainError(_("The branch map isn't readable."))
+        known = set(Branch.objects.for_company(company).values_list("pk", flat=True))
+        cleaned = {}
+        for word, branch_id in mapped.items():
+            word = str(word).strip()[:100]
+            if not word:
+                continue
+            try:
+                branch_id = int(branch_id)
+            except TypeError, ValueError:
+                raise DomainError(_("The branch map isn't readable.")) from None
+            if branch_id not in known:
+                raise DomainError(_("The branch map names a branch of another company."))
+            cleaned[word] = branch_id
+        values["branch_map"] = cleaned
+    if "columns" in values:
+        columns = values["columns"] or {}
+        if not isinstance(columns, dict):
+            raise DomainError(_("The column map isn't readable."))
+        values["columns"] = {
+            str(key): value if isinstance(value, int) else str(value).strip()[:100]
+            for key, value in columns.items()
+            if value not in (None, "")
+        }
+    branch = values.get("branch", current.branch if current else None)
+    columns = values.get("columns", current.columns if current else {})
+    importer.check_columns(columns, needs_branch=branch is None)
+    return values
+
+
+@transaction.atomic
+def create_import_profile(company, *, by: Membership, name: str, **fields) -> SalesImportProfile:
+    """How to read one cash-register program's export, saved once and reused every day."""
+    _need_person(by)
+    values = _profile_values(company, {"name": name, **fields}, current=None)
+    profile = SalesImportProfile.objects.create(company=company, created_by=by, **values)
+    _record(
+        SalesAction.IMPORT_PROFILE_CREATED,
+        company,
+        by,
+        profile,
+        name=profile.name,
+        file_kind=profile.file_kind,
+        columns=profile.columns,
+    )
+    _bump(company.pk, PULSE_LINES)
+    return profile
+
+
+@transaction.atomic
+def update_import_profile(
+    profile: SalesImportProfile, *, by: Membership, **fields
+) -> SalesImportProfile:
+    _need_person(by)
+    profile = SalesImportProfile.objects.select_for_update().get(pk=profile.pk)
+    company = profile.company
+    values = _profile_values(company, fields, current=profile)
+    changes = {}
+    for key, value in values.items():
+        before = getattr(profile, key)
+        if before != value:
+            changes[key] = [
+                before.pk if hasattr(before, "pk") else before,
+                value.pk if hasattr(value, "pk") else value,
+            ]
+            setattr(profile, key, value)
+    if changes:
+        profile.save()
+        _record(SalesAction.IMPORT_PROFILE_CHANGED, company, by, profile, changes=changes)
+        _bump(company.pk, PULSE_LINES)
+    return profile
+
+
+@transaction.atomic
+def start_import(profile: SalesImportProfile, *, by: Membership, file) -> SalesImport:
+    """Take a file of sale lines and read it in the background. Nothing is read while the
+    company's sale lines don't come from imports."""
+    _need_person(by)
+    company = profile.company
+    _same_company(company, by)
+    if not lines.lines_on(company):
+        raise DomainError(_("Turn on imported sale lines in the sales settings first."))
+    if not profile.is_active:
+        raise DomainError(_("This profile is archived."))
+    clean = accept_document(file, allowed=("csv", "xlsx"))
+    kind = clean.name.rsplit(".", 1)[-1]
+    if kind != profile.file_kind:
+        raise DomainError(
+            _("%(profile)s reads %(kind)s files.")
+            % {"profile": profile.name, "kind": profile.get_file_kind_display()}
+        )
+    imp = SalesImport(company=company, profile=profile, created_by=by)
+    imp.file.save(clean.name, clean, save=False)
+    imp.save()
+    _record(SalesAction.IMPORT_STARTED, company, by, imp, profile=profile.pk)
+    pk = imp.pk
+    transaction.on_commit(lambda: tasks.process_import.delay(pk))
+    _bump(company.pk, PULSE_LINES)
+    return imp
+
+
+def match_code(company, *, by: Membership, code: str, product) -> int:
+    """A code of the match list means `product`: remembered, and every waiting line settled.
+    Each line commits on its own (a long list never holds the stock's locks for long)."""
+    _need_person(by)
+    return lines.match(company, code, product, by=by)
+
+
+@transaction.atomic
+def skip_code(company, *, by: Membership, code: str) -> int:
+    """The waiting lines with `code` aren't goods the stock keeps (a bag, a service)."""
+    _need_person(by)
+    if not (code or "").strip():
+        raise DomainError(_("Pick a code."))
+    return lines.skip(company, code, by=by)
+
+
+@transaction.atomic
+def map_cashier(pos: PosCashier, *, by: Membership, membership: Membership | None) -> PosCashier:
+    """The program's cashier code means this person (or nobody): their imported receipts
+    follow, earlier ones included."""
+    _need_person(by)
+    pos = PosCashier.objects.select_for_update().get(pk=pos.pk)
+    company = pos.company
+    _same_company(company, membership)
+    if membership is not None and membership.status != Membership.Status.APPROVED:
+        raise DomainError(_("%(person)s isn't on the team now.") % {"person": membership})
+    before = pos.membership_id
+    if before == (membership.pk if membership else None):
+        return pos
+    pos.membership = membership
+    pos.save(update_fields=["membership", "updated_at"])
+    Sale.objects.imported().filter(company=company, pos_cashier=pos).update(
+        cashier=membership, updated_at=timezone.now()
+    )
+    _record(
+        SalesAction.CASHIER_MAPPED,
+        company,
+        by,
+        pos,
+        code=pos.code,
+        before=before,
+        membership=membership.pk if membership else None,
+    )
+    _bump(company.pk, PULSE_LINES)
+    return pos

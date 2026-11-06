@@ -8,7 +8,15 @@ from datetime import date
 
 from celery import shared_task
 
-from apps.sales import rollup, scan
+from apps.sales import lines, rollup, scan
+
+
+@shared_task
+def process_import(import_id: int) -> str | None:
+    """Read an uploaded file of sale lines (PLAN-OWNER §14.7): receipts, lines, stock, the day
+    check and the legal price check. Idempotent: only a queued import is read."""
+    imp = lines.process(import_id)
+    return imp.status if imp is not None else None
 
 
 @shared_task
