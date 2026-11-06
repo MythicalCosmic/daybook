@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.4.2 — 2026-11-07
+
+### New: the final payslip for someone who leaves (Payroll)
+- The offboarding wizard has a **Final payslip** step (for people who manage payroll): a preview of the
+  last pay (the days worked through the last working day, other pay, fines, advances deducted in full,
+  the net or what the person would still owe) and two answers: "Prepare the final payslip" and "Unused
+  leave days to pay out".
+- When the person leaves, a **draft final run** is made for the leaving month and payroll managers hear
+  about it in the owner bot. Unused leave is paid at the average day of the last months' regular pay
+  (12 months and calendar days by default: Settings › Payroll › Leaving, to confirm with your accountant).
+  It is finalized, published and paid like any run; its PDF says "Final payslip".
+- The month's regular run skips the person (a draft moves their payslip over; an already finalized one
+  leaves only the payout and what is still open). When the pay can't cover the advances, the rest stays
+  as money the person owes in Finance.
+
 ## 0.4.1 — 2026-11-07
 
 ### New
