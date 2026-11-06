@@ -7,10 +7,10 @@ from decimal import Decimal as D
 import pytest
 
 from apps.finance.models import CompanyRate
-from apps.payroll import services
+from apps.payroll import providers, services
 from apps.payroll.models import PayrollRun, PayslipLine
 from apps.payroll.tests.conftest import local
-from apps.payroll.tests.test_settlement import HIRED, leave
+from apps.payroll.tests.test_settlement import HIRED, LAST_DAY, give_advance, history, leave
 
 pytestmark = pytest.mark.django_db
 Kind = PayslipLine.Kind
@@ -118,3 +118,23 @@ def test_a_dollar_salary_is_converted_on_the_last_day_it_is_booked_on(shop, team
     assert run.usd_rate == D("12000")
     # 11 of 26 days of 12 000 000 so‘m.
     assert run.payslips.get().base_pay == D("5076923.08")
+
+
+def test_the_spreadsheet_of_a_final_run_shows_the_unused_leave_paid_out(shop, team, cash):
+    """The §3.17 settlement exported for the accountant: 2 200 000 + 990 000 of unused leave
+    - 500 000 of advance = 2 690 000, every amount in a column of its own."""
+    staff = team
+    history(shop, staff.ali)
+    give_advance(staff, cash, staff.ali, "500000")
+    leave(staff.ali)
+    run = services.create_final_run(
+        staff.ali, by=staff.accountant, last_day=LAST_DAY, leave_days="5.5"
+    )
+
+    (row,) = providers.run_rows(staff.accountant, {"run": run.pk})
+
+    assert row["leave_payout"] == D("990000.00")
+    parts = ("base_pay", "extra", "bonuses", "leave_payout", "fines", "taxes", "advances")
+    assert sum(row[part] for part in parts) + row["reimbursements"] == row["net"]
+    assert row["net"] == D("2690000.00")
+    assert "leave_payout" in [column[0] for column in providers.RUN_COLUMNS]

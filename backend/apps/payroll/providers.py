@@ -7,7 +7,7 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from django.utils.translation import gettext as _
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_lazy, pgettext_lazy
 from rest_framework import serializers
 
 from apps.console.registry import CalendarItem, QueueAction, QueueItem
@@ -192,6 +192,7 @@ RUN_COLUMNS = [
     ("base_pay", gettext_lazy("Base pay"), "money"),
     ("extra", gettext_lazy("Overtime, nights, holidays"), "money"),
     ("bonuses", gettext_lazy("Bonuses"), "money"),
+    ("leave_payout", pgettext_lazy("payslip line", "Unused leave paid out"), "money"),
     ("fines", gettext_lazy("Fines and deductions"), "money"),
     ("taxes", gettext_lazy("Taxes withheld"), "money"),
     ("advances", gettext_lazy("Advances repaid"), "money"),
@@ -238,6 +239,7 @@ def run_rows(member: Membership, params: dict):
             "base_pay": payslip.base_pay,
             "extra": total(Kind.OVERTIME, Kind.NIGHT_WORK, Kind.HOLIDAY_WORK, Kind.PIECE),
             "bonuses": total(Kind.BONUS, Kind.ALLOWANCE, Kind.TASK_REWARD),
+            "leave_payout": total(Kind.LEAVE_PAYOUT),
             "fines": total(Kind.FINE, Kind.DEDUCTION),
             "taxes": total(Kind.INCOME_TAX, Kind.INPS),
             "advances": total(Kind.ADVANCE),
