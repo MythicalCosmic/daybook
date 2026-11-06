@@ -201,6 +201,6 @@ def planned_gaps_body(gaps: list) -> str:
             line += " · " + _("%(have)d of %(need)d") % {"have": gap.have, "need": gap.need}
         lines.append(line)
     if len(gaps) > PLANNED_LINES:
-        lines.append(_("and %(count)d more") % {"count": len(gaps) - PLANNED_LINES})
+        lines.append(_("More gaps: %(count)d") % {"count": len(gaps) - PLANNED_LINES})
     lines.append(_("Add a qualified pharmacist to the roster."))
     return "\n".join(lines)
