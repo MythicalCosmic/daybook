@@ -175,6 +175,28 @@ def test_an_asset_bought_or_booked_in_finance_never_turns_low_value(
         services.update_asset(booked, by=owner, category=uniforms)
 
 
+def test_the_cost_of_an_asset_bought_in_finance_stays_the_expense(
+    shop, owner, cash, equipment, chilonzor, category
+):
+    """Before its first month is booked the facts may be corrected, but the cost of an asset
+    whose purchase left the P&L is that purchase: anything else would lose or add money."""
+    txn = buy(shop, owner, cash, equipment, chilonzor, amount=6_000_000, day=date(2026, 11, 2))
+    asset = services.create_asset(
+        shop,
+        by=owner,
+        category=category,
+        name="Muzlatgich",
+        purchase_transaction=txn,
+        in_service_on=date(2026, 11, 3),
+    )
+    with pytest.raises(DomainError):
+        services.update_asset(asset, by=owner, cost=D(5_000_000))
+    # The form sends the cost back unchanged with every correction.
+    services.update_asset(asset, by=owner, cost=D(6_000_000), life_months=60)
+    asset.refresh_from_db()
+    assert asset.cost == D("6000000.00") and asset.life_months == 60
+
+
 def test_an_asset_that_books_no_depreciation_keeps_its_purchases_as_expenses(
     shop, owner, cash, equipment, chilonzor, category
 ):

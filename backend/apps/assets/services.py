@@ -662,6 +662,18 @@ def update_asset(asset: Asset, *, by: Membership, **fields) -> Asset:
     for money_field, label in (("cost", _("Cost")), ("salvage_value", _("Residual value"))):
         if money_field in fields:
             fields[money_field] = _money(fields[money_field], name=label, allow_zero=True)
+    txn = asset.purchase_transaction
+    # The purchase left the P&L whole: depreciating another cost would lose or add money.
+    if (
+        "cost" in fields
+        and txn is not None
+        and txn.capitalized
+        and fields["cost"] != -txn.base_amount
+    ):
+        raise DomainError(
+            _("The cost must be the whole expense (%(amount)s); split a mixed purchase first.")
+            % {"amount": -txn.base_amount}
+        )
     if "opening_accumulated" in fields and fields["opening_accumulated"] not in (None, ""):
         fields["opening_accumulated"] = _money(
             fields["opening_accumulated"], name=_("Earlier depreciation"), allow_zero=True
