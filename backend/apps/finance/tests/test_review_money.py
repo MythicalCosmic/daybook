@@ -484,3 +484,30 @@ def test_a_loan_due_later_does_not_hold_back_the_usual_supplier_payments(fin, bo
 
     assert data["basis"]["daily_paid"] == "400000.00"
     assert data["basis"]["suppliers_from"] == due.isoformat()
+
+
+# F9: another branch's recurring payment stays hidden in its History tab too --------------------
+
+
+def test_the_history_of_another_branchs_bill_stays_hidden(fin, boss, role, person, owner_api):
+    """Recurring payments are branch-scoped, but their History check only asked for the
+    company: a Chilonzor manager read the Yunusobod rent (name, amount, every change) through
+    the audit endpoint."""
+    from apps.companies.models import Branch
+    from apps.members.permissions import Perm
+
+    chilonzor = Branch.objects.create(company=fin, name="Chilonzor", code="CHL")
+    yunusobod = Branch.objects.create(company=fin, name="Yunusobod", code="YNS")
+    theirs = rule(fin, boss, name="Yunusobod rent", branch=yunusobod)
+    ours = rule(fin, boss, name="Chilonzor rent", branch=chilonzor)
+    head = person(fin, role(fin, "Head", [Perm.FINANCE_VIEW]), branches=[chilonzor])
+    client = owner_api(head)
+
+    def history(target):
+        return client.get(
+            f"/api/v1/owner/companies/{fin.pk}/audit/records/",
+            {"target_type": "recurringrule", "target_id": target.pk},
+        )
+
+    assert history(ours).status_code == 200
+    assert history(theirs).status_code == 404
