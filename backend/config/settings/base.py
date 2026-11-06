@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     "apps.knowledge",
     "apps.agenda",
     "apps.crm",
+    "apps.assets",
 ]
 
 AUTH_USER_MODEL = "accounts.User"

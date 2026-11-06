@@ -216,6 +216,7 @@ def run_rate(company, today: date, *, branch_ids) -> dict:
     )
     rows = (
         window.filter(kind__in=(Transaction.Kind.INCOME, Transaction.Kind.EXPENSE))
+        .exclude(capitalized=True)  # an asset bought once is not the usual daily spending
         .exclude(source_type=recurring.SOURCE)
         .exclude(category_id__in=list(planned))
     )

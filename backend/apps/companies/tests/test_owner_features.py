@@ -27,7 +27,17 @@ def test_lists_every_module_with_its_switch(company, owner, owner_api):
     data = response.json()
     assert data["features"] == []
     keys = [module["key"] for module in data["modules"]]
-    assert keys == ["finance", "sales", "stock", "attendance", "hr", "payroll", "ai", "recognition"]
+    assert keys == [
+        "finance",
+        "sales",
+        "stock",
+        "attendance",
+        "hr",
+        "payroll",
+        "ai",
+        "recognition",
+        "assets",
+    ]
     assert not any(module["enabled"] for module in data["modules"])
 
 

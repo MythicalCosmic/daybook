@@ -74,6 +74,7 @@ OWNER_APPS = (
     "knowledge",
     "agenda",
     "crm",
+    "assets",
 )
 
 

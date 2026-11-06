@@ -64,6 +64,7 @@ def actuals(company, month: date, *, branch_ids) -> dict[int, Decimal]:
         queries.posted_rows(company, branch_ids=branch_ids)
         .filter(
             kind__in=queries.PNL_KINDS,
+            capitalized=False,  # bought as an asset: its depreciation counts instead
             category__kind=Category.Kind.EXPENSE,
             occurred_on__range=(month, month_end(month)),
         )

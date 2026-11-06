@@ -14,6 +14,10 @@ class FinanceAction(models.TextChoices):
     TRANSACTION_APPROVED = "finance.transaction_approved", _("Approved a ledger entry")
     TRANSACTION_REJECTED = "finance.transaction_rejected", _("Rejected a ledger entry")
     TRANSACTION_VOIDED = "finance.transaction_voided", _("Voided a ledger entry")
+    TRANSACTION_CAPITALIZED = (
+        "finance.transaction_capitalized",
+        _("Turned an expense into a fixed asset purchase"),
+    )
     RECEIPT_ADDED = "finance.receipt_added", _("Attached a receipt")
     RECEIPT_REMOVED = "finance.receipt_removed", _("Removed a receipt")
     TRANSFER_MADE = "finance.transfer_made", _("Moved money between accounts")

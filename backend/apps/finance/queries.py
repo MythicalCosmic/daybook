@@ -213,7 +213,7 @@ def totals(company, start: date, end: date, group_by: str | None = None, *, bran
     Owner contributions, draws, transfers and opening balances never count. With `group_by`
     ("day", "week", "month") a zero-filled `series` too."""
     rows = posted_rows(company, branch_ids=branch_ids).filter(
-        kind__in=PNL_KINDS, occurred_on__range=(start, end)
+        kind__in=PNL_KINDS, capitalized=False, occurred_on__range=(start, end)
     )
     result = _signed_pnl(rows)
     if group_by:
@@ -262,7 +262,7 @@ def pnl(
     with nothing in either range are left out.
     """
     periods = period_list(start, end, group)
-    rows = posted_rows(company, branch_ids=branch_ids).filter(kind__in=PNL_KINDS)
+    rows = posted_rows(company, branch_ids=branch_ids).filter(kind__in=PNL_KINDS, capitalized=False)
     monthly = (
         rows.filter(occurred_on__range=(start, end))
         .annotate(month=TruncMonth("occurred_on"))
@@ -818,7 +818,7 @@ def filter_transactions(rows: QuerySet[Transaction], filters: dict) -> QuerySet[
     if side := filters.get("pnl"):
         # The rows behind a P&L line ("income" or "expense"), the way `totals` counts them: every
         # P&L kind by its category's kind, so refunds, write-offs and exchange differences are in.
-        rows = rows.filter(kind__in=PNL_KINDS, category__kind=side)
+        rows = rows.filter(kind__in=PNL_KINDS, capitalized=False, category__kind=side)
     if (low := filters.get("min")) is not None:
         rows = rows.filter(Q(base_amount__gte=low) | Q(base_amount__lte=-low))
     if (high := filters.get("max")) is not None:
@@ -1059,6 +1059,7 @@ def category_trend(company, category: Category, months: int, *, branch_ids, toda
     rows = posted_rows(company, branch_ids=branch_ids).filter(
         Q(category=category) | Q(category__parent=category),
         kind__in=PNL_KINDS,
+        capitalized=False,
         occurred_on__range=(first, today),
     )
     sums = {
@@ -1092,6 +1093,7 @@ def category_trend(company, category: Category, months: int, *, branch_ids, toda
         .filter(
             Q(category=category) | Q(category__parent=category),
             kind__in=PNL_KINDS,
+            capitalized=False,
             occurred_on__range=(last_start, last_end),
         )
         .aggregate(total=Sum("base_amount"))["total"]
@@ -1140,6 +1142,7 @@ def overview(company, *, branch_ids, today: date, mask_sensitive: bool = False) 
         posted_rows(company, branch_ids=branch_ids)
         .filter(
             kind__in=PNL_KINDS,
+            capitalized=False,
             occurred_on__range=(month_start, today),
             category__kind=Category.Kind.EXPENSE,
         )
@@ -1235,7 +1238,7 @@ def party_totals(party: Counterparty, *, branch_ids) -> dict:
     """Lifetime money with a counterparty: income from them and expenses with them (P&L
     basis), and what moved through the accounts."""
     rows = posted_rows(party.company, branch_ids=branch_ids).filter(counterparty=party)
-    pnl_part = _signed_pnl(rows.filter(kind__in=PNL_KINDS))
+    pnl_part = _signed_pnl(rows.filter(kind__in=PNL_KINDS, capitalized=False))
     flows = rows.filter(account__isnull=False).aggregate(
         money_in=Sum("base_amount", filter=Q(base_amount__gt=0)),
         money_out=Sum("base_amount", filter=Q(base_amount__lt=0)),

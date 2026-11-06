@@ -37,6 +37,7 @@ const ICONS: Record<CompanyFeature, LucideIcon> = {
   payroll: Banknote,
   ai: Sparkles,
   recognition: HeartHandshake,
+  assets: Boxes,
 };
 /** Modules that work best together (a hint, not a rule). */
 const PAIRS: Partial<Record<CompanyFeature, CompanyFeature[]>> = {
