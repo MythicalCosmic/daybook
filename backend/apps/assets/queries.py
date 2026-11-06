@@ -454,8 +454,8 @@ def _replacement(asset: Asset, settings, on: date) -> Decimal:
     """What buying it again will cost on `on`: its cost grown by the planning inflation."""
     bought = _acquired(asset)
     years = Decimal(max((on - bought).days, 0)) / Decimal("365.25")
-    growth = (1 + settings.replacement_inflation / 100) ** float(years)
-    return quantize((asset.cost) * Decimal(str(growth)))
+    growth = (1 + float(settings.replacement_inflation) / 100) ** float(years)
+    return quantize(asset.cost * Decimal(str(growth)))
 
 
 def planning(company, *, branch_ids: list[int] | None, today: date | None = None) -> dict:
@@ -512,20 +512,19 @@ def planning(company, *, branch_ids: list[int] | None, today: date | None = None
                     }
                 )
         if asset.status in (Asset.Status.IN_STORAGE, Asset.Status.SUSPENDED):
-            changed = (
-                asset.events.filter(
-                    kind__in=(
-                        AssetEvent.Kind.SUSPENDED,
-                        AssetEvent.Kind.NOTE,
-                        AssetEvent.Kind.CREATED,
-                        AssetEvent.Kind.RETURNED,
-                    )
-                )
+            # Idle since it was mothballed, or since it last came back or arrived.
+            kinds = (
+                (AssetEvent.Kind.SUSPENDED,)
+                if asset.status == Asset.Status.SUSPENDED
+                else (AssetEvent.Kind.CREATED, AssetEvent.Kind.RETURNED, AssetEvent.Kind.NOTE)
+            )
+            since = (
+                asset.events.filter(kind__in=kinds)
                 .order_by("-on")
                 .values_list("on", flat=True)
                 .first()
             )
-            if changed is None or (today - changed).days >= 60:
+            if since is None or (today - since).days >= 60:
                 idle.append(asset)
     upkeep = []
     soon = today + timedelta(days=max(settings.remind_days, 30))

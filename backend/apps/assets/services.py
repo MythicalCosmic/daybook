@@ -167,6 +167,18 @@ def _live(asset: Asset) -> None:
         raise DomainError(_("This asset was disposed of."))
 
 
+def _next_on_cadence(company, start: date, months: int) -> date:
+    """The first date of the cadence (every `months` from `start`) from today on: an asset
+    entered with years of history isn't "overdue since 2022" for a service nobody recorded."""
+    today = _today(company)
+    day = _add_months(start, months)
+    steps = 1
+    while day < today and steps < 1200:
+        steps += 1
+        day = _add_months(start, months * steps)
+    return day
+
+
 def _add_months(day: date, months: int) -> date:
     first = engine.add_months(day.replace(day=1), months)
     return first.replace(day=min(day.day, engine.days_in(first)))
@@ -541,9 +553,11 @@ def create_asset(company, *, by: Membership | None, category: AssetCategory, nam
     if asset.verify_months is None:
         asset.verify_months = category.verify_months
     if asset.in_service_on and asset.service_months and not asset.next_service_on:
-        asset.next_service_on = _add_months(asset.in_service_on, asset.service_months)
+        asset.next_service_on = _next_on_cadence(company, asset.in_service_on, asset.service_months)
     if asset.in_service_on and asset.verify_months and not asset.next_verification_on:
-        asset.next_verification_on = _add_months(asset.in_service_on, asset.verify_months)
+        asset.next_verification_on = _next_on_cadence(
+            company, asset.in_service_on, asset.verify_months
+        )
     _check_facts(asset)
     asset.save()
     details = {}
