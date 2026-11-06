@@ -8,7 +8,8 @@ person the author may give work to and a time to come; the bot card then offers 
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy, ngettext_lazy
 
-from apps.ai.agents.registry import Agent, EventTemplate, Field, register
+from apps.ai import drafting
+from apps.ai.agents.registry import Agent, EventTemplate, Field, Prompt, register
 
 KEY = "voice_tasks"
 # How long "Undo" stays on the card after an automatic create.
@@ -36,6 +37,12 @@ AGENT = register(
         ),
         icon="mic",
         needs_claude=False,
+        prompts=(
+            Prompt(
+                gettext_lazy("Turning a voice note or a typed instruction into tasks"),
+                drafting.SYSTEM,
+            ),
+        ),
         default_enabled=True,
         needs_speech=True,
         fields=(

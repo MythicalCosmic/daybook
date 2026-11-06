@@ -126,6 +126,8 @@ def agent_detail(company, key: str, *, can_configure: bool, now: datetime | None
         # An agent that is off or can't work here expects nothing.
         "upcoming": [] if scene == "asleep" else _upcoming(company, agent, state, now),
         "scene": scene,
+        "prompts": [{"label": str(prompt.label), "text": prompt.text} for prompt in agent.prompts],
+        "instructions": state.instructions,
     }
 
 

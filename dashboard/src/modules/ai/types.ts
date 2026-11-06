@@ -164,6 +164,8 @@ export interface Agent {
 export interface AgentPatch {
   enabled?: boolean;
   config?: Record<string, AgentConfigValue>;
+  /** The owner's own instructions ("" takes them away). */
+  instructions?: string;
 }
 
 // ─── One agent's page (`GET ai/agents/{key}/`, briefs/v5-agent-page.md) ─────
@@ -224,6 +226,12 @@ export interface AgentUpcoming {
   label: string;
 }
 
+/** What an agent asks Claude: the job, and its system prompt as Claude reads it (English). */
+export interface AgentPrompt {
+  label: string;
+  text: string;
+}
+
 export interface AgentDetail extends Agent {
   runs: AgentRun[];
   calls: AgentCall[];
@@ -231,6 +239,10 @@ export interface AgentDetail extends Agent {
   upcoming: AgentUpcoming[];
   /** What its scene shows (AgentScene.vue): at work, on and waiting, or asleep. */
   scene: SceneState;
+  /** What it asks Claude; none when it works by fixed rules. */
+  prompts: AgentPrompt[];
+  /** The owner's own instructions, added after each prompt. */
+  instructions: string;
 }
 
 export type ActivityLevel = "info" | "success" | "warning";

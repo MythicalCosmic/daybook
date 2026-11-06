@@ -19,6 +19,7 @@ from django.utils import timezone
 from django.utils.translation import gettext as _
 
 from apps.ai import agents, availability, conf, speech
+from apps.ai import instructions as owner_instructions
 from apps.ai import tasks as jobs
 from apps.ai.agents import runner, voice_tasks
 from apps.ai.audit_actions import AIAction
@@ -253,17 +254,38 @@ def agent_unavailable(company, agent) -> str:
 
 @transaction.atomic
 def update_agent(
-    company, key: str, *, by: Membership, enabled: bool | None = None, config: dict | None = None
+    company,
+    key: str,
+    *,
+    by: Membership,
+    enabled: bool | None = None,
+    config: dict | None = None,
+    instructions: str | None = None,
 ):
-    """Switch an agent on or off and change its settings (checked against its fields)."""
+    """Switch an agent on or off, change its settings (checked against its fields) and the
+    owner's own instructions for its Claude calls (apps.ai.instructions; only for an agent that
+    asks Claude)."""
     _ensure_may_configure(by)
     agent = agents.get(key)
     if agent is None:
         raise DomainError(_("There is no such agent."))
     state = AgentState.objects.select_for_update().get(pk=agents.state_of(company, key).pk)
-    before = {"enabled": state.enabled, "config": dict(state.config or {})}
+    before = {
+        "enabled": state.enabled,
+        "config": dict(state.config or {}),
+        "instructions": state.instructions,
+    }
     if config is not None:
         state.config = agents.clean_config(agent, config, agents.config_of(agent, state))
+    if instructions is not None:
+        text = instructions.strip()
+        if text and not agent.prompts:
+            raise DomainError(_("This agent works by fixed rules: it has no instructions."))
+        if len(text) > owner_instructions.MAX_LENGTH:
+            raise DomainError(
+                _("At most %(max)d characters.") % {"max": owner_instructions.MAX_LENGTH}
+            )
+        state.instructions = text
     if enabled is not None and enabled != state.enabled:
         if enabled and agent.needs_claude and not availability.configured():
             raise DomainError(_("This agent needs Claude: add ANTHROPIC_API_KEY on the server."))
@@ -271,7 +293,11 @@ def update_agent(
     if state.enabled and agent.scheduled and (config is not None or not before["enabled"]):
         runner.schedule_first_run(state)
     state.save()
-    after = {"enabled": state.enabled, "config": dict(state.config or {})}
+    after = {
+        "enabled": state.enabled,
+        "config": dict(state.config or {}),
+        "instructions": state.instructions,
+    }
     if changed := audit.diff(before, after):
         audit.record(
             AIAction.AGENT_CHANGED,

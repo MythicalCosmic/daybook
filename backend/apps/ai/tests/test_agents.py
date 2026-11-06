@@ -302,6 +302,53 @@ def test_with_claude_the_plan_has_a_summary(
     assert request["output_config"]["effort"] == "low"
 
 
+def test_the_owners_instructions_come_after_the_agents_own_prompt(
+    crew, fake_claude, sent_messages, django_capture_on_commit_callbacks
+):
+    company = crew["giver"].company
+    late_task(crew, hours=27)
+    state = agents.state_of(company, morning_plan.KEY)
+    state.instructions = "Mention the fridge checks first."
+    state.save(update_fields=["instructions"])
+    fake_claude.script(
+        fake_claude.json({"summary": "Muzlatgichlar joyida. Bitta vazifa kechikdi."})
+    )
+
+    with django_capture_on_commit_callbacks(execute=True):
+        morning_plan.run(company, agents.state_of(company, morning_plan.KEY), local(8, 35))
+
+    [request] = fake_claude.requests
+    system = (
+        request["system"]
+        if isinstance(request["system"], str)
+        else "".join(block["text"] for block in request["system"])
+    )
+    assert system.startswith(morning_plan.SYSTEM)
+    assert system.endswith(
+        "<company_instructions>\nMention the fridge checks first.\n</company_instructions>"
+    )
+    assert system.index(morning_plan.SYSTEM) < system.index("Mention the fridge")
+
+
+def test_without_instructions_the_prompt_is_the_agents_own(
+    crew, fake_claude, sent_messages, django_capture_on_commit_callbacks
+):
+    company = crew["giver"].company
+    late_task(crew, hours=27)
+    fake_claude.script(fake_claude.json({"summary": "Bitta vazifa kechikmoqda. Tekshiring."}))
+
+    with django_capture_on_commit_callbacks(execute=True):
+        morning_plan.run(company, agents.state_of(company, morning_plan.KEY), local(8, 35))
+
+    [request] = fake_claude.requests
+    system = (
+        request["system"]
+        if isinstance(request["system"], str)
+        else "".join(block["text"] for block in request["system"])
+    )
+    assert system == morning_plan.SYSTEM
+
+
 def test_the_next_plan_is_on_a_workday(crew):
     company = crew["giver"].company
     company.workdays = [0, 1, 2, 3, 4]  # Monday to Friday

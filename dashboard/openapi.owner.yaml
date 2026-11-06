@@ -18437,6 +18437,14 @@ components:
             * `working` - working
             * `idle` - idle
             * `asleep` - asleep
+        prompts:
+          type: array
+          items:
+            $ref: '#/components/schemas/AIAgentPrompt'
+          description: What it asks Claude; none when it works by fixed rules.
+        instructions:
+          type: string
+          description: The owner's own instructions, added after each prompt.
       required:
       - available
       - calls
@@ -18445,11 +18453,13 @@ components:
       - enabled
       - fields
       - icon
+      - instructions
       - key
       - last_run_at
       - name
       - needs_claude
       - next_run_at
+      - prompts
       - running
       - runs
       - scene
@@ -18506,6 +18516,18 @@ components:
       required:
       - label
       - value
+    AIAgentPrompt:
+      type: object
+      properties:
+        label:
+          type: string
+          description: The job it asks Claude to do, in the reader's language.
+        text:
+          type: string
+          description: The system prompt as Claude reads it (English).
+      required:
+      - label
+      - text
     AIAgentRun:
       type: object
       properties:
@@ -28236,6 +28258,9 @@ components:
         config:
           type: object
           additionalProperties: {}
+        instructions:
+          type: string
+          maxLength: 1000
     PatchedAISettingsRequest:
       type: object
       properties:

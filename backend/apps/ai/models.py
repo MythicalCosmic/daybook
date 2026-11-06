@@ -188,6 +188,8 @@ class AgentState(TenantModel):
     last_error = models.CharField(max_length=200, blank=True)
     # Set while a run is queued or going ("Run now", a tick), cleared when it ends.
     running_since = models.DateTimeField(null=True, blank=True)
+    # The owner's own instructions for its Claude calls, after its own (apps.ai.instructions).
+    instructions = models.TextField(blank=True, default="")
 
     class Meta:
         constraints = [

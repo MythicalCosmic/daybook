@@ -58,9 +58,9 @@ from django.utils.translation import gettext_lazy, ngettext_lazy
 from pydantic import BaseModel
 from pydantic import Field as PydanticField
 
-from apps.ai import availability, bot_messages, client, events
+from apps.ai import availability, bot_messages, client, events, instructions
 from apps.ai.agents import morning_plan, registry, runner
-from apps.ai.agents.registry import Agent, EventTemplate, Field
+from apps.ai.agents.registry import Agent, EventTemplate, Field, Prompt
 from apps.ai.tools.scrub import scrub_data
 from apps.companies.models import Feature
 from apps.core.exceptions import DomainError
@@ -742,7 +742,7 @@ def bonus_reasons(company, chosen: list[Candidate], period: date) -> list[str]:
                 schema=BonusReasons,
                 effort="low",
                 max_tokens=MAX_TOKENS,
-                system=BONUS_SYSTEM,
+                system=instructions.system_for(company, KEY, BONUS_SYSTEM),
                 user=[{"type": "text", "text": f"<people>\n{_json(people)}\n</people>"}],
             )
         except client.ClaudeError:
@@ -862,7 +862,7 @@ def _opening(member: Membership, system: str, facts: dict) -> str:
             schema=Opening,
             effort="low",
             max_tokens=MAX_TOKENS,
-            system=system,
+            system=instructions.system_for(company, KEY, system),
             user=[
                 {
                     "type": "text",
@@ -929,6 +929,11 @@ AGENT = registry.register(
         ),
         icon="briefcase",
         needs_claude=False,
+        prompts=(
+            Prompt(gettext_lazy("The morning HR note"), DIGEST_SYSTEM),
+            Prompt(gettext_lazy("Payroll before pay day"), PAYROLL_SYSTEM),
+            Prompt(gettext_lazy("A bonus reason"), BONUS_SYSTEM),
+        ),
         default_enabled=True,
         fields=(
             Field("at", "time", gettext_lazy("Send at"), "09:00"),

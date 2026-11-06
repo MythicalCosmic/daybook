@@ -19,9 +19,9 @@ from django.utils.translation import gettext_lazy
 from pydantic import BaseModel
 from pydantic import Field as PydanticField
 
-from apps.ai import availability, client, conf, events
+from apps.ai import availability, client, conf, events, instructions
 from apps.ai.agents import registry
-from apps.ai.agents.registry import Agent, EventTemplate, Field
+from apps.ai.agents.registry import Agent, EventTemplate, Field, Prompt
 from apps.ai.tools.scrub import scrub
 from apps.core import uploads
 from apps.tasks.models import Task, TaskComment
@@ -137,7 +137,7 @@ def _ask_claude(task: Task, language: str) -> PhotoVerdict:
         schema=PhotoVerdict,
         effort="low",
         max_tokens=4000,
-        system=SYSTEM,
+        system=instructions.system_for(task.company, KEY, SYSTEM),
         user=[
             {
                 "type": "image",
@@ -178,6 +178,7 @@ AGENT = registry.register(
         ),
         icon="scan-eye",
         needs_claude=True,
+        prompts=(Prompt(gettext_lazy("Checking a proof photo"), SYSTEM),),
         default_enabled=False,
         fields=(
             Field(

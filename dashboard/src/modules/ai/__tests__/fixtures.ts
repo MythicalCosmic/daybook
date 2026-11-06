@@ -187,6 +187,9 @@ export function agentDetail(overrides: Partial<AgentDetail> = {}): AgentDetail {
       { at: null, kind: "item", label: "Tasks due in the next 24 hours: 4" },
     ],
     scene: "idle",
+    // The deadline watcher works by fixed rules: no prompt, nothing to instruct.
+    prompts: [],
+    instructions: "",
     ...overrides,
   };
 }

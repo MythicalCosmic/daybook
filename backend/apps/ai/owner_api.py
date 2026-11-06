@@ -20,6 +20,7 @@ from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 
 from apps.ai import agents, availability, chat, conf, queries, services, speech
+from apps.ai import instructions as owner_instructions
 from apps.ai.agents import photo_checker
 from apps.ai.api import CREATE_ERRORS, DRAFT_RELATIONS, DraftEndpoints
 from apps.ai.models import AIDraft, AISettings
@@ -365,6 +366,13 @@ class AIAgentUpcomingSerializer(serializers.Serializer):
     label = serializers.CharField()
 
 
+class AIAgentPromptSerializer(serializers.Serializer):
+    label = serializers.CharField(
+        help_text="The job it asks Claude to do, in the reader's language."
+    )
+    text = serializers.CharField(help_text="The system prompt as Claude reads it (English).")
+
+
 class AIAgentDetailSerializer(AIAgentSerializer):
     runs = AIAgentRunSerializer(many=True, help_text="The newest 30 runs, newest first.")
     calls = AIAgentCallSerializer(
@@ -378,11 +386,23 @@ class AIAgentDetailSerializer(AIAgentSerializer):
         ["working", "idle", "asleep"],
         help_text="working while it runs, idle when on and able to work, else asleep.",
     )
+    prompts = AIAgentPromptSerializer(
+        many=True, help_text="What it asks Claude; none when it works by fixed rules."
+    )
+    instructions = serializers.CharField(
+        allow_blank=True, help_text="The owner's own instructions, added after each prompt."
+    )
 
 
 class AIAgentUpdateSerializer(serializers.Serializer):
     enabled = serializers.BooleanField(required=False)
     config = serializers.DictField(required=False)
+    instructions = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        max_length=owner_instructions.MAX_LENGTH,
+        trim_whitespace=True,
+    )
 
 
 class AIQueuedSerializer(serializers.Serializer):

@@ -19,9 +19,9 @@ from django.utils.translation import gettext_lazy, ngettext
 from pydantic import BaseModel
 from pydantic import Field as PydanticField
 
-from apps.ai import availability, bot_messages, client, events
+from apps.ai import availability, bot_messages, client, events, instructions
 from apps.ai.agents import registry, runner
-from apps.ai.agents.registry import Agent, EventTemplate, Field
+from apps.ai.agents.registry import Agent, EventTemplate, Field, Prompt
 from apps.members import departments
 from apps.members.models import Membership
 from apps.members.permissions import Perm
@@ -115,6 +115,13 @@ class PlanSummary(BaseModel):
     summary: str = PydanticField(description="Two short sentences, in the reader's language.")
 
 
+SYSTEM = (
+    "You write a two-sentence morning summary for a pharmacy team's manager from the numbers "
+    "given, in the requested language (Uzbek in Latin script). Use only these numbers; say what "
+    "matters first."
+)
+
+
 def _summary(member: Membership, day: dict) -> str:
     """Two sentences from Claude over the numbers; "" without Claude or on any failure."""
     company = member.company
@@ -134,11 +141,7 @@ def _summary(member: Membership, day: dict) -> str:
             schema=PlanSummary,
             effort="low",
             max_tokens=2000,
-            system=(
-                "You write a two-sentence morning summary for a pharmacy team's manager from "
-                "the numbers given, in the requested language (Uzbek in Latin script). Use only "
-                "these numbers; say what matters first."
-            ),
+            system=instructions.system_for(company, KEY, SYSTEM),
             user=[{"type": "text", "text": f"<language>{language}</language>\n{facts}"}],
         )
     except client.ClaudeError:
@@ -217,6 +220,7 @@ AGENT = registry.register(
         ),
         icon="sunrise",
         needs_claude=False,
+        prompts=(Prompt(gettext_lazy("The morning summary for a manager"), SYSTEM),),
         default_enabled=True,
         fields=(
             Field("at", "time", gettext_lazy("Send at"), "08:30"),

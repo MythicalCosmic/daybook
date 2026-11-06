@@ -19,7 +19,9 @@ export type Translate = (key: string, named?: Record<string, unknown>, plural?: 
 // ─── Sections ───────────────────────────────────────────────────────────────
 
 /** The page's sections in order: what it did, its internal log, tokens, what's next, settings. */
-export const AGENT_TABS = ["done", "log", "tokens", "next", "settings"] as const;
+export const AGENT_TABS = ["done", "log", "tokens", "next", "prompt", "settings"] as const;
+/** How long the owner's own instructions to an agent may be (apps.ai.instructions.MAX_LENGTH). */
+export const INSTRUCTIONS_MAX = 1000;
 export type AgentTab = (typeof AGENT_TABS)[number];
 
 // ─── Which agents work on a schedule ────────────────────────────────────────

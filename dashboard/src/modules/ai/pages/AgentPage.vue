@@ -8,7 +8,7 @@
  * what it did, its internal log (runs and Claude calls), tokens, what comes next, its settings.
  * Read-only without ai.configure (and the money hidden, never shown as 0).
  */
-import { Activity, Bot, CalendarClock, Coins, History, Play, Settings2 } from "@lucide/vue";
+import { Activity, Bot, CalendarClock, Coins, History, Play, ScrollText, Settings2 } from "@lucide/vue";
 import { computed, useId } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
@@ -38,6 +38,7 @@ import AgentKpis from "../components/AgentKpis.vue";
 import AgentLog from "../components/AgentLog.vue";
 import AgentScene from "../components/AgentScene.vue";
 import AgentSectionTabs, { type SectionTab } from "../components/AgentSectionTabs.vue";
+import AgentPrompt from "../components/AgentPrompt.vue";
 import AgentSettings from "../components/AgentSettings.vue";
 import AgentUpcoming from "../components/AgentUpcoming.vue";
 import AgentUsage from "../components/AgentUsage.vue";
@@ -82,7 +83,7 @@ const kpis = computed(() => (agent.value ? agentKpis(agent.value, { t, lang: fmt
 
 const tab = useRouteState("tab", rs.enum<AgentTab>(AGENT_TABS, "done"));
 const panelId = useId();
-const SECTION_ICONS = { done: Activity, log: History, tokens: Coins, next: CalendarClock, settings: Settings2 } as const;
+const SECTION_ICONS = { done: Activity, log: History, tokens: Coins, next: CalendarClock, prompt: ScrollText, settings: Settings2 } as const;
 const tabs = computed<SectionTab<AgentTab>[]>(() =>
   AGENT_TABS.map((id) => ({ id, label: t(`ai.agent.tab.${id}`), icon: SECTION_ICONS[id], count: id === "next" && agent.value?.upcoming.length ? agent.value.upcoming.length : undefined })),
 );
@@ -177,6 +178,7 @@ const agentsLink = computed(() => ({ name: "ai.agents", params: { companyId: com
           <AgentLog v-else-if="tab === 'log'" :agent="agent" :can-configure="canConfigure" :claude="claude" />
           <AgentUsage v-else-if="tab === 'tokens'" :agent="agent" :claude="claude" />
           <AgentUpcoming v-else-if="tab === 'next'" :items="agent.upcoming" :on="on" />
+          <AgentPrompt v-else-if="tab === 'prompt'" :agent="agent" :can-configure="canConfigure" />
           <AgentSettings v-else :agent="agent" :can-configure="canConfigure" :ai-on="aiOn" />
         </div>
       </section>

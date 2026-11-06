@@ -34,7 +34,7 @@ from django.db.models import Count
 from django.utils import timezone
 from pydantic import BaseModel, Field
 
-from apps.ai import availability, client, rules
+from apps.ai import availability, client, instructions, rules
 from apps.ai.models import AIDraft
 from apps.ai.tools.scrub import scrub
 from apps.members import departments
@@ -278,7 +278,8 @@ def _with_claude(author, text: str, *, language: str, people, now: datetime) -> 
         model=settings.AI_MODEL_DRAFTS,
         schema=TaskDraftSet,
         effort="low",
-        system=SYSTEM,
+        # The Voice tasks agent's own instructions, whoever drafts (a voice note, Smart add).
+        system=instructions.system_for(author.company, "voice_tasks", SYSTEM),
         user=[{"type": "text", "text": context}],
     )
     allowed = {c.id for c in people}

@@ -61,6 +61,8 @@ DETAIL_FIELDS = {
     "usage",
     "upcoming",
     "scene",
+    "prompts",
+    "instructions",
 }
 RUN_FIELDS = {
     "id",
@@ -266,7 +268,48 @@ def test_changing_an_agent_still_needs_ai_configure(owner_api, pharmacy):
     assert refused.status_code == 403
     changed = owner_api(pharmacy.owner).patch(url, {"enabled": False}, format="json")
     assert changed.status_code == 200 and changed.json()["enabled"] is False
-    assert set(changed.json()) == DETAIL_FIELDS - {"runs", "calls", "usage", "upcoming", "scene"}
+    assert set(changed.json()) == DETAIL_FIELDS - {
+        "runs",
+        "calls",
+        "usage",
+        "upcoming",
+        "scene",
+        "prompts",
+        "instructions",
+    }
+
+
+def test_the_page_shows_what_it_asks_claude_and_the_owner_adds_instructions(owner_api, pharmacy):
+    from apps.ai.agents import voice_tasks
+    from apps.ai.audit_actions import AIAction
+    from apps.audit.models import AuditLog
+
+    url = f"/api/v1/owner/companies/{pharmacy.company.pk}/ai/agents/{voice_tasks.KEY}/"
+    owner = owner_api(pharmacy.owner)
+    body = owner.get(url).json()
+    assert body["prompts"] == [
+        {"label": "Turning a voice note or a typed instruction into tasks", "text": drafting.SYSTEM}
+    ]
+    assert body["instructions"] == ""
+
+    saved = owner.patch(
+        url, {"instructions": "  Fridge problems are always urgent.  "}, format="json"
+    )
+
+    assert saved.status_code == 200, saved.content
+    assert owner.get(url).json()["instructions"] == "Fridge problems are always urgent."
+    row = AuditLog.objects.filter(action=AIAction.AGENT_CHANGED).latest("pk")
+    assert row.details["changes"] == {"instructions": ["", "Fridge problems are always urgent."]}
+    # Only someone who sets up AI; at most 1000 characters; a rules-only agent takes none.
+    assert (
+        owner_api(pharmacy.viewer).patch(url, {"instructions": "x"}, format="json").status_code
+        == 403
+    )
+    assert owner.patch(url, {"instructions": "x" * 1001}, format="json").status_code == 400
+    watcher = url.replace(voice_tasks.KEY, deadline_watcher.KEY)
+    assert owner.get(watcher).json()["prompts"] == []
+    assert owner.patch(watcher, {"instructions": "Be kind."}, format="json").status_code == 400
+    assert owner.patch(watcher, {"instructions": ""}, format="json").status_code == 200
 
 
 def test_the_scene_works_waits_or_sleeps(owner_api, pharmacy):

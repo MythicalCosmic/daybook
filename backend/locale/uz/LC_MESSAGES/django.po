@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-03 15:48+0500\n"
+"POT-Creation-Date: 2026-11-06 17:30+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -556,6 +556,18 @@ msgstr ""
 "oladi, uni mas’ul xodim tasdiqlaydi."
 
 #: backend/apps/ai/agents/hr_assistant.py
+msgid "The morning HR note"
+msgstr "Ertalabki HR xati"
+
+#: backend/apps/ai/agents/hr_assistant.py
+msgid "Payroll before pay day"
+msgstr "Maosh kunidan oldin ish haqi"
+
+#: backend/apps/ai/agents/hr_assistant.py
+msgid "A bonus reason"
+msgstr "Mukofot sababi"
+
+#: backend/apps/ai/agents/hr_assistant.py
 #: backend/apps/ai/agents/morning_plan.py
 msgid "Send at"
 msgstr "Yuborish vaqti"
@@ -663,6 +675,10 @@ msgstr ""
 "nima muddatli, nima kechikkan, nima tekshiruvini kutmoqda va kim dam olishda."
 
 #: backend/apps/ai/agents/morning_plan.py
+msgid "The morning summary for a manager"
+msgstr "Rahbar uchun ertalabki xulosa"
+
+#: backend/apps/ai/agents/morning_plan.py
 msgid "Who gets it"
 msgstr "Kim oladi"
 
@@ -724,6 +740,10 @@ msgstr ""
 "Vazifa bajarilganda tasdiq rasmini o‘qiydi (muzlatgich termometri, "
 "yaroqlilik muddatlari) va ishni tekshiradigan odamga izoh qoldiradi. Vazifa "
 "rasmlari Claude xizmatiga yuboriladi."
+
+#: backend/apps/ai/agents/photo_checker.py
+msgid "Checking a proof photo"
+msgstr "Isbot rasmini tekshirish"
 
 #: backend/apps/ai/agents/photo_checker.py
 msgid "Only routines"
@@ -801,6 +821,10 @@ msgid ""
 msgstr ""
 "Ovozli xabar va yozma ko‘rsatmalarni vazifaga aylantiradi: kim uchun, "
 "qachongacha, shoshilinchmi, rasm kerakmi."
+
+#: backend/apps/ai/agents/voice_tasks.py
+msgid "Turning a voice note or a typed instruction into tasks"
+msgstr "Ovozli xabar yoki yozilgan ko‘rsatmadan vazifa tuzish"
 
 #: backend/apps/ai/agents/voice_tasks.py
 msgid "Create at once"
@@ -1466,6 +1490,15 @@ msgstr "Platforma bu kompaniya uchun AI funksiyalarini o‘chirib qo‘ygan."
 #: backend/apps/ai/services.py
 msgid "There is no such agent."
 msgstr "Bunday agent yo‘q."
+
+#: backend/apps/ai/services.py
+msgid "This agent works by fixed rules: it has no instructions."
+msgstr "Bu agent qat’iy qoidalar bo‘yicha ishlaydi: unga ko‘rsatma berilmaydi."
+
+#: backend/apps/ai/services.py
+#, python-format
+msgid "At most %(max)d characters."
+msgstr "Ko‘pi bilan %(max)d ta belgi."
 
 #: backend/apps/ai/services.py
 msgid "This agent needs Claude: add ANTHROPIC_API_KEY on the server."

@@ -74,6 +74,15 @@ class EventTemplate:
 
 
 @dataclass(frozen=True)
+class Prompt:
+    """What an agent asks Claude, shown on its page: a name for the job in the active language,
+    and the system prompt as Claude reads it (English)."""
+
+    label: str | Promise
+    text: str
+
+
+@dataclass(frozen=True)
 class Agent:
     key: str
     name: str | Promise
@@ -103,6 +112,8 @@ class Agent:
     # page. Counts only, never a name or a text, about what its own messages are about; the
     # labels in the active language.
     upcoming: Callable | None = None
+    # What it asks Claude (none: it works by fixed rules); the owner's instructions follow each.
+    prompts: tuple[Prompt, ...] = ()
 
     def __post_init__(self):
         if not self.usage_features:
