@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-07 01:23+0500\n"
+"POT-Creation-Date: 2026-11-07 01:24+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -2718,6 +2718,7 @@ msgid "Found in a count"
 msgstr "Найдено при инвентаризации"
 
 #: backend/apps/assets/models.py backend/apps/projects/hooks.py
+#: backend/apps/tasks/templates/tasks/readings_journal.html
 msgid "Note"
 msgstr "Заметка"
 
@@ -2972,6 +2973,7 @@ msgstr "Тип"
 #: backend/apps/payroll/providers.py
 #: backend/apps/payroll/templates/payroll/payslip.html
 #: backend/apps/sales/hooks.py backend/apps/tasks/hooks.py
+#: backend/apps/tasks/templates/tasks/readings_journal.html
 msgid "Branch"
 msgstr "Филиал"
 
@@ -6038,6 +6040,7 @@ msgid "Card terminal"
 msgstr "Терминал"
 
 #: backend/apps/finance/exporters.py
+#: backend/apps/tasks/templates/tasks/readings_journal.html
 msgid "Date"
 msgstr "Дата"
 
@@ -6116,6 +6119,7 @@ msgstr "В базовой валюте"
 
 #: backend/apps/finance/exporters.py backend/apps/payroll/providers.py
 #: backend/apps/payroll/templates/payroll/payslip.html
+#: backend/apps/tasks/templates/tasks/readings_journal.html
 msgid "Month"
 msgstr "Месяц"
 
@@ -14635,6 +14639,15 @@ msgstr ""
 "Одна задача подробно: прогресс по чек-листу, отправленные напоминания, "
 "последние комментарии."
 
+#: backend/apps/tasks/ai_tools.py
+msgid ""
+"Storage readings (fridge and room temperature, humidity): values out of "
+"range and missed readings per routine and branch."
+msgstr ""
+"Показания условий хранения (температура холодильников и помещения, "
+"влажность): значения вне нормы и пропущенные замеры по регулярным задачам и "
+"филиалам."
+
 #: backend/apps/tasks/api.py
 msgid "Give from and to as YYYY-MM-DD."
 msgstr "Укажите даты начала (from) и конца (to) в формате YYYY-MM-DD."
@@ -14652,6 +14665,10 @@ msgstr "Такого шага в чек-листе нет."
 #: employee_bot/bot/handlers/member/tasks.py
 msgid "That person isn't in your company."
 msgstr "Этого человека нет в вашей компании."
+
+#: backend/apps/tasks/api.py
+msgid "Readings routines are set up in the dashboard."
+msgstr "Регулярные задачи с показаниями настраиваются в панели управления."
 
 #: backend/apps/tasks/audit_actions.py
 msgid "Gave a task to someone else"
@@ -14696,6 +14713,18 @@ msgstr "Принято автоматически: никто не провер�
 #: backend/apps/tasks/audit_actions.py
 msgid "Changed the rules for finished tasks"
 msgstr "Изменение правил приёмки выполненных задач"
+
+#: backend/apps/tasks/audit_actions.py
+msgid "Changed the storage reading ranges and times"
+msgstr "Изменил(а) нормы и время замеров условий хранения"
+
+#: backend/apps/tasks/audit_actions.py
+msgid "Set up storage readings for a branch"
+msgstr "Настроил(а) замеры условий хранения для филиала"
+
+#: backend/apps/tasks/audit_actions.py
+msgid "Took a reading again"
+msgstr "Повторил(а) замер"
 
 #: backend/apps/tasks/bot_messages.py
 msgid "Nothing on your list. To add a task, tap «New task» or just type it."
@@ -14855,6 +14884,43 @@ msgstr "Пришлите короткий отчёт."
 #: backend/apps/tasks/bot_messages.py
 msgid "Send a photo or a short report."
 msgstr "Пришлите фото или короткий отчёт."
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "out of range (%(range)s)"
+msgstr "вне нормы (%(range)s)"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "Recheck: %(reading)s"
+msgstr "Повторный замер: %(reading)s"
+
+#: backend/apps/tasks/bot_messages.py backend/apps/tasks/services.py
+#, python-format
+msgid "Note: %(note)s"
+msgstr "Примечание: %(note)s"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "%(what)s, allowed %(range)s:"
+msgstr "%(what)s, допустимо %(range)s:"
+
+#: backend/apps/tasks/bot_messages.py employee_bot/bot/handlers/member/tasks.py
+msgid "Type the number, like 5,2."
+msgstr "Введите число, например 5,2."
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "Out of range: %(readings)s."
+msgstr "Вне нормы: %(readings)s."
+
+#: backend/apps/tasks/bot_messages.py
+msgid ""
+"Write what you did about it (for example: moved the medicines to the other "
+"fridge)."
+msgstr ""
+"Напишите, что вы сделали (например: переложил препараты в другой "
+"холодильник)."
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
@@ -15300,6 +15366,11 @@ msgstr "отчёт"
 msgid "waiting for check"
 msgstr "ждёт проверки"
 
+#: backend/apps/tasks/demo.py backend/apps/tasks/services.py
+#, python-format
+msgid "Done by %(name)s"
+msgstr "Выполнил(а): %(name)s"
+
 #: backend/apps/tasks/feeds.py
 #, python-format
 msgid "Finished “%(title)s”"
@@ -15325,6 +15396,10 @@ msgstr "Сотрудник просит больше времени"
 #: backend/apps/tasks/hooks.py
 msgid "Work accepted automatically without a review"
 msgstr "Работа принята автоматически без проверки"
+
+#: backend/apps/tasks/hooks.py
+msgid "A storage reading out of range"
+msgstr "Показание условий хранения вне нормы"
 
 #: backend/apps/tasks/hooks.py
 msgid "Tasks to check"
@@ -15374,6 +15449,22 @@ msgstr "Отчёт"
 msgid "Reward"
 msgstr "Премия"
 
+#: backend/apps/tasks/hooks.py
+msgid "Storage readings"
+msgstr "Показания условий хранения"
+
+#: backend/apps/tasks/hooks.py
+msgid "Set up fridge and room readings"
+msgstr "Настройте замеры холодильников и помещения"
+
+#: backend/apps/tasks/hooks.py
+msgid ""
+"Fridge and room temperature and humidity, twice a day: the monthly log fills "
+"itself."
+msgstr ""
+"Температура холодильников и помещения и влажность дважды в день: журнал за "
+"месяц заполняется сам."
+
 #: backend/apps/tasks/inbox_actions.py backend/apps/tasks/services.py
 msgid "More time given"
 msgstr "Время продлено"
@@ -15386,6 +15477,10 @@ msgstr "Срок прежний"
 msgid "This task no longer exists."
 msgstr "Этой задачи больше нет."
 
+#: backend/apps/tasks/journal.py
+msgid "Temperature and humidity log"
+msgstr "Журнал температуры и влажности"
+
 #: backend/apps/tasks/models.py
 msgid "Not needed"
 msgstr "Не нужно"
@@ -15397,6 +15492,10 @@ msgstr "Короткий отчёт"
 #: backend/apps/tasks/models.py
 msgid "Photo or text report"
 msgstr "Фото или отчёт"
+
+#: backend/apps/tasks/models.py
+msgid "Readings"
+msgstr "Показания"
 
 #: backend/apps/tasks/models.py
 msgid "Weekdays"
@@ -15455,6 +15554,24 @@ msgstr ""
 #: backend/apps/tasks/models.py
 msgid "Onboarding tasks: due this many days after the approval."
 msgstr "Задачи адаптации: срок — через столько дней после одобрения."
+
+#: backend/apps/tasks/models.py
+msgid ""
+"With the readings proof: 1 to 3 numbers each run asks for, with their "
+"allowed range (`[{\"key\": \"t\", \"label\", \"unit\", \"min\", \"max\", "
+"\"critical\"}]`)."
+msgstr ""
+"С подтверждением показаниями: 1–3 числа, которые запрашиваются при каждом "
+"выполнении, с допустимым диапазоном (`[{\"key\": \"t\", \"label\", \"unit\", "
+"\"min\", \"max\", \"critical\"}]`)."
+
+#: backend/apps/tasks/models.py
+msgid ""
+"One of us does it: the first person to finish closes everyone else's copy of "
+"that day at the same branch."
+msgstr ""
+"Делает кто-то один: первый выполнивший закрывает копии остальных за этот "
+"день в том же филиале."
 
 #: backend/apps/tasks/models.py
 msgid "Daily"
@@ -15518,6 +15635,14 @@ msgstr ""
 "без них её проверяют."
 
 #: backend/apps/tasks/models.py
+msgid ""
+"The readings its routine asked for, copied when the task was made: editing "
+"the routine later never changes them."
+msgstr ""
+"Показания, которые запрашивала регулярная задача, копируются при создании "
+"задачи: последующие изменения регулярной задачи их не меняют."
+
+#: backend/apps/tasks/models.py
 msgid "A small preview of the proof photo, made after it's uploaded."
 msgstr "Миниатюра фотоотчёта, создаётся после загрузки."
 
@@ -15555,6 +15680,10 @@ msgid "Commented on a task"
 msgstr "Новый комментарий к задаче"
 
 #: backend/apps/tasks/models.py
+msgid "Did a shared routine for everyone"
+msgstr "Выполнил(а) общую регулярную задачу за всех"
+
+#: backend/apps/tasks/models.py
 msgid "Task card"
 msgstr "Карточка задачи"
 
@@ -15590,6 +15719,15 @@ msgstr "Когда сотрудник выполняет задачу."
 msgid "If nobody reviews it within this many hours, accept it automatically."
 msgstr "Если никто не проверит за столько часов, принять автоматически."
 
+#: backend/apps/tasks/models.py
+msgid "When the storage readings are taken, in the company's timezone."
+msgstr ""
+"Когда снимаются показания условий хранения, по часовому поясу компании."
+
+#: backend/apps/tasks/models.py
+msgid "What was done about it: needed out of range."
+msgstr "Что было сделано: обязательно, если значение вне нормы."
+
 #: backend/apps/tasks/owner_api.py
 msgid "Use without or only."
 msgstr "Используйте «without» или «only»."
@@ -15606,7 +15744,8 @@ msgstr "Чтобы назначить награду, нужно право да
 msgid "Some of the people picked don't work here."
 msgstr "Некоторые из выбранных людей здесь не работают."
 
-#: backend/apps/tasks/owner_api.py backend/apps/tasks/services.py
+#: backend/apps/tasks/owner_api.py backend/apps/tasks/presets.py
+#: backend/apps/tasks/services.py
 msgid "That isn't part of your company."
 msgstr "Это не относится к вашей компании."
 
@@ -15625,6 +15764,14 @@ msgstr "Укажите даты начала (from) и конца (to)."
 msgid "Pick at most %(days)d days."
 msgstr "Выберите период не больше %(days)d дней."
 
+#: backend/apps/tasks/owner_api.py
+msgid "Pick a branch."
+msgstr "Выберите филиал."
+
+#: backend/apps/tasks/owner_api.py
+msgid "Give the month as YYYY-MM."
+msgstr "Укажите месяц в формате ГГГГ-ММ."
+
 #: backend/apps/tasks/owner_serializers.py
 msgid "Pick people, positions or branches."
 msgstr "Выберите людей, должности или филиалы."
@@ -15638,6 +15785,176 @@ msgstr "Поле %(name)s обязательно."
 msgid "Give due_at or shift_days."
 msgstr "Укажите due_at или shift_days."
 
+#: backend/apps/tasks/presets.py
+#, python-format
+msgid "Fridge %(number)d: temperature, %(time)s"
+msgstr "Холодильник %(number)d: температура, %(time)s"
+
+#: backend/apps/tasks/presets.py
+msgid ""
+"Read the thermometer inside the fridge and type the number. Out of range: "
+"move the medicines to a fridge that keeps the range, write what you did, and "
+"take the reading again."
+msgstr ""
+"Посмотрите термометр внутри холодильника и введите число. Вне нормы: "
+"переложите препараты в холодильник, который держит норму, напишите, что "
+"сделали, и повторите замер."
+
+#: backend/apps/tasks/presets.py
+#, python-format
+msgid "Fridge %(number)d temperature"
+msgstr "Температура холодильника %(number)d"
+
+#: backend/apps/tasks/presets.py
+#, python-format
+msgid "Room: temperature and humidity, %(time)s"
+msgstr "Помещение: температура и влажность, %(time)s"
+
+#: backend/apps/tasks/presets.py
+msgid ""
+"Read the thermometer and the hygrometer in the storage room and type both "
+"numbers."
+msgstr ""
+"Посмотрите термометр и гигрометр в помещении хранения и введите оба числа."
+
+#: backend/apps/tasks/presets.py
+msgid "Room temperature"
+msgstr "Температура в помещении"
+
+#: backend/apps/tasks/presets.py
+msgid "Humidity"
+msgstr "Влажность"
+
+#: backend/apps/tasks/presets.py
+msgid "Wet cleaning"
+msgstr "Влажная уборка"
+
+#: backend/apps/tasks/presets.py
+msgid "Floors, counters and shelves, with a disinfectant."
+msgstr "Полы, прилавки и стеллажи, с дезинфицирующим средством."
+
+#: backend/apps/tasks/presets.py
+msgid "Weekly disinfection"
+msgstr "Еженедельная дезинфекция"
+
+#: backend/apps/tasks/presets.py
+msgid "Fridges, shelves, door handles and the counter, with a disinfectant."
+msgstr ""
+"Холодильники, стеллажи, дверные ручки и прилавок, с дезинфицирующим "
+"средством."
+
+#: backend/apps/tasks/presets.py
+msgid "Dispensing camera: records and keeps 30 days"
+msgstr "Камера отпуска: ведёт запись и хранит 30 дней"
+
+#: backend/apps/tasks/presets.py
+msgid ""
+"Check that the camera over the counter is recording and that the last 30 "
+"days of video are kept."
+msgstr ""
+"Проверьте, что камера над прилавком ведёт запись и видео за последние 30 "
+"дней сохранено."
+
+#: backend/apps/tasks/presets.py backend/apps/tasks/services.py
+msgid "You can't change routines."
+msgstr "Вы не можете изменять регулярные задачи."
+
+#: backend/apps/tasks/presets.py backend/apps/tasks/services.py
+msgid "This routine belongs to a branch you don't manage."
+msgstr "Эта регулярная задача относится к филиалу, которым вы не управляете."
+
+#: backend/apps/tasks/presets.py
+#, python-format
+msgid "Pick 0 to %(max)d fridges."
+msgstr "Выберите от 0 до %(max)d холодильников."
+
+#: backend/apps/tasks/presets.py
+msgid "Nobody works at this branch yet: pick who takes the readings."
+msgstr ""
+"В этом филиале пока никто не работает: выберите, кто будет снимать показания."
+
+#: backend/apps/tasks/readings.py backend/apps/tasks/services.py
+msgid "Allowed values go from −50 to 100."
+msgstr "Допустимые значения: от −50 до 100."
+
+#: backend/apps/tasks/readings.py
+msgid "Readings must be a list."
+msgstr "Показания должны быть списком."
+
+#: backend/apps/tasks/readings.py
+#, python-format
+msgid "A routine asks for at most %(max)d readings."
+msgstr "Регулярная задача запрашивает не больше %(max)d показаний."
+
+#: backend/apps/tasks/readings.py
+msgid "Each reading needs a name, a unit and its allowed values."
+msgstr ""
+"У каждого показания должны быть название, единица и допустимые значения."
+
+#: backend/apps/tasks/readings.py
+msgid "A reading's key is one letter, a to z."
+msgstr "Ключ показания: одна буква от a до z."
+
+#: backend/apps/tasks/readings.py
+msgid "Each reading of a routine needs its own key."
+msgstr "У каждого показания регулярной задачи должен быть свой ключ."
+
+#: backend/apps/tasks/readings.py
+msgid "Name each reading: what is measured."
+msgstr "Назовите каждое показание: что измеряется."
+
+#: backend/apps/tasks/readings.py
+#, python-format
+msgid "Keep the name of a reading under %(max)d characters."
+msgstr "Название показания должно быть не длиннее %(max)d символов."
+
+#: backend/apps/tasks/readings.py
+#, python-format
+msgid "Keep a unit under %(max)d characters."
+msgstr "Единица должна быть не длиннее %(max)d символов."
+
+#: backend/apps/tasks/readings.py backend/apps/tasks/services.py
+msgid "The lowest allowed value can't be above the highest."
+msgstr "Нижняя граница не может быть выше верхней."
+
+#: backend/apps/tasks/readings.py
+#, python-format
+msgid "This task doesn't ask for %(keys)s."
+msgstr "Эта задача не запрашивает: %(keys)s."
+
+#: backend/apps/tasks/readings.py
+msgid "Type the new reading."
+msgstr "Введите новое показание."
+
+#: backend/apps/tasks/readings.py
+msgid "Enter the readings to complete this task."
+msgstr "Чтобы выполнить задачу, введите показания."
+
+#: backend/apps/tasks/readings.py
+#, python-format
+msgid "A reading is missing: %(label)s."
+msgstr "Не введено показание: %(label)s."
+
+#: backend/apps/tasks/readings.py
+#, python-format
+msgid "%(label)s: type a number, like 5.2."
+msgstr "%(label)s: введите число, например 5,2."
+
+#: backend/apps/tasks/readings.py
+#, python-format
+msgid "%(label)s: that can't be right. Type a value from −50 to 100."
+msgstr "%(label)s: такого не может быть. Введите значение от −50 до 100."
+
+#: backend/apps/tasks/readings.py
+#, python-format
+msgid "%(label)s is out of range (%(range)s). Write what you did about it."
+msgstr "Вне нормы: %(label)s (%(range)s). Напишите, что вы сделали."
+
+#: backend/apps/tasks/readings.py
+#, python-format
+msgid "Keep the note under %(max)d characters."
+msgstr "Заметка должна быть не длиннее %(max)d символов."
+
 #: backend/apps/tasks/services.py
 msgid "Repeating tasks for others are set up as daily tasks."
 msgstr "Повторяющиеся задачи для других настраиваются как регулярные."
@@ -15649,6 +15966,12 @@ msgstr "Выберите время для повторяющейся задач
 #: backend/apps/tasks/services.py
 msgid "A reward is for work you give to someone else."
 msgstr "Премию назначают только за работу, которую вы поручаете другому."
+
+#: backend/apps/tasks/services.py
+msgid "Readings are taken on routines: set one up under Routines."
+msgstr ""
+"Показания снимаются в регулярных задачах: настройте её в разделе «Регулярные "
+"задачи»."
 
 #: backend/apps/tasks/services.py
 msgid "You can't change this task."
@@ -15857,11 +16180,6 @@ msgstr "Причина: %(reason)s"
 
 #: backend/apps/tasks/services.py
 #, python-format
-msgid "Note: %(note)s"
-msgstr "Примечание: %(note)s"
-
-#: backend/apps/tasks/services.py
-#, python-format
 msgid "Deadline now: %(due)s"
 msgstr "Срок сейчас: %(due)s"
 
@@ -15942,14 +16260,6 @@ msgid "This routine starts on %(day)s."
 msgstr "Эта регулярная задача начинается %(day)s."
 
 #: backend/apps/tasks/services.py
-msgid "You can't change routines."
-msgstr "Вы не можете изменять регулярные задачи."
-
-#: backend/apps/tasks/services.py
-msgid "This routine belongs to a branch you don't manage."
-msgstr "Эта регулярная задача относится к филиалу, которым вы не управляете."
-
-#: backend/apps/tasks/services.py
 msgid "Give the routine a title."
 msgstr "Укажите название регулярной задачи."
 
@@ -15968,6 +16278,24 @@ msgstr "Выберите для этой регулярной задачи од�
 #: backend/apps/tasks/services.py
 msgid "Pick the time it's due."
 msgstr "Выберите, к какому времени задачу нужно выполнить."
+
+#: backend/apps/tasks/services.py
+msgid "Readings are taken on routines, not on onboarding or personal tasks."
+msgstr ""
+"Показания снимаются в регулярных задачах, а не в задачах адаптации или "
+"личных задачах."
+
+#: backend/apps/tasks/services.py
+msgid "Add at least one reading: what is measured and its allowed values."
+msgstr "Добавьте хотя бы одно показание: что измеряется и допустимые значения."
+
+#: backend/apps/tasks/services.py
+msgid "Pick the Readings proof to ask for readings."
+msgstr "Чтобы запрашивать показания, выберите подтверждение «Показания»."
+
+#: backend/apps/tasks/services.py
+msgid "Only routines can be shared by a team."
+msgstr "Общими могут быть только регулярные задачи."
 
 #: backend/apps/tasks/services.py
 msgid "Pick who does it: people or positions."
@@ -16023,6 +16351,61 @@ msgid "Finish registration first."
 msgstr "Сначала завершите регистрацию."
 
 #: backend/apps/tasks/services.py
+msgid "This task doesn't take readings."
+msgstr "В этой задаче показания не снимаются."
+
+#: backend/apps/tasks/services.py
+msgid ""
+"Only the person who took the readings, or a manager, can take them again."
+msgstr "Повторить замер может только тот, кто его снимал, или руководитель."
+
+#: backend/apps/tasks/services.py
+msgid "Take the readings first: this task isn't finished."
+msgstr "Сначала снимите показания: задача ещё не выполнена."
+
+#: backend/apps/tasks/services.py
+msgid "Too late for a recheck: it's been more than 2 hours."
+msgstr "Повторный замер уже поздно: прошло больше 2 часов."
+
+#: backend/apps/tasks/services.py
+#, python-format
+msgid "Back in range at %(time)s"
+msgstr "Вернулось в норму в %(time)s"
+
+#: backend/apps/tasks/services.py
+#, python-format
+msgid "Out of range: %(label)s %(value)s"
+msgstr "Вне нормы: %(label)s %(value)s"
+
+#: backend/apps/tasks/services.py owner_bot/ownerbot/invite.py
+#, python-format
+msgid "Branch: %(branch)s"
+msgstr "Филиал: %(branch)s"
+
+#: backend/apps/tasks/services.py
+#, python-format
+msgid "%(label)s: %(value)s, allowed %(range)s"
+msgstr "%(label)s: %(value)s, допустимо: %(range)s"
+
+#: backend/apps/tasks/services.py
+#, python-format
+msgid "What was done: %(note)s"
+msgstr "Что сделано: %(note)s"
+
+#: backend/apps/tasks/services.py
+#, python-format
+msgid "Taken by: %(name)s, %(time)s"
+msgstr "Кто измерил: %(name)s, %(time)s"
+
+#: backend/apps/tasks/services.py
+msgid "Undone: the readings will be entered again"
+msgstr "Отменено: показания введут заново"
+
+#: backend/apps/tasks/services.py
+msgid "Done by a colleague"
+msgstr "Выполнил коллега"
+
+#: backend/apps/tasks/services.py
 msgid "You can't change the company's settings."
 msgstr "Вы не можете менять настройки компании."
 
@@ -16030,6 +16413,19 @@ msgstr "Вы не можете менять настройки компании.
 #, python-format
 msgid "Pick between %(low)d and %(high)d hours."
 msgstr "Выберите от %(low)d до %(high)d часов."
+
+#: backend/apps/tasks/services.py
+msgid "Pick at least one time for the readings."
+msgstr "Выберите хотя бы одно время замера."
+
+#: backend/apps/tasks/services.py
+#, python-format
+msgid "Take readings at most %(max)d times a day."
+msgstr "Снимайте показания не чаще %(max)d раз в день."
+
+#: backend/apps/tasks/services.py
+msgid "Humidity goes from 0 to 100 %."
+msgstr "Влажность бывает от 0 до 100 %."
 
 #: backend/apps/tasks/services.py
 #, python-format
@@ -16044,6 +16440,58 @@ msgid ""
 msgstr ""
 "Никто не проверил работу за %(hours)d ч, поэтому она принята.\n"
 "Исполнитель: %(name)s"
+
+#: backend/apps/tasks/templates/tasks/readings_journal.html
+msgid "This branch has no readings routines yet."
+msgstr "В этом филиале пока нет регулярных задач с показаниями."
+
+#: backend/apps/tasks/templates/tasks/readings_journal.html
+msgid "Instrument"
+msgstr "Место измерения"
+
+#: backend/apps/tasks/templates/tasks/readings_journal.html
+msgid "Allowed"
+msgstr "Допустимо"
+
+#: backend/apps/tasks/templates/tasks/readings_journal.html
+msgid "Out of range"
+msgstr "Вне нормы"
+
+#: backend/apps/tasks/templates/tasks/readings_journal.html
+msgid "Time"
+msgstr "Время"
+
+#: backend/apps/tasks/templates/tasks/readings_journal.html
+msgid "Value"
+msgstr "Значение"
+
+#: backend/apps/tasks/templates/tasks/readings_journal.html
+msgid "Taken by"
+msgstr "Кто измерил"
+
+#: backend/apps/tasks/templates/tasks/readings_journal.html
+msgid "Signature"
+msgstr "Подпись"
+
+#: backend/apps/tasks/templates/tasks/readings_journal.html
+msgid "recheck"
+msgstr "повторный замер"
+
+#: backend/apps/tasks/templates/tasks/readings_journal.html
+msgid "No reading"
+msgstr "Замер не проводился"
+
+#: backend/apps/tasks/templates/tasks/readings_journal.html
+msgid ""
+"Values out of range are in bold. A recheck is the second measurement after "
+"something was done about it."
+msgstr ""
+"Значения вне нормы выделены жирным. Повторный замер: второе измерение после "
+"принятых мер."
+
+#: backend/apps/tasks/templates/tasks/readings_journal.html
+msgid "Head of pharmacy"
+msgstr "Заведующий аптекой"
 
 #: backend/apps/timeoff/admin.py
 msgid "Approve selected time off"
@@ -16541,6 +16989,14 @@ msgstr "Начато"
 #: employee_bot/bot/handlers/member/tasks.py
 msgid "The task is open again."
 msgstr "Задача снова открыта."
+
+#: employee_bot/bot/handlers/member/tasks.py
+msgid "This task is already done."
+msgstr "Эта задача уже выполнена."
+
+#: employee_bot/bot/handlers/member/tasks.py
+msgid "That can't be right. Type a value from −50 to 100."
+msgstr "Такого не может быть. Введите значение от −50 до 100."
 
 #: employee_bot/bot/handlers/member/tasks.py
 msgid "No task is waiting for a photo right now."
@@ -17055,11 +17511,6 @@ msgstr "Открывшие её сразу попадают в команду."
 #: owner_bot/ownerbot/invite.py
 msgid "People who open it ask to join, and you approve them."
 msgstr "Открывшие её подают заявку, а вы их одобряете."
-
-#: owner_bot/ownerbot/invite.py
-#, python-format
-msgid "Branch: %(branch)s"
-msgstr "Филиал: %(branch)s"
 
 #: owner_bot/ownerbot/invite.py
 #, python-format

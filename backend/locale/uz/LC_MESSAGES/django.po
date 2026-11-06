@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-07 01:23+0500\n"
+"POT-Creation-Date: 2026-11-07 01:24+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -2681,6 +2681,7 @@ msgid "Found in a count"
 msgstr "Inventarizatsiyada topildi"
 
 #: backend/apps/assets/models.py backend/apps/projects/hooks.py
+#: backend/apps/tasks/templates/tasks/readings_journal.html
 msgid "Note"
 msgstr "Izoh"
 
@@ -2936,6 +2937,7 @@ msgstr "Turi"
 #: backend/apps/payroll/providers.py
 #: backend/apps/payroll/templates/payroll/payslip.html
 #: backend/apps/sales/hooks.py backend/apps/tasks/hooks.py
+#: backend/apps/tasks/templates/tasks/readings_journal.html
 msgid "Branch"
 msgstr "Filial"
 
@@ -6053,6 +6055,7 @@ msgid "Card terminal"
 msgstr "Terminal"
 
 #: backend/apps/finance/exporters.py
+#: backend/apps/tasks/templates/tasks/readings_journal.html
 msgid "Date"
 msgstr "Sana"
 
@@ -6131,6 +6134,7 @@ msgstr "Asosiy valyutada"
 
 #: backend/apps/finance/exporters.py backend/apps/payroll/providers.py
 #: backend/apps/payroll/templates/payroll/payslip.html
+#: backend/apps/tasks/templates/tasks/readings_journal.html
 msgid "Month"
 msgstr "Oy"
 
@@ -14703,6 +14707,15 @@ msgstr ""
 "Bitta vazifa batafsil: nazorat ro‘yxati qadamlarining bajarilishi, "
 "yuborilgan eslatmalar, so‘nggi izohlar."
 
+#: backend/apps/tasks/ai_tools.py
+msgid ""
+"Storage readings (fridge and room temperature, humidity): values out of "
+"range and missed readings per routine and branch."
+msgstr ""
+"Saqlash ko‘rsatkichlari (muzlatgich va xona harorati, namlik): har bir "
+"muntazam vazifa va filial bo‘yicha me’yordan chiqqan qiymatlar va olinmagan "
+"ko‘rsatkichlar."
+
 #: backend/apps/tasks/api.py
 msgid "Give from and to as YYYY-MM-DD."
 msgstr ""
@@ -14723,6 +14736,10 @@ msgstr "Nazorat ro‘yxatida bunday qadam yo‘q."
 #: employee_bot/bot/handlers/member/tasks.py
 msgid "That person isn't in your company."
 msgstr "Bu odam sizning kompaniyangizda emas."
+
+#: backend/apps/tasks/api.py
+msgid "Readings routines are set up in the dashboard."
+msgstr "Ko‘rsatkichli muntazam vazifalar boshqaruv panelida sozlanadi."
 
 #: backend/apps/tasks/audit_actions.py
 msgid "Gave a task to someone else"
@@ -14767,6 +14784,18 @@ msgstr "Avtomatik qabul qilindi: hech kim o‘z vaqtida tekshirmadi"
 #: backend/apps/tasks/audit_actions.py
 msgid "Changed the rules for finished tasks"
 msgstr "Bajarilgan vazifalar qoidasini o‘zgartirdi"
+
+#: backend/apps/tasks/audit_actions.py
+msgid "Changed the storage reading ranges and times"
+msgstr "Saqlash ko‘rsatkichlarining me’yorlari va vaqtlarini o‘zgartirdi"
+
+#: backend/apps/tasks/audit_actions.py
+msgid "Set up storage readings for a branch"
+msgstr "Filial uchun saqlash ko‘rsatkichlarini sozladi"
+
+#: backend/apps/tasks/audit_actions.py
+msgid "Took a reading again"
+msgstr "Ko‘rsatkichni qayta o‘lchadi"
 
 #: backend/apps/tasks/bot_messages.py
 msgid "Nothing on your list. To add a task, tap «New task» or just type it."
@@ -14927,6 +14956,43 @@ msgstr "Qisqa hisobot yuboring."
 #: backend/apps/tasks/bot_messages.py
 msgid "Send a photo or a short report."
 msgstr "Rasm yoki qisqa hisobot yuboring."
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "out of range (%(range)s)"
+msgstr "me’yordan tashqari (%(range)s)"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "Recheck: %(reading)s"
+msgstr "Qayta o‘lchash: %(reading)s"
+
+#: backend/apps/tasks/bot_messages.py backend/apps/tasks/services.py
+#, python-format
+msgid "Note: %(note)s"
+msgstr "Izoh: %(note)s"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "%(what)s, allowed %(range)s:"
+msgstr "%(what)s, ruxsat etilgan: %(range)s:"
+
+#: backend/apps/tasks/bot_messages.py employee_bot/bot/handlers/member/tasks.py
+msgid "Type the number, like 5,2."
+msgstr "Raqamni yozing, masalan 5,2."
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "Out of range: %(readings)s."
+msgstr "Me’yordan chiqdi: %(readings)s."
+
+#: backend/apps/tasks/bot_messages.py
+msgid ""
+"Write what you did about it (for example: moved the medicines to the other "
+"fridge)."
+msgstr ""
+"Nima chora ko‘rganingizni yozing (masalan: dorilarni boshqa muzlatgichga "
+"o‘tkazdim)."
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
@@ -15373,6 +15439,11 @@ msgstr "hisobot"
 msgid "waiting for check"
 msgstr "tekshiruv kutilmoqda"
 
+#: backend/apps/tasks/demo.py backend/apps/tasks/services.py
+#, python-format
+msgid "Done by %(name)s"
+msgstr "Bajardi: %(name)s"
+
 #: backend/apps/tasks/feeds.py
 #, python-format
 msgid "Finished “%(title)s”"
@@ -15395,6 +15466,10 @@ msgstr "Xodim qo‘shimcha vaqt so‘rayapti"
 #: backend/apps/tasks/hooks.py
 msgid "Work accepted automatically without a review"
 msgstr "Tekshirilmasdan avtomatik qabul qilingan ish"
+
+#: backend/apps/tasks/hooks.py
+msgid "A storage reading out of range"
+msgstr "Saqlash ko‘rsatkichi me’yordan chiqdi"
 
 #: backend/apps/tasks/hooks.py
 msgid "Tasks to check"
@@ -15444,6 +15519,22 @@ msgstr "Dalil"
 msgid "Reward"
 msgstr "Mukofot"
 
+#: backend/apps/tasks/hooks.py
+msgid "Storage readings"
+msgstr "Saqlash ko‘rsatkichlari"
+
+#: backend/apps/tasks/hooks.py
+msgid "Set up fridge and room readings"
+msgstr "Muzlatgich va xona ko‘rsatkichlarini sozlang"
+
+#: backend/apps/tasks/hooks.py
+msgid ""
+"Fridge and room temperature and humidity, twice a day: the monthly log fills "
+"itself."
+msgstr ""
+"Muzlatgich va xona harorati hamda namlik, kuniga ikki marta: oylik jurnal "
+"o‘zi to‘ladi."
+
 #: backend/apps/tasks/inbox_actions.py backend/apps/tasks/services.py
 msgid "More time given"
 msgstr "Qo‘shimcha vaqt berildi"
@@ -15456,6 +15547,10 @@ msgstr "Muddat o‘zgarmaydi"
 msgid "This task no longer exists."
 msgstr "Bu vazifa endi mavjud emas."
 
+#: backend/apps/tasks/journal.py
+msgid "Temperature and humidity log"
+msgstr "Harorat va namlik jurnali"
+
 #: backend/apps/tasks/models.py
 msgid "Not needed"
 msgstr "Kerak emas"
@@ -15467,6 +15562,10 @@ msgstr "Qisqa hisobot"
 #: backend/apps/tasks/models.py
 msgid "Photo or text report"
 msgstr "Rasm yoki hisobot"
+
+#: backend/apps/tasks/models.py
+msgid "Readings"
+msgstr "Ko‘rsatkichlar"
 
 #: backend/apps/tasks/models.py
 msgid "Weekdays"
@@ -15531,6 +15630,24 @@ msgstr ""
 "tugaydi."
 
 #: backend/apps/tasks/models.py
+msgid ""
+"With the readings proof: 1 to 3 numbers each run asks for, with their "
+"allowed range (`[{\"key\": \"t\", \"label\", \"unit\", \"min\", \"max\", "
+"\"critical\"}]`)."
+msgstr ""
+"Ko‘rsatkichlar dalili bilan: har safar so‘raladigan 1–3 ta raqam va ularning "
+"ruxsat etilgan oralig‘i (`[{\"key\": \"t\", \"label\", \"unit\", \"min\", "
+"\"max\", \"critical\"}]`)."
+
+#: backend/apps/tasks/models.py
+msgid ""
+"One of us does it: the first person to finish closes everyone else's copy of "
+"that day at the same branch."
+msgstr ""
+"Bittamiz bajaramiz: birinchi bajargan kishi shu filialdagi boshqalarning "
+"o‘sha kungi nusxasini yopadi."
+
+#: backend/apps/tasks/models.py
 msgid "Daily"
 msgstr "Muntazam"
 
@@ -15592,6 +15709,14 @@ msgstr ""
 "qilinadi, ularsiz esa kimdir tekshiradi."
 
 #: backend/apps/tasks/models.py
+msgid ""
+"The readings its routine asked for, copied when the task was made: editing "
+"the routine later never changes them."
+msgstr ""
+"Muntazam vazifa so‘ragan ko‘rsatkichlar vazifa yaratilganda nusxalanadi: "
+"keyin muntazam vazifani o‘zgartirish ularni o‘zgartirmaydi."
+
+#: backend/apps/tasks/models.py
 msgid "A small preview of the proof photo, made after it's uploaded."
 msgstr "Dalil rasmining kichik nusxasi, rasm yuklangandan keyin yaratiladi."
 
@@ -15627,6 +15752,10 @@ msgstr "Vazifangizni tekshirdi"
 #: backend/apps/tasks/models.py
 msgid "Commented on a task"
 msgstr "Vazifaga izoh qoldirdi"
+
+#: backend/apps/tasks/models.py
+msgid "Did a shared routine for everyone"
+msgstr "Umumiy muntazam vazifani hamma uchun bajardi"
 
 #: backend/apps/tasks/models.py
 msgid "Task card"
@@ -15665,6 +15794,14 @@ msgstr "Kimdir vazifani bajarganda."
 msgid "If nobody reviews it within this many hours, accept it automatically."
 msgstr "Shuncha soat ichida hech kim tekshirmasa, avtomatik qabul qilish."
 
+#: backend/apps/tasks/models.py
+msgid "When the storage readings are taken, in the company's timezone."
+msgstr "Saqlash ko‘rsatkichlari qachon o‘lchanadi, kompaniya vaqt mintaqasida."
+
+#: backend/apps/tasks/models.py
+msgid "What was done about it: needed out of range."
+msgstr "Nima chora ko‘rildi: me’yordan chiqqanda shart."
+
 #: backend/apps/tasks/owner_api.py
 msgid "Use without or only."
 msgstr "«without» yoki «only» qiymatini kiriting."
@@ -15681,7 +15818,8 @@ msgstr "Mukofot belgilash uchun vazifa berish huquqi kerak."
 msgid "Some of the people picked don't work here."
 msgstr "Tanlangan odamlarning ba’zilari bu yerda ishlamaydi."
 
-#: backend/apps/tasks/owner_api.py backend/apps/tasks/services.py
+#: backend/apps/tasks/owner_api.py backend/apps/tasks/presets.py
+#: backend/apps/tasks/services.py
 msgid "That isn't part of your company."
 msgstr "Bu sizning kompaniyangizga tegishli emas."
 
@@ -15700,6 +15838,14 @@ msgstr "Boshlanish (from) va tugash (to) sanalarini kiriting."
 msgid "Pick at most %(days)d days."
 msgstr "Ko‘pi bilan %(days)d kunlik davr tanlang."
 
+#: backend/apps/tasks/owner_api.py
+msgid "Pick a branch."
+msgstr "Filialni tanlang."
+
+#: backend/apps/tasks/owner_api.py
+msgid "Give the month as YYYY-MM."
+msgstr "Oyni YYYY-MM ko‘rinishida kiriting."
+
 #: backend/apps/tasks/owner_serializers.py
 msgid "Pick people, positions or branches."
 msgstr "Odamlar, lavozimlar yoki filiallarni tanlang."
@@ -15713,6 +15859,182 @@ msgstr "%(name)s maydonini to‘ldirish shart."
 msgid "Give due_at or shift_days."
 msgstr "due_at yoki shift_days maydonini to‘ldiring."
 
+#: backend/apps/tasks/presets.py
+#, python-format
+msgid "Fridge %(number)d: temperature, %(time)s"
+msgstr "Muzlatgich %(number)d: harorat, %(time)s"
+
+#: backend/apps/tasks/presets.py
+msgid ""
+"Read the thermometer inside the fridge and type the number. Out of range: "
+"move the medicines to a fridge that keeps the range, write what you did, and "
+"take the reading again."
+msgstr ""
+"Muzlatgich ichidagi termometrni ko‘ring va raqamni yozing. Me’yordan chiqsa: "
+"dorilarni me’yorni saqlaydigan muzlatgichga o‘tkazing, nima qilganingizni "
+"yozing va qayta o‘lchang."
+
+#: backend/apps/tasks/presets.py
+#, python-format
+msgid "Fridge %(number)d temperature"
+msgstr "Muzlatgich %(number)d harorati"
+
+#: backend/apps/tasks/presets.py
+#, python-format
+msgid "Room: temperature and humidity, %(time)s"
+msgstr "Xona: harorat va namlik, %(time)s"
+
+#: backend/apps/tasks/presets.py
+msgid ""
+"Read the thermometer and the hygrometer in the storage room and type both "
+"numbers."
+msgstr ""
+"Saqlash xonasidagi termometr va gigrometrni ko‘ring va ikkala raqamni yozing."
+
+#: backend/apps/tasks/presets.py
+msgid "Room temperature"
+msgstr "Xona harorati"
+
+#: backend/apps/tasks/presets.py
+msgid "Humidity"
+msgstr "Namlik"
+
+#: backend/apps/tasks/presets.py
+msgid "Wet cleaning"
+msgstr "Nam tozalash"
+
+#: backend/apps/tasks/presets.py
+msgid "Floors, counters and shelves, with a disinfectant."
+msgstr "Pol, peshtaxta va javonlar, dezinfeksiyalovchi vosita bilan."
+
+#: backend/apps/tasks/presets.py
+msgid "Weekly disinfection"
+msgstr "Haftalik dezinfeksiya"
+
+#: backend/apps/tasks/presets.py
+msgid "Fridges, shelves, door handles and the counter, with a disinfectant."
+msgstr ""
+"Muzlatgichlar, javonlar, eshik tutqichlari va peshtaxta, dezinfeksiyalovchi "
+"vosita bilan."
+
+#: backend/apps/tasks/presets.py
+msgid "Dispensing camera: records and keeps 30 days"
+msgstr "Sotuv kamerasi: yozib boradi va 30 kun saqlaydi"
+
+#: backend/apps/tasks/presets.py
+msgid ""
+"Check that the camera over the counter is recording and that the last 30 "
+"days of video are kept."
+msgstr ""
+"Peshtaxta ustidagi kamera yozib borayotganini va oxirgi 30 kunlik video "
+"saqlanganini tekshiring."
+
+#: backend/apps/tasks/presets.py backend/apps/tasks/services.py
+msgid "You can't change routines."
+msgstr "Siz muntazam vazifalarni o‘zgartira olmaysiz."
+
+#: backend/apps/tasks/presets.py backend/apps/tasks/services.py
+msgid "This routine belongs to a branch you don't manage."
+msgstr "Bu muntazam vazifa siz boshqarmaydigan filialga tegishli."
+
+#: backend/apps/tasks/presets.py
+#, python-format
+msgid "Pick 0 to %(max)d fridges."
+msgstr "Muzlatgichlar soni: 0–%(max)d."
+
+#: backend/apps/tasks/presets.py
+msgid "Nobody works at this branch yet: pick who takes the readings."
+msgstr ""
+"Bu filialda hali hech kim ishlamaydi: ko‘rsatkichlarni kim o‘lchashini "
+"tanlang."
+
+#: backend/apps/tasks/readings.py backend/apps/tasks/services.py
+msgid "Allowed values go from −50 to 100."
+msgstr "Ruxsat etilgan qiymatlar: −50…100."
+
+#: backend/apps/tasks/readings.py
+msgid "Readings must be a list."
+msgstr "Ko‘rsatkichlar ro‘yxat bo‘lishi kerak."
+
+#: backend/apps/tasks/readings.py
+#, python-format
+msgid "A routine asks for at most %(max)d readings."
+msgstr "Muntazam vazifa ko‘pi bilan %(max)d ta ko‘rsatkich so‘raydi."
+
+#: backend/apps/tasks/readings.py
+msgid "Each reading needs a name, a unit and its allowed values."
+msgstr ""
+"Har bir ko‘rsatkichning nomi, o‘lchov birligi va ruxsat etilgan qiymatlari "
+"bo‘lishi kerak."
+
+#: backend/apps/tasks/readings.py
+msgid "A reading's key is one letter, a to z."
+msgstr "Ko‘rsatkich kaliti bitta harf: a dan z gacha."
+
+#: backend/apps/tasks/readings.py
+msgid "Each reading of a routine needs its own key."
+msgstr ""
+"Muntazam vazifaning har bir ko‘rsatkichi o‘z kalitiga ega bo‘lishi kerak."
+
+#: backend/apps/tasks/readings.py
+msgid "Name each reading: what is measured."
+msgstr "Har bir ko‘rsatkichni nomlang: nima o‘lchanadi."
+
+#: backend/apps/tasks/readings.py
+#, python-format
+msgid "Keep the name of a reading under %(max)d characters."
+msgstr "Ko‘rsatkich nomi %(max)d belgidan oshmasin."
+
+#: backend/apps/tasks/readings.py
+#, python-format
+msgid "Keep a unit under %(max)d characters."
+msgstr "O‘lchov birligi %(max)d belgidan oshmasin."
+
+#: backend/apps/tasks/readings.py backend/apps/tasks/services.py
+msgid "The lowest allowed value can't be above the highest."
+msgstr "Eng past me’yor eng yuqori me’yordan baland bo‘lishi mumkin emas."
+
+#: backend/apps/tasks/readings.py
+#, python-format
+msgid "This task doesn't ask for %(keys)s."
+msgstr "Bu vazifa bularni so‘ramaydi: %(keys)s."
+
+#: backend/apps/tasks/readings.py
+msgid "Type the new reading."
+msgstr "Yangi ko‘rsatkichni yozing."
+
+#: backend/apps/tasks/readings.py
+msgid "Enter the readings to complete this task."
+msgstr "Vazifani bajarish uchun ko‘rsatkichlarni kiriting."
+
+#: backend/apps/tasks/readings.py
+#, python-format
+msgid "A reading is missing: %(label)s."
+msgstr "Ko‘rsatkich kiritilmagan: %(label)s."
+
+#: backend/apps/tasks/readings.py
+#, python-format
+msgid "%(label)s: type a number, like 5.2."
+msgstr "%(label)s: raqam yozing, masalan 5,2."
+
+#: backend/apps/tasks/readings.py
+#, python-format
+msgid "%(label)s: that can't be right. Type a value from −50 to 100."
+msgstr ""
+"%(label)s: bu to‘g‘ri bo‘lishi mumkin emas. −50…100 oralig‘idagi qiymat "
+"yozing."
+
+#: backend/apps/tasks/readings.py
+#, python-format
+msgid "%(label)s is out of range (%(range)s). Write what you did about it."
+msgstr ""
+"Me’yordan chiqdi: %(label)s (%(range)s). Nima chora ko‘rganingizni yozing."
+
+#: backend/apps/tasks/readings.py
+#, python-format
+msgid "Keep the note under %(max)d characters."
+msgstr "Izoh %(max)d belgidan oshmasin."
+
 #: backend/apps/tasks/services.py
 msgid "Repeating tasks for others are set up as daily tasks."
 msgstr ""
@@ -15725,6 +16047,12 @@ msgstr "Takrorlanadigan vazifa uchun vaqt tanlang."
 #: backend/apps/tasks/services.py
 msgid "A reward is for work you give to someone else."
 msgstr "Mukofot faqat boshqa odamga beriladigan ish uchun belgilanadi."
+
+#: backend/apps/tasks/services.py
+msgid "Readings are taken on routines: set one up under Routines."
+msgstr ""
+"Ko‘rsatkichlar muntazam vazifalarda olinadi: uni Muntazam vazifalar "
+"bo‘limida sozlang."
 
 #: backend/apps/tasks/services.py
 msgid "You can't change this task."
@@ -15934,11 +16262,6 @@ msgstr "Sabab: %(reason)s"
 
 #: backend/apps/tasks/services.py
 #, python-format
-msgid "Note: %(note)s"
-msgstr "Izoh: %(note)s"
-
-#: backend/apps/tasks/services.py
-#, python-format
 msgid "Deadline now: %(due)s"
 msgstr "Hozirgi muddat: %(due)s"
 
@@ -16019,14 +16342,6 @@ msgid "This routine starts on %(day)s."
 msgstr "Bu muntazam vazifa %(day)s kuni boshlanadi."
 
 #: backend/apps/tasks/services.py
-msgid "You can't change routines."
-msgstr "Siz muntazam vazifalarni o‘zgartira olmaysiz."
-
-#: backend/apps/tasks/services.py
-msgid "This routine belongs to a branch you don't manage."
-msgstr "Bu muntazam vazifa siz boshqarmaydigan filialga tegishli."
-
-#: backend/apps/tasks/services.py
 msgid "Give the routine a title."
 msgstr "Muntazam vazifaga nom bering."
 
@@ -16045,6 +16360,26 @@ msgstr "Bu muntazam vazifa uchun filiallaringizdan birini tanlang."
 #: backend/apps/tasks/services.py
 msgid "Pick the time it's due."
 msgstr "Qaysi soatgacha bajarilishi kerakligini tanlang."
+
+#: backend/apps/tasks/services.py
+msgid "Readings are taken on routines, not on onboarding or personal tasks."
+msgstr ""
+"Ko‘rsatkichlar muntazam vazifalarda olinadi, moslashuv yoki shaxsiy "
+"vazifalarda emas."
+
+#: backend/apps/tasks/services.py
+msgid "Add at least one reading: what is measured and its allowed values."
+msgstr ""
+"Kamida bitta ko‘rsatkich qo‘shing: nima o‘lchanadi va ruxsat etilgan "
+"qiymatlari."
+
+#: backend/apps/tasks/services.py
+msgid "Pick the Readings proof to ask for readings."
+msgstr "Ko‘rsatkich so‘rash uchun «Ko‘rsatkichlar» dalilini tanlang."
+
+#: backend/apps/tasks/services.py
+msgid "Only routines can be shared by a team."
+msgstr "Faqat muntazam vazifalarni jamoa bilan bo‘lishish mumkin."
 
 #: backend/apps/tasks/services.py
 msgid "Pick who does it: people or positions."
@@ -16100,6 +16435,63 @@ msgid "Finish registration first."
 msgstr "Avval ro‘yxatdan o‘tishni yakunlang."
 
 #: backend/apps/tasks/services.py
+msgid "This task doesn't take readings."
+msgstr "Bu vazifada ko‘rsatkich olinmaydi."
+
+#: backend/apps/tasks/services.py
+msgid ""
+"Only the person who took the readings, or a manager, can take them again."
+msgstr ""
+"Ko‘rsatkichlarni faqat ularni o‘lchagan kishi yoki rahbar qayta o‘lchay "
+"oladi."
+
+#: backend/apps/tasks/services.py
+msgid "Take the readings first: this task isn't finished."
+msgstr "Avval ko‘rsatkichlarni o‘lchang: bu vazifa hali bajarilmagan."
+
+#: backend/apps/tasks/services.py
+msgid "Too late for a recheck: it's been more than 2 hours."
+msgstr "Qayta o‘lchash uchun kech: 2 soatdan ko‘p vaqt o‘tdi."
+
+#: backend/apps/tasks/services.py
+#, python-format
+msgid "Back in range at %(time)s"
+msgstr "Me’yorga qaytdi: %(time)s"
+
+#: backend/apps/tasks/services.py
+#, python-format
+msgid "Out of range: %(label)s %(value)s"
+msgstr "Me’yordan chiqdi: %(label)s %(value)s"
+
+#: backend/apps/tasks/services.py owner_bot/ownerbot/invite.py
+#, python-format
+msgid "Branch: %(branch)s"
+msgstr "Filial: %(branch)s"
+
+#: backend/apps/tasks/services.py
+#, python-format
+msgid "%(label)s: %(value)s, allowed %(range)s"
+msgstr "%(label)s: %(value)s, ruxsat etilgan: %(range)s"
+
+#: backend/apps/tasks/services.py
+#, python-format
+msgid "What was done: %(note)s"
+msgstr "Ko‘rilgan chora: %(note)s"
+
+#: backend/apps/tasks/services.py
+#, python-format
+msgid "Taken by: %(name)s, %(time)s"
+msgstr "Kim o‘lchadi: %(name)s, %(time)s"
+
+#: backend/apps/tasks/services.py
+msgid "Undone: the readings will be entered again"
+msgstr "Bekor qilindi: ko‘rsatkichlar qaytadan kiritiladi"
+
+#: backend/apps/tasks/services.py
+msgid "Done by a colleague"
+msgstr "Hamkasb bajardi"
+
+#: backend/apps/tasks/services.py
 msgid "You can't change the company's settings."
 msgstr "Kompaniya sozlamalarini o‘zgartira olmaysiz."
 
@@ -16107,6 +16499,19 @@ msgstr "Kompaniya sozlamalarini o‘zgartira olmaysiz."
 #, python-format
 msgid "Pick between %(low)d and %(high)d hours."
 msgstr "%(low)d–%(high)d soat oralig‘ida tanlang."
+
+#: backend/apps/tasks/services.py
+msgid "Pick at least one time for the readings."
+msgstr "Ko‘rsatkichlar uchun kamida bitta vaqtni tanlang."
+
+#: backend/apps/tasks/services.py
+#, python-format
+msgid "Take readings at most %(max)d times a day."
+msgstr "Ko‘rsatkichlarni kuniga ko‘pi bilan %(max)d marta o‘lchang."
+
+#: backend/apps/tasks/services.py
+msgid "Humidity goes from 0 to 100 %."
+msgstr "Namlik: 0–100 %."
 
 #: backend/apps/tasks/services.py
 #, python-format
@@ -16121,6 +16526,58 @@ msgid ""
 msgstr ""
 "%(hours)d soat ichida hech kim tekshirmadi, shuning uchun qabul qilindi.\n"
 "Bajardi: %(name)s"
+
+#: backend/apps/tasks/templates/tasks/readings_journal.html
+msgid "This branch has no readings routines yet."
+msgstr "Bu filialda hali ko‘rsatkichli muntazam vazifalar yo‘q."
+
+#: backend/apps/tasks/templates/tasks/readings_journal.html
+msgid "Instrument"
+msgstr "O‘lchov joyi"
+
+#: backend/apps/tasks/templates/tasks/readings_journal.html
+msgid "Allowed"
+msgstr "Ruxsat etilgan"
+
+#: backend/apps/tasks/templates/tasks/readings_journal.html
+msgid "Out of range"
+msgstr "Me’yordan chiqqan"
+
+#: backend/apps/tasks/templates/tasks/readings_journal.html
+msgid "Time"
+msgstr "Vaqt"
+
+#: backend/apps/tasks/templates/tasks/readings_journal.html
+msgid "Value"
+msgstr "Qiymat"
+
+#: backend/apps/tasks/templates/tasks/readings_journal.html
+msgid "Taken by"
+msgstr "Kim o‘lchadi"
+
+#: backend/apps/tasks/templates/tasks/readings_journal.html
+msgid "Signature"
+msgstr "Imzo"
+
+#: backend/apps/tasks/templates/tasks/readings_journal.html
+msgid "recheck"
+msgstr "qayta o‘lchash"
+
+#: backend/apps/tasks/templates/tasks/readings_journal.html
+msgid "No reading"
+msgstr "Ko‘rsatkich olinmagan"
+
+#: backend/apps/tasks/templates/tasks/readings_journal.html
+msgid ""
+"Values out of range are in bold. A recheck is the second measurement after "
+"something was done about it."
+msgstr ""
+"Me’yordan chiqqan qiymatlar qalin harfda. Qayta o‘lchash chora ko‘rilgandan "
+"keyingi ikkinchi o‘lchovdir."
+
+#: backend/apps/tasks/templates/tasks/readings_journal.html
+msgid "Head of pharmacy"
+msgstr "Dorixona mudiri"
 
 #: backend/apps/timeoff/admin.py
 msgid "Approve selected time off"
@@ -16623,6 +17080,14 @@ msgstr "Boshlandi"
 #: employee_bot/bot/handlers/member/tasks.py
 msgid "The task is open again."
 msgstr "Vazifa yana ochiq."
+
+#: employee_bot/bot/handlers/member/tasks.py
+msgid "This task is already done."
+msgstr "Bu vazifa allaqachon bajarilgan."
+
+#: employee_bot/bot/handlers/member/tasks.py
+msgid "That can't be right. Type a value from −50 to 100."
+msgstr "Bu to‘g‘ri bo‘lishi mumkin emas. −50…100 oralig‘idagi qiymat yozing."
 
 #: employee_bot/bot/handlers/member/tasks.py
 msgid "No task is waiting for a photo right now."
@@ -17135,11 +17600,6 @@ msgstr "Uni ochganlar darhol qo‘shiladi."
 #: owner_bot/ownerbot/invite.py
 msgid "People who open it ask to join, and you approve them."
 msgstr "Uni ochganlar qo‘shilishni so‘raydi, siz ularni tasdiqlaysiz."
-
-#: owner_bot/ownerbot/invite.py
-#, python-format
-msgid "Branch: %(branch)s"
-msgstr "Filial: %(branch)s"
 
 #: owner_bot/ownerbot/invite.py
 #, python-format
