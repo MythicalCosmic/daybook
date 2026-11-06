@@ -2,14 +2,14 @@
 shipped in 0.4.2 and pins the fix (or is marked xfail with the reason when the fix is the
 lead's call)."""
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from zoneinfo import ZoneInfo
 
 import pytest
 
-from apps.finance import queries, recurring, reminders
-from apps.finance.models import Category, MoneyAccount, RecurringRule, Transaction
+from apps.finance import queries, recurring, reminders, services, tax_calendar
+from apps.finance.models import Category, Debt, MoneyAccount, RecurringRule, Transaction
 from apps.inbox.models import Notification
 
 pytestmark = pytest.mark.django_db
@@ -139,3 +139,41 @@ def test_the_paid_button_racing_another_payment_books_nothing_more(
 
     assert reminders.paid_action(note, boss, "") == "Already paid."
     assert booked(bill) == 1
+
+
+# F2: a sales-tax bill settles only its own tax, never payroll's withheld taxes ----------------
+
+
+def test_a_vat_bill_leaves_the_payroll_tax_debts_to_their_own_bills(fin, boss, kassa, today):
+    """Payroll books the income tax it withholds as a payable to the tax office. Paying VAT used
+    to settle that debt first: VAT read 700 000 less in "Taxes", and the income tax, paid on its
+    own bill a few days later, was booked as an expense a second time."""
+    made = {r.template_key: r for r in tax_calendar.apply(fin, by=boss, key="vat")}
+    vat, income_tax = made["tax.vat"], made["tax.income_tax"]
+    withheld = services.open_debt(
+        fin,
+        by=boss,
+        direction="payable",
+        kind="tax",
+        amount="700000",
+        currency="UZS",
+        issued_on=today - timedelta(days=5),
+        counterparty=vat.counterparty,
+        category="salaries",
+    )
+
+    paid_vat = recurring.pay_occurrence(vat, by=boss, account=kassa, amount="30000000")
+
+    withheld.refresh_from_db()
+    assert (withheld.status, withheld.paid) == (Debt.Status.OPEN, Decimal("0.00"))
+    [row] = paid_vat.rows
+    assert (row.kind, row.amount, row.category.system_code) == (
+        "expense",
+        Decimal("-30000000.00"),
+        "taxes",
+    )
+
+    paid_income_tax = recurring.pay_occurrence(income_tax, by=boss, account=kassa, amount="700000")
+    withheld.refresh_from_db()
+    assert withheld.status == Debt.Status.PAID
+    assert [row.kind for row in paid_income_tax.rows] == ["debt_payment"]

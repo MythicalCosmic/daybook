@@ -15,9 +15,10 @@ right after a manual post never book twice.
   amount that varies, the paid amount becomes the next estimate) or skips it.
 - An **auto** rule posts itself on its due day (`run_due`, every 30 minutes) on its account.
 
-A tax-calendar bill (`template_key` "tax.…") paid while the tax office has open tax payables
-(payroll books the income tax and social tax it withholds as such debts) settles those first,
-oldest first, so the tax is never counted twice; only the rest is booked as an expense.
+A payroll-tax bill of the tax calendar (income tax, pension, social tax) paid while the tax
+office has open tax payables (payroll books the taxes of its runs as such debts) settles those
+first, oldest first, so the tax is never counted twice; only the rest is booked as an expense.
+A VAT, turnover or profit tax bill is always its own expense.
 """
 
 import logging
@@ -443,8 +444,14 @@ def _post(rule: RecurringRule, scheduled: date, occurred_on: date, *, by) -> Tra
 def _settle_tax_debts(
     rule: RecurringRule, *, by: Membership, account: MoneyAccount, amount: Decimal, paid_on: date
 ) -> list[Transaction]:
-    """A tax-calendar bill first settles the open tax payables to its counterparty."""
-    if not rule.template_key.startswith("tax.") or rule.counterparty_id is None:
+    """A payroll-tax bill of the tax calendar first settles the open tax payables to its
+    counterparty: the income tax, pension and social tax payroll booked. VAT, turnover and
+    profit tax never pay those (VAT would read less, and the payroll tax would be booked again
+    as an expense when its own bill is paid)."""
+    from apps.finance.tax_calendar import PAYROLL_TAXES  # tax_calendar builds on this module
+
+    payroll_taxes = {item.key for item in PAYROLL_TAXES}
+    if rule.template_key not in payroll_taxes or rule.counterparty_id is None:
         return []
     debts = Debt.objects.filter(
         company=rule.company,
