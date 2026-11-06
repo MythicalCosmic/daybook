@@ -279,3 +279,28 @@ def test_held_cash_is_booked_on_the_account_in_the_base_currency(fin, boss, memb
     row = claim.transaction
     assert (row.account_id, row.currency, row.amount) == (held.pk, "USD", Decimal("-45.00"))
     assert not MoneyAccount.objects.filter(company=fin, holder=jasur, currency="UZS").exists()
+
+
+# F6: the fixed-asset categories are booked by the system, never claimed -------------------------
+
+
+def test_the_fixed_asset_categories_are_not_offered_or_taken_for_a_claim(fin, boss, member, today):
+    """Depreciation and "Fixed assets written off" (0.4.1) are booked by the assets module and
+    move no money; the claim's category list (bot, mini app) offered them."""
+    from apps.core.exceptions import DomainError
+    from apps.finance import defaults
+
+    defaults.ensure_asset_categories(fin)
+    jasur = member(fin, "Employee", first_name="Jasur")
+    offered = set(claims.expense_categories(fin).values_list("system_code", flat=True))
+    assert not offered & {"depreciation", "asset_disposal"}
+    depreciation = Category.objects.get(company=fin, system_code="depreciation")
+    with pytest.raises(DomainError):
+        claims.submit_claim(
+            fin,
+            by=jasur,
+            amount="45000",
+            category=depreciation,
+            spent_on=today,
+            paid_from="own_money",
+        )

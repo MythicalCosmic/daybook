@@ -182,8 +182,17 @@ def expense_categories(company) -> QuerySet[Category]:
     )
 
 
-# Categories a person never claims: what the system books by itself.
-CLAIM_EXCLUDED = ("salaries", "payroll_taxes", "cash_shortage", "bad_debts", "fx_diff")
+# Categories a person never claims: what the system books by itself (fixed assets' depreciation
+# and write-offs move no money).
+CLAIM_EXCLUDED = (
+    "salaries",
+    "payroll_taxes",
+    "cash_shortage",
+    "bad_debts",
+    "fx_diff",
+    "depreciation",
+    "asset_disposal",
+)
 
 
 def held_accounts(member: Membership) -> list[MoneyAccount]:
