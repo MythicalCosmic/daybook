@@ -109,6 +109,7 @@ function payslipRow(extra: Partial<PayslipRow> = {}): PayslipRow {
     id: 6,
     member: { id: 7, name: "Alisher Valiyev", photo_url: null, position: "Farmatsevt", home_branch: "Chilonzor", status: "approved" },
     period: "2026-10-01",
+    run_kind: "regular",
     pay_type: "monthly",
     currency: "UZS",
     base_pay: "4800000.00",
