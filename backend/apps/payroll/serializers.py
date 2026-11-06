@@ -136,6 +136,7 @@ class SettingsSerializer(serializers.ModelSerializer):
             "daily_hours",
             "auto_prepare",
             "leave_payout_months",
+            "leave_payout_unit",
         )
         ref_name = "PayrollSettings"
 
@@ -625,6 +626,7 @@ class RunSerializer(serializers.ModelSerializer):
     )
     finalized_by = serializers.SerializerMethodField()
     actions = serializers.SerializerMethodField()
+    leave_days = serializers.DecimalField(max_digits=6, decimal_places=2, coerce_to_string=True)
 
     class Meta:
         model = PayrollRun
@@ -635,6 +637,9 @@ class RunSerializer(serializers.ModelSerializer):
             "kind",
             "status",
             "member",
+            "last_day",
+            "leave_days",
+            "after_regular",
             "usd_rate",
             "calculated_at",
             "totals",
@@ -671,7 +676,8 @@ class RunSerializer(serializers.ModelSerializer):
     @extend_schema_field(serializers.ListField(child=serializers.CharField()))
     def get_actions(self, run):
         """What the caller may do with the run now: calculate, finalize, reopen, cancel,
-        publish, mark_paid."""
+        publish, mark_paid, and on a draft final settlement leave_payout (the unused leave
+        days)."""
         member = self.context.get("membership")
         if member is None:
             return []
@@ -680,6 +686,8 @@ class RunSerializer(serializers.ModelSerializer):
         if status == PayrollRun.Status.DRAFT:
             if member.has_perm("payroll.manage"):
                 found += ["calculate", "cancel"]
+                if run.kind == PayrollRun.Kind.FINAL:
+                    found.append("leave_payout")
             if member.has_perm("payroll.finalize"):
                 found.append("finalize")
         elif status == PayrollRun.Status.FINALIZED:
@@ -703,6 +711,30 @@ class RunCreateSerializer(serializers.Serializer):
 
     class Meta:
         ref_name = "PayrollRunCreate"
+
+
+class FinalRunCreateSerializer(serializers.Serializer):
+    member = serializers.IntegerField()
+    leave_days = serializers.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        min_value=Decimal(0),
+        max_value=Decimal(366),
+        required=False,
+        default=Decimal(0),
+    )
+
+    class Meta:
+        ref_name = "PayrollFinalRunCreate"
+
+
+class LeavePayoutSerializer(serializers.Serializer):
+    leave_days = serializers.DecimalField(
+        max_digits=6, decimal_places=2, min_value=Decimal(0), max_value=Decimal(366)
+    )
+
+    class Meta:
+        ref_name = "PayrollLeavePayout"
 
 
 class RunCalculateSerializer(serializers.Serializer):
@@ -798,6 +830,9 @@ class PayslipRowSerializer(serializers.ModelSerializer):
     )
     reimbursements = serializers.SerializerMethodField()
     period = serializers.SerializerMethodField()
+    run_kind = serializers.SerializerMethodField(
+        help_text="regular: a month's payslip; final: the settlement of someone who left."
+    )
 
     class Meta:
         model = Payslip
@@ -805,6 +840,7 @@ class PayslipRowSerializer(serializers.ModelSerializer):
             "id",
             "member",
             "period",
+            "run_kind",
             "pay_type",
             "currency",
             "base_pay",
@@ -832,6 +868,9 @@ class PayslipRowSerializer(serializers.ModelSerializer):
 
     def get_period(self, payslip) -> str:
         return payslip.run.period.isoformat()
+
+    def get_run_kind(self, payslip) -> str:
+        return payslip.run.kind
 
     def _part(self, payslip, name: str) -> str:
         parts = getattr(payslip, "_row_parts", None)

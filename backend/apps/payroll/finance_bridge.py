@@ -42,21 +42,47 @@ def accrued_amount(payslip: Payslip, lines=None) -> Decimal:
     return sum((line.amount for line in lines if line.kind not in OUTSIDE_ACCRUAL), ZERO)
 
 
-def _booked_on(payslip: Payslip) -> date:
-    return periods.last_day(payslip.run.period)
+def advance_offsets(payslip: Payslip, lines=None) -> list[tuple[PayslipLine, Decimal]]:
+    """(advance line, what it really takes back) in line order: everything the payslip owes the
+    person (the salary payable, then the expenses it pays back) covers the advances. A regular
+    payslip always covers them in full; a final one deducts every advance left in full, and
+    what its pay can't cover stays owed on the advance (the negative net, a receivable)."""
+    lines = lines if lines is not None else list(payslip.lines.all())
+    cover = max(accrued_amount(payslip, lines), ZERO) + sum(
+        (line.amount for line in lines if line.kind == Kind.REIMBURSEMENT), ZERO
+    )
+    found = []
+    for line in lines:
+        if line.kind == Kind.ADVANCE and line.advance_id is not None:
+            taken = min(-line.amount, max(cover, ZERO))
+            cover -= taken
+            found.append((line, taken))
+    return found
+
+
+def booked_on(run: PayrollRun) -> date:
+    """The day a run's pay is accrued: the month's last day, a final settlement's last day."""
+    if run.kind == PayrollRun.Kind.FINAL and run.last_day is not None:
+        return run.last_day
+    return periods.last_day(run.period)
 
 
 def book_payslip(payslip: Payslip, *, by) -> None:
-    lines = list(payslip.lines.select_related("advance__debt", "debt"))
+    lines = list(payslip.lines.select_related("advance__debt", "debt").order_by("order", "pk"))
     company = payslip.company
     member = payslip.membership
-    month = queries.month_label(payslip.run.period)
-    issued_on = _booked_on(payslip)
+    run = payslip.run
+    month = queries.month_label(run.period)
+    issued_on = booked_on(run)
     accrued = accrued_amount(payslip, lines)
     if accrued < 0:
         raise DomainError(
             _("The pay of %(name)s is below zero: lower a deduction first.") % {"name": member}
         )
+    if run.kind == PayrollRun.Kind.FINAL:
+        description = _("Final settlement for %(month)s: %(name)s")
+    else:
+        description = _("Salary for %(month)s: %(name)s")
     salary = None
     if accrued > 0:
         salary = finance.open_debt(
@@ -70,35 +96,15 @@ def book_payslip(payslip: Payslip, *, by) -> None:
             membership=member,
             category="salaries",
             branch=member.home_branch,
-            description=_("Salary for %(month)s: %(name)s") % {"month": month, "name": member},
+            description=description % {"month": month, "name": member},
             source=Source(PAYSLIP, payslip.pk, "accrued"),
         )
     payslip.salary_debt = salary
     payslip.save(update_fields=["salary_debt", "updated_at"])
+    # Expenses paid back are reserved first: a final payslip may offset an advance against them.
+    reimbursements = []
     for line in lines:
-        if line.kind == Kind.ADVANCE and line.advance_id is not None:
-            taken = -line.amount
-            debt = line.advance.debt
-            paid_on = max(issued_on, debt.issued_on)
-            finance.pay_debt(
-                debt,
-                by=by,
-                amount=taken,
-                paid_on=paid_on,
-                source=Source(PAYSLIP, payslip.pk, f"adv{line.advance_id}"),
-            )
-            if salary is None:
-                raise DomainError(
-                    _("The pay of %(name)s can't cover the advance.") % {"name": member}
-                )
-            finance.pay_debt(
-                salary,
-                by=by,
-                amount=taken,
-                paid_on=paid_on,
-                source=Source(PAYSLIP, payslip.pk, f"off{line.advance_id}"),
-            )
-        elif line.kind == Kind.REIMBURSEMENT and line.debt_id is not None:
+        if line.kind == Kind.REIMBURSEMENT and line.debt_id is not None:
             debt = line.debt
             if debt.status != Debt.Status.OPEN or debt.amount - debt.paid != line.amount:
                 raise DomainError(
@@ -109,6 +115,49 @@ def book_payslip(payslip: Payslip, *, by) -> None:
                     % {"name": member}
                 )
             finance.lock_debt(debt, source=Source(PAYSLIP, payslip.pk))
+            reimbursements.append([debt, line.amount])
+    salary_left = accrued
+    for line, taken in advance_offsets(payslip, lines):
+        if taken <= 0:
+            continue
+        debt = line.advance.debt
+        paid_on = max(issued_on, debt.issued_on)
+        finance.pay_debt(
+            debt,
+            by=by,
+            amount=taken,
+            paid_on=paid_on,
+            source=Source(PAYSLIP, payslip.pk, f"adv{line.advance_id}"),
+        )
+        from_salary = min(taken, salary_left)
+        if from_salary > 0:
+            finance.pay_debt(
+                salary,
+                by=by,
+                amount=from_salary,
+                paid_on=max(paid_on, salary.issued_on),
+                source=Source(PAYSLIP, payslip.pk, f"off{line.advance_id}"),
+            )
+            salary_left -= from_salary
+        rest = taken - from_salary
+        for item in reimbursements:
+            if rest <= 0:
+                break
+            expense, left = item
+            share = min(rest, left)
+            if share <= 0:
+                continue
+            finance.pay_debt(
+                expense,
+                by=by,
+                amount=share,
+                paid_on=max(paid_on, expense.issued_on),
+                source=Source(PAYSLIP, payslip.pk, f"rof{line.advance_id}-{expense.pk}"),
+            )
+            item[1] = left - share
+            rest -= share
+        if rest > 0:
+            raise DomainError(_("The pay of %(name)s can't cover the advance.") % {"name": member})
 
 
 def _tax_office(company, by) -> Counterparty:
@@ -149,7 +198,7 @@ def book_taxes(run: PayrollRun, *, by) -> None:
         return
     company = run.company
     office = _tax_office(company, by)
-    issued_on = periods.last_day(run.period)
+    issued_on = booked_on(run)
     month = queries.month_label(run.period)
     currency = run.payslips.values_list("currency", flat=True).first()
     parts = (
@@ -198,12 +247,13 @@ def unbook_run(run: PayrollRun, *, by) -> None:
     reason = _("Payroll for %(month)s reopened") % {"month": queries.month_label(run.period)}
     payslips = list(run.payslips.select_related("salary_debt"))
     for payslip in payslips:
-        # Advance offsets settle the advances' receivables: voiding reopens them.
+        # Advance offsets settle the advances' receivables (and, on a final payslip, part of
+        # the expenses it paid back): voiding reopens them.
         offsets = Transaction.objects.filter(
+            Q(source_key__startswith="adv") | Q(source_key__startswith="rof"),
             company_id=run.company_id,
             source_type=PAYSLIP,
             source_id=payslip.pk,
-            source_key__startswith="adv",
             status__in=("posted", "pending"),
         )
         for row in offsets.order_by("pk"):

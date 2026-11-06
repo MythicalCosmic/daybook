@@ -52,6 +52,13 @@ class PayType(models.TextChoices):
 PayoutMethod = EmployeeProfile.PayoutMethod
 
 
+class LeaveUnit(models.TextChoices):
+    """How unused leave is counted for the payout on leaving (§3.17)."""
+
+    CALENDAR = "calendar", _("Calendar days")
+    WORK_DAYS = "work_days", _("Working days")
+
+
 class PayrollSettings(models.Model):
     """One row per company, made on first read by `apps.payroll.conf.get_settings`."""
 
@@ -134,7 +141,21 @@ class PayrollSettings(models.Model):
         default=True, help_text=_("Prepare last month's draft run on the 1st of each month.")
     )
     leave_payout_months = models.PositiveSmallIntegerField(
-        default=12, validators=(MinValueValidator(1), MaxValueValidator(24))
+        default=12,
+        validators=(MinValueValidator(1), MaxValueValidator(24)),
+        help_text=_(
+            "Unused leave paid out on leaving: the average day's pay of this many months "
+            "before. Confirm the method with your accountant."
+        ),
+    )
+    leave_payout_unit = models.CharField(
+        max_length=10,
+        choices=LeaveUnit.choices,
+        default=LeaveUnit.CALENDAR,
+        help_text=_(
+            "How unused leave days are counted: the average day is the pay over the calendar "
+            "days employed, or over the working days paid."
+        ),
     )
     # Pay day reminders: the last month a reminder went out for (once a month).
     reminded_period = models.DateField(null=True, blank=True, editable=False)
@@ -517,6 +538,17 @@ class PayrollRun(TenantModel):
         blank=True,
         related_name="final_runs",
     )
+    # A final settlement (kind=final) only: the last working day (paid through it, inclusive),
+    # the unused leave days paid out, and whether the month's regular run had paid their work
+    # already when they left (then this run pays only the leave and what is left).
+    last_day = models.DateField(null=True, blank=True)
+    leave_days = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        default=Decimal(0),
+        validators=(MinValueValidator(Decimal(0)), MaxValueValidator(Decimal(366))),
+    )
+    after_regular = models.BooleanField(default=False)
     calculated_at = models.DateTimeField(null=True, blank=True)
     warnings = models.JSONField(default=list, blank=True)
     totals = models.JSONField(default=dict, blank=True)
@@ -547,6 +579,10 @@ class PayrollRun(TenantModel):
     @property
     def is_locked(self) -> bool:
         return self.status in (self.Status.FINALIZED, self.Status.PAID)
+
+    @property
+    def is_final(self) -> bool:
+        return self.kind == self.Kind.FINAL
 
 
 class Payslip(TenantModel):

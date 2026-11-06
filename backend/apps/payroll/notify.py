@@ -10,9 +10,10 @@ Nothing here writes payroll rows.
 from __future__ import annotations
 
 import logging
+from decimal import Decimal
 
 from django.db import transaction
-from django.utils import translation
+from django.utils import formats, translation
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy
 
@@ -334,6 +335,51 @@ def _run_prepared(run_id: int) -> None:
         dedupe_key=f"payroll.run_prepared:{run.pk}:{run.calculated_at:%Y%m%d%H%M%S}"
         if run.calculated_at
         else "",
+    )
+
+
+def final_run_prepared(run: PayrollRun) -> None:
+    """A leaver's final payslip waits as a draft: payroll managers who see them hear."""
+    _later(_final_run_prepared, run.pk)
+
+
+def _final_run_prepared(run_id: int) -> None:
+    run = (
+        PayrollRun.objects.select_related("company", "membership__user")
+        .filter(pk=run_id, kind=PayrollRun.Kind.FINAL)
+        .first()
+    )
+    if run is None or run.status != PayrollRun.Status.DRAFT or run.membership is None:
+        return
+    member = run.membership
+    totals = run.totals or {}
+    currency = totals.get("currency") or run.company.base_currency
+    net = Decimal(str(totals.get("net") or "0"))
+
+    def title(_person):
+        return _("The final payslip of %(name)s is ready to check") % {"name": member}
+
+    def body(_person):
+        parts = []
+        if run.last_day is not None:
+            parts.append(
+                _("Last working day: %(date)s")
+                % {"date": formats.date_format(run.last_day, "d.m.Y")}
+            )
+        if net < 0:
+            parts.append(_("They owe: %(amount)s") % {"amount": _money(-net, currency)})
+        else:
+            parts.append(_("Net pay: %(amount)s") % {"amount": _money(net, currency)})
+        return " · ".join(parts)
+
+    inbox.notify(
+        deciders(run.company, member),
+        "payroll.final_run",
+        title=title,
+        body=body,
+        url=_url(run.company_id, f"/runs/{run.pk}"),
+        target=run,
+        dedupe_key=f"payroll.final_run:{run.pk}",
     )
 
 

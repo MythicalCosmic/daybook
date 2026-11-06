@@ -36,6 +36,8 @@ class PayrollAction(models.TextChoices):
     RUN_FINALIZED = "payroll.run_finalized", _("Finalized a payroll run")
     RUN_REOPENED = "payroll.run_reopened", _("Reopened a payroll run")
     RUN_CANCELLED = "payroll.run_cancelled", _("Cancelled a payroll run")
+    FINAL_RUN_CREATED = "payroll.final_run_created", _("Prepared a final payslip for a leaver")
+    LEAVE_PAYOUT_CHANGED = "payroll.leave_payout_changed", _("Changed the unused leave paid out")
     PAYSLIPS_PUBLISHED = "payroll.payslips_published", _("Published payslips")
     PAYSLIPS_PAID = "payroll.payslips_paid", _("Marked payslips paid")
     PAYSLIP_LINE_ADDED = "payroll.payslip_line_added", _("Added a line to a payslip")

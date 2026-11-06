@@ -59,6 +59,7 @@ from apps.payroll.runs import (
     reopen_run,
     set_manual_lines,
 )
+from apps.payroll.settlement import create_final_run, set_leave_days
 
 # Pulse keys (registered in hooks.py).
 PULSE_PENDING = "payroll.pending"
@@ -242,6 +243,7 @@ SETTINGS_FIELDS = (
     "daily_hours",
     "auto_prepare",
     "leave_payout_months",
+    "leave_payout_unit",
 )
 
 
@@ -1313,6 +1315,7 @@ __all__ = [
     "cancel_run",
     "confirm_received",
     "create_advance",
+    "create_final_run",
     "create_run",
     "decide_advance",
     "dispute",
@@ -1334,6 +1337,7 @@ __all__ = [
     "request_advance",
     "save_rule",
     "save_task_rate",
+    "set_leave_days",
     "set_manual_lines",
     "set_pay",
     "unlock_pay",

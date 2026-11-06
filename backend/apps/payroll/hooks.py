@@ -15,7 +15,8 @@ from apps.exports.registry import register_exporter
 from apps.finance import sources
 from apps.inbox.registry import register_action, register_kind
 from apps.members.permissions import Perm
-from apps.payroll import actions, defaults, providers, queries
+from apps.members.signals import member_left
+from apps.payroll import actions, defaults, providers, queries, settlement
 from apps.payroll.audit_actions import PayrollAction
 from apps.payroll.models import Adjustment, Advance, Compensation, Payslip
 
@@ -97,6 +98,16 @@ registry.register_setup_step(
     done=providers.setup_done,
     feature=FEATURE,
 )
+# The final settlement of someone who leaves: a step of the offboarding wizard (it shows pay,
+# so payroll.manage only) and, once they left, the draft final run (`settlement`).
+registry.register_offboard_step(
+    "payroll",
+    perm=MANAGE,
+    order=70,
+    label=_("Final payslip"),
+    preview=settlement.offboard_step,
+    feature=FEATURE,
+)
 
 registry.register_brief_section(
     "payroll", perm=VIEW, order=60, build=providers.brief_section, feature=FEATURE
@@ -163,6 +174,12 @@ register_kind(
     default_telegram=True,
 )
 register_kind(
+    "payroll.final_run",
+    label=_("Final payslips of leavers to check"),
+    audience="owner",
+    default_telegram=True,
+)
+register_kind(
     "payroll.pay_day",
     label=_("Pay day reminders"),
     audience="owner",
@@ -195,3 +212,4 @@ def make_defaults(sender, company, by=None, **kwargs) -> None:
 
 
 company_created.connect(make_defaults, dispatch_uid="payroll.make_defaults")
+member_left.connect(settlement.on_member_left, dispatch_uid="payroll.final_settlement")

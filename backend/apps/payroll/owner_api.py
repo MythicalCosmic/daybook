@@ -770,6 +770,8 @@ class RunViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, PayrollViewSe
     perm = VIEW
     perms_by_action = {
         "create": MANAGE,
+        "final": MANAGE,
+        "leave_payout": MANAGE,
         "calculate": MANAGE,
         "cancel": MANAGE,
         "finalize": FINALIZE,
@@ -786,6 +788,10 @@ class RunViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, PayrollViewSe
         rows = PayrollRun.objects.for_company(self.company).select_related(
             "membership__user", "finalized_by"
         )
+        if self.branch_scope is not None:
+            # A final settlement belongs to its person: outside the caller's branches, 404.
+            people = Membership.objects.filter(branches__in=self.branch_scope).values("pk")
+            rows = rows.filter(Q(membership__isnull=True) | Q(membership__in=people))
         if self.action == "list":
             params = self.request.query_params
             if value := params.get("status"):
@@ -850,6 +856,29 @@ class RunViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, PayrollViewSe
             notes=data["notes"],
         )
         return self._out(run, status.HTTP_201_CREATED)
+
+    @extend_schema(request=s.FinalRunCreateSerializer, responses={201: s.RunSerializer})
+    @action(detail=False, methods=["post"])
+    def final(self, request, company_id):
+        """The final settlement of someone who left (their draft final payslip, through their
+        last working day), when the offboarding wizard didn't prepare it."""
+        serializer = s.FinalRunCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        run = services.create_final_run(
+            self.person(data["member"]), by=self.membership, leave_days=data["leave_days"]
+        )
+        return self._out(run, status.HTTP_201_CREATED)
+
+    @extend_schema(request=s.LeavePayoutSerializer, responses=s.RunSerializer)
+    @action(detail=True, methods=["post"], url_path="leave-payout")
+    def leave_payout(self, request, company_id, pk):
+        """The unused leave days a draft final settlement pays out; calculated again at once."""
+        serializer = s.LeavePayoutSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        days = serializer.validated_data["leave_days"]
+        run = services.set_leave_days(self.get_object(), by=self.membership, leave_days=days)
+        return self._out(run)
 
     @extend_schema(
         parameters=[OpenApiParameter("status", str, description="draft,published,paid")],
