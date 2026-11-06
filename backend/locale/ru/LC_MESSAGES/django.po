@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-07 04:14+0500\n"
+"POT-Creation-Date: 2026-11-07 04:52+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -6041,6 +6041,16 @@ msgstr "Изменить сумму"
 #: backend/apps/finance/bot_messages.py
 msgid "Change category"
 msgstr "Изменить категорию"
+
+#. Translators: a button showing the next page of categories.
+#: backend/apps/finance/bot_messages.py
+msgid "More ›"
+msgstr "Ещё ›"
+
+#. Translators: a button showing the previous page of categories.
+#: backend/apps/finance/bot_messages.py
+msgid "‹ Back"
+msgstr "‹ Назад"
 
 #: backend/apps/finance/bot_messages.py
 msgid "Cancelled. Nothing was sent."

@@ -86,6 +86,16 @@ def claim_button_cancel() -> str:
     return _("Cancel")
 
 
+def claim_button_more() -> str:
+    # Translators: a button showing the next page of categories.
+    return _("More ›")
+
+
+def claim_button_back() -> str:
+    # Translators: a button showing the previous page of categories.
+    return _("‹ Back")
+
+
 def claim_cancelled() -> str:
     return _("Cancelled. Nothing was sent.")
 
