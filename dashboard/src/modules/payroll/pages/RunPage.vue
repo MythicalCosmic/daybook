@@ -99,20 +99,32 @@ const selectable = computed(() => run.value?.status === "finalized" && has("mark
 
 /** Some row has this part: taxes and expenses paid back get a column only in a run that has them. */
 const anyNonZero = (pick: (row: Payslip) => Money | null | undefined) => payslips.value.some((row) => hasAmount(pick(row)) && moneySign(pick(row)!) !== 0);
+/**
+ * A money column's width: its usual one, or wider when its longest amount needs it (a prorated
+ * "+1 460 714,29 so'm" ran into the next column). Amounts at the table's size measure about
+ * 7.3 px a character (narrow group spaces), so 7.8 leaves room, plus the cells' 12 px padding.
+ */
+const fit = (width: number, pick: (row: Payslip) => Money | null | undefined, sign: "auto" | "always" = "auto") => {
+  const longest = payslips.value.reduce((most, row) => {
+    const value = pick(row);
+    return hasAmount(value) ? Math.max(most, fmt.money(value, row.currency, { sign }).length) : most;
+  }, 0);
+  return Math.max(width, Math.ceil(longest * 7.8) + 28);
+};
 // The parts add up to net as the server sends them (base + extra pay + bonuses + fines +
 // advances + taxes + expenses paid back): nothing is worked out here.
 const columns = computed<TableColumn<Payslip>[]>(() => [
   { id: "person", header: t("payroll.payslips.person"), minWidth: 210, sticky: true, hideable: false, value: (row) => row.member.name },
-  { id: "base", header: t("payroll.payslips.base"), width: 136, numeric: true, value: (row) => row.base_pay ?? null },
-  { id: "extras", header: t("payroll.payslips.extras"), hint: t("payroll.payslips.extrasHint"), width: 128, numeric: true, value: (row) => row.extras ?? null },
-  { id: "bonuses", header: t("payroll.payslips.bonuses"), width: 124, numeric: true, value: (row) => row.bonuses ?? null },
-  { id: "fines", header: t("payroll.payslips.fines"), width: 124, numeric: true, value: (row) => row.fines ?? null },
-  { id: "advances", header: t("payroll.payslips.advances"), width: 124, numeric: true, value: (row) => row.advances ?? null },
-  ...(anyNonZero((row) => row.taxes_withheld) ? [{ id: "taxes", header: t("payroll.payslips.taxes"), width: 124, numeric: true, value: (row: Payslip) => row.taxes_withheld ?? null }] : []),
-  ...(anyNonZero((row) => row.reimbursements) ? [{ id: "reimbursements", header: t("payroll.payslips.reimbursements"), width: 124, numeric: true, value: (row: Payslip) => row.reimbursements ?? null }] : []),
-  { id: "gross", header: t("payroll.totals.gross"), width: 136, numeric: true, value: (row) => row.gross ?? null },
-  { id: "deductions", header: t("payroll.totals.deductions"), width: 136, numeric: true, value: (row) => row.deductions ?? null },
-  { id: "net", header: t("payroll.totals.net"), width: 148, numeric: true, value: (row) => row.net ?? null },
+  { id: "base", header: t("payroll.payslips.base"), width: fit(136, (row) => row.base_pay), numeric: true, value: (row) => row.base_pay ?? null },
+  { id: "extras", header: t("payroll.payslips.extras"), hint: t("payroll.payslips.extrasHint"), width: fit(128, (row) => row.extras, "always"), numeric: true, value: (row) => row.extras ?? null },
+  { id: "bonuses", header: t("payroll.payslips.bonuses"), width: fit(124, (row) => row.bonuses, "always"), numeric: true, value: (row) => row.bonuses ?? null },
+  { id: "fines", header: t("payroll.payslips.fines"), width: fit(124, (row) => row.fines), numeric: true, value: (row) => row.fines ?? null },
+  { id: "advances", header: t("payroll.payslips.advances"), width: fit(124, (row) => row.advances), numeric: true, value: (row) => row.advances ?? null },
+  ...(anyNonZero((row) => row.taxes_withheld) ? [{ id: "taxes", header: t("payroll.payslips.taxes"), width: fit(124, (row) => row.taxes_withheld), numeric: true, value: (row: Payslip) => row.taxes_withheld ?? null }] : []),
+  ...(anyNonZero((row) => row.reimbursements) ? [{ id: "reimbursements", header: t("payroll.payslips.reimbursements"), width: fit(124, (row) => row.reimbursements), numeric: true, value: (row: Payslip) => row.reimbursements ?? null }] : []),
+  { id: "gross", header: t("payroll.totals.gross"), width: fit(136, (row) => row.gross), numeric: true, value: (row) => row.gross ?? null },
+  { id: "deductions", header: t("payroll.totals.deductions"), width: fit(136, (row) => row.deductions), numeric: true, value: (row) => row.deductions ?? null },
+  { id: "net", header: t("payroll.totals.net"), width: fit(148, (row) => row.net), numeric: true, value: (row) => row.net ?? null },
   // Every payslip of a draft is a draft: the column says something only once the run is finalized.
   ...(run.value && run.value.status !== "draft" ? [{ id: "status", header: t("payroll.payslips.status"), width: 128, value: (row: Payslip) => t(`payroll.payslipStatus.${payslipStage(row.status, run.value?.status)}`) }] : []),
 ]);
