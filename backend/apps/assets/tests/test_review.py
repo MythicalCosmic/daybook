@@ -458,3 +458,37 @@ def test_a_purchase_capitalized_meanwhile_is_not_voided(
         finance.void_transaction(txn, by=owner, reason="Xato")
     txn.refresh_from_db()
     assert txn.status == Transaction.Status.POSTED
+
+
+def test_a_leavers_lost_equipment_is_written_off_after_a_late_last_day(
+    shop, owner, ali, category, chilonzor
+):
+    """Ali's last day was 30 September, recorded in November when October's depreciation was
+    already posted: "not handed back" still writes the laptop off (on the first day the books
+    allow), instead of failing quietly in the receiver and leaving it with Ali."""
+    from apps.assets import providers
+    from apps.assets.models import Asset
+
+    laptop = services.create_asset(
+        shop,
+        by=owner,
+        category=category,
+        name="Noutbuk",
+        cost=D(9_600_000),
+        life_months=48,
+        branch=chilonzor,
+        in_service_on=date(2026, 6, 1),
+    )
+    services.issue(laptop, by=owner, membership=ali, on=date(2026, 6, 1))
+    providers.on_member_left(
+        ali,
+        terminated_on=date(2026, 9, 30),
+        details={"assets": {f"asset_{laptop.pk}": "lost"}},
+        by=owner,
+    )
+    laptop.refresh_from_db()
+    assert laptop.status == Asset.Status.DISPOSED and laptop.disposal == "lost"
+    assert laptop.disposed_on == date(2026, 10, 1) and laptop.custodian is None
+    # July … October were posted (200 000 each): the rest is the loss.
+    loss = Transaction.objects.get(company=shop, category__system_code="asset_disposal")
+    assert loss.base_amount == D("-8800000.00")
