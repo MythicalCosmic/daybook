@@ -388,15 +388,9 @@ def test_a_bill_in_soum_is_not_paid_from_a_dollar_account(fin, boss, kassa, toda
 # Left to the lead (xfail): real, but the fix is a product decision ------------------------------
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "Product decision for the lead: a claim still waiting when its day's period is closed "
-        "can only be rejected (open_debt / approve_transaction refuse a closed day). Book it on "
-        "the approval day, or let the approver pick the day."
-    ),
-)
 def test_a_claim_waiting_across_the_period_close_can_still_be_approved(fin, boss, member, today):
+    """The lead's decision: a claim still waiting when its day's period is closed is booked on
+    the first open day (as depreciation is), keeping the day it was spent."""
     jasur = member(fin, "Employee", first_name="Jasur")
     transport = Category.objects.get(company=fin, system_code="transport")
     claim = claims.submit_claim(
@@ -413,17 +407,13 @@ def test_a_claim_waiting_across_the_period_close_can_still_be_approved(fin, boss
 
     claim.refresh_from_db()
     assert claim.status == "approved" and claim.debt_id is not None
+    assert claim.spent_on == today - timedelta(days=3)
+    assert claim.debt.issued_on == today  # the first open day
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "Forecast heuristic, the lead's call: every payable with a due date (a bank loan too) "
-        "pushes back the day the usual supplier payments start, so a loan due in 80 days drops "
-        "two months of distributor payments from the forecast. Only trade payables should."
-    ),
-)
 def test_a_loan_due_later_does_not_hold_back_the_usual_supplier_payments(fin, boss, kassa, today):
+    """The lead's decision: only trade payables (goods on credit) push back the day the usual
+    supplier payments start; a bank loan due in 80 days is its own line."""
     from apps.finance import planning
     from apps.finance.tests.factories import CounterpartyFactory
 

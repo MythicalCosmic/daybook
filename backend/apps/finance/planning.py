@@ -54,6 +54,9 @@ class Item:
     rule_id: int | None
     debt_id: int | None
     url: str
+    # A debt for goods or services on credit: the kind the usual supplier payments and customer
+    # collections are made of (a loan or a bill due later doesn't hold them back).
+    trade: bool = False
 
     def as_dict(self) -> dict:
         return {
@@ -160,6 +163,7 @@ def _debt_items(company, today: date, until: date, branch_ids) -> list[Item]:
                 rule_id=None,
                 debt_id=debt.pk,
                 url=f"/c/{company.pk}/finance/debts?debt={debt.pk}",
+                trade=debt.kind == Debt.Kind.TRADE,
             )
         )
     # What the company owes its people: one line per day and currency, never per person.
@@ -263,11 +267,12 @@ def forecast(company, days: int = 90, *, branch_ids, today: date | None = None) 
     basis = run_rate(company, today, branch_ids=branch_ids)
     flows: dict[date, list[Decimal]] = defaultdict(lambda: [ZERO, ZERO])  # day -> [in, out]
     events = []
-    # The last due day of the debts already booked, per side: after it, the usual payments to
-    # suppliers (and collections from customers) carry on.
+    # The last due day of the trade debts already booked, per side: after it, the usual payments
+    # to suppliers (and collections from customers) carry on. A loan or a bill due later is its
+    # own line and holds nothing back.
     covered = {"payable": today, "receivable": today}
     for item in items(company, today, until, branch_ids=branch_ids):
-        if item.kind in covered and item.date > covered[item.kind]:
+        if item.kind in covered and item.trade and item.date > covered[item.kind]:
             covered[item.kind] = item.date
         if item.amount is None:
             continue
