@@ -224,8 +224,9 @@ def warning_text(warning: dict) -> str:
         ) % {"name": name, "month": _warning_month(warning)}
     if code == "paid_after_last_day":
         return _(
-            "The %(month)s payroll paid %(name)s %(amount)s for days after their last day. Add a "
-            "line by hand if it should be paid back."
+            "The %(month)s payroll paid %(name)s %(amount)s for days after their last day. To "
+            "take it back, add a line by hand for at most what this payslip pays, and record the "
+            "rest in Finance as money they owe."
         ) % {"name": name, "month": _warning_month(warning), "amount": _warning_money(warning)}
     return code or ""
 
