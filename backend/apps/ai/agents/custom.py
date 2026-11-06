@@ -155,6 +155,7 @@ DOMAINS = {
     "calendar": gettext_lazy("Calendar"),
     "communication": gettext_lazy("Announcements"),
     "knowledge": gettext_lazy("Knowledge base"),
+    "assets": gettext_lazy("Equipment and depreciation"),
 }
 WEEKDAYS = (
     gettext_lazy("Monday"),

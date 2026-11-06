@@ -44,3 +44,24 @@ def test_off_while_the_module_is_off(shop, ali, api_as):
     shop.features = ["finance"]
     shop.save(update_fields=["features"])
     assert api_as(ali).get(url(shop)).status_code == 403
+
+
+def test_the_ai_tool_sums_up_the_register(shop, owner, category):
+    from apps.ai.tools.registry import ToolContext, get_tool
+    from apps.assets.ai_tools import AssetsOverviewInput
+
+    services.create_asset(
+        shop,
+        by=owner,
+        category=category,
+        name="Muzlatgich",
+        cost=D(8_400_000),
+        life_months=84,
+        in_service_on=date(2026, 9, 10),
+        next_service_on=date(2026, 11, 20),
+    )
+    tool = get_tool("assets_overview")
+    result = tool.fn(ToolContext.for_member(owner), AssetsOverviewInput(days=30))
+    assert result.data["assets"] == 1
+    assert result.data["cost"] == "8400000.00"
+    assert [row["type"] for row in result.rows] == ["service"]
