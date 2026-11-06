@@ -6,7 +6,7 @@ from decimal import Decimal as D
 
 import pytest
 
-from apps.assets import conf, posting, queries, services
+from apps.assets import conf, engine, posting, queries, services
 from apps.assets.models import AssetCategory, DepreciationEntry
 from apps.assets.tests.test_posting import buy, depreciation_rows
 from apps.core.exceptions import DomainError
@@ -492,3 +492,32 @@ def test_a_leavers_lost_equipment_is_written_off_after_a_late_last_day(
     # July … October were posted (200 000 each): the rest is the loss.
     loss = Transaction.objects.get(company=shop, category__system_code="asset_disposal")
     assert loss.base_amount == D("-8800000.00")
+
+
+DECLINING = dict(cost=D(12_000_000), life_months=60, method="declining", start=date(2026, 1, 5))
+
+
+def test_mothballing_shifts_declining_balance_without_speeding_it_up():
+    """A pause makes the life wait: every later month is the one it would have been, a month
+    later. Each new basis took its rate from the life left (2/31 instead of 2/60), so the month
+    after the pause nearly doubled."""
+    plain = [row.amount for row in engine.schedule(engine.Facts(**DECLINING))]
+    pause = (
+        engine.Change("suspend", date(2028, 6, 10)),
+        engine.Change("resume", date(2028, 7, 10)),
+    )
+    paused = [row.amount for row in engine.schedule(engine.Facts(**DECLINING, changes=pause))]
+    july = 29  # February 2026 is month 0
+    assert paused[:july] == plain[:july] and paused[july] == 0
+    assert paused[july + 1 :] == plain[july:]
+
+
+def test_old_books_carry_on_at_the_declining_rate_of_the_whole_life():
+    """Entered with what the old books depreciated by the same method, the asset goes on as it
+    would have here: 2/60 of its value a month, not 2/27 because 27 months are left."""
+    facts = dict(DECLINING, start=date(2024, 1, 10))
+    full = engine.schedule(engine.Facts(**facts))
+    entered = date(2026, 11, 1)
+    lump = sum((row.amount for row in full if row.month < entered), D(0))
+    rows = engine.schedule(engine.Facts(**facts, opening_accumulated=lump, opening_month=entered))
+    assert [row.amount for row in rows] == [row.amount for row in full if row.month >= entered]
