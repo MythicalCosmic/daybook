@@ -5,7 +5,7 @@
 from django.urls import path
 from rest_framework.routers import SimpleRouter
 
-from apps.finance import owner_api
+from apps.finance import owner_api, planning_api
 
 router = SimpleRouter()
 router.register("finance/accounts", owner_api.AccountViewSet, basename="finance-account")
@@ -18,8 +18,46 @@ router.register(
 )
 router.register("finance/transfers", owner_api.TransferViewSet, basename="finance-transfer")
 router.register("finance/debts", owner_api.DebtViewSet, basename="finance-debt")
+# Package I: money planning.
+router.register("finance/recurring", planning_api.RecurringViewSet, basename="finance-recurring")
+router.register("finance/claims", planning_api.ClaimViewSet, basename="finance-claim")
+
+planning = [
+    path(
+        "finance/recurring/templates/",
+        planning_api.TemplatesView.as_view(),
+        name="finance-recurring-templates",
+    ),
+    path(
+        "finance/recurring/templates/<str:key>/apply/",
+        planning_api.TemplateApplyView.as_view(),
+        name="finance-recurring-template-apply",
+    ),
+    path("finance/upcoming/", planning_api.UpcomingView.as_view(), name="finance-upcoming"),
+    path(
+        "finance/reports/forecast/",
+        planning_api.ForecastView.as_view(),
+        name="finance-report-forecast",
+    ),
+    path("finance/budgets/", planning_api.BudgetsView.as_view(), name="finance-budgets"),
+    path(
+        "finance/budgets/copy/", planning_api.BudgetCopyView.as_view(), name="finance-budgets-copy"
+    ),
+    path("finance/payables/", planning_api.PayablesView.as_view(), name="finance-payables"),
+    path(
+        "finance/payables/pay/",
+        planning_api.PayablesPayView.as_view(),
+        name="finance-payables-pay",
+    ),
+    path(
+        "finance/debts/<int:pk>/credit/",
+        planning_api.DebtCreditView.as_view(),
+        name="finance-debt-credit",
+    ),
+]
 
 urlpatterns = [
+    *planning,
     path("finance/overview/", owner_api.OverviewView.as_view(), name="finance-overview"),
     path("finance/options/", owner_api.OptionsView.as_view(), name="finance-options"),
     path("finance/receipts/", owner_api.ReceiptUploadView.as_view(), name="finance-receipts"),

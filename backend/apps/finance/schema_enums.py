@@ -17,4 +17,11 @@ ENUM_NAME_OVERRIDES = {
     "FinanceDebtDirectionEnum": "apps.finance.models.Debt.Direction",
     "FinanceDebtKindEnum": "apps.finance.models.Debt.Kind",
     "FinanceDebtStatusEnum": "apps.finance.models.Debt.Status",
+    # Package I.
+    "FinanceTaxRegimeEnum": "apps.finance.models.FinanceSettings.TaxRegime",
+    "FinanceRecurringModeEnum": "apps.finance.models.RecurringRule.Mode",
+    "FinanceRecurringFrequencyEnum": "apps.finance.models.RecurringRule.Frequency",
+    "FinanceRecurringOnHolidayEnum": "apps.finance.models.RecurringRule.OnHoliday",
+    "FinanceClaimPaidFromEnum": "apps.finance.models.Claim.PaidFrom",
+    "FinanceClaimStatusEnum": "apps.finance.models.Claim.Status",
 }

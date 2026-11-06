@@ -429,6 +429,23 @@ class Counterparty(TenantModel):
 # source, so a module can void a booking and book it again under the same source.
 LIVE_STATUSES = ("pending", "posted")
 
+# Rows that take part of a debt off it (`debt_amount` counts in `Debt.paid`): payments,
+# write-offs, and credit notes (`services.credit_debt`: a contra income or expense on the debt
+# with no account, which the accrual that opened a debt never is).
+SETTLES_DEBT = Q(kind__in=("debt_payment", "write_off")) | Q(
+    kind__in=("income", "expense"), is_contra=True, account__isnull=True, debt__isnull=False
+)
+
+
+def credits_debt(row) -> bool:
+    """Whether `row` is a credit note on a debt (see SETTLES_DEBT)."""
+    return (
+        row.kind in ("income", "expense")
+        and row.is_contra
+        and row.account_id is None
+        and row.debt_id is not None
+    )
+
 
 class Debt(TenantModel):
     """Money owed to the company (receivable) or by it (payable), settled by payments."""

@@ -40,6 +40,7 @@ from django.utils import timezone
 from apps.core.exceptions import DomainError
 from apps.core.money import Currency, MoneyField, quantize
 from apps.finance.models import (
+    SETTLES_DEBT,
     Category,
     Counterparty,
     Debt,
@@ -1014,9 +1015,9 @@ def balances_on(company, on: date, *, branch_ids) -> dict:
     settled = defaultdict(lambda: ZERO)
     for entry in (
         Transaction.objects.filter(
+            SETTLES_DEBT,
             company=company,
             status=Status.POSTED,
-            kind__in=(Kind.DEBT_PAYMENT, Kind.WRITE_OFF),
             occurred_on__lte=on,
         )
         .values("debt_id")
@@ -1292,6 +1293,22 @@ def vat_percent(company) -> Decimal:
     from apps.finance import conf
 
     return conf.get_settings(company).vat_percent
+
+
+def upcoming(company, days: int = 30, *, branch_ids, today: date | None = None) -> dict:
+    """Bills, taxes, payables, receivables and pay due in the next `days` days (and what is
+    overdue), with totals in the base currency (Package I contract; `planning.upcoming`)."""
+    from apps.finance import planning
+
+    return planning.upcoming(company, days, branch_ids=branch_ids, today=today)
+
+
+def forecast(company, days: int = 90, *, branch_ids, today: date | None = None) -> dict:
+    """The cash balance day by day for `days` days, its low point and the first day below
+    zero (Package I contract; `planning.forecast`)."""
+    from apps.finance import planning
+
+    return planning.forecast(company, days, branch_ids=branch_ids, today=today)
 
 
 def tax_summary(company, today: date, *, branch_ids) -> dict:

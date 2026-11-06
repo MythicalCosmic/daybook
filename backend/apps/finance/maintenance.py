@@ -18,7 +18,7 @@ from apps.console import pulse
 from apps.core.money import quantize
 from apps.finance import alerts, services
 from apps.finance.audit_actions import FinanceAction
-from apps.finance.models import Debt, MoneyAccount, Receipt, Transaction
+from apps.finance.models import SETTLES_DEBT, Debt, MoneyAccount, Receipt, Transaction
 from apps.members.permissions import Perm
 
 logger = logging.getLogger(__name__)
@@ -28,7 +28,6 @@ logger = logging.getLogger(__name__)
 ORPHAN_RECEIPT_AGE = timedelta(days=2)
 
 Kind = Transaction.Kind
-SETTLING = (Kind.DEBT_PAYMENT, Kind.WRITE_OFF)
 
 
 def _account_truth(account_id: int):
@@ -38,7 +37,7 @@ def _account_truth(account_id: int):
 
 def _debt_truth(debt_id: int):
     rows = Transaction.objects.filter(
-        debt_id=debt_id, kind__in=SETTLING, status=Transaction.Status.POSTED
+        SETTLES_DEBT, debt_id=debt_id, status=Transaction.Status.POSTED
     )
     return quantize(rows.aggregate(total=Sum("debt_amount"))["total"] or 0)
 
@@ -49,7 +48,7 @@ def _status_for(debt: Debt, paid) -> str:
     if debt.status in (Debt.Status.PAID, Debt.Status.WRITTEN_OFF):
         return debt.status
     last = (
-        Transaction.objects.filter(debt=debt, kind__in=SETTLING, status=Transaction.Status.POSTED)
+        Transaction.objects.filter(SETTLES_DEBT, debt=debt, status=Transaction.Status.POSTED)
         .order_by("-occurred_on", "-pk")
         .first()
     )
@@ -77,7 +76,7 @@ def verify_company(company: Company, *, fix: bool = True) -> dict:
         if account.balance != quantize(account_sums.get(account.pk) or 0)
     ]
     debt_sums = dict(
-        posted.filter(kind__in=SETTLING, debt__isnull=False)
+        posted.filter(SETTLES_DEBT, debt__isnull=False)
         .values("debt_id")
         .annotate(total=Sum("debt_amount"))
         .order_by()
@@ -161,10 +160,14 @@ def verify_balances(*, fix: bool = True) -> dict[int, dict]:
 
 
 def purge_orphan_receipts(*, now=None) -> int:
-    """Delete receipts uploaded on their own and never linked to an entry, with their files
-    (after the delete commits). Returns how many were deleted."""
+    """Delete receipts uploaded on their own and never linked to an entry or an expense claim,
+    with their files (after the delete commits). Returns how many were deleted."""
     cutoff = (now or timezone.now()) - ORPHAN_RECEIPT_AGE
-    stale = list(Receipt.objects.filter(transaction__isnull=True, created_at__lt=cutoff)[:500])
+    stale = list(
+        Receipt.objects.filter(transaction__isnull=True, claim__isnull=True, created_at__lt=cutoff)[
+            :500
+        ]
+    )
     for receipt in stale:
         names = [name for name in (receipt.file.name, receipt.thumb.name) if name]
         storage = receipt.file.storage
