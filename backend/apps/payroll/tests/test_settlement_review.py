@@ -7,9 +7,9 @@ from decimal import Decimal as D
 import pytest
 
 from apps.finance.models import CompanyRate
-from apps.payroll import providers, services
+from apps.payroll import providers, queries, services
 from apps.payroll.models import PayrollRun, PayslipLine
-from apps.payroll.tests.conftest import local
+from apps.payroll.tests.conftest import OCTOBER, local
 from apps.payroll.tests.test_settlement import HIRED, LAST_DAY, give_advance, history, leave
 
 pytestmark = pytest.mark.django_db
@@ -138,3 +138,26 @@ def test_the_spreadsheet_of_a_final_run_shows_the_unused_leave_paid_out(shop, te
     assert sum(row[part] for part in parts) + row["reimbursements"] == row["net"]
     assert row["net"] == D("2690000.00")
     assert "leave_payout" in [column[0] for column in providers.RUN_COLUMNS]
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason=(
+        "Product decision for the lead: `queries.run_summary` (the §11.4 contract behind the "
+        "payroll overview's month series, the brief, company facts and Ask AI) sums only the "
+        "month's regular run, so a leaver settled by a final run drops out of the month's "
+        "payroll figures. Suggested: add the payslips of the month's non-cancelled final runs "
+        "to run_summary (and to the overview's by-position and by-branch tables)."
+    ),
+)
+def test_the_months_payroll_figures_count_a_leavers_final_payslip(shop, team):
+    staff = team
+    leave(staff.ali)
+    services.create_final_run(staff.ali, by=staff.accountant, last_day=LAST_DAY)
+    services.create_run(shop, by=staff.accountant, period="2026-10")
+
+    summary = queries.run_summary(shop, OCTOBER)
+
+    # Sara's 4 680 000 in the monthly run and Ali's 2 200 000 (11 of 26 days) in his final one.
+    assert summary["people"] == 2
+    assert summary["net"] == D("6880000.00")
