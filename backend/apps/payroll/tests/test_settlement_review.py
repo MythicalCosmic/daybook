@@ -6,9 +6,13 @@ from decimal import Decimal as D
 
 import pytest
 
+from apps.finance import services as finance
 from apps.finance.models import CompanyRate, Debt
-from apps.payroll import providers, queries, services
-from apps.payroll.models import PayrollRun, PayslipLine
+from apps.inbox.models import Notification
+from apps.members.models import AccessRole
+from apps.members.permissions import Perm
+from apps.payroll import finance_bridge, providers, queries, services
+from apps.payroll.models import Advance, PayrollRun, PayslipLine
 from apps.payroll.tests.conftest import OCTOBER, local
 from apps.payroll.tests.test_settlement import HIRED, LAST_DAY, give_advance, history, leave
 
@@ -197,3 +201,88 @@ def test_what_october_paid_after_the_last_day_can_be_taken_back(shop, team, free
         membership=staff.ali, direction=Debt.Direction.RECEIVABLE, status=Debt.Status.OPEN
     )
     assert sum(debt.amount - debt.paid for debt in owed) == D("264516.13")
+
+
+# What the review checked and found sound, pinned so it stays that way ----------------------
+
+
+def test_an_advance_above_the_pay_is_offset_against_expenses_paid_back(shop, team, cash):
+    """Last day Monday 5 October: 600 000 of pay and 400 000 of expenses to pay back against
+    an advance of 800 000. The advance is settled in full (600 000 from the salary, 200 000
+    from the expenses) and the cash desk pays out exactly the net, 200 000."""
+    staff = team
+    advance = give_advance(staff, cash, staff.ali, "800000")
+    claim = finance.open_debt(
+        shop,
+        by=staff.owner,
+        direction="payable",
+        kind="reimbursement",
+        amount=D("400000"),
+        currency="UZS",
+        issued_on=date(2026, 10, 2),
+        membership=staff.ali,
+        category="other_expense",
+        description="Gloves",
+    )
+    leave(staff.ali)
+    run = services.create_final_run(staff.ali, by=staff.accountant, last_day=date(2026, 10, 5))
+    payslip = run.payslips.get()
+    assert payslip.net == D("200000.00")
+
+    services.finalize_run(run, by=staff.owner)
+    advance.refresh_from_db()
+    claim.refresh_from_db()
+    payslip.refresh_from_db()
+    assert advance.status == Advance.Status.REPAID
+    assert advance.debt.status == Debt.Status.PAID
+    assert (payslip.salary_debt.amount, payslip.salary_debt.paid) == (D("600000"), D("600000"))
+    assert claim.paid == D("200000") and claim.status == Debt.Status.OPEN
+
+    services.reopen_run(run, by=staff.owner)
+    advance.refresh_from_db()
+    claim.refresh_from_db()
+    assert advance.debt.paid == 0 and claim.paid == 0 and not claim.is_locked
+    assert finance_bridge.booked_total(run) == 0
+
+    services.finalize_run(run, by=staff.owner)
+    cash.refresh_from_db()
+    before = cash.balance
+    services.mark_paid(run, by=staff.accountant, payslip_ids=[payslip.pk], account=cash)
+    cash.refresh_from_db()
+    claim.refresh_from_db()
+    assert before - cash.balance == D("200000")
+    assert claim.status == Debt.Status.PAID
+
+
+def test_a_final_run_stays_inside_the_branches_of_whoever_reads_it(
+    shop, team, owner_api, django_capture_on_commit_callbacks
+):
+    """Lola manages pay at Chilonzor only: she sees and changes Ali's final run, never Sara's
+    (Yunusobod), and only Ali's reaches her inbox."""
+    staff = team
+    role = AccessRole.objects.create(
+        company=shop,
+        name="Chilonzor payroll",
+        permissions=[Perm.DASHBOARD_ACCESS, Perm.PAYROLL_VIEW, Perm.PAYROLL_MANAGE],
+    )
+    lola = staff.lead
+    lola.role = role
+    lola.save(update_fields=["role"])
+    leave(staff.ali)
+    leave(staff.sara)
+    with django_capture_on_commit_callbacks(execute=True):
+        ali = services.create_final_run(staff.ali, by=staff.owner, last_day=LAST_DAY)
+        sara = services.create_final_run(staff.sara, by=staff.owner, last_day=LAST_DAY)
+    told = Notification.objects.filter(kind="payroll.final_run", recipient=lola)
+    assert [n.target_id for n in told] == [ali.pk]
+
+    client = owner_api(lola)
+    base = f"/api/v1/owner/companies/{shop.pk}/payroll/"
+    listed = client.get(base + "runs/?kind=final").json()["results"]
+    assert [row["id"] for row in listed] == [ali.pk]
+    assert client.get(base + f"runs/{sara.pk}/").status_code == 404
+    assert client.get(base + f"runs/{sara.pk}/payslips/").status_code == 404
+    payout = {"leave_days": "3"}
+    assert client.post(base + f"runs/{sara.pk}/leave-payout/", payout).status_code == 404
+    assert client.post(base + "runs/final/", {"member": staff.sara.pk}).status_code == 404
+    assert client.post(base + f"runs/{ali.pk}/leave-payout/", payout).status_code == 200
