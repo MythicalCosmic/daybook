@@ -110,6 +110,15 @@ export const STUB_TITLES: Record<string, { title: Triple; pages: Record<string, 
       claims: ["Expense claims", "Авансовые отчёты", "Xarajat so‘rovlari"],
     },
   },
+  assets: {
+    title: ["Assets", "Основные средства", "Asosiy vositalar"],
+    pages: {
+      items: ["Register", "Реестр", "Reestr"],
+      depreciation: ["Depreciation", "Амортизация", "Amortizatsiya"],
+      planning: ["Planning", "Планирование", "Rejalashtirish"],
+      counts: ["Counts", "Инвентаризация", "Inventarizatsiya"],
+    },
+  },
   payroll: {
     title: ["Payroll", "Зарплата", "Ish haqi"],
     pages: {

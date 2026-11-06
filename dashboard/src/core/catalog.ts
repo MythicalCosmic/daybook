@@ -247,6 +247,20 @@ export const CATALOG: readonly CatalogEntry[] = [
     ],
   },
   {
+    id: "assets",
+    group: "money",
+    order: 35,
+    pkg: "v6",
+    perm: ["assets.manage", "finance.view"],
+    feature: "assets",
+    pages: [
+      { id: "items", to: "assets/items" },
+      { id: "depreciation", to: "assets/depreciation" },
+      { id: "planning", to: "assets/planning" },
+      { id: "counts", to: "assets/counts" },
+    ],
+  },
+  {
     id: "payroll",
     group: "money",
     order: 40,
