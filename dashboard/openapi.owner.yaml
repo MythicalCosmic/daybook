@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: 911 Trello API
-  version: 0.4.0
+  version: 0.4.1
   description: API for the employee mini app and the owner dashboard.
 paths:
   /api/v1/owner/auth/dev-login/:
@@ -2627,6 +2627,146 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AssetsMovement'
+          description: ''
+  /api/v1/owner/companies/{company_id}/assets/permits/:
+    get:
+      operationId: companies_assets_permits_list
+      description: 'GET (read) / POST (assets.manage) `assets/permits/`: soonest to
+        end first.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AssetsPermit'
+          description: ''
+    post:
+      operationId: companies_assets_permits_create
+      description: 'GET (read) / POST (assets.manage) `assets/permits/`: soonest to
+        end first.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssetsPermitRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetsPermit'
+          description: ''
+  /api/v1/owner/companies/{company_id}/assets/permits/{permit_id}/:
+    patch:
+      operationId: companies_assets_permits_partial_update
+      description: 'GET (read) / POST (assets.manage) `assets/permits/`: soonest to
+        end first.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: permit_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAssetsPermitRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetsPermit'
+          description: ''
+    delete:
+      operationId: companies_assets_permits_destroy
+      description: 'GET (read) / POST (assets.manage) `assets/permits/`: soonest to
+        end first.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: permit_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/assets/permits/{permit_id}/file/:
+    post:
+      operationId: companies_assets_permits_file_create
+      description: 'GET (read) / POST (assets.manage) `assets/permits/`: soonest to
+        end first.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: permit_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AssetsPermitFileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AssetsPermitFileRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetsPermit'
           description: ''
   /api/v1/owner/companies/{company_id}/assets/planning/:
     get:
@@ -13273,6 +13413,46 @@ paths:
               schema:
                 $ref: '#/components/schemas/Run'
           description: ''
+  /api/v1/owner/companies/{company_id}/payroll/runs/{id}/leave-payout/:
+    post:
+      operationId: companies_payroll_runs_leave_payout_create
+      description: The unused leave days a draft final settlement pays out; calculated
+        again at once.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayrollLeavePayoutRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PayrollLeavePayoutRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayrollLeavePayoutRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Run'
+          description: ''
   /api/v1/owner/companies/{company_id}/payroll/runs/{id}/mark-paid/:
     post:
       operationId: companies_payroll_runs_mark_paid_create
@@ -13435,6 +13615,41 @@ paths:
       - ownerJwtAuth: []
       responses:
         '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Run'
+          description: ''
+  /api/v1/owner/companies/{company_id}/payroll/runs/final/:
+    post:
+      operationId: companies_payroll_runs_final_create
+      description: |-
+        The final settlement of someone who left (their draft final payslip, through their
+        last working day), when the offboarding wizard didn't prepare it.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayrollFinalRunCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PayrollFinalRunCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayrollFinalRunCreateRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
           content:
             application/json:
               schema:
@@ -23967,6 +24182,130 @@ components:
       - out_cost
       - out_depreciation
       - written_down
+    AssetsPermit:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        kind:
+          $ref: '#/components/schemas/AssetsPermitKindEnum'
+        name:
+          type: string
+          maxLength: 120
+        number:
+          type: string
+          maxLength: 64
+        issuer:
+          type: string
+          maxLength: 150
+        issued_on:
+          type: string
+          format: date
+          nullable: true
+        valid_until:
+          type: string
+          format: date
+          nullable: true
+        remind_days:
+          type: integer
+          maximum: 365
+          minimum: 1
+        branch:
+          type: integer
+          nullable: true
+        branch_name:
+          type: string
+          readOnly: true
+          nullable: true
+        responsible:
+          type: integer
+          nullable: true
+        responsible_name:
+          type: string
+          readOnly: true
+          nullable: true
+        notes:
+          type: string
+          maxLength: 4000
+        days_left:
+          type: integer
+          readOnly: true
+          nullable: true
+        file_url:
+          type: string
+          readOnly: true
+          nullable: true
+      required:
+      - branch_name
+      - days_left
+      - file_url
+      - id
+      - responsible_name
+    AssetsPermitFileRequest:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+      required:
+      - file
+    AssetsPermitKindEnum:
+      enum:
+      - pharmacy_licence
+      - controlled_licence
+      - lease
+      - fire_safety
+      - sanitary
+      - cash_register
+      - insurance
+      - other
+      type: string
+      description: |-
+        * `pharmacy_licence` - Pharmacy licence
+        * `controlled_licence` - Controlled substances licence
+        * `lease` - Lease agreement
+        * `fire_safety` - Fire safety approval
+        * `sanitary` - Sanitary approval
+        * `cash_register` - Cash register registration
+        * `insurance` - Insurance policy
+        * `other` - Other
+    AssetsPermitRequest:
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/AssetsPermitKindEnum'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        number:
+          type: string
+          maxLength: 64
+        issuer:
+          type: string
+          maxLength: 150
+        issued_on:
+          type: string
+          format: date
+          nullable: true
+        valid_until:
+          type: string
+          format: date
+          nullable: true
+        remind_days:
+          type: integer
+          maximum: 365
+          minimum: 1
+        branch:
+          type: integer
+          nullable: true
+        responsible:
+          type: integer
+          nullable: true
+        notes:
+          type: string
+          maxLength: 4000
     AssetsPlanAsset:
       type: object
       properties:
@@ -30734,6 +31073,14 @@ components:
         * `uz` - O‘zbekcha
         * `ru` - Русский
         * `en` - English
+    LeavePayoutUnitEnum:
+      enum:
+      - calendar
+      - work_days
+      type: string
+      description: |-
+        * `calendar` - Calendar days
+        * `work_days` - Working days
     LifecycleFine:
       type: object
       properties:
@@ -33524,6 +33871,42 @@ components:
           type: integer
         is_active:
           type: boolean
+    PatchedAssetsPermitRequest:
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/AssetsPermitKindEnum'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        number:
+          type: string
+          maxLength: 64
+        issuer:
+          type: string
+          maxLength: 150
+        issued_on:
+          type: string
+          format: date
+          nullable: true
+        valid_until:
+          type: string
+          format: date
+          nullable: true
+        remind_days:
+          type: integer
+          maximum: 365
+          minimum: 1
+        branch:
+          type: integer
+          nullable: true
+        responsible:
+          type: integer
+          nullable: true
+        notes:
+          type: string
+          maxLength: 4000
     PatchedAssetsSettingsRequest:
       type: object
       properties:
@@ -34540,6 +34923,16 @@ components:
           type: integer
           maximum: 24
           minimum: 1
+          description: 'Unused leave paid out on leaving: the average day''s pay of
+            this many months before. Confirm the method with your accountant.'
+        leave_payout_unit:
+          allOf:
+          - $ref: '#/components/schemas/LeavePayoutUnitEnum'
+          description: |-
+            How unused leave days are counted: the average day is the pay over the calendar days employed, or over the working days paid.
+
+            * `calendar` - Calendar days
+            * `work_days` - Working days
     PatchedPayrollTaskRateWriteRequest:
       type: object
       properties:
@@ -35731,6 +36124,27 @@ components:
       - expires_in
       - name
       - url
+    PayrollFinalRunCreateRequest:
+      type: object
+      properties:
+        member:
+          type: integer
+        leave_days:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
+          default: '0.00'
+      required:
+      - member
+    PayrollLeavePayoutRequest:
+      type: object
+      properties:
+        leave_days:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
+      required:
+      - leave_days
     PayrollLineKindEnum:
       enum:
       - base
@@ -35983,6 +36397,11 @@ components:
         period:
           type: string
           readOnly: true
+        run_kind:
+          type: string
+          readOnly: true
+          description: 'regular: a month''s payslip; final: the settlement of someone
+            who left.'
         pay_type:
           allOf:
           - $ref: '#/components/schemas/PayrollPayTypeEnum'
@@ -36138,6 +36557,7 @@ components:
       - received_at
       - reimbursements
       - run
+      - run_kind
       - run_status
       - scheduled_days
       - status
@@ -36651,6 +37071,16 @@ components:
           type: integer
           maximum: 24
           minimum: 1
+          description: 'Unused leave paid out on leaving: the average day''s pay of
+            this many months before. Confirm the method with your accountant.'
+        leave_payout_unit:
+          allOf:
+          - $ref: '#/components/schemas/LeavePayoutUnitEnum'
+          description: |-
+            How unused leave days are counted: the average day is the pay over the calendar days employed, or over the working days paid.
+
+            * `calendar` - Calendar days
+            * `work_days` - Working days
       required:
       - rounding_step
     PayrollTaskRateWriteRequest:
@@ -36708,6 +37138,11 @@ components:
         period:
           type: string
           readOnly: true
+        run_kind:
+          type: string
+          readOnly: true
+          description: 'regular: a month''s payslip; final: the settlement of someone
+            who left.'
         pay_type:
           allOf:
           - $ref: '#/components/schemas/PayrollPayTypeEnum'
@@ -36804,6 +37239,7 @@ components:
       - published_at
       - received_at
       - reimbursements
+      - run_kind
       - status
       - taxes_withheld
       - viewed_at
@@ -41011,6 +41447,18 @@ components:
           - $ref: '#/components/schemas/PayrollPerson'
           nullable: true
           readOnly: true
+        last_day:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        leave_days:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
+        after_regular:
+          type: boolean
+          readOnly: true
         usd_rate:
           type: string
           format: decimal
@@ -41058,12 +41506,15 @@ components:
           readOnly: true
       required:
       - actions
+      - after_regular
       - calculated_at
       - created_at
       - finalized_at
       - finalized_by
       - id
       - kind
+      - last_day
+      - leave_days
       - member
       - month
       - notes

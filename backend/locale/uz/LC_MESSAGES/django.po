@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-07 01:59+0500\n"
+"POT-Creation-Date: 2026-11-07 02:27+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -10983,6 +10983,14 @@ msgid "Cancelled a payroll run"
 msgstr "Ish haqi hisob-kitobini bekor qildi"
 
 #: backend/apps/payroll/audit_actions.py
+msgid "Prepared a final payslip for a leaver"
+msgstr "Ishdan ketgan xodimga yakuniy hisob-varaq tayyorlandi"
+
+#: backend/apps/payroll/audit_actions.py
+msgid "Changed the unused leave paid out"
+msgstr "Foydalanilmagan ta’til kompensatsiyasi o‘zgartirildi"
+
+#: backend/apps/payroll/audit_actions.py
 msgid "Published payslips"
 msgstr "Hisob-varaqlarni e’lon qildi"
 
@@ -11070,13 +11078,13 @@ msgstr "Ish haqi noldan past: %(name)s. Avval ushlanmani kamaytiring."
 
 #: backend/apps/payroll/finance_bridge.py
 #, python-format
-msgid "Salary for %(month)s: %(name)s"
-msgstr "Ish haqi (%(month)s): %(name)s"
+msgid "Final settlement for %(month)s: %(name)s"
+msgstr "Yakuniy hisob-kitob (%(month)s): %(name)s"
 
 #: backend/apps/payroll/finance_bridge.py
 #, python-format
-msgid "The pay of %(name)s can't cover the advance."
-msgstr "Ish haqi avansni qoplamaydi: %(name)s."
+msgid "Salary for %(month)s: %(name)s"
+msgstr "Ish haqi (%(month)s): %(name)s"
 
 #: backend/apps/payroll/finance_bridge.py
 #, python-format
@@ -11086,6 +11094,11 @@ msgid ""
 msgstr ""
 "Bu orada xodimning xarajati boshqa yo‘l bilan qoplandi: %(name)s. Ish haqini "
 "qayta hisoblang."
+
+#: backend/apps/payroll/finance_bridge.py
+#, python-format
+msgid "The pay of %(name)s can't cover the advance."
+msgstr "Ish haqi avansni qoplamaydi: %(name)s."
 
 #: backend/apps/payroll/finance_bridge.py
 msgid "Income tax and pension withheld"
@@ -11150,6 +11163,10 @@ msgstr ""
 "hisoblanadi."
 
 #: backend/apps/payroll/hooks.py
+msgid "Final payslip"
+msgstr "Yakuniy hisob-varaq"
+
+#: backend/apps/payroll/hooks.py
 msgid "Pay days"
 msgstr "Ish haqi kunlari"
 
@@ -11164,6 +11181,10 @@ msgstr "To‘lanadigan tasdiqlangan avanslar"
 #: backend/apps/payroll/hooks.py
 msgid "Payroll ready to check"
 msgstr "Tekshirishga tayyor ish haqi"
+
+#: backend/apps/payroll/hooks.py
+msgid "Final payslips of leavers to check"
+msgstr "Tekshirilishi kerak bo‘lgan yakuniy hisob-varaqlar"
 
 #: backend/apps/payroll/hooks.py
 msgid "Pay day reminders"
@@ -11186,6 +11207,12 @@ msgstr "Hisob-varaqlaringiz"
 msgid "%(count)s day"
 msgid_plural "%(count)s days"
 msgstr[0] "%(count)s kun"
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid "%(days)s day"
+msgid_plural "%(days)s days"
+msgstr[0] "%(days)s kun"
 
 #: backend/apps/payroll/labels.py
 msgid "Annual leave"
@@ -11302,8 +11329,17 @@ msgid "(capped, of %(full)s)"
 msgstr "(cheklangan, to‘liq summa: %(full)s)"
 
 #: backend/apps/payroll/labels.py
+msgid "Advance deducted in full"
+msgstr "Avans to‘liq ushlab qolindi"
+
+#: backend/apps/payroll/labels.py
 msgid "Advance repaid"
 msgstr "Avans qaytarildi"
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid "Unused leave paid out: %(days)s"
+msgstr "Foydalanilmagan ta’til kompensatsiyasi: %(days)s"
 
 #: backend/apps/payroll/labels.py
 #, python-format
@@ -11374,6 +11410,52 @@ msgid "%(name)s has no working days this month: paid by calendar days."
 msgstr ""
 "Bu oy ish kunlari yo‘q, kalendar kunlari bo‘yicha hisoblandi: %(name)s."
 
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid ""
+"%(name)s owes %(amount)s after the final settlement: it stays as a debt in "
+"Finance."
+msgstr ""
+"Yakuniy hisob-kitobdan keyin qarz qoldi: %(name)s, %(amount)s. Summa Moliya "
+"bo‘limida qarz sifatida qoladi."
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid ""
+"%(name)s has no pay history or monthly pay to work out a leave day: add the "
+"unused leave as a line by hand."
+msgstr ""
+"Ta’til kunini hisoblash uchun ish haqi tarixi ham, oylik ish haqi ham yo‘q "
+"(%(name)s): ta’til kompensatsiyasini qo‘lda qator sifatida qo‘shing."
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid ""
+"%(name)s has less than a full month of pay history: a leave day is their "
+"monthly pay over the month's days."
+msgstr ""
+"Ish haqi tarixi bir oydan kam (%(name)s): ta’til kuni oylik ish haqini oy "
+"kunlariga bo‘lib hisoblanadi."
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid ""
+"The %(month)s payroll had paid the month of %(name)s already: this payslip "
+"pays the unused leave and what is still open."
+msgstr ""
+"Ish haqi hisobi (%(month)s) bu oyni allaqachon to‘lagan (%(name)s): bu hisob-"
+"varaq ta’til kompensatsiyasi va ochiq qolgan summalarni to‘laydi."
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid ""
+"The %(month)s payroll paid %(name)s %(amount)s for days after their last "
+"day. Add a line by hand if it should be paid back."
+msgstr ""
+"Ish haqi hisobi (%(month)s) oxirgi ish kunidan keyingi kunlar uchun ham "
+"to‘lagan: %(name)s, %(amount)s. Qaytarilishi kerak bo‘lsa, qo‘lda qator "
+"qo‘shing."
+
 #: backend/apps/payroll/models.py
 msgctxt "pay type"
 msgid "Monthly"
@@ -11393,6 +11475,14 @@ msgstr "Soatbay"
 msgctxt "pay type"
 msgid "Per task"
 msgstr "Vazifabay"
+
+#: backend/apps/payroll/models.py
+msgid "Calendar days"
+msgstr "Kalendar kunlari"
+
+#: backend/apps/payroll/models.py backend/apps/payroll/providers.py
+msgid "Working days"
+msgstr "Ish kunlari"
 
 #: backend/apps/payroll/models.py
 msgid "The currency payslips are paid in."
@@ -11453,6 +11543,22 @@ msgstr ""
 #: backend/apps/payroll/models.py
 msgid "Prepare last month's draft run on the 1st of each month."
 msgstr "Har oyning 1-sanasida o‘tgan oy ish haqining qoralamasini tayyorlash."
+
+#: backend/apps/payroll/models.py
+msgid ""
+"Unused leave paid out on leaving: the average day's pay of this many months "
+"before. Confirm the method with your accountant."
+msgstr ""
+"Ishdan ketishda foydalanilmagan ta’til uchun kompensatsiya: shuncha oydagi "
+"o‘rtacha kunlik ish haqi bo‘yicha. Usulni buxgalteringiz bilan tasdiqlang."
+
+#: backend/apps/payroll/models.py
+msgid ""
+"How unused leave days are counted: the average day is the pay over the "
+"calendar days employed, or over the working days paid."
+msgstr ""
+"Foydalanilmagan ta’til kunlari qanday sanaladi: o‘rtacha kun uchun ish haqi "
+"ishlangan kalendar kunlariga yoki haq to‘langan ish kunlariga bo‘linadi."
 
 #: backend/apps/payroll/models.py
 msgid "By attendance"
@@ -11939,6 +12045,21 @@ msgstr "Ogohlantirishlar: %(count)s"
 
 #: backend/apps/payroll/notify.py
 #, python-format
+msgid "The final payslip of %(name)s is ready to check"
+msgstr "Yakuniy hisob-varaq tekshirishga tayyor: %(name)s"
+
+#: backend/apps/payroll/notify.py backend/apps/payroll/payslip_pdf.py
+#, python-format
+msgid "Last working day: %(date)s"
+msgstr "Oxirgi ish kuni: %(date)s"
+
+#: backend/apps/payroll/notify.py
+#, python-format
+msgid "They owe: %(amount)s"
+msgstr "Xodimning qarzi: %(amount)s"
+
+#: backend/apps/payroll/notify.py
+#, python-format
 msgid "Today is pay day for %(month)s"
 msgstr "Bugun ish haqi kuni: %(month)s"
 
@@ -12013,8 +12134,25 @@ msgstr ""
 
 #: backend/apps/payroll/payslip_pdf.py
 #, python-format
+msgid "Final payslip: %(month)s"
+msgstr "Yakuniy hisob-varaq: %(month)s"
+
+#: backend/apps/payroll/payslip_pdf.py
+#, python-format
 msgid "Payslip: %(month)s"
 msgstr "Hisob-varaq: %(month)s"
+
+#: backend/apps/payroll/payslip_pdf.py
+msgid "They owe the company"
+msgstr "Xodimning kompaniyaga qarzi"
+
+#: backend/apps/payroll/payslip_pdf.py backend/apps/payroll/providers.py
+msgid "To be paid"
+msgstr "Qo‘lga beriladi"
+
+#: backend/apps/payroll/payslip_pdf.py
+msgid "What they owe stays as a debt in Finance."
+msgstr "Qarz summasi Moliya bo‘limida qarz sifatida qoladi."
 
 #: backend/apps/payroll/providers.py
 #, python-format
@@ -12028,10 +12166,6 @@ msgstr "Javob berish"
 #: backend/apps/payroll/providers.py
 msgid "Pay type"
 msgstr "Ish haqi turi"
-
-#: backend/apps/payroll/providers.py
-msgid "Working days"
-msgstr "Ish kunlari"
 
 #: backend/apps/payroll/providers.py
 msgid "Paid days"
@@ -12071,11 +12205,6 @@ msgid "Earned"
 msgstr "Hisoblangan"
 
 #: backend/apps/payroll/providers.py
-#: backend/apps/payroll/templates/payroll/payslip.html
-msgid "To be paid"
-msgstr "Qo‘lga beriladi"
-
-#: backend/apps/payroll/providers.py
 msgid "Paid on"
 msgstr "To‘langan sana"
 
@@ -12105,7 +12234,7 @@ msgstr "Hali boshlanmagan oy uchun ish haqini hisoblab bo‘lmaydi."
 msgid "There is already a payroll for %(month)s."
 msgstr "Bu oy uchun ish haqi allaqachon bor: %(month)s."
 
-#: backend/apps/payroll/runs.py
+#: backend/apps/payroll/runs.py backend/apps/payroll/settlement.py
 msgid "Only a draft payroll can be calculated."
 msgstr "Faqat qoralama ish haqini hisoblash mumkin."
 
@@ -12116,6 +12245,15 @@ msgstr "Faqat qoralama ish haqini yakunlash mumkin."
 #: backend/apps/payroll/runs.py
 msgid "There is nobody to pay in this payroll."
 msgstr "Bu hisob-kitobda ish haqi oladigan hech kim yo‘q."
+
+#: backend/apps/payroll/runs.py
+#, python-format
+msgid ""
+"The deductions on the final payslip of %(names)s are more than the pay: "
+"lower a line added by hand."
+msgstr ""
+"Yakuniy hisob-varaqdagi ushlanmalar ish haqidan ko‘p: %(names)s. Qo‘lda "
+"qo‘shilgan qatorni kamaytiring."
 
 #: backend/apps/payroll/runs.py
 #, python-format
@@ -12400,6 +12538,133 @@ msgstr "Avans: %(name)s"
 #: backend/apps/payroll/services.py
 msgid "Only a paid advance can be paid back."
 msgstr "Faqat to‘langan avansni qaytarish mumkin."
+
+#: backend/apps/payroll/settlement.py
+msgid "Enter the unused leave days: a number from 0 to 366."
+msgstr "Foydalanilmagan ta’til kunlarini kiriting: 0–366 oralig‘idagi son."
+
+#: backend/apps/payroll/settlement.py
+#, python-format
+msgid "Their final payslip already exists (%(month)s)."
+msgstr "Yakuniy hisob-varaq allaqachon tuzilgan (%(month)s)."
+
+#: backend/apps/payroll/settlement.py
+msgid "No pay setup: payroll has nothing to settle."
+msgstr "Ish haqi sozlamasi yo‘q: hisob-kitob qilinadigan narsa yo‘q."
+
+#: backend/apps/payroll/settlement.py
+#, python-format
+msgid ""
+"Worked out as if today (%(date)s) were the last day: the final payslip "
+"follows the last day you pick."
+msgstr ""
+"Bugun (%(date)s) oxirgi ish kuni deb hisoblangan: yakuniy hisob-varaq siz "
+"tanlagan oxirgi kun bo‘yicha tuziladi."
+
+#: backend/apps/payroll/settlement.py
+#, python-format
+msgid ""
+"The %(month)s payroll has paid their month already: the final payslip pays "
+"the unused leave and what is still open."
+msgstr ""
+"Ish haqi hisobi (%(month)s) bu oyni allaqachon to‘lagan: yakuniy hisob-varaq "
+"ta’til kompensatsiyasi va ochiq qolgan summalarni to‘laydi."
+
+#: backend/apps/payroll/settlement.py
+#, python-format
+msgid "Pay for %(paid)s of %(scheduled)s working days: %(amount)s"
+msgstr "Ish kunlari: %(paid)s / %(scheduled)s, ish haqi: %(amount)s"
+
+#: backend/apps/payroll/settlement.py
+#, python-format
+msgid "Pay for work this month: %(amount)s"
+msgstr "Shu oydagi ish uchun haq: %(amount)s"
+
+#: backend/apps/payroll/settlement.py
+#, python-format
+msgid "Bonuses and other pay: %(amount)s"
+msgstr "Bonuslar va boshqa to‘lovlar: %(amount)s"
+
+#: backend/apps/payroll/settlement.py
+#, python-format
+msgid "Fines and deductions: %(amount)s"
+msgstr "Jarimalar va ushlanmalar: %(amount)s"
+
+#: backend/apps/payroll/settlement.py
+#, python-format
+msgid "Advances deducted in full: %(amount)s"
+msgstr "To‘liq ushlab qolinadigan avanslar: %(amount)s"
+
+#: backend/apps/payroll/settlement.py
+#, python-format
+msgid "They would owe %(amount)s: it stays as a debt in Finance."
+msgstr ""
+"Xodimning qarzi qoladi: %(amount)s. Summa Moliya bo‘limida qarz sifatida "
+"qoladi."
+
+#: backend/apps/payroll/settlement.py
+#, python-format
+msgid "To be paid before unused leave: %(amount)s"
+msgstr "Ta’til kompensatsiyasisiz to‘lanadigan summa: %(amount)s"
+
+#: backend/apps/payroll/settlement.py
+#, python-format
+msgid ""
+"Each unused leave day pays %(amount)s: the average day's pay of the last "
+"%(months)s months."
+msgstr ""
+"Har bir foydalanilmagan ta’til kuni uchun: %(amount)s (so‘nggi %(months)s "
+"oydagi o‘rtacha kunlik ish haqi)."
+
+#: backend/apps/payroll/settlement.py
+#, python-format
+msgid ""
+"Each unused leave day pays %(amount)s: their monthly pay over the month's "
+"days (less than a full month of pay history)."
+msgstr ""
+"Har bir foydalanilmagan ta’til kuni uchun: %(amount)s (oylik ish haqi oy "
+"kunlariga bo‘lingan, ish haqi tarixi bir oydan kam)."
+
+#: backend/apps/payroll/settlement.py
+msgid "Prepare the final payslip"
+msgstr "Yakuniy hisob-varaqni tayyorlash"
+
+#: backend/apps/payroll/settlement.py
+msgid ""
+"A draft payslip through the last day, for payroll managers to check and pay."
+msgstr ""
+"Oxirgi kungacha hisoblangan qoralama: ish haqi mas’ullari tekshirib, "
+"to‘laydi."
+
+#: backend/apps/payroll/settlement.py
+msgid "Unused leave days to pay out"
+msgstr "Kompensatsiya qilinadigan ta’til kunlari"
+
+#: backend/apps/payroll/settlement.py
+msgid ""
+"Count them from their leave records; 0 when none. Payroll can change it on "
+"the draft."
+msgstr ""
+"Ta’til yozuvlaridan sanang; bo‘lmasa 0. Ish haqi bo‘limi qoralamada "
+"o‘zgartirishi mumkin."
+
+#: backend/apps/payroll/settlement.py
+msgid "A final payslip is only for someone who has left."
+msgstr "Yakuniy hisob-varaq faqat ishdan ketgan xodim uchun tuziladi."
+
+#: backend/apps/payroll/settlement.py
+#, python-format
+msgid "%(name)s has no pay setup for %(month)s."
+msgstr "Ish haqi sozlamasi yo‘q: %(name)s (%(month)s)."
+
+#: backend/apps/payroll/settlement.py
+#, python-format
+msgid "There is already a final payslip for %(name)s."
+msgstr "Yakuniy hisob-varaq allaqachon bor: %(name)s."
+
+#: backend/apps/payroll/settlement.py
+msgid "Only a final payslip pays out unused leave."
+msgstr "Ta’til kompensatsiyasi faqat yakuniy hisob-varaqda to‘lanadi."
 
 #: backend/apps/payroll/templates/payroll/payslip.html
 msgid "Employee"

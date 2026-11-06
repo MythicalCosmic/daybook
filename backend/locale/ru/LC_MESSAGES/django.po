@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-07 01:59+0500\n"
+"POT-Creation-Date: 2026-11-07 02:27+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -10935,6 +10935,14 @@ msgid "Cancelled a payroll run"
 msgstr "Расчёт зарплаты отменён"
 
 #: backend/apps/payroll/audit_actions.py
+msgid "Prepared a final payslip for a leaver"
+msgstr "Подготовлен окончательный расчёт уволившегося сотрудника"
+
+#: backend/apps/payroll/audit_actions.py
+msgid "Changed the unused leave paid out"
+msgstr "Изменена компенсация за неиспользованный отпуск"
+
+#: backend/apps/payroll/audit_actions.py
 msgid "Published payslips"
 msgstr "Расчётные листки опубликованы"
 
@@ -11022,13 +11030,13 @@ msgstr "Зарплата ниже нуля: %(name)s. Сначала умень�
 
 #: backend/apps/payroll/finance_bridge.py
 #, python-format
-msgid "Salary for %(month)s: %(name)s"
-msgstr "Зарплата (%(month)s): %(name)s"
+msgid "Final settlement for %(month)s: %(name)s"
+msgstr "Окончательный расчёт (%(month)s): %(name)s"
 
 #: backend/apps/payroll/finance_bridge.py
 #, python-format
-msgid "The pay of %(name)s can't cover the advance."
-msgstr "Зарплаты не хватает на возврат аванса: %(name)s."
+msgid "Salary for %(month)s: %(name)s"
+msgstr "Зарплата (%(month)s): %(name)s"
 
 #: backend/apps/payroll/finance_bridge.py
 #, python-format
@@ -11038,6 +11046,11 @@ msgid ""
 msgstr ""
 "Тем временем расход сотрудника возмещён иначе: %(name)s. Пересчитайте "
 "зарплату."
+
+#: backend/apps/payroll/finance_bridge.py
+#, python-format
+msgid "The pay of %(name)s can't cover the advance."
+msgstr "Зарплаты не хватает на возврат аванса: %(name)s."
 
 #: backend/apps/payroll/finance_bridge.py
 msgid "Income tax and pension withheld"
@@ -11098,6 +11111,10 @@ msgstr ""
 "Укажите оплату каждого сотрудника, чтобы рассчитывать их расчётные листки."
 
 #: backend/apps/payroll/hooks.py
+msgid "Final payslip"
+msgstr "Окончательный расчёт"
+
+#: backend/apps/payroll/hooks.py
 msgid "Pay days"
 msgstr "Дни выплат"
 
@@ -11112,6 +11129,10 @@ msgstr "Одобренные авансы к выплате"
 #: backend/apps/payroll/hooks.py
 msgid "Payroll ready to check"
 msgstr "Зарплата готова к проверке"
+
+#: backend/apps/payroll/hooks.py
+msgid "Final payslips of leavers to check"
+msgstr "Окончательные расчёты на проверку"
 
 #: backend/apps/payroll/hooks.py
 msgid "Pay day reminders"
@@ -11137,6 +11158,14 @@ msgstr[0] "%(count)s день"
 msgstr[1] "%(count)s дня"
 msgstr[2] "%(count)s дней"
 msgstr[3] "%(count)s дня"
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid "%(days)s day"
+msgid_plural "%(days)s days"
+msgstr[0] "%(days)s день"
+msgstr[1] "%(days)s дня"
+msgstr[2] "%(days)s дней"
 
 #: backend/apps/payroll/labels.py
 msgid "Annual leave"
@@ -11256,8 +11285,17 @@ msgid "(capped, of %(full)s)"
 msgstr "(ограничено, полная сумма: %(full)s)"
 
 #: backend/apps/payroll/labels.py
+msgid "Advance deducted in full"
+msgstr "Аванс удержан полностью"
+
+#: backend/apps/payroll/labels.py
 msgid "Advance repaid"
 msgstr "Возврат аванса"
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid "Unused leave paid out: %(days)s"
+msgstr "Компенсация за неиспользованный отпуск: %(days)s"
 
 #: backend/apps/payroll/labels.py
 #, python-format
@@ -11341,6 +11379,51 @@ msgstr "Зарплата ниже нуля: %(name)s. Уменьшите уде�
 msgid "%(name)s has no working days this month: paid by calendar days."
 msgstr "В этом месяце нет рабочих дней, оплата по календарным дням: %(name)s."
 
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid ""
+"%(name)s owes %(amount)s after the final settlement: it stays as a debt in "
+"Finance."
+msgstr ""
+"Долг после окончательного расчёта: %(name)s, %(amount)s. Сумма остаётся "
+"задолженностью в Финансах."
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid ""
+"%(name)s has no pay history or monthly pay to work out a leave day: add the "
+"unused leave as a line by hand."
+msgstr ""
+"Для расчёта дня отпуска нет ни истории выплат, ни оклада (%(name)s): "
+"добавьте компенсацию отпуска строкой вручную."
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid ""
+"%(name)s has less than a full month of pay history: a leave day is their "
+"monthly pay over the month's days."
+msgstr ""
+"История выплат меньше месяца (%(name)s): день отпуска считается как оклад, "
+"делённый на дни месяца."
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid ""
+"The %(month)s payroll had paid the month of %(name)s already: this payslip "
+"pays the unused leave and what is still open."
+msgstr ""
+"Ведомость (%(month)s) уже оплатила этот месяц (%(name)s): этот расчёт "
+"выплачивает компенсацию отпуска и то, что осталось открытым."
+
+#: backend/apps/payroll/labels.py
+#, python-format
+msgid ""
+"The %(month)s payroll paid %(name)s %(amount)s for days after their last "
+"day. Add a line by hand if it should be paid back."
+msgstr ""
+"Ведомость (%(month)s) оплатила и дни после последнего рабочего дня: "
+"%(name)s, %(amount)s. Если сумму нужно вернуть, добавьте строку вручную."
+
 #: backend/apps/payroll/models.py
 msgctxt "pay type"
 msgid "Monthly"
@@ -11360,6 +11443,14 @@ msgstr "Почасово"
 msgctxt "pay type"
 msgid "Per task"
 msgstr "Сдельно"
+
+#: backend/apps/payroll/models.py
+msgid "Calendar days"
+msgstr "Календарные дни"
+
+#: backend/apps/payroll/models.py backend/apps/payroll/providers.py
+msgid "Working days"
+msgstr "Рабочие дни"
 
 #: backend/apps/payroll/models.py
 msgid "The currency payslips are paid in."
@@ -11417,6 +11508,22 @@ msgstr ""
 #: backend/apps/payroll/models.py
 msgid "Prepare last month's draft run on the 1st of each month."
 msgstr "Готовить черновик зарплаты за прошлый месяц каждое 1-е число."
+
+#: backend/apps/payroll/models.py
+msgid ""
+"Unused leave paid out on leaving: the average day's pay of this many months "
+"before. Confirm the method with your accountant."
+msgstr ""
+"Компенсация за неиспользованный отпуск при увольнении: по среднему дневному "
+"заработку за столько месяцев. Согласуйте метод с бухгалтером."
+
+#: backend/apps/payroll/models.py
+msgid ""
+"How unused leave days are counted: the average day is the pay over the "
+"calendar days employed, or over the working days paid."
+msgstr ""
+"Как считаются дни неиспользованного отпуска: средний день равен заработку, "
+"делённому на календарные дни работы или на оплаченные рабочие дни."
 
 #: backend/apps/payroll/models.py
 msgid "By attendance"
@@ -11903,6 +12010,21 @@ msgstr "Предупреждений: %(count)s"
 
 #: backend/apps/payroll/notify.py
 #, python-format
+msgid "The final payslip of %(name)s is ready to check"
+msgstr "Окончательный расчёт готов к проверке: %(name)s"
+
+#: backend/apps/payroll/notify.py backend/apps/payroll/payslip_pdf.py
+#, python-format
+msgid "Last working day: %(date)s"
+msgstr "Последний рабочий день: %(date)s"
+
+#: backend/apps/payroll/notify.py
+#, python-format
+msgid "They owe: %(amount)s"
+msgstr "Долг сотрудника: %(amount)s"
+
+#: backend/apps/payroll/notify.py
+#, python-format
 msgid "Today is pay day for %(month)s"
 msgstr "Сегодня день зарплаты: %(month)s"
 
@@ -11976,8 +12098,25 @@ msgstr ""
 
 #: backend/apps/payroll/payslip_pdf.py
 #, python-format
+msgid "Final payslip: %(month)s"
+msgstr "Окончательный расчётный листок: %(month)s"
+
+#: backend/apps/payroll/payslip_pdf.py
+#, python-format
 msgid "Payslip: %(month)s"
 msgstr "Расчётный листок: %(month)s"
+
+#: backend/apps/payroll/payslip_pdf.py
+msgid "They owe the company"
+msgstr "Долг перед компанией"
+
+#: backend/apps/payroll/payslip_pdf.py backend/apps/payroll/providers.py
+msgid "To be paid"
+msgstr "К выплате"
+
+#: backend/apps/payroll/payslip_pdf.py
+msgid "What they owe stays as a debt in Finance."
+msgstr "Сумма долга остаётся задолженностью в Финансах."
 
 #: backend/apps/payroll/providers.py
 #, python-format
@@ -11991,10 +12130,6 @@ msgstr "Ответить"
 #: backend/apps/payroll/providers.py
 msgid "Pay type"
 msgstr "Тип оплаты"
-
-#: backend/apps/payroll/providers.py
-msgid "Working days"
-msgstr "Рабочие дни"
 
 #: backend/apps/payroll/providers.py
 msgid "Paid days"
@@ -12034,11 +12169,6 @@ msgid "Earned"
 msgstr "Начислено"
 
 #: backend/apps/payroll/providers.py
-#: backend/apps/payroll/templates/payroll/payslip.html
-msgid "To be paid"
-msgstr "К выплате"
-
-#: backend/apps/payroll/providers.py
 msgid "Paid on"
 msgstr "Дата выплаты"
 
@@ -12068,7 +12198,7 @@ msgstr "Нельзя рассчитать зарплату за месяц, ко
 msgid "There is already a payroll for %(month)s."
 msgstr "Зарплата за этот месяц уже есть: %(month)s."
 
-#: backend/apps/payroll/runs.py
+#: backend/apps/payroll/runs.py backend/apps/payroll/settlement.py
 msgid "Only a draft payroll can be calculated."
 msgstr "Пересчитать можно только черновик зарплаты."
 
@@ -12079,6 +12209,15 @@ msgstr "Утвердить можно только черновик зарпла
 #: backend/apps/payroll/runs.py
 msgid "There is nobody to pay in this payroll."
 msgstr "В этом расчёте некому платить."
+
+#: backend/apps/payroll/runs.py
+#, python-format
+msgid ""
+"The deductions on the final payslip of %(names)s are more than the pay: "
+"lower a line added by hand."
+msgstr ""
+"Удержания в окончательном расчёте больше заработка: %(names)s. Уменьшите "
+"строку, добавленную вручную."
 
 #: backend/apps/payroll/runs.py
 #, python-format
@@ -12360,6 +12499,133 @@ msgstr "Аванс: %(name)s"
 #: backend/apps/payroll/services.py
 msgid "Only a paid advance can be paid back."
 msgstr "Вернуть можно только выплаченный аванс."
+
+#: backend/apps/payroll/settlement.py
+msgid "Enter the unused leave days: a number from 0 to 366."
+msgstr "Укажите дни неиспользованного отпуска: число от 0 до 366."
+
+#: backend/apps/payroll/settlement.py
+#, python-format
+msgid "Their final payslip already exists (%(month)s)."
+msgstr "Окончательный расчёт уже составлен (%(month)s)."
+
+#: backend/apps/payroll/settlement.py
+msgid "No pay setup: payroll has nothing to settle."
+msgstr "Нет настройки оплаты: рассчитывать нечего."
+
+#: backend/apps/payroll/settlement.py
+#, python-format
+msgid ""
+"Worked out as if today (%(date)s) were the last day: the final payslip "
+"follows the last day you pick."
+msgstr ""
+"Расчёт сделан так, будто сегодня (%(date)s) последний день: окончательный "
+"расчёт будет по дню, который вы выберете."
+
+#: backend/apps/payroll/settlement.py
+#, python-format
+msgid ""
+"The %(month)s payroll has paid their month already: the final payslip pays "
+"the unused leave and what is still open."
+msgstr ""
+"Ведомость (%(month)s) уже оплатила этот месяц: окончательный расчёт выплатит "
+"компенсацию отпуска и то, что осталось открытым."
+
+#: backend/apps/payroll/settlement.py
+#, python-format
+msgid "Pay for %(paid)s of %(scheduled)s working days: %(amount)s"
+msgstr "Оплата за %(paid)s из %(scheduled)s рабочих дней: %(amount)s"
+
+#: backend/apps/payroll/settlement.py
+#, python-format
+msgid "Pay for work this month: %(amount)s"
+msgstr "Оплата работы за этот месяц: %(amount)s"
+
+#: backend/apps/payroll/settlement.py
+#, python-format
+msgid "Bonuses and other pay: %(amount)s"
+msgstr "Премии и другие выплаты: %(amount)s"
+
+#: backend/apps/payroll/settlement.py
+#, python-format
+msgid "Fines and deductions: %(amount)s"
+msgstr "Штрафы и удержания: %(amount)s"
+
+#: backend/apps/payroll/settlement.py
+#, python-format
+msgid "Advances deducted in full: %(amount)s"
+msgstr "Авансы удерживаются полностью: %(amount)s"
+
+#: backend/apps/payroll/settlement.py
+#, python-format
+msgid "They would owe %(amount)s: it stays as a debt in Finance."
+msgstr ""
+"Сотрудник останется должен %(amount)s: сумма останется задолженностью в "
+"Финансах."
+
+#: backend/apps/payroll/settlement.py
+#, python-format
+msgid "To be paid before unused leave: %(amount)s"
+msgstr "К выплате без компенсации отпуска: %(amount)s"
+
+#: backend/apps/payroll/settlement.py
+#, python-format
+msgid ""
+"Each unused leave day pays %(amount)s: the average day's pay of the last "
+"%(months)s months."
+msgstr ""
+"Каждый день неиспользованного отпуска: %(amount)s (средний дневной заработок "
+"за последние %(months)s мес.)."
+
+#: backend/apps/payroll/settlement.py
+#, python-format
+msgid ""
+"Each unused leave day pays %(amount)s: their monthly pay over the month's "
+"days (less than a full month of pay history)."
+msgstr ""
+"Каждый день неиспользованного отпуска: %(amount)s (оклад, делённый на дни "
+"месяца: история выплат меньше месяца)."
+
+#: backend/apps/payroll/settlement.py
+msgid "Prepare the final payslip"
+msgstr "Подготовить окончательный расчёт"
+
+#: backend/apps/payroll/settlement.py
+msgid ""
+"A draft payslip through the last day, for payroll managers to check and pay."
+msgstr ""
+"Черновик расчёта по последний день: ответственные за зарплату проверят и "
+"выплатят."
+
+#: backend/apps/payroll/settlement.py
+msgid "Unused leave days to pay out"
+msgstr "Дни неиспользованного отпуска к компенсации"
+
+#: backend/apps/payroll/settlement.py
+msgid ""
+"Count them from their leave records; 0 when none. Payroll can change it on "
+"the draft."
+msgstr ""
+"Посчитайте по записям об отпусках; если нет, укажите 0. Отдел зарплаты может "
+"изменить это в черновике."
+
+#: backend/apps/payroll/settlement.py
+msgid "A final payslip is only for someone who has left."
+msgstr "Окончательный расчёт делается только для уволившегося сотрудника."
+
+#: backend/apps/payroll/settlement.py
+#, python-format
+msgid "%(name)s has no pay setup for %(month)s."
+msgstr "Нет настройки оплаты: %(name)s (%(month)s)."
+
+#: backend/apps/payroll/settlement.py
+#, python-format
+msgid "There is already a final payslip for %(name)s."
+msgstr "Окончательный расчёт уже есть: %(name)s."
+
+#: backend/apps/payroll/settlement.py
+msgid "Only a final payslip pays out unused leave."
+msgstr "Компенсация отпуска выплачивается только в окончательном расчёте."
 
 #: backend/apps/payroll/templates/payroll/payslip.html
 msgid "Employee"
