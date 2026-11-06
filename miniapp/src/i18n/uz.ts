@@ -210,10 +210,12 @@ const uz: Partial<Record<Key, string>> = {
   "proof.tag.photo": "Rasm kerak",
   "proof.tag.text": "Hisobot kerak",
   "proof.tag.any": "Rasm yoki hisobot kerak",
+  "proof.tag.readings": "Ko‘rsatkichlar kerak",
   "proof.none": "Kerak emas",
   "proof.photo": "Rasm",
   "proof.text": "Qisqa hisobot",
   "proof.any": "Rasm yoki hisobot",
+  "proof.readings": "Ko‘rsatkichlar (harorat, namlik)",
 
   "detail.kicker.daily": "Muntazam vazifa · {repeat}, soat {time}",
   "detail.kicker.dailyPlain": "Muntazam vazifa",

@@ -222,10 +222,12 @@ const ru: Partial<Record<Key | `${string}_${"few" | "many"}`, string>> = {
   "proof.tag.photo": "Нужно фото",
   "proof.tag.text": "Нужен отчёт",
   "proof.tag.any": "Нужно фото или отчёт",
+  "proof.tag.readings": "Нужны показания",
   "proof.none": "Не нужен",
   "proof.photo": "Фото",
   "proof.text": "Короткий отчёт",
   "proof.any": "Фото или отчёт",
+  "proof.readings": "Показания (температура, влажность)",
 
   "detail.kicker.daily": "Регулярная задача · {repeat} в {time}",
   "detail.kicker.dailyPlain": "Регулярная задача",

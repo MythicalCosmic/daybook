@@ -208,10 +208,12 @@ const en = {
   "proof.tag.photo": "Photo needed",
   "proof.tag.text": "Note needed",
   "proof.tag.any": "Photo or note needed",
+  "proof.tag.readings": "Readings needed",
   "proof.none": "Not needed",
   "proof.photo": "A photo",
   "proof.text": "A short note",
   "proof.any": "A photo or a note",
+  "proof.readings": "Readings (temperature, humidity)",
 
   "detail.kicker.daily": "Routine · {repeat} at {time}",
   "detail.kicker.dailyPlain": "Routine",
