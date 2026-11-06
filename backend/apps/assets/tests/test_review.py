@@ -391,3 +391,23 @@ def test_units_of_output_need_no_useful_life(shop, owner):
     services.record_usage(asset, by=owner, on=date(2026, 11, 5), units=D(100))
     rows = posting.schedule_of(asset, until=NOV_1)
     assert rows and rows[-1].month == NOV_1 and rows[-1].amount == D("100000.00")
+
+
+def test_the_tax_book_stops_when_the_asset_leaves(shop, owner, category):
+    settings = conf.get_settings(shop)
+    settings.tax_book = True
+    settings.save()
+    asset = services.create_asset(
+        shop,
+        by=owner,
+        category=category,
+        name="Muzlatgich",
+        cost=D(12_000_000),
+        life_months=84,
+        in_service_on=date(2026, 3, 15),
+    )
+    services.dispose(asset, by=owner, on=date(2026, 11, 5), kind="written_off", reason="Singan")
+    report = queries.depreciation_report(shop, branch_ids=None, year=2026)
+    # 20 % a year on 12 000 000 = 200 000 a month, April … November, then it is gone.
+    assert report["tax"][3:] == [D("200000.00")] * 8 + [D("0.00")]
+    assert report["tax_total"] == D("1600000.00")

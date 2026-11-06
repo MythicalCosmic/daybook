@@ -267,7 +267,7 @@ def detail(asset: Asset, *, today: date | None = None) -> dict:
             asset.cost + added,
             asset.category.tax_rate,
             asset.in_service_on,
-            until=engine.add_months(month, 600),
+            until=_tax_until(asset, engine.add_months(month, 600)),
             rule=settings.start_rule,
         )
         done = sum((amount for day, amount in tax_rows if day < month), ZERO)
@@ -290,6 +290,13 @@ def detail(asset: Asset, *, today: date | None = None) -> dict:
         "files": list(asset.files.all()),
         "next_due": next_due(asset, today),
     }
+
+
+def _tax_until(asset: Asset, until: date) -> date:
+    """The tax book runs to `until`, or to the month the asset left (its last month there)."""
+    if asset.disposed_on is not None:
+        return min(until, engine.first_of(asset.disposed_on))
+    return until
 
 
 def _group_key(asset: Asset, group: str) -> tuple[int | None, str]:
@@ -338,7 +345,7 @@ def depreciation_report(
                 asset.cost,
                 asset.category.tax_rate,
                 asset.in_service_on,
-                until=end,
+                until=_tax_until(asset, end),
                 rule=settings.start_rule,
             ):
                 if day.year == year:
