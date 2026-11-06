@@ -43,8 +43,8 @@ def context(payslip: Payslip) -> dict:
             _("Last working day: %(date)s") % {"date": formats.date_format(run.last_day, "d.m.Y")}
         )
     facts += [
-        _("Working days: %(days)s") % {"days": payslip.scheduled_days.normalize()},
-        _("Paid days: %(days)s") % {"days": payslip.paid_days.normalize()},
+        _("Working days: %(days)s") % {"days": f"{payslip.scheduled_days.normalize():f}"},
+        _("Paid days: %(days)s") % {"days": f"{payslip.paid_days.normalize():f}"},
     ]
     if payslip.worked_minutes:
         facts.append(

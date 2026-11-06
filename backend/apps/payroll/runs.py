@@ -121,8 +121,9 @@ def create_run(
 
 
 def _usd_rate(run: PayrollRun) -> Decimal | None:
-    """The run's dollar rate: as given, else the company's rate for the month's last day when
-    a pay setup or an active task rate is in another currency."""
+    """The run's dollar rate: as given, else the company's rate for the day its pay is booked
+    on (the month's last day, a final settlement's last working day) when a pay setup or an
+    active task rate is in another currency."""
     if run.usd_rate is not None:
         return run.usd_rate
     currency = conf.get_settings(run.company).currency
@@ -136,7 +137,7 @@ def _usd_rate(run: PayrollRun) -> Decimal | None:
     if not foreign:
         return None
     try:
-        return rate_for(run.company, "USD", periods.last_day(run.period)).rate
+        return rate_for(run.company, "USD", finance_bridge.booked_on(run)).rate
     except DomainError:
         return None
 
@@ -295,8 +296,10 @@ def _calculate(run: PayrollRun, *, by, member_ids=None) -> PayrollRun:
     if member_ids is None:
         rules.evaluate_monthly(company, run.period, by=by)
     run.usd_rate = _usd_rate(run)
+    # A draft never holds its own adjustments (finalize sets them, reopen clears them), so one
+    # already on a payslip was paid by a final run of the month: never pay it twice.
     inputs, people = calculator.gather(
-        company, run.period, usd_rate=run.usd_rate, member_ids=member_ids
+        company, run.period, usd_rate=run.usd_rate, member_ids=member_ids, unpaid_only=True
     )
     # People settled by a final run of that month are paid there, not here (unless this run
     # had paid their month already when they left: then the final run pays only the rest).
