@@ -438,3 +438,23 @@ def test_a_pending_expense_that_bought_an_asset_is_not_rejected(
     )
     with pytest.raises(DomainError):
         finance.reject_transaction(txn, by=owner, reason="Xato")
+
+
+def test_a_purchase_capitalized_meanwhile_is_not_voided(
+    shop, owner, cash, equipment, chilonzor, monkeypatch
+):
+    """void_transaction checked `capitalized` before it locked the row: an asset made from the
+    expense in between (committed while the void waited for the lock) left a void purchase
+    whose money is back on the account and whose asset still depreciates."""
+    txn = buy(shop, owner, cash, equipment, chilonzor, amount=3_000_000, day=date(2026, 11, 2))
+    real_lock = finance._lock_row
+
+    def lock_after_an_asset_was_made(row):
+        Transaction.objects.filter(pk=row.pk).update(capitalized=True)
+        return real_lock(row)
+
+    monkeypatch.setattr(finance, "_lock_row", lock_after_an_asset_was_made)
+    with pytest.raises(DomainError):
+        finance.void_transaction(txn, by=owner, reason="Xato")
+    txn.refresh_from_db()
+    assert txn.status == Transaction.Status.POSTED
