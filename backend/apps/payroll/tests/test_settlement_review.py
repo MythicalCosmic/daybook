@@ -6,7 +6,7 @@ from decimal import Decimal as D
 
 import pytest
 
-from apps.finance.models import CompanyRate
+from apps.finance.models import CompanyRate, Debt
 from apps.payroll import providers, queries, services
 from apps.payroll.models import PayrollRun, PayslipLine
 from apps.payroll.tests.conftest import OCTOBER, local
@@ -161,3 +161,39 @@ def test_the_months_payroll_figures_count_a_leavers_final_payslip(shop, team):
     # Sara's 4 680 000 in the monthly run and Ali's 2 200 000 (11 of 26 days) in his final one.
     assert summary["people"] == 2
     assert summary["net"] == D("6880000.00")
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason=(
+        "Product decision for the lead: the warning `paid_after_last_day` says to add a line "
+        "by hand to take the overpayment back, but a final payslip whose hand-made deduction "
+        "is more than its pay is refused at finalize ('more than the pay: lower a line added "
+        "by hand'). Either book the rest as a receivable from the person (like an advance "
+        "left) or reword the warning: take back at most what the payslip pays, record the "
+        "rest as a debt in Finance."
+    ),
+)
+def test_what_october_paid_after_the_last_day_can_be_taken_back(shop, team, freeze):
+    """October paid Ali 600 000 for the 29th to the 31st; his final payslip pays 2 unused
+    leave days (5 200 000 / 31 x 2 = 335 483.87). Taking the 600 000 back as the warning
+    says leaves him owing 264 516.13, a receivable in Finance."""
+    staff = team
+    _regular, final = finalized_october_then_ali_leaves(shop, staff, freeze)
+    warning = next(w for w in final.warnings if w["code"] == "paid_after_last_day")
+    assert warning["amount"] == "600000.00"
+    payslip = final.payslips.get()
+    services.set_manual_lines(
+        payslip,
+        by=staff.accountant,
+        lines=[{"label": "Paid after the last day", "amount": "-600000"}],
+    )
+
+    services.finalize_run(final, by=staff.owner)
+
+    payslip.refresh_from_db()
+    assert payslip.net == D("-264516.13")
+    owed = Debt.objects.filter(
+        membership=staff.ali, direction=Debt.Direction.RECEIVABLE, status=Debt.Status.OPEN
+    )
+    assert sum(debt.amount - debt.paid for debt in owed) == D("264516.13")
