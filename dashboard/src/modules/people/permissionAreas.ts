@@ -22,7 +22,10 @@ export const PERMISSION_AREAS: ReadonlyArray<{ id: PermissionAreaId; perms: read
     id: "work",
     perms: ["tasks.view_all", "tasks.assign", "tasks.templates", "tasks.confirm", "reminders.configure", "projects.view_all", "projects.manage", "projects.time_view"],
   },
-  { id: "sales", perms: ["sales.view", "sales.operate", "sales.manage", "sales.invoices", "stock.manage", "crm.view", "crm.manage"] },
+  {
+    id: "sales",
+    perms: ["sales.view", "sales.operate", "sales.manage", "sales.invoices", "stock.operate", "stock.manage", "stock.controlled", "crm.view", "crm.manage"],
+  },
   { id: "finance", perms: ["finance.view", "finance.record", "finance.claim", "finance.approve", "finance.manage"] },
   { id: "comms", perms: ["announcements.send", "groups.manage", "knowledge.manage", "agenda.manage"] },
   { id: "insights", perms: ["reports.view", "ai.use", "ai.configure"] },
