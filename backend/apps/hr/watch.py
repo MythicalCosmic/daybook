@@ -9,8 +9,18 @@
   today's birthdays and work anniversaries are posted to the groups that want them and the
   person is greeted, once per celebration.
 
+- `watch_coverage` (every 5 minutes, docs/PLAN-OWNER.md §14.9): a pharmacy open with fewer
+  qualified pharmacists checked in than it needs, for `coverage_alert_minutes`, reaches its
+  manager and the owners (critical, once per branch and gap); so does a till opened by someone
+  who isn't a qualified pharmacist (once per till shift).
+- `watch_planned_coverage` (hourly): gaps in the published roster of the next `coverage_days`
+  reach whoever runs the roster at that branch (a warning, once per gap). Days past the last
+  published shift of a branch aren't planned yet and stay quiet; a gap already under way is the
+  live check's.
+
 Every job walks the active companies with HR switched on; one company's failure is logged and
-never stops the others.
+never stops the others. The coverage jobs do nothing until the rule is set up
+(`conf.coverage_settings`).
 """
 
 import logging
@@ -24,7 +34,7 @@ from django.utils import timezone, translation
 from apps.companies.models import Company
 from apps.groups.models import GroupEvent
 from apps.groups.services import broadcast
-from apps.hr import bot_messages, conf, notify, overview, queries
+from apps.hr import bot_messages, conf, coverage, notify, overview, queries
 from apps.hr.models import Celebration
 from apps.members.models import Membership
 
@@ -123,6 +133,69 @@ def _step(item, field: str, days_left: int, warn_days: int, announce) -> int:
     with transaction.atomic():
         type(item).objects.filter(pk=item.pk).update(**{field: marked})
         return announce(step) if step is not None else 0
+
+
+# Pharmacist coverage ---------------------------------------------------------------------------
+
+# A till shift that opened and closed between two runs is still told about.
+SELLER_WINDOW = timedelta(minutes=15)
+
+
+def watch_coverage(now: datetime | None = None) -> int:
+    return _each(coverage_company, now)
+
+
+def coverage_company(company: Company, now: datetime) -> int:
+    settings = conf.coverage_settings(company)
+    if settings is None:
+        return 0
+    branches = {branch.pk: branch for branch in coverage.pharmacies(company, branch_ids=None)}
+    wait = timedelta(minutes=settings.coverage_alert_minutes)
+    sent = 0
+    for gap in coverage.live(company, now):
+        if now - gap.since < wait or gap.branch_id not in branches:
+            continue
+        names = [
+            str(person)
+            for person in Membership.objects.filter(pk__in=gap.others).order_by(
+                "first_name", "last_name", "pk"
+            )
+        ]
+        sent += notify.coverage_gap_live(branches[gap.branch_id], gap, names)
+    tz = ZoneInfo(company.timezone)
+    day = timezone.localtime(now, tz).date()
+    for row in coverage.unqualified_sellers(company, day, branch_ids=None):
+        if row["status"] != "open" and now - row["opened_at"] > SELLER_WINDOW:
+            continue
+        branch = branches.get(row["branch_id"])
+        if branch is not None:
+            sent += notify.unqualified_seller(branch, row, timezone.localtime(row["opened_at"], tz))
+    return sent
+
+
+def watch_planned_coverage(now: datetime | None = None) -> int:
+    return _each(planned_company, now)
+
+
+def planned_company(company: Company, now: datetime) -> int:
+    from apps.attendance import queries as attendance
+
+    settings = conf.coverage_settings(company)
+    if settings is None:
+        return 0
+    branches = {branch.pk: branch for branch in coverage.pharmacies(company, branch_ids=None)}
+    recipients: dict[int, list[Membership]] = {}
+    sent = 0
+    for gap in coverage.upcoming(company, now, settings.coverage_days, branch_ids=None):
+        if gap.start <= now or gap.branch_id not in branches:
+            continue  # under way: the live check has it
+        if gap.branch_id not in recipients:
+            recipients[gap.branch_id] = attendance.managers_for(company, gap.branch_id)
+        monday = gap.start.date() - timedelta(days=gap.start.weekday())
+        sent += notify.coverage_gap_planned(
+            branches[gap.branch_id], gap, recipients[gap.branch_id], monday.isoformat()
+        )
+    return sent
 
 
 # Celebrations ----------------------------------------------------------------------------------

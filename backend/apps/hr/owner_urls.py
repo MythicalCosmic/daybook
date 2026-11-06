@@ -28,6 +28,13 @@ urlpatterns = [
     path("hr/settings/", owner_api.SettingsView.as_view(), name="hr-settings"),
     path("hr/overview/", owner_api.OverviewView.as_view(), name="hr-overview"),
     path("hr/celebrations/", owner_api.CelebrationsView.as_view(), name="hr-celebrations"),
+    path("hr/coverage/", owner_api.CoverageView.as_view(), name="hr-coverage"),
+    path("hr/coverage/live/", owner_api.LiveCoverageView.as_view(), name="hr-coverage-live"),
+    path(
+        "hr/coverage/pharmacists/",
+        owner_api.PharmacistsView.as_view(),
+        name="hr-coverage-pharmacists",
+    ),
     path("hr/people/<int:member_id>/profile/", owner_api.ProfileView.as_view(), name="hr-profile"),
     path(
         "hr/people/<int:member_id>/sensitive/",

@@ -70,7 +70,8 @@ class LiveGap:
     since: datetime
     have: int
     need: int
-    present: tuple[int, ...] = ()
+    present: tuple[int, ...] = ()  # the qualified people checked in (fewer than `need`)
+    others: tuple[int, ...] = ()  # people checked in who don't count
 
 
 @dataclass(frozen=True)
@@ -105,6 +106,9 @@ class BranchPlan:
     days: list[DayPlan] = field(default_factory=list)
     gaps: list[Gap] = field(default_factory=list)  # merged across midnight
     shifts: int = 0  # every planned shift at the branch in the period (anyone's)
+    last_day: date | None = None  # the last day of the period anyone is planned here
+    # Where the roster ends: the later of that day's closing and the end of its last shift.
+    horizon: datetime | None = None
 
 
 @dataclass
@@ -125,6 +129,8 @@ class Plan:
 
 OK, OFF, SETUP, NO_ROSTER = "ok", "off", "setup", "no_roster"
 STATES = (OK, OFF, SETUP, NO_ROSTER)
+# Why a branch is closed on a day.
+CLOSED = ("weekday", "holiday", "no_hours")
 
 
 def state(company) -> str:
@@ -216,11 +222,12 @@ def plan(
     for branch in branches:
         here = by_branch.get(branch.pk, [])
         counted = [
-            (shift.starts_at, shift.ends_at, shift.membership_id)
+            (_local(shift.starts_at, tz), _local(shift.ends_at, tz), shift.membership_id)
             for shift in here
             if qualifier.counts(shift.membership_id, shift.date)
         ]
-        row = BranchPlan(branch, shifts=sum(1 for shift in here if start <= shift.date <= end))
+        dated = [shift.date for shift in here if start <= shift.date <= end]
+        row = BranchPlan(branch, shifts=len(dated), last_day=max(dated, default=None))
         day = start
         while day <= end:
             hours = open_hours(branch, day, tz, holidays)
@@ -234,8 +241,8 @@ def plan(
                     shift.pk,
                     shift.membership,
                     shift.date,
-                    shift.starts_at,
-                    shift.ends_at,
+                    _local(shift.starts_at, tz),
+                    _local(shift.ends_at, tz),
                     shift.published_at is not None,
                     qualifier.verdict(shift.membership_id, shift.date),
                 )
@@ -245,6 +252,10 @@ def plan(
             row.days.append(today)
             day += timedelta(days=1)
         row.gaps = _merge([gap for today in row.days for gap in today.gaps])
+        if row.last_day is not None:
+            ends = [_local(s.ends_at, tz) for s in here if start <= s.date <= row.last_day]
+            closing = next((d.closes for d in row.days if d.date == row.last_day), None)
+            row.horizon = max([*ends, *([closing] if closing else [])])
         result.branches.append(row)
     return result
 
@@ -270,6 +281,23 @@ def planned_gaps(
         drafts=drafts,
         exclude_member_ids=exclude_member_ids,
     ).gaps
+
+
+def upcoming(company, now: datetime, days: int, *, branch_ids: list[int] | None) -> list[Gap]:
+    """The gaps of the published roster from `now` on, over `days` days: gaps not over yet, up
+    to where each branch's roster ends (`BranchPlan.horizon`; later days aren't planned yet, and
+    a branch with nothing published has no roster to check)."""
+    today = timezone.localtime(now, ZoneInfo(company.timezone)).date()
+    found = plan(company, today, today + timedelta(days=days - 1), branch_ids=branch_ids)
+    gaps = []
+    for row in found.branches:
+        if row.horizon is None:
+            continue
+        for gap in row.gaps:
+            end = min(gap.end, row.horizon)
+            if end > now and gap.start < end:
+                gaps.append(Gap(gap.branch_id, gap.start, end, gap.have, gap.need))
+    return gaps
 
 
 def live(company, now: datetime | None = None) -> list[LiveGap]:
@@ -309,16 +337,13 @@ def live(company, now: datetime | None = None) -> list[LiveGap]:
         window = _open_window(branch, local, tz, holidays)
         if window is None:
             continue
+        there = [record for record in here if _there(record, now, AttendanceRecord.Status.OPEN)]
         present = sorted(
-            {
-                record.membership_id
-                for record in here
-                if _there(record, now, AttendanceRecord.Status.OPEN)
-                and qualifier.counts(record.membership_id, record.date)
-            }
+            {r.membership_id for r in there if qualifier.counts(r.membership_id, r.date)}
         )
         if len(present) >= settings.coverage_min:
             continue
+        others = tuple(sorted({record.membership_id for record in there} - set(present)))
         left = [
             record.check_out_at
             for record in here
@@ -330,7 +355,16 @@ def live(company, now: datetime | None = None) -> list[LiveGap]:
         since = max([moment for moment in (opened, *left) if moment is not None], default=None)
         if since is None:  # around the clock and nobody qualified lately: since the day began
             since = _at(today, time(0), tz)
-        found.append(LiveGap(branch.pk, since, len(present), settings.coverage_min, tuple(present)))
+        found.append(
+            LiveGap(
+                branch.pk,
+                _local(since, tz),
+                len(present),
+                settings.coverage_min,
+                tuple(present),
+                others,
+            )
+        )
     return found
 
 
@@ -383,6 +417,10 @@ def unqualified_sellers(company, day: date, *, branch_ids: list[int] | None) -> 
 
 def _at(day: date, clock: time, tz: ZoneInfo) -> datetime:
     return datetime.combine(day, clock, tzinfo=tz)
+
+
+def _local(moment: datetime, tz: ZoneInfo) -> datetime:
+    return timezone.localtime(moment, tz)
 
 
 def _there(record, now: datetime, open_status: str) -> bool:

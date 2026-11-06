@@ -8,8 +8,8 @@ from django.utils.translation import ngettext
 
 from apps.console.registry import CalendarItem
 from apps.core.exceptions import DomainError
-from apps.hr import bot_messages, conf, overview, queries, services
-from apps.hr.models import Celebration, Contract, EmployeeDocument
+from apps.hr import bot_messages, conf, coverage, overview, queries, services
+from apps.hr.models import Celebration, Contract, DocumentKind, EmployeeDocument
 from apps.members import scope
 from apps.members.models import Membership
 
@@ -137,6 +137,77 @@ def brief_section(company, day: date, now, branch_ids: list[int] | None) -> dict
     if not lines:
         return None
     return {"title": _("HR"), "lines": lines}
+
+
+BRIEF_GAPS = 3
+# The documents a pharmacist renews (diplomas don't expire).
+RENEWED_KINDS = (
+    DocumentKind.PHARMACIST_CERTIFICATE,
+    DocumentKind.QUALIFICATION_CATEGORY,
+    DocumentKind.STATE_REGISTRATION,
+)
+
+
+def coverage_brief(company, day: date, now, branch_ids: list[int] | None) -> dict | None:
+    """Pharmacist coverage for the morning brief and /today: hours without a qualified
+    pharmacist in the next 7 days of the roster, a pharmacy without one right now, tills opened
+    by someone not qualified, and pharmacist certificates that end within 30 days."""
+    settings = conf.coverage_settings(company)
+    if settings is None:
+        return None
+    names = {
+        branch.pk: branch.name for branch in coverage.pharmacies(company, branch_ids=branch_ids)
+    }
+    lines = []
+    live = [gap for gap in coverage.live(company, now) if gap.branch_id in names]
+    for gap in live:
+        lines.append(
+            _("No qualified pharmacist now: %(branch)s, since %(time)s")
+            % {"branch": names[gap.branch_id], "time": bot_messages.clock(gap.since)}
+        )
+    gaps = coverage.upcoming(company, now, 7, branch_ids=branch_ids)
+    if gaps:
+        lines.append(
+            _("Roster gaps without a qualified pharmacist, next 7 days: %(count)d")
+            % {"count": len(gaps)}
+        )
+        for gap in gaps[:BRIEF_GAPS]:
+            when = bot_messages.planned_gap_when(gap.start, gap.end)
+            lines.append(f"{names.get(gap.branch_id, '')}: {when}")
+    for row in coverage.unqualified_sellers(company, day, branch_ids=branch_ids):
+        lines.append(
+            _("Till opened by someone not qualified: %(name)s (%(branch)s)")
+            % {"name": row["cashier"], "branch": row["branch"]}
+        )
+    positions = conf.pharmacist_position_ids(settings)
+    expiring = (
+        queries.expiring_documents(company, branch_ids=branch_ids, day=day, within=30)
+        .filter(kind__in=RENEWED_KINDS, membership__position_id__in=positions)
+        .count()
+    )
+    if expiring:
+        lines.append(
+            _("Pharmacist certificates to renew within 30 days: %(count)d") % {"count": expiring}
+        )
+    if not lines:
+        return None
+    return {"title": _("Pharmacist coverage"), "lines": lines}
+
+
+def pharmacists_done(company) -> bool:
+    """The setup step hr.pharmacists: the pharmacist positions are chosen and someone in them
+    is qualified today (their diplomas and certificates are in). Nothing to do for a company
+    with the rule off or without a pharmacy."""
+    settings = conf.get_settings(company)
+    if not settings.coverage_enabled or not coverage.pharmacies(company, branch_ids=None):
+        return True
+    positions = conf.pharmacist_position_ids(settings)
+    if not positions:
+        return False
+    people = Membership.objects.filter(
+        company=company, status=Membership.Status.APPROVED, position_id__in=positions
+    ).values_list("pk", flat=True)
+    return bool(queries.qualified(company, list(people), queries.today(company)))
 
 
 # The company calendar -----------------------------------------------------------------------------

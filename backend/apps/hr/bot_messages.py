@@ -129,3 +129,70 @@ def anniversary_greeting_title(years: int) -> str:
 def greeting_body(company_name: str) -> str:
     # Translators: %(company)s is the company's name.
     return _("The whole team of «%(company)s» congratulates you.") % {"company": company_name}
+
+
+# Pharmacist coverage (docs/PLAN-OWNER.md §14.9) -------------------------------------------
+
+
+def clock(moment) -> str:
+    return moment.strftime("%H:%M")
+
+
+def reason_text(reason: str | None) -> str:
+    """Why someone doesn't count as a qualified pharmacist, in a few words."""
+    return {
+        "missing": _("a required document is missing"),
+        "expired": _("a required document has expired"),
+        "unverified": _("a document is not verified yet"),
+        "not_pharmacist": _("not in a pharmacist position"),
+        "not_approved": _("not working now"),
+    }.get(reason or "", _("not qualified"))
+
+
+def live_gap_title(branch: str) -> str:
+    # Translators: %(branch)s is a pharmacy's name, e.g. "Yunusobod".
+    return _("No qualified pharmacist on duty: %(branch)s") % {"branch": branch}
+
+
+def live_gap_body(since, present: list[str]) -> str:
+    lines = [_("Since %(time)s nobody qualified has checked in.") % {"time": clock(since)}]
+    if present:
+        lines.append(_("Checked in: %(names)s") % {"names": ", ".join(present)})
+    lines.append(_("Only people with pharmaceutical education may sell medicines."))
+    return "\n".join(lines)
+
+
+def seller_title(branch: str) -> str:
+    return _("Till opened by someone not qualified: %(branch)s") % {"branch": branch}
+
+
+def seller_body(cashier: str, opened_at, reason: str | None) -> str:
+    # Translators: %(name)s is a person, %(time)s a clock time, %(reason)s a few words of why.
+    return _("Opened at %(time)s. Cashier: %(name)s (%(reason)s).") % {
+        "time": clock(opened_at),
+        "name": cashier,
+        "reason": reason_text(reason),
+    }
+
+
+def planned_gap_title(branch: str) -> str:
+    return _("No qualified pharmacist in the roster: %(branch)s") % {"branch": branch}
+
+
+def planned_gap_when(start, end) -> str:
+    # Translators: a day (dd.mm.yyyy) and two clock times, e.g. "14.11.2026, 20:00 to 08:00".
+    return _("%(day)s, %(start)s to %(end)s") % {
+        "day": day(start.date()),
+        "start": clock(start),
+        "end": clock(end),
+    }
+
+
+def planned_gap_body(start, end, have: int, need: int) -> str:
+    lines = [planned_gap_when(start, end)]
+    if need > 1:
+        lines.append(
+            _("Qualified pharmacists planned: %(have)d of %(need)d") % {"have": have, "need": need}
+        )
+    lines.append(_("Add a qualified pharmacist to the roster."))
+    return "\n".join(lines)
