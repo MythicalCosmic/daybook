@@ -21,6 +21,8 @@ import type {
   Custody,
   DepreciationReport,
   Movement,
+  Permit,
+  PermitInput,
   Planning,
   Purchase,
   Summary,
@@ -60,6 +62,16 @@ export const assetsApi = {
   planning: (cid: number, params: Query = {}) => http.get<Planning>(path(cid, "planning/"), params),
   custody: (cid: number, params: Query = {}) => http.get<Custody[]>(path(cid, "custody/"), params),
   purchases: (cid: number) => http.get<Purchase[]>(path(cid, "purchases/")),
+
+  permits: (cid: number) => http.get<Permit[]>(path(cid, "permits/")),
+  createPermit: (cid: number, input: PermitInput) => http.post<Permit>(path(cid, "permits/"), input),
+  updatePermit: (cid: number, id: number, input: PermitInput) => http.patch<Permit>(path(cid, `permits/${id}/`), input),
+  deletePermit: (cid: number, id: number) => http.delete(path(cid, `permits/${id}/`)),
+  uploadPermit: (cid: number, id: number, file: File) => {
+    const form = new FormData();
+    form.append("file", file);
+    return http.form<Permit>(path(cid, `permits/${id}/file/`), form);
+  },
 
   counts: (cid: number) => http.get<AssetCount[]>(path(cid, "counts/")),
   count: (cid: number, id: number) => http.get<AssetCount>(path(cid, `counts/${id}/`)),
@@ -101,6 +113,7 @@ export const useMovement = (params: MaybeRefOrGetter<Query>) => useResource("mov
 export const usePlanning = (params: MaybeRefOrGetter<Query>) => useResource("planning", () => ({ ...toValue(params) }), (cid, p) => assetsApi.planning(cid, p as Query), { keepPrevious: true });
 export const useCustody = (params: MaybeRefOrGetter<Query>) => useResource("custody", () => ({ ...toValue(params) }), (cid, p) => assetsApi.custody(cid, p as Query), { keepPrevious: true });
 export const usePurchases = (enabled: MaybeRefOrGetter<boolean> = true) => useResource("purchases", {}, (cid) => assetsApi.purchases(cid), { enabled });
+export const usePermits = () => useResource("permits", {}, (cid) => assetsApi.permits(cid));
 export const useCounts = () => useResource("counts", {}, (cid) => assetsApi.counts(cid));
 export const useCount = (id: MaybeRefOrGetter<number | null>) => useResource("count", () => ({ id: toValue(id) }), (cid, p) => assetsApi.count(cid, Number(p.id)), { enabled: () => !!toValue(id) });
 

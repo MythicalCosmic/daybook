@@ -37,4 +37,10 @@ export const routes: RouteRecordRaw[] = [
     component: () => lazy().then((m) => m.pages.counts()),
     meta: { title: "assets.nav.counts", perm: READ },
   },
+  {
+    path: "assets/permits",
+    name: "assets.permits",
+    component: () => lazy().then((m) => m.pages.permits()),
+    meta: { title: "assets.nav.permits", perm: READ },
+  },
 ];

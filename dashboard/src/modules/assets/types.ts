@@ -388,3 +388,25 @@ export interface AssetCount {
   totals: Record<CountResult, number>;
   lines?: CountLine[];
 }
+
+export type PermitKind = "pharmacy_licence" | "controlled_licence" | "lease" | "fire_safety" | "sanitary" | "cash_register" | "insurance" | "other";
+
+export interface Permit {
+  id: number;
+  kind: PermitKind;
+  name: string;
+  number: string;
+  issuer: string;
+  issued_on: string | null;
+  valid_until: string | null;
+  remind_days: number;
+  branch: number | null;
+  branch_name: string | null;
+  responsible: number | null;
+  responsible_name: string | null;
+  notes: string;
+  days_left: number | null;
+  file_url: string | null;
+}
+
+export type PermitInput = Partial<Omit<Permit, "id" | "branch_name" | "responsible_name" | "days_left" | "file_url">>;

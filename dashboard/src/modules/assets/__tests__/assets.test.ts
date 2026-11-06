@@ -308,3 +308,33 @@ describe("the form and the steps", () => {
     expect(sent?.body).toEqual({ on: "2026-11-07", kind: "sold", amount: "7000000.00", account: 4, reason: "" });
   });
 });
+
+describe("licences and permits", () => {
+  it("puts the expired ones first and says how long the others have", async () => {
+    const permit = (id: number, days_left: number | null, name: string) => ({
+      id,
+      kind: "pharmacy_licence",
+      name,
+      number: "L-1",
+      issuer: "",
+      issued_on: null,
+      valid_until: days_left === null ? null : "2026-12-17",
+      remind_days: 60,
+      branch: 1,
+      branch_name: "Chilonzor",
+      responsible: null,
+      responsible_name: null,
+      notes: "",
+      days_left,
+      file_url: null,
+    });
+    stub({ "GET assets/permits/": () => json([permit(1, -3, "Litsenziya"), permit(2, 40, "Ijara"), permit(3, null, "Sug‘urta")]) });
+    const app = await testApp("/c/1/assets/permits");
+    const { default: PermitsPage } = await import("../pages/PermitsPage.vue");
+    const { wrapper } = mountWithProviders(PermitsPage, { plugins: app.plugins });
+    await settle();
+    expect(wrapper.find("[data-testid=permits-expired]").text()).toContain("Litsenziya");
+    expect(wrapper.find("[data-testid=permits-soon]").text()).toContain("Ijara");
+    expect(wrapper.find("[data-testid=permits-valid]").text()).toContain(en["assets.permits.noEnd"]);
+  });
+});

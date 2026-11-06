@@ -27,6 +27,7 @@ export default defineModule({
     { key: "items", title: "assets.nav.items", to: "assets/items" },
     { key: "depreciation", title: "assets.nav.depreciation", to: "assets/depreciation" },
     { key: "planning", title: "assets.nav.planning", to: "assets/planning" },
+    { key: "permits", title: "assets.nav.permits", to: "assets/permits" },
     { key: "counts", title: "assets.nav.counts", to: "assets/counts" },
   ],
   invalidates: ["assets"],

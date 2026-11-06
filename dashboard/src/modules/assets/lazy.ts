@@ -5,6 +5,7 @@ export const pages = {
   depreciation: () => import("./pages/DepreciationPage.vue"),
   planning: () => import("./pages/PlanningPage.vue"),
   counts: () => import("./pages/CountsPage.vue"),
+  permits: () => import("./pages/PermitsPage.vue"),
 };
 
 export const panels = {
