@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-07 03:50+0500\n"
+"POT-Creation-Date: 2026-11-07 04:05+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -2955,9 +2955,9 @@ msgstr "Выберите филиал, где оно находится."
 msgid "Use its own action for this."
 msgstr "Для этого есть отдельное действие."
 
-#: backend/apps/assets/owner_api.py
-msgid "Pick an account of this company."
-msgstr "Выберите счёт этой компании."
+#: backend/apps/assets/owner_api.py backend/apps/finance/owner_api.py
+msgid "Pick one of your accounts."
+msgstr "Выберите один из ваших счетов."
 
 #: backend/apps/assets/owner_api.py
 msgid "Give a year."
@@ -3301,6 +3301,10 @@ msgid "That expense was voided or rejected."
 msgstr "Этот расход аннулирован или отклонён."
 
 #: backend/apps/assets/services.py
+msgid "This expense already bought an asset."
+msgstr "На этот расход уже заведено средство."
+
+#: backend/apps/assets/services.py
 msgid "The cost can't be below zero."
 msgstr "Стоимость не может быть меньше нуля."
 
@@ -3345,10 +3349,6 @@ msgstr "Эта категория отключена."
 #: backend/apps/assets/services.py
 msgid "Give the asset a name."
 msgstr "Укажите название средства."
-
-#: backend/apps/assets/services.py
-msgid "This expense already bought an asset."
-msgstr "На этот расход уже заведено средство."
 
 #: backend/apps/assets/services.py
 msgid "Price"
@@ -3402,6 +3402,29 @@ msgid ""
 msgstr ""
 "Амортизация уже в учёте: используйте «Изменить срок», «Увеличить стоимость» "
 "или «Уменьшить стоимость»."
+
+#: backend/apps/assets/services.py
+msgid ""
+"It is in Finance already: it can't become a low-value item or stop being one."
+msgstr ""
+"Средство уже в Финансах: его нельзя перевести в малоценные предметы или "
+"обратно."
+
+#: backend/apps/assets/services.py
+msgid ""
+"Its purchase left the P&L and comes back as depreciation: booking it can't "
+"be switched off."
+msgstr ""
+"Покупка исключена из отчёта о прибыли и возвращается амортизацией: учёт "
+"амортизации нельзя отключить."
+
+#: backend/apps/assets/services.py
+msgid ""
+"Its purchase is already a cost in the P&L: booking its depreciation too "
+"would count it twice."
+msgstr ""
+"Покупка уже учтена в расходах отчёта о прибыли: учёт амортизации посчитал бы "
+"её дважды."
 
 #: backend/apps/assets/services.py
 msgid "It is already in service and depreciating."
@@ -7082,10 +7105,6 @@ msgid "The finance module is off for this company."
 msgstr "Модуль «Финансы» для этой компании выключен."
 
 #: backend/apps/finance/owner_api.py
-msgid "Pick one of your accounts."
-msgstr "Выберите один из ваших счетов."
-
-#: backend/apps/finance/owner_api.py
 msgid "Pick a counterparty."
 msgstr "Выберите контрагента."
 
@@ -7541,14 +7560,14 @@ msgid "Only a live expense can be the purchase of an asset."
 msgstr "Покупкой средства может быть только действующий расход."
 
 #: backend/apps/finance/services.py
-msgid "This entry is part of a transfer: void the transfer instead."
-msgstr "Эта проводка — часть перевода: аннулируйте весь перевод."
-
-#: backend/apps/finance/services.py
 msgid ""
 "This expense bought a fixed asset: remove or dispose of the asset first."
 msgstr ""
 "На этот расход куплено основное средство: сначала удалите или спишите его."
+
+#: backend/apps/finance/services.py
+msgid "This entry is part of a transfer: void the transfer instead."
+msgstr "Эта проводка — часть перевода: аннулируйте весь перевод."
 
 #: backend/apps/finance/services.py
 msgid "This entry opened a debt: cancel the debt instead."
@@ -11786,10 +11805,13 @@ msgstr ""
 #, python-format
 msgid ""
 "The %(month)s payroll paid %(name)s %(amount)s for days after their last "
-"day. Add a line by hand if it should be paid back."
+"day. To take it back, add a line by hand for at most what this payslip pays, "
+"and record the rest in Finance as money they owe."
 msgstr ""
 "Ведомость (%(month)s) оплатила и дни после последнего рабочего дня: "
-"%(name)s, %(amount)s. Если сумму нужно вернуть, добавьте строку вручную."
+"%(name)s, %(amount)s. Чтобы вернуть сумму, добавьте вручную строку не больше "
+"того, что платит этот расчётный лист, а остаток запишите в Финансах как долг "
+"сотрудника."
 
 #: backend/apps/payroll/models.py
 msgctxt "pay type"
@@ -12225,7 +12247,7 @@ msgctxt "payslip line"
 msgid "Paid leave"
 msgstr "Оплачиваемый отпуск"
 
-#: backend/apps/payroll/models.py
+#: backend/apps/payroll/models.py backend/apps/payroll/providers.py
 msgctxt "payslip line"
 msgid "Unused leave paid out"
 msgstr "Компенсация неиспользованного отпуска"
@@ -12581,10 +12603,12 @@ msgstr "В этом расчёте некому платить."
 #, python-format
 msgid ""
 "The deductions on the final payslip of %(names)s are more than the pay: "
-"lower a line added by hand."
+"lower a line added by hand to at most the pay, and record the rest in "
+"Finance as money they owe."
 msgstr ""
 "Удержания в окончательном расчёте больше заработка: %(names)s. Уменьшите "
-"строку, добавленную вручную."
+"строку, добавленную вручную, до суммы заработка, а остаток запишите в "
+"Финансах как долг сотрудника."
 
 #: backend/apps/payroll/runs.py
 #, python-format

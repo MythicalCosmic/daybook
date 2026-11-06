@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-07 03:50+0500\n"
+"POT-Creation-Date: 2026-11-07 04:05+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -2923,9 +2923,9 @@ msgstr "Qaysi filialda turganini tanlang."
 msgid "Use its own action for this."
 msgstr "Buning uchun alohida amaldan foydalaning."
 
-#: backend/apps/assets/owner_api.py
-msgid "Pick an account of this company."
-msgstr "Shu kompaniya hisobini tanlang."
+#: backend/apps/assets/owner_api.py backend/apps/finance/owner_api.py
+msgid "Pick one of your accounts."
+msgstr "Hisoblaringizdan birini tanlang."
 
 #: backend/apps/assets/owner_api.py
 msgid "Give a year."
@@ -3268,6 +3268,10 @@ msgid "That expense was voided or rejected."
 msgstr "Bu xarajat bekor qilingan yoki rad etilgan."
 
 #: backend/apps/assets/services.py
+msgid "This expense already bought an asset."
+msgstr "Bu xarajat bilan allaqachon vosita olingan."
+
+#: backend/apps/assets/services.py
 msgid "The cost can't be below zero."
 msgstr "Qiymat noldan kam bo‘lmaydi."
 
@@ -3313,10 +3317,6 @@ msgstr "Bu toifa o‘chirilgan."
 #: backend/apps/assets/services.py
 msgid "Give the asset a name."
 msgstr "Vositaga nom bering."
-
-#: backend/apps/assets/services.py
-msgid "This expense already bought an asset."
-msgstr "Bu xarajat bilan allaqachon vosita olingan."
 
 #: backend/apps/assets/services.py
 msgid "Price"
@@ -3370,6 +3370,29 @@ msgid ""
 msgstr ""
 "Amortizatsiyasi allaqachon hisobda: «Muddatni o‘zgartirish», «Qiymatiga "
 "qo‘shish» yoki «Qiymatini pasaytirish»dan foydalaning."
+
+#: backend/apps/assets/services.py
+msgid ""
+"It is in Finance already: it can't become a low-value item or stop being one."
+msgstr ""
+"Vosita allaqachon Moliyada: uni kam baholi buyumlarga o‘tkazib ham, ulardan "
+"qaytarib ham bo‘lmaydi."
+
+#: backend/apps/assets/services.py
+msgid ""
+"Its purchase left the P&L and comes back as depreciation: booking it can't "
+"be switched off."
+msgstr ""
+"Xaridi foyda va zarar hisobotidan chiqarilgan va amortizatsiya bo‘lib "
+"qaytadi: uni hisobga yozishni o‘chirib bo‘lmaydi."
+
+#: backend/apps/assets/services.py
+msgid ""
+"Its purchase is already a cost in the P&L: booking its depreciation too "
+"would count it twice."
+msgstr ""
+"Xaridi foyda va zarar hisobotida allaqachon xarajat sifatida bor: "
+"amortizatsiyani ham yozish uni ikki marta hisoblaydi."
 
 #: backend/apps/assets/services.py
 msgid "It is already in service and depreciating."
@@ -7116,10 +7139,6 @@ msgid "The finance module is off for this company."
 msgstr "Bu kompaniyada moliya moduli o‘chirilgan."
 
 #: backend/apps/finance/owner_api.py
-msgid "Pick one of your accounts."
-msgstr "Hisoblaringizdan birini tanlang."
-
-#: backend/apps/finance/owner_api.py
 msgid "Pick a counterparty."
 msgstr "Kontragentni tanlang."
 
@@ -7572,16 +7591,16 @@ msgid "Only a live expense can be the purchase of an asset."
 msgstr "Faqat amaldagi xarajat vosita xaridi bo‘la oladi."
 
 #: backend/apps/finance/services.py
-msgid "This entry is part of a transfer: void the transfer instead."
-msgstr ""
-"Bu yozuv o‘tkazmaning bir qismi: o‘rniga butun o‘tkazmani bekor qiling."
-
-#: backend/apps/finance/services.py
 msgid ""
 "This expense bought a fixed asset: remove or dispose of the asset first."
 msgstr ""
 "Bu xarajat bilan asosiy vosita olingan: avval vositani o‘chiring yoki "
 "hisobdan chiqaring."
+
+#: backend/apps/finance/services.py
+msgid "This entry is part of a transfer: void the transfer instead."
+msgstr ""
+"Bu yozuv o‘tkazmaning bir qismi: o‘rniga butun o‘tkazmani bekor qiling."
 
 #: backend/apps/finance/services.py
 msgid "This entry opened a debt: cancel the debt instead."
@@ -11822,11 +11841,13 @@ msgstr ""
 #, python-format
 msgid ""
 "The %(month)s payroll paid %(name)s %(amount)s for days after their last "
-"day. Add a line by hand if it should be paid back."
+"day. To take it back, add a line by hand for at most what this payslip pays, "
+"and record the rest in Finance as money they owe."
 msgstr ""
 "Ish haqi hisobi (%(month)s) oxirgi ish kunidan keyingi kunlar uchun ham "
-"to‘lagan: %(name)s, %(amount)s. Qaytarilishi kerak bo‘lsa, qo‘lda qator "
-"qo‘shing."
+"to‘lagan: %(name)s, %(amount)s. Qaytarib olish uchun bu hisob-varaq "
+"to‘laydigan summadan oshmaydigan qatorni qo‘lda qo‘shing, qolganini esa "
+"Moliyada xodimning qarzi sifatida yozing."
 
 #: backend/apps/payroll/models.py
 msgctxt "pay type"
@@ -12265,7 +12286,7 @@ msgctxt "payslip line"
 msgid "Paid leave"
 msgstr "Haq to‘lanadigan ta’til"
 
-#: backend/apps/payroll/models.py
+#: backend/apps/payroll/models.py backend/apps/payroll/providers.py
 msgctxt "payslip line"
 msgid "Unused leave paid out"
 msgstr "Foydalanilmagan ta’til uchun to‘lov"
@@ -12622,10 +12643,12 @@ msgstr "Bu hisob-kitobda ish haqi oladigan hech kim yo‘q."
 #, python-format
 msgid ""
 "The deductions on the final payslip of %(names)s are more than the pay: "
-"lower a line added by hand."
+"lower a line added by hand to at most the pay, and record the rest in "
+"Finance as money they owe."
 msgstr ""
 "Yakuniy hisob-varaqdagi ushlanmalar ish haqidan ko‘p: %(names)s. Qo‘lda "
-"qo‘shilgan qatorni kamaytiring."
+"qo‘shilgan qatorni ish haqidan oshmaydigan qilib kamaytiring, qolganini esa "
+"Moliyada xodimning qarzi sifatida yozing."
 
 #: backend/apps/payroll/runs.py
 #, python-format
