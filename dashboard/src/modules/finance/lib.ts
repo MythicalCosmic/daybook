@@ -23,9 +23,33 @@ import {
 
 import type { StatusTone } from "@/components/StatusPill.vue";
 import type { SelectOption } from "@/components/options";
+import { parseDay } from "@/lib/dates";
 import { dec, toMoney } from "@/lib/decimal";
 
-import type { AccountKind, AgingBucket, CategoryKind, CategoryNode, CounterpartyKind, CurrencyTotal, Debt, DebtStatus, Pnl, PnlNode, Transaction, TransactionKind } from "./types";
+import type {
+  AccountKind,
+  AgingBucket,
+  BudgetRow,
+  BudgetStatus,
+  CategoryKind,
+  CategoryNode,
+  ClaimStatus,
+  CounterpartyKind,
+  CurrencyTotal,
+  Debt,
+  DebtStatus,
+  Forecast,
+  PayableBucket,
+  PayableDebt,
+  Pnl,
+  PnlNode,
+  RecurringFrequency,
+  RecurringRule,
+  TaxTemplateSet,
+  Transaction,
+  TransactionKind,
+  UpcomingItem,
+} from "./types";
 
 export const ACCOUNT_ICONS: Record<AccountKind, LucideIcon> = {
   cash: Banknote,
@@ -358,3 +382,268 @@ export function quarterLabel(key: string, t: (key: string, params: Record<string
   const match = /^(\d{4})-Q([1-4])$/.exec(key);
   return match ? t("finance.reports.quarter", { year: match[1], q: match[2] }) : null;
 }
+
+// ─── Money planning (package I) ─────────────────────────────────────────────────────────────
+
+type Translate = (key: string, params?: Record<string, unknown>) => string;
+
+/** A month as the API writes it: "2026-11". */
+export function isMonth(value: string): boolean {
+  return /^\d{4}-(0[1-9]|1[0-2])$/.test(value);
+}
+
+/** The month `amount` months from `month`: shiftMonth("2026-01", -1) is "2025-12". */
+export function shiftMonth(month: string, amount: number): string {
+  const [year, number] = month.split("-").map(Number) as [number, number];
+  const index = year * 12 + (number - 1) + amount;
+  const nextYear = Math.floor(index / 12);
+  return `${nextYear}-${String(index - nextYear * 12 + 1).padStart(2, "0")}`;
+}
+
+/** The first day of a month, to format it ("November 2026"). */
+export function monthStart(month: string): string {
+  return `${month}-01`;
+}
+
+const hasBudget = (budget: string | null | undefined): budget is string => budget !== null && budget !== undefined && budget !== "" && dec(budget).gt(0);
+
+/** How much of a budget is spent, as a fraction (0.82; above 1 when over), or null without a budget. */
+export function budgetShare(budget: string | null | undefined, actual: string): number | null {
+  return hasBudget(budget) ? dec(actual).div(dec(budget)).toNumber() : null;
+}
+
+/**
+ * The server's status rule for a budget being typed, so the bar answers before it is saved: a
+ * warning from 80 % of the budget, over from 100 %, compared in decimals (exactly 80 % warns).
+ */
+export function budgetStatus(budget: string | null | undefined, actual: string): BudgetStatus {
+  if (!hasBudget(budget)) return "none";
+  const spent = dec(actual);
+  if (spent.gte(dec(budget))) return "over";
+  return spent.times(5).gte(dec(budget).times(4)) ? "warning" : "ok";
+}
+
+/** Bar and pill tones per budget status. */
+export const BUDGET_TONES: Record<BudgetStatus, StatusTone> = { none: "neutral", ok: "success", warning: "warning", over: "danger" };
+
+export interface BudgetLine<T> {
+  row: T;
+  depth: 0 | 1;
+  /** A top-level category with subcategories listed under it. */
+  parent: boolean;
+}
+
+/**
+ * Budget rows in the table's order: each top-level category followed by its subcategories (the
+ * API sends both levels and says which is which with `parent_id`). A row whose parent is missing
+ * stands at the top level; anything deeper than two levels is listed last, never dropped.
+ */
+export function budgetLines<T extends { category: { id: number; parent_id: number | null } }>(rows: readonly T[]): BudgetLine<T>[] {
+  const ids = new Set(rows.map((row) => row.category.id));
+  const children = new Map<number, T[]>();
+  const tops: T[] = [];
+  for (const row of rows) {
+    const parent = row.category.parent_id;
+    if (parent !== null && parent !== row.category.id && ids.has(parent)) children.set(parent, [...(children.get(parent) ?? []), row]);
+    else tops.push(row);
+  }
+  const lines: BudgetLine<T>[] = [];
+  const shown = new Set<number>();
+  for (const top of tops) {
+    const kids = children.get(top.category.id) ?? [];
+    lines.push({ row: top, depth: 0, parent: kids.length > 0 });
+    shown.add(top.category.id);
+    for (const kid of kids) {
+      lines.push({ row: kid, depth: 1, parent: false });
+      shown.add(kid.category.id);
+    }
+  }
+  for (const row of rows) if (!shown.has(row.category.id)) lines.push({ row, depth: 1, parent: false });
+  return lines;
+}
+
+/** How much of the month has gone, in percent: the even pace a budget is measured against (20 with 24 of 30 days left). */
+export function monthPace(daysLeft: number, daysInMonth: number): number {
+  if (daysInMonth <= 0) return 0;
+  return Math.min(100, Math.max(0, ((daysInMonth - daysLeft) / daysInMonth) * 100));
+}
+
+const sameMoney = (a: string | null, b: string | null): boolean => (a === null || b === null ? a === b : dec(a).eq(dec(b)));
+
+/**
+ * The typed budgets that differ from the saved ones, as `PUT budgets/` takes them (null removes one).
+ * `in`, not hasOwnProperty: on a reactive draft only `in` is tracked, so a first typed budget counts.
+ */
+export function budgetChanges(rows: readonly BudgetRow[], drafts: Readonly<Record<number, string | null>>): Array<{ category: number; amount: string | null }> {
+  const changes: Array<{ category: number; amount: string | null }> = [];
+  for (const row of rows) {
+    if (!(row.category.id in drafts)) continue;
+    const typed = drafts[row.category.id];
+    const next = typed === undefined || typed === null || typed === "" ? null : typed;
+    if (!sameMoney(next, row.budget)) changes.push({ category: row.category.id, amount: next });
+  }
+  return changes;
+}
+
+/**
+ * The month's budget total with the typed changes, added up as the server does (`budgets.month_view`):
+ * every top-level budget, and a subcategory's only while its parent has none (a parent's actual
+ * already holds its children's spending). Without changes it is the server's own total.
+ */
+export function draftBudgetTotal(total: string, rows: readonly BudgetRow[], changes: ReadonlyArray<{ category: number; amount: string | null }>): string {
+  if (!changes.length) return total;
+  const typed = new Map(changes.map((change) => [change.category, change.amount]));
+  const byId = new Map(rows.map((row) => [row.category.id, row]));
+  const budgetOf = (row: BudgetRow) => (typed.has(row.category.id) ? (typed.get(row.category.id) ?? null) : row.budget);
+  const set = (value: string | null) => value !== null && value !== "";
+  let sum = dec(0);
+  for (const row of rows) {
+    const budget = budgetOf(row);
+    if (!set(budget)) continue;
+    const parent = row.category.parent_id !== null ? byId.get(row.category.parent_id) : undefined;
+    if (!parent || !set(budgetOf(parent))) sum = sum.plus(dec(budget));
+  }
+  return toMoney(sum);
+}
+
+// Recurring rules ------------------------------------------------------------------------------
+
+export type RuleGroup = "bill" | "auto" | "tax";
+
+/** Which list a rule belongs to: taxes apart from the other bills, auto-posted ones apart from both. */
+export function ruleGroup(rule: Pick<RecurringRule, "mode" | "is_tax">): RuleGroup {
+  return rule.is_tax ? "tax" : rule.mode;
+}
+
+/** The day a rule falls on, from a date: weekly 1–7 (Monday first), otherwise the day of the month. */
+export function ruleDayFrom(day: string, frequency: RecurringFrequency): number {
+  const date = parseDay(day);
+  return frequency === "weekly" ? ((date.getUTCDay() + 6) % 7) + 1 : date.getUTCDate();
+}
+
+/**
+ * A rule's schedule in words: "Monthly, day 25", "Every 2 weeks: Monday", "Yearly, 25 Mar" (the
+ * month of a yearly rule is its start's month; day 31 means the month's last day).
+ */
+export function scheduleText(rule: Pick<RecurringRule, "frequency" | "interval" | "day" | "starts_on">, t: Translate, formatDay: (day: string) => string): string {
+  const n = Math.max(1, rule.interval || 1);
+  const many = n > 1 ? "N" : "";
+  if (rule.frequency === "weekly") {
+    const weekday = t(`common.weekday.long.${Math.min(7, Math.max(1, rule.day)) - 1}`);
+    return t(`finance.recurring.freq.weekly${many}`, { n, when: weekday });
+  }
+  if (rule.frequency === "yearly") {
+    const month = rule.starts_on.slice(0, 7);
+    const first = parseDay(`${month}-01`);
+    const length = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 0)).getUTCDate();
+    const date = `${month}-${String(Math.min(rule.day, length)).padStart(2, "0")}`;
+    return t(`finance.recurring.freq.yearly${many}`, { n, when: formatDay(date) });
+  }
+  const when = rule.day >= 31 ? t("finance.recurring.lastDay") : t("finance.recurring.dayN", { day: rule.day });
+  return t(`finance.recurring.freq.${rule.frequency}${many}`, { n, when });
+}
+
+/** The tax calendar's template sets with the company's own regime first. */
+export function taxSetsInOrder(sets: readonly TaxTemplateSet[]): TaxTemplateSet[] {
+  return [...sets].sort((a, b) => Number(b.current) - Number(a.current));
+}
+
+// Upcoming payments and the forecast --------------------------------------------------------------
+
+export interface UpcomingGroup {
+  /** "overdue", or the day. */
+  key: string;
+  /** Null for the overdue group. */
+  day: string | null;
+  items: UpcomingItem[];
+  /** What is known to come in and go out that day, in the base currency. */
+  in: string;
+  out: string;
+}
+
+/**
+ * Upcoming items by day, everything overdue first in one group. A day's totals add the items with
+ * an amount in the base currency; an unknown amount or a dollar debt shows on its own line only.
+ */
+export function groupUpcoming(items: readonly UpcomingItem[], base: string): UpcomingGroup[] {
+  const sorted = [...items].sort((a, b) => Number(b.overdue) - Number(a.overdue) || a.date.localeCompare(b.date));
+  const groups = new Map<string, UpcomingGroup>();
+  for (const item of sorted) {
+    const key = item.overdue ? "overdue" : item.date;
+    let group = groups.get(key);
+    if (!group) {
+      group = { key, day: item.overdue ? null : item.date, items: [], in: "0.00", out: "0.00" };
+      groups.set(key, group);
+    }
+    group.items.push(item);
+    if (item.amount !== null && item.currency === base) {
+      if (item.direction === "in") group.in = toMoney(dec(group.in).plus(dec(item.amount)));
+      else group.out = toMoney(dec(group.out).plus(dec(item.amount)));
+    }
+  }
+  return [...groups.values()];
+}
+
+export type UpcomingTarget = { type: "pay"; ruleId: number } | { type: "link"; to: string } | { type: "none" };
+
+/**
+ * Where an upcoming item is dealt with: a bill or a tax is paid right there (or opened on the
+ * recurring page for someone who can't record payments), an auto-posted rule on the recurring
+ * page, a payable on the Payables page with it ticked, a receivable in its debt's drawer, and
+ * anything else (payroll) where the server points.
+ */
+export function upcomingTarget(item: UpcomingItem, base: string, canPay: boolean): UpcomingTarget {
+  if ((item.kind === "bill" || item.kind === "tax") && item.rule_id !== null) {
+    return canPay ? { type: "pay", ruleId: item.rule_id } : { type: "link", to: `${base}/recurring?rule=${item.rule_id}` };
+  }
+  if (item.kind === "auto" && item.rule_id !== null) return { type: "link", to: `${base}/recurring?rule=${item.rule_id}` };
+  if (item.kind === "payable" && item.debt_id !== null) return { type: "link", to: `${base}/payables?select=${item.debt_id}` };
+  if (item.kind === "receivable" && item.debt_id !== null) return { type: "link", to: `${base}/debts?direction=receivable&debt=${item.debt_id}` };
+  return item.url ? { type: "link", to: item.url } : { type: "none" };
+}
+
+export type ForecastHeadline = { kind: "below"; date: string; balance: string } | { kind: "low"; date: string; balance: string };
+
+/** The forecast in one line: the first day cash goes below zero, else its lowest point. */
+export function forecastHeadline(forecast: Pick<Forecast, "below_zero_on" | "low" | "points">): ForecastHeadline {
+  if (forecast.below_zero_on) {
+    const point = forecast.points.find((row) => row.date === forecast.below_zero_on);
+    return { kind: "below", date: forecast.below_zero_on, balance: point?.balance ?? forecast.low.balance };
+  }
+  return { kind: "low", date: forecast.low.date, balance: forecast.low.balance };
+}
+
+// Payables -------------------------------------------------------------------------------------------
+
+export const PAYABLE_BUCKETS: readonly PayableBucket[] = ["overdue", "week", "later"];
+export const BUCKET_TONES: Record<PayableBucket, StatusTone> = { overdue: "danger", week: "warning", later: "neutral" };
+
+/** Accounts that hold cash or a person's money: a goods-receipt payable shouldn't be paid from them. */
+export const CASH_ACCOUNT_KINDS: readonly AccountKind[] = ["cash", "safe", "employee", "owner"];
+
+/**
+ * Wholesale of marked medicines is paid by bank transfer (plan §14.4 row 25): paying a
+ * goods-receipt payable from a cash desk, a safe or someone's own money gets a warning first.
+ */
+export function bankTransferWarning(debts: ReadonlyArray<{ bank_only: boolean }>, account: { kind: AccountKind } | null | undefined): boolean {
+  return !!account && CASH_ACCOUNT_KINDS.includes(account.kind) && debts.some((debt) => debt.bank_only);
+}
+
+/** What payables owe per bucket and in all, in the base currency. */
+export function bucketTotals(debts: ReadonlyArray<Pick<PayableDebt, "bucket" | "base_outstanding">>): Record<PayableBucket | "all", string> {
+  const totals: Record<PayableBucket | "all", ReturnType<typeof dec>> = { overdue: dec(0), week: dec(0), later: dec(0), all: dec(0) };
+  for (const debt of debts) {
+    totals[debt.bucket] = totals[debt.bucket].plus(dec(debt.base_outstanding));
+    totals.all = totals.all.plus(dec(debt.base_outstanding));
+  }
+  return { overdue: toMoney(totals.overdue), week: toMoney(totals.week), later: toMoney(totals.later), all: toMoney(totals.all) };
+}
+
+/** An amount someone may pay on a debt: more than zero and no more than what is left. */
+export function validPayment(amount: string | null | undefined, outstanding: string): boolean {
+  return !!amount && dec(amount).gt(0) && dec(amount).lte(dec(outstanding));
+}
+
+// Claims ---------------------------------------------------------------------------------------------
+
+export const CLAIM_TONES: Record<ClaimStatus, StatusTone> = { submitted: "warning", approved: "info", paid: "success", rejected: "danger", cancelled: "neutral" };

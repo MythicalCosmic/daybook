@@ -20,34 +20,50 @@ import type {
   AccountsResponse,
   Aging,
   Balances,
+  BudgetInput,
+  BudgetMonth,
   BulkResult,
   CashFlow,
   CategoryInput,
   CategoryNode,
   CategoryTrend,
+  Claim,
   Counterparty,
   CounterpartyDetail,
   CounterpartyInput,
+  CreditInput,
   Debt,
   DebtDetail,
   DebtInput,
   DebtSummary,
   FinanceSettings,
+  Forecast,
   Installment,
   Options,
   Overview,
+  Payables,
+  PayablesPayInput,
+  PayablesPayResult,
   PaymentInput,
   Pnl,
   RateRow,
   Rates,
   Receipt,
+  RecurringDone,
+  RecurringInput,
+  RecurringPayInput,
+  RecurringRule,
   Statement,
+  TaxRegime,
+  TaxSummary,
+  TaxTemplateSet,
   Transaction,
   TransactionInput,
   TransactionPage,
   TransactionPatch,
   Transfer,
   TransferInput,
+  Upcoming,
 } from "./types";
 
 export const MODULE = "finance";
@@ -133,6 +149,37 @@ export const financeApi = {
   settings: (cid: number) => http.get<FinanceSettings>(path(cid, "settings/")),
   updateSettings: (cid: number, input: Partial<FinanceSettings>) => http.patch<FinanceSettings>(path(cid, "settings/"), input),
   lock: (cid: number, until: string | null) => http.post<FinanceSettings>(path(cid, "settings/lock/"), { until }),
+  taxSummary: (cid: number) => http.get<TaxSummary>(path(cid, "tax-summary/")),
+
+  // Money planning (package I) ------------------------------------------------------------------
+
+  recurring: (cid: number, params: Query = {}) => http.get<RecurringRule[]>(path(cid, "recurring/"), params),
+  createRecurring: (cid: number, input: RecurringInput) => http.post<RecurringRule>(path(cid, "recurring/"), input),
+  updateRecurring: (cid: number, id: number, input: Partial<RecurringInput>) => http.patch<RecurringRule>(path(cid, `recurring/${id}/`), input),
+  /** Switches the rule off; what it booked stays. */
+  stopRecurring: (cid: number, id: number) => http.delete(path(cid, `recurring/${id}/`)),
+  payRecurring: (cid: number, id: number, input: RecurringPayInput) => http.post<RecurringDone>(path(cid, `recurring/${id}/pay/`), input),
+  skipRecurring: (cid: number, id: number) => http.post<RecurringRule>(path(cid, `recurring/${id}/skip/`), {}),
+  runRecurring: (cid: number, id: number) => http.post<RecurringDone>(path(cid, `recurring/${id}/run-now/`), {}),
+  taxTemplates: (cid: number) => http.get<TaxTemplateSet[]>(path(cid, "recurring/templates/")),
+  applyTaxTemplate: (cid: number, key: TaxRegime) => http.post<RecurringRule[]>(path(cid, `recurring/templates/${key}/apply/`), {}),
+
+  upcoming: (cid: number, days: number) => http.get<Upcoming>(path(cid, "upcoming/"), { days }),
+  forecast: (cid: number, days: number) => http.get<Forecast>(path(cid, "reports/forecast/"), { days }),
+
+  budgets: (cid: number, month: string) => http.get<BudgetMonth>(path(cid, "budgets/"), { month }),
+  setBudgets: (cid: number, input: BudgetInput) => http.put<BudgetMonth>(path(cid, "budgets/"), input),
+  copyBudgets: (cid: number, month: string) => http.post<BudgetMonth>(path(cid, "budgets/copy/"), { month }),
+
+  payables: (cid: number) => http.get<Payables>(path(cid, "payables/")),
+  payPayables: (cid: number, input: PayablesPayInput) => http.post<PayablesPayResult>(path(cid, "payables/pay/"), input),
+  creditDebt: (cid: number, id: number, input: CreditInput) => http.post<Transaction>(path(cid, `debts/${id}/credit/`), input),
+
+  claims: (cid: number, params: Query, signal?: AbortSignal) => http.get<Page<Claim>>(path(cid, "claims/"), params, { signal }),
+  claim: (cid: number, id: number) => http.get<Claim>(path(cid, `claims/${id}/`)),
+  approveClaim: (cid: number, id: number) => http.post<Claim>(path(cid, `claims/${id}/approve/`), {}),
+  rejectClaim: (cid: number, id: number, reason: string) => http.post<Claim>(path(cid, `claims/${id}/reject/`), { reason }),
+  payClaim: (cid: number, id: number, input: { account: number; paid_on?: string }) => http.post<Claim>(path(cid, `claims/${id}/pay/`), input),
 };
 
 // ─── Keys ───────────────────────────────────────────────────────────────────
@@ -187,6 +234,22 @@ export const useAging = (params: MaybeRefOrGetter<Query>) => useResource("aging"
 export const useCategoryTrend = (params: MaybeRefOrGetter<Query>, enabled: MaybeRefOrGetter<boolean>) =>
   useResource("category-trend", () => ({ ...toValue(params) }), (cid, p) => financeApi.categoryTrend(cid, p as Query), { keepPrevious: true, enabled });
 export const useSettings = (enabled: MaybeRefOrGetter<boolean> = true) => useResource("settings", {}, (cid) => financeApi.settings(cid), { enabled });
+export const useTaxSummary = (enabled: MaybeRefOrGetter<boolean> = true) => useResource("tax-summary", {}, (cid) => financeApi.taxSummary(cid), { enabled, staleTime: 60_000 });
+
+// Money planning (package I) ----------------------------------------------------------------------
+
+export const useRecurring = (params: MaybeRefOrGetter<Query> = {}, enabled: MaybeRefOrGetter<boolean> = true) =>
+  useResource("recurring", () => ({ ...toValue(params) }), (cid, p) => financeApi.recurring(cid, p as Query), { keepPrevious: true, enabled });
+export const useTaxTemplates = (enabled: MaybeRefOrGetter<boolean> = true) => useResource("tax-templates", {}, (cid) => financeApi.taxTemplates(cid), { enabled, staleTime: 60_000 });
+export const useUpcoming = (days: MaybeRefOrGetter<number>) =>
+  useResource("upcoming", () => ({ days: toValue(days) }), (cid, p) => financeApi.upcoming(cid, Number(p.days)), { keepPrevious: true });
+export const useForecast = (days: MaybeRefOrGetter<number>) =>
+  useResource("forecast", () => ({ days: toValue(days) }), (cid, p) => financeApi.forecast(cid, Number(p.days)), { keepPrevious: true, staleTime: 60_000 });
+export const useBudgets = (month: MaybeRefOrGetter<string>, enabled: MaybeRefOrGetter<boolean> = true) =>
+  useResource("budgets", () => ({ month: toValue(month) }), (cid, p) => financeApi.budgets(cid, String(p.month)), { keepPrevious: true, enabled: () => !!toValue(month) && toValue(enabled) });
+export const usePayables = () => useResource("payables", {}, (cid) => financeApi.payables(cid));
+export const useClaims = (params: MaybeRefOrGetter<Query>) =>
+  useResource("claims", () => ({ ...toValue(params) }), (cid, p, signal) => financeApi.claims(cid, p as Query, signal), { keepPrevious: true });
 
 // ─── Mutations ──────────────────────────────────────────────────────────────
 

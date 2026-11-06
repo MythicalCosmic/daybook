@@ -585,4 +585,309 @@ export interface FinanceSettings {
   reimburse_via: "payroll" | "cash";
   base_currency: Currency;
   can_reopen: boolean;
+  /** Which tax the company pays (package I). */
+  tax_regime: TaxRegime;
+  vat_percent: string;
+  /** The turnover-tax threshold in base calculation values (BHM). */
+  turnover_threshold: number;
+  /** One base calculation value in the base currency. */
+  base_value: Money;
+  /** Read-only: the owner confirmed the regime (the Get started step is done). */
+  tax_regime_set: boolean;
+  /** Read-only: the payroll module is on, so claims can be paid back with the payroll. */
+  payroll_on: boolean;
+}
+
+// Money planning (package I): budgets, recurring rules, the tax calendar, upcoming payments, the
+// cash forecast, distributor payables and expense claims, written from the v6-i API contract.
+
+export type TaxRegime = "turnover" | "vat" | "vat_simplified";
+
+/** A category as the planning endpoints send it: the parent's id instead of its name. */
+export interface PlanCategoryRef extends Ref {
+  kind: CategoryKind;
+  color: string;
+  parent_id: number | null;
+}
+
+export interface PersonRef extends Ref {
+  photo_url: string | null;
+}
+
+/** The turnover-tax tile: income this calendar year against the threshold. */
+export interface TaxSummary {
+  regime: TaxRegime;
+  vat_percent: string;
+  year: number;
+  currency: Currency;
+  turnover: Money;
+  /** `threshold_values` × `base_value`. */
+  threshold: Money;
+  threshold_values: number;
+  base_value: Money;
+  /** turnover / threshold with 2 decimals ("0.37"); null when the threshold is 0. */
+  share: string | null;
+  over: boolean;
+}
+
+// Recurring rules and the tax calendar ------------------------------------------------------------
+
+export type RecurringMode = "bill" | "auto";
+export type RecurringFrequency = "weekly" | "monthly" | "quarterly" | "yearly";
+export type HolidayRule = "before" | "after" | "keep";
+
+export interface RecurringRule {
+  id: number;
+  name: string;
+  kind: CategoryKind;
+  /** "bill": a reminder that stays open until paid or skipped; "auto": posted on its due day. */
+  mode: RecurringMode;
+  frequency: RecurringFrequency;
+  interval: number;
+  /** Weekly: 1–7 (Monday–Sunday); otherwise the day of the month, 1–31 (31 = the last day). */
+  day: number;
+  on_holiday: HolidayRule;
+  category: PlanCategoryRef;
+  counterparty: Ref | null;
+  account: AccountRef | null;
+  branch: Ref | null;
+  amount: Money;
+  currency: Currency;
+  amount_varies: boolean;
+  starts_on: string;
+  ends_on: string | null;
+  /** The open occurrence, after the holiday move; null when the rule has finished. */
+  next_due_on: string | null;
+  /** A bill whose open occurrence is before today. */
+  overdue: boolean;
+  remind_days_before: number;
+  payer: PersonRef | null;
+  template_key: string;
+  is_tax: boolean;
+  is_active: boolean;
+  last_done_on: string | null;
+  /** The next three due dates, after holiday moves. */
+  upcoming: string[];
+  created_at: string;
+}
+
+export interface RecurringInput {
+  name: string;
+  kind: CategoryKind;
+  mode: RecurringMode;
+  frequency: RecurringFrequency;
+  interval?: number;
+  day: number;
+  on_holiday?: HolidayRule;
+  category: number;
+  counterparty?: number | null;
+  /** Required for an auto rule. */
+  account?: number | null;
+  branch?: number | null;
+  amount: Money;
+  amount_varies?: boolean;
+  starts_on: string;
+  ends_on?: string | null;
+  remind_days_before?: number;
+  /** A membership id. */
+  payer?: number | null;
+  is_active?: boolean;
+}
+
+export interface RecurringPayInput {
+  account: number;
+  amount: Money;
+  paid_on?: string;
+}
+
+/** What paying a bill or running an auto rule now answers. */
+export interface RecurringDone {
+  rule: RecurringRule;
+  transaction_id: number;
+}
+
+export interface TaxTemplateItem {
+  template_key: string;
+  name: string;
+  frequency: RecurringFrequency;
+  day: number;
+  category_code: string;
+  applied: boolean;
+  rule_id: number | null;
+}
+
+export interface TaxTemplateSet {
+  key: TaxRegime;
+  label: string;
+  /** The company's own regime. */
+  current: boolean;
+  note: string;
+  items: TaxTemplateItem[];
+}
+
+// Upcoming payments and the forecast ---------------------------------------------------------------
+
+export type UpcomingKind = "bill" | "auto" | "tax" | "payable" | "receivable" | "payroll";
+
+export interface UpcomingItem {
+  /** "rule:12:2026-12-01" or "debt:44". */
+  key: string;
+  kind: UpcomingKind;
+  title: string;
+  subtitle: string;
+  date: string;
+  /** Null when nobody knows yet (a tax whose amount varies). */
+  amount: Money | null;
+  currency: Currency;
+  direction: "in" | "out";
+  overdue: boolean;
+  estimate: boolean;
+  rule_id: number | null;
+  debt_id: number | null;
+  url: string;
+}
+
+export interface Upcoming {
+  today: string;
+  days: number;
+  currency: Currency;
+  /** By date, the overdue ones first. */
+  items: UpcomingItem[];
+  /** In the base currency. */
+  totals: { out: Money; in: Money; overdue_out: Money; overdue_in: Money };
+}
+
+export interface ForecastPoint {
+  date: string;
+  balance: Money;
+  in: Money;
+  out: Money;
+}
+
+export interface Forecast {
+  today: string;
+  days: number;
+  currency: Currency;
+  /** Cash now, in the base currency. */
+  start: Money;
+  /** One per day from today to today + days. */
+  points: ForecastPoint[];
+  low: { date: string; balance: Money };
+  /** The first day the balance goes below zero. */
+  below_zero_on: string | null;
+  end: Money;
+  /** The run-rate of normal sales and expenses the curve assumes. */
+  basis: { daily_in: Money; daily_out: Money; days_observed: number };
+  events: Array<{ date: string; title: string; amount: Money; direction: "in" | "out" }>;
+}
+
+// Budgets -------------------------------------------------------------------------------------------
+
+/** "warning" from 80 % of the budget, "over" from 100 %. */
+export type BudgetStatus = "none" | "ok" | "warning" | "over";
+
+export interface BudgetRow {
+  category: PlanCategoryRef;
+  budget: Money | null;
+  actual: Money;
+  /** actual / budget ("0.82"); null without a budget. */
+  share: string | null;
+  status: BudgetStatus;
+}
+
+export interface BudgetMonth {
+  /** "2026-11". */
+  month: string;
+  currency: Currency;
+  days_left: number;
+  days_in_month: number;
+  /** Every active expense category, top level and children, budgeted or not. */
+  rows: BudgetRow[];
+  totals: { budget: Money; actual: Money };
+}
+
+export interface BudgetInput {
+  month: string;
+  /** A null amount removes the category's budget. */
+  rows: Array<{ category: number; amount: Money | null }>;
+}
+
+// Payables ------------------------------------------------------------------------------------------
+
+export type PayableBucket = "overdue" | "week" | "later";
+
+export interface PayableDebt extends Debt {
+  bucket: PayableBucket;
+  /** A goods-receipt payable: wholesale of marked goods is paid by bank transfer. */
+  bank_only: boolean;
+}
+
+export interface PayableGroup {
+  counterparty: Ref;
+  total: Money;
+  overdue: Money;
+  debts: PayableDebt[];
+}
+
+export interface Payables {
+  today: string;
+  currency: Currency;
+  groups: PayableGroup[];
+  totals: Record<PayableBucket | "all", Money>;
+}
+
+export interface PayablesPayInput {
+  account: number;
+  paid_on: string;
+  debts: Array<{ id: number; amount: Money }>;
+}
+
+export interface PayablesPayResult {
+  paid: Array<{ debt_id: number; transaction_id: number }>;
+  warnings: string[];
+}
+
+export interface CreditInput {
+  amount: Money;
+  reason: string;
+  credited_on?: string | null;
+}
+
+// Claims --------------------------------------------------------------------------------------------
+
+export type ClaimStatus = "submitted" | "approved" | "rejected" | "paid" | "cancelled";
+
+export interface ClaimReceipt {
+  id: number;
+  url: string;
+  thumb_url: string | null;
+  content_type: string;
+  is_image: boolean;
+}
+
+export interface Claim {
+  id: number;
+  member: PersonRef;
+  amount: Money;
+  currency: Currency;
+  category: PlanCategoryRef;
+  spent_on: string;
+  description: string;
+  /** "own_money": the person paid and is owed it back; "held_cash": company cash they hold. */
+  paid_from: "own_money" | "held_cash";
+  status: ClaimStatus;
+  status_label: string;
+  branch: Ref | null;
+  receipts: ClaimReceipt[];
+  created_at: string;
+  decided_by: PersonRef | null;
+  decided_at: string | null;
+  reject_reason: string;
+  /** Own money only: how it is paid back. */
+  reimburse_via: "payroll" | "cash" | null;
+  transaction_id: number | null;
+  debt_id: number | null;
+  can_decide: boolean;
+  can_pay: boolean;
+  can_cancel: boolean;
 }

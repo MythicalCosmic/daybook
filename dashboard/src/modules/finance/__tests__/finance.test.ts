@@ -129,13 +129,15 @@ describe("api", () => {
 
   it("registers in the money group with the finance pulse keys, widgets and deep links", () => {
     expect(module).toMatchObject({ id: "finance", group: "money", order: 30, feature: "finance", hotkey: "f", invalidates: ["finance"] });
-    expect(module.widgets?.map((w) => w.id)).toEqual(["finance.kpi.cash_now", "finance.kpi.expenses_mtd", "finance.chart.cash_flow_30d"]);
+    expect(module.widgets?.map((w) => w.id)).toEqual(["finance.kpi.cash_now", "finance.kpi.expenses_mtd", "finance.chart.cash_flow_30d", "finance.budget_burn"]);
     // The two KPI tiles fill the row of the inbox's "Needs you" (order 30, two columns) and the
-    // chart pairs with the activity stream (40): a four-column grid without holes.
+    // chart pairs with the activity stream (40): a four-column grid without holes. The budgets
+    // card (package I) follows the chart, another two-column card of that band.
     expect(module.widgets?.map((w) => [w.order, w.span])).toEqual([
       [31, 1],
       [32, 1],
       [42, 2],
+      [43, 2],
     ]);
     expect(module.deepLinks?.txn?.("12")).toBe("finance/transactions?txn=12");
     expect(module.deepLinks?.debt?.("x")).toBeNull();

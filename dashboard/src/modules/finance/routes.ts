@@ -2,7 +2,8 @@
  * Routes of the finance module, children of /c/:companyId (plan §6.1: `finance`,
  * `finance/accounts[/:id]`, `finance/transactions`, `finance/debts`, `finance/counterparties[/:id]`,
  * `finance/reports/:report`, plus `finance/settings/:tab?` for categories, rates, the period lock
- * and preferences). Pages load lazily.
+ * and preferences), and package I's money planning: `finance/budgets`, `finance/recurring`,
+ * `finance/calendar`, `finance/payables` and `finance/claims`. Pages load lazily.
  */
 import type { RouteRecordRaw } from "vue-router";
 
@@ -42,6 +43,37 @@ export const routes: RouteRecordRaw[] = [
     name: "finance.debts",
     component: () => import("./pages/DebtsPage.vue"),
     meta: { title: "finance.nav.debts", perm: "finance.view" },
+  },
+  {
+    path: "finance/payables",
+    name: "finance.payables",
+    component: () => import("./pages/PayablesPage.vue"),
+    meta: { title: "finance.nav.payables", perm: "finance.view" },
+  },
+  {
+    // Approvers see the claims without the rest of finance.
+    path: "finance/claims",
+    name: "finance.claims",
+    component: () => import("./pages/ClaimsPage.vue"),
+    meta: { title: "finance.nav.claims", perm: ["finance.approve", "finance.view"] },
+  },
+  {
+    path: "finance/calendar",
+    name: "finance.calendar",
+    component: () => import("./pages/CalendarPage.vue"),
+    meta: { title: "finance.nav.calendar", perm: "finance.view" },
+  },
+  {
+    path: "finance/recurring",
+    name: "finance.recurring",
+    component: () => import("./pages/RecurringPage.vue"),
+    meta: { title: "finance.nav.recurring", perm: "finance.view" },
+  },
+  {
+    path: "finance/budgets",
+    name: "finance.budgets",
+    component: () => import("./pages/BudgetsPage.vue"),
+    meta: { title: "finance.nav.budgets", perm: "finance.view" },
   },
   {
     path: "finance/counterparties",
