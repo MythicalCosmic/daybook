@@ -2,9 +2,10 @@
 
 One task is one message (research R1 C2, C3): every action edits the card that was tapped.
 Done can be undone for a minute (R2 T38); a proof photo is asked for on the card itself and
-an album counts once (audit B-6); checklist steps are ticked from the card (X-5); snoozing
-offers choices and says the deadline stays (R1 N4); replies to a task message become comments
-(R1 Q2); managers act on an escalation from its card (B-9).
+an album counts once (audit B-6); a readings task asks for each value in the chat, and for a
+note when one is out of range (PLAN-OWNER §14.10); checklist steps are ticked from the card
+(X-5); snoozing offers choices and says the deadline stays (R1 N4); replies to a task message
+become comments (R1 Q2); managers act on an escalation from its card (B-9).
 """
 
 from contextlib import suppress
@@ -14,6 +15,7 @@ from aiogram import Bot, F, Router, html
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import Command, Filter, StateFilter
 from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
 from aiogram.utils.chat_action import ChatActionSender
 from asgiref.sync import sync_to_async
@@ -30,6 +32,7 @@ from apps.members.models import Membership
 from apps.members.scope import branch_ids, restrict
 from apps.tasks import bot_messages as task_messages
 from apps.tasks import dates, queries, services
+from apps.tasks import readings as reading_specs
 from apps.tasks.callbacks import (
     ListCallback,
     PhotoCallback,
@@ -55,6 +58,15 @@ from bot.states.tasks import (
     TaskTime,
 )
 from bot.task_refs import task_id_of_message
+
+
+class TakeReadings(StatesGroup):
+    """Done on a readings task (PLAN-OWNER §14.10): each value in turn, then the note when one
+    is out of range. State-bound, so nothing else typed meanwhile is mistaken for a value."""
+
+    value = State()
+    note = State()
+
 
 router = Router(name="member_tasks")
 router.message.filter(IsRegistered())
@@ -206,6 +218,21 @@ async def _done(
             await cards.edit(callback, message)
             await callback.answer()
             return
+        if task.proof == Proof.READINGS and task.readings:
+            # Readings are the proof: no photo is asked for.
+            await state.set_state(TakeReadings.value)
+            await state.update_data(
+                task_id=task.pk,
+                chat_id=callback.message.chat.id,
+                message_id=callback.message.message_id,
+                values={},
+            )
+            message = await sync_to_async(task_messages.readings_prompt)(
+                task, membership, now, task.readings[0]
+            )
+            await cards.edit(callback, message)
+            await callback.answer()
+            return
         if task.proof != Proof.NONE:
             await state.set_state(CompleteTask.proof)
             await state.update_data(
@@ -317,6 +344,116 @@ def _drop_undo_at(task: Task, member: Membership, chat_id: int, message_id: int)
             (task.pk, member.pk, chat_id, message_id),
             countdown=int(rules.UNDO_WINDOW.total_seconds()) + 2,
         )
+
+
+# Readings: each value in turn, then the note when one is out of range (§14.10) ------------
+
+
+@router.message(TakeReadings.value, F.text)
+async def reading_value(message: Message, membership: Membership, state: FSMContext, bot: Bot):
+    data = await state.get_data()
+    if message.text.strip().lower() in CANCEL_WORDS:
+        await _cancel_readings(message, membership, state, bot, data)
+        return
+    task = await cards.find(membership, data["task_id"])
+    if task is None or not task.is_open:
+        await state.clear()
+        await message.answer(cards.gone() if task is None else _("This task is already done."))
+        return
+    values = dict(data.get("values") or {})
+    waiting = [spec for spec in task.readings if spec["key"] not in values]
+    if not waiting:  # a value typed twice in a hurry: the note comes next
+        await state.set_state(TakeReadings.note)
+        return
+    spec = waiting[0]
+    value = reading_specs.parse(message.text)
+    if value is None or not reading_specs.is_plausible(value):
+        problem = (
+            _("Type the number, like 5,2.")
+            if value is None
+            else _("That can't be right. Type a value from −50 to 100.")
+        )
+        text, markup = await sync_to_async(task_messages.reading_request)(
+            task, spec, problem=problem
+        )
+        await message.answer(text, reply_markup=markup)
+        return
+    values[spec["key"]] = message.text.strip()
+    await state.update_data(values=values)
+    if len(waiting) > 1:
+        text, markup = await sync_to_async(task_messages.reading_request)(task, waiting[1])
+        await message.answer(text, reply_markup=markup)
+        return
+    out = _out_of_range(task, values)
+    if out:
+        await state.set_state(TakeReadings.note)
+        text, markup = await sync_to_async(task_messages.reading_note_request)(task, out)
+        await message.answer(text, reply_markup=markup)
+        return
+    await _finish_readings(message, state, membership, bot, data | {"values": values})
+
+
+@router.message(TakeReadings.note, F.text)
+async def reading_note(message: Message, membership: Membership, state: FSMContext, bot: Bot):
+    data = await state.get_data()
+    if message.text.strip().lower() in CANCEL_WORDS:
+        await _cancel_readings(message, membership, state, bot, data)
+        return
+    await _finish_readings(message, state, membership, bot, data, note=message.text)
+
+
+@router.message(TakeReadings.value)
+@router.message(TakeReadings.note)
+async def reading_expected(message: Message, membership: Membership, state: FSMContext) -> None:
+    """A photo, a sticker or a voice note while a value is awaited: the same question again."""
+    data = await state.get_data()
+    task = await cards.find(membership, data["task_id"])
+    if task is None or not task.is_open:
+        await state.clear()
+        return
+    if await state.get_state() == TakeReadings.note.state:
+        out = _out_of_range(task, data.get("values") or {})
+        text, markup = await sync_to_async(task_messages.reading_note_request)(task, out)
+    else:
+        values = data.get("values") or {}
+        spec = next(spec for spec in task.readings if spec["key"] not in values)
+        text, markup = await sync_to_async(task_messages.reading_request)(
+            task, spec, problem=_("Type the number, like 5,2.")
+        )
+    await message.answer(text, reply_markup=markup)
+
+
+def _out_of_range(task: Task, values: dict) -> list[tuple[dict, object]]:
+    """The specs whose typed value is out of their range, with the value."""
+    out = []
+    for spec in task.readings:
+        value = reading_specs.parse(values.get(spec["key"]))
+        if value is not None and not reading_specs.in_range(value, *reading_specs.spec_range(spec)):
+            out.append((spec, value))
+    return out
+
+
+async def _finish_readings(
+    message: Message, state: FSMContext, membership: Membership, bot: Bot, data: dict, note=""
+) -> None:
+    outcome = await cards.act(
+        membership,
+        data["task_id"],
+        services.complete_task,
+        readings=data.get("values") or {},
+        reading_note=note,
+    )
+    await _finish_proof(message, state, outcome, data, bot, membership)
+
+
+async def _cancel_readings(
+    message: Message, membership: Membership, state: FSMContext, bot: Bot, data: dict
+) -> None:
+    await state.clear()
+    outcome = await cards.card(membership, data["task_id"])
+    if outcome.message:
+        await cards.edit_at(bot, data["chat_id"], data["message_id"], outcome.message)
+    await message.answer(_("Okay, cancelled."))
 
 
 # A photo that came first (R1 C4): which task is it for? ------------------------------------

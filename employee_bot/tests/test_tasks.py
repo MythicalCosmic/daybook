@@ -251,3 +251,110 @@ async def test_snooze_from_a_reminder(dp, bot, company, member):
     await dp.feed_update(bot, updates.callback(tg, press(TaskAction.SNOOZE, task.pk)))
 
     assert alerts(bot)[-1] == "No snoozes left for this task."
+
+
+# Readings (PLAN-OWNER §14.10): each value asked in the chat after Done ---------------------
+
+FRIDGE = {
+    "key": "t",
+    "label": "Fridge 1 (vaccines)",
+    "unit": "°C",
+    "min": "2.0",
+    "max": "8.0",
+    "critical": True,
+}
+HUMIDITY = {
+    "key": "h",
+    "label": "Humidity",
+    "unit": "%",
+    "min": None,
+    "max": "60.0",
+    "critical": False,
+}
+
+
+async def readings_task(worker, *specs):
+    return await make_task(
+        assignee=worker,
+        created_by=None,
+        kind=Task.Kind.DAILY,
+        title="Fridge, morning",
+        proof=Proof.READINGS,
+        readings=list(specs),
+    )
+
+
+async def taken(task: Task) -> list[tuple]:
+    rows = task.readings_taken.order_by("pk").values_list("key", "value", "in_range", "note")
+    return [row async for row in rows]
+
+
+async def test_done_asks_for_the_reading_and_5_2_completes(dp, bot, company, member):
+    worker = await member.aregistered(company)
+    task = await readings_task(worker, FRIDGE)
+    tg = updates.tg_user(worker.user.telegram_id)
+
+    await dp.feed_update(bot, updates.callback(tg, press(TaskAction.DONE, task.pk)))
+    asked = edits(bot)[-1].text
+    assert "Fridge 1 (vaccines), °C, allowed 2–8:" in asked
+    assert "Send a photo" not in asked  # readings are the proof
+    assert (await reload(task)).status == Task.Status.TODO
+
+    await dp.feed_update(bot, updates.message(tg, "5,2"))
+
+    task = await reload(task)
+    assert task.status == Task.Status.DONE
+    [(key, value, in_range, note)] = await taken(task)
+    assert (key, str(value), in_range, note) == ("t", "5.20", True, "")
+    assert "Fridge 1 (vaccines): 5.2 °C" in edits(bot)[-1].text
+
+
+async def test_each_value_in_turn_and_a_note_when_out_of_range(dp, bot, company, member):
+    worker = await member.aregistered(company)
+    task = await readings_task(worker, FRIDGE, HUMIDITY)
+    tg = updates.tg_user(worker.user.telegram_id)
+    await dp.feed_update(bot, updates.callback(tg, press(TaskAction.DONE, task.pk)))
+
+    await dp.feed_update(bot, updates.message(tg, "warm"))
+    assert "Type the number" in sent(bot)[-1].text
+    await dp.feed_update(bot, updates.message(tg, "8.5"))
+    assert "Humidity, %, allowed ≤ 60:" in sent(bot)[-1].text
+    await dp.feed_update(bot, updates.message(tg, "40"))
+    assert "Out of range: Fridge 1 (vaccines) 8.5 °C (2–8 °C)" in sent(bot)[-1].text
+    assert (await reload(task)).status == Task.Status.TODO
+
+    await dp.feed_update(bot, updates.message(tg, "Moved the vaccines to fridge 2"))
+
+    task = await reload(task)
+    assert task.status == Task.Status.DONE
+    rows = await taken(task)
+    assert [(key, str(value), in_range) for key, value, in_range, _note in rows] == [
+        ("t", "8.50", False),
+        ("h", "40.00", True),
+    ]
+    assert rows[0][3] == "Moved the vaccines to fridge 2"
+
+
+async def test_a_photo_while_a_value_is_awaited_asks_again(dp, bot, company, member):
+    worker = await member.aregistered(company)
+    task = await readings_task(worker, FRIDGE)
+    tg = updates.tg_user(worker.user.telegram_id)
+    await dp.feed_update(bot, updates.callback(tg, press(TaskAction.DONE, task.pk)))
+
+    await dp.feed_update(bot, updates.photo(tg))
+
+    assert "Fridge 1 (vaccines), °C, allowed 2–8:" in sent(bot)[-1].text
+    assert (await reload(task)).status == Task.Status.TODO
+
+
+async def test_cancel_while_readings_are_asked(dp, bot, company, member):
+    worker = await member.aregistered(company)
+    task = await readings_task(worker, FRIDGE)
+    tg = updates.tg_user(worker.user.telegram_id)
+    await dp.feed_update(bot, updates.callback(tg, press(TaskAction.DONE, task.pk)))
+
+    await dp.feed_update(bot, updates.message(tg, "bekor"))
+    await dp.feed_update(bot, updates.message(tg, "5"))
+
+    assert (await reload(task)).status == Task.Status.TODO
+    assert await taken(task) == []
