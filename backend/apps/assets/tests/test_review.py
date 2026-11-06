@@ -6,7 +6,7 @@ from decimal import Decimal as D
 
 import pytest
 
-from apps.assets import conf, queries, services
+from apps.assets import conf, posting, queries, services
 from apps.assets.models import AssetCategory, DepreciationEntry
 from apps.assets.tests.test_posting import buy, depreciation_rows
 from apps.core.exceptions import DomainError
@@ -368,3 +368,26 @@ def test_salaries_never_show_as_purchases(
     assert rows[0]["description"] == "" and rows[0]["counterparty"] is None
     rows = owner_api(owner).get(f"{base(shop)}/purchases/").json()
     assert rows[0]["description"] == "Ali o‘z pulidan: muzlatgich"
+
+
+def test_units_of_output_need_no_useful_life(shop, owner):
+    """The units method runs on the units recorded, so a useful life is optional (the form and
+    the checks say so); without one the asset still depreciates."""
+    generators = AssetCategory.objects.create(
+        company=shop, name="Generatorlar", life_months=None, method="units"
+    )
+    asset = services.create_asset(
+        shop,
+        by=owner,
+        category=generators,
+        name="Generator",
+        cost=D(10_000_000),
+        method="units",
+        total_units=D(10_000),
+        unit="soat",
+        in_service_on=date(2026, 9, 3),
+    )
+    assert asset.life_months is None
+    services.record_usage(asset, by=owner, on=date(2026, 11, 5), units=D(100))
+    rows = posting.schedule_of(asset, until=NOV_1)
+    assert rows and rows[-1].month == NOV_1 and rows[-1].amount == D("100000.00")
