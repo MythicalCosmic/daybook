@@ -8,8 +8,15 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-from apps.finance import queries, recurring, reminders, services, tax_calendar
-from apps.finance.models import Category, Debt, MoneyAccount, RecurringRule, Transaction
+from apps.finance import budgets, claims, queries, recurring, reminders, services, tax_calendar
+from apps.finance.models import (
+    Budget,
+    Category,
+    Debt,
+    MoneyAccount,
+    RecurringRule,
+    Transaction,
+)
 from apps.inbox.models import Notification
 
 pytestmark = pytest.mark.django_db
@@ -177,3 +184,34 @@ def test_a_vat_bill_leaves_the_payroll_tax_debts_to_their_own_bills(fin, boss, k
     withheld.refresh_from_db()
     assert withheld.status == Debt.Status.PAID
     assert [row.kind for row in paid_income_tax.rows] == ["debt_payment"]
+
+
+# F3: merging a category that a bill, a budget or a claim uses -----------------------------------
+
+
+def test_merging_a_category_moves_its_bills_budgets_and_claims(fin, boss, member, today):
+    """The bills, budgets and claims of package I hold their category with PROTECT, and the
+    merge only moved ledger rows: merging "Taksi" into "Yetkazib berish" was a 500."""
+    jasur = member(fin, "Employee", first_name="Jasur")
+    taxi = services.create_category(fin, by=boss, name="Taksi", kind="expense")
+    delivery = services.create_category(fin, by=boss, name="Yetkazib berish", kind="expense")
+    courier = rule(fin, boss, name="Courier", category=taxi, day=today.day, starts_on=today)
+    month = today.replace(day=1)
+    later = (month + timedelta(days=40)).replace(day=1)
+    budgets.set_budgets(fin, by=boss, month=month, rows=[(taxi, "1000000"), (delivery, "2000000")])
+    budgets.set_budgets(fin, by=boss, month=later, rows=[(taxi, "500000")])
+    expense = claims.submit_claim(
+        fin, by=jasur, amount="45000", category=taxi, spent_on=today, paid_from="own_money"
+    )
+
+    services.merge_category(taxi, into=delivery, by=boss)
+
+    courier.refresh_from_db()
+    expense.refresh_from_db()
+    assert courier.category_id == delivery.pk
+    assert expense.category_id == delivery.pk
+    # The merged category's budget joins the target's: its actuals now hold both.
+    assert sorted(
+        Budget.objects.filter(company=fin).values_list("month", "category_id", "amount")
+    ) == [(month, delivery.pk, Decimal("3000000.00")), (later, delivery.pk, Decimal("500000.00"))]
+    assert not Category.objects.filter(pk=taxi.pk).exists()
