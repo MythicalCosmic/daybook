@@ -242,7 +242,12 @@ def _history(conversation: AIConversation) -> list[dict]:
 def _tool_definitions(ctx: ToolContext) -> tuple[list[dict], dict]:
     """The asker's tools as the API takes them, sorted by name and described in English
     whatever the asker's language, so `tools` stays byte-identical across turns (the prompt
-    cache, and thinking blocks are bound to it)."""
+    cache, and thinking blocks are bound to it).
+
+    Not `strict`: Anthropic refuses a whole request (400) once its strict tools pass 20, or
+    their optional parameters 24, or their union parameters 16, and every module adds tools (an
+    owner of a company with finance, sales, HR and payroll passed all three). `run_tool`
+    validates each call against the tool's model and hands Claude the problems instead."""
     tools = registry.tools_for(ctx)
     with translation.override("en"):
         definitions = [
@@ -250,7 +255,6 @@ def _tool_definitions(ctx: ToolContext) -> tuple[list[dict], dict]:
                 "name": tool.name,
                 "description": str(tool.label),
                 "input_schema": anthropic.transform_schema(tool.input),
-                "strict": True,
             }
             for tool in tools
         ]

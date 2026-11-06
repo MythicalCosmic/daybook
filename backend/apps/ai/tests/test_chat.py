@@ -106,10 +106,56 @@ def test_the_tool_loop_with_claude(
     assert "tool_choice" not in first and "temperature" not in first
     names = [tool["name"] for tool in first["tools"]]
     assert names == sorted(names) and "tasks_search" in names
-    assert all(tool["strict"] is True for tool in first["tools"])
+    assert not any(tool.get("strict") for tool in first["tools"])  # see test_tools_fit_any_company
     results = second["messages"][-1]["content"]
     assert results[0]["type"] == "tool_result" and results[0]["tool_use_id"] == "toolu_1"
     assert json.loads(results[0]["content"])["total"] == 1
+
+
+def _strict_budget(definitions: list[dict]) -> tuple[int, int, int]:
+    """Strict tools, and their optional and union parameters, as Anthropic counts them."""
+    optional = union = 0
+
+    def walk(schema: dict, defs: dict) -> None:
+        nonlocal optional, union
+        if "$ref" in schema:
+            return walk(defs.get(schema["$ref"].split("/")[-1], {}), defs)
+        required = set(schema.get("required", []))
+        for name, sub in (schema.get("properties") or {}).items():
+            optional += name not in required
+            union += "anyOf" in sub or isinstance(sub.get("type"), list)
+            walk(sub, defs)
+        if isinstance(schema.get("items"), dict):
+            walk(schema["items"], defs)
+        for sub in schema.get("anyOf", []):
+            walk(sub, defs)
+
+    strict = [tool for tool in definitions if tool.get("strict")]
+    for tool in strict:
+        walk(tool["input_schema"], tool["input_schema"].get("$defs", {}))
+    return len(strict), optional, union
+
+
+def test_tools_fit_any_company(owner, company):
+    """Anthropic refuses a whole request (400) whose strict tools pass 20, their optional
+    parameters 24 or their union parameters 16: once HR and payroll added theirs, every Ask AI
+    question of an owner failed. With every module on, the request still stays acceptable."""
+    from apps.ai import chat
+    from apps.ai.tools.registry import ToolContext
+    from apps.companies.models import Feature
+
+    company.features = list(Feature.values)
+    company.save(update_fields=["features"])
+    owner.refresh_from_db()
+    ctx = ToolContext.for_member(
+        owner, switches={"share_task_text", "share_finance", "share_salaries"}
+    )
+
+    definitions, _ = chat._tool_definitions(ctx)
+
+    assert len(definitions) > 20  # every module's tools: more than strict mode takes
+    tools, optional, union = _strict_budget(definitions)
+    assert tools <= 20 and optional <= 24 and union <= 16
 
 
 def test_two_turns_send_the_same_system_and_tools_and_replay_the_history(

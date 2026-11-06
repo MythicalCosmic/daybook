@@ -390,6 +390,7 @@
   "ai.chat.teaserKey": "Add ANTHROPIC_API_KEY on the server and Ask AI turns on by itself.",
   "ai.chat.teaserOff": "Turn on AI first, then connect Claude on the server.",
   "ai.chat.teaserSoon": "Ask AI arrives with the next server update.",
+  "ai.chat.teaserBusy": "Claude isn’t answering right now. Ask AI comes back by itself in a few minutes.",
   "ai.chat.unavailable": "Ask AI isn’t available yet",
   "ai.chat.unavailableBody": "It turns on once the owner connects Claude.",
 

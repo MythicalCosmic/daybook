@@ -4,6 +4,7 @@ import { ApiError } from "@/api/http";
 
 import {
   aiVisibility,
+  chatOffReason,
   applyBlockers,
   applyFix,
   arrivals,
@@ -39,6 +40,15 @@ describe("status → what shows", () => {
     expect(off).toMatchObject({ turnOn: true, offNotice: false, dictate: false, smartAdd: false, chat: false, chatTeaser: true });
     const offForStaff = aiVisibility(status({ enabled: false, can_configure: false }));
     expect(offForStaff).toMatchObject({ turnOn: false, offNotice: true, chatTeaser: false });
+  });
+
+  it("says why Ask AI is off instead of promising it with the next update", () => {
+    expect(chatOffReason(status({ enabled: false }))).toBe("ai.chat.teaserOff");
+    expect(chatOffReason(status({ claude: "not_configured" }))).toBe("ai.chat.teaserKey");
+    expect(chatOffReason(status({ claude: "budget_reached" }))).toBe("ai.claude.budget_reached.hint");
+    expect(chatOffReason(status({ claude: "blocked" }))).toBe("ai.claude.blocked.hint");
+    expect(chatOffReason(status({ claude: "unavailable" }))).toBe("ai.chat.teaserBusy");
+    expect(chatOffReason(status())).toBe("ai.chat.teaserSoon");
   });
 
   it("shows Dictate, Smart add and Ask AI from the features, and the key notice without a key", () => {

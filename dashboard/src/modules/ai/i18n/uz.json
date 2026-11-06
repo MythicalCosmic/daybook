@@ -390,6 +390,7 @@
   "ai.chat.teaserKey": "Serverga ANTHROPIC_API_KEY qo‘shing, shunda AI bilan suhbat o‘zi yoqiladi.",
   "ai.chat.teaserOff": "Avval AI xizmatini yoqing, keyin serverga Claude kalitini qo‘shing.",
   "ai.chat.teaserSoon": "AI bilan suhbat serverning keyingi yangilanishida qo‘shiladi.",
+  "ai.chat.teaserBusy": "Claude hozir javob bermayapti. AI bilan suhbat bir necha daqiqada o‘zi qaytadi.",
   "ai.chat.unavailable": "AI bilan suhbat hali mavjud emas",
   "ai.chat.unavailableBody": "Egasi Claude xizmatini ulagach, u yoqiladi.",
 

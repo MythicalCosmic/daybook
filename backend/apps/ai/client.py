@@ -256,12 +256,18 @@ def _record(feature: str, company, membership, requested: str, response, latency
 
 
 def _log_failure(feature: str, company, model: str, exc: Exception, started: float) -> None:
+    # A request Anthropic refuses (4xx) says why; that reason is ours to fix, so it's logged.
+    status = getattr(exc, "status_code", None)
+    detail = str(getattr(exc, "message", "") or "")[:300] if status and status < 500 else ""
     logger.warning(
-        "claude call failed company=%s feature=%s model=%s error=%s request_id=%s latency_ms=%s",
+        "claude call failed company=%s feature=%s model=%s error=%s status=%s detail=%s "
+        "request_id=%s latency_ms=%s",
         company.pk,
         feature,
         model,
         type(exc).__name__,
+        status or "",
+        detail,
         getattr(exc, "request_id", None) or "",
         int((time.monotonic() - started) * 1000),
     )

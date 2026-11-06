@@ -56,6 +56,24 @@ export function aiVisibility(status: AiStatus | null | undefined): AiVisibility 
   };
 }
 
+/** Why Ask AI is off, for someone who can change it (the teaser's line), as an i18n key: AI off,
+ * no key, the platform's pause, the month's budget spent, Claude not answering; "comes with an
+ * update" only when none of these is it. */
+export function chatOffReason(status: AiStatus | null | undefined): string {
+  if (!status?.enabled) return "ai.chat.teaserOff";
+  switch (status.claude) {
+    case "not_configured":
+      return "ai.chat.teaserKey";
+    case "blocked":
+    case "budget_reached":
+      return `ai.claude.${status.claude}.hint`;
+    case "unavailable":
+      return "ai.chat.teaserBusy";
+    default:
+      return "ai.chat.teaserSoon";
+  }
+}
+
 export type Tone = "neutral" | "primary" | "success" | "warning" | "danger" | "info";
 
 export const CLAUDE_TONE: Record<ClaudeState, Tone> = {

@@ -29,7 +29,7 @@ import { useSessionStore } from "@/stores/session";
 import { aiApi, aiKeys, useAiStatus, useCompanyId, useConversations, useMessages, useTurn } from "../api";
 import AiHeader from "../components/AiHeader.vue";
 import TurnSteps from "../components/TurnSteps.vue";
-import { aiVisibility, turnIsLive } from "../lib";
+import { aiVisibility, chatOffReason, turnIsLive } from "../lib";
 import type { Conversation } from "../types";
 
 const { t, te } = useI18n();
@@ -53,6 +53,7 @@ const live = computed(() => turnId.value !== null && (turnIsLive(turn.data.value
 /** The question being answered, shown until the saved messages include it. */
 const pending = ref<string | null>(null);
 const failed = ref<{ text: string; error: string } | null>(null);
+const teaserNote = computed(() => t(chatOffReason(status.data.value)));
 const text = ref("");
 const sending = ref(false);
 const listOpen = ref(false);
@@ -188,7 +189,7 @@ const conversationTime = (conversation: Conversation) => fmt.relative(conversati
         </ul>
         <p class="flex items-start gap-2 rounded-[10px] bg-surface/80 px-3 py-2.5 text-sm text-fg ring-1 ring-line">
           <KeyRound :size="15" class="mt-0.5 shrink-0 text-accent-fg" aria-hidden="true" />
-          <span>{{ !status.data.value?.enabled ? t("ai.chat.teaserOff") : status.data.value.claude === "not_configured" ? t("ai.chat.teaserKey") : t("ai.chat.teaserSoon") }}</span>
+          <span data-testid="ai-chat-why">{{ teaserNote }}</span>
         </p>
         <div v-if="!status.data.value?.enabled">
           <UiButton variant="primary" :size="isPhone ? 'lg' : 'md'" :icon="Sparkles" :to="{ name: 'ai.agents', params: { companyId: company.currentId } }">{{ t("ai.turnOn.button") }}</UiButton>
