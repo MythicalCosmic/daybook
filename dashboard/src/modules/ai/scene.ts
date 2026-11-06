@@ -4,22 +4,35 @@
  * and what the screen shows. The room is drawn in units (960 × 180, the middle 320 × 180 is the
  * stage) and scaled to cover its box, so the chibi (HTML) is placed with the same numbers.
  */
-import { BUDDY_DURATION, type BuddyAction, type BuddyMood } from "./lib";
+import { BUDDY_DURATION, type BuddyAction, type BuddyMood, type BuddyVariant } from "./lib";
 
 export type SceneState = "working" | "idle" | "asleep";
 
 /** In a chair it stays seated: no hops, dances or walks, only what reads well at a desk. */
 export const SCENE_ACTIONS: Record<Exclude<SceneState, "asleep">, readonly BuddyAction[]> = {
-  working: ["type", "type", "type", "type", "type", "think", "sparkle", "blink"],
-  idle: ["blink", "blink", "look", "think", "wink", "star", "hearts", "sparkle", "wave", "type"],
+  working: ["type", "type", "type", "type", "type", "think", "sparkle", "blink", "sweat"],
+  idle: ["blink", "blink", "look", "think", "wink", "star", "hearts", "sparkle", "wave", "type", "shy", "love"],
+};
+
+/** Each chibi's own move, now and then at its desk: the voice chibi listens, the deadline one
+ * rings its clock, the morning one cheers, the photo one winks (a snap), HR thinks it over. */
+export const SIGNATURE_MOVE: Record<BuddyVariant, BuddyAction> = {
+  claude: "sparkle",
+  voice: "listen",
+  morning: "cheer",
+  deadline: "ring",
+  photo: "wink",
+  hr: "think",
 };
 
 /** How often it changes what it does. */
 export const SCENE_BEAT_MS: Record<Exclude<SceneState, "asleep">, number> = { working: 2600, idle: 4200 };
 
-/** The next thing it does: never the same face twice in a row, but typing may go on and on. */
-export function pickSceneAction(state: SceneState, previous: BuddyAction | null, random: () => number = Math.random): BuddyAction {
+/** The next thing it does: never the same face twice in a row, but typing may go on and on; about
+ * one beat in seven its own `signature` move, when it has one. */
+export function pickSceneAction(state: SceneState, previous: BuddyAction | null, random: () => number = Math.random, signature?: BuddyAction): BuddyAction {
   if (state === "asleep") return "idle";
+  if (signature && signature !== previous && random() < 1 / 7) return signature;
   const pool = SCENE_ACTIONS[state];
   for (let tries = 0; tries < 6; tries += 1) {
     const next = pool[Math.min(pool.length - 1, Math.floor(random() * pool.length))]!;
@@ -72,4 +85,43 @@ export function seatBox(width: number, height: number, asleep: boolean): { left:
     top: Math.round(offsetY + (SEAT.y + (asleep ? SEAT.slump : 0)) * scale),
     size: Math.max(1, Math.round(SEAT.size * scale)),
   };
+}
+
+/** Where a stage point (room units) lands in a box of `width` × `height` px: the bubbles' anchors. */
+export function stagePoint(x: number, y: number, width: number, height: number): { left: number; top: number } {
+  const { scale, offsetX, offsetY } = roomScale(width, height);
+  return { left: Math.round(offsetX + (ROOM.stageX + x) * scale), top: Math.round(offsetY + y * scale) };
+}
+
+/** The wall clock's hands for a time of day, in degrees clockwise from 12. */
+export function clockHands(hours: number, minutes: number): { hour: number; minute: number } {
+  return { hour: ((hours % 12) + minutes / 60) * 30, minute: (minutes % 60) * 6 };
+}
+
+/** What it thinks about now and then (a little picture in a thought bubble, no words). */
+export type ThoughtIcon = "heart" | "star" | "coffee" | "note" | "idea";
+export const THOUGHTS: Record<Exclude<SceneState, "asleep">, readonly ThoughtIcon[]> = {
+  working: ["idea", "coffee", "note"],
+  idle: ["heart", "star", "coffee", "note"],
+};
+
+export function pickThought(state: SceneState, previous: ThoughtIcon | null, random: () => number = Math.random): ThoughtIcon | null {
+  if (state === "asleep") return null;
+  const choices = THOUGHTS[state].filter((icon) => icon !== previous);
+  return choices[Math.min(choices.length - 1, Math.floor(random() * choices.length))] ?? null;
+}
+
+export interface Saying {
+  key: string;
+  params?: Record<string, string | number>;
+}
+
+/** What it says when tapped, one after another: how it's doing, its own line, what it did today
+ * and when it runs next; asleep, only that it's off. */
+export function sceneSayings(state: SceneState, variant: BuddyVariant, next: string | null, doneToday: number | null): Saying[] {
+  if (state === "asleep") return [{ key: "ai.agent.scene.say.asleep" }];
+  const sayings: Saying[] = [{ key: state === "working" ? "ai.agent.scene.say.busy" : "ai.agent.scene.say.hi" }, { key: `ai.agent.scene.say.${variant}` }];
+  if (doneToday !== null) sayings.push(doneToday > 0 ? { key: "ai.agent.scene.say.today", params: { count: doneToday } } : { key: "ai.agent.scene.say.nothingYet" });
+  if (next) sayings.push({ key: "ai.agent.scene.say.next", params: { time: next } });
+  return sayings;
 }

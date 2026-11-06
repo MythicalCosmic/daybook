@@ -58,6 +58,18 @@ export function isNight(timeZone: string, now: number): boolean {
   return isNightHour(zonedNow(timeZone, now).getHours());
 }
 
+/** The room's wall clock and calendar: the time and the day of the month in the company. */
+export function sceneClock(timeZone: string, now: number): { hours: number; minutes: number; day: number } {
+  const local = zonedNow(timeZone, now);
+  return { hours: local.getHours(), minutes: local.getMinutes(), day: local.getDate() };
+}
+
+/** What the agent did today in the company (its activity of today), for its chibi to tell. */
+export function doneToday(items: readonly Pick<ActivityItem, "created_at">[], timeZone: string, now: number): number {
+  const today = todayIn(timeZone, now);
+  return items.filter((item) => zonedDay(item.created_at, timeZone) === today).length;
+}
+
 // ─── The lines on its screen ────────────────────────────────────────────────
 
 /** How many lines the page hands the scene (it shows the newest that fit: scene.ts screenLines). */

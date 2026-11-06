@@ -31,7 +31,7 @@ import { rs, useRouteState } from "@/lib/useRouteState";
 import { useCompanyStore } from "@/stores/company";
 
 import { useAgentActions } from "../agentActions";
-import { AGENT_TABS, agentKpis, agentStatus, isNight, isScheduled, sceneLines, sceneOf, type AgentTab } from "../agentPage";
+import { AGENT_TABS, agentKpis, agentStatus, clockText, doneToday, isNight, isScheduled, sceneClock, sceneLines, sceneOf, type AgentTab } from "../agentPage";
 import { useActivityFeed, useAgent, useAiStatus } from "../api";
 import ActivityFeed from "../components/ActivityFeed.vue";
 import AgentKpis from "../components/AgentKpis.vue";
@@ -72,6 +72,10 @@ const runnable = computed(() => !!agent.value && isScheduled(agent.value) && can
 const scene = computed(() => (agent.value ? sceneOf(agent.value, aiOn.value) : "asleep"));
 const lines = computed(() => (agent.value ? sceneLines(feed.items.value, agent.value.runs, t, undefined, agent.value.name) : []));
 const night = computed(() => isNight(company.timezone, now.value));
+// What the room shows on its wall and what the chibi tells when tapped.
+const clock = computed(() => sceneClock(company.timezone, now.value));
+const nextRun = computed(() => (agent.value?.next_run_at ? clockText(agent.value.next_run_at, company.timezone, fmt.lang.value, now.value) : null));
+const today = computed(() => (agent.value ? doneToday(feed.items.value, company.timezone, now.value) : null));
 const sceneLabel = computed(() => (agent.value ? t("ai.agent.scene.label", { name: agent.value.name, state: t(`ai.agent.scene.${scene.value}`) }) : ""));
 
 const kpis = computed(() => (agent.value ? agentKpis(agent.value, { t, lang: fmt.lang.value, timeZone: company.timezone, now: now.value, aiOn: aiOn.value }) : []));
@@ -131,7 +135,7 @@ const agentsLink = computed(() => ({ name: "ai.agents", params: { companyId: com
     <ErrorState v-else-if="query.isError.value && !agent" class="ui-card" :error="query.error.value" :retry="() => query.refetch()" />
     <template v-else>
       <!-- The page's main thing, right under the header: the agent at its desk. -->
-      <AgentScene v-if="agent" :variant="agent.key" :state="scene" :lines="lines" :night="night" :label="sceneLabel" />
+      <AgentScene v-if="agent" :variant="agent.key" :state="scene" :lines="lines" :night="night" :label="sceneLabel" :clock="clock" :next-run="nextRun" :done-today="today" />
       <SkeletonBlock v-else class="!h-60 md:!h-[380px]" radius="12px" />
 
       <InlineAlert v-if="status.data.value && !aiOn" tone="neutral" :icon="Bot" :title="t('ai.off.title')" :description="canConfigure ? t('ai.agent.aiOffOwner') : t('ai.off.body')">
