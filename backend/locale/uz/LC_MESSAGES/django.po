@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-07 02:27+0500\n"
+"POT-Creation-Date: 2026-11-07 03:50+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -5125,15 +5125,28 @@ msgid "Reordered branches"
 msgstr "Filiallar tartibini o‘zgartirdi"
 
 #: backend/apps/companies/hooks.py
+msgid "Tell us about your business"
+msgstr "Biznesingiz haqida ayting"
+
+#: backend/apps/companies/hooks.py
+msgid ""
+"A pharmacy, a distributor or both, and who you sell to: modules set their "
+"defaults by it."
+msgstr ""
+"Dorixona, distribyutor yoki ikkalasi, va kimga sotasiz: modullar standart "
+"sozlamalarini shunga qarab qo‘yadi."
+
+#: backend/apps/companies/hooks.py
 msgid "Set up your branches"
 msgstr "Filiallarni sozlang"
 
 #: backend/apps/companies/hooks.py
 msgid ""
-"Address, opening hours and the check-in circle on the map for each shop."
+"Address, hours or open 24 hours, the check-in circle on the map, and the "
+"licences each pharmacy holds."
 msgstr ""
-"Har bir do‘kon uchun manzil, ish vaqti va xaritadagi kelishni belgilash "
-"doirasi."
+"Manzil, ish vaqti yoki kecha-kunduz ishlashi, xaritadagi kelish doirasi va "
+"har bir dorixonaning litsenziyalari."
 
 #: backend/apps/companies/hooks.py
 msgid "Invite your staff"
@@ -5198,6 +5211,42 @@ msgid "Assets and equipment"
 msgstr "Asosiy vositalar va jihozlar"
 
 #: backend/apps/companies/models.py
+msgid "Pharmacy"
+msgstr "Dorixona"
+
+#: backend/apps/companies/models.py
+msgid "Distributor"
+msgstr "Distribyutor"
+
+#: backend/apps/companies/models.py
+msgid "Pharmacy and distributor"
+msgstr "Dorixona va distribyutor"
+
+#: backend/apps/companies/models.py
+msgid "Walk-in customers"
+msgstr "Oddiy xaridorlar"
+
+#: backend/apps/companies/models.py
+msgid "Clinics and hospitals"
+msgstr "Klinika va shifoxonalar"
+
+#: backend/apps/companies/models.py
+msgid "Other pharmacies"
+msgstr "Boshqa dorixonalar"
+
+#: backend/apps/companies/models.py
+msgid "Companies"
+msgstr "Kompaniyalar"
+
+#: backend/apps/companies/models.py
+msgid "Warehouse"
+msgstr "Ombor"
+
+#: backend/apps/companies/models.py
+msgid "Office"
+msgstr "Ofis"
+
+#: backend/apps/companies/models.py
 msgid "How long a rejected person waits before asking to join again."
 msgstr "Rad etilgan odam qayta so‘rov yuborishdan oldin qancha kutadi."
 
@@ -5247,6 +5296,19 @@ msgid "Colleagues see each other's phone numbers in the app."
 msgstr "Hamkasblar ilovada bir-birining telefon raqamini ko‘radi."
 
 #: backend/apps/companies/models.py
+msgid "What the business is. Modules take their defaults from it."
+msgstr "Biznes turi. Modullar standart sozlamalarini shundan oladi."
+
+#: backend/apps/companies/models.py
+msgid "Who the business sells to."
+msgstr "Biznes kimga sotadi."
+
+#: backend/apps/companies/models.py
+msgid "When the owner first saved what the business is (a Get started step)."
+msgstr ""
+"Egasi biznes turini birinchi marta qachon saqlagani («Boshlash» qadami)."
+
+#: backend/apps/companies/models.py
 msgid "Short code printed on shift and invoice numbers."
 msgstr "Smena va hisob-faktura raqamlarida chiqadigan qisqa kod."
 
@@ -5257,6 +5319,30 @@ msgstr "Kelganini belgilashda filialgacha ruxsat etilgan masofa, metrda."
 #: backend/apps/companies/models.py
 msgid "Cash above this in the branch raises an alert."
 msgstr "Filialda naqd pul shundan oshsa, ogohlantirish keladi."
+
+#: backend/apps/companies/models.py
+msgid "The pharmacy rules apply at pharmacies only."
+msgstr "Dorixona qoidalari faqat dorixonalarda amal qiladi."
+
+#: backend/apps/companies/models.py
+msgid "Open around the clock: hours and weekdays are ignored."
+msgstr "Kecha-kunduz ochiq: ish vaqti va hafta kunlari hisobga olinmaydi."
+
+#: backend/apps/companies/models.py
+msgid ""
+"Licensed for narcotics and psychotropics: the controlled-substance register "
+"runs here."
+msgstr ""
+"Giyohvand va psixotrop vositalarga litsenziya bor: nazoratdagi moddalar "
+"jurnali shu yerda yuritiladi."
+
+#: backend/apps/companies/models.py
+msgid "A social pharmacy: may also hold the restricted medicines."
+msgstr "Ijtimoiy dorixona: cheklangan dorilarni ham saqlashi mumkin."
+
+#: backend/apps/companies/models.py
+msgid "In an area where some medicines are dispensed only by e-prescription."
+msgstr "Ba’zi dorilar faqat elektron retsept bilan beriladigan hududda."
 
 #: backend/apps/companies/models.py backend/apps/finance/models.py
 #: backend/apps/members/models.py
@@ -5339,6 +5425,14 @@ msgid "The waiting time is between 0 and 720 hours."
 msgstr "Kutish vaqti 0–720 soat oralig‘ida bo‘lishi kerak."
 
 #: backend/apps/companies/services.py
+msgid "Pick what the business is from the list."
+msgstr "Biznes turini ro‘yxatdan tanlang."
+
+#: backend/apps/companies/services.py
+msgid "Pick at least one kind of customer from the list."
+msgstr "Ro‘yxatdan kamida bitta xaridor turini tanlang."
+
+#: backend/apps/companies/services.py
 msgid "Pick modules from the list."
 msgstr "Modullarni ro‘yxatdan tanlang."
 
@@ -5404,6 +5498,10 @@ msgstr "Shu kompaniyada ishlaydigan rahbarni tanlang."
 #: backend/apps/companies/services.py
 msgid "The cash limit can't be negative."
 msgstr "Naqd pul limiti manfiy bo‘lishi mumkin emas."
+
+#: backend/apps/companies/services.py
+msgid "Pick what the branch is from the list."
+msgstr "Filial turini ro‘yxatdan tanlang."
 
 #: backend/apps/console/audit_actions.py
 msgid "Shared a saved view"
@@ -8984,6 +9082,268 @@ msgstr "Bu amal endi mavjud emas."
 msgid "Please give a reason."
 msgstr "Iltimos, sababini yozing."
 
+#: backend/apps/inventory/models.py
+msgid "Two-letter country code (ISO 3166-1), e.g. UZ."
+msgstr "Ikki harfli mamlakat kodi (ISO 3166-1), masalan UZ."
+
+#: backend/apps/inventory/models.py
+msgid "Medicine"
+msgstr "Dori"
+
+#: backend/apps/inventory/models.py
+msgid "Medical device"
+msgstr "Tibbiy buyum"
+
+#: backend/apps/inventory/models.py
+msgid "Supplement"
+msgstr "Biologik faol qo‘shimcha"
+
+#: backend/apps/inventory/models.py
+msgid "Cosmetics and hygiene"
+msgstr "Kosmetika va gigiyena"
+
+#: backend/apps/inventory/models.py
+msgid "Other goods"
+msgstr "Boshqa tovarlar"
+
+#: backend/apps/inventory/models.py
+msgid "Service"
+msgstr "Xizmat"
+
+#: backend/apps/inventory/models.py
+msgid "Tablet"
+msgstr "Tabletka"
+
+#: backend/apps/inventory/models.py
+msgid "Capsule"
+msgstr "Kapsula"
+
+#: backend/apps/inventory/models.py
+msgid "Syrup"
+msgstr "Sirop"
+
+#: backend/apps/inventory/models.py
+msgid "Suspension"
+msgstr "Suspenziya"
+
+#: backend/apps/inventory/models.py
+msgid "Solution"
+msgstr "Eritma"
+
+#: backend/apps/inventory/models.py
+msgid "Injection"
+msgstr "In’yeksiya"
+
+#: backend/apps/inventory/models.py
+msgid "Powder"
+msgstr "Kukun"
+
+#: backend/apps/inventory/models.py
+msgid "Ointment"
+msgstr "Malham"
+
+#: backend/apps/inventory/models.py
+msgid "Cream"
+msgstr "Krem"
+
+#: backend/apps/inventory/models.py
+msgid "Gel"
+msgstr "Gel"
+
+#: backend/apps/inventory/models.py
+msgid "Eye drops"
+msgstr "Ko‘z tomchilari"
+
+#: backend/apps/inventory/models.py
+msgid "Ear drops"
+msgstr "Quloq tomchilari"
+
+#: backend/apps/inventory/models.py
+msgid "Nasal drops or spray"
+msgstr "Burun tomchilari yoki spreyi"
+
+#: backend/apps/inventory/models.py
+msgid "Spray"
+msgstr "Sprey"
+
+#: backend/apps/inventory/models.py
+msgid "Suppository"
+msgstr "Sham"
+
+#: backend/apps/inventory/models.py
+msgid "Patch"
+msgstr "Plastir"
+
+#: backend/apps/inventory/models.py
+msgid "Other form"
+msgstr "Boshqa shakl"
+
+#: backend/apps/inventory/models.py
+msgid "Not controlled"
+msgstr "Nazoratda emas"
+
+#: backend/apps/inventory/models.py
+msgid "Narcotic"
+msgstr "Giyohvand vosita"
+
+#: backend/apps/inventory/models.py
+msgid "Psychotropic"
+msgstr "Psixotrop modda"
+
+#: backend/apps/inventory/models.py
+msgid "Contains a precursor"
+msgstr "Prekursor saqlaydi"
+
+#: backend/apps/inventory/models.py
+msgid "Strong-acting (listed)"
+msgstr "Kuchli ta’sirli (ro‘yxatdagi)"
+
+#: backend/apps/inventory/models.py
+msgid "Room temperature, 15–25 °C"
+msgstr "Xona harorati, 15–25 °C"
+
+#: backend/apps/inventory/models.py
+msgid "Cool place, 8–15 °C"
+msgstr "Salqin joy, 8–15 °C"
+
+#: backend/apps/inventory/models.py
+msgid "Fridge, 2–8 °C"
+msgstr "Muzlatgich, 2–8 °C"
+
+#: backend/apps/inventory/models.py
+msgid "Freezer, −18 °C or colder"
+msgstr "Muzlatkich kamera, −18 °C va undan sovuq"
+
+#: backend/apps/inventory/models.py
+msgid ""
+"Active ingredient (INN), lowercase Latin; a combination sorted and joined "
+"with +."
+msgstr ""
+"Ta’sir etuvchi modda (XPN), kichik lotin harflarida; kombinatsiya alifbo "
+"tartibida + bilan."
+
+#: backend/apps/inventory/models.py
+msgid "\"500 mg\", \"250 mg/5 ml\""
+msgstr "«500 mg», «250 mg/5 ml»"
+
+#: backend/apps/inventory/models.py
+msgid ""
+"Parts sold separately in one pack (blisters, ampoules, tablets); 1 sells "
+"whole packs only. A part may be sold only when it shows the name, series, "
+"expiry and maker, never from a damaged pack."
+msgstr ""
+"Bitta qadoqdagi alohida sotiladigan qismlar (blister, ampula, tabletka); 1 "
+"bo‘lsa faqat butun qadoq sotiladi. Qismda nomi, seriyasi, yaroqlilik muddati "
+"va ishlab chiqaruvchisi ko‘rinib tursagina sotish mumkin, shikastlangan "
+"qadoqdan hech qachon."
+
+#: backend/apps/inventory/models.py
+msgid "What one part is called: \"blister\", \"ampoule\"."
+msgstr "Bitta qism nomi: «blister», «ampula»."
+
+#: backend/apps/inventory/models.py
+msgid "Prescription only: everything not on the Ministry of Health's OTC list."
+msgstr ""
+"Faqat retsept bo‘yicha: Sog‘liqni saqlash vazirligining retseptsiz dorilar "
+"ro‘yxatida yo‘q hammasi."
+
+#: backend/apps/inventory/models.py
+msgid "In a group that must be prescribed electronically."
+msgstr "Elektron retsept bilan yozilishi shart bo‘lgan guruhda."
+
+#: backend/apps/inventory/models.py
+msgid ""
+"A starred strong-acting medicine: held only at licensed or social pharmacies."
+msgstr ""
+"Yulduzchali kuchli ta’sirli dori: faqat litsenziyali yoki ijtimoiy "
+"dorixonalarda saqlanadi."
+
+#: backend/apps/inventory/models.py
+msgid "The pack's main EAN-13."
+msgstr "Qadoqning asosiy EAN-13 kodi."
+
+#: backend/apps/inventory/models.py
+msgid "The product code of tasnif.soliq.uz (MXIK)."
+msgstr "tasnif.soliq.uz mahsulot kodi (MXIK)."
+
+#: backend/apps/inventory/models.py
+msgid "The state registration certificate."
+msgstr "Davlat ro‘yxatidan o‘tganlik guvohnomasi."
+
+#: backend/apps/inventory/models.py
+msgid "Carries a digital marking code (Asl belgisi)."
+msgstr "Raqamli markirovka kodi bor (Asl belgisi)."
+
+#: backend/apps/inventory/models.py
+msgid "Empty: the company's rate from its tax regime."
+msgstr "Bo‘sh bo‘lsa: kompaniyaning soliq rejimidagi stavka."
+
+#: backend/apps/inventory/models.py
+msgid "A socially significant medicine: a lower markup cap."
+msgstr "Ijtimoiy ahamiyatli dori: ustamaning chegarasi pastroq."
+
+#: backend/apps/inventory/models.py
+msgid "On the Ministry of Health's list every pharmacy must keep in stock."
+msgstr ""
+"Har bir dorixonada bo‘lishi shart bo‘lgan Sog‘liqni saqlash vazirligi "
+"ro‘yxatida."
+
+#: backend/apps/inventory/models.py
+msgid "The registry's maximum price per pack for a prescription medicine."
+msgstr "Retseptli dori uchun reyestrdagi bitta qadoqning eng yuqori narxi."
+
+#: backend/apps/inventory/models.py
+msgid ""
+"Per pack: the price of the batch sold next, or the list price of an item "
+"without batches."
+msgstr ""
+"Bitta qadoq: navbatdagi sotiladigan seriya narxi yoki seriyasiz tovarning "
+"prays narxi."
+
+#: backend/apps/inventory/models.py
+msgid "Per part; empty: the pack price divided by the parts, rounded up."
+msgstr ""
+"Bitta qism; bo‘sh bo‘lsa: qadoq narxi qismlarga bo‘linib, yuqoriga "
+"yaxlitlanadi."
+
+#: backend/apps/inventory/models.py
+msgid "The last purchase cost per pack."
+msgstr "Bitta qadoqning oxirgi xarid narxi."
+
+#: backend/apps/inventory/models.py
+msgid "On sale"
+msgstr "Sotuvda"
+
+#: backend/apps/inventory/models.py
+msgid "In quarantine"
+msgstr "Karantinda"
+
+#: backend/apps/inventory/models.py
+msgid "Recalled"
+msgstr "Qaytarib olingan"
+
+#: backend/apps/inventory/models.py
+msgid ""
+"Per pack as the distributor's invoice charges it (VAT included), frozen when "
+"posted."
+msgstr ""
+"Distribyutor nakladnoyidagi bitta qadoq narxi (QQS bilan), kirim qilinganda "
+"o‘zgarmaydi."
+
+#: backend/apps/inventory/models.py
+msgid "Per pack; a prescription batch is never priced above its legal cap."
+msgstr ""
+"Bitta qadoq; retseptli seriya hech qachon qonuniy chegaradan qimmat "
+"bo‘lmaydi."
+
+#: backend/apps/inventory/services.py
+msgid "Stock counts arrive with the stock module."
+msgstr "Inventarizatsiya zaxira moduli bilan keladi."
+
+#: backend/apps/inventory/services.py
+msgid "The journals arrive with the stock module."
+msgstr "Jurnallar zaxira moduli bilan keladi."
+
 #: backend/apps/knowledge/ai_tools.py
 msgid ""
 "Search the company's knowledge base pages (how-tos, rules) the asker may read"
@@ -10419,6 +10779,18 @@ msgid ""
 msgstr ""
 "Mahsulotlar, tovar kirimi, inventarizatsiya va hisobdan chiqarishlarni "
 "boshqarish (qoldiqlarni ko‘rish ham kiradi)"
+
+#: backend/apps/members/permissions.py
+msgid ""
+"Look up stock, count, receive goods for checking, record expiry checks and "
+"defektura"
+msgstr ""
+"Qoldiqlarni ko‘rish, inventarizatsiya, tovarni tekshirish uchun qabul "
+"qilish, yaroqlilik muddatini tekshirish va defektura"
+
+#: backend/apps/members/permissions.py
+msgid "Keep the controlled-substance register and the prescription log"
+msgstr "Nazoratdagi moddalar jurnali va retseptlar jurnalini yuritish"
 
 #: backend/apps/members/permissions.py
 msgid "See accounts, transactions, debts, profit and cost prices"
@@ -16446,6 +16818,14 @@ msgid "Readings are taken on routines: set one up under Routines."
 msgstr ""
 "Ko‘rsatkichlar muntazam vazifalarda olinadi: uni Muntazam vazifalar "
 "bo‘limida sozlang."
+
+#: backend/apps/tasks/services.py
+msgid "This task can go only to someone working in the company."
+msgstr "Bu vazifani faqat kompaniyada ishlayotgan kishiga berish mumkin."
+
+#: backend/apps/tasks/services.py
+msgid "Pick someone from this company to hear when it is late."
+msgstr "Kechiksa xabar oladigan kishini shu kompaniyadan tanlang."
 
 #: backend/apps/tasks/services.py
 msgid "You can't change this task."

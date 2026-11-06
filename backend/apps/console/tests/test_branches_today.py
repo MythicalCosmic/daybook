@@ -69,6 +69,20 @@ def test_open_once_a_till_or_the_first_check_in_opened_it(branch):
     )
 
 
+def test_a_24_hour_branch_is_never_closed_or_on_a_day_off(company):
+    """§14.5: around the clock, hours and weekdays don't count; a till or a check-in opens it."""
+    night = BranchFactory(company=company, name="Yunusobod", open_24h=True, open_weekdays=[0])
+    sunday = date(2026, 10, 25)
+    opened = {"sales": sales_facts("2026-10-24T20:00:00+05:00")}
+
+    assert status(night, local(3, 0), card=opened) == "open"
+    assert status(night, local(3, 0, day=sunday), holiday=True, card=opened) == "open"
+    assert status(night, local(3, 0)) == "not_opened"
+    assert status(night, local(23, 0, day=sunday), holiday=True) == "not_opened"
+    # Nothing can record an opening without sales or attendance: it is simply open.
+    assert status(night, local(3, 0), records_openings=False) == "open"
+
+
 def test_not_opened_ten_minutes_after_opening_time(branch):
     assert status(branch, local(9, 5)) == "closed"  # still within the grace
     assert status(branch, local(9, 10)) == "not_opened"

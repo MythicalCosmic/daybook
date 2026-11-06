@@ -91,6 +91,14 @@ class InsightsCompanyFacts(TypedDict):
     alerts: int
 
 
+class InventoryCompanyFacts(TypedDict):
+    """Stock (§14.5): value at cost of the batches expiring within 30 days; items below their
+    minimum at any branch."""
+
+    expiring_30d_value: str
+    low_items: int
+
+
 COMPANY_FACTS: dict[str, type] = {
     "tasks": TasksCompanyFacts,
     "sales": SalesCompanyFacts,
@@ -99,6 +107,7 @@ COMPANY_FACTS: dict[str, type] = {
     "payroll": PayrollCompanyFacts,
     "inbox": InboxCompanyFacts,
     "insights": InsightsCompanyFacts,
+    "inventory": InventoryCompanyFacts,
 }
 
 

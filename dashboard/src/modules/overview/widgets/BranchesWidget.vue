@@ -47,7 +47,7 @@ function statusLabel(branch: BranchToday): string {
     return by ? t("overview.branches.status.openedBy", { time, name: by.split(" ")[0] }) : t("overview.branches.status.openedAt", { time });
   }
   if (branch.status === "not_opened") {
-    const late = minutesLate(branch.opens_at, zonedNow(company.timezone, now.value));
+    const late = branch.open_24h ? 0 : minutesLate(branch.opens_at, zonedNow(company.timezone, now.value));
     // "6h 41m late", not "+401 min".
     return late > 0 ? t("overview.branches.status.late", { late: fmt.duration(late) }) : t("overview.branches.status.not_opened");
   }
@@ -55,6 +55,7 @@ function statusLabel(branch: BranchToday): string {
 }
 
 function hours(branch: BranchToday): string | null {
+  if (branch.open_24h) return t("overview.branches.allDay");
   if (!branch.opens_at && !branch.closes_at) return null;
   return t("overview.branches.hours", { from: branch.opens_at ?? "—", to: branch.closes_at ?? "—" });
 }

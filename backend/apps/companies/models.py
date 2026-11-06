@@ -37,6 +37,37 @@ class Feature(models.TextChoices):
     ASSETS = "assets", _("Assets and equipment")
 
 
+class BusinessKind(models.TextChoices):
+    """What a company is (docs/PLAN-OWNER.md §14.21). Modules read it only for their defaults and
+    to hide screens that don't apply; it switches no module."""
+
+    PHARMACY = "pharmacy", _("Pharmacy")
+    DISTRIBUTOR = "distributor", _("Distributor")
+    BOTH = "both", _("Pharmacy and distributor")
+
+
+class Customer(models.TextChoices):
+    """Who a company sells to (`Company.sells_to`)."""
+
+    WALK_IN = "walk_in", _("Walk-in customers")
+    CLINICS = "clinics", _("Clinics and hospitals")
+    PHARMACIES = "pharmacies", _("Other pharmacies")
+    COMPANIES = "companies", _("Companies")
+
+
+class BranchKind(models.TextChoices):
+    """The retail rules (mandatory list, pharmacist coverage, the camera check) apply at
+    pharmacy branches only."""
+
+    PHARMACY = "pharmacy", _("Pharmacy")
+    WAREHOUSE = "warehouse", _("Warehouse")
+    OFFICE = "office", _("Office")
+
+
+def default_sells_to() -> list[str]:
+    return [Customer.WALK_IN]
+
+
 def default_workdays() -> list[int]:
     return [0, 1, 2, 3, 4, 5]  # Monday to Saturday
 
@@ -100,6 +131,23 @@ class Company(TimeStampedModel):
     )
     team_directory_phones = models.BooleanField(
         default=True, help_text=_("Colleagues see each other's phone numbers in the app.")
+    )
+    business_kind = models.CharField(
+        max_length=12,
+        choices=BusinessKind.choices,
+        default=BusinessKind.PHARMACY,
+        help_text=_("What the business is. Modules take their defaults from it."),
+    )
+    sells_to = ArrayField(
+        models.CharField(max_length=12, choices=Customer.choices),
+        default=default_sells_to,
+        blank=True,
+        help_text=_("Who the business sells to."),
+    )
+    business_confirmed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_("When the owner first saved what the business is (a Get started step)."),
     )
 
     INVITE_PREFIX = "c_"
@@ -178,6 +226,28 @@ class Branch(TenantModel):
     )
     cash_limit = MoneyField(
         null=True, blank=True, help_text=_("Cash above this in the branch raises an alert.")
+    )
+    kind = models.CharField(
+        max_length=10,
+        choices=BranchKind.choices,
+        default=BranchKind.PHARMACY,
+        help_text=_("The pharmacy rules apply at pharmacies only."),
+    )
+    open_24h = models.BooleanField(
+        default=False, help_text=_("Open around the clock: hours and weekdays are ignored.")
+    )
+    controlled_licence = models.BooleanField(
+        default=False,
+        help_text=_(
+            "Licensed for narcotics and psychotropics: the controlled-substance register runs here."
+        ),
+    )
+    social_pharmacy = models.BooleanField(
+        default=False, help_text=_("A social pharmacy: may also hold the restricted medicines.")
+    )
+    e_prescription_area = models.BooleanField(
+        default=False,
+        help_text=_("In an area where some medicines are dispensed only by e-prescription."),
     )
     is_active = models.BooleanField(default=True)
     order = models.PositiveIntegerField(default=0)

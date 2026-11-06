@@ -346,6 +346,27 @@ def test_the_distributor_is_a_second_smaller_company_with_the_same_owner(debug):
     assert not list(made_today(Company.objects.filter(slug__in=(PHARMACY, DISTRIBUTOR))))
 
 
+def test_the_companies_say_what_they_are_and_their_branches_what_they_hold(debug):
+    """§14.3, §14.5: a pharmacy selling to walk-in customers and clinics, Yunusobod open around
+    the clock and licensed for controlled substances, both in the e-prescription area; a
+    distributor selling to pharmacies and clinics from a warehouse."""
+    seed_core()
+
+    pharmacy = Company.objects.get(slug=PHARMACY)
+    assert (pharmacy.business_kind, pharmacy.sells_to) == ("pharmacy", ["walk_in", "clinics"])
+    assert pharmacy.business_confirmed_at is not None
+    flags = {
+        branch.code: (branch.kind, branch.open_24h, branch.controlled_licence)
+        for branch in pharmacy.branches.all()
+    }
+    assert flags == {"CHL": ("pharmacy", False, False), "YNS": ("pharmacy", True, True)}
+    assert all(branch.e_prescription_area for branch in pharmacy.branches.all())
+    distributor = Company.objects.get(slug=DISTRIBUTOR)
+    assert distributor.business_kind == "distributor"
+    assert distributor.sells_to == ["pharmacies", "clinics"]
+    assert [branch.kind for branch in distributor.branches.all()] == ["warehouse"]
+
+
 def test_each_company_works_the_days_its_branches_open(debug):
     seed_core()
 

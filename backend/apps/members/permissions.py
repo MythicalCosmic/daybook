@@ -47,6 +47,14 @@ class Perm(models.TextChoices):
         "stock.manage",
         _("Manage products, goods receipts, stock counts and write-offs (includes reading stock)"),
     )
+    STOCK_OPERATE = (
+        "stock.operate",
+        _("Look up stock, count, receive goods for checking, record expiry checks and defektura"),
+    )
+    STOCK_CONTROLLED = (
+        "stock.controlled",
+        _("Keep the controlled-substance register and the prescription log"),
+    )
 
     # Finance
     FINANCE_VIEW = "finance.view", _("See accounts, transactions, debts, profit and cost prices")
@@ -114,10 +122,11 @@ class Perm(models.TextChoices):
 # The roles every new company starts with. Existing companies got theirs through migrations
 # that only add (members/0005 creates Cashier and Accountant; members/0008 gives each role still
 # named like one of these its Phase 2 permissions; members/0009 creates Pharmacist where the
-# name is free). A permission added here later needs a migration of its own for existing
-# companies (members/tests/test_phase2_role_migration.py, test_pharmacist_role_migration.py).
-# Pharmacist is for a pharmacy's qualified staff, who sell at the counter and run its till
-# (docs/PLAN-OWNER.md §14.3); W2.a adds `stock.operate` to it.
+# name is free; members/0016 gives `stock.operate` to every role that runs a till). A
+# permission added here later needs a migration of its own for existing companies
+# (members/tests/test_phase2_role_migration.py, test_pharmacist_role_migration.py,
+# test_stock_operate_migration.py). Pharmacist is for a pharmacy's qualified staff, who sell at
+# the counter, run its till and look after its stock (docs/PLAN-OWNER.md §14.3, §14.5).
 DEFAULT_ROLES = (
     {"name": "Owner", "is_owner": True},
     {
@@ -177,7 +186,13 @@ DEFAULT_ROLES = (
             Perm.PAYROLL_PAY,
         ],
     },
-    {"name": "Pharmacist", "permissions": [Perm.SALES_OPERATE, Perm.FINANCE_CLAIM]},
-    {"name": "Cashier", "permissions": [Perm.SALES_OPERATE, Perm.FINANCE_CLAIM]},
+    {
+        "name": "Pharmacist",
+        "permissions": [Perm.SALES_OPERATE, Perm.STOCK_OPERATE, Perm.FINANCE_CLAIM],
+    },
+    {
+        "name": "Cashier",
+        "permissions": [Perm.SALES_OPERATE, Perm.STOCK_OPERATE, Perm.FINANCE_CLAIM],
+    },
     {"name": "Employee", "is_default": True, "permissions": [Perm.FINANCE_CLAIM]},
 )

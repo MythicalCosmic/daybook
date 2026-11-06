@@ -24,6 +24,7 @@ from rest_framework.response import Response
 
 from apps.accounts import company_switch
 from apps.accounts.services import approved_memberships
+from apps.companies.models import BusinessKind, Customer
 from apps.console import pulse, queries, registry, services
 from apps.console.base import OwnerAPIView, OwnerUserAPIView, OwnerViewSet
 from apps.console.models import SavedView
@@ -63,6 +64,11 @@ class OwnerMeCompanySerializer(serializers.Serializer):
     timezone = serializers.CharField()
     base_currency = serializers.CharField()
     features = serializers.ListField(child=serializers.CharField())
+    business_kind = serializers.ChoiceField(
+        BusinessKind.choices,
+        help_text="What the business is; modules hide screens that don't apply.",
+    )
+    sells_to = serializers.ListField(child=serializers.ChoiceField(Customer.choices))
     role = RoleBriefSerializer(allow_null=True)
     is_owner = serializers.BooleanField()
     permissions = serializers.ListField(child=serializers.ChoiceField(Perm.choices))

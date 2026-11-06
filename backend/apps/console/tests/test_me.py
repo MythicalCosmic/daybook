@@ -51,6 +51,8 @@ def test_a_company_entry_has_everything_the_shell_needs(company, member, owner_a
         "timezone": "Asia/Tashkent",
         "base_currency": "UZS",
         "features": ["sales", "finance"],
+        "business_kind": "pharmacy",
+        "sells_to": ["walk_in"],
         "role": {"id": owner.role_id, "name": "Owner"},
         "is_owner": True,
         "permissions": [perm.value for perm in Perm],

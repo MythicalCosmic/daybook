@@ -146,6 +146,63 @@ def create_task(
 
 
 @transaction.atomic
+def create_system_task(
+    company,
+    *,
+    assignee: Membership,
+    title: str,
+    due_at,
+    description: str = "",
+    checklist=(),
+    escalate_to: Membership | None = None,
+) -> Task:
+    """Work the system gives someone (docs/PLAN-OWNER.md §14.5): the monthly expiry check, a
+    recall's "remove this series" task. An assigned task with no `created_by`, so no real
+    person's name stands on it (`create_task(by=…)` would make a personal task when `by` is
+    also the assignee), at the assignee's home branch, under the company's default reminders
+    and with the usual "new task" message, built like the onboarding tasks. Nobody confirms
+    it: there is no giver. Refuses an assignee who isn't approved and onboarded."""
+    company_id = getattr(company, "pk", company)
+    if (
+        assignee.company_id != company_id
+        or assignee.status != Membership.Status.APPROVED
+        or assignee.onboarded_at is None
+    ):
+        raise DomainError(_("This task can go only to someone working in the company."))
+    if escalate_to is not None and escalate_to.company_id != company_id:
+        raise DomainError(_("Pick someone from this company to hear when it is late."))
+    task = Task(
+        company_id=company_id,
+        kind=Task.Kind.ASSIGNED,
+        assignee=assignee,
+        created_by=None,
+        needs_confirmation=False,
+        accept_with_proof=False,
+        escalate_to=escalate_to,
+        branch_id=assignee.home_branch_id,
+    )
+    _apply_changes(task, {"title": title, "description": description, "due_at": due_at})
+    _restart_reminders(task)
+    task.save()
+    ChecklistItem.objects.bulk_create(
+        ChecklistItem(task=task, text=text.strip()[:200], order=index)
+        for index, text in enumerate(checklist)
+        if text.strip()
+    )
+    _add_to_feed(Activity.Kind.ASSIGNED, task, [assignee], None)
+    audit.record(
+        AuditLog.Action.TASK_ASSIGNED,
+        company_id=company_id,
+        actor=None,
+        target=task,
+        assignee=str(assignee),
+        system=True,
+    )
+    transaction.on_commit(partial(jobs.notify_task_assigned.delay, task.pk))
+    return task
+
+
+@transaction.atomic
 def update_task(task: Task, *, by: Membership, **changes) -> Task:
     if unknown := changes.keys() - EDITABLE_FIELDS:
         raise ValueError(f"Not editable: {sorted(unknown)}")

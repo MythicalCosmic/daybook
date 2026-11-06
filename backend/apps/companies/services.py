@@ -34,7 +34,15 @@ from apps.accounts.models import User
 from apps.audit import services as audit
 from apps.companies import signals
 from apps.companies.audit_actions import CompanyAction
-from apps.companies.models import Branch, Company, Feature, validate_timezone
+from apps.companies.models import (
+    Branch,
+    BranchKind,
+    BusinessKind,
+    Company,
+    Customer,
+    Feature,
+    validate_timezone,
+)
 from apps.core.exceptions import DomainError
 from apps.core.models import Language
 from apps.core.money import Currency
@@ -244,6 +252,8 @@ SETTINGS_FIELDS = (
     "rejoin_cooldown_hours",
     "owner_sees_personal_tasks",
     "team_directory_phones",
+    "business_kind",
+    "sells_to",
 )
 MAX_REJOIN_COOLDOWN_HOURS = 24 * 30
 
@@ -291,7 +301,11 @@ def update_settings(company: Company, *, by: Membership, **fields) -> Company:
         before = audit.snapshot(company)
         for name, value in clean.items():
             setattr(company, name, value)
-        company.save(update_fields=[*clean, "updated_at"])
+        saved = [*clean]
+        if company.business_confirmed_at is None and {"business_kind", "sells_to"} & set(clean):
+            company.business_confirmed_at = clock.now()  # even when the defaults were right
+            saved.append("business_confirmed_at")
+        company.save(update_fields=[*saved, "updated_at"])
         if changes := audit.diff(before, audit.snapshot(company)):
             audit.record(
                 CompanyAction.SETTINGS_CHANGED,
@@ -337,6 +351,15 @@ def _clean_setting(name: str, value):
         if hours < 0 or hours > MAX_REJOIN_COOLDOWN_HOURS:
             raise DomainError(_("The waiting time is between 0 and 720 hours."))
         return hours
+    if name == "business_kind":
+        if value not in BusinessKind.values:
+            raise DomainError(_("Pick what the business is from the list."))
+        return value
+    if name == "sells_to":
+        chosen = set(value or ())
+        if not chosen or chosen - set(Customer.values):
+            raise DomainError(_("Pick at least one kind of customer from the list."))
+        return [each for each in Customer.values if each in chosen]  # in the list's order
     return bool(value)
 
 
@@ -433,7 +456,13 @@ BRANCH_FIELDS = (
     "open_weekdays",
     "manager",
     "cash_limit",
+    "kind",
+    "open_24h",
+    "controlled_licence",
+    "social_pharmacy",
+    "e_prescription_area",
 )
+BRANCH_FLAGS = ("open_24h", "controlled_licence", "social_pharmacy", "e_prescription_area")
 GEOFENCE_RANGE = (25, 5000)
 CODE_PATTERN = re.compile(r"^[A-Z0-9]{1,8}$")
 
@@ -644,6 +673,12 @@ def _clean_branch_field(branch: Branch, name: str, value):
         if amount < 0:
             raise DomainError(_("The cash limit can't be negative."))
         return amount
+    if name == "kind":
+        if value not in BranchKind.values:
+            raise DomainError(_("Pick what the branch is from the list."))
+        return value
+    if name in BRANCH_FLAGS:
+        return bool(value)
     return value
 
 

@@ -63,6 +63,7 @@ def test_every_fixed_key_has_a_shape():
         "payroll",
         "inbox",
         "insights",
+        "inventory",
     }
     assert (
         contracts.problems(

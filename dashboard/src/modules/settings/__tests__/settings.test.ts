@@ -58,6 +58,9 @@ const SETTINGS: CompanySettings = {
   rejoin_cooldown_hours: 24,
   owner_sees_personal_tasks: true,
   team_directory_phones: true,
+  business_kind: "pharmacy",
+  sells_to: ["walk_in"],
+  business_confirmed: false,
   features: ["finance"],
   setup_completed: false,
 };
@@ -161,6 +164,11 @@ const BRANCH = {
   open_weekdays: [0, 1, 2, 3, 4, 5, 6],
   manager: { id: 4, name: "Bekzod Mirzayev" },
   cash_limit: "20000000.00",
+  kind: "pharmacy",
+  open_24h: false,
+  controlled_licence: false,
+  social_pharmacy: false,
+  e_prescription_area: false,
   is_active: true,
   order: 1,
   people: 4,
@@ -194,7 +202,8 @@ describe("BranchesPanel", () => {
     const { wrapper } = mountWithProviders(BranchesPanel, { plugins: app.plugins });
     await flushPromises();
     expect(wrapper.text()).toContain("09:00–21:00 · every day");
-    expect(wrapper.text()).toContain("around the clock · every day");
+    expect(wrapper.text()).toContain("around the clock");
+    expect(wrapper.text()).not.toContain("around the clock · every day"); // days don't apply
 
     // The drawer says so and offers no times to fill in.
     const toggle = document.querySelector<HTMLButtonElement>("[data-around-the-clock] button[role=switch]")!;
@@ -216,7 +225,7 @@ describe("BranchesPanel", () => {
     form.dispatchEvent(new Event("submit", { cancelable: true }));
     await flushPromises();
     const patch = calls.find((c) => c.method === "PATCH");
-    expect(patch?.body).toMatchObject({ name: "Yunusobod 24/7", opens_at: null, closes_at: null });
+    expect(patch?.body).toMatchObject({ name: "Yunusobod 24/7", opens_at: null, closes_at: null, open_24h: true });
     wrapper.unmount();
   });
 });

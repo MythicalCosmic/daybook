@@ -24,11 +24,25 @@ registry.register_pulse("companies.setup", perm=None, count=None)
 
 # "Get started" (§6.2): the steps this package owns. Other modules add theirs.
 registry.register_setup_step(
+    "companies.business",
+    perm=Perm.COMPANY_SETTINGS,
+    order=5,
+    label=_("Tell us about your business"),
+    description=_(
+        "A pharmacy, a distributor or both, and who you sell to: modules set their defaults by it."
+    ),
+    url="settings/company",
+    done=queries.business_told,
+)
+registry.register_setup_step(
     "companies.branches",
     perm=Perm.COMPANY_SETTINGS,
     order=10,
     label=_("Set up your branches"),
-    description=_("Address, opening hours and the check-in circle on the map for each shop."),
+    description=_(
+        "Address, hours or open 24 hours, the check-in circle on the map, and the licences "
+        "each pharmacy holds."
+    ),
     url="settings/branches",
     done=queries.branch_done,
 )

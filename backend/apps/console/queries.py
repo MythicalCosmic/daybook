@@ -96,6 +96,8 @@ def me_companies(user: User) -> list[dict]:
                 "timezone": company.timezone,
                 "base_currency": company.base_currency,
                 "features": list(company.features),
+                "business_kind": company.business_kind,
+                "sells_to": list(company.sells_to),
                 "role": {"id": member.role_id, "name": member.role.name} if member.role else None,
                 "is_owner": bool(member.role and member.role.is_owner),
                 "permissions": [perm.value for perm in Perm if member.has_perm(perm)],
@@ -129,6 +131,7 @@ def branches_today(member: Membership, now: datetime) -> list[dict]:
             "code": branch.code,
             "opens_at": _clock(branch.opens_at),
             "closes_at": _clock(branch.closes_at),
+            "open_24h": branch.open_24h,
         }
         for key, by_branch in facts.items():
             if branch.pk in by_branch:
@@ -147,11 +150,14 @@ def branch_status(
     minutes past `opens_at`, nothing recorded), closed (after `closes_at`, or not open yet) or
     day_off (a weekday it doesn't open, or a holiday). When the company runs neither sales nor
     attendance (`records_openings` off), nothing can record an opening: a branch is open within
-    its hours on an open day, never not_opened."""
+    its hours on an open day, never not_opened. A branch open around the clock (`open_24h`) is
+    never closed or on a day off: open once a till or a check-in shows it, else not_opened."""
     opened = bool(
         (card.get("sales") or {}).get("opened_at")
         or (card.get("attendance") or {}).get("first_check_in")
     )
+    if branch.open_24h:
+        return BranchStatus.OPEN if opened or not records_openings else BranchStatus.NOT_OPENED
     day_off = holiday or local.weekday() not in branch.open_weekdays
     if day_off and not opened:
         return BranchStatus.DAY_OFF

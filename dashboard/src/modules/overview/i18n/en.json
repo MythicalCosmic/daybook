@@ -43,5 +43,6 @@
   "overview.routines.toConfirm": "{n} to confirm",
   "overview.routines.onTrack": "Nothing late so far",
   "overview.routines.none": "No routine is due today",
-  "overview.routines.holiday": "A holiday: no routine work"
+  "overview.routines.holiday": "A holiday: no routine work",
+  "overview.branches.allDay": "Open 24 hours"
 }

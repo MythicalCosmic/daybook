@@ -3,7 +3,7 @@
  * `apps.inbox.owner_api` notification preferences, `apps.signin.owner_api` sessions). Written by
  * hand from the serializers: money and dates are strings.
  */
-import type { Currency, Language, Money, PersonRef } from "@/api/types";
+import type { BranchKind, BusinessKind, Currency, CustomerKind, Language, Money, PersonRef } from "@/api/types";
 import type { CompanyFeature } from "@/core/features";
 
 /** `GET/PATCH O settings/` */
@@ -26,6 +26,10 @@ export interface CompanySettings {
   rejoin_cooldown_hours: number;
   owner_sees_personal_tasks: boolean;
   team_directory_phones: boolean;
+  business_kind: BusinessKind;
+  sells_to: CustomerKind[];
+  /** The owner saved what the business is: the "Tell us about your business" step is done. */
+  business_confirmed: boolean;
   features: CompanyFeature[];
   setup_completed: boolean;
 }
@@ -44,6 +48,8 @@ export type SettingsPatch = Partial<
     | "rejoin_cooldown_hours"
     | "owner_sees_personal_tasks"
     | "team_directory_phones"
+    | "business_kind"
+    | "sells_to"
   >
 >;
 
@@ -76,6 +82,13 @@ export interface Branch {
   open_weekdays: number[];
   manager: PersonRef | null;
   cash_limit: Money | null;
+  kind: BranchKind;
+  /** Open around the clock: hours and weekdays are ignored. */
+  open_24h: boolean;
+  /** Licensed for narcotics and psychotropics: the controlled register runs here. */
+  controlled_licence: boolean;
+  social_pharmacy: boolean;
+  e_prescription_area: boolean;
   is_active: boolean;
   order: number;
   /** Approved members working there. */
@@ -95,6 +108,11 @@ export interface BranchInput {
   open_weekdays: number[];
   manager_id: number | null;
   cash_limit: Money | null;
+  kind: BranchKind;
+  open_24h: boolean;
+  controlled_licence: boolean;
+  social_pharmacy: boolean;
+  e_prescription_area: boolean;
 }
 
 /** `GET O branches/managers/` */

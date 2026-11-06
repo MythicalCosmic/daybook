@@ -1,8 +1,9 @@
 <script setup lang="ts">
 /**
- * A branch in a drawer (`?branch=12`, or `?branch=new`): name and code, address and phone, the
- * place and check-in circle on a map, opening hours and days, the manager and the cash limit.
- * Closing a branch keeps its history; its audit trail is at the bottom.
+ * A branch in a drawer (`?branch=12`, or `?branch=new`): name and code, what it is (a pharmacy,
+ * a warehouse, an office), address and phone, the place and check-in circle on a map, opening
+ * hours and days (or open 24 hours), the licences it holds (§14.21), the manager and the cash
+ * limit. Closing a branch keeps its history; its audit trail is at the bottom.
  */
 import { Archive, ArchiveRestore, History, MapPin, Store } from "@lucide/vue";
 import { computed, defineAsyncComponent, ref, watch } from "vue";
@@ -32,6 +33,8 @@ import { closeQueryKey } from "@/lib/useRouteState";
 import { useCompanyStore } from "@/stores/company";
 
 import { useBranchMutations, useManagers } from "../api";
+import type { BranchKind } from "@/api/types";
+
 import type { Branch, BranchInput } from "../types";
 
 const AuditTrail = defineAsyncComponent(() => import("@/components/AuditTrail.vue"));
@@ -71,6 +74,11 @@ const schema = z
     open_weekdays: z.array(z.number().int().min(0).max(6)),
     manager_id: z.number().nullable(),
     cash_limit: z.string().nullable(),
+    kind: z.enum(["pharmacy", "warehouse", "office"]),
+    open_24h: z.boolean(),
+    controlled_licence: z.boolean(),
+    social_pharmacy: z.boolean(),
+    e_prescription_area: z.boolean(),
   })
   .refine((v) => (v.opens_at === null) === (v.closes_at === null), { path: ["closes_at"], message: "settings.branch.bothTimes" });
 
@@ -92,6 +100,12 @@ function valuesOf(source: Branch | null): Values {
     open_weekdays: [...(source?.open_weekdays ?? [0, 1, 2, 3, 4, 5, 6])],
     manager_id: source?.manager?.id ?? null,
     cash_limit: source?.cash_limit ?? null,
+    kind: source?.kind ?? "pharmacy",
+    // A branch saved without hours before the flag existed was already "around the clock".
+    open_24h: source ? source.open_24h || (source.opens_at === null && source.closes_at === null) : false,
+    controlled_licence: source?.controlled_licence ?? false,
+    social_pharmacy: source?.social_pharmacy ?? false,
+    e_prescription_area: source?.e_prescription_area ?? false,
   };
 }
 
@@ -124,10 +138,12 @@ watch(
   { immediate: true },
 );
 
-/** "Open around the clock" clears both times; switching it off brings back the last ones. */
+/** "Open around the clock" (`open_24h`) clears both times; switching it off brings back the
+ * last ones. */
 const aroundTheClock = computed({
-  get: () => form.values.opens_at === null && form.values.closes_at === null,
+  get: () => form.values.open_24h,
   set: (on: boolean) => {
+    form.values.open_24h = on;
     if (on) {
       lastHours = { opens: form.values.opens_at ?? lastHours.opens, closes: form.values.closes_at ?? lastHours.closes };
       form.values.opens_at = null;
@@ -138,6 +154,12 @@ const aroundTheClock = computed({
     }
   },
 });
+
+const kinds = computed<{ value: BranchKind; label: string }[]>(() => [
+  { value: "pharmacy", label: t("settings.branch.kind.pharmacy") },
+  { value: "warehouse", label: t("settings.branch.kind.warehouse") },
+  { value: "office", label: t("settings.branch.kind.office") },
+]);
 
 const radii = [50, 100, 150, 300, 500];
 const radiusOptions = computed(() => radii.map((m) => ({ value: m, label: t("settings.branch.metres", { m }) })));
@@ -185,6 +207,10 @@ const company_ = computed(() => company.current);
         </FormField>
       </div>
 
+      <FormField :label="t('settings.branch.kindLabel')" :hint="t('settings.branch.kindHint')">
+        <SegmentedControl v-model="form.values.kind" :options="kinds" :disabled="!canEdit" block :aria-label="t('settings.branch.kindLabel')" />
+      </FormField>
+
       <div class="grid gap-4 sm:grid-cols-[1fr_200px]">
         <FormField :label="t('settings.branch.address')" :error="form.errors.address" optional>
           <TextInput v-model="form.values.address" :icon="MapPin" :maxlength="255" :disabled="!canEdit" :placeholder="t('settings.branch.addressPlaceholder')" />
@@ -230,9 +256,19 @@ const company_ = computed(() => company.current);
             <TimePicker v-model="form.values.closes_at" :step="15" :disabled="!canEdit" />
           </FormField>
         </div>
-        <FormField :label="t('settings.branch.days')" :hint="t('settings.branch.daysHint')">
+        <FormField v-if="!aroundTheClock" :label="t('settings.branch.days')" :hint="t('settings.branch.daysHint')">
           <WeekdayPicker v-model="form.values.open_weekdays" presets :disabled="!canEdit" />
         </FormField>
+      </section>
+
+      <section v-if="form.values.kind === 'pharmacy'" class="flex flex-col gap-1">
+        <p class="text-base font-semibold text-fg">{{ t("settings.branch.licences") }}</p>
+        <p class="mb-2 text-sm text-muted">{{ t("settings.branch.licencesHint") }}</p>
+        <div class="flex flex-col divide-y divide-line">
+          <ToggleSwitch v-model="form.values.controlled_licence" layout="row" class="py-3" :label="t('settings.branch.controlled')" :description="t('settings.branch.controlledHint')" :disabled="!canEdit" />
+          <ToggleSwitch v-model="form.values.social_pharmacy" layout="row" class="py-3" :label="t('settings.branch.social')" :description="t('settings.branch.socialHint')" :disabled="!canEdit" />
+          <ToggleSwitch v-model="form.values.e_prescription_area" layout="row" class="py-3" :label="t('settings.branch.eRx')" :description="t('settings.branch.eRxHint')" :disabled="!canEdit" />
+        </div>
       </section>
 
       <section class="grid gap-4 sm:grid-cols-2">

@@ -115,6 +115,8 @@ function menu(branch: Branch, index: number) {
               <button type="button" class="truncate text-left text-md font-semibold text-fg hover:underline" @click.stop="edit(branch.id)">{{ branch.name }}</button>
               <UiBadge v-if="branch.code" tone="neutral" variant="outline" class="font-mono">{{ branch.code }}</UiBadge>
               <StatusPill v-if="!branch.latitude" tone="warning" size="sm" :label="t('settings.branch.noPlace')" />
+              <UiBadge v-if="branch.kind && branch.kind !== 'pharmacy'" tone="neutral">{{ t(`settings.branch.kind.${branch.kind}`) }}</UiBadge>
+              <UiBadge v-if="branch.controlled_licence" tone="info">{{ t("settings.branch.controlledShort") }}</UiBadge>
             </div>
             <p class="mt-1 flex items-start gap-1.5 text-sm text-muted">
               <MapPin :size="14" class="mt-0.5 shrink-0" />
@@ -122,7 +124,8 @@ function menu(branch: Branch, index: number) {
             </p>
             <div class="mt-2.5 flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-muted">
               <span class="inline-flex items-center gap-1.5"><Clock :size="14" />
-                {{ branch.opens_at ? `${branch.opens_at}–${branch.closes_at}` : t("settings.branch.allDayShort") }} · {{ days(branch) }}
+                <template v-if="branch.open_24h || !branch.opens_at">{{ t("settings.branch.allDayShort") }}</template>
+                <template v-else>{{ branch.opens_at }}–{{ branch.closes_at }} · {{ days(branch) }}</template>
               </span>
               <span class="inline-flex items-center gap-1.5"><Users :size="14" />{{ t("settings.branch.peopleCount", { n: branch.people }, branch.people) }}</span>
               <span v-if="branch.latitude" class="inline-flex items-center gap-1.5"><CircleDot :size="14" />{{ t("settings.branch.radiusShort", { m: branch.geofence_m }) }}</span>

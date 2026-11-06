@@ -98,13 +98,17 @@ ADDITIONS = {
     "agenda.manage": set(),
     "crm.view": set(),
     "crm.manage": set(),
+    # Pharmacy stock (§14.5): whoever runs a till looks after the stock at the counter; the
+    # controlled register is the owner's to hand out.
+    "stock.operate": {"Pharmacist", "Cashier"},
+    "stock.controlled": set(),
 }
 
 
 def test_the_registry_has_every_new_permission():
     assert len(OWNER_CONSOLE) == 29
     assert set(OWNER_CONSOLE) | set(ADDITIONS) <= set(Perm.values)
-    assert len(Perm.values) == 14 + 29 + 12
+    assert len(Perm.values) == 14 + 29 + 14
 
 
 @pytest.mark.parametrize("code", [*OWNER_CONSOLE, *ADDITIONS])

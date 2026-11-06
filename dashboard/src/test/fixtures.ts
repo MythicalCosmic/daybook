@@ -10,6 +10,8 @@ export function company(overrides: Partial<Company> = {}): Company {
     timezone: "Asia/Tashkent",
     base_currency: "UZS",
     features: ["finance", "sales", "attendance", "hr", "payroll", "ai"],
+    business_kind: "pharmacy",
+    sells_to: ["walk_in"],
     role: { id: 1, name: "Owner" },
     is_owner: true,
     permissions: [],

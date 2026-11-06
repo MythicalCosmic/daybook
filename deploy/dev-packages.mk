@@ -8,7 +8,7 @@
 # Without PKG nothing is overridden and .env decides (the lead's everyday setup).
 #
 # Columns: package : database : Redis DB : backend : dashboard : mini app : stream.
-# Package n (A=1 … R=15, then S, T, Q, U) has backend port 28100 + 10n and the next three ports
+# Package n (A=1 … R=15, then S, T, Q, U, J2) has backend port 28100 + 10n and the next three ports
 # for the dashboard, the mini app and the stream; test databases are test_trello_<package>.
 # W0-F works as D. G's stream is 28175 because 28173 is the lead's mini app.
 # Redis needs more than its default 16 databases for S, T, Q and U (docker-compose.yml starts it
@@ -33,7 +33,8 @@ DEV_PACKAGES := \
 	s:trello_s:16:28260:28261:28262:28263 \
 	t:trello_t:17:28270:28271:28272:28273 \
 	q:trello_q:18:28280:28281:28282:28283 \
-	u:trello_u:19:28290:28291:28292:28293
+	u:trello_u:19:28290:28291:28292:28293 \
+	j2:trello_j2:20:28300:28301:28302:28303
 
 # Where the docker-compose.yml database and Redis listen on this machine.
 DEV_DB_URL ?= postgres://trello:trello@localhost:25432

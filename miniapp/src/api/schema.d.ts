@@ -194,6 +194,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/companies/{company_id}/assets/mine/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["v1_companies_assets_mine_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/assets/mine/{id}/acknowledge/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["v1_companies_assets_mine_acknowledge_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/companies/{company_id}/attendance/": {
         parameters: {
             query?: never;
@@ -2420,6 +2452,25 @@ export interface components {
             /** @default  */
             number: string;
         };
+        AssetsMineItem: {
+            /** @description The hand-out (what is acknowledged). */
+            id: number;
+            asset_id: number;
+            number: string;
+            name: string;
+            model: string;
+            serial: string;
+            category: string;
+            icon: string;
+            branch: string | null;
+            /** Format: date */
+            issued_on: string;
+            condition: string;
+            note: string;
+            /** Format: date-time */
+            acknowledged_at: string | null;
+            photo_url: string | null;
+        };
         AttendanceBranchRef: {
             id: number;
             name: string;
@@ -3929,6 +3980,8 @@ export interface components {
             readonly id: number;
             readonly member: components["schemas"]["PayrollPersonCard"];
             readonly period: string;
+            /** @description regular: a month's payslip; final: the settlement of someone who left. */
+            readonly run_kind: string;
             readonly pay_type: components["schemas"]["PayrollPayTypeEnum"];
             readonly currency: components["schemas"]["CurrencyEnum"];
             /** Format: decimal */
@@ -4036,6 +4089,8 @@ export interface components {
             readonly id: number;
             readonly member: components["schemas"]["PayrollPersonCard"];
             readonly period: string;
+            /** @description regular: a month's payslip; final: the settlement of someone who left. */
+            readonly run_kind: string;
             readonly pay_type: components["schemas"]["PayrollPayTypeEnum"];
             readonly currency: components["schemas"]["CurrencyEnum"];
             /** Format: decimal */
@@ -4114,6 +4169,8 @@ export interface components {
          *     * `sales.manage` - Verify, correct and void shifts; registers, payment methods, targets, customers
          *     * `sales.invoices` - Create, issue and void invoices
          *     * `stock.manage` - Manage products, goods receipts, stock counts and write-offs (includes reading stock)
+         *     * `stock.operate` - Look up stock, count, receive goods for checking, record expiry checks and defektura
+         *     * `stock.controlled` - Keep the controlled-substance register and the prescription log
          *     * `finance.view` - See accounts, transactions, debts, profit and cost prices
          *     * `finance.record` - Record income, expenses, transfers and payments on accounts they operate
          *     * `finance.manage` - Manage accounts, categories, budgets and rates; fix or void entries; lock periods
@@ -4147,7 +4204,7 @@ export interface components {
          *     * `crm.manage` - Manage CRM deals and pipelines
          * @enum {string}
          */
-        PermissionsEnum: "members.view" | "members.approve" | "members.manage" | "roles.manage" | "positions.manage" | "tasks.view_all" | "tasks.assign" | "tasks.templates" | "tasks.confirm" | "reminders.configure" | "groups.manage" | "reports.view" | "time_off.approve" | "announcements.send" | "dashboard.access" | "company.settings" | "audit.view" | "data.export" | "branches.all" | "sales.view" | "sales.operate" | "sales.manage" | "sales.invoices" | "stock.manage" | "finance.view" | "finance.record" | "finance.manage" | "finance.approve" | "finance.claim" | "hr.view" | "hr.manage" | "hr.sensitive" | "hr.hiring" | "attendance.view" | "attendance.manage" | "time_off.manage" | "payroll.view" | "payroll.propose" | "payroll.manage" | "payroll.finalize" | "payroll.pay" | "ai.use" | "ai.configure" | "projects.view_all" | "projects.manage" | "projects.time_view" | "hr.discipline" | "hr.suspend" | "hr.terminate" | "assets.manage" | "reviews.manage" | "knowledge.manage" | "agenda.manage" | "crm.view" | "crm.manage";
+        PermissionsEnum: "members.view" | "members.approve" | "members.manage" | "roles.manage" | "positions.manage" | "tasks.view_all" | "tasks.assign" | "tasks.templates" | "tasks.confirm" | "reminders.configure" | "groups.manage" | "reports.view" | "time_off.approve" | "announcements.send" | "dashboard.access" | "company.settings" | "audit.view" | "data.export" | "branches.all" | "sales.view" | "sales.operate" | "sales.manage" | "sales.invoices" | "stock.manage" | "stock.operate" | "stock.controlled" | "finance.view" | "finance.record" | "finance.manage" | "finance.approve" | "finance.claim" | "hr.view" | "hr.manage" | "hr.sensitive" | "hr.hiring" | "attendance.view" | "attendance.manage" | "time_off.manage" | "payroll.view" | "payroll.propose" | "payroll.manage" | "payroll.finalize" | "payroll.pay" | "ai.use" | "ai.configure" | "projects.view_all" | "projects.manage" | "projects.time_view" | "hr.discipline" | "hr.suspend" | "hr.terminate" | "assets.manage" | "reviews.manage" | "knowledge.manage" | "agenda.manage" | "crm.view" | "crm.manage";
         PersonCard: {
             id: number;
             name: string;
@@ -5357,6 +5414,49 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FeedAnnouncement"];
+                };
+            };
+        };
+    };
+    v1_companies_assets_mine_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssetsMineItem"][];
+                };
+            };
+        };
+    };
+    v1_companies_assets_mine_acknowledge_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssetsMineItem"];
                 };
             };
         };

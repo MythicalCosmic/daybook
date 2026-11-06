@@ -111,6 +111,9 @@ def test_employees_without_dashboard_access_are_refused(company, member, owner_a
         {"base_currency": "EUR"},
         {"rejoin_cooldown_hours": 1000},
         {"morning_report_at": "20:00"},
+        {"business_kind": "cafe"},
+        {"sells_to": []},
+        {"sells_to": ["walk_in", "tourists"]},
     ],
 )
 def test_bad_settings_are_refused(company, owner, owner_api, patch):
@@ -232,3 +235,32 @@ def test_the_logo_needs_company_settings(company, member, owner_api):
         .status_code
         == 403
     )
+
+
+def test_the_owner_tells_what_the_business_is_and_who_it_sells_to(company, owner, owner_api):
+    """§14.5: a Get started step, done once saved, even when the defaults were already right."""
+    data = owner_api(owner).get(url(company)).json()
+    assert data["business_kind"] == "pharmacy" and data["sells_to"] == ["walk_in"]
+    assert _step(company, owner, owner_api)["done"] is False
+
+    response = owner_api(owner).patch(url(company), {"sells_to": ["walk_in"]}, format="json")
+    assert response.status_code == 200
+    assert _step(company, owner, owner_api)["done"] is True
+
+    response = owner_api(owner).patch(
+        url(company),
+        {"business_kind": "both", "sells_to": ["clinics", "walk_in", "clinics"]},
+        format="json",
+    )
+    assert response.status_code == 200
+    company.refresh_from_db()
+    assert company.business_kind == "both"
+    assert company.sells_to == ["walk_in", "clinics"]  # in the list's order, once each
+    me = owner_api(owner).get("/api/v1/owner/me/").json()
+    [mine] = [row for row in me["companies"] if row["id"] == company.pk]
+    assert (mine["business_kind"], mine["sells_to"]) == ("both", ["walk_in", "clinics"])
+
+
+def _step(company, owner, owner_api) -> dict:
+    steps = owner_api(owner).get(url(company, "setup/")).json()["steps"]
+    return next(step for step in steps if step["key"] == "companies.business")

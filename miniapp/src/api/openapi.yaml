@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: 911 Trello API
-  version: 0.3.2
+  version: 0.4.2
   description: API for the employee mini app and the owner dashboard.
 paths:
   /api/v1/auth/telegram/:
@@ -336,6 +336,55 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FeedAnnouncement'
+          description: ''
+  /api/v1/companies/{company_id}/assets/mine/:
+    get:
+      operationId: v1_companies_assets_mine_list
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AssetsMineItem'
+          description: ''
+  /api/v1/companies/{company_id}/assets/mine/{id}/acknowledge/:
+    post:
+      operationId: v1_companies_assets_mine_acknowledge_create
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetsMineItem'
           description: ''
   /api/v1/companies/{company_id}/attendance/:
     get:
@@ -5311,6 +5360,58 @@ components:
           maxLength: 32
       required:
       - payments
+    AssetsMineItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: The hand-out (what is acknowledged).
+        asset_id:
+          type: integer
+        number:
+          type: string
+        name:
+          type: string
+        model:
+          type: string
+        serial:
+          type: string
+        category:
+          type: string
+        icon:
+          type: string
+        branch:
+          type: string
+          nullable: true
+        issued_on:
+          type: string
+          format: date
+        condition:
+          type: string
+        note:
+          type: string
+        acknowledged_at:
+          type: string
+          format: date-time
+          nullable: true
+        photo_url:
+          type: string
+          nullable: true
+      required:
+      - acknowledged_at
+      - asset_id
+      - branch
+      - category
+      - condition
+      - icon
+      - id
+      - issued_on
+      - model
+      - name
+      - note
+      - number
+      - photo_url
+      - serial
     AttendanceBranchRef:
       type: object
       properties:
@@ -8967,6 +9068,11 @@ components:
         period:
           type: string
           readOnly: true
+        run_kind:
+          type: string
+          readOnly: true
+          description: 'regular: a month''s payslip; final: the settlement of someone
+            who left.'
         pay_type:
           allOf:
           - $ref: '#/components/schemas/PayrollPayTypeEnum'
@@ -9122,6 +9228,7 @@ components:
       - received_at
       - reimbursements
       - run
+      - run_kind
       - run_status
       - scheduled_days
       - status
@@ -9248,6 +9355,11 @@ components:
         period:
           type: string
           readOnly: true
+        run_kind:
+          type: string
+          readOnly: true
+          description: 'regular: a month''s payslip; final: the settlement of someone
+            who left.'
         pay_type:
           allOf:
           - $ref: '#/components/schemas/PayrollPayTypeEnum'
@@ -9344,6 +9456,7 @@ components:
       - published_at
       - received_at
       - reimbursements
+      - run_kind
       - status
       - taxes_withheld
       - viewed_at
@@ -9426,6 +9539,8 @@ components:
       - sales.manage
       - sales.invoices
       - stock.manage
+      - stock.operate
+      - stock.controlled
       - finance.view
       - finance.record
       - finance.manage
@@ -9483,6 +9598,8 @@ components:
         * `sales.manage` - Verify, correct and void shifts; registers, payment methods, targets, customers
         * `sales.invoices` - Create, issue and void invoices
         * `stock.manage` - Manage products, goods receipts, stock counts and write-offs (includes reading stock)
+        * `stock.operate` - Look up stock, count, receive goods for checking, record expiry checks and defektura
+        * `stock.controlled` - Keep the controlled-substance register and the prescription log
         * `finance.view` - See accounts, transactions, debts, profit and cost prices
         * `finance.record` - Record income, expenses, transfers and payments on accounts they operate
         * `finance.manage` - Manage accounts, categories, budgets and rates; fix or void entries; lock periods

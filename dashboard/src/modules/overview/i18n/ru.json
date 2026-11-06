@@ -43,5 +43,6 @@
   "overview.routines.toConfirm": "на проверке: {n}",
   "overview.routines.onTrack": "Пока без опозданий",
   "overview.routines.none": "Сегодня регулярных задач нет",
-  "overview.routines.holiday": "Праздник: регулярных задач нет"
+  "overview.routines.holiday": "Праздник: регулярных задач нет",
+  "overview.branches.allDay": "Круглосуточно"
 }

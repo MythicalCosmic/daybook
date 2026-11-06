@@ -25,6 +25,8 @@ export const PERMS = [
   "sales.manage",
   "sales.invoices",
   "stock.manage",
+  "stock.operate",
+  "stock.controlled",
   "finance.view",
   "finance.record",
   "finance.manage",

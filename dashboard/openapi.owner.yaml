@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: 911 Trello API
-  version: 0.4.1
+  version: 0.4.2
   description: API for the employee mini app and the owner dashboard.
 paths:
   /api/v1/owner/auth/dev-login/:
@@ -25615,6 +25615,28 @@ components:
           format: decimal
           pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
           nullable: true
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/BranchKindEnum'
+          description: |-
+            The pharmacy rules apply at pharmacies only.
+
+            * `pharmacy` - Pharmacy
+            * `warehouse` - Warehouse
+            * `office` - Office
+        open_24h:
+          type: boolean
+          description: 'Open around the clock: hours and weekdays are ignored.'
+        controlled_licence:
+          type: boolean
+          description: 'Licensed for narcotics and psychotropics: the controlled-substance
+            register runs here.'
+        social_pharmacy:
+          type: boolean
+          description: 'A social pharmacy: may also hold the restricted medicines.'
+        e_prescription_area:
+          type: boolean
+          description: In an area where some medicines are dispensed only by e-prescription.
         is_active:
           type: boolean
           readOnly: true
@@ -25669,6 +25691,16 @@ components:
       - latitude
       - longitude
       - name
+    BranchKindEnum:
+      enum:
+      - pharmacy
+      - warehouse
+      - office
+      type: string
+      description: |-
+        * `pharmacy` - Pharmacy
+        * `warehouse` - Warehouse
+        * `office` - Office
     BranchRequest:
       type: object
       properties:
@@ -25725,6 +25757,28 @@ components:
           format: decimal
           pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
           nullable: true
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/BranchKindEnum'
+          description: |-
+            The pharmacy rules apply at pharmacies only.
+
+            * `pharmacy` - Pharmacy
+            * `warehouse` - Warehouse
+            * `office` - Office
+        open_24h:
+          type: boolean
+          description: 'Open around the clock: hours and weekdays are ignored.'
+        controlled_licence:
+          type: boolean
+          description: 'Licensed for narcotics and psychotropics: the controlled-substance
+            register runs here.'
+        social_pharmacy:
+          type: boolean
+          description: 'A social pharmacy: may also hold the restricted medicines.'
+        e_prescription_area:
+          type: boolean
+          description: In an area where some medicines are dispensed only by e-prescription.
       required:
       - name
     BranchToday:
@@ -25913,6 +25967,16 @@ components:
       - done
       - failed
       - results
+    BusinessKindEnum:
+      enum:
+      - pharmacy
+      - distributor
+      - both
+      type: string
+      description: |-
+        * `pharmacy` - Pharmacy
+        * `distributor` - Distributor
+        * `both` - Pharmacy and distributor
     CalendarItem:
       type: object
       properties:
@@ -26430,6 +26494,21 @@ components:
           type: boolean
         team_directory_phones:
           type: boolean
+        business_kind:
+          allOf:
+          - $ref: '#/components/schemas/BusinessKindEnum'
+          description: |-
+            What the business is (§14.21); it switches no module.
+
+            * `pharmacy` - Pharmacy
+            * `distributor` - Distributor
+            * `both` - Pharmacy and distributor
+        sells_to:
+          type: array
+          items:
+            $ref: '#/components/schemas/SellsToEnum'
+          description: Who the business sells to.
+          minItems: 1
         features:
           type: array
           items:
@@ -26441,6 +26520,7 @@ components:
       required:
       - base_currency
       - base_currency_locked
+      - business_kind
       - default_language
       - evening_report_at
       - features
@@ -26451,6 +26531,7 @@ components:
       - name
       - owner_sees_personal_tasks
       - rejoin_cooldown_hours
+      - sells_to
       - setup_completed
       - slug
       - team_directory_phones
@@ -32454,6 +32535,19 @@ components:
           type: array
           items:
             type: string
+        business_kind:
+          allOf:
+          - $ref: '#/components/schemas/BusinessKindEnum'
+          description: |-
+            What the business is; modules hide screens that don't apply.
+
+            * `pharmacy` - Pharmacy
+            * `distributor` - Distributor
+            * `both` - Pharmacy and distributor
+        sells_to:
+          type: array
+          items:
+            $ref: '#/components/schemas/SellsToEnum'
         role:
           allOf:
           - $ref: '#/components/schemas/RoleBrief'
@@ -32490,6 +32584,7 @@ components:
       - base_currency
       - branch_scope
       - branches
+      - business_kind
       - features
       - home_branch
       - id
@@ -32500,6 +32595,7 @@ components:
       - pending
       - permissions
       - role
+      - sells_to
       - setup_completed
       - timezone
     OwnerMeUser:
@@ -34184,6 +34280,28 @@ components:
           format: decimal
           pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
           nullable: true
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/BranchKindEnum'
+          description: |-
+            The pharmacy rules apply at pharmacies only.
+
+            * `pharmacy` - Pharmacy
+            * `warehouse` - Warehouse
+            * `office` - Office
+        open_24h:
+          type: boolean
+          description: 'Open around the clock: hours and weekdays are ignored.'
+        controlled_licence:
+          type: boolean
+          description: 'Licensed for narcotics and psychotropics: the controlled-substance
+            register runs here.'
+        social_pharmacy:
+          type: boolean
+          description: 'A social pharmacy: may also hold the restricted medicines.'
+        e_prescription_area:
+          type: boolean
+          description: In an area where some medicines are dispensed only by e-prescription.
     PatchedCategoryUpdateRequest:
       type: object
       properties:
@@ -34241,6 +34359,21 @@ components:
           type: boolean
         team_directory_phones:
           type: boolean
+        business_kind:
+          allOf:
+          - $ref: '#/components/schemas/BusinessKindEnum'
+          description: |-
+            What the business is (§14.21); it switches no module.
+
+            * `pharmacy` - Pharmacy
+            * `distributor` - Distributor
+            * `both` - Pharmacy and distributor
+        sells_to:
+          type: array
+          items:
+            $ref: '#/components/schemas/SellsToEnum'
+          description: Who the business sells to.
+          minItems: 1
     PatchedCorrectRequest:
       type: object
       properties:
@@ -37325,6 +37458,8 @@ components:
       - sales.manage
       - sales.invoices
       - stock.manage
+      - stock.operate
+      - stock.controlled
       - finance.view
       - finance.record
       - finance.manage
@@ -37382,6 +37517,8 @@ components:
         * `sales.manage` - Verify, correct and void shifts; registers, payment methods, targets, customers
         * `sales.invoices` - Create, issue and void invoices
         * `stock.manage` - Manage products, goods receipts, stock counts and write-offs (includes reading stock)
+        * `stock.operate` - Look up stock, count, receive goods for checking, record expiry checks and defektura
+        * `stock.controlled` - Keep the controlled-substance register and the prescription log
         * `finance.view` - See accounts, transactions, debts, profit and cost prices
         * `finance.record` - Record income, expenses, transfers and payments on accounts they operate
         * `finance.manage` - Manage accounts, categories, budgets and rates; fix or void entries; lock periods
@@ -42196,6 +42333,18 @@ components:
       - title
       - type
       - url
+    SellsToEnum:
+      enum:
+      - walk_in
+      - clinics
+      - pharmacies
+      - companies
+      type: string
+      description: |-
+        * `walk_in` - Walk-in customers
+        * `clinics` - Clinics and hospitals
+        * `pharmacies` - Other pharmacies
+        * `companies` - Companies
     Setup:
       type: object
       properties:

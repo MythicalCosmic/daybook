@@ -95,6 +95,7 @@ def test_editing_a_branch_is_audited_with_its_changes(company, owner, owner_api)
         {"opens_at": "09:00"},  # without a closing time
         {"open_weekdays": [8]},
         {"cash_limit": "-5.00"},
+        {"kind": "kiosk"},
     ],
 )
 def test_bad_branch_data_is_refused(company, owner, owner_api, patch):
@@ -103,6 +104,37 @@ def test_bad_branch_data_is_refused(company, owner, owner_api, patch):
     response = owner_api(owner).patch(url(company, f"{branch.pk}/"), patch, format="json")
 
     assert response.status_code == 400, patch
+
+
+def test_a_branch_says_what_it_is_and_which_licences_it_holds(company, owner, owner_api):
+    """§14.5, §14.21: a pharmacy by default; open around the clock, licensed for controlled
+    substances, a social pharmacy and in the e-prescription area are its own facts."""
+    branch = company.branches.get()
+    data = owner_api(owner).get(url(company, f"{branch.pk}/")).json()
+    assert data["kind"] == "pharmacy"
+    assert not any(
+        data[flag]
+        for flag in ("open_24h", "controlled_licence", "social_pharmacy", "e_prescription_area")
+    )
+
+    response = owner_api(owner).patch(
+        url(company, f"{branch.pk}/"),
+        {"open_24h": True, "controlled_licence": True, "e_prescription_area": True},
+        format="json",
+    )
+
+    assert response.status_code == 200
+    branch.refresh_from_db()
+    assert branch.open_24h and branch.controlled_licence and branch.e_prescription_area
+    assert not branch.social_pharmacy
+    log = AuditLog.objects.get(action=CompanyAction.BRANCH_CHANGED)
+    assert log.details["changes"]["controlled_licence"] == [False, True]
+    response = owner_api(owner).post(
+        url(company),
+        {**CHILONZOR, "name": "Ombor", "code": "OMB", "kind": "warehouse"},
+        format="json",
+    )
+    assert response.status_code == 201 and response.json()["kind"] == "warehouse"
 
 
 def test_names_and_codes_are_unique(company, owner, owner_api):

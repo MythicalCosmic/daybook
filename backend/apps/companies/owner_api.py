@@ -30,7 +30,7 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
 from apps.companies import queries, services
-from apps.companies.models import Branch, Company, Feature
+from apps.companies.models import Branch, BusinessKind, Company, Customer, Feature
 from apps.console import registry
 from apps.console.base import OwnerAPIView, OwnerUserAPIView, OwnerViewSet
 from apps.core import uploads
@@ -81,8 +81,22 @@ class CompanySettingsSerializer(serializers.Serializer):
     rejoin_cooldown_hours = serializers.IntegerField(min_value=0, max_value=24 * 30)
     owner_sees_personal_tasks = serializers.BooleanField()
     team_directory_phones = serializers.BooleanField()
+    business_kind = serializers.ChoiceField(
+        BusinessKind.choices, help_text="What the business is (§14.21); it switches no module."
+    )
+    sells_to = serializers.ListField(
+        child=serializers.ChoiceField(Customer.choices),
+        min_length=1,
+        help_text="Who the business sells to.",
+    )
+    business_confirmed = serializers.SerializerMethodField(
+        help_text="The owner saved what the business is (the Get started step is done)."
+    )
     features = serializers.ListField(child=serializers.CharField(), read_only=True)
     setup_completed = serializers.SerializerMethodField()
+
+    def get_business_confirmed(self, company: Company) -> bool:
+        return company.business_confirmed_at is not None
 
     def get_logo(self, company: Company) -> str | None:
         return company.logo.url if company.logo else None
@@ -232,6 +246,11 @@ class BranchSerializer(serializers.ModelSerializer):
             "manager",
             "manager_id",
             "cash_limit",
+            "kind",
+            "open_24h",
+            "controlled_licence",
+            "social_pharmacy",
+            "e_prescription_area",
             "is_active",
             "order",
             "people",

@@ -54,6 +54,11 @@ def modules_chosen(company: Company) -> bool:
     return bool(company.features)
 
 
+def business_told(company: Company) -> bool:
+    """The "Tell us about your business" step: what it is and who it sells to were saved."""
+    return company.business_confirmed_at is not None
+
+
 def invite(company: Company) -> dict:
     """What the invite page and the poster show. "Pending" counts the join requests ready for a
     decision, like the Join requests badge (someone who hasn't filled in their details yet has

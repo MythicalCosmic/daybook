@@ -70,6 +70,13 @@ export interface RoleRef {
  * `alerts` is W0-D's request to W0-L (the open red alerts behind the switcher's status dot, §13.2);
  * it stays optional until `me/` sends it.
  */
+/** `Company.business_kind` (docs/PLAN-OWNER.md §14.21). */
+export type BusinessKind = "pharmacy" | "distributor" | "both";
+/** `Company.sells_to` entries. */
+export type CustomerKind = "walk_in" | "clinics" | "pharmacies" | "companies";
+/** `Branch.kind`: the pharmacy rules apply at pharmacies only. */
+export type BranchKind = "pharmacy" | "warehouse" | "office";
+
 export interface Company {
   id: number;
   name: string;
@@ -77,6 +84,10 @@ export interface Company {
   timezone: string;
   base_currency: Currency;
   features: CompanyFeature[];
+  /** What the business is (§14.21): modules hide screens that don't apply; it switches no module. */
+  business_kind: BusinessKind;
+  /** Who it sells to. */
+  sells_to: CustomerKind[];
   /** null only for a membership without a role (never an owner). */
   role: RoleRef | null;
   /** Owners hold every permission. */
@@ -263,6 +274,8 @@ export interface BranchToday {
   /** "HH:MM", company time. */
   opens_at: string | null;
   closes_at: string | null;
+  /** Open around the clock (§14.5): never closed or on a day off. */
+  open_24h?: boolean;
   status: BranchStatus;
   sales?: { opened_at: string | null; opened_by: PersonRef | null; open_tills: number; net: Money; cash_in_branch: Money };
   attendance?: { rostered: number; checked_in: number; first_check_in: string | null };

@@ -1,14 +1,17 @@
 <script setup lang="ts">
 /**
  * Settings › Company (plan §4.4): name and logo, language, timezone, base currency (locked once
- * money is booked), the work week, report times, the morning digest, the rejoin wait and the two
- * people switches. One form with a save bar; read-only for people without `company.settings`.
+ * money is booked), what the business is and who it sells to (§14.21), the work week, report
+ * times, the morning digest, the rejoin wait and the two people switches. One form with a save
+ * bar; read-only for people without `company.settings`.
  */
-import { CalendarClock, Image as ImageIcon, Lock, ShieldCheck, Trash2, Upload } from "@lucide/vue";
+import { CalendarClock, Check, Image as ImageIcon, Lock, ShieldCheck, Trash2, Upload } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { z } from "zod";
 
+import type { BusinessKind, CustomerKind } from "@/api/types";
+import CheckBox from "@/components/CheckBox.vue";
 import CompanyLogo from "@/components/CompanyLogo.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import FormField from "@/components/FormField.vue";
@@ -55,6 +58,8 @@ const schema = z
     rejoin_cooldown_hours: z.number({ message: "common.form.number" }).int().min(0).max(720),
     owner_sees_personal_tasks: z.boolean(),
     team_directory_phones: z.boolean(),
+    business_kind: z.enum(["pharmacy", "distributor", "both"]),
+    sells_to: z.array(z.enum(["walk_in", "clinics", "pharmacies", "companies"])).min(1, "settings.company.sellsToRequired"),
   })
   .refine((v) => v.morning_report_at !== v.evening_report_at, { path: ["evening_report_at"], message: "settings.company.sameTimes" });
 
@@ -73,6 +78,8 @@ function valuesOf(data: CompanySettings | undefined): Values {
     rejoin_cooldown_hours: data?.rejoin_cooldown_hours ?? 24,
     owner_sees_personal_tasks: data?.owner_sees_personal_tasks ?? true,
     team_directory_phones: data?.team_directory_phones ?? true,
+    business_kind: data?.business_kind ?? "pharmacy",
+    sells_to: [...(data?.sells_to ?? ["walk_in"])],
   };
 }
 
@@ -101,6 +108,25 @@ const currencies = computed(() => [
   { value: "UZS" as const, label: t("settings.company.uzs") },
   { value: "USD" as const, label: t("settings.company.usd") },
 ]);
+
+const kinds = computed<{ value: BusinessKind; label: string }[]>(() => [
+  { value: "pharmacy", label: t("settings.company.kind.pharmacy") },
+  { value: "distributor", label: t("settings.company.kind.distributor") },
+  { value: "both", label: t("settings.company.kind.both") },
+]);
+const CUSTOMERS: CustomerKind[] = ["walk_in", "clinics", "pharmacies", "companies"];
+function sellsTo(kind: CustomerKind, on: boolean): void {
+  const chosen = new Set(form.values.sells_to);
+  if (on) chosen.add(kind);
+  else chosen.delete(kind);
+  form.values.sells_to = CUSTOMERS.filter((each) => chosen.has(each));
+}
+/** The defaults were right: saving them as they are marks the Get started step done. */
+async function confirmBusiness(): Promise<void> {
+  const data = await save.mutateAsync({ business_kind: form.values.business_kind, sells_to: form.values.sells_to });
+  form.reset(valuesOf(data));
+  toast.success(t("settings.company.businessSaved"));
+}
 
 const fileInput = ref<HTMLInputElement | null>(null);
 async function pickLogo(event: Event): Promise<void> {
@@ -175,6 +201,31 @@ async function dropLogo(): Promise<void> {
                 <UiBadge v-if="locked" tone="neutral"><Lock :size="12" class="mr-1 inline" />{{ t("settings.company.locked") }}</UiBadge>
               </div>
             </FormField>
+          </div>
+        </div>
+      </PageSection>
+
+      <!-- The business (§14.21) -->
+      <PageSection variant="card" :title="t('settings.company.business')" :description="t('settings.company.businessHint')">
+        <div class="flex flex-col gap-5">
+          <FormField :label="t('settings.company.kindLabel')">
+            <SegmentedControl v-model="form.values.business_kind" :options="kinds" :disabled="!canEdit" block :aria-label="t('settings.company.kindLabel')" />
+          </FormField>
+          <FormField :label="t('settings.company.sellsTo')" :hint="t('settings.company.sellsToHint')" :error="form.errors.sells_to">
+            <div class="grid gap-2 sm:grid-cols-2" role="group" :aria-label="t('settings.company.sellsTo')">
+              <CheckBox
+                v-for="kind in CUSTOMERS"
+                :key="kind"
+                :model-value="form.values.sells_to.includes(kind)"
+                :label="t(`settings.company.customer.${kind}`)"
+                :disabled="!canEdit"
+                @update:model-value="(on: boolean) => sellsTo(kind, on)"
+              />
+            </div>
+          </FormField>
+          <div v-if="canEdit && !settings.data.value.business_confirmed && !form.dirty.value" class="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
+            <span class="min-w-0 flex-1 basis-[16rem] text-sm text-muted">{{ t("settings.company.confirmHint") }}</span>
+            <UiButton :icon="Check" :loading="save.isPending.value" @click="confirmBusiness">{{ t("settings.company.confirm") }}</UiButton>
           </div>
         </div>
       </PageSection>

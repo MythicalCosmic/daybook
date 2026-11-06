@@ -110,6 +110,7 @@ BRANCHES = [
         "closes_at": time(22, 0),
         "cash_limit": Decimal("10000000.00"),
         "order": 0,
+        "e_prescription_area": True,  # Tashkent (§14.4 row 12)
     },
     {
         "name": "Yunusobod",
@@ -122,8 +123,13 @@ BRANCHES = [
         "closes_at": None,
         "cash_limit": Decimal("15000000.00"),
         "order": 1,
+        # Around the clock and the one licensed for narcotics and psychotropics (§14.3).
+        "open_24h": True,
+        "controlled_licence": True,
+        "e_prescription_area": True,
     },
 ]
+
 SMALL_BRANCH = {
     "name": "Sergeli ombori",
     "code": "SRG",
@@ -136,6 +142,7 @@ SMALL_BRANCH = {
     "open_weekdays": [0, 1, 2, 3, 4, 5],
     "cash_limit": Decimal("5000000.00"),
     "order": 0,
+    "kind": "warehouse",
 }
 
 # Telegram ids of the demo people. Sign in as one of them with dev init data.
@@ -455,8 +462,20 @@ class Command(BaseCommand):
         company = create_company(name=NAME, slug=SLUG, timezone="Asia/Tashkent")
         accept_finished_work(company)
         # Both pharmacies open every day (§14.3); the distributor keeps Monday to Saturday.
+        # A pharmacy selling to walk-in customers and clinics, its business told (§14.5).
         company.workdays = every_weekday()
-        company.save(update_fields=["workdays", "updated_at"])
+        company.business_kind = "pharmacy"
+        company.sells_to = ["walk_in", "clinics"]
+        company.business_confirmed_at = now
+        company.save(
+            update_fields=[
+                "workdays",
+                "business_kind",
+                "sells_to",
+                "business_confirmed_at",
+                "updated_at",
+            ]
+        )
         chilonzor, yunusobod = self._branches(company, BRANCHES)
         staff = self._staff(company, plan.PEOPLE, {"C": chilonzor, "Y": yunusobod}, now)
         chilonzor.manager = staff["manager"]
@@ -689,6 +708,13 @@ class Command(BaseCommand):
     def _build_distributor(self, now, *, owner: User) -> tuple[Company, dict[str, Membership]]:
         company = create_company(name=SMALL_NAME, slug=SMALL_SLUG, timezone="Asia/Tashkent")
         accept_finished_work(company)
+        # A distributor selling to pharmacies and clinics (§14.3, §14.5).
+        company.business_kind = "distributor"
+        company.sells_to = ["pharmacies", "clinics"]
+        company.business_confirmed_at = now
+        company.save(
+            update_fields=["business_kind", "sells_to", "business_confirmed_at", "updated_at"]
+        )
         [sergeli] = self._branches(company, [SMALL_BRANCH])
         staff = self._staff(company, plan.SMALL_PEOPLE, {"S": sergeli}, now, users={OWNER: owner})
         sergeli.manager = staff["manager"]

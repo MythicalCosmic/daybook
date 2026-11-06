@@ -48,6 +48,8 @@ def test_an_owners_own_pharmacist_role_and_the_other_roles_stay(company):
     assert pharmacists(company).count() == 1
 
 
-def test_the_frozen_role_is_todays_default_role():
+def test_the_latest_frozen_role_is_todays_default_role():
+    """0009 made the role as it was then; 0016 makes it with `stock.operate` (§14.5)."""
+    latest = importlib.import_module("apps.members.migrations.0016_stock_operate")
     [today] = [role for role in DEFAULT_ROLES if role["name"] == MIGRATION.NAME]
-    assert [str(perm) for perm in today["permissions"]] == MIGRATION.PERMISSIONS
+    assert [str(perm) for perm in today["permissions"]] == latest.PERMISSIONS

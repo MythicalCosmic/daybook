@@ -43,5 +43,6 @@
   "overview.routines.toConfirm": "{n} ta tasdiqlanishi kerak",
   "overview.routines.onTrack": "Hozircha kechikish yo‘q",
   "overview.routines.none": "Bugun muntazam vazifa yo‘q",
-  "overview.routines.holiday": "Bayram: muntazam vazifalar yo‘q"
+  "overview.routines.holiday": "Bayram: muntazam vazifalar yo‘q",
+  "overview.branches.allDay": "Kecha-kunduz ochiq"
 }

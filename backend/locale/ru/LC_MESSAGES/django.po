@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-07 02:27+0500\n"
+"POT-Creation-Date: 2026-11-07 03:50+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -5127,14 +5127,28 @@ msgid "Reordered branches"
 msgstr "Изменён порядок филиалов"
 
 #: backend/apps/companies/hooks.py
+msgid "Tell us about your business"
+msgstr "Расскажите о своём бизнесе"
+
+#: backend/apps/companies/hooks.py
+msgid ""
+"A pharmacy, a distributor or both, and who you sell to: modules set their "
+"defaults by it."
+msgstr ""
+"Аптека, дистрибьютор или и то и другое, и кому вы продаёте: модули "
+"настраиваются по умолчанию исходя из этого."
+
+#: backend/apps/companies/hooks.py
 msgid "Set up your branches"
 msgstr "Настройте филиалы"
 
 #: backend/apps/companies/hooks.py
 msgid ""
-"Address, opening hours and the check-in circle on the map for each shop."
+"Address, hours or open 24 hours, the check-in circle on the map, and the "
+"licences each pharmacy holds."
 msgstr ""
-"Адрес, часы работы и зона отметки прихода на карте для каждого магазина."
+"Адрес, часы работы или круглосуточный режим, круг отметки прихода на карте и "
+"лицензии каждой аптеки."
 
 #: backend/apps/companies/hooks.py
 msgid "Invite your staff"
@@ -5199,6 +5213,42 @@ msgid "Assets and equipment"
 msgstr "Основные средства и оборудование"
 
 #: backend/apps/companies/models.py
+msgid "Pharmacy"
+msgstr "Аптека"
+
+#: backend/apps/companies/models.py
+msgid "Distributor"
+msgstr "Дистрибьютор"
+
+#: backend/apps/companies/models.py
+msgid "Pharmacy and distributor"
+msgstr "Аптека и дистрибьютор"
+
+#: backend/apps/companies/models.py
+msgid "Walk-in customers"
+msgstr "Розничные покупатели"
+
+#: backend/apps/companies/models.py
+msgid "Clinics and hospitals"
+msgstr "Клиники и больницы"
+
+#: backend/apps/companies/models.py
+msgid "Other pharmacies"
+msgstr "Другие аптеки"
+
+#: backend/apps/companies/models.py
+msgid "Companies"
+msgstr "Компании"
+
+#: backend/apps/companies/models.py
+msgid "Warehouse"
+msgstr "Склад"
+
+#: backend/apps/companies/models.py
+msgid "Office"
+msgstr "Офис"
+
+#: backend/apps/companies/models.py
 msgid "How long a rejected person waits before asking to join again."
 msgstr "Сколько отклонённый человек ждёт, прежде чем снова подать заявку."
 
@@ -5244,6 +5294,18 @@ msgid "Colleagues see each other's phone numbers in the app."
 msgstr "Коллеги видят номера телефонов друг друга в приложении."
 
 #: backend/apps/companies/models.py
+msgid "What the business is. Modules take their defaults from it."
+msgstr "Вид бизнеса. Модули берут из него настройки по умолчанию."
+
+#: backend/apps/companies/models.py
+msgid "Who the business sells to."
+msgstr "Кому продаёт бизнес."
+
+#: backend/apps/companies/models.py
+msgid "When the owner first saved what the business is (a Get started step)."
+msgstr "Когда владелец впервые сохранил вид бизнеса (шаг «Начала работы»)."
+
+#: backend/apps/companies/models.py
 msgid "Short code printed on shift and invoice numbers."
 msgstr "Короткий код, который ставится в номера смен и счетов на оплату."
 
@@ -5254,6 +5316,31 @@ msgstr "На каком расстоянии от филиала можно от
 #: backend/apps/companies/models.py
 msgid "Cash above this in the branch raises an alert."
 msgstr "Если наличных в филиале больше этой суммы, придёт предупреждение."
+
+#: backend/apps/companies/models.py
+msgid "The pharmacy rules apply at pharmacies only."
+msgstr "Аптечные правила действуют только в аптеках."
+
+#: backend/apps/companies/models.py
+msgid "Open around the clock: hours and weekdays are ignored."
+msgstr "Работает круглосуточно: часы и дни недели не учитываются."
+
+#: backend/apps/companies/models.py
+msgid ""
+"Licensed for narcotics and psychotropics: the controlled-substance register "
+"runs here."
+msgstr ""
+"Есть лицензия на наркотические и психотропные средства: здесь ведётся журнал "
+"предметно-количественного учёта."
+
+#: backend/apps/companies/models.py
+msgid "A social pharmacy: may also hold the restricted medicines."
+msgstr "Социальная аптека: может хранить и ограниченные препараты."
+
+#: backend/apps/companies/models.py
+msgid "In an area where some medicines are dispensed only by e-prescription."
+msgstr ""
+"В районе, где некоторые препараты отпускаются только по электронному рецепту."
 
 #: backend/apps/companies/models.py backend/apps/finance/models.py
 #: backend/apps/members/models.py
@@ -5335,6 +5422,14 @@ msgid "The waiting time is between 0 and 720 hours."
 msgstr "Время ожидания — от 0 до 720 часов."
 
 #: backend/apps/companies/services.py
+msgid "Pick what the business is from the list."
+msgstr "Выберите вид бизнеса из списка."
+
+#: backend/apps/companies/services.py
+msgid "Pick at least one kind of customer from the list."
+msgstr "Выберите из списка хотя бы один вид покупателей."
+
+#: backend/apps/companies/services.py
 msgid "Pick modules from the list."
 msgstr "Выберите модули из списка."
 
@@ -5397,6 +5492,10 @@ msgstr "Выберите руководителя, который работае
 #: backend/apps/companies/services.py
 msgid "The cash limit can't be negative."
 msgstr "Лимит наличных не может быть отрицательным."
+
+#: backend/apps/companies/services.py
+msgid "Pick what the branch is from the list."
+msgstr "Выберите тип филиала из списка."
 
 #: backend/apps/console/audit_actions.py
 msgid "Shared a saved view"
@@ -8949,6 +9048,262 @@ msgstr "Это действие больше недоступно."
 msgid "Please give a reason."
 msgstr "Пожалуйста, укажите причину."
 
+#: backend/apps/inventory/models.py
+msgid "Two-letter country code (ISO 3166-1), e.g. UZ."
+msgstr "Двухбуквенный код страны (ISO 3166-1), например UZ."
+
+#: backend/apps/inventory/models.py
+msgid "Medicine"
+msgstr "Лекарственный препарат"
+
+#: backend/apps/inventory/models.py
+msgid "Medical device"
+msgstr "Медицинское изделие"
+
+#: backend/apps/inventory/models.py
+msgid "Supplement"
+msgstr "БАД"
+
+#: backend/apps/inventory/models.py
+msgid "Cosmetics and hygiene"
+msgstr "Косметика и гигиена"
+
+#: backend/apps/inventory/models.py
+msgid "Other goods"
+msgstr "Прочие товары"
+
+#: backend/apps/inventory/models.py
+msgid "Service"
+msgstr "Услуга"
+
+#: backend/apps/inventory/models.py
+msgid "Tablet"
+msgstr "Таблетки"
+
+#: backend/apps/inventory/models.py
+msgid "Capsule"
+msgstr "Капсулы"
+
+#: backend/apps/inventory/models.py
+msgid "Syrup"
+msgstr "Сироп"
+
+#: backend/apps/inventory/models.py
+msgid "Suspension"
+msgstr "Суспензия"
+
+#: backend/apps/inventory/models.py
+msgid "Solution"
+msgstr "Раствор"
+
+#: backend/apps/inventory/models.py
+msgid "Injection"
+msgstr "Инъекции"
+
+#: backend/apps/inventory/models.py
+msgid "Powder"
+msgstr "Порошок"
+
+#: backend/apps/inventory/models.py
+msgid "Ointment"
+msgstr "Мазь"
+
+#: backend/apps/inventory/models.py
+msgid "Cream"
+msgstr "Крем"
+
+#: backend/apps/inventory/models.py
+msgid "Gel"
+msgstr "Гель"
+
+#: backend/apps/inventory/models.py
+msgid "Eye drops"
+msgstr "Глазные капли"
+
+#: backend/apps/inventory/models.py
+msgid "Ear drops"
+msgstr "Ушные капли"
+
+#: backend/apps/inventory/models.py
+msgid "Nasal drops or spray"
+msgstr "Назальные капли или спрей"
+
+#: backend/apps/inventory/models.py
+msgid "Spray"
+msgstr "Спрей"
+
+#: backend/apps/inventory/models.py
+msgid "Suppository"
+msgstr "Суппозитории"
+
+#: backend/apps/inventory/models.py
+msgid "Patch"
+msgstr "Пластырь"
+
+#: backend/apps/inventory/models.py
+msgid "Other form"
+msgstr "Другая форма"
+
+#: backend/apps/inventory/models.py
+msgid "Not controlled"
+msgstr "Не подконтрольный"
+
+#: backend/apps/inventory/models.py
+msgid "Narcotic"
+msgstr "Наркотическое средство"
+
+#: backend/apps/inventory/models.py
+msgid "Psychotropic"
+msgstr "Психотропное вещество"
+
+#: backend/apps/inventory/models.py
+msgid "Contains a precursor"
+msgstr "Содержит прекурсор"
+
+#: backend/apps/inventory/models.py
+msgid "Strong-acting (listed)"
+msgstr "Сильнодействующий (из перечня)"
+
+#: backend/apps/inventory/models.py
+msgid "Room temperature, 15–25 °C"
+msgstr "Комнатная температура, 15–25 °C"
+
+#: backend/apps/inventory/models.py
+msgid "Cool place, 8–15 °C"
+msgstr "Прохладное место, 8–15 °C"
+
+#: backend/apps/inventory/models.py
+msgid "Fridge, 2–8 °C"
+msgstr "Холодильник, 2–8 °C"
+
+#: backend/apps/inventory/models.py
+msgid "Freezer, −18 °C or colder"
+msgstr "Морозильник, −18 °C и холоднее"
+
+#: backend/apps/inventory/models.py
+msgid ""
+"Active ingredient (INN), lowercase Latin; a combination sorted and joined "
+"with +."
+msgstr ""
+"Действующее вещество (МНН) строчными латинскими буквами; комбинация по "
+"алфавиту через +."
+
+#: backend/apps/inventory/models.py
+msgid "\"500 mg\", \"250 mg/5 ml\""
+msgstr "«500 мг», «250 мг/5 мл»"
+
+#: backend/apps/inventory/models.py
+msgid ""
+"Parts sold separately in one pack (blisters, ampoules, tablets); 1 sells "
+"whole packs only. A part may be sold only when it shows the name, series, "
+"expiry and maker, never from a damaged pack."
+msgstr ""
+"Части одной упаковки, продаваемые отдельно (блистеры, ампулы, таблетки); 1 — "
+"только целыми упаковками. Часть можно продать, только если на ней видны "
+"название, серия, срок годности и производитель, и никогда из повреждённой "
+"упаковки."
+
+#: backend/apps/inventory/models.py
+msgid "What one part is called: \"blister\", \"ampoule\"."
+msgstr "Как называется одна часть: «блистер», «ампула»."
+
+#: backend/apps/inventory/models.py
+msgid "Prescription only: everything not on the Ministry of Health's OTC list."
+msgstr ""
+"Только по рецепту: всё, чего нет в перечне безрецептурных препаратов "
+"Минздрава."
+
+#: backend/apps/inventory/models.py
+msgid "In a group that must be prescribed electronically."
+msgstr "В группе, которую выписывают только электронным рецептом."
+
+#: backend/apps/inventory/models.py
+msgid ""
+"A starred strong-acting medicine: held only at licensed or social pharmacies."
+msgstr ""
+"Сильнодействующий препарат со звёздочкой: только в лицензированных или "
+"социальных аптеках."
+
+#: backend/apps/inventory/models.py
+msgid "The pack's main EAN-13."
+msgstr "Основной EAN-13 упаковки."
+
+#: backend/apps/inventory/models.py
+msgid "The product code of tasnif.soliq.uz (MXIK)."
+msgstr "Код товара в tasnif.soliq.uz (ИКПУ)."
+
+#: backend/apps/inventory/models.py
+msgid "The state registration certificate."
+msgstr "Регистрационное удостоверение."
+
+#: backend/apps/inventory/models.py
+msgid "Carries a digital marking code (Asl belgisi)."
+msgstr "Несёт код цифровой маркировки (Asl belgisi)."
+
+#: backend/apps/inventory/models.py
+msgid "Empty: the company's rate from its tax regime."
+msgstr "Пусто — ставка компании по её налоговому режиму."
+
+#: backend/apps/inventory/models.py
+msgid "A socially significant medicine: a lower markup cap."
+msgstr "Социально значимый препарат: ниже предельная наценка."
+
+#: backend/apps/inventory/models.py
+msgid "On the Ministry of Health's list every pharmacy must keep in stock."
+msgstr "В перечне Минздрава, который должен быть в каждой аптеке."
+
+#: backend/apps/inventory/models.py
+msgid "The registry's maximum price per pack for a prescription medicine."
+msgstr "Предельная цена упаковки рецептурного препарата по реестру."
+
+#: backend/apps/inventory/models.py
+msgid ""
+"Per pack: the price of the batch sold next, or the list price of an item "
+"without batches."
+msgstr ""
+"За упаковку: цена серии, которая продаётся следующей, или прайсовая цена "
+"товара без серий."
+
+#: backend/apps/inventory/models.py
+msgid "Per part; empty: the pack price divided by the parts, rounded up."
+msgstr ""
+"За часть; пусто — цена упаковки, делённая на части, с округлением вверх."
+
+#: backend/apps/inventory/models.py
+msgid "The last purchase cost per pack."
+msgstr "Последняя закупочная цена упаковки."
+
+#: backend/apps/inventory/models.py
+msgid "On sale"
+msgstr "В продаже"
+
+#: backend/apps/inventory/models.py
+msgid "In quarantine"
+msgstr "В карантине"
+
+#: backend/apps/inventory/models.py
+msgid "Recalled"
+msgstr "Отозвана"
+
+#: backend/apps/inventory/models.py
+msgid ""
+"Per pack as the distributor's invoice charges it (VAT included), frozen when "
+"posted."
+msgstr ""
+"За упаковку по накладной дистрибьютора (с НДС), фиксируется при проведении."
+
+#: backend/apps/inventory/models.py
+msgid "Per pack; a prescription batch is never priced above its legal cap."
+msgstr "За упаковку; рецептурная серия никогда не дороже предельной цены."
+
+#: backend/apps/inventory/services.py
+msgid "Stock counts arrive with the stock module."
+msgstr "Инвентаризация появится вместе с модулем остатков."
+
+#: backend/apps/inventory/services.py
+msgid "The journals arrive with the stock module."
+msgstr "Журналы появятся вместе с модулем остатков."
+
 #: backend/apps/knowledge/ai_tools.py
 msgid ""
 "Search the company's knowledge base pages (how-tos, rules) the asker may read"
@@ -10365,6 +10720,18 @@ msgid ""
 msgstr ""
 "Управление товарами, поступлениями, инвентаризацией и списаниями (включая "
 "просмотр остатков)"
+
+#: backend/apps/members/permissions.py
+msgid ""
+"Look up stock, count, receive goods for checking, record expiry checks and "
+"defektura"
+msgstr ""
+"Смотреть остатки, считать, принимать товар на проверку, отмечать проверку "
+"сроков и вести дефектуру"
+
+#: backend/apps/members/permissions.py
+msgid "Keep the controlled-substance register and the prescription log"
+msgstr "Вести журнал предметно-количественного учёта и журнал рецептов"
 
 #: backend/apps/members/permissions.py
 msgid "See accounts, transactions, debts, profit and cost prices"
@@ -16364,6 +16731,14 @@ msgid "Readings are taken on routines: set one up under Routines."
 msgstr ""
 "Показания снимаются в регулярных задачах: настройте её в разделе «Регулярные "
 "задачи»."
+
+#: backend/apps/tasks/services.py
+msgid "This task can go only to someone working in the company."
+msgstr "Эту задачу можно дать только тому, кто работает в компании."
+
+#: backend/apps/tasks/services.py
+msgid "Pick someone from this company to hear when it is late."
+msgstr "Выберите из этой компании того, кто узнает об опоздании."
 
 #: backend/apps/tasks/services.py
 msgid "You can't change this task."
