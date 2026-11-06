@@ -37,6 +37,23 @@ class HRSettings(TimeStampedModel):
     # The employer as contracts print it ({{company_name}}, {{company_tin}}).
     employer_name = models.CharField(max_length=200, blank=True)
     employer_tin = models.CharField(max_length=9, blank=True)
+    # "A qualified pharmacist whenever a pharmacy is open" (docs/PLAN-OWNER.md §14.9): checked at
+    # pharmacy branches only, and only once `pharmacist_positions` says who counts.
+    coverage_enabled = models.BooleanField(default=True)
+    pharmacist_positions = models.ManyToManyField(Position, blank=True, related_name="+")
+    coverage_min = models.PositiveSmallIntegerField(
+        default=1, validators=[MinValueValidator(1), MaxValueValidator(10)]
+    )
+    # Only people who have their position's required documents (verified, in force) count.
+    coverage_needs_documents = models.BooleanField(default=True)
+    coverage_alert_minutes = models.PositiveSmallIntegerField(
+        default=15, validators=[MinValueValidator(5), MaxValueValidator(240)]
+    )
+    coverage_days = models.PositiveSmallIntegerField(
+        default=14, validators=[MinValueValidator(1), MaxValueValidator(31)]
+    )
+    # Off for a company whose cashiers only take payment while a pharmacist dispenses.
+    unqualified_seller_alert = models.BooleanField(default=True)
 
     class Meta:
         verbose_name = "HR settings"
