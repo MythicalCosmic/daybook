@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.4.1 — 2026-11-07
+
+### New
+- **Licences and permits** (Money › Assets › Licences): the pharmacy licence, the controlled-substances
+  licence, the lease, fire safety and sanitary approvals, the cash register's registration, insurance,
+  each with its branch, number, issuer, end date, the scan and who is responsible. The owner bot warns
+  from its warning days ahead (60 by default), a week before and when one has expired.
+- **Jihozlarim (My equipment)** in the mini app: what the company gave you, with "Qabul qildim" to confirm
+  you have it, a card on Home while something waits, and the bot's "you were given…" message opens it.
+- **Ask AI and your own agents read fixed assets**: how much depreciation this year, what needs a service
+  or an instrument check, what to replace soon, which repairs approach a new one's price.
+- `/today` in the owner bot says what the equipment needs: services and instrument checks due, warranties
+  and insurance ending.
+
 ## 0.4.0 — 2026-11-07
 
 ### New: fixed assets and depreciation (Asosiy vositalar va amortizatsiya)
