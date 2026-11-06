@@ -9,11 +9,12 @@ the Payables screen and Upcoming); J1's goods receipts don't exist yet, so nothi
 twice.
 """
 
-from datetime import timedelta
+from datetime import datetime, time, timedelta
 from decimal import Decimal
+from zoneinfo import ZoneInfo
 
 from django.core.files.base import ContentFile
-from django.utils import translation
+from django.utils import timezone, translation
 from django.utils.translation import gettext as _
 
 from apps.finance import budgets, claims, recurring, services, tax_calendar
@@ -176,11 +177,20 @@ def _budgets(ledger) -> None:
                 category
                 for category in Category.objects.filter(
                     company=company, kind=Category.Kind.EXPENSE, is_sensitive=False
-                ).exclude(system_code__in=claims.CLAIM_EXCLUDED)
+                )
+                .exclude(system_code__in=claims.CLAIM_EXCLUDED)
+                .select_related("parent")
                 if spent.get(category.pk, D(0)) > 0 and category.parent_id is not None
             ),
             key=lambda category: -spent[category.pk],
         )
+        # Everyday spending first: a fixed cost such as rent "over budget" is no story.
+        fixed = {
+            category.pk
+            for category in busy
+            if category.parent is not None and category.parent.system_code in FIXED_COSTS
+        }
+        busy = [c for c in busy if c.pk not in fixed] + [c for c in busy if c.pk in fixed]
         rows = [(category, amount) for category, amount in calm]
         taken = {category.pk for category, _amount in rows}
         shares = iter(("0.88", "1.12"))
@@ -190,28 +200,57 @@ def _budgets(ledger) -> None:
             share = next(shares, None)
             if share is None:
                 break
-            amount = (spent[category.pk] / D(share)).quantize(D("1000"))
-            rows.append((category, max(amount, D("1000"))))
+            rows.append((category, _tidy(spent[category.pk] / D(share))))
         budgets.set_budgets(company, by=owner, month=start, rows=rows)
+
+
+FIXED_COSTS = ("rent", "salaries", "taxes", "payroll_taxes")
+
+
+def _tidy(amount: Decimal) -> Decimal:
+    """A budget as people write one: 105 000 000, 4 300 000, 850 000."""
+    step = D("1000000") if amount >= D("20000000") else D("100000")
+    if amount < D("1000000"):
+        step = D("10000")
+    return max((amount / step).quantize(D(1)) * step, step)
 
 
 def _claims(ledger) -> None:
     """Jasur's fuel waiting for approval, Madina's printer paper approved (payroll pays it
     back), the head's taxi from the cash he holds (below the threshold: booked at once) and
-    Nigora's night taxi rejected."""
+    Nigora's night taxi rejected. Each is sent within its person's hours on the day after the
+    spending and decided the next morning (`demo_time.moment`), so the times read naturally."""
+    from apps.core import demo_time
+    from apps.finance.demo import _receipt_picture  # demo imports this module
+
     company, today = ledger.company, ledger.today
     people = ledger.people
+    zone = ZoneInfo(company.timezone)
     transport = Category.objects.get(company=company, system_code="transport")
     other = Category.objects.get(company=company, system_code="other_expense")
     fuel = ledger.cat["fuel"]
-    from apps.finance.demo import _receipt_picture  # demo imports this module
 
-    claims.submit_claim(
-        company,
-        by=people["jasur"],
+    def at(key: str, day, hour: int, minute: int = 0):
+        moment = datetime.combine(day, time(hour, minute), tzinfo=zone)
+        return min(ledger.story.at_work(key, day, moment), timezone.now())
+
+    def submit(key: str, ago: int, hour: int, **fields):
+        spent = today - timedelta(days=ago)
+        sent = min(spent + timedelta(days=1), today)
+        with demo_time.moment(at(key, sent, hour, 20)):
+            return claims.submit_claim(company, by=people[key], spent_on=spent, **fields)
+
+    def decide(claim, ago: int, **fields):
+        day = today - timedelta(days=ago)
+        with demo_time.moment(at("owner", day, 10, 5)):
+            claims.decide_claim(claim, by=ledger.owner, **fields)
+
+    submit(
+        "jasur",
+        1,
+        11,
         amount=D("260000"),
         category=fuel,
-        spent_on=today - timedelta(days=1),
         paid_from=Claim.PaidFrom.OWN_MONEY,
         description="Yetkazib berish uchun benzin, Chilonzor - Yunusobod",
         receipt_files=[
@@ -227,42 +266,42 @@ def _claims(ledger) -> None:
         ],
         via=Claim.Via.BOT,
     )
-    paper = claims.submit_claim(
-        company,
-        by=people["madina"],
+    paper = submit(
+        "madina",
+        4,
+        9,
         amount=D("240000"),
         category=other,
-        spent_on=today - timedelta(days=4),
         paid_from=Claim.PaidFrom.OWN_MONEY,
         description="Printer uchun qog‘oz va kartrij",
         via=Claim.Via.MINIAPP,
     )
-    claims.decide_claim(paper, by=ledger.owner, approve=True)
+    decide(paper, 2, approve=True)
     held = sum((account.balance for account in claims.held_accounts(ledger.manager)), D(0))
     if held >= D("150000"):
-        claims.submit_claim(
-            company,
-            by=ledger.manager,
+        submit(
+            "manager",
+            2,
+            12,
             amount=D("150000"),
             category=transport,
-            spent_on=today - timedelta(days=2),
             paid_from=Claim.PaidFrom.HELD_CASH,
             description="Taksi: distribyutordan shoshilinch dori olib kelish",
             via=Claim.Via.MINIAPP,
         )
-    night = claims.submit_claim(
-        company,
-        by=people["nigora"],
+    night = submit(
+        "nigora",
+        3,
+        21,
         amount=D("320000"),
         category=transport,
-        spent_on=today - timedelta(days=3),
         paid_from=Claim.PaidFrom.OWN_MONEY,
         description="Tungi smenadan keyin taksi",
         via=Claim.Via.BOT,
     )
-    claims.decide_claim(
+    decide(
         night,
-        by=ledger.owner,
+        1,
         approve=False,
         reason="Tungi smena taksisi ish haqiga kiritilgan, alohida qaytarilmaydi.",
     )
