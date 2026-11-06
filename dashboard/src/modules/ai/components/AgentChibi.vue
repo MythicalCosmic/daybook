@@ -15,9 +15,10 @@ import { BUDDY_DURATION, buddyVariant, pickChibiAction, type BuddyAction } from 
 import AiBuddy from "./AiBuddy.vue";
 import { buddyCue, buddyGreeting } from "./buddyBus";
 
-const props = withDefaults(defineProps<{ agentKey: string; name: string; on: boolean; running?: boolean; size?: number }>(), {
+const props = withDefaults(defineProps<{ agentKey: string; name: string; on: boolean; running?: boolean; size?: number; color?: string | null }>(), {
   running: false,
   size: 46,
+  color: null,
 });
 
 const action = ref<BuddyAction>("idle");
@@ -72,6 +73,7 @@ onBeforeUnmount(() => {
 <template>
   <AiBuddy
     :variant="buddyVariant(agentKey)"
+    :color="color"
     :mood="running ? 'busy' : 'on'"
     :asleep="!on && action === 'idle'"
     :action="action"

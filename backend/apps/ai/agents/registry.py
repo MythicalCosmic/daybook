@@ -9,6 +9,11 @@ dashboard's agent page) also sums the Claude calls of its `usage_features` and l
 
     state = state_of(company, "voice_tasks")         # the AgentState row, made on first read
     config = config_of(get("voice_tasks"), state)     # the settings, defaults filled in
+
+Built-in agents are code; the agents an owner makes in their own words are rows
+(apps.ai.agents.custom, keys `custom_<id>`). `resolve(company, key)` finds either (a custom one
+is built from its row), and `agents_for(company)` lists the built-in ones, then the company's
+own; `get` and `all_agents` stay the built-in ones only.
 """
 
 from collections.abc import Callable
@@ -114,6 +119,8 @@ class Agent:
     upcoming: Callable | None = None
     # What it asks Claude (none: it works by fixed rules); the owner's instructions follow each.
     prompts: tuple[Prompt, ...] = ()
+    # The CustomAgent row a custom agent was built from (None for the built-in ones).
+    custom: Any = None
 
     def __post_init__(self):
         if not self.usage_features:
@@ -131,6 +138,9 @@ class Agent:
 
 
 _agents: dict[str, Agent] = {}
+
+# Custom agents (apps.ai.agents.custom): `custom_<id>`.
+CUSTOM_PREFIX = "custom_"
 
 
 class DuplicateAgent(ValueError):
@@ -156,6 +166,39 @@ def all_agents() -> list[Agent]:
     return sorted(_agents.values(), key=lambda agent: (agent.order, agent.key))
 
 
+def is_custom(key: str) -> bool:
+    """Whether `key` names an agent an owner made (`custom_12`)."""
+    return key.startswith(CUSTOM_PREFIX) and key[len(CUSTOM_PREFIX) :].isdigit()
+
+
+def resolve(company, key: str) -> Agent | None:
+    """The agent `key` of `company`: a built-in one, or one of the company's own (not deleted),
+    built from its row. None when there is no such agent."""
+    agent = _agents.get(key)
+    if agent is None and is_custom(key):
+        from apps.ai.agents import custom
+
+        return custom.agent_of(company, key)
+    return agent
+
+
+def agents_for(company) -> list[Agent]:
+    """The built-in agents in the dashboard's order, then the company's own, oldest first."""
+    from apps.ai.agents import custom
+
+    return all_agents() + custom.agents_of(company)
+
+
+def event_template(key: str, kind: str) -> EventTemplate | None:
+    """The words of event `kind` of agent `key` (every custom agent shares the same ones)."""
+    if is_custom(key):
+        from apps.ai.agents import custom
+
+        return custom.EVENTS.get(kind)
+    agent = _agents.get(key)
+    return agent.events.get(kind) if agent else None
+
+
 def state_of(company, key: str):
     """The company's AgentState row of agent `key` (off, with its defaults, until switched on)."""
     from apps.ai.models import AgentState
@@ -163,7 +206,9 @@ def state_of(company, key: str):
     state = AgentState.objects.filter(company=company, key=key).first()
     if state is not None:
         return state
-    agent = _agents[key]
+    agent = resolve(company, key)
+    if agent is None:
+        raise KeyError(key)
     try:
         with transaction.atomic():
             return AgentState.objects.create(company=company, key=key, config=agent.defaults())

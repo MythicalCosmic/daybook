@@ -209,6 +209,10 @@ def _bot_of(member: Membership) -> str:
     return BotName.EMPLOYEE
 
 
+# The same choice for every agent that writes to people (apps.ai.agents.custom).
+bot_of = _bot_of
+
+
 AGENT = registry.register(
     Agent(
         key=KEY,

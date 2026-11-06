@@ -7,9 +7,14 @@
  * (last run, next run, tokens and cost this month); and its sections, named in the URL (`?tab=`):
  * what it did, its internal log (runs and Claude calls), tokens, what comes next, its settings.
  * Read-only without ai.configure (and the money hidden, never shown as 0).
+ *
+ * An agent an owner made (briefs/v6-k.md) has the same page in its own colour: its prompt is its
+ * job (Edit opens the form) and the prompts it sends, its settings what it is set to with Edit,
+ * Pause and Delete, and what it did starts with the last report it wrote (for its owner and the
+ * people it goes to); a pause or a spent budget says why nothing is sent.
  */
-import { Activity, Bot, CalendarClock, Coins, History, Play, ScrollText, Settings2 } from "@lucide/vue";
-import { computed, useId } from "vue";
+import { Activity, Bot, CalendarClock, Coins, History, Play, ScrollText, Send, Settings2, TriangleAlert, WalletCards } from "@lucide/vue";
+import { computed, defineAsyncComponent, ref, useId } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 
@@ -42,6 +47,12 @@ import AgentPrompt from "../components/AgentPrompt.vue";
 import AgentSettings from "../components/AgentSettings.vue";
 import AgentUpcoming from "../components/AgentUpcoming.vue";
 import AgentUsage from "../components/AgentUsage.vue";
+import CustomAgentPrompt from "../components/CustomAgentPrompt.vue";
+import CustomAgentSettings from "../components/CustomAgentSettings.vue";
+import type { AgentDetail, CustomAgentInfo } from "../types";
+
+// The form of an agent an owner made loads when it is first opened.
+const CustomAgentDialog = defineAsyncComponent(() => import("../components/CustomAgentDialog.vue"));
 
 const { t } = useI18n();
 const fmt = useFormat();
@@ -89,6 +100,16 @@ const tabs = computed<SectionTab<AgentTab>[]>(() =>
 );
 const switchId = useId();
 const agentsLink = computed(() => ({ name: "ai.agents", params: { companyId: company.currentId ?? 0 } }));
+
+// An agent an owner made: its own fields, its form.
+const custom = computed(() => (agent.value?.custom ? (agent.value as AgentDetail & { custom: CustomAgentInfo }) : null));
+const budgetSpent = computed(() => !!agent.value?.needs_claude && aiOn.value && claude.value === "budget_reached");
+const editing = ref(false);
+const editWanted = ref(false);
+function edit(): void {
+  editWanted.value = true;
+  editing.value = true;
+}
 </script>
 
 <template>
@@ -136,8 +157,18 @@ const agentsLink = computed(() => ({ name: "ai.agents", params: { companyId: com
     <ErrorState v-else-if="query.isError.value && !agent" class="ui-card" :error="query.error.value" :retry="() => query.refetch()" />
     <template v-else>
       <!-- The page's main thing, right under the header: the agent at its desk. -->
-      <AgentScene v-if="agent" :variant="agent.key" :state="scene" :lines="lines" :night="night" :label="sceneLabel" :clock="clock" :next-run="nextRun" :done-today="today" />
+      <AgentScene v-if="agent" :variant="agent.key" :color="agent.custom?.color" :state="scene" :lines="lines" :night="night" :label="sceneLabel" :clock="clock" :next-run="nextRun" :done-today="today" />
       <SkeletonBlock v-else class="!h-60 md:!h-[380px]" radius="12px" />
+
+      <InlineAlert
+        v-if="custom?.custom.paused_reason"
+        tone="warning"
+        :icon="TriangleAlert"
+        :title="t('ai.custom.pausedTitle')"
+        :description="`${custom.custom.paused_text}. ${t('ai.custom.pausedHint')}`"
+        data-testid="agent-paused-alert"
+      />
+      <InlineAlert v-if="budgetSpent" tone="warning" :icon="WalletCards" :title="t('ai.budget.reachedTitle')" :description="t('ai.custom.budgetBody')" data-testid="agent-budget-alert" />
 
       <InlineAlert v-if="status.data.value && !aiOn" tone="neutral" :icon="Bot" :title="t('ai.off.title')" :description="canConfigure ? t('ai.agent.aiOffOwner') : t('ai.off.body')">
         <template v-if="canConfigure" #actions>
@@ -154,6 +185,13 @@ const agentsLink = computed(() => ({ name: "ai.agents", params: { companyId: com
             <SkeletonBlock v-for="n in 4" :key="n" height="56px" radius="10px" />
           </div>
           <template v-else-if="tab === 'done'">
+            <section v-if="custom?.custom.last_report" class="ui-card mb-4 flex flex-col gap-2 p-4 md:p-5" data-testid="custom-last-report">
+              <h3 class="flex items-center gap-2 text-md font-semibold text-fg">
+                <Send :size="16" class="text-accent-fg" aria-hidden="true" />{{ t("ai.custom.lastReport") }}
+                <span v-if="custom.custom.last_report_at" class="num text-sm font-normal text-muted">· {{ fmt.relative(custom.custom.last_report_at, now) }}</span>
+              </h3>
+              <p class="whitespace-pre-wrap text-sm leading-relaxed text-fg">{{ custom.custom.last_report }}</p>
+            </section>
             <div class="ui-card px-3 py-2 md:px-5 md:py-4">
               <div v-if="feed.isPending.value" class="flex flex-col gap-3 py-2" aria-hidden="true">
                 <div v-for="n in 4" :key="n" class="flex items-start gap-3">
@@ -178,10 +216,13 @@ const agentsLink = computed(() => ({ name: "ai.agents", params: { companyId: com
           <AgentLog v-else-if="tab === 'log'" :agent="agent" :can-configure="canConfigure" :claude="claude" />
           <AgentUsage v-else-if="tab === 'tokens'" :agent="agent" :claude="claude" />
           <AgentUpcoming v-else-if="tab === 'next'" :items="agent.upcoming" :on="on" />
+          <CustomAgentPrompt v-else-if="tab === 'prompt' && custom" :agent="custom" :can-configure="canConfigure" @edit="edit" />
           <AgentPrompt v-else-if="tab === 'prompt'" :agent="agent" :can-configure="canConfigure" />
+          <CustomAgentSettings v-else-if="custom" :agent="custom" :can-configure="canConfigure" :ai-on="aiOn" @edit="edit" />
           <AgentSettings v-else :agent="agent" :can-configure="canConfigure" :ai-on="aiOn" />
         </div>
       </section>
     </template>
+    <CustomAgentDialog v-if="editWanted && custom" v-model:open="editing" :agent="custom" />
   </div>
 </template>

@@ -60,12 +60,14 @@ const props = withDefaults(
     nextRun?: string | null;
     /** How many things it did today, for what it says when tapped. */
     doneToday?: number | null;
+    /** An agent an owner made: its chibi's colour. */
+    color?: string | null;
   }>(),
-  { lines: () => [], night: false, clock: null, nextRun: null, doneToday: null },
+  { lines: () => [], night: false, clock: null, nextRun: null, doneToday: null, color: null },
 );
 
 const { t } = useI18n();
-const VARIANTS = new Set(["claude", "voice", "morning", "deadline", "photo", "hr"]);
+const VARIANTS = new Set(["claude", "voice", "morning", "deadline", "photo", "hr", "custom"]);
 const chibi = computed(() => (VARIANTS.has(props.variant) ? (props.variant as ReturnType<typeof buddyVariant>) : buddyVariant(props.variant)));
 const buddy = computed(() => sceneBuddy(props.state));
 const reduced = reducedMotion();
@@ -603,6 +605,7 @@ onBeforeUnmount(() => {
       >
         <AiBuddy
           :variant="chibi"
+          :color="color"
           :mood="buddy.mood"
           :action="action"
           :beat="beat"
@@ -699,6 +702,20 @@ onBeforeUnmount(() => {
               <rect class="sc-paper" x="114" y="91" width="9" height="1" />
               <rect class="sc-pen" x="125" y="84" width="1" height="8" />
               <rect class="sc-gear" x="125" y="84" width="1" height="1" />
+            </template>
+            <template v-else-if="chibi === 'custom'">
+              <!-- The report it is about to send: an envelope with a heart seal. -->
+              <rect class="sc-paper" x="113" y="90" width="14" height="10" />
+              <rect class="sc-paper-shade" x="113" y="99" width="14" height="1" />
+              <rect class="sc-envelope-flap" x="113" y="90" width="2" height="1" />
+              <rect class="sc-envelope-flap" x="115" y="91" width="2" height="1" />
+              <rect class="sc-envelope-flap" x="117" y="92" width="2" height="1" />
+              <rect class="sc-envelope-flap" x="121" y="92" width="2" height="1" />
+              <rect class="sc-envelope-flap" x="123" y="91" width="2" height="1" />
+              <rect class="sc-envelope-flap" x="125" y="90" width="2" height="1" />
+              <rect class="sc-seal" x="119" y="92" width="2" height="1" />
+              <rect class="sc-seal" x="118" y="93" width="4" height="1" />
+              <rect class="sc-seal" x="119" y="94" width="2" height="1" />
             </template>
             <template v-else>
               <rect class="sc-claude" x="115" y="89" width="10" height="11" />
@@ -1080,6 +1097,10 @@ onBeforeUnmount(() => {
 .sc-pen { fill: #2d6fd2; }
 .sc-plush-eye { fill: #2b2622; }
 .sc-plush-cheek { fill: #f39a88; }
+.sc-envelope-flap { fill: #d8cfbd; }
+.sc-seal { fill: #f06b9b; }
+/* At work, the envelope lifts a little: the report is on its way. */
+.agent-scene[data-state="working"] .sc-prop[data-prop="custom"] { animation: sc-wobble 2.4s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 100%; }
 .agent-scene[data-state="working"] .sc-prop[data-prop="morning"] { animation: sc-wobble 2.4s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 100%; }
 
 /* Its legs and floor shadow are under the desk: never drawn, so a slump can't show them. */

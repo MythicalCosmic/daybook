@@ -7,6 +7,9 @@ A function returning branch-bound data takes the required keyword
     agent_row(company, key)                      one of them (None: not listed here)
     agent_detail(company, key, can_configure=…)  one agent's page: runs, calls, tokens, next
     activity(company, branch_ids=…, agent=…)     what they did, newest first, in pages
+
+The agents an owner made (apps.ai.agents.custom) are listed after the built-in ones, with their
+own fields under "custom" (None for a built-in agent).
 """
 
 from datetime import date, datetime, time, timedelta
@@ -19,8 +22,8 @@ from django.utils import timezone
 from django.utils.translation import gettext as _
 
 from apps.ai import agents, conf, events
-from apps.ai.agents import runner
-from apps.ai.models import AgentEvent, AgentRun, AIDraft, AIUsage
+from apps.ai.agents import custom, runner
+from apps.ai.models import AgentEvent, AgentRun, AIDraft, AIUsage, CustomAgent
 from apps.members.models import Membership
 from apps.members.queries import photo_url
 from apps.tasks.models import Task
@@ -43,7 +46,7 @@ def agent_rows(company) -> list[dict]:
     counts = _event_counts(company)
     return [
         _agent_row(company, agent, agents.state_of(company, agent.key), counts, timezone.now())
-        for agent in agents.all_agents()
+        for agent in agents.agents_for(company)
         if agent.works_in(company)
     ]
 
@@ -57,7 +60,7 @@ def agent_row(company, key: str) -> dict | None:
 
 def _listed(company, key: str):
     """The agent `key` and the company's state of it, when it is listed for the company."""
-    agent = agents.get(key)
+    agent = agents.resolve(company, key)
     if agent is None or not agent.works_in(company):
         return None
     return agent, agents.state_of(company, key)
@@ -100,14 +103,18 @@ def _agent_row(company, agent, state, counts: dict, now: datetime) -> dict:
         "stats": {"today": today_count, "week": week},
         "config": config,
         "fields": [_field(item) for item in agent.fields],
+        "custom": custom.describe(agent.custom) if agent.custom is not None else None,
     }
 
 
-def agent_detail(company, key: str, *, can_configure: bool, now: datetime | None = None):
+def agent_detail(
+    company, key: str, *, can_configure: bool, now: datetime | None = None, viewer=None
+):
     """One agent's page: its row as the list shows it, plus its newest runs, its newest Claude
     calls, its token use (this month, and each of the last USAGE_DAYS days), what comes next
-    and its scene. Money and error texts only for `can_configure` (ai.configure). None for an
-    unknown key or an agent not listed for the company."""
+    and its scene. Money and error texts only for `can_configure` (ai.configure); a custom
+    agent's last report only for `viewer` when it was written for them. None for an unknown key
+    or an agent not listed for the company."""
     if (found := _listed(company, key)) is None:
         return None
     agent, state = found
@@ -128,6 +135,7 @@ def agent_detail(company, key: str, *, can_configure: bool, now: datetime | None
         "scene": scene,
         "prompts": [{"label": str(prompt.label), "text": prompt.text} for prompt in agent.prompts],
         "instructions": state.instructions,
+        "custom": custom.describe(agent.custom, viewer) if agent.custom is not None else None,
     }
 
 
@@ -313,6 +321,7 @@ def activity(
     more = len(page) > limit
     page = page[:limit]
     labels = _subject_labels(company, page)
+    names = _custom_names(company, page)
     results = []
     for event in page:
         spec = agents.get(event.agent)
@@ -327,8 +336,8 @@ def activity(
             {
                 "id": event.pk,
                 "agent": event.agent,
-                "agent_name": str(spec.name) if spec else event.agent,
-                "icon": spec.icon if spec else "sparkles",
+                "agent_name": str(spec.name) if spec else names.get(event.agent, event.agent),
+                "icon": spec.icon if spec else ("bot" if event.agent in names else "sparkles"),
                 "kind": event.kind,
                 "level": event.level,
                 "text": events.render(event),
@@ -338,6 +347,17 @@ def activity(
             }
         )
     return {"results": results, "next_before": page[-1].pk if more and page else None}
+
+
+def _custom_names(company, page: list[AgentEvent]) -> dict[str, str]:
+    """The names of the custom agents the page's events are from (deleted ones too)."""
+    ids = {
+        int(event.agent[len(custom.PREFIX) :]) for event in page if agents.is_custom(event.agent)
+    }
+    if not ids:
+        return {}
+    rows = CustomAgent.objects.filter(company=company, pk__in=ids).values_list("pk", "name")
+    return {custom.key_of(pk): name for pk, name in rows}
 
 
 def _person(member: Membership) -> dict:

@@ -4,10 +4,12 @@
  * "Turn on AI" hero while AI is off, and a card per agent with its switch and numbers; a card opens
  * the agent's own page (AgentPage.vue). Dictate and Smart add are one tap away from here too.
  * While AI is on, Claude's little helper lives in a strip at the top and wanders over the cards
- * (AiBuddyStage.vue), and every agent card has its own chibi.
+ * (AiBuddyStage.vue), and every agent card has its own chibi. The agents an owner made in their own
+ * words are cards like the others, in the colour they picked; who may set up AI finds "New agent"
+ * at the end of the grid (CustomAgentDialog.vue, briefs/v6-k.md).
  */
-import { Bot, KeyRound, Mic, Settings2, Sparkles, WalletCards } from "@lucide/vue";
-import { computed, useId } from "vue";
+import { Bot, KeyRound, Mic, Plus, Settings2, Sparkles, WalletCards } from "@lucide/vue";
+import { computed, defineAsyncComponent, ref, useId } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink } from "vue-router";
 
@@ -28,8 +30,12 @@ import { useBuddyCues } from "../components/buddyCues";
 import { buddyEverywhere } from "../components/buddyPrefs";
 import AiHeader from "../components/AiHeader.vue";
 import TurnOnCard from "../components/TurnOnCard.vue";
+import { agentsLeft, CUSTOM_MAX } from "../customAgent";
 import { openDictation } from "../dictation";
 import { aiVisibility, isMissingEndpoint } from "../lib";
+
+// The New agent dialog loads when it is first opened.
+const CustomAgentDialog = defineAsyncComponent(() => import("../components/CustomAgentDialog.vue"));
 
 const { t } = useI18n();
 const company = useCompanyStore();
@@ -43,6 +49,15 @@ const canConfigure = computed(() => status.data.value?.can_configure ?? false);
 const { switching, starting, toggle, runNow } = useAgentActions();
 
 const settingsPath = computed(() => `/c/${company.currentId}/settings/ai`);
+
+// The agents an owner makes in their own words: at most CUSTOM_MAX, made by who may set up AI.
+const left = computed(() => agentsLeft(agents.data.value));
+const creating = ref(false);
+const dialogWanted = ref(false);
+function newAgent(): void {
+  dialogWanted.value = true;
+  creating.value = true;
+}
 // The helpers react to what happens in the company: voice notes, late and finished tasks.
 useBuddyCues(aiOn);
 const everywhereId = useId();
@@ -126,7 +141,21 @@ const buddyLine = computed(() => {
           @toggle="(value) => toggle(agent, value)"
           @run="runNow(agent)"
         />
+        <button
+          v-if="canConfigure && aiOn"
+          type="button"
+          class="flex min-h-[176px] min-w-0 flex-col items-center justify-center gap-2 rounded-card border-2 border-dashed border-line-strong bg-surface-2/30 p-5 text-center transition-[border-color,background-color] hover:border-accent-fg/50 hover:bg-surface-2/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-60"
+          :disabled="left === 0"
+          data-testid="agent-new"
+          @click="newAgent"
+        >
+          <span class="flex size-11 items-center justify-center rounded-full bg-surface text-accent-fg shadow-raised" aria-hidden="true"><Plus :size="22" /></span>
+          <span class="text-md font-semibold text-fg">{{ t("ai.custom.new") }}</span>
+          <span class="max-w-xs text-sm text-muted">{{ left ? t("ai.custom.newBody") : t("ai.custom.full", { max: CUSTOM_MAX }) }}</span>
+          <span class="num text-xs text-subtle">{{ t("ai.custom.count", { n: CUSTOM_MAX - left, max: CUSTOM_MAX }) }}</span>
+        </button>
       </div>
+      <CustomAgentDialog v-if="dialogWanted" v-model:open="creating" />
       <p v-if="canConfigure && aiOn" class="px-1 text-sm text-muted">
         {{ t("ai.agents.settingsHint") }}
         <RouterLink :to="settingsPath" class="font-medium text-accent-fg hover:underline">{{ t("ai.agents.settingsLink") }}</RouterLink>

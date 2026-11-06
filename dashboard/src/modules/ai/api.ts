@@ -27,6 +27,9 @@ import type {
   ApplyResult,
   ChatMessage,
   Conversation,
+  CustomAgentForm,
+  CustomAgentOptions,
+  CustomAgentTemplate,
   DraftSource,
   DraftStatus,
   Turn,
@@ -63,6 +66,13 @@ export const aiApi = {
   activity: (cid: number, params: { agent?: string; limit?: number; before?: number }, signal?: AbortSignal) =>
     http.get<ActivityPage>(path(cid, "activity/"), params, { signal }),
 
+  /** The agents an owner makes (briefs/v6-k.md). Field refusals come back to the form, not as toasts. */
+  customTemplates: (cid: number, signal?: AbortSignal) => http.get<CustomAgentTemplate[]>(path(cid, "custom-agents/templates/"), undefined, { signal }),
+  customOptions: (cid: number, signal?: AbortSignal) => http.get<CustomAgentOptions>(path(cid, "custom-agents/options/"), undefined, { signal }),
+  createCustom: (cid: number, form: CustomAgentForm) => http.post<Agent>(path(cid, "custom-agents/"), form, { toast: false }),
+  updateCustom: (cid: number, id: number, form: Partial<CustomAgentForm>) => http.patch<Agent>(path(cid, `custom-agents/${id}/`), form, { toast: false }),
+  deleteCustom: (cid: number, id: number) => http.delete<void>(path(cid, `custom-agents/${id}/`)),
+
   /** How many tasks were finished today (the tasks module's summary), for the helpers' cheers. */
   tasksDoneToday: (cid: number, signal?: AbortSignal) => http.get<{ done_today: number }>(ownerPath(cid, "tasks/summary/"), undefined, { signal }),
   drafts: (cid: number, params: DraftFilters, signal?: AbortSignal) => http.get<Page<AiDraft>>(path(cid, "task-drafts/"), { ...params }, { signal }),
@@ -89,6 +99,8 @@ export const aiKeys = {
   settings: (cid: number) => qk(cid, MODULE, "settings"),
   agents: (cid: number) => qk(cid, MODULE, "agents"),
   agent: (cid: number, key: string) => qk(cid, MODULE, "agent", { key }),
+  customTemplates: (cid: number) => qk(cid, MODULE, "custom-templates"),
+  customOptions: (cid: number) => qk(cid, MODULE, "custom-options"),
   activity: (cid: number, agent: string, limit: number) => qk(cid, MODULE, "activity", { agent, limit }),
   drafts: (cid: number, filters: DraftFilters) => qk(cid, MODULE, "drafts", { ...filters }),
   draft: (cid: number, id: number) => qk(cid, MODULE, "draft", { id }),
@@ -214,6 +226,72 @@ export function useRunAgent() {
       // The run is queued: show the card (and the page) working until the next answer says otherwise.
       caches.change(key, (agent) => ({ ...agent, running: true }));
       setTimeout(() => caches.refresh(key), 1500);
+    },
+  });
+}
+
+// ─── The agents an owner makes ─────────────────────────────────────────────
+
+/** The ready jobs of the New agent dialog, in the reader's language (only while it is open). */
+export function useCustomTemplates(enabled: MaybeRefOrGetter<boolean>) {
+  const cid = useCompanyId();
+  return useQuery({
+    queryKey: computed(() => aiKeys.customTemplates(cid.value)),
+    queryFn: ({ signal }) => aiApi.customTemplates(cid.value, signal),
+    enabled: computed(() => cid.value > 0 && toValue(enabled)),
+    staleTime: 5 * 60_000,
+  });
+}
+
+/** What the form offers: what it may read, the groups, the people who can get Telegram messages. */
+export function useCustomOptions(enabled: MaybeRefOrGetter<boolean>) {
+  const cid = useCompanyId();
+  return useQuery({
+    queryKey: computed(() => aiKeys.customOptions(cid.value)),
+    queryFn: ({ signal }) => aiApi.customOptions(cid.value, signal),
+    enabled: computed(() => cid.value > 0 && toValue(enabled)),
+    staleTime: 30_000,
+  });
+}
+
+/** The list, the agent's page and the form's counts change with every save. */
+function useCustomRefresh() {
+  const cid = useCompanyId();
+  const client = useQueryClient();
+  return (key?: string) => {
+    void client.invalidateQueries({ queryKey: aiKeys.agents(cid.value) });
+    void client.invalidateQueries({ queryKey: aiKeys.customOptions(cid.value) });
+    if (key) void client.invalidateQueries({ queryKey: aiKeys.agent(cid.value, key) });
+  };
+}
+
+export function useCreateCustomAgent() {
+  const cid = useCompanyId();
+  const refresh = useCustomRefresh();
+  return useMutation({
+    mutationFn: (form: CustomAgentForm) => aiApi.createCustom(cid.value, form),
+    onSuccess: (agent) => refresh(agent.key),
+  });
+}
+
+export function useUpdateCustomAgent() {
+  const cid = useCompanyId();
+  const refresh = useCustomRefresh();
+  return useMutation({
+    mutationFn: ({ id, form }: { id: number; form: Partial<CustomAgentForm> }) => aiApi.updateCustom(cid.value, id, form),
+    onSuccess: (agent) => refresh(agent.key),
+  });
+}
+
+export function useDeleteCustomAgent() {
+  const cid = useCompanyId();
+  const client = useQueryClient();
+  const refresh = useCustomRefresh();
+  return useMutation({
+    mutationFn: (agent: Pick<Agent, "key"> & { custom?: { id: number } | null }) => aiApi.deleteCustom(cid.value, agent.custom?.id ?? 0),
+    onSuccess: (_result, agent) => {
+      client.removeQueries({ queryKey: aiKeys.agent(cid.value, agent.key) });
+      refresh();
     },
   });
 }

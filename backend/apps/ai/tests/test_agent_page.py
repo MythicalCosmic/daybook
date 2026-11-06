@@ -63,6 +63,8 @@ DETAIL_FIELDS = {
     "scene",
     "prompts",
     "instructions",
+    # An agent an owner made has its own fields here; a built-in one has None (v6).
+    "custom",
 }
 RUN_FIELDS = {
     "id",

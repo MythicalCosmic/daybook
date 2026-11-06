@@ -5,6 +5,7 @@ AIDraft      a voice note or typed instruction on its way to tasks, and what bec
 AIUsage      one Claude call: tokens and money, never content
 AgentState   one agent of a company: on/off, its settings, when it ran
 AgentEvent   what an agent did, worded at read time in the reader's language
+CustomAgent  an agent an owner made in their own words (apps.ai.agents.custom)
 """
 
 from decimal import Decimal
@@ -234,6 +235,103 @@ class AgentRun(TenantModel):
 
     def __str__(self):
         return f"{self.key} run #{self.pk}"
+
+
+class CustomAgent(TenantModel):
+    """An agent an owner made in their own words (apps.ai.agents.custom): what it should do,
+    when, who gets what it writes, and what it may read. It reads with the rights of `run_as`
+    (their permissions and branches, at run time); its switch, schedule, runs and events live
+    under the key `custom_<id>` like every other agent's (AgentState, AgentRun, AgentEvent)."""
+
+    class Frequency(models.TextChoices):
+        DAILY = "daily", _("Every day")
+        WEEKDAYS = "weekdays", _("Workdays")
+        WEEKLY = "weekly", _("Once a week")
+        MONTHLY = "monthly", _("Once a month")
+
+    class Recipients(models.TextChoices):
+        ME = "me", _("Me")
+        PEOPLE = "people", _("Chosen people")
+        GROUP = "group", _("A Telegram group")
+
+    class Color(models.TextChoices):
+        SKY = "sky", _("Sky")
+        ROSE = "rose", _("Rose")
+        INDIGO = "indigo", _("Indigo")
+        LIME = "lime", _("Lime")
+        AMBER = "amber", _("Amber")
+        PLUM = "plum", _("Plum")
+        AQUA = "aqua", _("Aqua")
+        SLATE = "slate", _("Slate")
+
+    class Paused(models.TextChoices):
+        """Why it switched itself off (its owner can't run it any more)."""
+
+        NONE = "", _("Not paused")
+        LEFT = "left", _("Its owner no longer works here")
+        NO_ACCESS = "no_access", _("Its owner can't use AI or the dashboard any more")
+
+    name = models.CharField(max_length=60)
+    job = models.TextField(max_length=2000, help_text=_("What it should do, in the owner's words."))
+    color = models.CharField(max_length=16, choices=Color.choices, default=Color.SKY)
+    # The template it started from ("" = written from scratch).
+    template = models.CharField(max_length=32, blank=True)
+    frequency = models.CharField(max_length=16, choices=Frequency.choices, default=Frequency.DAILY)
+    at = models.TimeField(help_text=_("When it runs, in the company's timezone."))
+    weekday = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        validators=[MaxValueValidator(6)],
+        help_text=_("For weekly: 0 = Monday."),
+    )
+    month_day = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(1), MaxValueValidator(28)],
+        help_text=_("For monthly: the day of the month."),
+    )
+    recipients = models.CharField(max_length=16, choices=Recipients.choices, default=Recipients.ME)
+    people = models.ManyToManyField("members.Membership", blank=True, related_name="+")
+    group = models.ForeignKey(
+        "groups.TelegramGroup",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    # The tool domains it may read (apps.ai.tools.registry): only those whose module is on are
+    # offered, and only the tools `run_as` may use.
+    domains = ArrayField(models.CharField(max_length=32), default=list, blank=True)
+    run_as = models.ForeignKey(
+        "members.Membership",
+        on_delete=models.CASCADE,
+        related_name="+",
+        help_text=_("Whose rights it reads with; who 'me' is."),
+    )
+    created_by = models.ForeignKey(
+        "members.Membership", on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    paused_reason = models.CharField(
+        max_length=16, choices=Paused.choices, default=Paused.NONE, blank=True
+    )
+    # The last report it wrote, for its page (shown only to its owner and the people it goes to).
+    last_report = models.TextField(blank=True, default="")
+    last_report_at = models.DateTimeField(null=True, blank=True)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+
+    MAX_LIVE = 10
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["company", "deleted_at"], name="ai_custom_agent_live"),
+        ]
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def key(self) -> str:
+        return f"custom_{self.pk}"
 
 
 class AIConversation(TenantModel):

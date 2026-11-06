@@ -2,7 +2,10 @@
 leaves it, with the default agents on; three voice notes (two made into tasks, one waiting) and
 the agents' work of the last two days, made through the real services and backdated into
 working hours. For the agents' own pages: their runs of the last two days and today, and the
-Claude calls of the last 30 workdays (AI_FAKE makes none, so they are written as recorded)."""
+Claude calls of the last 30 workdays (AI_FAKE makes none, so they are written as recorded).
+Two agents of the owner's own (apps.ai.agents.custom), made from the templates: the evening
+report to her, and Monday's best of the week to her and the manager, with the past week's runs,
+what they sent and their calls."""
 
 from collections import Counter
 from datetime import date, datetime, time, timedelta
@@ -14,7 +17,7 @@ from django.utils import timezone
 
 from apps.ai import drafts, events, pricing, services
 from apps.ai.agents import deadline_watcher, hr_assistant, morning_plan, photo_checker, voice_tasks
-from apps.ai.models import AgentEvent, AgentRun, AgentState, AIDraft, AIUsage
+from apps.ai.models import AgentEvent, AgentRun, AgentState, AIDraft, AIUsage, CustomAgent
 from apps.tasks.models import Task, TaskComment
 
 # (who speaks, source, what was said, made into tasks, (days ago, hour, minute) or None = just now)
@@ -53,6 +56,9 @@ RUN_DAYS = 2
 # The deadline watcher's half hours, 08:00-20:30; the one run that failed (days ago, h, m).
 WATCH_FROM, WATCH_UNTIL = time(8, 0), time(20, 30)
 WATCH_FAILED = (1, 13, 0)
+# The owner's own agents: (template, who reads it); and how many days back they ran.
+CUSTOM_AGENTS = (("evening_report", ("owner",)), ("monday_best", ("owner", "manager")))
+CUSTOM_DAYS = 7
 
 
 def seed(company, people, now) -> None:
@@ -76,6 +82,7 @@ def finish(company, people, now) -> None:
     _morning_plans(company, now, clock)
     _photo_note(company, clock)
     agent_pages(company, now)
+    custom_agents(company, people, now)
 
 
 class _Clock:
@@ -262,6 +269,106 @@ def agent_pages(company, now) -> None:
             AgentState.objects.filter(company=company, key=key).update(
                 last_run_at=last.started_at, last_status=last.status, last_error=last.error
             )
+
+
+def custom_agents(company, people, now) -> list[CustomAgent]:
+    """The owner's own agents, made from two templates in the company's language, with what
+    they did over the last CUSTOM_DAYS days."""
+    from apps.ai.agents import custom, custom_templates
+
+    owner = people["owner"]
+    readable = {
+        option["key"] for option in custom.domain_options(company, owner) if option["available"]
+    }
+    made = []
+    for key, readers in CUSTOM_AGENTS:
+        template = custom_templates.get(key)
+        reachable = [people[who] for who in readers if custom.reachable(people.get(who))]
+        domains = [domain for domain in template.domains if domain in readable]
+        if not domains:
+            continue
+        many = len(reachable) > 1
+        row = services.create_custom_agent(
+            company,
+            by=owner,
+            data={
+                "name": str(template.name),
+                "job": str(template.job),
+                "frequency": template.frequency,
+                "at": template.at,
+                "weekday": template.weekday,
+                "month_day": template.month_day,
+                "color": template.color,
+                "template": key,
+                "domains": domains,
+                "recipients": "people" if many else "me",
+                "people": [person.pk for person in reachable] if many else [],
+            },
+        )
+        _custom_history(company, row, reachable if many else [owner], now)
+        made.append(row)
+    return made
+
+
+def _custom_history(company, row: CustomAgent, readers: list, now) -> None:
+    """Its runs of the last days at its time, a message to each reader at each, the Claude
+    calls each made (two of the tool loop, one per other language) and its last report."""
+    from apps.ai.agents import custom
+
+    zone = ZoneInfo(company.timezone)
+    today = timezone.localtime(now, zone).date()
+    languages = {person.user.language for person in readers}
+    runs, calls = [], []
+    for days_ago in range(CUSTOM_DAYS, 0, -1):
+        day = today - timedelta(days=days_ago)
+        if not custom.runs_on(row, company, day):
+            continue
+        began = datetime.combine(day, row.at, zone)
+        made = [
+            _call(
+                company,
+                row.key,
+                settings.AI_MODEL_FAST,
+                began + timedelta(seconds=2 + 3 * index),
+                (1850 + 140 * index + 15 * days_ago, 160 + 120 * index, 2100),
+            )
+            for index in range(2)
+        ]
+        made += [
+            _call(company, row.key, settings.AI_MODEL_FAST, began + timedelta(seconds=9), numbers)
+            for numbers in [(520, 210, 1400)] * (len(languages) - 1)
+        ]
+        calls += made
+        runs.append(_run(company, row.key, began, made, done=len(readers), seconds=11))
+        for person in readers:
+            logged = events.log(
+                company,
+                row.key,
+                "sent",
+                params={"to": str(person)},
+                subject=("member", person.pk),
+                branch_id=person.home_branch_id,
+                dedupe_key=f"{row.key}:demo:{day:%Y%m%d}:m{person.pk}",
+            )
+            if logged is not None:
+                AgentEvent.objects.filter(pk=logged.pk).update(
+                    created_at=began + timedelta(seconds=12)
+                )
+    AIUsage.objects.bulk_create([usage for usage, _moment in calls])
+    for usage, moment in calls:
+        AIUsage.objects.filter(pk=usage.pk).update(created_at=moment)
+    AgentRun.objects.bulk_create(runs)
+    if not runs:
+        return
+    last = runs[-1]
+    AgentState.objects.filter(company=company, key=row.key).update(
+        last_run_at=last.started_at, last_status=last.status
+    )
+    ctx = custom.context_of(row)
+    report = custom.sample_report(row, ctx, custom.tools_of(row, ctx), row.run_as.user.language)
+    CustomAgent.objects.filter(pk=row.pk).update(
+        last_report=report, last_report_at=last.finished_at
+    )
 
 
 def _watcher_runs(company, day: date, days_ago: int, zone, escalated: list) -> list[AgentRun]:

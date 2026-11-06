@@ -10,6 +10,10 @@ Every run is recorded (`AgentRun`, the agent page's log): made "running" when it
 finished with what it did, its error, and the calls, tokens and money of the Claude calls its
 usage features made meanwhile; one whose next time can't be worked out is recorded as an
 error. The newest `AgentRun.RUNS_KEPT` of each agent stay.
+
+The agents an owner made (apps.ai.agents.custom, `custom_<id>`) run the same way: `resolve`
+builds each from its row. The state a run gets says how it was started: `state.forced` ("Run
+now") and `state.due_at` (the time it was due; None for a forced or a first run).
 """
 
 import logging
@@ -37,7 +41,8 @@ def tick(now: datetime | None = None) -> int:
     """Run what is due; how many things the agents did."""
     now = now or timezone.now()
     due = (
-        AgentState.objects.filter(enabled=True, key__in=scheduled_keys())
+        AgentState.objects.filter(enabled=True)
+        .filter(Q(key__in=scheduled_keys()) | Q(key__startswith=registry.CUSTOM_PREFIX))
         .filter(Q(next_run_at__isnull=True) | Q(next_run_at__lte=now))
         .select_related("company")
     )
@@ -62,11 +67,12 @@ def run_state(state_id: int, now: datetime | None = None, *, forced: bool = Fals
         )
         if state is None:
             return 0  # another worker holds it
-        agent = registry.get(state.key)
+        agent = registry.resolve(state.company, state.key)
         if agent is None or not agent.scheduled:
             return 0
         if not forced and (not state.enabled or (state.next_run_at and state.next_run_at > now)):
             return 0
+        state.forced, state.due_at = forced, None if forced else state.next_run_at
         config = registry.config_of(agent, state)
         try:
             state.next_run_at = agent.next_run(config, now, state.company)
@@ -174,7 +180,7 @@ def next_runs(agent, state: AgentState, company, now: datetime, count: int) -> l
 
 def schedule_first_run(state: AgentState, now: datetime | None = None) -> None:
     """When an agent is switched on: its first run at its next time."""
-    agent = registry.get(state.key)
+    agent = registry.resolve(state.company, state.key)
     if agent is None or not agent.scheduled:
         return
     now = now or timezone.now()

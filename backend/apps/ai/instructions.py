@@ -25,7 +25,13 @@ def of(company, key: str) -> str:
 
 def system_for(company, key: str, base: str) -> str:
     """`base` (an agent's system prompt) with the company's instructions for it after it."""
-    text = of(company, key)
+    return wrap(base, of(company, key))
+
+
+def wrap(base: str, text: str, intro: str = INTRO) -> str:
+    """`base` with the owner's `text` after it, framed by `intro` (the agents an owner makes in
+    their own words send their job this way, apps.ai.agents.custom)."""
+    text = (text or "").strip()
     if not text:
         return base
-    return f"{base}\n\n{INTRO}\n<company_instructions>\n{text}\n</company_instructions>"
+    return f"{base}\n\n{intro}\n<company_instructions>\n{text}\n</company_instructions>"
