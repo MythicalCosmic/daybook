@@ -254,3 +254,28 @@ def test_budget_thresholds_are_reached_not_rounded_to(
     budget = Budget.objects.get(company=fin, month=month, category=rent)
     assert (budget.alerted_100_at is not None) == (status == "over")
     assert (budget.alerted_80_at is not None) == (status in ("warning", "over"))
+
+
+# F5: a held-cash claim is booked on the cash the person holds, in the claim's currency -------
+
+
+def test_held_cash_is_booked_on_the_account_in_the_base_currency(fin, boss, member, today):
+    """`submit_claim` checks the cash held in the base currency but booked the expense on the
+    holder's UZS account (the default of `account_for_holder`): in a company keeping its books
+    in dollars it opened an empty "cash on hand (UZS)" account and booked the dollars there."""
+    fin.base_currency = "USD"
+    fin.save(update_fields=["base_currency"])
+    jasur = member(fin, "Employee", first_name="Jasur")
+    held = services.account_for_holder(fin, jasur, currency="USD")
+    services.record_transaction(
+        fin, by=boss, kind="opening", amount="500", occurred_on=today, account=held
+    )
+    transport = Category.objects.get(company=fin, system_code="transport")
+
+    claim = claims.submit_claim(
+        fin, by=jasur, amount="45", category=transport, spent_on=today, paid_from="held_cash"
+    )
+
+    row = claim.transaction
+    assert (row.account_id, row.currency, row.amount) == (held.pk, "USD", Decimal("-45.00"))
+    assert not MoneyAccount.objects.filter(company=fin, holder=jasur, currency="UZS").exists()

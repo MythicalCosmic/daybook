@@ -444,7 +444,8 @@ def sync_paid(company=None) -> int:
 
 def _record_held(claim: Claim, *, by: Membership, posted: bool) -> Transaction:
     company = claim.company
-    account = services.account_for_holder(company, claim.membership)
+    # The cash the person holds in the claim's (base) currency: what submit_claim checked.
+    account = services.account_for_holder(company, claim.membership, currency=claim.currency)
     return services.record_transaction(
         company,
         by=by,
