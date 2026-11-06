@@ -304,3 +304,56 @@ def test_the_fixed_asset_categories_are_not_offered_or_taken_for_a_claim(fin, bo
             spent_on=today,
             paid_from="own_money",
         )
+
+
+# F7: a claim's waiting entry is decided with its claim, never voided on its own ---------------
+
+
+def test_a_waiting_claim_entry_is_not_voided_from_the_ledger(
+    fin, boss, member, kassa, today, owner_api
+):
+    """A held-cash claim waits as a pending expense on the holder's account. The ledger refused
+    to approve or reject it ("decide it there") but voided it: the claim then could be neither
+    rejected nor cancelled (its entry was no longer pending), and approving it booked nothing."""
+    jasur = member(fin, "Employee", first_name="Jasur")
+    services.record_transaction(
+        fin,
+        by=boss,
+        kind="income",
+        amount="1000000",
+        occurred_on=today,
+        account=kassa,
+        category="sales",
+    )
+    services.transfer(
+        fin,
+        by=boss,
+        from_account=kassa,
+        to_account=services.account_for_holder(fin, jasur),
+        amount_out=Decimal("500000"),
+        occurred_on=today,
+    )
+    transport = Category.objects.get(company=fin, system_code="transport")
+    claim = claims.submit_claim(
+        fin, by=jasur, amount="45000", category=transport, spent_on=today, paid_from="held_cash"
+    )
+    assert claim.transaction.status == Transaction.Status.PENDING
+    client = owner_api(boss)
+    entry = client.get(url(fin, f"transactions/{claim.transaction_id}/")).json()
+    assert entry["can_void"] is False
+
+    one = client.post(
+        url(fin, f"transactions/{claim.transaction_id}/void/"), {"reason": "Stray"}, format="json"
+    )
+    many = client.post(
+        url(fin, "transactions/bulk/"),
+        {"action": "void", "ids": [claim.transaction_id], "reason": "Stray"},
+        format="json",
+    )
+
+    assert one.status_code == 400, one.content
+    assert many.json()["results"][0]["ok"] is False
+    claims.decide_claim(claim, by=boss, approve=False, reason="No receipt")
+    claim.refresh_from_db()
+    assert claim.status == "rejected"
+    assert claim.transaction.status == Transaction.Status.REJECTED

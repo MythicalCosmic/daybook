@@ -581,6 +581,8 @@ class TransactionSerializer(serializers.ModelSerializer):
             return False
         if foreign_source(row) is not None:
             return False
+        if row.status == "pending" and row.source_type:
+            return False  # a claim's waiting entry is decided with its claim
         return not (row.kind == "fx" and row.source_type == "finance.transaction")
 
     def get_can_approve(self, row) -> bool:

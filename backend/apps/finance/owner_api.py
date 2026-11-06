@@ -206,6 +206,16 @@ def refuse_foreign(row) -> None:
         raise DomainError(message % {"source": label})
 
 
+def waiting_elsewhere(row: Transaction) -> str | None:
+    """Why a pending entry another flow decides (an expense claim waiting for approval) isn't
+    voided here: alone, its claim could then be neither rejected nor really approved."""
+    if row.status == Transaction.Status.PENDING and row.source_type:
+        return _("This entry comes from %(source)s: decide it there.") % {
+            "source": out.source_label(row)
+        }
+    return None
+
+
 # Overview and options -------------------------------------------------------------------------
 
 
@@ -1061,6 +1071,8 @@ class TransactionViewSet(FinanceMixin, OwnerViewSet):
         serializer = out.ReasonSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         refuse_foreign(row)
+        if (waiting := waiting_elsewhere(row)) is not None:
+            raise DomainError(waiting)
         domain(
             lambda: services.void_transaction(
                 row, by=self.membership, reason=serializer.validated_data["reason"]
@@ -1130,6 +1142,8 @@ class TransactionViewSet(FinanceMixin, OwnerViewSet):
                 if (label := out.foreign_source(row)) is not None:
                     error = _("This entry comes from %(source)s: correct it there.")
                     refused.append({"id": row.pk, "ok": False, "error": error % {"source": label}})
+                elif (waiting := waiting_elsewhere(row)) is not None:
+                    refused.append({"id": row.pk, "ok": False, "error": waiting})
             refused_ids = {item["id"] for item in refused}
             rows = [row for row in rows if row.pk not in refused_ids]
         results = (
