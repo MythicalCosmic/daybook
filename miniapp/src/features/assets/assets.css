@@ -1,0 +1,45 @@
+/* "Jihozlarim": one card per item, its state and "I have it". */
+.mine-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 10px;
+}
+.mine-head {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.mine-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: var(--color-accent-100);
+  color: var(--color-accent-700);
+}
+.mine-icon--done {
+  background: var(--color-accent-2-100);
+  color: var(--color-accent-2-700);
+}
+.mine-text {
+  min-width: 0;
+}
+.mine-title {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.mine-line {
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.mine-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+}

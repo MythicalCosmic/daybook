@@ -629,5 +629,6 @@ def mine(membership) -> list[AssetAssignment]:
             company=membership.company, membership=membership, returned_on__isnull=True
         )
         .select_related("asset__category", "asset__branch")
+        .prefetch_related("asset__files")
         .order_by("-issued_on")
     )

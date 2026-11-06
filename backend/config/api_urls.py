@@ -43,6 +43,7 @@ EMPLOYEE_APPS = (
     "knowledge",
     "agenda",
     "crm",
+    "assets",
 )
 
 # Apps whose owner_urls.py adds owner endpoints under owner/companies/<id>/ (§4.1). An optional
