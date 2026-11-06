@@ -314,8 +314,11 @@ def _run_text(company, month: date, count: int) -> str:
 
 
 def book_asset_cost(asset: Asset, *, amount: Decimal, day: date, key: str, description: str):
-    """One asset's own non-cash cost (its book value written off or written down)."""
+    """One asset's own non-cash cost (its book value written off or written down). Never for a
+    low-value item: its cost was an expense of the month it was bought."""
     if not finance_on(asset.company) or not asset.books_depreciation or amount <= 0:
+        return None
+    if asset.category.kind == asset.category.Kind.LOW_VALUE:
         return None
     from apps.finance import services as finance
     from apps.finance.sources import Source

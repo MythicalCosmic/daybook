@@ -433,7 +433,9 @@ def _check_facts(asset: Asset) -> None:
     if asset.cost < 0:
         raise DomainError(_("The cost can't be below zero."))
     if asset.category.kind == AssetCategory.Kind.LOW_VALUE:
+        # Never depreciated: its cost was an expense when bought, so Finance books nothing more.
         asset.method = Method.NONE
+        asset.books_depreciation = False
     if asset.method not in Method.values:
         raise DomainError(_("Pick a method from the list."))
     if asset.method != Method.NONE:
@@ -634,6 +636,17 @@ def update_asset(asset: Asset, *, by: Membership, **fields) -> Asset:
         )
     if "category" in fields:
         _same_company(company, fields["category"])
+        low = AssetCategory.Kind.LOW_VALUE
+        if (fields["category"].kind == low) != (asset.category.kind == low):
+            # A low-value item never depreciates: the move changes every month of it.
+            if _booked(asset) or _purchases_of(asset):
+                raise DomainError(
+                    _(
+                        "It is in Finance already: it can't become a low-value item or stop "
+                        "being one."
+                    )
+                )
+            facts.add("category")
     if "branch" in fields:
         _same_company(company, fields["branch"])
     if "supplier" in fields:

@@ -7,7 +7,7 @@ from decimal import Decimal as D
 import pytest
 
 from apps.assets import services
-from apps.assets.models import DepreciationEntry
+from apps.assets.models import AssetCategory, DepreciationEntry
 from apps.assets.tests.test_posting import buy, depreciation_rows
 from apps.core.exceptions import DomainError
 from apps.finance import queries as finance_queries
@@ -124,6 +124,55 @@ def test_an_asset_written_off_in_finance_is_never_deleted(shop, owner, category)
     assert Transaction.objects.filter(company=shop, category__system_code="asset_disposal").exists()
     with pytest.raises(DomainError):
         services.delete_asset(asset, by=owner)
+
+
+def test_a_low_value_item_bought_in_finance_stays_an_expense_once(
+    shop, owner, cash, equipment, chilonzor
+):
+    """Low-value items are never depreciated: their cost is an expense of the month they are
+    bought, never taken out of the P&L, and never booked a second time when thrown away."""
+    uniforms = AssetCategory.objects.get(company=shop, system_code="low_value")
+    txn = buy(shop, owner, cash, equipment, chilonzor, amount=450_000, day=date(2026, 11, 2))
+    item = services.create_asset(
+        shop, by=owner, category=uniforms, name="Xalatlar", purchase_transaction=txn
+    )
+    txn.refresh_from_db()
+    assert not txn.capitalized
+    assert november(shop)["expense"] == D("450000.00")
+    services.write_down(item, by=owner, on=date(2026, 11, 5), amount=D(50_000))
+    services.dispose(item, by=owner, on=date(2026, 11, 6), kind="written_off", reason="Eskirdi")
+    assert november(shop)["expense"] == D("450000.00")
+
+
+def test_an_asset_bought_or_booked_in_finance_never_turns_low_value(
+    shop, owner, cash, equipment, chilonzor, category
+):
+    """A low-value item never depreciates: a fridge moved into that category would keep its
+    purchase out of the P&L (or its booked months) with nothing left to bring the rest in."""
+    uniforms = AssetCategory.objects.get(company=shop, system_code="low_value")
+    txn = buy(shop, owner, cash, equipment, chilonzor, amount=6_000_000, day=date(2026, 11, 2))
+    asset = services.create_asset(
+        shop,
+        by=owner,
+        category=category,
+        name="Muzlatgich",
+        purchase_transaction=txn,
+        in_service_on=date(2026, 11, 3),
+    )
+    with pytest.raises(DomainError):
+        services.update_asset(asset, by=owner, category=uniforms)
+    old = buy(shop, owner, cash, equipment, chilonzor, amount=8_400_000, day=date(2026, 9, 5))
+    booked = services.create_asset(
+        shop,
+        by=owner,
+        category=category,
+        name="Konditsioner",
+        purchase_transaction=old,
+        in_service_on=date(2026, 9, 10),
+    )
+    assert booked.entries.filter(transaction__isnull=False).exists()
+    with pytest.raises(DomainError):
+        services.update_asset(booked, by=owner, category=uniforms)
 
 
 def test_an_asset_that_books_no_depreciation_keeps_its_purchases_as_expenses(
