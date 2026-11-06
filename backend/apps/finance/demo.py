@@ -168,6 +168,10 @@ class Ledger:
         self.debts()
         self.extras()
         self.settings()
+        # Package I: the tax regime and calendar, recurring bills, budgets and claims.
+        from apps.finance import demo_planning
+
+        demo_planning.build(self)
 
     def rates(self) -> None:
         """A dollar rate for every day (the Central Bank's, as the hourly job would store)."""

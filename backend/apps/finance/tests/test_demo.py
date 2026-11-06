@@ -126,6 +126,43 @@ def test_the_demo_uses_the_safe_a_branch_already_has(company, demo_people):
     assert "Kapitalbank" not in names
 
 
+def test_the_demo_shows_money_planning(seeded):
+    """Package I's part (§14.8): the regime and its tax calendar, recurring bills, budgets near
+    and over their limits, claims in every state, a marketing bonus and a destruction service."""
+    from apps.finance import budgets, planning
+    from apps.finance.models import Claim, RecurringRule
+
+    company = seeded
+    today = queries.local_today(company)
+    assert conf.get_settings(company).tax_regime == "vat"
+    rules = RecurringRule.objects.filter(company=company, is_active=True)
+    assert rules.filter(template_key="").count() == 4
+    assert set(rules.exclude(template_key="").values_list("template_key", flat=True)) == {
+        "tax.vat",
+        "tax.profit",
+        "tax.income_tax",
+        "tax.inps",
+        "tax.social_tax",
+    }
+    last = budgets.previous_month(today.replace(day=1))
+    month = budgets.month_view(company, last, branch_ids=None, today=today)
+    states = {row["status"] for row in month["rows"]}
+    assert {"warning", "over", "ok"} <= states
+    this_month = budgets.month_view(company, today.replace(day=1), branch_ids=None, today=today)
+    assert sum(1 for row in this_month["rows"] if row["budget"]) >= 3
+    claims = Claim.objects.filter(company=company)
+    assert set(claims.values_list("status", flat=True)) >= {"submitted", "approved", "rejected"}
+    assert claims.get(status="submitted").receipts.count() == 1
+    rows = Transaction.objects.filter(company=company)
+    assert rows.filter(category__name="Marketing bonuslari", kind="income").exists()
+    assert rows.filter(category__name="Utilizatsiya xizmatlari", kind="expense").exists()
+    upcoming = planning.upcoming(company, 30, branch_ids=None, today=today)
+    assert {"bill", "tax", "auto", "payable"} <= {item["kind"] for item in upcoming["items"]}
+    forecast = planning.forecast(company, 90, branch_ids=None, today=today)
+    assert len(forecast["points"]) == 91
+    assert maintenance.verify_company(company, fix=False) == {"accounts": [], "debts": []}
+
+
 def test_the_distributors_books(company, demo_people):
     people = demo_people(company)
     small = {

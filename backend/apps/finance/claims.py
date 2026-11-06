@@ -254,8 +254,6 @@ def submit_claim(
     otherwise it waits and the approvers are asked."""
     services._need_actor(by)
     user = services._actor(company, by)
-    if not company.has_feature("finance"):
-        raise DomainError(_("The finance module is off for this company."))
     if by.status != Membership.Status.APPROVED:
         raise DomainError(_("Your access is paused."))
     if paid_from not in PaidFrom.values:
