@@ -383,3 +383,104 @@ def test_a_bill_in_soum_is_not_paid_from_a_dollar_account(fin, boss, kassa, toda
     assert booked(bill) == 0
     dollars.refresh_from_db()
     assert dollars.balance == Decimal("0.00")
+
+
+# Left to the lead (xfail): real, but the fix is a product decision ------------------------------
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason=(
+        "Product decision for the lead: a claim still waiting when its day's period is closed "
+        "can only be rejected (open_debt / approve_transaction refuse a closed day). Book it on "
+        "the approval day, or let the approver pick the day."
+    ),
+)
+def test_a_claim_waiting_across_the_period_close_can_still_be_approved(fin, boss, member, today):
+    jasur = member(fin, "Employee", first_name="Jasur")
+    transport = Category.objects.get(company=fin, system_code="transport")
+    claim = claims.submit_claim(
+        fin,
+        by=jasur,
+        amount="45000",
+        category=transport,
+        spent_on=today - timedelta(days=3),
+        paid_from="own_money",
+    )
+    services.lock_period(fin, by=boss, until=today - timedelta(days=1))
+
+    claims.decide_claim(claim, by=boss, approve=True)
+
+    claim.refresh_from_db()
+    assert claim.status == "approved" and claim.debt_id is not None
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason=(
+        "Forecast heuristic, the lead's call: every payable with a due date (a bank loan too) "
+        "pushes back the day the usual supplier payments start, so a loan due in 80 days drops "
+        "two months of distributor payments from the forecast. Only trade payables should."
+    ),
+)
+def test_a_loan_due_later_does_not_hold_back_the_usual_supplier_payments(fin, boss, kassa, today):
+    from apps.finance import planning
+    from apps.finance.tests.factories import CounterpartyFactory
+
+    distributor = CounterpartyFactory(company=fin, name="Oqtosh Med Ta’minot", kind="supplier")
+    bank = CounterpartyFactory(company=fin, name="Ipoteka Bank", kind="other")
+    first = today - timedelta(days=28)
+    services.record_transaction(
+        fin,
+        by=boss,
+        kind="income",
+        amount="50000000",
+        occurred_on=first,
+        account=kassa,
+        category="sales",
+    )
+    for offset in range(0, 28, 7):  # 2 800 000 a week to the distributor: 400 000 a day
+        day = first + timedelta(days=offset)
+        debt = services.open_debt(
+            fin,
+            by=boss,
+            direction="payable",
+            kind="trade",
+            amount="2800000",
+            currency="UZS",
+            issued_on=day,
+            due_on=day,
+            counterparty=distributor,
+            category="goods",
+        )
+        services.pay_debt(debt, by=boss, amount=Decimal("2800000"), paid_on=day, account=kassa)
+    due = today + timedelta(days=5)
+    services.open_debt(
+        fin,
+        by=boss,
+        direction="payable",
+        kind="trade",
+        amount="1000000",
+        currency="UZS",
+        issued_on=today,
+        due_on=due,
+        counterparty=distributor,
+        category="goods",
+    )
+    services.open_debt(
+        fin,
+        by=boss,
+        direction="payable",
+        kind="loan",
+        amount="20000000",
+        currency="UZS",
+        issued_on=today,
+        due_on=today + timedelta(days=80),
+        counterparty=bank,
+        account=kassa,
+    )
+
+    data = planning.forecast(fin, 90, branch_ids=None, today=today)
+
+    assert data["basis"]["daily_paid"] == "400000.00"
+    assert data["basis"]["suppliers_from"] == due.isoformat()
