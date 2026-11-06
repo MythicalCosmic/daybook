@@ -694,7 +694,7 @@ def cashier_scorecard(
 
 def _opened_late(shift: CashShift, company, grace_minutes: int) -> bool:
     opens = shift.branch.opens_at
-    if opens is None:
+    if opens is None or shift.branch.open_24h:
         return False
     at = local(company, shift.opened_at)
     if at.date() != shift.business_day:
@@ -808,7 +808,7 @@ def today(company, now: datetime, *, branch_ids: list[int] | None) -> list[dict]
         status = branch_status(branch, at, holiday=holiday, card=card)
         tills = cash_rows[branch.pk]["tills"]
         alerts = []
-        if status == "not_opened":
+        if status == "not_opened" and not branch.open_24h:
             alerts.append({"kind": "not_opened", "severity": "critical"})
         for shift in differences[branch.pk]:
             alerts.append(
@@ -843,6 +843,7 @@ def today(company, now: datetime, *, branch_ids: list[int] | None) -> list[dict]
                 "name": branch.name,
                 "code": branch.code,
                 "status": status,
+                "open_24h": branch.open_24h,
                 "opens_at": branch.opens_at.strftime("%H:%M") if branch.opens_at else None,
                 "closes_at": branch.closes_at.strftime("%H:%M") if branch.closes_at else None,
                 "opened_at": opened_at,

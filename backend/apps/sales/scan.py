@@ -11,6 +11,13 @@ the scan every 5 minutes sends each alert once.
   after opening, for a branch without hours): managers and the cashier hear.
 - **Handover unconfirmed** for `handover_confirm_hours`.
 - **Cash over the limit** after closing (`Branch.cash_limit`).
+
+A branch open around the clock (`Branch.open_24h`, §14.7) has no opening and no closing moment,
+whatever hours it still carries: it never gets the "not opened" alert, a till of it alerts only
+once it has been open for 26 hours, and its cash is checked against the limit once, at the end
+of the business day (`SalesSettings.business_day_ends_at`). Only pharmacy branches open tills
+(`Branch.kind`): a warehouse or an office, and a company that sells by invoice, never hear that
+they weren't opened.
 """
 
 import logging
@@ -21,7 +28,7 @@ from django.db import transaction
 from django.db.models import Sum
 from django.utils import timezone, translation
 
-from apps.companies.models import Branch, Company, Feature
+from apps.companies.models import Branch, BranchKind, Company, Feature
 from apps.console import registry
 from apps.groups.models import GroupEvent
 from apps.groups.services import broadcast
@@ -44,6 +51,8 @@ logger = logging.getLogger(__name__)
 
 NOT_OPENED_WINDOW = timedelta(hours=2)
 NO_HOURS_LIMIT = timedelta(hours=16)
+ROUND_THE_CLOCK_LIMIT = timedelta(hours=26)  # a 24-hour branch's till, open since yesterday
+DAY_END_WINDOW = timedelta(hours=1)  # when a 24-hour branch's cash is checked, after the day ends
 EVENING_DELAY = timedelta(minutes=30)
 DEFAULT_CLOSE = (22, 0)
 
@@ -75,17 +84,25 @@ def scan_company(company, now: datetime) -> int:
         )
     )
     checked_in = _checked_in(company, at.date(), now, [b.pk for b in branches])
+    tills = settings.mode != SalesSettings.Mode.INVOICES
     for branch in branches:
         quiet = branch.pk in opened or branch.pk in checked_in
-        if not quiet and _not_opened(branch, at, holiday, settings):
+        if tills and not quiet and _not_opened(branch, at, holiday, settings):
             late = int((at - _at(at, branch.opens_at)).total_seconds() // 60)
             sent += alerts.branch_not_opened(
                 branch, at.date(), branch.opens_at.strftime("%H:%M"), late
             )
-        if branch.cash_limit and _after_closing_today(branch, at):
+        if not branch.cash_limit:
+            continue
+        if branch.open_24h:
+            ended = _day_just_ended(company, at, settings)
+            check, day = ended is not None, ended
+        else:
+            check, day = _after_closing_today(branch, at), at.date()
+        if check:
             amount = cash_in_branch(branch)
             if amount > branch.cash_limit:
-                sent += alerts.cash_over_limit(branch, at.date(), amount)
+                sent += alerts.cash_over_limit(branch, day, amount)
     sent += _open_too_long(company, settings, now)
     sent += _late_handovers(company, settings, now)
     return sent
@@ -110,6 +127,8 @@ def _at(at: datetime, clock) -> datetime:
 
 
 def _not_opened(branch: Branch, at: datetime, holiday: bool, settings: SalesSettings) -> bool:
+    if branch.open_24h or branch.kind != BranchKind.PHARMACY:
+        return False
     if branch.opens_at is None or holiday or at.weekday() not in branch.open_weekdays:
         return False
     due = _at(at, branch.opens_at) + timedelta(minutes=settings.late_open_minutes)
@@ -121,16 +140,30 @@ def _not_opened(branch: Branch, at: datetime, holiday: bool, settings: SalesSett
 
 
 def _after_closing_today(branch: Branch, at: datetime) -> bool:
-    if branch.closes_at is None:
+    if branch.open_24h or branch.closes_at is None:
         return False
     if branch.opens_at is not None and branch.closes_at < branch.opens_at:
         return False  # open past midnight: no clean "after closing" moment in this calendar day
     return at >= _at(at, branch.closes_at)
 
 
+def _day_just_ended(company, at: datetime, settings: SalesSettings) -> date | None:
+    """The business day that ended within the last `DAY_END_WINDOW` (else None): a 24-hour
+    branch's cash is checked once, right after its business day ends."""
+    ends = at.replace(
+        hour=settings.business_day_ends_at.hour,
+        minute=settings.business_day_ends_at.minute,
+        second=0,
+        microsecond=0,
+    )
+    if not (ends <= at < ends + DAY_END_WINDOW):
+        return None
+    return ends.date() - timedelta(days=1)
+
+
 def _closing_moment(shift: CashShift) -> datetime | None:
     branch = shift.branch
-    if branch.closes_at is None:
+    if branch.open_24h or branch.closes_at is None:
         return None
     opened = local(shift.company, shift.opened_at)
     closing = opened.replace(
@@ -154,7 +187,8 @@ def _open_too_long(company, settings: SalesSettings, now: datetime) -> int:
     ).select_related("branch", "cashier__user", "company"):
         closing = _closing_moment(shift)
         if closing is None:
-            if now - shift.opened_at >= NO_HOURS_LIMIT:
+            limit = ROUND_THE_CLOCK_LIMIT if shift.branch.open_24h else NO_HOURS_LIMIT
+            if now - shift.opened_at >= limit:
                 sent += alerts.shift_not_closed(shift, "—")
             continue
         if now >= closing + timedelta(minutes=settings.close_alert_minutes):
@@ -222,7 +256,7 @@ def post_evening_all(now: datetime | None = None) -> int:
 def _last_close(company, at: datetime) -> datetime:
     closes = [
         branch.closes_at
-        for branch in Branch.objects.filter(company=company, is_active=True)
+        for branch in Branch.objects.filter(company=company, is_active=True, open_24h=False)
         if branch.closes_at is not None
         and (branch.opens_at is None or branch.closes_at > branch.opens_at)
     ]

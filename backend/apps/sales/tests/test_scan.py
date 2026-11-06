@@ -211,3 +211,116 @@ def test_closing_queues_the_daily_rollup(shop, django_capture_on_commit_callback
         )
     row = DailySales.objects.get(branch=shop.branch, day=shift.business_day)
     assert row.net == Decimal("700000.00") and row.shifts == 1
+
+
+# 24-hour branches (PLAN-OWNER §14.7) ---------------------------------------------------------
+
+
+@pytest.fixture
+def round_the_clock(hours):
+    """Yunusobod open around the clock; it still carries the hours it had before."""
+    shop = hours
+    Branch.objects.filter(pk=shop.other_branch.pk).update(open_24h=True)
+    shop.other_branch.refresh_from_db()
+    return shop
+
+
+def test_a_24_hour_branch_never_hears_it_was_not_opened(round_the_clock):
+    shop = round_the_clock
+    for hour, minute in ((9, 15), (9, 40), (10, 30), (3, 0)):
+        scan.scan_company(shop.company, moment(21, hour, minute))
+    sent = alerts("sales.branch_not_opened")
+    assert not sent.filter(target_id=shop.other_branch.pk).exists()
+    # The branch with hours still does.
+    assert sent.filter(target_id=shop.branch.pk).exists()
+
+
+def test_a_24_hour_branch_till_alerts_after_26_hours_not_at_closing(round_the_clock):
+    shop = round_the_clock
+    shift = services.open_shift(
+        by=shop.colleague, register=shop.other_register, opening_float="0", now=moment(21, 8, 0)
+    )
+    # Its old closing time (21:00) and the 16 hours of a branch without hours pass quietly.
+    scan.scan_company(shop.company, moment(21, 22, 30))
+    scan.scan_company(shop.company, moment(22, 0, 30))
+    scan.scan_company(shop.company, moment(22, 9, 55))
+    assert not alerts("sales.shift_not_closed").exists()
+    assert not alerts("sales.till_open").exists()
+    # 26 hours after it opened: managers and the cashier hear, once.
+    scan.scan_company(shop.company, moment(22, 10, 0))
+    scan.scan_company(shop.company, moment(22, 10, 5))
+    assert alerts("sales.shift_not_closed").count() == 2
+    [mine] = alerts("sales.till_open")
+    assert mine.recipient_id == shop.colleague.pk and mine.target_id == shift.pk
+
+
+def test_a_branch_without_hours_still_alerts_after_16_hours(hours):
+    shop = hours
+    Branch.objects.filter(pk=shop.branch.pk).update(opens_at=None, closes_at=None)
+    services.open_shift(
+        by=shop.cashier, register=shop.register, opening_float="0", now=moment(21, 8, 0)
+    )
+    scan.scan_company(shop.company, moment(21, 23, 55))
+    assert not alerts("sales.shift_not_closed").exists()
+    scan.scan_company(shop.company, moment(22, 0, 0))
+    assert alerts("sales.shift_not_closed").count() == 2
+
+
+def test_a_24_hour_branch_checks_its_cash_once_at_the_end_of_the_business_day(round_the_clock):
+    from apps.finance import services as finance
+
+    shop = round_the_clock
+    Branch.objects.filter(pk=shop.other_branch.pk).update(cash_limit=Decimal("50000"))
+    safe = finance.account_for_branch(shop.other_branch)
+    finance.record_transaction(
+        shop.company,
+        by=shop.owner,
+        kind="opening",
+        amount="500000",
+        occurred_on=moment(1, 12).date(),
+        account=safe,
+    )
+    # After its old closing time nothing happens: it has no closing moment.
+    scan.scan_company(shop.company, moment(21, 21, 40))
+    scan.scan_company(shop.company, moment(21, 23, 50))
+    assert not alerts("sales.cash_over_limit").exists()
+    # The business day ends at 04:00: one check, for the day that ended (the 21st).
+    scan.scan_company(shop.company, moment(22, 4, 0))
+    scan.scan_company(shop.company, moment(22, 4, 30))
+    sent = alerts("sales.cash_over_limit")
+    assert sent.count() == 2  # owner and manager
+    assert set(sent.values_list("dedupe_key", flat=True)) == {
+        f"sales.over_limit:{shop.other_branch.pk}:2026-10-21"
+    }
+    # Later that morning: still once.
+    scan.scan_company(shop.company, moment(22, 9, 0))
+    assert alerts("sales.cash_over_limit").count() == 2
+
+
+def test_warehouses_and_invoice_companies_are_never_expected_to_open_a_till(hours):
+    from apps.companies.models import BranchKind
+
+    shop = hours
+    Branch.objects.filter(pk=shop.branch.pk).update(kind=BranchKind.WAREHOUSE)
+    scan.scan_company(shop.company, moment(21, 9, 15))
+    sent = alerts("sales.branch_not_opened")
+    assert not sent.filter(target_id=shop.branch.pk).exists()
+    assert sent.filter(target_id=shop.other_branch.pk).exists()
+    Notification.objects.all().delete()
+    SalesSettings.objects.filter(company=shop.company).update(mode=SalesSettings.Mode.INVOICES)
+    scan.scan_company(shop.company, moment(22, 9, 15))
+    assert not alerts("sales.branch_not_opened").exists()
+
+
+def test_the_today_page_shows_no_not_opened_alert_for_a_24_hour_branch(round_the_clock):
+    from apps.sales import queries
+
+    shop = round_the_clock
+    cards = {
+        card["id"]: card for card in queries.today(shop.company, moment(21, 11, 0), branch_ids=None)
+    }
+    hours_card, night_card = cards[shop.branch.pk], cards[shop.other_branch.pk]
+    assert hours_card["status"] == "not_opened"
+    assert {"kind": "not_opened", "severity": "critical"} in hours_card["alerts"]
+    assert night_card["open_24h"] is True and night_card["status"] == "not_opened"
+    assert not [a for a in night_card["alerts"] if a["kind"] == "not_opened"]
