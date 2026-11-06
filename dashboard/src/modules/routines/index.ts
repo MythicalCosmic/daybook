@@ -4,7 +4,8 @@
  * History (completion per routine per day, per person), To confirm (routine work waiting for a
  * check, by routine and day) and the routines themselves, with onboarding templates for new people.
  */
-import { ClipboardCheck, GraduationCap, Plus, Repeat } from "@lucide/vue";
+import { ClipboardCheck, GraduationCap, Plus, Repeat, Thermometer } from "@lucide/vue";
+import { defineAsyncComponent } from "vue";
 
 import { defineModule } from "@/core/modules";
 import { counter } from "@/core/pulse";
@@ -22,7 +23,8 @@ export default defineModule({
   hotkey: "r",
   routes,
   nav: [
-    { key: "today", title: "routines.nav.today", to: "routines", perm: "tasks.view_all", exact: true },
+    // The badge: today's storage readings still out of range (PLAN-OWNER §14.10).
+    { key: "today", title: "routines.nav.today", to: "routines", perm: "tasks.view_all", exact: true, badge: counter("tasks.readings_alerts") },
     { key: "history", title: "routines.nav.history", to: "routines/history", perm: "tasks.view_all" },
     { key: "confirm", title: "routines.nav.confirm", to: "routines/confirm", perm: "tasks.confirm", badge: counter("tasks.routine_review") },
     { key: "all", title: "routines.nav.all", to: "routines/all", perm: "tasks.templates" },
@@ -55,6 +57,25 @@ export default defineModule({
       keywords: ["onboarding", "new staff", "yangi xodim", "адаптация"],
       perm: "tasks.templates",
       run: () => ctx.go("routines/onboarding"),
+    },
+    {
+      id: "routines.storage",
+      title: ctx.t("routines.cmd.storage"),
+      icon: Thermometer,
+      keywords: ["fridge", "temperature", "humidity", "muzlatgich", "harorat", "namlik", "холодильник", "температура", "влажность"],
+      perm: "tasks.templates",
+      run: () => ctx.go("routines/all?storage=1"),
+    },
+  ],
+  // Settings → Routines: what "Set up storage readings" starts from (ranges and times).
+  settings: [
+    {
+      id: "routines",
+      title: "routines.settings.title",
+      perm: "company.settings",
+      order: 16,
+      icon: Thermometer,
+      component: defineAsyncComponent(() => import("./components/RoutinesSettingsPanel.vue")),
     },
   ],
   messages: (language) => import(`./i18n/${language}.json`),

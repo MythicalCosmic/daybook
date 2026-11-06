@@ -10,7 +10,24 @@ import { http, ownerPath } from "@/api/http";
 import { moduleKey, qk } from "@/api/keys";
 import { useCompanyId } from "@/stores/company";
 
-import type { BulkResult, GivenToday, PlanOptions, Routine, RoutineCompliance, RoutineDay, RoutineHistory, RoutineInput, RoutinePreview, ToConfirm } from "./types";
+import type {
+  BulkResult,
+  GivenToday,
+  PdfLink,
+  PlanOptions,
+  Routine,
+  RoutineCompliance,
+  RoutineDay,
+  RoutineHistory,
+  RoutineInput,
+  RoutinePreview,
+  RoutineReadings,
+  RoutinesSettings,
+  StoragePresetDefaults,
+  StoragePresetInput,
+  StoragePresetResult,
+  ToConfirm,
+} from "./types";
 
 /** Filters of Today and History, as the API names them. */
 export interface WorkParams {
@@ -50,6 +67,18 @@ export const routinesApi = {
   /** The company's rule for finished work, which a new routine starts with (PLAN-OWNER §15.3). */
   finishRule: (cid: number, signal?: AbortSignal) =>
     http.get<{ on_finish: "auto" | "proof" | "ask"; auto_accept_after_hours: number | null }>(ownerPath(cid, "tasks/settings/"), undefined, { signal }),
+  // Storage readings (PLAN-OWNER §14.10) ---------------------------------------------------
+  /** One readings routine's journal: values, a series per key, missed days (default 30 days). */
+  readings: (cid: number, id: number, range: { from: string; to: string } | null, signal?: AbortSignal) =>
+    http.get<RoutineReadings>(ownerPath(cid, `routines/${id}/readings/`), range ?? undefined, { signal }),
+  /** A short-lived link to a branch's month of readings as a PDF; `month` "YYYY-MM". */
+  readingsPdf: (cid: number, branch: number, month: string) =>
+    http.get<PdfLink>(ownerPath(cid, "routines/readings/pdf/"), { branch: String(branch), month }, { toast: true }),
+  presetDefaults: (cid: number, branch: number, signal?: AbortSignal) =>
+    http.get<StoragePresetDefaults>(ownerPath(cid, "routines/storage-preset/"), { branch: String(branch) }, { signal }),
+  applyPreset: (cid: number, input: StoragePresetInput) => http.post<StoragePresetResult>(ownerPath(cid, "routines/storage-preset/"), input),
+  settings: (cid: number, signal?: AbortSignal) => http.get<RoutinesSettings>(ownerPath(cid, "routines/settings/"), undefined, { signal }),
+  saveSettings: (cid: number, patch: Partial<RoutinesSettings>) => http.patch<RoutinesSettings>(ownerPath(cid, "routines/settings/"), patch),
 };
 
 export const routineKeys = {
@@ -62,7 +91,72 @@ export const routineKeys = {
   day: (cid: number, params: WorkParams) => qk(cid, MODULE, "day", { ...params }),
   history: (cid: number, params: WorkParams) => qk(cid, MODULE, "history", { ...params }),
   toConfirm: (cid: number) => qk(cid, MODULE, "to-confirm"),
+  readings: (cid: number, id: number, range: { from: string; to: string } | null) => qk(cid, MODULE, "readings", { id, ...range }),
+  preset: (cid: number, branch: number) => qk(cid, MODULE, "storage-preset", { branch }),
+  settings: (cid: number) => qk(cid, MODULE, "settings"),
 };
+
+export function useRoutineReadings(id: MaybeRefOrGetter<number | null>, range: MaybeRefOrGetter<{ from: string; to: string } | null>, enabled: MaybeRefOrGetter<boolean> = true) {
+  const cid = useCompanyId();
+  return useQuery({
+    queryKey: computed(() => routineKeys.readings(cid.value, toValue(id) ?? 0, toValue(range))),
+    queryFn: ({ signal }) => routinesApi.readings(cid.value, toValue(id)!, toValue(range), signal),
+    enabled: computed(() => cid.value > 0 && !!toValue(id) && toValue(enabled)),
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
+  });
+}
+
+export function usePresetDefaults(branch: MaybeRefOrGetter<number | null>) {
+  const cid = useCompanyId();
+  return useQuery({
+    queryKey: computed(() => routineKeys.preset(cid.value, toValue(branch) ?? 0)),
+    queryFn: ({ signal }) => routinesApi.presetDefaults(cid.value, toValue(branch)!, signal),
+    enabled: computed(() => cid.value > 0 && !!toValue(branch)),
+    staleTime: 30_000,
+  });
+}
+
+/** The preset made routines: every routine list and day refetches. */
+export function useApplyPreset() {
+  const cid = useCompanyId();
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (input: StoragePresetInput) => routinesApi.applyPreset(cid.value, input),
+    onSettled: () => client.invalidateQueries({ queryKey: routineKeys.all(cid.value) }),
+  });
+}
+
+export function useRoutinesSettings() {
+  const cid = useCompanyId();
+  return useQuery({
+    queryKey: computed(() => routineKeys.settings(cid.value)),
+    queryFn: ({ signal }) => routinesApi.settings(cid.value, signal),
+    enabled: computed(() => cid.value > 0),
+    staleTime: 60_000,
+  });
+}
+
+/**
+ * Opens a branch's month of readings as a PDF from its short-lived signed link: Telegram's own
+ * download inside Telegram, a new tab elsewhere (the server serves PDFs inline).
+ */
+export async function openReadingsPdf(cid: number, branch: number, month: string): Promise<void> {
+  const link = await routinesApi.readingsPdf(cid, branch, month);
+  const absolute = new URL(link.url, window.location.origin).href;
+  const webApp = window.Telegram?.WebApp;
+  if (webApp?.initData && webApp.downloadFile && webApp.isVersionAtLeast("8.0")) {
+    webApp.downloadFile({ url: absolute, file_name: link.name });
+    return;
+  }
+  const anchor = document.createElement("a");
+  anchor.href = absolute;
+  anchor.target = "_blank";
+  anchor.rel = "noopener";
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+}
 
 /** The company's rule for finished work, cached with the tasks module's copy of it. */
 export function useFinishRule() {

@@ -5,7 +5,7 @@
  * with their proofs (Today, on that day, for that routine). Rates count the work whose time has
  * come; what's still ahead today isn't held against anyone.
  */
-import { CalendarRange, Store, Users } from "@lucide/vue";
+import { CalendarRange, FileDown, Store, Users } from "@lucide/vue";
 import { computed, nextTick, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
@@ -20,6 +20,7 @@ import PageSection from "@/components/PageSection.vue";
 import { useScopedBranches } from "@/components/pickers";
 import ProgressBar from "@/components/ProgressBar.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
+import UiButton from "@/components/UiButton.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
 import { addDays, DATE_PRESETS, diffDays } from "@/lib/dates";
 import { useDelayedPending } from "@/lib/useDelayedPending";
@@ -28,6 +29,7 @@ import { useRangeState } from "@/lib/useRangeState";
 import { useCompanyToday } from "@/stores/company";
 
 import { usePlanOptions, useRoutineHistory } from "../api";
+import MonthLogDialog from "../components/MonthLogDialog.vue";
 import RoutinesHeader from "../components/RoutinesHeader.vue";
 import { weekdayOf } from "../lib";
 import type { HistoryCell } from "../types";
@@ -60,6 +62,8 @@ const query = useRoutineHistory(params);
 const skeleton = useDelayedPending(computed(() => query.isPending.value));
 const data = computed(() => query.data.value ?? null);
 const today = useCompanyToday();
+const takesReadings = computed(() => (data.value?.routines ?? []).some((row) => row.routine.proof === "readings"));
+const logOpen = ref(false);
 
 const kpis = computed(() => {
   const totals = data.value?.totals;
@@ -114,9 +118,12 @@ const tone = (value: number | null) => (value === null ? "neutral" : value >= 90
   <div class="flex min-w-0 flex-col gap-5">
     <RoutinesHeader>
       <template #actions>
+        <!-- The temperature and humidity log, once the company takes readings (PLAN-OWNER §14.10). -->
+        <UiButton v-if="takesReadings" :icon="FileDown" data-testid="month-log" @click="logOpen = true">{{ t("routines.readings.logButton") }}</UiButton>
         <DateRangePicker v-model="period" align="end" :presets="PRESETS" :compare="false" />
       </template>
     </RoutinesHeader>
+    <MonthLogDialog v-model:open="logOpen" />
 
     <KpiStrip :items="kpis" :loading="query.isPending.value" :columns="4" phone="compact" />
     <FilterBar v-model="filters.values.value" :defs="defs" />

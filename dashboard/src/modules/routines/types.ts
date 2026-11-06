@@ -1,7 +1,34 @@
 /** Shapes of the routines endpoints (plan §4.5 `routines/`, `apps.tasks.owner_serializers`). */
 import type { BranchRef } from "@/api/types";
 
-export type ProofKind = "none" | "photo" | "text" | "any";
+export type ProofKind = "none" | "photo" | "text" | "any" | "readings";
+
+/** One number a readings routine asks for (PLAN-OWNER §14.10). Bounds are decimal strings ("2.0"); null: none that side. */
+export interface ReadingSpec {
+  key: string;
+  label: string;
+  unit: string;
+  min: string | null;
+  max: string | null;
+  /** Out of range is a critical alert (a fridge with vaccines). */
+  critical: boolean;
+}
+
+/** A value typed in for a readings run, held to the range it had then. */
+export interface ReadingTaken {
+  id: number;
+  key: string;
+  label: string;
+  unit: string;
+  value: string;
+  min: string | null;
+  max: string | null;
+  in_range: boolean;
+  note: string;
+  is_recheck: boolean;
+  recorded_at: string;
+  recorded_by: { id: number; name: string } | null;
+}
 
 export interface RoutinePerson {
   id: number;
@@ -49,6 +76,10 @@ export interface Routine {
   onboarding: boolean;
   due_after_days: number;
   proof: ProofKind;
+  /** With proof "readings": what each run asks for. */
+  readings?: ReadingSpec[];
+  /** One of us does it: the first to finish closes the others' copies of that day at the branch. */
+  shared?: boolean;
   needs_confirmation: boolean;
   /** With needs_confirmation: a run finished with a photo or text proof is accepted at once. */
   accept_with_proof?: boolean;
@@ -75,6 +106,9 @@ export interface RoutineInput {
   onboarding?: boolean;
   due_after_days?: number;
   proof?: ProofKind;
+  /** With proof "readings": 1 to 3 specs (a spec without a key gets the next free letter); [] otherwise. */
+  readings?: Array<Omit<ReadingSpec, "key"> & { key?: string }>;
+  shared?: boolean;
   /** null: the company's rule for finished work decides; left out on an edit: unchanged. */
   needs_confirmation?: boolean | null;
   checklist?: string[];
@@ -122,6 +156,8 @@ export interface RoutineRef {
   proof: ProofKind;
   needs_confirmation: boolean;
   is_active: boolean;
+  shared?: boolean;
+  readings?: ReadingSpec[];
 }
 
 export interface RoutineRun {
@@ -140,9 +176,13 @@ export interface RoutineRun {
   proof_photo: string | null;
   checklist: { done: number; total: number };
   can_confirm: boolean;
+  /** What a readings run asks for, and what was typed in (rechecks included). */
+  readings?: ReadingSpec[];
+  readings_taken?: ReadingTaken[];
 }
 
-export type RunCounts = Record<RunState | "skipped", number>;
+/** `excursions`: first measurements out of range among the runs (readings routines). */
+export type RunCounts = Record<RunState | "skipped", number> & { excursions?: number };
 
 export interface DayRoutine {
   routine: RoutineRef;
@@ -226,4 +266,69 @@ export interface PlanOptions {
   positions: Array<{ id: number; name: string }>;
   routines: Array<{ id: number; title: string }>;
   policies: Array<{ id: number; name: string; is_default: boolean }>;
+}
+
+// ─── Storage readings (PLAN-OWNER §14.10) ───────────────────────────────────────────────────
+
+/** A reading as the journal lists it. */
+export interface ReadingRow extends ReadingTaken {
+  task_id: number;
+  day: string;
+  /** "09:05", company time. */
+  time: string;
+  branch: BranchRef | null;
+  routine: { id: number; title: string } | null;
+}
+
+/** `routines/{id}/readings/`: the routine's journal; `series` has each day's first value per key. */
+export interface RoutineReadings {
+  range: { from: string; to: string };
+  specs: ReadingSpec[];
+  totals: { taken: number; excursions: number; rechecks: number; missed: number };
+  series: Array<{ date: string } & Record<string, string | null>>;
+  missed: string[];
+  rows: ReadingRow[];
+}
+
+/** `routines/storage-preset/?branch=`: what the preset dialog starts from. */
+export interface StoragePresetDefaults {
+  branch: BranchRef;
+  fridges: number;
+  times: string[];
+  positions: Array<{ id: number; name: string }>;
+  fridge: { min: string; max: string };
+  room: { min: string; max: string };
+  humidity_max: string;
+  /** Readings routines the branch already has. */
+  existing: number;
+}
+
+export interface StoragePresetInput {
+  branch: number;
+  fridges: number;
+  positions: number[];
+  times: string[];
+}
+
+export interface StoragePresetResult {
+  created: RoutineRef[];
+  /** Titles the branch already had at that time, left as they are. */
+  existing: string[];
+}
+
+/** Settings → Routines: what the storage preset starts from. Decimals as strings. */
+export interface RoutinesSettings {
+  storage_fridge_min: string;
+  storage_fridge_max: string;
+  storage_room_min: string;
+  storage_room_max: string;
+  storage_humidity_max: string;
+  /** "HH:MM" */
+  storage_times: string[];
+}
+
+export interface PdfLink {
+  url: string;
+  name: string;
+  expires_in: number;
 }

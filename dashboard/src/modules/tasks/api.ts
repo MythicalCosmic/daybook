@@ -19,6 +19,7 @@ import type {
   BulkResponse,
   ProofWall,
   QuickAddParse,
+  ReadingsToday,
   TaskCalendar,
   TaskComment,
   TaskCreateInput,
@@ -72,6 +73,9 @@ export const tasksApi = {
   /** The company's rules for finished work: anyone reads them, company.settings changes them. */
   settings: (cid: number, signal?: AbortSignal) => http.get<TasksSettings>(ownerPath(cid, "tasks/settings/"), undefined, { signal }),
   saveSettings: (cid: number, input: Partial<TasksSettings>) => http.patch<TasksSettings>(ownerPath(cid, "tasks/settings/"), input),
+  /** Today's storage readings (PLAN-OWNER §14.10): values out of range and readings missed. Never toasts. */
+  readingsToday: (cid: number, signal?: AbortSignal) =>
+    http.get<ReadingsToday>(ownerPath(cid, "routines/readings/today/"), undefined, { signal, toast: false }),
 };
 
 /** Filter values (URL shape) as API params: empty values dropped. */
@@ -99,6 +103,8 @@ export const taskKeys = {
   timeline: (cid: number, id: number) => qk(cid, MODULE, "timeline", { id }),
   proofs: (cid: number, params: Params) => qk(cid, MODULE, "proofs", params),
   settings: (cid: number) => qk(cid, MODULE, "settings"),
+  /** Under this module's key, so the tasks pulse keys (a reading out of range) refresh it. */
+  readingsToday: (cid: number) => qk(cid, MODULE, "readings-today"),
 };
 
 // ─── Queries ────────────────────────────────────────────────────────────────

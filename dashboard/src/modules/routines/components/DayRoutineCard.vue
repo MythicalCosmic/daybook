@@ -4,7 +4,7 @@
  * (late, to confirm), each person's run and who was skipped and why. A routine made after the
  * day's time says when it starts and, today, offers "Give today's task now"; a holiday says so.
  */
-import { Camera, ChevronDown, Clock, PartyPopper, Send, ShieldCheck, Store } from "@lucide/vue";
+import { Camera, ChevronDown, Clock, PartyPopper, Send, ShieldCheck, Store, Thermometer, UsersRound } from "@lucide/vue";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -41,6 +41,8 @@ const tone = computed(() => {
 });
 const attention = computed(() =>
   [
+    // Storage readings out of range that day (first measurements, PLAN-OWNER §14.10).
+    { key: "excursions", n: props.row.counts.excursions ?? 0, tone: "bg-danger-soft text-danger" },
     { key: "late", n: props.row.counts.late + props.row.counts.missed, tone: "bg-danger-soft text-danger" },
     { key: "review", n: props.row.counts.review, tone: "bg-warning-soft text-warning" },
   ].filter((chip) => chip.n > 0),
@@ -78,7 +80,10 @@ function give(): void {
         <p class="mt-1 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
           <span class="inline-flex items-center gap-1 tabular-nums"><Clock :size="14" aria-hidden="true" />{{ routine.due_time }}</span>
           <span v-if="routine.branch" class="inline-flex items-center gap-1"><Store :size="14" aria-hidden="true" />{{ routine.branch.name }}</span>
-          <span v-if="routine.proof !== 'none'" class="inline-flex items-center gap-1"><Camera :size="14" aria-hidden="true" />{{ t(`routines.proof.${routine.proof}`) }}</span>
+          <span v-if="routine.proof !== 'none'" class="inline-flex items-center gap-1"
+            ><component :is="routine.proof === 'readings' ? Thermometer : Camera" :size="14" aria-hidden="true" />{{ t(`routines.proof.${routine.proof}`) }}</span
+          >
+          <span v-if="routine.shared" class="inline-flex items-center gap-1" :title="t('routines.editor.sharedHint')"><UsersRound :size="14" aria-hidden="true" />{{ t("routines.today.shared") }}</span>
           <span v-if="routine.needs_confirmation" class="inline-flex items-center gap-1"><ShieldCheck :size="14" aria-hidden="true" />{{ t("routines.today.checked") }}</span>
           <span v-for="chip in attention" :key="chip.key" :class="['rounded-full px-2 py-px text-xs font-semibold', chip.tone]">{{ t(`routines.today.chip.${chip.key}`, { n: chip.n }, chip.n) }}</span>
         </p>

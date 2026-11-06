@@ -34,6 +34,7 @@ import { useCompanyStore } from "@/stores/company";
 import { useCompliance, usePlanOptions, useRoutine, useSaveRoutine } from "../api";
 import { formatRoutineAudit, routineFieldLabels } from "../audit";
 import GiveTodayDialog from "../components/GiveTodayDialog.vue";
+import ReadingsJournal from "../components/ReadingsJournal.vue";
 import RoutineEditor from "../components/RoutineEditor.vue";
 import RoutinePreview from "../components/RoutinePreview.vue";
 import WeekdayDots from "../components/WeekdayDots.vue";
@@ -166,6 +167,9 @@ const tone = (value: number | null) => (value === null ? "neutral" : value >= 90
           <RoutinePreview :routine-id="data.id" />
         </section>
       </div>
+
+      <!-- A readings routine's journal: the chart with its allowed band, every value, the month's PDF. -->
+      <ReadingsJournal v-if="data.proof === 'readings'" :routine="data" :range="range" />
 
       <PageSection :title="t('routines.detail.people')" variant="card" flush>
         <div v-if="compliance.isPending.value" class="flex flex-col gap-2 p-4"><SkeletonBlock v-for="n in 3" :key="n" height="28px" /></div>

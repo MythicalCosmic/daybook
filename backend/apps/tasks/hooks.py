@@ -152,7 +152,7 @@ registry.register_setup_step(
     description=_(
         "Fridge and room temperature and humidity, twice a day: the monthly log fills itself."
     ),
-    url="routines?storage=1",
+    url="routines/all?storage=1",
     done=feeds.storage_set_up,
 )
 

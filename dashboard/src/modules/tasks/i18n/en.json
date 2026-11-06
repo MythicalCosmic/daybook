@@ -377,5 +377,22 @@
   "tasks.reviews.rule.proof": "Company rule: work finished with a photo or a report is accepted automatically; the rest comes here.",
   "tasks.reviews.rule.ask": "Company rule: every finished task waits here for a check.",
   "tasks.reviews.ruleWait": "If nobody checks it within {n} h, it is accepted automatically.",
-  "tasks.reviews.ruleLink": "Change"
+  "tasks.reviews.ruleLink": "Change",
+  "tasks.proof.readings": "Readings",
+  "tasks.readings.title": "Readings",
+  "tasks.readings.allowed": "Allowed: {range}",
+  "tasks.readings.noRange": "Any value",
+  "tasks.readings.critical": "Critical",
+  "tasks.readings.criticalHint": "Out of range, the alert about it is critical",
+  "tasks.readings.inRange": "In range",
+  "tasks.readings.outOfRange": "Out of range",
+  "tasks.readings.recheck": "Recheck",
+  "tasks.readings.notTaken": "Not taken yet",
+  "tasks.readings.recheckUntil": "A recheck may come until {time}",
+  "tasks.widget.readings": "Storage readings today",
+  "tasks.widget.readingsLink": "Routines today",
+  "tasks.widget.readingsOk": "All readings in range",
+  "tasks.widget.readingsTaken": "Taken today: {n}",
+  "tasks.widget.readingsMissed": "Not taken",
+  "tasks.widget.backInRange": "Back in range at {time}"
 }

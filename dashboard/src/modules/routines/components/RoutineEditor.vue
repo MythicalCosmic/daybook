@@ -32,9 +32,11 @@ import { isApiError } from "@/api/http";
 
 import { useDeleteRoutine, useFinishRule, usePlanOptions, useSaveRoutine } from "../api";
 import { afterSave, missesToday, nextRunOf, runLabel } from "../lib";
+import { fromDrafts, toDraft, type SpecDraft } from "../readings";
 import type { ProofKind, Routine, RoutineInput } from "../types";
 import { useRunWords } from "../useRunWords";
 import GiveTodayDialog from "./GiveTodayDialog.vue";
+import ReadingSpecsEditor from "./ReadingSpecsEditor.vue";
 import RoutinePreview from "./RoutinePreview.vue";
 
 const open = defineModel<boolean>("open", { default: false });
@@ -76,6 +78,10 @@ function setConfirmation(value: boolean): void {
   confirmTouched.value = true;
 }
 const checklist = ref<string[]>([]);
+/** With the readings proof: what each run asks for (PLAN-OWNER §14.10). */
+const specs = ref<SpecDraft[]>([]);
+/** One of us does it: the first to finish closes the others' copies of that day at the branch. */
+const shared = ref(false);
 const policy = ref<number | null>(null);
 const escalateTo = ref<number | null>(null);
 const active = ref(true);
@@ -96,6 +102,8 @@ function load(): void {
   needsConfirmation.value = routine ? routine.needs_confirmation : null;
   confirmTouched.value = false;
   checklist.value = routine ? [...routine.checklist] : [];
+  specs.value = (routine?.readings ?? []).map(toDraft);
+  shared.value = routine?.shared ?? false;
   policy.value = routine?.reminder_policy?.id ?? null;
   escalateTo.value = routine?.escalate_to?.id ?? null;
   active.value = routine?.is_active ?? true;
@@ -145,7 +153,10 @@ function announce(routine: Routine, created: boolean): void {
     ...(next === "offer" ? { action: { label: t("routines.give.button"), onClick: () => ((saved.value = routine), (giveOpen.value = true)) } } : {}),
   });
 }
-const proofOptions = computed(() => (["none", "photo", "text", "any"] as const).map((value) => ({ value, label: t(`routines.proof.${value}`) })));
+// Readings are a routine's proof only: never an onboarding template's.
+const proofOptions = computed(() =>
+  ([...(["none", "photo", "text", "any"] as const), ...(isOnboarding.value ? [] : (["readings"] as const))] as ProofKind[]).map((value) => ({ value, label: t(`routines.proof.${value}`) })),
+);
 
 function input(): RoutineInput {
   const body: RoutineInput = {
@@ -169,6 +180,8 @@ function input(): RoutineInput {
   } else {
     body.weekdays = weekdays.value;
     body.starts_on = startsOn.value;
+    body.readings = proof.value === "readings" ? fromDrafts(specs.value).specs : [];
+    body.shared = shared.value;
   }
   return body;
 }
@@ -179,6 +192,10 @@ function validate(): boolean {
   if (!dueTime.value) found.due_time = t("routines.editor.timeRequired");
   if (!isOnboarding.value && weekdays.value.length === 0) found.weekdays = t("routines.editor.daysRequired");
   if (!isOnboarding.value && people.value.length === 0 && positions.value.length === 0) found.who = t("routines.editor.whoRequired");
+  if (proof.value === "readings") {
+    const problem = specs.value.length ? fromDrafts(specs.value).problem : "missing";
+    if (problem) found.readings = t(`routines.readings.problem.${problem}`);
+  }
   errors.value = found;
   return Object.keys(found).length === 0;
 }
@@ -277,6 +294,7 @@ async function onDelete(): Promise<void> {
           <FormField :label="t('routines.field.branch')" :hint="t('routines.editor.branchHint')" optional>
             <BranchPicker v-model="branch" :placeholder="t('routines.editor.allBranches')" />
           </FormField>
+          <ToggleSwitch v-if="!isOnboarding" v-model="shared" layout="row" :label="t('routines.field.shared')" :description="t('routines.editor.sharedHint')" data-testid="shared" />
         </section>
 
         <section class="flex flex-col gap-4 border-t border-line pt-5">
@@ -296,6 +314,9 @@ async function onDelete(): Promise<void> {
               />
             </div>
           </div>
+          <FormField v-if="proof === 'readings'" :label="t('routines.field.readings')" :hint="t('routines.editor.readingsHint')" required>
+            <ReadingSpecsEditor v-model="specs" :error="errors.readings" />
+          </FormField>
           <FormField :label="t('routines.field.checklist')" :hint="t('routines.editor.checklistHint')" optional>
             <ChecklistEditor v-model="checklist" texts="routines.checklist" />
           </FormField>

@@ -70,6 +70,8 @@ export default defineModule({
     { id: "tasks.chart.on_time_trend", span: 2, order: 40, kind: "chart", perm: "tasks.view_all", component: defineAsyncComponent(() => import("./widgets/OnTimeTrendWidget.vue")) },
     { id: "tasks.branches_now", span: 2, order: 39, kind: "card", perm: "tasks.view_all", component: defineAsyncComponent(() => import("./widgets/BranchesNowWidget.vue")) },
     { id: "tasks.top_bottom", span: 2, order: 41, kind: "card", perm: "reports.view", component: defineAsyncComponent(() => import("./widgets/TopBottomWidget.vue")) },
+    // Today's storage readings out of range and missed (PLAN-OWNER §14.10); nothing until a company sets readings up.
+    { id: "tasks.readings_today", span: 2, order: 38, kind: "card", perm: "tasks.view_all", component: defineAsyncComponent(() => import("./widgets/ReadingsTodayWidget.vue")) },
   ],
   settings: [
     { id: "tasks", title: "tasks.settings.title", perm: "company.settings", order: 15, icon: ListChecks, component: defineAsyncComponent(() => import("./components/TasksSettingsPanel.vue")) },
