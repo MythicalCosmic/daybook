@@ -643,7 +643,9 @@ def test_the_agents_list(owner_api, crew, company, member):
         "stats",
         "config",
         "fields",
+        "custom",
     }
+    assert watcher["custom"] is None  # only the agents an owner made have their own fields
     assert watcher["icon"] == "alarm-clock"
     assert watcher["config"] == {
         "escalate_after_hours": 2,

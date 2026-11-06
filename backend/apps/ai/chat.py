@@ -239,16 +239,17 @@ def _history(conversation: AIConversation) -> list[dict]:
     ]
 
 
-def _tool_definitions(ctx: ToolContext) -> tuple[list[dict], dict]:
+def _tool_definitions(ctx: ToolContext, tools: list | None = None) -> tuple[list[dict], dict]:
     """The asker's tools as the API takes them, sorted by name and described in English
     whatever the asker's language, so `tools` stays byte-identical across turns (the prompt
-    cache, and thinking blocks are bound to it).
+    cache, and thinking blocks are bound to it). `tools` narrows them (a custom agent reads only
+    its own domains, apps.ai.agents.custom); they must come from `registry.tools_for(ctx)`.
 
     Not `strict`: Anthropic refuses a whole request (400) once its strict tools pass 20, or
     their optional parameters 24, or their union parameters 16, and every module adds tools (an
     owner of a company with finance, sales, HR and payroll passed all three). `run_tool`
     validates each call against the tool's model and hands Claude the problems instead."""
-    tools = registry.tools_for(ctx)
+    tools = registry.tools_for(ctx) if tools is None else sorted(tools, key=lambda t: t.name)
     with translation.override("en"):
         definitions = [
             {
@@ -356,6 +357,12 @@ def _ensure_may_call(company) -> None:
 
 def _text_of(response) -> str:
     return "\n\n".join(block.text for block in response.content if block.type == "text").strip()
+
+
+# The loop's pieces, for the other tool loops (apps.ai.agents.custom) to use rather than copy.
+tool_definitions = _tool_definitions
+ensure_may_call = _ensure_may_call
+text_of = _text_of
 
 
 def clean_answer(text: str, ctx: ToolContext) -> str:

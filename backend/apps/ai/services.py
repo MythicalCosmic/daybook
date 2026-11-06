@@ -6,6 +6,7 @@ Each service takes `by: Membership` (`None` means the system), audits its change
     draft = services.start_draft(member, audio=data, seconds=14, source="bot", tg={...})
     services.apply_draft(draft, member)            # apps.ai.drafts
     services.enable_ai(company, by=owner)          # the owner's consent; default agents on
+    services.create_custom_agent(company, by=owner, data={...})   # an agent in their own words
 """
 
 from dataclasses import dataclass
@@ -21,10 +22,10 @@ from django.utils.translation import gettext as _
 from apps.ai import agents, availability, conf, speech
 from apps.ai import instructions as owner_instructions
 from apps.ai import tasks as jobs
-from apps.ai.agents import runner, voice_tasks
+from apps.ai.agents import custom, runner, voice_tasks
 from apps.ai.audit_actions import AIAction
 from apps.ai.drafts import apply_draft, discard_draft, undo_draft
-from apps.ai.models import AgentState, AIDraft, AISettings
+from apps.ai.models import AgentState, AIDraft, AISettings, CustomAgent
 from apps.audit import services as audit
 from apps.companies.models import Feature
 from apps.core.exceptions import DomainError
@@ -37,6 +38,8 @@ __all__ = [
     "DraftRefused",
     "agent_unavailable",
     "apply_draft",
+    "create_custom_agent",
+    "delete_custom_agent",
     "disable_ai",
     "discard_draft",
     "enable_ai",
@@ -44,6 +47,7 @@ __all__ = [
     "start_draft",
     "undo_draft",
     "update_agent",
+    "update_custom_agent",
     "update_settings",
     "voice_status",
 ]
@@ -264,9 +268,10 @@ def update_agent(
 ):
     """Switch an agent on or off, change its settings (checked against its fields) and the
     owner's own instructions for its Claude calls (apps.ai.instructions; only for an agent that
-    asks Claude)."""
+    asks Claude). An agent an owner made takes no instructions (its job says what it does);
+    switched back on after it paused itself, it reads with the rights of who switched it on."""
     _ensure_may_configure(by)
-    agent = agents.get(key)
+    agent = agents.resolve(company, key)
     if agent is None:
         raise DomainError(_("There is no such agent."))
     state = AgentState.objects.select_for_update().get(pk=agents.state_of(company, key).pk)
@@ -281,6 +286,8 @@ def update_agent(
         text = instructions.strip()
         if text and not agent.prompts:
             raise DomainError(_("This agent works by fixed rules: it has no instructions."))
+        if text and agent.custom is not None:
+            raise DomainError(_("Change what this agent does in its job."))
         if len(text) > owner_instructions.MAX_LENGTH:
             raise DomainError(
                 _("At most %(max)d characters.") % {"max": owner_instructions.MAX_LENGTH}
@@ -289,6 +296,8 @@ def update_agent(
     if enabled is not None and enabled != state.enabled:
         if enabled and agent.needs_claude and not availability.configured():
             raise DomainError(_("This agent needs Claude: add ANTHROPIC_API_KEY on the server."))
+        if enabled and agent.custom is not None:
+            _resume_custom(agent.custom, by)
         state.enabled = enabled
     if state.enabled and agent.scheduled and (config is not None or not before["enabled"]):
         runner.schedule_first_run(state)
@@ -327,17 +336,167 @@ def give_an_hour(task_id: int, *, by: Membership):
 
 
 def run_agent_now(company, key: str, *, by: Membership) -> AgentState:
-    """ "Run now": the scheduled agent runs at once on the ai queue."""
+    """ "Run now": the scheduled agent runs at once on the ai queue. The agents an owner made
+    may do it `custom.RUN_NOW_PER_DAY` times a day in all, one run at a time each."""
     _ensure_may_configure(by)
-    agent = agents.get(key)
+    agent = agents.resolve(company, key)
     if agent is None or not agent.scheduled:
         raise DomainError(_("This agent works by itself when something happens."))
     if not conf.ai_on(company):
         raise DomainError(_("Turn AI on first."))
     state = agents.state_of(company, key)
+    if agent.custom is not None:
+        now = timezone.now()
+        if state.running_since is not None and now - state.running_since < custom.RUNNING_FOR:
+            raise DomainError(_("It is already at work: its report is on the way."))
+        if custom.run_now_left(company, now) <= 0:
+            raise DomainError(
+                _("That's all the runs for today (%(limit)s). The schedule goes on as usual.")
+                % {"limit": custom.RUN_NOW_PER_DAY}
+            )
     AgentState.objects.filter(pk=state.pk).update(running_since=timezone.now())
     transaction.on_commit(partial(jobs.run_agent.delay, state.pk))
     return state
+
+
+# The agents an owner makes in their own words (apps.ai.agents.custom) ------------------------
+
+
+def _ensure_may_read_for(by: Membership) -> None:
+    if not by.has_perm(Perm.AI_USE):
+        raise PermissionDenied(_("You can't use AI, so an agent can't read for you."))
+
+
+@transaction.atomic
+def create_custom_agent(company, *, by: Membership, data: dict) -> CustomAgent:
+    """A new agent in `by`'s own words, reading with their rights, switched on at its first
+    time (off on a server without Claude). At most CustomAgent.MAX_LIVE live ones a company."""
+    _ensure_may_configure(by)
+    _ensure_may_read_for(by)
+    if not conf.ai_on(company):
+        raise DomainError(_("Turn AI on first."))
+    # One at a time per company, so two at once can't both be the tenth.
+    AISettings.objects.select_for_update().get(pk=conf.get_settings(company).pk)
+    if custom.live(company).count() >= CustomAgent.MAX_LIVE:
+        raise DomainError(
+            _("You can have %(max)s agents of your own. Delete one to make another.")
+            % {"max": CustomAgent.MAX_LIVE}
+        )
+    fields, people = custom.clean(company, by, data)
+    row = CustomAgent.objects.create(company=company, run_as=by, created_by=by, **fields)
+    row.people.set(people)
+    state = AgentState.objects.create(
+        company=company, key=row.key, enabled=availability.configured(), config={}
+    )
+    if state.enabled:
+        runner.schedule_first_run(state)
+        state.save(update_fields=["next_run_at", "updated_at"])
+    audit.record(
+        AIAction.AGENT_CREATED,
+        company_id=company.pk,
+        actor=by.user,
+        target=row,
+        agent=row.key,
+        name=row.name,
+    )
+    return row
+
+
+@transaction.atomic
+def update_custom_agent(row: CustomAgent, *, by: Membership, data: dict) -> CustomAgent:
+    """Change what the agent does, when, who gets it and what it may read (`data`: the fields
+    that change, or the whole form). Whoever changes what it does, reads or who gets it becomes
+    its owner: it reads with their rights from then on."""
+    _ensure_may_configure(by)
+    row = CustomAgent.objects.select_for_update().get(pk=row.pk, deleted_at__isnull=True)
+    current_people = list(row.people.all())
+    before = custom.snapshot(row, current_people)
+    current = {
+        "name": row.name,
+        "job": row.job,
+        "color": row.color,
+        "frequency": row.frequency,
+        "at": row.at,
+        "weekday": row.weekday,
+        "month_day": row.month_day,
+        "recipients": row.recipients,
+        "people": [person.pk for person in current_people],
+        "group": row.group_id,
+        "domains": list(row.domains),
+        "template": row.template,
+    }
+    merged = current | {key: value for key, value in data.items() if key in current}
+    reads = custom.reads_of(merged) != custom.reads_of(current)
+    if reads:
+        _ensure_may_read_for(by)
+    fields, people = custom.clean(row.company, by, merged, reads=reads)
+    fields.pop("template", None)
+    schedule = (row.frequency, row.at, row.weekday, row.month_day)
+    for name, value in fields.items():
+        setattr(row, name, value)
+    if reads:
+        row.run_as = by
+    row.save()
+    if people is not None:
+        row.people.set(people)
+    after = custom.snapshot(row, people if people is not None else current_people)
+    state = AgentState.objects.select_for_update().get(pk=agents.state_of(row.company, row.key).pk)
+    if state.enabled and schedule != (row.frequency, row.at, row.weekday, row.month_day):
+        runner.schedule_first_run(state)
+        state.save(update_fields=["next_run_at", "updated_at"])
+    if changed := audit.diff(before, after):
+        audit.record(
+            AIAction.AGENT_CHANGED,
+            company_id=row.company_id,
+            actor=by.user,
+            target=row,
+            agent=row.key,
+            changes=changed,
+        )
+    return row
+
+
+@transaction.atomic
+def delete_custom_agent(row: CustomAgent, *, by: Membership) -> None:
+    """Gone from the list and its page, and it never runs again; its runs and what it did stay
+    in the activity."""
+    _ensure_may_configure(by)
+    row = CustomAgent.objects.select_for_update().get(pk=row.pk)
+    if row.deleted_at is not None:
+        return
+    row.deleted_at = timezone.now()
+    row.save(update_fields=["deleted_at", "updated_at"])
+    AgentState.objects.filter(company_id=row.company_id, key=row.key).update(
+        enabled=False, next_run_at=None, running_since=None
+    )
+    audit.record(
+        AIAction.AGENT_DELETED,
+        company_id=row.company_id,
+        actor=by.user,
+        target=row,
+        agent=row.key,
+        name=row.name,
+    )
+
+
+def _resume_custom(row: CustomAgent, by: Membership) -> None:
+    """A custom agent switched back on: when it paused itself (its owner left or lost the
+    right to use AI), `by` becomes its owner and it reads with their rights."""
+    if not row.paused_reason and not custom.why_paused(row.run_as):
+        return
+    _ensure_may_read_for(by)
+    before = row.run_as_id
+    CustomAgent.objects.filter(pk=row.pk).update(run_as=by, paused_reason="")
+    row.run_as, row.paused_reason = by, ""
+    if before != by.pk:
+        audit.record(
+            AIAction.AGENT_CHANGED,
+            company_id=row.company_id,
+            actor=by.user,
+            target=row,
+            agent=row.key,
+            changes={"run_as": [before, by.pk]},
+        )
 
 
 @transaction.atomic

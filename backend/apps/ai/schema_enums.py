@@ -27,4 +27,7 @@ ENUM_NAME_OVERRIDES = {
         "unavailable",
     ],
     "AiSpeechStateEnum": ["ready", "not_configured", "fake"],
+    "AiCustomAgentColorEnum": "apps.ai.models.CustomAgent.Color",
+    "AiCustomAgentFrequencyEnum": "apps.ai.models.CustomAgent.Frequency",
+    "AiCustomAgentRecipientsEnum": "apps.ai.models.CustomAgent.Recipients",
 }

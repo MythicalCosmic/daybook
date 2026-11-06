@@ -512,3 +512,19 @@ def bonus_reason(percent: int, tasks: int, period) -> str:
         "%(month)s: %(percent)s%% of %(count)s tasks done on time, no lateness fine.",
         tasks,
     ) % {"month": payroll_queries.month_label(period), "percent": percent, "count": tasks}
+
+
+# The agents an owner makes in their own words (apps.ai.agents.custom) ---------------------------
+
+# Telegram takes 4096 characters; the report is asked to stay under 1200.
+CUSTOM_REPORT_MAX = 4000
+
+
+def custom_report(name: str, text: str) -> str:
+    """A custom agent's message: its name in bold, then its report (plain text, escaped)."""
+    head = f"<b>{html.quote(name)}</b>\n\n"
+    body = html.quote(text)
+    while len(head) + len(body) > CUSTOM_REPORT_MAX and text:
+        text = text[: max(0, len(text) - 200)]
+        body = html.quote(text.rstrip()) + "…"
+    return head + body

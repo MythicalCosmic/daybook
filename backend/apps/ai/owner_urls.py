@@ -34,6 +34,24 @@ urlpatterns = [
     path("ai/agents/<str:key>/run/", owner_api.AgentRunView.as_view(), name="owner-ai-agent-run"),
     path("ai/activity/", owner_api.ActivityView.as_view(), name="owner-ai-activity"),
     path(
+        "ai/custom-agents/", owner_api.CustomAgentListView.as_view(), name="owner-ai-custom-agents"
+    ),
+    path(
+        "ai/custom-agents/templates/",
+        owner_api.CustomAgentTemplatesView.as_view(),
+        name="owner-ai-custom-agent-templates",
+    ),
+    path(
+        "ai/custom-agents/options/",
+        owner_api.CustomAgentOptionsView.as_view(),
+        name="owner-ai-custom-agent-options",
+    ),
+    path(
+        "ai/custom-agents/<int:agent_id>/",
+        owner_api.CustomAgentView.as_view(),
+        name="owner-ai-custom-agent",
+    ),
+    path(
         "ai/conversations/",
         owner_api.ConversationListView.as_view(),
         name="owner-ai-conversations",

@@ -6,7 +6,7 @@ from django.utils.translation import gettext_lazy as _
 from unfold.admin import ModelAdmin
 
 from apps.ai import availability
-from apps.ai.models import AIDraft, AISettings, AIUsage
+from apps.ai.models import AIDraft, AISettings, AIUsage, CustomAgent
 
 
 @admin.register(AISettings)
@@ -102,4 +102,35 @@ class AIDraftAdmin(ModelAdmin):
     readonly_fields = fields
 
     def has_add_permission(self, request):
+        return False
+
+
+@admin.register(CustomAgent)
+class CustomAgentAdmin(ModelAdmin):
+    """The agents owners made, to see what they do; changed only from the dashboard, which
+    checks rights and keeps the audit log. What they wrote stays with the company."""
+
+    list_display = ("name", "company", "frequency", "at", "recipients", "paused_reason")
+    list_filter = ("frequency", "recipients", "paused_reason")
+    search_fields = ("name", "company__name")
+    fields = (
+        "company",
+        "name",
+        "frequency",
+        "at",
+        "weekday",
+        "month_day",
+        "recipients",
+        "domains",
+        "run_as",
+        "created_by",
+        "paused_reason",
+        "deleted_at",
+    )
+    readonly_fields = fields
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
         return False

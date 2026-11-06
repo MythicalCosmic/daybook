@@ -10,6 +10,12 @@
 
 Drafts: people with ai.configure or tasks.view_all see the company's (in their branches),
 everyone else their own; only the author creates a draft's tasks or throws it away.
+
+    GET/POST ai/custom-agents/             the agents an owner made (POST: ai.configure)
+    PATCH/DELETE ai/custom-agents/<id>/    ai.configure; DELETE is a soft delete
+    GET  ai/custom-agents/templates/       ai.configure: the ready jobs to start from
+    GET  ai/custom-agents/options/         ai.configure: what the form offers
+A custom agent's page, switch and "Run now" are the agents' own (ai/agents/custom_<id>/…).
 """
 
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -21,9 +27,9 @@ from rest_framework.response import Response
 
 from apps.ai import agents, availability, chat, conf, queries, services, speech
 from apps.ai import instructions as owner_instructions
-from apps.ai.agents import photo_checker
+from apps.ai.agents import custom, custom_templates, photo_checker
 from apps.ai.api import CREATE_ERRORS, DRAFT_RELATIONS, DraftEndpoints
-from apps.ai.models import AIDraft, AISettings
+from apps.ai.models import AIDraft, AISettings, CustomAgent
 from apps.ai.serializers import (
     AIApplyResultSerializer,
     AIDraftApplySerializer,
@@ -278,6 +284,50 @@ class AIAgentStatsSerializer(serializers.Serializer):
     week = serializers.IntegerField()
 
 
+class AICustomPersonSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+
+
+class AICustomGroupSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    title = serializers.CharField()
+
+
+class AICustomDomainSerializer(serializers.Serializer):
+    key = serializers.CharField(help_text="A tool domain (apps.ai.tools.registry).")
+    label = serializers.CharField()
+
+
+class AICustomAgentSerializer(serializers.Serializer):
+    """An agent an owner made: what it does, when, for whom and what it may read."""
+
+    id = serializers.IntegerField()
+    job = serializers.CharField(help_text="What it should do, in the owner's words.")
+    color = serializers.ChoiceField(CustomAgent.Color.choices)
+    template = serializers.CharField(allow_blank=True, help_text="The template it started from.")
+    frequency = serializers.ChoiceField(CustomAgent.Frequency.choices)
+    at = serializers.CharField(help_text="HH:MM in the company's timezone.")
+    weekday = serializers.IntegerField(allow_null=True, help_text="Weekly: 0 = Monday.")
+    month_day = serializers.IntegerField(allow_null=True, help_text="Monthly: 1 to 28.")
+    recipients = serializers.ChoiceField(CustomAgent.Recipients.choices)
+    people = AICustomPersonSerializer(many=True)
+    group = AICustomGroupSerializer(allow_null=True)
+    domains = AICustomDomainSerializer(many=True)
+    run_as = AICustomPersonSerializer(help_text="Whose rights it reads with ('me').")
+    created_by = AICustomPersonSerializer(allow_null=True)
+    created_at = serializers.DateTimeField()
+    paused_reason = serializers.CharField(
+        allow_blank=True, help_text='Why it switched itself off: "", "left" or "no_access".'
+    )
+    paused_text = serializers.CharField(allow_blank=True)
+    last_report = serializers.CharField(
+        allow_null=True,
+        help_text="What it last wrote: only for its owner and the people it goes to (else null).",
+    )
+    last_report_at = serializers.DateTimeField(allow_null=True)
+
+
 class AIAgentSerializer(serializers.Serializer):
     key = serializers.CharField()
     name = serializers.CharField()
@@ -294,6 +344,9 @@ class AIAgentSerializer(serializers.Serializer):
     stats = AIAgentStatsSerializer()
     config = serializers.DictField()
     fields = AIAgentFieldSerializer(many=True)
+    custom = AICustomAgentSerializer(
+        allow_null=True, help_text="An agent an owner made (custom_<id>); null for a built-in one."
+    )
 
 
 MONEY = {"max_digits": 16, "decimal_places": 6, "allow_null": True}
@@ -457,7 +510,10 @@ class AgentView(OwnerAPIView):
     @extend_schema(responses=AIAgentDetailSerializer)
     def get(self, request, company_id, key):
         page = queries.agent_detail(
-            self.company, key, can_configure=self.membership.has_perm(CONFIGURE)
+            self.company,
+            key,
+            can_configure=self.membership.has_perm(CONFIGURE),
+            viewer=self.membership,
         )
         if page is None:
             raise NotFound
@@ -465,7 +521,7 @@ class AgentView(OwnerAPIView):
 
     @extend_schema(request=AIAgentUpdateSerializer, responses=AIAgentSerializer)
     def patch(self, request, company_id, key):
-        agent = agents.get(key)
+        agent = agents.resolve(self.company, key)
         if agent is None or not agent.works_in(self.company):
             raise NotFound
         form = AIAgentUpdateSerializer(data=request.data)
@@ -483,7 +539,7 @@ class AgentRunView(OwnerAPIView):
 
     @extend_schema(request=None, responses={202: AIQueuedSerializer})
     def post(self, request, company_id, key):
-        if agents.get(key) is None:
+        if agents.resolve(self.company, key) is None:
             raise NotFound
         services.run_agent_now(self.company, key, by=self.membership)
         return Response({"queued": True}, status=202)
@@ -512,6 +568,176 @@ class ActivityView(OwnerAPIView):
             before=before,
         )
         return Response(AIActivityPageSerializer(page).data)
+
+
+# The agents an owner makes in their own words (apps.ai.agents.custom) --------------------------
+
+
+class AICustomAgentWriteSerializer(serializers.Serializer):
+    """The New agent form (or the fields that change). The rules and their translated messages
+    are apps.ai.agents.custom.clean's."""
+
+    name = serializers.CharField(required=False, allow_blank=True, max_length=200)
+    job = serializers.CharField(required=False, allow_blank=True, max_length=4000)
+    color = serializers.CharField(required=False, allow_blank=True, max_length=16)
+    template = serializers.CharField(required=False, allow_blank=True, max_length=32)
+    frequency = serializers.CharField(required=False, help_text="daily, weekdays, weekly, monthly")
+    at = serializers.CharField(required=False, help_text="HH:MM in the company's timezone.")
+    weekday = serializers.IntegerField(required=False, allow_null=True)
+    month_day = serializers.IntegerField(required=False, allow_null=True)
+    recipients = serializers.CharField(required=False, help_text="me, people or group")
+    people = serializers.ListField(child=serializers.IntegerField(), required=False)
+    group = serializers.IntegerField(required=False, allow_null=True)
+    domains = serializers.ListField(child=serializers.CharField(max_length=32), required=False)
+
+
+class AICustomTemplateSerializer(serializers.Serializer):
+    key = serializers.CharField()
+    name = serializers.CharField()
+    job = serializers.CharField()
+    frequency = serializers.ChoiceField(CustomAgent.Frequency.choices)
+    at = serializers.CharField()
+    weekday = serializers.IntegerField(allow_null=True)
+    month_day = serializers.IntegerField(allow_null=True)
+    domains = serializers.ListField(child=serializers.CharField())
+    color = serializers.ChoiceField(CustomAgent.Color.choices)
+    icon = serializers.CharField(help_text="A lucide icon name.")
+    needs = serializers.CharField(allow_null=True, help_text="The module it is about.")
+
+
+class AICustomDomainOptionSerializer(serializers.Serializer):
+    key = serializers.CharField()
+    label = serializers.CharField()
+    available = serializers.BooleanField(help_text="Whether the asker may read it.")
+    reason = serializers.CharField(
+        allow_blank=True, help_text='"", "switch_off" (Settings → AI) or "no_access".'
+    )
+    feature = serializers.CharField(allow_null=True, help_text="Its module, when it has one.")
+
+
+class AICustomRecipientSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    position = serializers.CharField(allow_blank=True)
+    photo = serializers.CharField(allow_null=True)
+
+
+class AICustomOptionsSerializer(serializers.Serializer):
+    domains = AICustomDomainOptionSerializer(many=True)
+    groups = AICustomGroupSerializer(many=True, help_text="Linked Telegram groups.")
+    people = AICustomRecipientSerializer(
+        many=True, help_text="Who can get it: approved, with the bot started."
+    )
+    max_agents = serializers.IntegerField()
+    live = serializers.IntegerField(help_text="How many the company has now.")
+    run_now_left = serializers.IntegerField(help_text='"Run now"s left today, for all of them.')
+    me = AICustomPersonSerializer()
+
+
+def custom_options(member) -> dict:
+    from apps.groups.models import TelegramGroup
+    from apps.members.models import Membership
+    from apps.members.queries import photo_url
+
+    company = member.company
+    groups = TelegramGroup.objects.filter(company=company, is_active=True).order_by("title", "pk")
+    people = (
+        Membership.objects.for_company(company)
+        .filter(status=Membership.Status.APPROVED, user__telegram_id__isnull=False)
+        .select_related("user", "position")
+        .order_by("first_name", "last_name", "pk")[:500]
+    )
+    return {
+        "domains": custom.domain_options(company, member),
+        "groups": [{"id": group.pk, "title": str(group)} for group in groups],
+        "people": [
+            {
+                "id": person.pk,
+                "name": str(person),
+                "position": person.position.name if person.position_id else "",
+                "photo": photo_url(person),
+            }
+            for person in people
+        ],
+        "max_agents": CustomAgent.MAX_LIVE,
+        "live": custom.live(company).count(),
+        "run_now_left": custom.run_now_left(company),
+        "me": {"id": member.pk, "name": str(member)},
+    }
+
+
+class CustomAgentListView(OwnerAPIView):
+    """GET: the company's own agents as the agents list shows them. POST: a new one
+    (ai.configure), switched on; it reads with the creator's rights."""
+
+    perm = None
+    perms_by_action = {"post": CONFIGURE}
+
+    @extend_schema(responses=AIAgentSerializer(many=True))
+    def get(self, request, company_id):
+        rows = [row for row in queries.agent_rows(self.company) if row["custom"] is not None]
+        return Response(AIAgentSerializer(rows, many=True).data)
+
+    @extend_schema(request=AICustomAgentWriteSerializer, responses={201: AIAgentSerializer})
+    def post(self, request, company_id):
+        form = AICustomAgentWriteSerializer(data=request.data)
+        form.is_valid(raise_exception=True)
+        try:
+            row = services.create_custom_agent(
+                self.company, by=self.membership, data=form.validated_data
+            )
+        except DjangoValidationError as exc:
+            raise ValidationError(exc.message_dict) from exc
+        self.bump(PULSE_SETTINGS)
+        return Response(
+            AIAgentSerializer(queries.agent_row(self.company, row.key)).data, status=201
+        )
+
+
+class CustomAgentView(OwnerAPIView):
+    perm = CONFIGURE
+
+    def row(self, agent_id: int) -> CustomAgent:
+        found = custom.live(self.company).filter(pk=agent_id).first()
+        if found is None:
+            raise NotFound
+        return found
+
+    @extend_schema(request=AICustomAgentWriteSerializer, responses=AIAgentSerializer)
+    def patch(self, request, company_id, agent_id):
+        row = self.row(agent_id)
+        form = AICustomAgentWriteSerializer(data=request.data, partial=True)
+        form.is_valid(raise_exception=True)
+        try:
+            row = services.update_custom_agent(row, by=self.membership, data=form.validated_data)
+        except DjangoValidationError as exc:
+            raise ValidationError(exc.message_dict) from exc
+        self.bump(PULSE_SETTINGS)
+        return Response(AIAgentSerializer(queries.agent_row(self.company, row.key)).data)
+
+    @extend_schema(request=None, responses={204: None})
+    def delete(self, request, company_id, agent_id):
+        services.delete_custom_agent(self.row(agent_id), by=self.membership)
+        self.bump(PULSE_SETTINGS)
+        return Response(status=204)
+
+
+class CustomAgentTemplatesView(OwnerAPIView):
+    perm = CONFIGURE
+
+    @extend_schema(responses=AICustomTemplateSerializer(many=True))
+    def get(self, request, company_id):
+        return Response(
+            AICustomTemplateSerializer(custom_templates.for_company(self.company), many=True).data
+        )
+
+
+class CustomAgentOptionsView(OwnerAPIView):
+    perm = CONFIGURE
+
+    @extend_schema(responses=AICustomOptionsSerializer)
+    def get(self, request, company_id):
+        return Response(AICustomOptionsSerializer(custom_options(self.membership)).data)
 
 
 # Ask AI -----------------------------------------------------------------------------------------

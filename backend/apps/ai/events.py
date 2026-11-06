@@ -32,8 +32,7 @@ def log(
     level: str | None = None,
 ) -> AgentEvent | None:
     """Record one event; None when `dedupe_key` was already used in the company."""
-    spec = registry.get(agent)
-    template = spec.events.get(kind) if spec else None
+    template = registry.event_template(agent, kind)
     if template is None:
         raise ValueError(f"Agent {agent!r} has no event {kind!r}.")
     subject_type, subject_id = subject or ("", None)
@@ -66,8 +65,7 @@ def already(company, dedupe_key: str) -> bool:
 
 def render(event: AgentEvent, language: str | None = None) -> str:
     """The event's sentence in `language` (the active language when None)."""
-    spec = registry.get(event.agent)
-    template = spec.events.get(event.kind) if spec else None
+    template = registry.event_template(event.agent, event.kind)
     if template is None:
         return event.kind
     params = {"count": 0, **(event.params or {})}
