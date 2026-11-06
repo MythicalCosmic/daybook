@@ -146,10 +146,19 @@ def _event(asset: Asset, kind: str, *, by, on: date, **fields) -> AssetEvent:
 
 
 def _booked(asset: Asset) -> bool:
-    """Is any month of its depreciation, or its disposal, in Finance?"""
+    """Is any month of its depreciation, or its disposal, sale or write-down, in Finance?"""
+    from apps.finance.models import LIVE_STATUSES, Transaction
+
     return (
         asset.entries.filter(transaction__isnull=False).exists()
         or asset.disposal_transaction_id is not None
+        # Its own rows (written off, written down) point back at it only by their source.
+        or Transaction.objects.filter(
+            company_id=asset.company_id,
+            source_type=posting.SOURCE_ASSET,
+            source_id=asset.pk,
+            status__in=LIVE_STATUSES,
+        ).exists()
     )
 
 

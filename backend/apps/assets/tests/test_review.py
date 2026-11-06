@@ -11,6 +11,7 @@ from apps.assets.models import DepreciationEntry
 from apps.assets.tests.test_posting import buy, depreciation_rows
 from apps.core.exceptions import DomainError
 from apps.finance import queries as finance_queries
+from apps.finance.models import Transaction
 
 pytestmark = pytest.mark.django_db
 
@@ -96,3 +97,30 @@ def test_a_late_month_after_a_move_still_reaches_finance(
     assert in_finance == sum(
         entry.amount for entry in DepreciationEntry.objects.filter(company=shop)
     )
+
+
+def test_an_asset_written_down_in_finance_is_never_deleted(shop, owner, category):
+    """Deleting it would leave the write-down in the P&L with nothing to correct it from."""
+    asset = services.create_asset(
+        shop,
+        by=owner,
+        category=category,
+        name="Muzlatgich",
+        cost=D(6_000_000),
+        life_months=60,
+        in_service_on=date(2026, 11, 2),
+    )
+    services.write_down(asset, by=owner, on=date(2026, 11, 5), amount=D(1_000_000))
+    assert Transaction.objects.filter(company=shop, category__system_code="asset_disposal").exists()
+    with pytest.raises(DomainError):
+        services.delete_asset(asset, by=owner)
+
+
+def test_an_asset_written_off_in_finance_is_never_deleted(shop, owner, category):
+    asset = services.create_asset(
+        shop, by=owner, category=category, name="Kassa", cost=D(3_000_000), life_months=60
+    )
+    services.dispose(asset, by=owner, on=date(2026, 11, 5), kind="written_off", reason="Singan")
+    assert Transaction.objects.filter(company=shop, category__system_code="asset_disposal").exists()
+    with pytest.raises(DomainError):
+        services.delete_asset(asset, by=owner)
