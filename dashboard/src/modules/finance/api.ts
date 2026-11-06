@@ -159,8 +159,9 @@ export const financeApi = {
   /** Switches the rule off; what it booked stays. */
   stopRecurring: (cid: number, id: number) => http.delete(path(cid, `recurring/${id}/`)),
   payRecurring: (cid: number, id: number, input: RecurringPayInput) => http.post<RecurringDone>(path(cid, `recurring/${id}/pay/`), input),
-  skipRecurring: (cid: number, id: number) => http.post<RecurringRule>(path(cid, `recurring/${id}/skip/`), {}),
-  runRecurring: (cid: number, id: number) => http.post<RecurringDone>(path(cid, `recurring/${id}/run-now/`), {}),
+  // `occurrence`: the due day the person saw, so a second press never skips or posts the next one.
+  skipRecurring: (cid: number, id: number, occurrence?: string | null) => http.post<RecurringRule>(path(cid, `recurring/${id}/skip/`), occurrence ? { occurrence } : {}),
+  runRecurring: (cid: number, id: number, occurrence?: string | null) => http.post<RecurringDone>(path(cid, `recurring/${id}/run-now/`), occurrence ? { occurrence } : {}),
   taxTemplates: (cid: number) => http.get<TaxTemplateSet[]>(path(cid, "recurring/templates/")),
   applyTaxTemplate: (cid: number, key: TaxRegime) => http.post<RecurringRule[]>(path(cid, `recurring/templates/${key}/apply/`), {}),
 

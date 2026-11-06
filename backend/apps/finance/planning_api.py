@@ -209,22 +209,32 @@ class RecurringViewSet(FinanceMixin, OwnerViewSet):
                 account=account,
                 amount=data.get("amount"),
                 paid_on=paid_on,
+                occurrence=data.get("occurrence"),
             )
         )
         self.changed(OVERDUE)
         return self._payment(payment)
 
-    @extend_schema(request=None, responses=s.RecurringRuleSerializer)
+    def _occurrence(self):
+        serializer = s.RecurringOccurrenceSerializer(data=self.request.data)
+        serializer.is_valid(raise_exception=True)
+        return serializer.validated_data.get("occurrence")
+
+    @extend_schema(request=s.RecurringOccurrenceSerializer, responses=s.RecurringRuleSerializer)
     @action(detail=True, methods=["post"])
     def skip(self, request, company_id, pk=None):
-        rule = domain(lambda: recurring.skip_occurrence(self.get_object(), by=self.membership))
+        rule, occurrence = self.get_object(), self._occurrence()
+        rule = domain(
+            lambda: recurring.skip_occurrence(rule, by=self.membership, occurrence=occurrence)
+        )
         self.changed()
         return self.respond(rule)
 
-    @extend_schema(request=None, responses=s.RecurringPaymentSerializer)
+    @extend_schema(request=s.RecurringOccurrenceSerializer, responses=s.RecurringPaymentSerializer)
     @action(detail=True, methods=["post"], url_path="run-now")
     def run_now(self, request, company_id, pk=None):
-        payment = domain(lambda: recurring.run_now(self.get_object(), by=self.membership))
+        rule, occurrence = self.get_object(), self._occurrence()
+        payment = domain(lambda: recurring.run_now(rule, by=self.membership, occurrence=occurrence))
         self.changed()
         return self._payment(payment)
 

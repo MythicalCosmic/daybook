@@ -264,8 +264,15 @@ def paid_action(notification, by: Membership, reason: str) -> str:
         raise DomainError(
             _("You can't record payments on %(account)s.") % {"account": rule.account}
         )
-    with transaction.atomic():
-        recurring.pay_occurrence(rule, by=by, account=rule.account)
+    try:
+        with transaction.atomic():
+            # The occurrence is checked again under the rule's lock: someone may have paid it
+            # in the dashboard since it was read above.
+            recurring.pay_occurrence(
+                rule, by=by, account=rule.account, occurrence=date.fromisoformat(occurrence)
+            )
+    except recurring.Settled:
+        return str(_("Already paid."))
     return str(_("Paid from %(account)s.") % {"account": rule.account.name})
 
 

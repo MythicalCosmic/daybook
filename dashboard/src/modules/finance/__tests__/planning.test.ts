@@ -356,9 +356,9 @@ describe("planning endpoints", () => {
     });
     await financeApi.setBudgets(1, { month: "2026-11", rows: [{ category: 5, amount: "3000000" }, { category: 6, amount: null }] });
     await financeApi.copyBudgets(1, "2026-12");
-    await financeApi.payRecurring(1, 12, { account: 3, amount: "12000000", paid_on: "2026-11-06" });
-    await financeApi.skipRecurring(1, 12);
-    await financeApi.runRecurring(1, 12);
+    await financeApi.payRecurring(1, 12, { account: 3, amount: "12000000", paid_on: "2026-11-06", occurrence: "2026-11-05" });
+    await financeApi.skipRecurring(1, 12, "2026-12-05");
+    await financeApi.runRecurring(1, 12, null);
     await financeApi.stopRecurring(1, 12);
     await financeApi.applyTaxTemplate(1, "vat");
     await financeApi.payPayables(1, { account: 5, paid_on: "2026-11-06", debts: [{ id: 1, amount: "5000000" }] });
@@ -372,8 +372,9 @@ describe("planning endpoints", () => {
     const by = (method: string, path: string) => calls.find((call) => call.method === method && call.url.replace(PREFIX, "").split("?")[0] === path);
     expect(by("PUT", "budgets/")?.body).toEqual({ month: "2026-11", rows: [{ category: 5, amount: "3000000" }, { category: 6, amount: null }] });
     expect(by("POST", "budgets/copy/")?.body).toEqual({ month: "2026-12" });
-    expect(by("POST", "recurring/12/pay/")?.body).toEqual({ account: 3, amount: "12000000", paid_on: "2026-11-06" });
-    expect(by("POST", "recurring/12/skip/")?.body).toEqual({});
+    // The occurrence the person saw goes along, so a second press never settles the next one.
+    expect(by("POST", "recurring/12/pay/")?.body).toEqual({ account: 3, amount: "12000000", paid_on: "2026-11-06", occurrence: "2026-11-05" });
+    expect(by("POST", "recurring/12/skip/")?.body).toEqual({ occurrence: "2026-12-05" });
     expect(by("POST", "recurring/12/run-now/")?.body).toEqual({});
     expect(by("DELETE", "recurring/12/")).toBeTruthy();
     expect(by("POST", "recurring/templates/vat/apply/")?.body).toEqual({});
