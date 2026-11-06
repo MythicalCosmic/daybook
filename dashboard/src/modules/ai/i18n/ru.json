@@ -515,6 +515,7 @@
   "ai.custom.noDomains": "Не включено ничего, что он мог бы читать.",
   "ai.custom.reason.switchOff": "Выключено в Настройки › AI",
   "ai.custom.reason.noAccess": "Ваш доступ этого не открывает",
+  "ai.custom.reason.moduleOff": "Этот модуль сейчас выключен: оттуда он ничего не читает",
   "ai.custom.color.sky": "Небесный",
   "ai.custom.color.rose": "Розовый",
   "ai.custom.color.indigo": "Индиго",

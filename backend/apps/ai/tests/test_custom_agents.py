@@ -729,6 +729,32 @@ def test_who_changes_what_it_reads_becomes_its_owner(crew, owner_api):
     assert row.run_as == crew.owner
 
 
+def test_a_change_that_keeps_what_it_reads_is_not_checked_again(crew, owner_api):
+    crew.company.features = [*crew.company.features, "finance"]
+    crew.company.save(update_fields=["features"])
+    row = make(crew, domains=["tasks", "finance"])
+    crew.company.features = [name for name in crew.company.features if name != "finance"]
+    crew.company.save(update_fields=["features"])
+    api = owner_api(crew.owner)
+
+    # The whole form back, a new name: finance is off now, but what it reads didn't change.
+    kept = api.patch(
+        url(crew, f"{row.pk}/"),
+        {"name": "Kech", "domains": ["finance", "tasks"], "recipients": "me", "people": []},
+        format="json",
+    )
+    assert kept.status_code == 200
+    # Changing what it reads checks all of it again.
+    refused = api.patch(
+        url(crew, f"{row.pk}/"), {"domains": ["tasks", "finance", "reports"]}, format="json"
+    )
+    assert refused.status_code == 400 and "domains" in refused.data
+    taken_away = api.patch(url(crew, f"{row.pk}/"), {"domains": ["tasks"]}, format="json")
+    assert taken_away.status_code == 200
+    row.refresh_from_db()
+    assert (row.name, row.domains) == ("Kech", ["tasks"])
+
+
 def test_deleting_it_is_a_soft_delete(crew, owner_api):
     row = make(crew)
 

@@ -515,6 +515,7 @@
   "ai.custom.noDomains": "Nothing it could read is switched on.",
   "ai.custom.reason.switchOff": "Off in Settings › AI",
   "ai.custom.reason.noAccess": "Your access doesn’t open it",
+  "ai.custom.reason.moduleOff": "Its module is off now: it reads nothing there",
   "ai.custom.color.sky": "Sky",
   "ai.custom.color.rose": "Rose",
   "ai.custom.color.indigo": "Indigo",

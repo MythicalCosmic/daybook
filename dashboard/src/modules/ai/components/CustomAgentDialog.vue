@@ -36,7 +36,7 @@ import { useCompanyStore } from "@/stores/company";
 import { useCreateCustomAgent, useCustomOptions, useCustomTemplates, useUpdateCustomAgent } from "../api";
 import { checkForm, CUSTOM_JOB_MAX, CUSTOM_NAME_MAX, formFromAgent, formFromTemplate, FREQUENCIES, freshForm, MONTH_DAYS, payload, whenText, type CustomFormErrors } from "../customAgent";
 import { CUSTOM_COLOR_KEYS, CUSTOM_COLORS } from "../lib";
-import type { Agent, CustomAgentForm, CustomAgentInfo, CustomAgentTemplate, CustomRecipients } from "../types";
+import type { Agent, CustomAgentForm, CustomAgentInfo, CustomAgentTemplate, CustomDomainOption, CustomRecipients } from "../types";
 import AiBuddy from "./AiBuddy.vue";
 import { templateIcon } from "./templateIcons";
 
@@ -54,6 +54,12 @@ const step = ref<"pick" | "form">("pick");
 const templates = useCustomTemplates(() => open.value && !editing.value);
 const options = useCustomOptions(open);
 const domains = computed(() => options.data.value?.domains ?? []);
+// Editing: what it reads whose module went off since stays listed, so it can be taken away.
+const domainList = computed<CustomDomainOption[]>(() => {
+  const offered = new Set(domains.value.map((domain) => domain.key));
+  const gone = (props.agent?.custom.domains ?? []).filter((domain) => !offered.has(domain.key));
+  return [...domains.value, ...gone.map((domain) => ({ key: domain.key, label: domain.label, available: false, reason: "module_off", feature: null }))];
+});
 
 const form = reactive<CustomAgentForm>(freshForm([]));
 const checked = ref<CustomFormErrors>({});
@@ -104,7 +110,12 @@ const recipientOptions = computed<{ value: CustomRecipients; label: string }[]>(
 ]);
 const weekdayOptions = computed(() => [0, 1, 2, 3, 4, 5, 6].map((value) => ({ value, label: t(`common.weekday.long.${value}`) })));
 const dayOptions = computed(() => MONTH_DAYS.map((value) => ({ value, label: String(value) })));
-const people = computed<PersonOption[]>(() => (options.data.value?.people ?? []).map((person) => ({ id: person.id, name: person.name, subtitle: person.position || undefined, photo_url: person.photo })));
+const people = computed<PersonOption[]>(() => {
+  const offered: PersonOption[] = (options.data.value?.people ?? []).map((person) => ({ id: person.id, name: person.name, subtitle: person.position || undefined, photo_url: person.photo }));
+  // Editing: someone it writes to who can't get it any more stays listed, so they can be taken away.
+  const known = new Set(offered.map((person) => person.id));
+  return [...offered, ...(props.agent?.custom.people ?? []).filter((person) => !known.has(person.id))];
+});
 const groups = computed(() => (options.data.value?.groups ?? []).map((group) => ({ value: group.id, label: group.title })));
 // Editing someone else's agent: changing what it does, reads or who gets it makes you its owner.
 const takesOver = computed(() => !!props.agent && !!options.data.value && props.agent.custom.run_as.id !== options.data.value.me.id);
@@ -114,7 +125,9 @@ function toggleDomain(key: string, on: boolean): void {
 }
 
 function reasonText(reason: string): string {
-  return reason === "switch_off" ? t("ai.custom.reason.switchOff") : t("ai.custom.reason.noAccess");
+  if (reason === "switch_off") return t("ai.custom.reason.switchOff");
+  if (reason === "module_off") return t("ai.custom.reason.moduleOff");
+  return t("ai.custom.reason.noAccess");
 }
 
 async function submit(): Promise<void> {
@@ -228,10 +241,10 @@ const description = computed(() => (step.value === "pick" ? t("ai.custom.pickBod
         <div v-if="options.isPending.value" class="grid gap-2 sm:grid-cols-2" aria-hidden="true">
           <SkeletonBlock v-for="n in 4" :key="n" height="28px" />
         </div>
-        <EmptyState v-else-if="!domains.length" size="sm" :icon="Sparkles" :title="t('ai.custom.noDomains')" />
+        <EmptyState v-else-if="!domainList.length" size="sm" :icon="Sparkles" :title="t('ai.custom.noDomains')" />
         <div v-else class="grid gap-x-4 gap-y-2 sm:grid-cols-2" data-testid="custom-domains">
           <CheckBox
-            v-for="domain in domains"
+            v-for="domain in domainList"
             :key="domain.key"
             :model-value="form.domains.includes(domain.key)"
             :label="domain.label"
@@ -271,7 +284,8 @@ const description = computed(() => (step.value === "pick" ? t("ai.custom.pickBod
       <div class="flex w-full flex-wrap items-center gap-2">
         <UiButton v-if="step === 'form' && !editing" variant="ghost" :icon="ArrowLeft" @click="step = 'pick'">{{ t("ai.custom.back") }}</UiButton>
         <span class="flex-1" />
-        <UiButton variant="ghost" @click="open = false">{{ t("common.cancel") }}</UiButton>
+        <!-- On a phone the sheet closes by its own button: Back and Create keep one row. -->
+        <UiButton variant="ghost" :class="step === 'form' && 'max-sm:hidden'" @click="open = false">{{ t("common.cancel") }}</UiButton>
         <UiButton v-if="step === 'form'" variant="primary" :icon="editing ? Check : Plus" :loading="saving" data-testid="custom-submit" @click="submit">
           {{ editing ? t("common.save") : t("ai.custom.create") }}
         </UiButton>

@@ -327,6 +327,20 @@ describe("the New agent dialog", () => {
     expect(made.router.currentRoute.value.fullPath).toBe("/c/1/ai");
   });
 
+  it("keeps what it reads and who gets it that went away since, so they can be taken away", async () => {
+    const calls = stubApi();
+    await open({
+      agent: custom({}, { domains: [{ key: "tasks", label: "Tasks" }, { key: "payroll", label: "Payroll" }], recipients: "people", people: [{ id: 12, name: "Bekzod Mirzayev" }, { id: 40, name: "Jasur Tursunov" }] }),
+    });
+
+    expect($("[data-domain=payroll]")!.textContent).toContain("Its module is off now");
+    expect($("[data-testid=custom-form]")!.textContent).toContain("Jasur Tursunov");
+    await click("[data-domain=payroll] button");
+    await click("[data-testid=custom-submit]");
+
+    expect(calls.find((call) => call.method === "PATCH")!.body).toMatchObject({ domains: ["tasks"], people: [12, 40] });
+  });
+
   it("says that changing someone else's agent makes you its owner", async () => {
     stubApi();
     await open({ agent: custom({}, { run_as: { id: 30, name: "Madina Saidova" } }) });

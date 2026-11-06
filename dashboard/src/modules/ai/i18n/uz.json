@@ -515,6 +515,7 @@
   "ai.custom.noDomains": "U o‘qiy oladigan hech bir bo‘lim yoqilmagan.",
   "ai.custom.reason.switchOff": "Sozlamalar › AI bo‘limida o‘chirilgan",
   "ai.custom.reason.noAccess": "Sizning huquqingiz buni ochmaydi",
+  "ai.custom.reason.moduleOff": "Bu bo‘lim hozir o‘chirilgan: u yerdan hech narsa o‘qimaydi",
   "ai.custom.color.sky": "Moviy",
   "ai.custom.color.rose": "Pushti",
   "ai.custom.color.indigo": "Indigo",
