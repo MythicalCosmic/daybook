@@ -36,7 +36,7 @@ from django.utils.translation import gettext_lazy
 from apps.console.registry import QueueAction, QueueItem
 from apps.core.exceptions import DomainError
 from apps.core.files import signed_url
-from apps.core.money import format_money
+from apps.core.money import format_money, quantize
 from apps.finance import conf, queries, services
 from apps.finance.audit_actions import FinanceAction
 from apps.finance.models import (
@@ -226,8 +226,10 @@ def wallet(member: Membership) -> dict:
             }
             for account in held
         ],
-        "held_total": str(sum((a.balance for a in held if a.currency == base), Decimal(0))),
-        "owed_to_me": str((owed["total"] or Decimal(0)) - (owed["paid"] or Decimal(0))),
+        "held_total": str(
+            quantize(sum((a.balance for a in held if a.currency == base), Decimal(0)))
+        ),
+        "owed_to_me": str(quantize((owed["total"] or Decimal(0)) - (owed["paid"] or Decimal(0)))),
         "approval_threshold": money(settings_row.approval_threshold),
         "receipt_required_over": money(settings_row.receipt_required_over),
     }
