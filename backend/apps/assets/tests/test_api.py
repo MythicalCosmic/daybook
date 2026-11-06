@@ -65,3 +65,20 @@ def test_the_ai_tool_sums_up_the_register(shop, owner, category):
     assert result.data["assets"] == 1
     assert result.data["cost"] == "8400000.00"
     assert [row["type"] for row in result.rows] == ["service"]
+
+
+def test_the_morning_brief_says_what_the_equipment_needs(shop, owner, category):
+    from apps.assets import providers
+
+    services.create_asset(
+        shop,
+        by=owner,
+        category=category,
+        name="Termometr",
+        cost=D(300_000),
+        next_service_on=date(2026, 11, 5),
+        warranty_until=date(2026, 11, 20),
+    )
+    section = providers.brief_section(shop, date(2026, 11, 7), None, None)
+    assert section["lines"] == ["Services due: 1", "Warranties ending soon: 1"]
+    assert providers.brief_section(shop, date(2026, 1, 1), None, []) is None

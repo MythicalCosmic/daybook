@@ -58,6 +58,9 @@ registry.register_calendar_source(
     events=providers.calendar_events,
     feature=FEATURE,
 )
+registry.register_brief_section(
+    "assets", perm=READ, order=65, build=providers.brief_section, feature=FEATURE
+)
 registry.register_offboard_step(
     "assets",
     perm=MANAGE,

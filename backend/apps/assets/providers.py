@@ -1,8 +1,9 @@
 """What fixed assets give the shared registries: the offboarding step, "Get started", the
 command palette, the company calendar, private files and the Excel register."""
 
-from datetime import date
+from datetime import date, timedelta
 
+from django.db.models import Q
 from django.utils.translation import gettext as _
 
 from apps.assets import posting, queries
@@ -84,6 +85,37 @@ def on_member_left(membership: Membership, *, terminated_on: date | None, detail
                 kind=Asset.Disposal.LOST,
                 reason=_("Not handed back when %(person)s left.") % {"person": membership},
             )
+
+
+# The morning brief (the owner bot's /today) -----------------------------------------------------
+
+
+def brief_section(company, day: date, now, branch_ids: list[int] | None) -> dict | None:
+    """What the equipment needs today: services and instrument checks due or overdue, and
+    warranties and insurance ending within the warning days. Nothing when all is well."""
+    from apps.assets import conf
+
+    ahead = day + timedelta(days=conf.get_settings(company).remind_days)
+    live = queries.scoped(company, branch_ids=branch_ids).exclude(status=Asset.Status.DISPOSED)
+    counts = (
+        (
+            _("Services due: %(count)d"),
+            live.exclude(status=Asset.Status.SUSPENDED).filter(next_service_on__lte=day),
+        ),
+        (_("Instrument checks due: %(count)d"), live.filter(next_verification_on__lte=day)),
+        (
+            _("Warranties ending soon: %(count)d"),
+            live.filter(warranty_until__gte=day, warranty_until__lte=ahead),
+        ),
+        (
+            _("Insurance ending soon: %(count)d"),
+            live.filter(Q(insurance_until__gte=day) & Q(insurance_until__lte=ahead)),
+        ),
+    )
+    lines = [text % {"count": count} for text, rows in counts if (count := rows.count())]
+    if not lines:
+        return None
+    return {"title": _("Equipment"), "lines": lines}
 
 
 # Get started ------------------------------------------------------------------------------------

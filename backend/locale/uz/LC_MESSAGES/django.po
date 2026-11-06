@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-07 01:53+0500\n"
+"POT-Creation-Date: 2026-11-07 01:55+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -2910,6 +2910,30 @@ msgstr "Ishdan ketishda qaytarib berdi."
 #, python-format
 msgid "Not handed back when %(person)s left."
 msgstr "Ishdan ketishda qaytarilmadi (%(person)s)."
+
+#: backend/apps/assets/providers.py
+#, python-format
+msgid "Services due: %(count)d"
+msgstr "Texnik xizmat vaqti kelgan: %(count)d"
+
+#: backend/apps/assets/providers.py
+#, python-format
+msgid "Instrument checks due: %(count)d"
+msgstr "Qiyoslash vaqti kelgan: %(count)d"
+
+#: backend/apps/assets/providers.py
+#, python-format
+msgid "Warranties ending soon: %(count)d"
+msgstr "Kafolati tugayotganlar: %(count)d"
+
+#: backend/apps/assets/providers.py
+#, python-format
+msgid "Insurance ending soon: %(count)d"
+msgstr "Sug‘urtasi tugayotganlar: %(count)d"
+
+#: backend/apps/assets/providers.py
+msgid "Equipment"
+msgstr "Jihozlar"
 
 #: backend/apps/assets/providers.py
 #, python-format
