@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-07 01:24+0500\n"
+"POT-Creation-Date: 2026-11-07 01:25+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -14716,15 +14716,15 @@ msgstr "Изменение правил приёмки выполненных з
 
 #: backend/apps/tasks/audit_actions.py
 msgid "Changed the storage reading ranges and times"
-msgstr "Изменил(а) нормы и время замеров условий хранения"
+msgstr "Изменены нормы и время замеров условий хранения"
 
 #: backend/apps/tasks/audit_actions.py
 msgid "Set up storage readings for a branch"
-msgstr "Настроил(а) замеры условий хранения для филиала"
+msgstr "Настроены замеры условий хранения для филиала"
 
 #: backend/apps/tasks/audit_actions.py
 msgid "Took a reading again"
-msgstr "Повторил(а) замер"
+msgstr "Повторный замер"
 
 #: backend/apps/tasks/bot_messages.py
 msgid "Nothing on your list. To add a task, tap «New task» or just type it."
@@ -15369,7 +15369,7 @@ msgstr "ждёт проверки"
 #: backend/apps/tasks/demo.py backend/apps/tasks/services.py
 #, python-format
 msgid "Done by %(name)s"
-msgstr "Выполнил(а): %(name)s"
+msgstr "Выполнено: %(name)s"
 
 #: backend/apps/tasks/feeds.py
 #, python-format
@@ -15562,8 +15562,7 @@ msgid ""
 "\"critical\"}]`)."
 msgstr ""
 "С подтверждением показаниями: 1–3 числа, которые запрашиваются при каждом "
-"выполнении, с допустимым диапазоном (`[{\"key\": \"t\", \"label\", \"unit\", "
-"\"min\", \"max\", \"critical\"}]`)."
+"выполнении, с допустимым диапазоном."
 
 #: backend/apps/tasks/models.py
 msgid ""
@@ -15681,7 +15680,7 @@ msgstr "Новый комментарий к задаче"
 
 #: backend/apps/tasks/models.py
 msgid "Did a shared routine for everyone"
-msgstr "Выполнил(а) общую регулярную задачу за всех"
+msgstr "Общая регулярная задача выполнена за всех"
 
 #: backend/apps/tasks/models.py
 msgid "Task card"
