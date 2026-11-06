@@ -21,7 +21,7 @@
     <dt>{% translate "Pay" %}</dt><dd>{{ pay_type }}</dd>
   </dl>
   <div>
-    <div class="small muted">{% translate "To be paid" %}</div>
+    <div class="small muted">{{ net_label }}</div>
     <div class="payslip-net">{{ net }}</div>
     {% if paid_on %}<div class="payslip-stamp">{% blocktranslate %}Paid {{ paid_on }}{% endblocktranslate %}</div>{% endif %}
   </div>
@@ -43,10 +43,11 @@
   <tfoot>
     <tr><td>{% translate "Earned" %}</td><td></td><td class="num">{{ gross }}</td></tr>
     <tr><td>{% translate "Deducted" %}</td><td></td><td class="num">{{ deductions }}</td></tr>
-    <tr><td>{% translate "To be paid" %}</td><td></td><td class="num">{{ net }}</td></tr>
+    <tr><td>{{ net_label }}</td><td></td><td class="num">{{ net }}</td></tr>
   </tfoot>
 </table>
 {% if taxes_note %}<p class="small muted">{{ taxes_note }}</p>{% endif %}
+{% if owes_note %}<p class="small muted">{{ owes_note }}</p>{% endif %}
 <div class="signatures">
   <div class="signature">{% translate "Accountant" %}</div>
   <div class="signature">{% translate "Employee" %}</div>

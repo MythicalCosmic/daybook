@@ -36,7 +36,13 @@ def context(payslip: Payslip) -> dict:
     member = payslip.membership
     month = queries.month_label(run.period)
     lines = list(payslip.lines.select_related("adjustment", "payslip").order_by("order", "pk"))
-    facts = [
+    final = run.kind == run.Kind.FINAL
+    facts = []
+    if final and run.last_day is not None:
+        facts.append(
+            _("Last working day: %(date)s") % {"date": formats.date_format(run.last_day, "d.m.Y")}
+        )
+    facts += [
         _("Working days: %(days)s") % {"days": payslip.scheduled_days.normalize()},
         _("Paid days: %(days)s") % {"days": payslip.paid_days.normalize()},
     ]
@@ -56,9 +62,11 @@ def context(payslip: Payslip) -> dict:
     paid_on = ""
     if payslip.paid_at is not None:
         paid_on = formats.date_format(periods.local(payslip.company, payslip.paid_at), "d.m.Y")
+    owes = payslip.net < 0
+    title = _("Final payslip: %(month)s") if final else _("Payslip: %(month)s")
     return {
         "company": payslip.company,
-        "title": _("Payslip: %(month)s") % {"month": month},
+        "title": title % {"month": month},
         "heading": member.full_name or str(member.user),
         "printed_on": formats.date_format(periods.today(payslip.company), "d.m.Y"),
         "person": str(member),
@@ -66,7 +74,10 @@ def context(payslip: Payslip) -> dict:
         "branch": member.home_branch.name if member.home_branch_id else "",
         "month": month,
         "pay_type": PayType(payslip.pay_type).label,
-        "net": _money(payslip.net, payslip.currency),
+        "net": _money(-payslip.net if owes else payslip.net, payslip.currency),
+        # A final payslip below zero: what they owe stays as a debt in Finance.
+        "net_label": _("They owe the company") if owes else _("To be paid"),
+        "owes_note": _("What they owe stays as a debt in Finance.") if owes else "",
         "gross": _money(payslip.gross, payslip.currency),
         "deductions": _money(payslip.deductions, payslip.currency),
         "paid_on": paid_on,
