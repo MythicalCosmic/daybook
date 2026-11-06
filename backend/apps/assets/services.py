@@ -576,7 +576,8 @@ def create_asset(company, *, by: Membership | None, category: AssetCategory, nam
     _check_facts(asset)
     asset.save()
     details = {}
-    if txn is not None:
+    # Its purchase leaves the P&L only when its depreciation brings the cost back.
+    if txn is not None and asset.books_depreciation:
         from apps.finance import services as finance
 
         try:
@@ -658,6 +659,8 @@ def update_asset(asset: Asset, *, by: Membership, **fields) -> Asset:
         _check_day(company, fields["purchased_on"], name=_("The purchase day"))
     if "in_service_on" in fields:
         _check_day(company, fields["in_service_on"], name=_("The start"), future_days=366)
+    if "books_depreciation" in fields:
+        _check_books_switch(asset, on=bool(fields["books_depreciation"]))
     old_branch = asset.branch
     before = {name: _plain(getattr(asset, name)) for name in fields}
     for name, value in fields.items():
@@ -688,6 +691,35 @@ def update_asset(asset: Asset, *, by: Membership, **fields) -> Asset:
     _repost(asset)
     _bump(company)
     return asset
+
+
+def _purchases_of(asset: Asset) -> list:
+    """The Finance expenses it was bought or improved with."""
+    rows = [asset.purchase_transaction] if asset.purchase_transaction_id else []
+    events = asset.events.filter(transaction__isnull=False).select_related("transaction")
+    return rows + [event.transaction for event in events]
+
+
+def _check_books_switch(asset: Asset, *, on: bool) -> None:
+    """Booking its depreciation follows its purchases in Finance: a capitalized one comes back
+    to the P&L only through depreciation, and one still an expense must not come back twice."""
+    if on == asset.books_depreciation:
+        return
+    purchases = _purchases_of(asset)
+    if not on and any(txn.capitalized for txn in purchases):
+        raise DomainError(
+            _(
+                "Its purchase left the P&L and comes back as depreciation: booking it can't be "
+                "switched off."
+            )
+        )
+    if on and any(not txn.capitalized for txn in purchases):
+        raise DomainError(
+            _(
+                "Its purchase is already a cost in the P&L: booking its depreciation too would "
+                "count it twice."
+            )
+        )
 
 
 def _plain(value) -> str:
@@ -987,7 +1019,7 @@ def add_to_cost(asset: Asset, *, by: Membership, on: date, amount, note="", purc
         note=note[:500],
         transaction=txn,
     )
-    if txn is not None:
+    if txn is not None and asset.books_depreciation:
         from apps.finance import services as finance
 
         finance.capitalize(txn, by=by)

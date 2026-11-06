@@ -124,3 +124,43 @@ def test_an_asset_written_off_in_finance_is_never_deleted(shop, owner, category)
     assert Transaction.objects.filter(company=shop, category__system_code="asset_disposal").exists()
     with pytest.raises(DomainError):
         services.delete_asset(asset, by=owner)
+
+
+def test_an_asset_that_books_no_depreciation_keeps_its_purchases_as_expenses(
+    shop, owner, cash, equipment, chilonzor, category
+):
+    """Without depreciation in Finance nothing would bring a capitalized purchase back."""
+    txn = buy(shop, owner, cash, equipment, chilonzor, amount=6_000_000, day=date(2026, 11, 2))
+    asset = services.create_asset(
+        shop,
+        by=owner,
+        category=category,
+        name="Muzlatgich",
+        purchase_transaction=txn,
+        in_service_on=date(2026, 11, 3),
+        books_depreciation=False,
+    )
+    txn.refresh_from_db()
+    assert not txn.capitalized
+    extra = buy(shop, owner, cash, equipment, chilonzor, amount=600_000, day=date(2026, 11, 4))
+    services.add_to_cost(asset, by=owner, on=date(2026, 11, 4), amount=D(600_000), purchase=extra)
+    extra.refresh_from_db()
+    assert not extra.capitalized
+    assert november(shop)["expense"] == D("6600000.00")
+
+
+def test_books_depreciation_follows_the_purchase_in_finance(
+    shop, owner, cash, equipment, chilonzor, category
+):
+    txn = buy(shop, owner, cash, equipment, chilonzor, amount=6_000_000, day=date(2026, 11, 2))
+    asset = services.create_asset(
+        shop,
+        by=owner,
+        category=category,
+        name="Muzlatgich",
+        purchase_transaction=txn,
+        in_service_on=date(2026, 11, 3),
+    )
+    with pytest.raises(DomainError):
+        services.update_asset(asset, by=owner, books_depreciation=False)
+    services.update_asset(asset, by=owner, books_depreciation=True)  # unchanged is fine
