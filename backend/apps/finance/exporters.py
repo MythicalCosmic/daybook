@@ -6,6 +6,9 @@ so those exporters are `sensitive` (the dashboard warns before sending them to T
 salary-type rows keep their amount but lose the person without payroll access.
 """
 
+import contextlib
+from decimal import Decimal
+
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
@@ -308,3 +311,46 @@ def category_trend_rows(member, params: dict):
     )
     for point in data["series"]:
         yield {"month": point["date"][:7], "category": category.name, "amount": point["amount"]}
+
+
+BUDGET_COLUMNS = [
+    Column("month", _("Month")),
+    Column("category", _("Category")),
+    Column("parent", _("Parent category")),
+    Column("budget", _("Budget"), "money"),
+    Column("actual", _("Actual"), "money"),
+    Column("share", _("Used, %"), "number"),
+    Column("status", _("Status")),
+]
+BUDGET_STATUS = {
+    "none": _("No budget"),
+    "ok": _("Within budget"),
+    "warning": _("Over 80 %"),
+    "over": _("Over budget"),
+}
+
+
+def budget_rows(member, params: dict):
+    """Package I: a month's budgets against actual spending (`month=YYYY-MM`, default now)."""
+    from apps.core.exceptions import DomainError
+    from apps.finance import budgets
+
+    today = queries.local_today(member.company)
+    month = budgets.month_start(today)
+    if params.get("month"):
+        with contextlib.suppress(DomainError):  # a bad month exports this month
+            month = budgets.parse_month(params.get("month"))
+    data = budgets.month_view(
+        member.company, month, branch_ids=_branches(member, params), today=today
+    )
+    for row in data["rows"]:
+        share = row["share"]
+        yield {
+            "month": data["month"],
+            "category": row["category"]["name"],
+            "parent": row["category"]["parent_name"] or "",
+            "budget": row["budget"],
+            "actual": row["actual"],
+            "share": str(int(Decimal(share) * 100)) if share is not None else None,
+            "status": str(BUDGET_STATUS[row["status"]]),
+        }

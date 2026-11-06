@@ -40,6 +40,7 @@ from django.utils import timezone
 from apps.core.exceptions import DomainError
 from apps.core.money import Currency, MoneyField, quantize
 from apps.finance.models import (
+    SETTLES_DEBT,
     Category,
     Counterparty,
     Debt,
@@ -1014,9 +1015,9 @@ def balances_on(company, on: date, *, branch_ids) -> dict:
     settled = defaultdict(lambda: ZERO)
     for entry in (
         Transaction.objects.filter(
+            SETTLES_DEBT,
             company=company,
             status=Status.POSTED,
-            kind__in=(Kind.DEBT_PAYMENT, Kind.WRITE_OFF),
             occurred_on__lte=on,
         )
         .values("debt_id")
@@ -1280,3 +1281,61 @@ def search_counterparties(rows: QuerySet[Counterparty], q: str, limit: int) -> l
     if len(digits) >= 4:
         query |= Q(phone__contains=digits)
     return list(rows.filter(query).order_by("-is_active", "name")[:limit])
+
+
+# Taxes (Package I) ------------------------------------------------------------------------------
+
+
+def vat_percent(company) -> Decimal:
+    """The VAT rate of the company's tax regime (`FinanceSettings.vat_percent`: 12 for VAT, 6 for
+    simplified VAT, 0 on turnover tax unless the company set another). J2's sales lines use it
+    for products without a rate of their own (§14.7)."""
+    from apps.finance import conf
+
+    return conf.get_settings(company).vat_percent
+
+
+def upcoming(company, days: int = 30, *, branch_ids, today: date | None = None) -> dict:
+    """Bills, taxes, payables, receivables and pay due in the next `days` days (and what is
+    overdue), with totals in the base currency (Package I contract; `planning.upcoming`)."""
+    from apps.finance import planning
+
+    return planning.upcoming(company, days, branch_ids=branch_ids, today=today)
+
+
+def forecast(company, days: int = 90, *, branch_ids, today: date | None = None) -> dict:
+    """The cash balance day by day for `days` days, its low point and the first day below
+    zero (Package I contract; `planning.forecast`)."""
+    from apps.finance import planning
+
+    return planning.forecast(company, days, branch_ids=branch_ids, today=today)
+
+
+def tax_summary(company, today: date, *, branch_ids) -> dict:
+    """The turnover-tax tile: income booked this calendar year (the P&L's income) against the
+    threshold, `turnover_threshold` base calculation values of `base_value` so'm each (both
+    company settings, defaults from §14.4 row 28, confirm with an accountant)."""
+    from apps.finance import conf
+
+    settings_row = conf.get_settings(company)
+    base = company.base_currency
+    turnover = totals(company, date(today.year, 1, 1), today, branch_ids=branch_ids)["income"]
+    threshold = quantize(settings_row.base_value * settings_row.turnover_threshold)
+    if base != Currency.UZS and threshold:
+        try:
+            threshold = convert(threshold, Currency.UZS, base, rate_for(company, base, today).rate)
+        except DomainError:
+            threshold = ZERO
+    share = (turnover / threshold).quantize(Decimal("0.01")) if threshold > 0 else None
+    return {
+        "regime": settings_row.tax_regime,
+        "vat_percent": str(settings_row.vat_percent),
+        "year": today.year,
+        "currency": base,
+        "turnover": str(turnover),
+        "threshold": str(threshold),
+        "threshold_values": settings_row.turnover_threshold,
+        "base_value": str(settings_row.base_value),
+        "share": str(share) if share is not None else None,
+        "over": threshold > 0 and turnover > threshold,
+    }

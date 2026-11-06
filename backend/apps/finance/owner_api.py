@@ -1929,6 +1929,16 @@ class SettingsView(FinanceMixin, OwnerAPIView):
         return Response(out.SettingsSerializer(row, context=self.context()).data)
 
 
+class TaxSummaryView(FinanceMixin, OwnerAPIView):
+    """This year's turnover against the turnover-tax threshold, and the tax regime (§14.8)."""
+
+    perm = VIEW
+
+    @extend_schema(responses=out.TaxSummarySerializer)
+    def get(self, request, company_id):
+        return Response(queries.tax_summary(self.company, self.today, branch_ids=self.branch_scope))
+
+
 class LockView(FinanceMixin, OwnerAPIView):
     """Close the books up to a day (or reopen: owners only)."""
 

@@ -57,6 +57,7 @@ from apps.finance.models import (
     Receipt,
     Transaction,
     Transfer,
+    credits_debt,
 )
 from apps.finance.queries import has_ledger_rows
 from apps.finance.rates import RateQuote, convert, quoted_currency, rate_for
@@ -79,6 +80,7 @@ __all__ = [
     "create_category",
     "create_counterparty",
     "create_defaults",
+    "credit_debt",
     "delete_category",
     "delete_company_rate",
     "get_settings",
@@ -420,6 +422,7 @@ def approve_transaction(txn: Transaction, *, by: Membership) -> Transaction:
     txn.save(update_fields=["status", "approved_by", "approved_at", "updated_at"])
     if txn.account_id is not None:
         _move(locked, {txn.account_id: txn.amount})
+    _watch_budget(txn)
     _audit(FinanceAction.TRANSACTION_APPROVED, company, user, txn, sensitive=_is_sensitive(txn))
     return txn
 
@@ -467,15 +470,17 @@ def void_transaction(txn: Transaction, *, by: Membership, reason: str) -> Transa
     _hold_books(company)
     if current.transfer_id is not None:
         raise DomainError(_("This entry is part of a transfer: void the transfer instead."))
+    credit = credits_debt(current)
     if current.kind == Kind.DEBT_OPEN or (
         current.kind in (Kind.INCOME, Kind.EXPENSE)
         and current.account_id is None
         and current.debt_id is not None
+        and not credit
     ):
         raise DomainError(_("This entry opened a debt: cancel the debt instead."))
     if current.kind == Kind.FX and current.source_type == ROW_SOURCE:
         raise DomainError(_("This exchange difference belongs to a payment: void the payment."))
-    settles = current.kind in (Kind.DEBT_PAYMENT, Kind.WRITE_OFF)
+    settles = current.kind in (Kind.DEBT_PAYMENT, Kind.WRITE_OFF) or credit
     debt = _lock_debt(current.debt_id) if settles else None
 
     txn = _lock_row(current)
@@ -1056,6 +1061,112 @@ def write_off(debt: Debt, *, by: Membership, reason: str, amount=None) -> Transa
     return row
 
 
+def credit_debt(
+    debt: Debt,
+    *,
+    by: Membership | None,
+    amount,
+    credited_on: date,
+    reason: str,
+    source: Source | None = None,
+) -> Transaction:
+    """Settle part of an open debt without money: a credit note (§14.8; J3's supplier returns
+    call it). It books a contra row on the debt's own category, with no account: a payable's
+    purchase cost goes down, a receivable's sales go down, both by the part's book value. It
+    counts in `Debt.paid` like a write-off. A repeated `source` books nothing more; more than
+    the open amount, and a debt another source reserved, are refused.
+    """
+    _need_actor_or_source(by, source)
+    source = sources.check(source)
+    company = Debt.objects.select_related("company").get(pk=debt.pk).company
+    booked = {"debt_id": debt.pk, "is_contra": True}
+    if source is not None and (found := _live_row(company, source)) is not None:
+        return _same_booking(found, source, booked)
+    user = _actor(company, by)
+    reason = _reason(reason)
+    amount = _money(amount)
+    _check_open(company, credited_on)
+
+    def write() -> Transaction:
+        locked_debt = _lock_debt(debt.pk)
+        if source is not None and (found := _live_row(company, source)) is not None:
+            return _same_booking(found, source, booked)
+        if locked_debt.status != Debt.Status.OPEN:
+            raise DomainError(_("This debt is already settled or cancelled."))
+        if locked_debt.is_locked and (
+            source is None
+            or (source.type, source.id) != (locked_debt.locked_by_type, locked_debt.locked_by_id)
+        ):
+            raise DomainError(_reserved_message(locked_debt))
+        if credited_on < locked_debt.issued_on:
+            raise DomainError(_("A debt can't be credited before the day it was issued."))
+        left = locked_debt.amount - locked_debt.paid
+        if amount > left:
+            raise DomainError(
+                _("That's more than the %(left)s still owed.")
+                % {"left": _format(left, locked_debt.currency)}
+            )
+        receivable = locked_debt.direction == Debt.Direction.RECEIVABLE
+        accrual = (
+            Transaction.objects.filter(
+                debt=locked_debt,
+                kind__in=(Kind.INCOME, Kind.EXPENSE),
+                account__isnull=True,
+                is_contra=False,
+                status__in=LIVE_STATUSES,
+            )
+            .select_related("category")
+            .order_by("pk")
+            .first()
+        )
+        if accrual is not None and accrual.category_id is not None:
+            category = accrual.category
+        else:
+            category = _category(company, "sales" if receivable else "goods")
+        book_value = _book_value(locked_debt, amount)
+        row = _row(
+            company,
+            user=user,
+            kind=Kind.INCOME if receivable else Kind.EXPENSE,
+            occurred_on=credited_on,
+            amount=-amount if receivable else amount,
+            currency=locked_debt.currency,
+            quote=RateQuote(locked_debt.rate, False, "debt"),
+            base_amount=-book_value if receivable else book_value,
+            category=category,
+            counterparty=locked_debt.counterparty,
+            membership=locked_debt.membership,
+            branch=locked_debt.branch,
+            project=locked_debt.project,
+            debt=locked_debt,
+            debt_amount=amount,
+            is_contra=True,
+            description=reason,
+            source=source,
+        )
+        locked_debt.paid += amount
+        if locked_debt.paid == locked_debt.amount:
+            locked_debt.status = Debt.Status.PAID
+        locked_debt.save(update_fields=["paid", "status", "updated_at"])
+        if source is None:
+            _audit(
+                FinanceAction.DEBT_CREDITED,
+                company,
+                user,
+                locked_debt,
+                sensitive=locked_debt.kind in Debt.SENSITIVE_KINDS,
+                transaction=row.pk,
+                amount=str(amount),
+                reason=reason,
+            )
+        return row
+
+    with transaction.atomic():
+        return _write_once(
+            write, lambda: _same_booking(_live_row(company, source), source, booked), source
+        )
+
+
 @transaction.atomic
 def cancel_debt(debt: Debt, *, by: Membership, reason: str) -> Debt:
     """Cancel a debt recorded by mistake: every row it has (the accrual or the money that moved
@@ -1181,7 +1292,12 @@ SETTINGS_FIELDS = (
     "receipt_required_over",
     "large_expense_alert",
     "reimburse_via",
+    "tax_regime",
+    "vat_percent",
+    "turnover_threshold",
+    "base_value",
 )
+PERCENT_STEP = Decimal("0.01")
 DEBT_FIELDS = ("due_on", "description", "responsible", "branch")
 BULK_ACTIONS = ("categorize", "void")
 MAX_BULK = 200
@@ -2346,8 +2462,14 @@ def lock_period(company, *, by: Membership, until: date | None) -> FinanceSettin
 
 @transaction.atomic
 def update_settings(company, *, by: Membership, **fields) -> FinanceSettings:
-    """Where rates come from, the approval and receipt thresholds, the large-expense alert and
-    how reimbursements are paid. The period lock has its own service (`lock_period`)."""
+    """Where rates come from, the approval and receipt thresholds, the large-expense alert, how
+    reimbursements are paid and the tax regime. The period lock has its own service
+    (`lock_period`).
+
+    Choosing a tax regime without a VAT rate sets the rate the regime implies (12 % for VAT,
+    6 % for simplified VAT, none for turnover tax); saving the regime confirms it, which ticks
+    the "Which tax do you pay?" step of Get started.
+    """
     _need_actor(by)
     _known(fields, SETTINGS_FIELDS)
     user = _actor(company, by)
@@ -2362,6 +2484,21 @@ def update_settings(company, *, by: Membership, **fields) -> FinanceSettings:
             if value not in FinanceSettings.ReimburseVia.values:
                 raise ValueError(f"Unknown reimbursement route {value!r}.")
             settings_row.reimburse_via = value
+        elif key == "tax_regime":
+            if value not in FinanceSettings.TaxRegime.values:
+                raise ValueError(f"Unknown tax regime {value!r}.")
+            settings_row.tax_regime = value
+            if "vat_percent" not in fields:
+                settings_row.vat_percent = FinanceSettings.REGIME_VAT[value]
+            settings_row.tax_regime_set_at = timezone.now()
+        elif key == "vat_percent":
+            settings_row.vat_percent = _percent(value)
+        elif key == "turnover_threshold":
+            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                raise DomainError(_("Enter a whole number of base values."))
+            settings_row.turnover_threshold = value
+        elif key == "base_value":
+            settings_row.base_value = _money(value)
         else:
             setattr(
                 settings_row,
@@ -2375,6 +2512,16 @@ def update_settings(company, *, by: Membership, **fields) -> FinanceSettings:
     return settings_row
 
 
+def _percent(value) -> Decimal:
+    try:
+        percent = Decimal(str(value)).quantize(PERCENT_STEP)
+    except InvalidOperation, TypeError, ValueError:
+        raise DomainError(_("Enter a percentage from 0 to 100.")) from None
+    if not percent.is_finite() or percent < 0 or percent > 100:
+        raise DomainError(_("Enter a percentage from 0 to 100."))
+    return percent
+
+
 def _settings_snapshot(row: FinanceSettings) -> dict:
     def money(value):
         return str(value) if value is not None else None
@@ -2385,6 +2532,10 @@ def _settings_snapshot(row: FinanceSettings) -> dict:
         "receipt_required_over": money(row.receipt_required_over),
         "large_expense_alert": money(row.large_expense_alert),
         "reimburse_via": row.reimburse_via,
+        "tax_regime": row.tax_regime,
+        "vat_percent": money(row.vat_percent),
+        "turnover_threshold": row.turnover_threshold,
+        "base_value": money(row.base_value),
     }
 
 
@@ -2700,7 +2851,7 @@ def _row(
     if base_amount is None:
         base_amount = convert(amount, currency, company.base_currency, quote.rate)
     _check_size(amount, base_amount)
-    return Transaction.objects.create(
+    row = Transaction.objects.create(
         company=company,
         kind=kind,
         status=status,
@@ -2726,6 +2877,17 @@ def _row(
         source_key=source.key if source else "",
         created_by=user,
     )
+    if status == Status.POSTED:
+        _watch_budget(row)
+    return row
+
+
+def _watch_budget(row: Transaction) -> None:
+    """A posted P&L row in a budgeted category checks that month's budget after commit."""
+    if row.kind in Transaction.PNL_KINDS and row.category_id is not None:
+        from apps.finance import budgets  # budgets builds on these services
+
+        budgets.watch(row)
 
 
 def _write_once(write, find, source: Source | None):

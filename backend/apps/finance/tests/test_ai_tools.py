@@ -117,3 +117,46 @@ def test_branch_scope(fin, boss, today, role, person):
     assert call_tool("finance_summary", viewer)["data"]["income"] == "100.00"
     rows = call_tool("finance_transactions", viewer)["rows"]
     assert [row["amount"] for row in rows] == ["100.00"]
+
+
+# Package I ------------------------------------------------------------------------------------
+
+
+def test_upcoming_budgets_and_payables(fin, boss, ledger, today, cash):
+    from datetime import timedelta
+
+    from apps.finance import budgets
+    from apps.finance.models import Category
+
+    distributor = CounterpartyFactory(company=fin, name="Tolzor Farm Savdo", kind="supplier")
+    services.open_debt(
+        fin,
+        by=boss,
+        direction="payable",
+        kind="trade",
+        amount=D("2000000"),
+        currency="UZS",
+        issued_on=today - timedelta(days=20),
+        due_on=today - timedelta(days=1),
+        counterparty=distributor,
+        category="goods",
+    )
+    salaries = Category.objects.get(company=fin, system_code="salaries")
+    budgets.set_budgets(fin, by=boss, month=today.replace(day=1), rows=[(salaries, "1000000")])
+
+    upcoming = call_tool("finance_upcoming", boss, days=30, forecast=True)
+    assert upcoming["rows"][0]["title"] == "Tolzor Farm Savdo"
+    assert upcoming["rows"][0]["overdue"] is True
+    assert upcoming["data"]["low_point"]["balance"]
+    payables = call_tool("finance_payables", boss, overdue_only=True)
+    assert payables["rows"][0]["party"] == "Tolzor Farm Savdo"
+    assert payables["rows"][0]["debts"][0]["bucket"] == "overdue"
+    month = call_tool("finance_budgets", boss)
+    [row] = [row for row in month["rows"] if row["category"] == salaries.name]
+    assert (row["budget"], row["actual"], row["status"]) == ("1000000.00", "1200000.00", "over")
+
+
+def test_planning_tools_need_finance_view(fin, member, ledger):
+    manager = member(fin, "Manager")
+    for name in ("finance_upcoming", "finance_budgets", "finance_payables"):
+        assert call_tool(name, manager) == {"error": "not_allowed"}

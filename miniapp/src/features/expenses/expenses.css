@@ -1,0 +1,190 @@
+/* Expenses: the summary, the claim rows, receipt tiles, and the result after sending. */
+@import "../states.css";
+
+.exp-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+/* — what is owed to me, the company cash I hold — */
+
+.exp-summary .list-item-value {
+  color: var(--color-text);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+/* — a claim in my list: the row, and Cancel under it on the same surface — */
+
+.exp-claim {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.exp-claim > .row {
+  background: transparent;
+}
+
+.exp-claim-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -6px;
+  padding: 0 8px 8px;
+}
+
+.exp-amount {
+  font-size: 15.5px;
+  font-weight: 700;
+}
+
+.exp-struck {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
+/* — receipts: picked files and those on file — */
+
+.exp-receipts {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.exp-receipts-more {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.exp-tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.exp-tile {
+  position: relative;
+  width: 76px;
+  height: 76px;
+}
+
+.exp-tile-img,
+.exp-tile-file {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+}
+
+.exp-tile-img--empty {
+  background: var(--color-neutral-100);
+}
+
+.exp-tile-file {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: var(--color-surface);
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.exp-tile-open {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: inherit;
+}
+
+/* A small round × on the tile's corner, with a finger-sized target around it. */
+.exp-tile-remove {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--color-text);
+  color: var(--color-bg);
+}
+
+.exp-tile-remove::before {
+  content: "";
+  position: absolute;
+  inset: -8px;
+}
+
+.exp-tile-remove:disabled {
+  opacity: 0.5;
+}
+
+/* — a sheet — */
+
+.exp-sheet-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+}
+
+/* — what became of a sent expense — */
+
+.exp-result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0 4px;
+  text-align: center;
+}
+
+.exp-result-icon {
+  width: 64px;
+  height: 64px;
+}
+
+.exp-result-icon--wait {
+  background: var(--color-accent-100);
+  color: var(--color-accent-700);
+}
+
+.exp-result-icon--done {
+  background: var(--color-accent-2-100);
+  color: var(--color-accent-2-700);
+}
+
+.exp-result-line {
+  margin: 0;
+  font-size: 16px;
+  overflow-wrap: anywhere;
+}
+
+.exp-result-amount {
+  font-weight: 700;
+}
+
+.exp-result .btn-block {
+  align-self: stretch;
+}
+
+.exp-result-done {
+  margin-top: 10px;
+}

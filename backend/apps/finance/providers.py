@@ -8,6 +8,7 @@ Every provider applies the member's branch scope itself (§2.6) and returns mone
 
 import logging
 from datetime import date, timedelta
+from decimal import Decimal
 
 from django.db.models import Q
 from django.utils.translation import gettext as _
@@ -15,7 +16,7 @@ from django.utils.translation import gettext as _
 from apps.console.registry import CalendarItem, FieldSpec, OffboardStep, SearchHit
 from apps.core.money import quantize
 from apps.finance import access, display, queries
-from apps.finance.models import Debt, MoneyAccount, Receipt, Transaction
+from apps.finance.models import Debt, FinanceSettings, MoneyAccount, Receipt, Transaction
 from apps.finance.sources import Source
 from apps.members import scope
 from apps.members.models import Membership
@@ -164,6 +165,44 @@ def brief_section(company, day: date, now, branch_ids: list[int] | None) -> dict
         "due_today_count": due_today.count(),
         "stale_rate": bool(cash["rate"]["stale"]),
         "url": f"/c/{company.pk}/finance",
+    }
+
+
+def obligations_section(company, day: date, now, branch_ids: list[int] | None) -> dict | None:
+    """Package I: bills and taxes due within a week (and overdue), payables due today and
+    overdue, and the budgets past 80 % this month. Silent when there is nothing to say."""
+    from apps.finance import budgets, planning
+
+    items = planning.items(company, day, day + timedelta(days=7), branch_ids=branch_ids)
+    bills = [item for item in items if item.kind in ("bill", "tax", "auto")]
+    payables = [
+        item for item in items if item.kind == "payable" and (item.overdue or item.date == day)
+    ]
+    month = budgets.month_view(company, day.replace(day=1), branch_ids=branch_ids, today=day)
+    burning = [row for row in month["rows"] if row["status"] in ("warning", "over")]
+    if not bills and not payables and not burning:
+        return None
+    value = queries.valuation(company, day)
+
+    def total(rows) -> str:
+        found = [
+            value.to_base(item.amount, item.currency) for item in rows if item.amount is not None
+        ]
+        return str(quantize(sum((amount for amount in found if amount is not None), Decimal(0))))
+
+    return {
+        "currency": company.base_currency,
+        "bills_due_count": len(bills),
+        "bills_overdue_count": sum(1 for item in bills if item.overdue),
+        "bills_due": total(bills),
+        "bills": [item.as_dict() for item in bills[:5]],
+        "payables_due_count": len(payables),
+        "payables_due": total(payables),
+        "budgets_over": [
+            {"category": row["category"]["name"], "share": row["share"], "status": row["status"]}
+            for row in burning[:5]
+        ],
+        "url": f"/c/{company.pk}/finance/calendar",
     }
 
 
@@ -368,6 +407,11 @@ def opening_balances_done(company) -> bool:
     )
 
 
+def tax_regime_done(company) -> bool:
+    """ "Which tax do you pay?": done once someone saved the tax regime in the settings."""
+    return FinanceSettings.objects.filter(company=company, tax_regime_set_at__isnull=False).exists()
+
+
 # Private files and record history -------------------------------------------------------------
 
 
@@ -392,7 +436,15 @@ def receipt_check(user, company_id: int, object_id) -> bool:
     if receipt.uploaded_by_id == user.pk:
         return True
     member = _member(user, company_id)
-    if member is None or receipt.transaction_id is None:
+    if member is None:
+        return False
+    if receipt.claim_id is not None:
+        # An expense claim's receipt: whoever may see the claim (its approvers above all).
+        from apps.finance import claims
+
+        if claims.visible_claims(member).filter(pk=receipt.claim_id).exists():
+            return True
+    if receipt.transaction_id is None:
         return False
     if access.masks_row(member, receipt.transaction):
         return False

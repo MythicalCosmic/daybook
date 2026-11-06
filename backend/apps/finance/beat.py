@@ -18,4 +18,17 @@ SCHEDULE = {
         "task": "apps.finance.tasks.verify_balances",
         "schedule": crontab(hour=3, minute=0),
     },
+    # Package I: recurring payments, reminders and budgets.
+    "finance-run-recurring": {
+        "task": "apps.finance.tasks.run_recurring",
+        "schedule": crontab(minute="*/30"),
+    },
+    "finance-remind-payments": {
+        "task": "apps.finance.tasks.remind_payments",
+        "schedule": crontab(minute="*/15"),
+    },
+    "finance-check-budgets": {
+        "task": "apps.finance.tasks.check_all_budgets",
+        "schedule": crontab(hour=3, minute=30),
+    },
 }

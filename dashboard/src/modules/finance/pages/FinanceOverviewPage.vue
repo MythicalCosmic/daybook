@@ -285,6 +285,10 @@ const firstRun = computed(() => !!data.value && !data.value.has_ledger);
               <AlarmClock :size="16" class="text-subtle" />
               <h3 class="flex-1 text-sm font-semibold text-fg">{{ t("finance.overview.dueSoon") }}</h3>
               <UiBadge v-if="data?.due_soon.length" :count="data.due_soon.length" tone="primary" />
+              <!-- Bills, taxes and payroll too, and the cash they leave: the payments calendar. -->
+              <RouterLink :to="`${base}/calendar`" class="inline-flex items-center gap-1 rounded-[6px] px-1.5 py-0.5 text-sm font-semibold text-muted hover:bg-highlight hover:text-fg" data-calendar-link>
+                {{ t("common.viewAll") }}<ArrowRight :size="14" />
+              </RouterLink>
             </header>
             <div v-if="skeleton" class="flex flex-col gap-2"><SkeletonBlock v-for="n in 4" :key="n" height="40px" /></div>
             <EmptyState v-else-if="data && !data.due_soon.length" size="sm" tone="success" :title="t('finance.overview.nothingDue')" :description="t('finance.overview.nothingDueBody')" />

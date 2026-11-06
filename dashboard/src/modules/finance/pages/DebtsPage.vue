@@ -4,7 +4,7 @@
  * modal"): the total each way with the overdue part, how old it is, and every debt with what is
  * left and how late; filters in the URL; the debt drawer on `?debt=`; `?new=1` opens the form.
  */
-import { ArrowDownLeft, ArrowUpRight, CircleDot, HandCoins, Plus, Rows3 } from "@lucide/vue";
+import { ArrowDownLeft, ArrowUpRight, CircleDot, HandCoins, Plus, Rows3, Truck } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
@@ -114,6 +114,8 @@ const exportParams = computed(() => ({ direction: direction.value, ...filters.pa
   <div>
     <PageHeader v-model:tab="direction" :title="t('finance.nav.debts')" :description="t('finance.debts.description')" :tabs="tabs">
       <template #actions>
+        <!-- Several supplier debts are paid together on the payables page. -->
+        <UiButton v-if="canRecord && direction === 'payable'" variant="secondary" :icon="Truck" :to="`/c/${company.currentId}/finance/payables`" data-pay-distributors>{{ t("finance.cmd.payDistributors") }}</UiButton>
         <UiButton v-if="canRecord" variant="primary" :icon="Plus" @click="formOpen = true">{{ t("finance.debts.new") }}</UiButton>
       </template>
     </PageHeader>

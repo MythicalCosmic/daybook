@@ -11,10 +11,26 @@ from apps.console import registry
 from apps.console.perms import AnyOf
 from apps.core.files import register_file_check
 from apps.exports.registry import register_exporter
-from apps.finance import defaults, exporters, providers, services, sources
+from apps.finance import (
+    claims,
+    defaults,
+    exporters,
+    providers,
+    recurring,
+    reminders,
+    services,
+    sources,
+)
 from apps.finance.audit_actions import FinanceAction
-from apps.finance.models import Category, CompanyRate, Counterparty, FinanceSettings
-from apps.inbox.registry import register_kind
+from apps.finance.models import (
+    Budget,
+    Category,
+    CompanyRate,
+    Counterparty,
+    FinanceSettings,
+    RecurringRule,
+)
+from apps.inbox.registry import register_action, register_kind
 from apps.members.permissions import Perm
 from apps.members.signals import member_left
 
@@ -38,6 +54,17 @@ sources.register(
 
 # Demo rows other demos may replace (finance.demo: sales per branch and day, salaries per person).
 sources.register("finance.demo", label=_("Demo data"), url_template="")
+# Package I: what a recurring payment posted (keyed by its due date) and what a claim booked.
+sources.register(
+    recurring.SOURCE,
+    label=_("Recurring payment"),
+    url_template="/c/{company_id}/finance/recurring?rule={id}",
+)
+sources.register(
+    claims.SOURCE,
+    label=_("Expense claim"),
+    url_template="/c/{company_id}/finance/claims?claim={id}",
+)
 
 
 def make_defaults(sender, company, by=None, **kwargs) -> None:
@@ -66,6 +93,24 @@ registry.register_pulse(
     "finance.overdue", perm=Perm.FINANCE_VIEW, count=providers.overdue_count, feature=FINANCE
 )
 registry.register_pulse("finance.ledger", perm=None, count=None, feature=FINANCE)
+registry.register_pulse(
+    claims.PULSE, perm=Perm.FINANCE_APPROVE, count=claims.queue_count, feature=FINANCE
+)
+registry.register_queue(
+    claims.PULSE,
+    perm=Perm.FINANCE_APPROVE,
+    label=_("Expense claims to approve"),
+    count=claims.queue_count,
+    items=claims.queue_items,
+    feature=FINANCE,
+)
+registry.register_brief_section(
+    "finance.obligations",
+    perm=Perm.FINANCE_VIEW,
+    order=41,
+    build=providers.obligations_section,
+    feature=FINANCE,
+)
 registry.register_branch_facts(
     "finance", perm=Perm.FINANCE_VIEW, facts=providers.branch_facts, feature=FINANCE
 )
@@ -104,6 +149,19 @@ registry.register_setup_step(
     ),
     url="finance/accounts?setup=opening",
     done=providers.opening_balances_done,
+    feature=FINANCE,
+)
+registry.register_setup_step(
+    "finance.tax_regime",
+    perm=Perm.FINANCE_MANAGE,
+    order=62,
+    label=_("Which tax do you pay?"),
+    description=_(
+        "Turnover tax, VAT 12 % or simplified VAT 6 %. Sales lines, the tax calendar and the "
+        "turnover tile follow it. Confirm with your accountant."
+    ),
+    url="settings/finance",
+    done=providers.tax_regime_done,
     feature=FINANCE,
 )
 registry.register_copy_part(
@@ -166,6 +224,14 @@ register_exporter(
     sensitive=True,
     feature=FINANCE,
 )
+register_exporter(
+    "finance.budget",
+    perm=Perm.FINANCE_VIEW,
+    label=_("Budgets"),
+    columns=exporters.BUDGET_COLUMNS,
+    rows=exporters.budget_rows,
+    feature=FINANCE,
+)
 
 # Notifications ------------------------------------------------------------------------------
 
@@ -181,6 +247,44 @@ register_kind(
     label=_("Balances were corrected from the ledger"),
     audience="owner",
     default_telegram=False,
+    severity="warning",
+)
+# Package I. A claim to approve lives in "Needs you"; its Telegram copy carries the buttons.
+register_kind(
+    "finance.claim",
+    label=_("Expense claims to approve"),
+    audience="owner",
+    default_telegram=True,
+    queue_kind=claims.PULSE,
+)
+register_action("finance.claim", "approve", claims.approve_action)
+register_action("finance.claim", "reject", claims.reject_action)
+register_kind(
+    "finance.claim_decided",
+    label=_("Your expense claims"),
+    audience="employee",
+    default_telegram=True,
+)
+register_kind(
+    "finance.bill_due",
+    label=_("Bills and taxes due"),
+    audience="owner",
+    default_telegram=True,
+)
+register_action("finance.bill_due", reminders.PAID, reminders.paid_action)
+register_action("finance.bill_due", reminders.LATER, reminders.later_action)
+register_kind(
+    "finance.debt_due",
+    label=_("Overdue debts you are responsible for"),
+    audience="owner",
+    default_telegram=True,
+    severity="warning",
+)
+register_kind(
+    "finance.budget",
+    label=_("Budget alerts"),
+    audience="owner",
+    default_telegram=True,
     severity="warning",
 )
 
@@ -208,4 +312,15 @@ audit_registry.register_target(
 )
 audit_registry.register_target(
     "companyrate", Perm.FINANCE_VIEW, check=providers.company_row_check(CompanyRate)
+)
+audit_registry.register_target(
+    "recurringrule", Perm.FINANCE_VIEW, check=providers.company_row_check(RecurringRule)
+)
+audit_registry.register_target(
+    "budget", Perm.FINANCE_VIEW, check=providers.company_row_check(Budget)
+)
+audit_registry.register_target(
+    "claim",
+    Perm.FINANCE_VIEW,
+    check=lambda member, target_id: claims.visible_claims(member).filter(pk=target_id).exists(),
 )

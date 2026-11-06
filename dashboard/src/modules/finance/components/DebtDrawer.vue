@@ -2,9 +2,10 @@
 /**
  * One debt in a side panel synced with `?debt=`: who owes whom, how much is left and since when,
  * the payments so far, an instalment plan, and the decisions: record a payment, change the due
- * date or who chases it, write it off, or cancel a debt recorded by mistake.
+ * date or who chases it, take a supplier's credit note off a payable, write it off, or cancel a
+ * debt recorded by mistake.
  */
-import { Ban, CalendarClock, CircleCheck, EyeOff, HandCoins, History, MoreHorizontal, Pencil, Plus, Split, Trash2, Undo2 } from "@lucide/vue";
+import { Ban, CalendarClock, CircleCheck, EyeOff, FileMinus, HandCoins, History, MoreHorizontal, Pencil, Plus, Split, Trash2, Undo2 } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
@@ -38,6 +39,7 @@ import { useCompanyStore } from "@/stores/company";
 
 import { financeApi, useDebt, useOptions, useRefresh } from "../api";
 import { dayStyle, DEBT_TONES, debtChanges, share } from "../lib";
+import CreditNoteDialog from "./CreditNoteDialog.vue";
 import PaymentDialog from "./PaymentDialog.vue";
 
 const { t } = useI18n();
@@ -57,10 +59,16 @@ const detail = computed(() => query.data.value ?? null);
 const debt = computed(() => detail.value?.debt ?? null);
 const tab = ref<"details" | "history">("details");
 const payOpen = ref(false);
+const creditOpen = ref(false);
 const editing = ref(false);
 const planning = ref(false);
 const saving = ref(false);
 const canRecord = computed(() => company.can("finance.record"));
+/** A supplier's credit note settles part of a payable without money (finance.manage). */
+const canCredit = computed(() => {
+  const d = debt.value;
+  return !!d && d.direction === "payable" && d.status === "open" && !d.masked && !d.is_locked && company.can("finance.manage");
+});
 const options = useOptions(editing);
 
 watch(id, () => {
@@ -201,6 +209,7 @@ const fieldLabels = computed(() => ({ due_on: t("finance.debts.due"), descriptio
 const moreMenu = computed<MenuEntry[]>(() => {
   const list: MenuEntry[] = [];
   if (!debt.value || !detail.value) return list;
+  if (canCredit.value) list.push({ label: t("finance.credit.action"), icon: FileMinus, onSelect: () => (creditOpen.value = true) });
   if (detail.value.can_write_off) list.push({ label: t("finance.debts.writeOff"), icon: Undo2, onSelect: writeOff });
   if (detail.value.can_cancel) list.push({ label: t("finance.debts.cancel"), icon: Ban, danger: true, onSelect: cancel });
   return list;
@@ -325,6 +334,7 @@ const moreMenu = computed<MenuEntry[]>(() => {
           </template>
           <AuditTrail v-else target-type="debt" :target-id="debt.id" :field-labels="fieldLabels" />
           <PaymentDialog v-model:open="payOpen" :debt="debt" />
+          <CreditNoteDialog v-if="canCredit" v-model:open="creditOpen" :debt="debt" />
         </div>
       </div>
     </template>
