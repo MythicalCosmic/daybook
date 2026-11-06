@@ -290,3 +290,29 @@ def test_a_sale_goes_only_to_an_account_the_person_may_record_on(
     cash.refresh_from_db()
     assert cash.balance == D("50000000.00")
     assert not Transaction.objects.filter(company=shop, category__system_code="asset_sale").exists()
+
+
+def test_an_improvement_paid_from_another_branch_is_refused(
+    shop, owner, keeper, owner_api, cash, equipment, chilonzor, yunusobod, category
+):
+    """The keeper sees Chilonzor only: an expense of Yunusobod can't become part of a Chilonzor
+    asset (and leave Yunusobod's P&L) through the assets page."""
+    fridge = services.create_asset(
+        shop,
+        by=owner,
+        category=category,
+        name="Muzlatgich",
+        cost=D(8_400_000),
+        life_months=84,
+        branch=chilonzor,
+        in_service_on=date(2026, 9, 10),
+    )
+    theirs = buy(shop, owner, cash, equipment, yunusobod, amount=500_000, day=date(2026, 11, 3))
+    reply = owner_api(keeper).post(
+        f"{base(shop)}/items/{fridge.pk}/addition/",
+        {"on": "2026-11-04", "amount": "500000", "purchase": theirs.pk},
+        format="json",
+    )
+    assert reply.status_code == 400, reply.json()
+    theirs.refresh_from_db()
+    assert not theirs.capitalized

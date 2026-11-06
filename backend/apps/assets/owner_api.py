@@ -524,12 +524,20 @@ class AssetViewSet(ModuleOn, Scope, OwnerViewSet):
     @extend_schema(request=s.AdditionSerializer, responses=s.AssetDetailSerializer)
     @action(detail=True, methods=["post"])
     def addition(self, request, company_id, pk=None):
-        return self._run(
-            request,
-            pk,
-            s.AdditionSerializer,
-            lambda asset, data: services.add_to_cost(asset, by=self.membership, **data),
-        )
+        from apps.finance.models import Transaction
+
+        def call(asset, data):
+            if data.get("purchase"):
+                # Like the purchase of a new asset: an expense of the caller's branches only.
+                txn = Transaction.objects.for_company(self.company).filter(pk=data["purchase"])
+                txn = txn.first()
+                scope = self.branch_scope
+                if txn is None or (scope is not None and txn.branch_id not in scope):
+                    raise ValidationError({"purchase": [_("That purchase isn't yours.")]})
+                data["purchase"] = txn
+            services.add_to_cost(asset, by=self.membership, **data)
+
+        return self._run(request, pk, s.AdditionSerializer, call)
 
     @extend_schema(request=s.AmountSerializer, responses=s.AssetDetailSerializer)
     @action(detail=True, methods=["post"], url_path="write-down")
