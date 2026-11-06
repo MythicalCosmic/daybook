@@ -251,6 +251,7 @@ def book_company(company) -> int:
     if not finance_on(company):
         return 0
     from apps.finance import services as finance
+    from apps.finance.models import Transaction
     from apps.finance.sources import Source
 
     made = 0
@@ -271,18 +272,18 @@ def book_company(company) -> int:
         for entry in pending:
             groups[(entry.month, entry.asset.branch_id)].append(entry)
         for (month, branch_id), entries in groups.items():
-            batch = (
-                DepreciationEntry.objects.filter(
-                    company=company,
-                    month=month,
-                    asset__branch_id=branch_id,
-                    transaction__isnull=False,
-                )
-                .values("transaction_id")
-                .distinct()
-                .count()
-                + 1
-            )
+            # The next free number of this month and branch in Finance itself: counting the
+            # entries by their asset's branch today would reuse a number after an asset moved,
+            # and a reused source returns the earlier row, so these entries would never be in
+            # the P&L.
+            prefix = f"d:{month:%Y-%m}:{branch_id or 0}:"
+            used = Transaction.objects.filter(
+                company=company,
+                source_type=SOURCE_RUN,
+                source_id=settings.pk,
+                source_key__startswith=prefix,
+            ).values_list("source_key", flat=True)
+            batch = max((int(key.rsplit(":", 1)[1]) for key in used), default=0) + 1
             total = sum((entry.amount for entry in entries), Decimal(0))
             day = booking_day(company, month_end(month))
             row = finance.book_non_cash(
@@ -290,7 +291,7 @@ def book_company(company) -> int:
                 amount=total,
                 occurred_on=day,
                 category="depreciation",
-                source=Source(SOURCE_RUN, settings.pk, f"d:{month:%Y-%m}:{branch_id or 0}:{batch}"),
+                source=Source(SOURCE_RUN, settings.pk, f"{prefix}{batch}"),
                 branch=entries[0].asset.branch,
                 description=_run_text(company, month, len(entries)),
             )

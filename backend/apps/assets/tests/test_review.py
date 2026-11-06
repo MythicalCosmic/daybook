@@ -7,7 +7,8 @@ from decimal import Decimal as D
 import pytest
 
 from apps.assets import services
-from apps.assets.tests.test_posting import buy
+from apps.assets.models import DepreciationEntry
+from apps.assets.tests.test_posting import buy, depreciation_rows
 from apps.core.exceptions import DomainError
 from apps.finance import queries as finance_queries
 
@@ -59,3 +60,39 @@ def test_one_expense_is_capitalized_once(shop, owner, cash, equipment, chilonzor
         services.create_asset(
             shop, by=owner, category=category, name="Javon", purchase_transaction=extra
         )
+
+
+def test_a_late_month_after_a_move_still_reaches_finance(
+    shop, owner, cash, equipment, chilonzor, yunusobod, category
+):
+    """October of a fridge is booked at Chilonzor, then the fridge moves to Yunusobod. Another
+    Chilonzor asset entered later gets its October: it must land in a row of its own, not be
+    "found" in the fridge's row (whose amount never included it)."""
+    bought = buy(shop, owner, cash, equipment, chilonzor, amount=8_400_000, day=date(2026, 9, 5))
+    fridge = services.create_asset(
+        shop,
+        by=owner,
+        category=category,
+        name="Muzlatgich",
+        purchase_transaction=bought,
+        in_service_on=date(2026, 9, 10),
+    )
+    services.move(fridge, by=owner, branch=yunusobod, on=date(2026, 11, 2))
+    later = buy(shop, owner, cash, equipment, chilonzor, amount=4_200_000, day=date(2026, 9, 6))
+    services.create_asset(
+        shop,
+        by=owner,
+        category=category,
+        name="Muzlatgich 2",
+        purchase_transaction=later,
+        in_service_on=date(2026, 9, 10),
+    )
+    october = DepreciationEntry.objects.filter(company=shop, month=date(2026, 10, 1))
+    assert sorted(entry.amount for entry in october) == [D("50000.00"), D("100000.00")]
+    for row in depreciation_rows(shop):
+        linked = sum((entry.amount for entry in row.depreciation_entries.all()), D(0))
+        assert -row.base_amount == linked, row.description
+    in_finance = sum(-row.base_amount for row in depreciation_rows(shop))
+    assert in_finance == sum(
+        entry.amount for entry in DepreciationEntry.objects.filter(company=shop)
+    )
