@@ -321,7 +321,9 @@ def preview(membership: Membership, *, last_day: date, leave_days: Decimal = ZER
     settlement = terms(
         membership, period=period, last_day=last_day, leave_days=leave_days, work_paid=work_paid
     )
-    draft = PayrollRun(company=company, period=period, kind=PayrollRun.Kind.FINAL)
+    draft = PayrollRun(
+        company=company, period=period, kind=PayrollRun.Kind.FINAL, last_day=last_day
+    )
     inputs, people = calculator.gather(
         company,
         period,

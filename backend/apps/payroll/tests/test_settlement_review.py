@@ -6,6 +6,7 @@ from decimal import Decimal as D
 
 import pytest
 
+from apps.finance.models import CompanyRate
 from apps.payroll import services
 from apps.payroll.models import PayrollRun, PayslipLine
 from apps.payroll.tests.conftest import local
@@ -99,3 +100,21 @@ def test_a_later_month_that_paid_a_leaver_is_flagged(shop, team, freeze):
     }
     # Tuesday 29 and Wednesday 30 September at 200 000; all of October.
     assert paid_after == {"2026-09-01": "400000.00", "2026-10-01": "5200000.00"}
+
+
+def test_a_dollar_salary_is_converted_on_the_last_day_it_is_booked_on(shop, team, freeze):
+    """Vali earns $1 000 a month and leaves on Wednesday 14 October; his final payslip is
+    booked on that day, so it takes that day's dollar rate, not the month end's."""
+    staff = team
+    services.set_pay(staff.vali, by=None, effective_from=HIRED, amount="1000", currency="USD")
+    CompanyRate.objects.create(company=shop, currency="USD", date=date(2026, 10, 14), rate=12000)
+    CompanyRate.objects.create(company=shop, currency="USD", date=date(2026, 10, 31), rate=12500)
+    freeze(local(date(2026, 11, 2), 10))
+    leave(staff.vali)
+    staff.ends[staff.vali.pk] = date(2026, 10, 14)
+
+    run = services.create_final_run(staff.vali, by=staff.accountant, last_day=date(2026, 10, 14))
+
+    assert run.usd_rate == D("12000")
+    # 11 of 26 days of 12 000 000 so‘m.
+    assert run.payslips.get().base_pay == D("5076923.08")
