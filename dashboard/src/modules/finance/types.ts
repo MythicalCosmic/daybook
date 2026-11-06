@@ -698,6 +698,8 @@ export interface RecurringPayInput {
   account: number;
   amount: Money;
   paid_on?: string;
+  /** The due day the dialog showed (`next_due_on`): once it is paid, a second request is refused. */
+  occurrence?: string;
 }
 
 /** What paying a bill or running an auto rule now answers. */

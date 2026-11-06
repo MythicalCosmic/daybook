@@ -182,8 +182,17 @@ def expense_categories(company) -> QuerySet[Category]:
     )
 
 
-# Categories a person never claims: what the system books by itself.
-CLAIM_EXCLUDED = ("salaries", "payroll_taxes", "cash_shortage", "bad_debts", "fx_diff")
+# Categories a person never claims: what the system books by itself (fixed assets' depreciation
+# and write-offs move no money).
+CLAIM_EXCLUDED = (
+    "salaries",
+    "payroll_taxes",
+    "cash_shortage",
+    "bad_debts",
+    "fx_diff",
+    "depreciation",
+    "asset_disposal",
+)
 
 
 def held_accounts(member: Membership) -> list[MoneyAccount]:
@@ -444,7 +453,8 @@ def sync_paid(company=None) -> int:
 
 def _record_held(claim: Claim, *, by: Membership, posted: bool) -> Transaction:
     company = claim.company
-    account = services.account_for_holder(company, claim.membership)
+    # The cash the person holds in the claim's (base) currency: what submit_claim checked.
+    account = services.account_for_holder(company, claim.membership, currency=claim.currency)
     return services.record_transaction(
         company,
         by=by,

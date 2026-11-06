@@ -170,7 +170,14 @@ class RecurringRuleWriteSerializer(serializers.Serializer):
     is_active = serializers.BooleanField(required=False)
 
 
-class RecurringPaySerializer(serializers.Serializer):
+class RecurringOccurrenceSerializer(serializers.Serializer):
+    """The due day the person saw (`next_due_on`): a second request for it is refused instead of
+    settling the next occurrence too. Optional, for older clients."""
+
+    occurrence = serializers.DateField(required=False, allow_null=True)
+
+
+class RecurringPaySerializer(RecurringOccurrenceSerializer):
     account = serializers.IntegerField()
     amount = MoneySerializerField(required=False, allow_null=True)
     paid_on = serializers.DateField(required=False, allow_null=True)

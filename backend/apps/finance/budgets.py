@@ -12,7 +12,7 @@ branches, so no other branch's spending leaks; alerts go to the people who see e
 import logging
 from calendar import monthrange
 from datetime import date, datetime, timedelta
-from decimal import Decimal
+from decimal import ROUND_DOWN, Decimal
 from zoneinfo import ZoneInfo
 
 from django.db import transaction
@@ -84,7 +84,8 @@ def actuals(company, month: date, *, branch_ids) -> dict[int, Decimal]:
 def status_of(budget: Decimal | None, actual: Decimal) -> tuple[Decimal | None, str]:
     if budget is None or budget <= 0:
         return None, "none"
-    share = (actual / budget).quantize(SHARE_STEP)
+    # Truncated, never rounded up: 99.5 % used is not "over" and 79.5 % not "80 %".
+    share = (actual / budget).quantize(SHARE_STEP, rounding=ROUND_DOWN)
     if share >= OVER:
         return share, "over"
     if share >= WARNING:

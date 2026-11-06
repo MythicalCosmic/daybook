@@ -1745,6 +1745,7 @@ def merge_category(source: Category, *, into: Category, by: Membership) -> Categ
         child.parent = into
         child.save(update_fields=["parent", "updated_at"])
     Counterparty.objects.filter(default_category=source).update(default_category=into)
+    planned = _merge_planning(source, into)
     name = source.name
     _audit(
         FinanceAction.CATEGORY_MERGED,
@@ -1754,9 +1755,39 @@ def merge_category(source: Category, *, into: Category, by: Membership) -> Categ
         merged=name,
         entries=moved,
         subcategories=len(children),
+        **planned,
     )
     source.delete()
     return into
+
+
+def _merge_planning(source: Category, into: Category) -> dict:
+    """Package I's rows that hold `source` (recurring payments, budgets, expense claims) move to
+    `into`. A budget joins `into`'s budget of the same month (its actuals now hold both), and
+    a new amount is a new budget: its alerts may come again."""
+    from apps.finance.models import Budget, Claim, RecurringRule
+
+    now = timezone.now()
+    rules = RecurringRule.objects.filter(category=source).update(category=into, updated_at=now)
+    claimed = Claim.objects.filter(category=source).update(category=into, updated_at=now)
+    budgets = 0
+    for budget in Budget.objects.select_for_update().filter(category=source).order_by("pk"):
+        same = (
+            Budget.objects.select_for_update()
+            .filter(company_id=budget.company_id, month=budget.month, category=into)
+            .first()
+        )
+        if same is None:
+            budget.category = into
+            budget.save(update_fields=["category", "updated_at"])
+        else:
+            same.amount += budget.amount
+            same.alerted_80_at = None
+            same.alerted_100_at = None
+            same.save(update_fields=["amount", "alerted_80_at", "alerted_100_at", "updated_at"])
+            budget.delete()
+        budgets += 1
+    return {"recurring": rules, "budgets": budgets, "claims": claimed}
 
 
 @transaction.atomic
