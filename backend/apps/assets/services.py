@@ -695,6 +695,7 @@ def put_into_service(asset: Asset, *, by: Membership, on: date) -> Asset:
 def set_status(asset: Asset, *, by: Membership, status: str, on: date, note: str = "") -> Asset:
     """In use, in storage or under repair (mothballing and disposal have their own steps)."""
     asset = _lock(asset)
+    _check_day(asset.company, on, name=_("The day"))
     _live(asset)
     allowed = (Asset.Status.IN_USE, Asset.Status.IN_STORAGE, Asset.Status.REPAIR)
     if status not in allowed:
@@ -716,6 +717,7 @@ def set_status(asset: Asset, *, by: Membership, status: str, on: date, note: str
 @transaction.atomic
 def move(asset: Asset, *, by: Membership, branch, on: date, note: str = "") -> Asset:
     asset = _lock(asset)
+    _check_day(asset.company, on, name=_("The day"))
     _live(asset)
     _same_company(asset.company, branch)
     if branch == asset.branch:
@@ -762,6 +764,7 @@ def issue(
 ) -> AssetAssignment:
     """Give the asset to someone (a laptop, the keys, a uniform): they confirm in the app."""
     asset = _lock(asset)
+    _check_day(asset.company, on, name=_("The day"))
     _live(asset)
     membership = _member(asset.company, membership)
     holder = asset.assignments.filter(returned_on__isnull=True).first()
@@ -799,6 +802,7 @@ def acknowledge(assignment: AssetAssignment, *, by: Membership) -> AssetAssignme
 @transaction.atomic
 def take_back(asset: Asset, *, by: Membership, on: date, condition="", note="") -> AssetAssignment:
     asset = _lock(asset)
+    _check_day(asset.company, on, name=_("The day"))
     assignment = asset.assignments.select_for_update().filter(returned_on__isnull=True).first()
     if assignment is None:
         raise DomainError(_("Nobody holds it."))
@@ -1005,6 +1009,7 @@ def change_estimate(
     """A new useful life (in total, from the start), residual value or method, from the first
     month not posted yet. Earlier months stay as they were."""
     asset = _lock(asset)
+    _check_day(asset.company, on, name=_("The day"))
     _live(asset)
     if life_months is None and salvage_value in (None, "") and method is None:
         raise DomainError(_("Change the useful life, the residual value or the method."))
@@ -1059,6 +1064,7 @@ def change_estimate(
 def suspend(asset: Asset, *, by: Membership, on: date, note="") -> AssetEvent:
     """Mothballed (konservatsiya): no depreciation from the next month, and its life waits."""
     asset = _lock(asset)
+    _check_day(asset.company, on, name=_("The day"))
     _live(asset)
     if asset.status == Asset.Status.SUSPENDED:
         raise DomainError(_("It is already mothballed."))
@@ -1073,6 +1079,7 @@ def suspend(asset: Asset, *, by: Membership, on: date, note="") -> AssetEvent:
 @transaction.atomic
 def resume(asset: Asset, *, by: Membership, on: date, note="") -> AssetEvent:
     asset = _lock(asset)
+    _check_day(asset.company, on, name=_("The day"))
     if asset.status != Asset.Status.SUSPENDED:
         raise DomainError(_("It isn't mothballed."))
     suspended = asset.events.filter(kind=AssetEvent.Kind.SUSPENDED).order_by("-on").first()
@@ -1091,6 +1098,7 @@ def resume(asset: Asset, *, by: Membership, on: date, note="") -> AssetEvent:
 def record_usage(asset: Asset, *, by: Membership, on: date, units) -> AssetEvent:
     """Units of output in a month (kilometres, hours) for the units method."""
     asset = _lock(asset)
+    _check_day(asset.company, on, name=_("The day"))
     _live(asset)
     if asset.method != Method.UNITS:
         raise DomainError(_("Only an asset depreciated by units of output records units."))

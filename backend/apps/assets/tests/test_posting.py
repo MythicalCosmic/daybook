@@ -311,7 +311,7 @@ def test_custody_is_given_confirmed_and_taken_back(shop, owner, ali, category):
     assignment.refresh_from_db()
     assert assignment.acknowledged_at is not None
     assert queries.mine(ali) == [assignment]
-    services.take_back(asset, by=owner, on=date(2026, 11, 8), condition="worn")
+    services.take_back(asset, by=owner, on=date(2026, 11, 7), condition="worn")
     asset.refresh_from_db()
     assert asset.custodian is None and asset.condition == "worn"
     assert queries.mine(ali) == []
