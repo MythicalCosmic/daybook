@@ -8,11 +8,15 @@ To the person (the employee bot, with a way into the app): their contract is in 
 document of theirs expires, their birthday or work anniversary.
 """
 
-from datetime import date
+import hashlib
+from datetime import date, timedelta
+
+from django.utils import timezone
 
 from apps.hr import bot_messages
 from apps.hr.models import Celebration, Contract, EmployeeDocument
 from apps.inbox import services as inbox
+from apps.inbox.models import Notification
 from apps.inbox.services import NotificationAction
 from apps.members import scope
 from apps.members.models import Membership
@@ -31,6 +35,8 @@ CELEBRATION = "hr.celebration"
 COVERAGE_GAP_LIVE = "hr.coverage_gap_live"
 UNQUALIFIED_SELLER = "hr.unqualified_seller"
 COVERAGE_GAP_PLANNED = "hr.coverage_gap_planned"
+# A roster gap told about is remembered this long (longer than the furthest look ahead).
+PLANNED_MEMORY_DAYS = 45
 
 
 def recipients(person: Membership, perm: Perm = Perm.HR_MANAGE) -> list[Membership]:
@@ -184,21 +190,42 @@ def unqualified_seller(branch, row: dict, opened_at) -> int:
     )
 
 
-def coverage_gap_planned(branch, gap, recipients: list[Membership], week: str) -> int:
-    """Hours of the published roster with no qualified pharmacist: once per gap, to whoever
-    runs the roster there."""
+def gap_key(gap) -> str:
+    return f"{_stamp(gap.start)}-{_stamp(gap.end)}"
+
+
+def announced_gaps(branch) -> set[str]:
+    """The roster gaps of `branch` already announced (each message keeps its gaps' keys)."""
+    rows = Notification.objects.filter(
+        company_id=branch.company_id,
+        kind=COVERAGE_GAP_PLANNED,
+        target_type="branch",
+        target_id=branch.pk,
+        created_at__gte=timezone.now() - timedelta(days=PLANNED_MEMORY_DAYS),
+    ).values_list("data", flat=True)
+    return {key for data in rows for key in (data or {}).get("gaps", [])}
+
+
+def coverage_gaps_planned(branch, gaps: list, recipients: list[Membership], week: str) -> int:
+    """Gaps of the published roster with no qualified pharmacist, to whoever runs the roster
+    there: the new ones of a run in one message per branch, so each gap is told once."""
+    known = announced_gaps(branch)
+    fresh = [gap for gap in gaps if gap_key(gap) not in known]
+    if not fresh:
+        return 0
+    keys = [gap_key(gap) for gap in fresh]
+    digest = hashlib.sha1("|".join(keys).encode(), usedforsecurity=False).hexdigest()[:20]
     return len(
         inbox.notify(
             recipients,
             COVERAGE_GAP_PLANNED,
             title=lambda reader: bot_messages.planned_gap_title(branch.name),
-            body=lambda reader: bot_messages.planned_gap_body(
-                gap.start, gap.end, gap.have, gap.need
-            ),
+            body=lambda reader: bot_messages.planned_gaps_body(fresh),
             url=f"/c/{branch.company_id}/attendance/roster?branch={branch.pk}&week={week}",
             target=branch,
             severity="warning",
-            dedupe_key=f"{COVERAGE_GAP_PLANNED}:{branch.pk}:{_stamp(gap.start)}:{_stamp(gap.end)}",
+            data={"gaps": keys},
+            dedupe_key=f"{COVERAGE_GAP_PLANNED}:{branch.pk}:{digest}",
         )
     )
 

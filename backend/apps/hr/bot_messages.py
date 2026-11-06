@@ -188,11 +188,19 @@ def planned_gap_when(start, end) -> str:
     }
 
 
-def planned_gap_body(start, end, have: int, need: int) -> str:
-    lines = [planned_gap_when(start, end)]
-    if need > 1:
-        lines.append(
-            _("Qualified pharmacists planned: %(have)d of %(need)d") % {"have": have, "need": need}
-        )
+PLANNED_LINES = 6
+
+
+def planned_gaps_body(gaps: list) -> str:
+    """The new gaps, one a line (a few at most), and what to do."""
+    lines = []
+    for gap in gaps[:PLANNED_LINES]:
+        line = planned_gap_when(gap.start, gap.end)
+        if gap.need > 1:
+            # Translators: qualified pharmacists planned out of those needed, e.g. "1 of 2".
+            line += " · " + _("%(have)d of %(need)d") % {"have": gap.have, "need": gap.need}
+        lines.append(line)
+    if len(gaps) > PLANNED_LINES:
+        lines.append(_("and %(count)d more") % {"count": len(gaps) - PLANNED_LINES})
     lines.append(_("Add a qualified pharmacist to the roster."))
     return "\n".join(lines)

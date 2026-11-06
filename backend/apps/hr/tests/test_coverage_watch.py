@@ -219,6 +219,27 @@ def test_a_gap_in_the_published_roster_warns_whoever_runs_it_once(shop, rota, ch
     assert planned(shop, freeze, hour=10) == 0
 
 
+def test_a_runs_new_gaps_come_in_one_message_and_each_gap_once(shop, rota, chilonzor, freeze):
+    for day in (TOMORROW, TOMORROW + timedelta(days=1)):
+        shift_at(rota.ali, day, time(8), time(17), branch=chilonzor)  # nobody for the evenings
+
+    assert planned(shop, freeze) == 2  # one message each for the owner and the manager
+    first = notices(notify.COVERAGE_GAP_PLANNED).first()
+    assert first.body.splitlines() == [
+        "22.10.2026, 17:00 to 22:00",
+        "23.10.2026, 17:00 to 22:00",
+        "Add a qualified pharmacist to the roster.",
+    ]
+    shift_at(rota.vali, TOMORROW + timedelta(days=2), time(14), time(17), branch=chilonzor)
+    assert planned(shop, freeze, hour=10) == 2  # only the new day's gaps
+    newest = notices(notify.COVERAGE_GAP_PLANNED).last()
+    assert newest.body.splitlines()[:-1] == [
+        "24.10.2026, 08:00 to 14:00",
+        "24.10.2026, 17:00 to 22:00",
+    ]
+    assert planned(shop, freeze, hour=11) == 0
+
+
 def test_drafts_days_past_the_roster_and_gaps_under_way_stay_quiet(shop, rota, chilonzor, freeze):
     plan_week(rota, chilonzor)
     shift_at(

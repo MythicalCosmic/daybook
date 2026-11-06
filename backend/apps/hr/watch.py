@@ -184,16 +184,19 @@ def planned_company(company: Company, now: datetime) -> int:
     if settings is None:
         return 0
     branches = {branch.pk: branch for branch in coverage.pharmacies(company, branch_ids=None)}
-    recipients: dict[int, list[Membership]] = {}
-    sent = 0
+    ahead: dict[int, list] = {}
     for gap in coverage.upcoming(company, now, settings.coverage_days, branch_ids=None):
-        if gap.start <= now or gap.branch_id not in branches:
-            continue  # under way: the live check has it
-        if gap.branch_id not in recipients:
-            recipients[gap.branch_id] = attendance.managers_for(company, gap.branch_id)
-        monday = gap.start.date() - timedelta(days=gap.start.weekday())
-        sent += notify.coverage_gap_planned(
-            branches[gap.branch_id], gap, recipients[gap.branch_id], monday.isoformat()
+        if gap.start > now and gap.branch_id in branches:  # under way: the live check has it
+            ahead.setdefault(gap.branch_id, []).append(gap)
+    sent = 0
+    for branch_id, gaps in ahead.items():
+        first = gaps[0].start.date()
+        monday = first - timedelta(days=first.weekday())
+        sent += notify.coverage_gaps_planned(
+            branches[branch_id],
+            gaps,
+            attendance.managers_for(company, branch_id),
+            monday.isoformat(),
         )
     return sent
 
