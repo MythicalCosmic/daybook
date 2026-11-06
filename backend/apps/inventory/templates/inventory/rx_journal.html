@@ -1,0 +1,52 @@
+{% extends "core/base_print.html" %}{% load i18n %}
+{% block style %}
+.journal table { font-size: 8.5pt; }
+.journal th, .journal td { padding: 1.4mm 1.6mm; }
+{% endblock %}
+{% block header_details %}<div class="small muted">{{ branch }} · {{ month }}</div>{% endblock %}
+{% block content %}
+<section class="journal">
+  <h1>{{ title }}</h1>
+  <p class="small muted">{{ branch }} · {{ month }}</p>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>{% translate "Date" %}</th>
+        <th>{% translate "Prescription" %}</th>
+        <th>{% translate "Prescribed" %}</th>
+        <th>{% translate "Prescriber" %}</th>
+        <th>{% translate "Facility" %}</th>
+        <th>{% translate "Medicine" %}</th>
+        <th>{% translate "Series" %}</th>
+        <th class="num">{% translate "Quantity" %}</th>
+        <th>{% translate "Kind" %}</th>
+        {% if invalid %}<th>{% translate "What was wrong" %}</th><th>{% translate "Facility told" %}</th>{% endif %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{{ row.day }}</td>
+        <td>{{ row.number }}</td>
+        <td>{{ row.prescribed_on }}</td>
+        <td>{{ row.prescriber }}</td>
+        <td>{{ row.facility }}</td>
+        <td>{{ row.product }}</td>
+        <td>{{ row.series }}</td>
+        <td class="num">{{ row.quantity }}</td>
+        <td>{{ row.kind }}</td>
+        {% if invalid %}<td>{{ row.reason }}</td><td>{{ row.notified }}</td>{% endif %}
+      </tr>
+      {% empty %}
+      <tr><td colspan="{% if invalid %}12{% else %}10{% endif %}" class="muted">{% translate "No prescriptions this month." %}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div class="signatures">
+    <div class="signature">{% translate "Responsible pharmacist" %}</div>
+    <div class="signature">{% translate "Head of pharmacy" %}</div>
+  </div>
+</section>
+{% endblock %}

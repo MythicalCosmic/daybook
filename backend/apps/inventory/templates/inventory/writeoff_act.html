@@ -1,0 +1,94 @@
+{% extends "core/base_print.html" %}{% load i18n %}
+{% block style %}
+.act-facts { display: grid; grid-template-columns: auto 1fr; column-gap: 5mm; row-gap: 1.2mm; margin: 0 0 5mm; font-size: 9.5pt; }
+.act-facts dt { color: #6b6b6b; }
+.act-facts dd { margin: 0; }
+.act table { font-size: 9pt; }
+.act h2 { margin-top: 5mm; }
+.commission td.sign { width: 35mm; }
+.act-note { font-size: 8.5pt; color: #555; margin-top: 3mm; }
+{% endblock %}
+{% block header_details %}<div class="small muted">{{ branch.name }}{% if branch.address %} · {{ branch.address }}{% endif %}</div>{% endblock %}
+{% block content %}
+<section class="act">
+  <h1>{{ title }}</h1>
+  <dl class="act-facts">
+    <dt>{% translate "Pharmacy" %}</dt><dd>{{ branch.name }}</dd>
+    <dt>{% translate "Reason" %}</dt><dd>{{ reason }}</dd>
+    <dt>{% translate "Approved" %}</dt><dd>{{ approved_on }}</dd>
+    <dt>{% translate "Destroyed" %}</dt><dd>{{ destroyed }}</dd>
+    <dt>{% translate "Place" %}</dt><dd>{{ writeoff.place }}</dd>
+    <dt>{% translate "Method" %}</dt><dd>{{ method }}</dd>
+    <dt>{% translate "Responsible person" %}</dt><dd>{{ writeoff.responsible }}</dd>
+    <dt>{% translate "Order number" %}</dt><dd>{{ writeoff.order_number }}</dd>
+    <dt>{% translate "Photos and videos" %}</dt><dd>{{ photos }}</dd>
+  </dl>
+
+  <h2>{% translate "Destroyed goods" %}</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>{% translate "Medicine" %}</th>
+        <th>{% translate "Manufacturer" %}</th>
+        <th>{% translate "Series" %}</th>
+        <th>{% translate "Expiry date" %}</th>
+        <th class="num">{% translate "Quantity" %}</th>
+        <th class="num">{% translate "Cost per pack" %}</th>
+        <th class="num">{% translate "Value" %}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for line in lines %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{{ line.product }}</td>
+        <td>{{ line.manufacturer }}</td>
+        <td>{{ line.series }}</td>
+        <td>{{ line.expires_on }}</td>
+        <td class="num">{{ line.quantity }}</td>
+        <td class="num">{{ line.unit_cost }}</td>
+        <td class="num">{{ line.value }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr><td colspan="7">{% translate "Total at cost" %}</td><td class="num">{{ total }}</td></tr>
+    </tfoot>
+  </table>
+
+  <h2>{% translate "Commission" %}</h2>
+  <table class="commission">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>{% translate "Name" %}</th>
+        <th>{% translate "Organisation" %}</th>
+        <th>{% translate "Role" %}</th>
+        <th>{% translate "Signature" %}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for member in commission %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{{ member.name }}</td>
+        <td>{{ member.organisation }}</td>
+        <td>{{ member.role }}</td>
+        <td class="sign"></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if sent_to %}
+  <p class="act-note">{% translate "Copies sent to" %}: {{ sent_to|join:", " }}</p>
+  {% endif %}
+  <p class="act-note">{% translate "The goods were destroyed in the presence of the commission; photos or videos of the destruction are kept with this act." %}</p>
+
+  <div class="signatures">
+    <div class="signature">{% translate "Responsible person" %}: {{ writeoff.responsible }}</div>
+    <div class="signature">{% translate "Head of pharmacy" %}</div>
+  </div>
+</section>
+{% endblock %}

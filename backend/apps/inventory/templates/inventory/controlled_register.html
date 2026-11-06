@@ -1,0 +1,99 @@
+{% extends "core/base_print.html" %}{% load i18n %}
+{% block style %}
+.book + .book { page-break-before: always; }
+.page + .page { page-break-before: always; }
+.page-facts { display: grid; grid-template-columns: auto 1fr; column-gap: 4mm; row-gap: 1mm; margin: 0 0 4mm; font-size: 9pt; }
+.page-facts dt { color: #6b6b6b; }
+.page-facts dd { margin: 0; }
+.page table { font-size: 8.5pt; }
+.page th, .page td { padding: 1.4mm 1.6mm; }
+.page td.sign { width: 22mm; border-left: 0.4pt solid #dcdcdc; }
+.totals td { font-weight: 700; }
+.diff { color: #a33a2a; font-weight: 700; }
+.register-note { font-size: 8pt; color: #555; margin-top: 3mm; }
+{% endblock %}
+{% block header_details %}<div class="small muted">{{ branch }} · {{ month }}</div>{% endblock %}
+{% block content %}
+{% if not books %}
+<h1>{{ title }}</h1>
+<p class="muted">{% translate "No controlled medicines were on hand or moved this month." %}</p>
+{% endif %}
+{% for book in books %}
+<section class="book">
+  {% for page in book.pages %}
+  <div class="page">
+    <h1>{{ book.title }}</h1>
+    <dl class="page-facts">
+      <dt>{% translate "Pharmacy" %}</dt><dd>{{ branch }}</dd>
+      <dt>{% translate "Month" %}</dt><dd>{{ month }}</dd>
+      <dt>{% translate "Medicine" %}</dt><dd>{{ page.product }}{% if page.inn %} ({{ page.inn }}){% endif %}</dd>
+      <dt>{% translate "Unit" %}</dt><dd>{{ page.unit }}</dd>
+      <dt>{% translate "Opening balance" %}</dt><dd>{{ page.row.opening }}</dd>
+    </dl>
+    <table>
+      <thead>
+        <tr>
+          <th>{% translate "Date" %}</th>
+          <th>{% translate "Operation" %}</th>
+          <th>{% translate "Document" %}</th>
+          <th>{% translate "Series" %}</th>
+          <th class="num">{% translate "In" %}</th>
+          <th class="num">{% translate "Out" %}</th>
+          <th class="num">{% translate "Balance" %}</th>
+          <th>{% translate "Signature" %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for entry in page.entries %}
+        <tr>
+          <td>{{ entry.day }}</td>
+          <td>{{ entry.operation }}</td>
+          <td>{{ entry.document }}</td>
+          <td>{{ entry.series }}</td>
+          <td class="num">{{ entry.received }}</td>
+          <td class="num">{{ entry.issued }}</td>
+          <td class="num">{{ entry.balance }}</td>
+          <td class="sign"></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="8" class="muted">{% translate "Nothing moved this month." %}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <table class="totals">
+      <thead>
+        <tr>
+          <th class="num">{% translate "Opening" %}</th>
+          <th class="num">{% translate "Received" %}</th>
+          <th class="num">{% translate "Issued" %}</th>
+          <th class="num">{% translate "Written off" %}</th>
+          <th class="num">{% translate "Adjusted" %}</th>
+          <th class="num">{% translate "Closing" %}</th>
+          <th class="num">{% translate "Counted" %}</th>
+          <th class="num">{% translate "Difference" %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="num">{{ page.row.opening }}</td>
+          <td class="num">{{ page.row.received }}</td>
+          <td class="num">{{ page.row.issued }}</td>
+          <td class="num">{{ page.row.written_off }}</td>
+          <td class="num">{{ page.row.adjusted }}</td>
+          <td class="num">{{ page.row.closing }}</td>
+          <td class="num">{{ page.counted }}</td>
+          <td class="num{% if page.difference and page.difference != '0' %} diff{% endif %}">{{ page.difference }}</td>
+        </tr>
+      </tbody>
+    </table>
+    {% if page.unrecorded %}<p class="register-note">{% blocktranslate count count=page.unrecorded %}{{ count }} issue has no prescription in the log.{% plural %}{{ count }} issues have no prescription in the log.{% endblocktranslate %}</p>{% endif %}
+    <p class="register-note">{% translate "Printed from the stock records to copy into or attach to the numbered, laced and sealed book, which stays the legal record." %}</p>
+    <div class="signatures">
+      <div class="signature">{% translate "Responsible pharmacist" %}</div>
+      <div class="signature">{% translate "Head of pharmacy" %}</div>
+    </div>
+  </div>
+  {% endfor %}
+</section>
+{% endfor %}
+{% endblock %}

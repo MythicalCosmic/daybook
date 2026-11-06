@@ -1,8 +1,9 @@
 """The stock contract (docs/PLAN-OWNER.md §14.6.3): the signatures W2.a fixed, which J2, S, J3
-and N call. J1 fills the bodies and keeps these exactly; the stub behaviour is tested here
-until then (J1 replaces those tests with real ones)."""
+and N call. J1 filled the bodies and keeps these exactly; what they do is tested here and in
+test_golden.py."""
 
 import inspect
+from datetime import date, timedelta
 from decimal import Decimal
 
 import pytest
@@ -10,6 +11,7 @@ import pytest
 from apps.companies.tests.factories import BranchFactory
 from apps.core.exceptions import DomainError
 from apps.inventory import queries, services
+from apps.inventory.models import ProductCode, StockCount
 from apps.inventory.tests.factories import ProductFactory
 
 K = inspect.Parameter.KEYWORD_ONLY
@@ -126,23 +128,55 @@ def test_the_catalogue_answers_codes_and_searches(company):
     assert queries.match_code(company, " AMX-500 ") == product
     assert queries.match_code(company, "") is None
     [row] = queries.lookup(company, "amoxi", branch_ids=None)
-    assert row["id"] == product.pk and row["quantity"] is None
+    assert row["id"] == product.pk and row["quantity"] == 0
     assert queries.lookup(company, "kapsula", branch_ids=None)[0]["name"] == product.name
+
+    services.remember_code(product, by=None, kind="pos", code="KASSA-77")
+    services.remember_code(product, by=None, kind="pos", code="KASSA-77")
+    assert ProductCode.objects.filter(product=product).count() == 1
+    assert queries.match_code(company, "KASSA-77") == product
+    assert queries.lookup(company, "KASSA-77", branch_ids=None)[0]["id"] == product.pk
 
 
 @pytest.mark.django_db
-def test_until_the_stock_module_deductions_move_nothing(company):
+def test_deductions_counts_and_queries_work_on_real_stock(company):
     branch = BranchFactory(company=company)
-    product = ProductFactory(company=company)
+    other = BranchFactory(company=company)
+    product = ProductFactory(company=company, units_per_pack=2)
+    soon = date.today() + timedelta(days=20)
+    batch = services.add_opening_stock(
+        branch,
+        by=None,
+        product=product,
+        series="X1",
+        expires_on=soon,
+        quantity=Decimal("4"),
+        unit_cost=Decimal("10000"),
+    )
 
     [allocation] = services.deduct(
         branch, product, Decimal("3"), by=None, document=("sales.sale", 1)
     )
-    assert allocation == services.Allocation(None, Decimal("3"), None)
+    assert allocation == services.Allocation(batch.pk, Decimal("3"), Decimal("5000.00"))
     assert services.record_rx(by=None, branch=branch, product=product, quantity=1) is None
+    count = services.start_count(branch, by=None)
+    assert count.status == StockCount.Status.OPEN and count.lines.count() == 1
     with pytest.raises(DomainError):
         services.start_count(branch, by=None)
-    assert queries.expiring(company, branch_ids=None, within_days=30, as_of=None) == []
+    [row] = queries.expiring(company, branch_ids=None, within_days=30, as_of=None)
+    assert row["batch_id"] == batch.pk and row["quantity"] == 1 and row["value"] == 5000
+    assert queries.expiring(company, branch_ids=[other.pk], within_days=30, as_of=None) == []
+    assert queries.batches(company, branch_ids=None, product_id=product.pk).get() == batch
+    assert queries.batches(company, branch_ids=[other.pk]).count() == 0
+    assert queries.velocity(company, branch_ids=None)[(branch.pk, product.pk)] == Decimal("0.107")
+    assert queries.levels(company, branch_ids=[branch.pk]).get().quantity == 1
+    assert queries.last_applied_count(branch) is None
+    assert (
+        queries.movements(
+            company, date.today() - timedelta(days=1), date.today(), branch_ids=[branch.pk]
+        ).count()
+        == 2
+    )
 
 
 @pytest.mark.django_db
