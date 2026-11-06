@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-07 04:05+0500\n"
+"POT-Creation-Date: 2026-11-07 04:14+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -7126,6 +7126,11 @@ msgid "This entry comes from %(source)s: correct it there."
 msgstr "Источник проводки — «%(source)s»: исправьте её там."
 
 #: backend/apps/finance/owner_api.py
+#, python-format
+msgid "This entry comes from %(source)s: decide it there."
+msgstr "Источник проводки — «%(source)s»: одобрите или отклоните её там."
+
+#: backend/apps/finance/owner_api.py
 msgid "Only people with payroll access mark salary categories."
 msgstr ""
 "Отмечать категории как зарплатные могут только те, у кого есть доступ к "
@@ -7159,11 +7164,6 @@ msgstr ""
 #: backend/apps/finance/owner_api.py backend/apps/finance/services.py
 msgid "This entry isn't waiting for approval."
 msgstr "Эта проводка не ждёт одобрения."
-
-#: backend/apps/finance/owner_api.py
-#, python-format
-msgid "This entry comes from %(source)s: decide it there."
-msgstr "Источник проводки — «%(source)s»: одобрите или отклоните её там."
 
 #: backend/apps/finance/owner_api.py
 msgid "Someone else approves the entries you made."
@@ -7352,9 +7352,23 @@ msgid ""
 "There is no exchange rate for %(currency)s yet. Enter today's rate first."
 msgstr "Курса для %(currency)s пока нет. Сначала введите курс на сегодня."
 
+#: backend/apps/finance/recurring.py backend/apps/inbox/services.py
+msgid "This has already been handled."
+msgstr "Это уже обработано."
+
 #: backend/apps/finance/recurring.py
 msgid "This payment is posted automatically: run it instead."
 msgstr "Этот платёж проводится автоматически: проведите его сейчас."
+
+#: backend/apps/finance/recurring.py backend/apps/finance/reminders.py
+msgid "Already paid."
+msgstr "Уже оплачено."
+
+#: backend/apps/finance/recurring.py backend/apps/finance/services.py
+#: backend/apps/payroll/finance_bridge.py
+#, python-format
+msgid "%(account)s holds %(currency)s."
+msgstr "Валюта счёта «%(account)s» — %(currency)s."
 
 #: backend/apps/finance/recurring.py
 msgid "A bill is paid with the amount you paid, not run."
@@ -7484,10 +7498,6 @@ msgstr[1] "%(count)s долга под вашим контролем: срок �
 msgstr[2] "%(count)s долгов под вашим контролем: срок наступил или прошёл"
 
 #: backend/apps/finance/reminders.py
-msgid "Already paid."
-msgstr "Уже оплачено."
-
-#: backend/apps/finance/reminders.py
 msgid "Open the dashboard to enter the amount."
 msgstr "Откройте панель управления, чтобы ввести сумму."
 
@@ -7541,11 +7551,6 @@ msgstr "%(person)s, наличные на руках"
 #: backend/apps/finance/services.py
 msgid "Pick the account the money went to or came from."
 msgstr "Выберите счёт, на который поступили или с которого ушли деньги."
-
-#: backend/apps/finance/services.py backend/apps/payroll/finance_bridge.py
-#, python-format
-msgid "%(account)s holds %(currency)s."
-msgstr "Валюта счёта «%(account)s» — %(currency)s."
 
 #: backend/apps/finance/services.py
 msgid "This debt was cancelled."
@@ -9054,10 +9059,6 @@ msgstr "Неизвестный тип уведомления."
 #: backend/apps/inbox/serializers.py
 msgid "Give ids or all=true."
 msgstr "Передайте ids или all=true."
-
-#: backend/apps/inbox/services.py
-msgid "This has already been handled."
-msgstr "Это уже обработано."
 
 #: backend/apps/inbox/services.py
 msgid "This action isn't available any more."

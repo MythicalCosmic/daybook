@@ -7132,6 +7132,17 @@ paths:
         required: true
       tags:
       - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecurringOccurrenceRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RecurringOccurrenceRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RecurringOccurrenceRequest'
       security:
       - ownerJwtAuth: []
       responses:
@@ -7160,6 +7171,17 @@ paths:
         required: true
       tags:
       - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecurringOccurrenceRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RecurringOccurrenceRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RecurringOccurrenceRequest'
       security:
       - ownerJwtAuth: []
       responses:
@@ -26509,6 +26531,11 @@ components:
             $ref: '#/components/schemas/SellsToEnum'
           description: Who the business sells to.
           minItems: 1
+        business_confirmed:
+          type: boolean
+          readOnly: true
+          description: The owner saved what the business is (the Get started step
+            is done).
         features:
           type: array
           items:
@@ -26520,6 +26547,7 @@ components:
       required:
       - base_currency
       - base_currency_locked
+      - business_confirmed
       - business_kind
       - default_language
       - evening_report_at
@@ -40233,9 +40261,26 @@ components:
       - shift_id
       - status
       - worked_minutes
+    RecurringOccurrenceRequest:
+      type: object
+      description: |-
+        The due day the person saw (`next_due_on`): a second request for it is refused instead of
+        settling the next occurrence too. Optional, for older clients.
+      properties:
+        occurrence:
+          type: string
+          format: date
+          nullable: true
     RecurringPayRequest:
       type: object
+      description: |-
+        The due day the person saw (`next_due_on`): a second request for it is refused instead of
+        settling the next occurrence too. Optional, for older clients.
       properties:
+        occurrence:
+          type: string
+          format: date
+          nullable: true
         account:
           type: integer
         amount:

@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-07 04:05+0500\n"
+"POT-Creation-Date: 2026-11-07 04:14+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -7160,6 +7160,13 @@ msgid "This entry comes from %(source)s: correct it there."
 msgstr "Bu yozuv «%(source)s» orqali yaratilgan: uni o‘sha yerda tuzating."
 
 #: backend/apps/finance/owner_api.py
+#, python-format
+msgid "This entry comes from %(source)s: decide it there."
+msgstr ""
+"Bu yozuv «%(source)s» orqali yaratilgan: uni o‘sha yerda tasdiqlang yoki rad "
+"eting."
+
+#: backend/apps/finance/owner_api.py
 msgid "Only people with payroll access mark salary categories."
 msgstr ""
 "Toifani ish haqi toifasi deb faqat ish haqiga ruxsati bor odamlar belgilay "
@@ -7193,13 +7200,6 @@ msgstr ""
 #: backend/apps/finance/owner_api.py backend/apps/finance/services.py
 msgid "This entry isn't waiting for approval."
 msgstr "Bu yozuv tasdiqni kutmayapti."
-
-#: backend/apps/finance/owner_api.py
-#, python-format
-msgid "This entry comes from %(source)s: decide it there."
-msgstr ""
-"Bu yozuv «%(source)s» orqali yaratilgan: uni o‘sha yerda tasdiqlang yoki rad "
-"eting."
 
 #: backend/apps/finance/owner_api.py
 msgid "Someone else approves the entries you made."
@@ -7386,9 +7386,23 @@ msgid ""
 msgstr ""
 "%(currency)s uchun hali valyuta kursi yo‘q. Avval bugungi kursni kiriting."
 
+#: backend/apps/finance/recurring.py backend/apps/inbox/services.py
+msgid "This has already been handled."
+msgstr "Bu allaqachon hal qilingan."
+
 #: backend/apps/finance/recurring.py
 msgid "This payment is posted automatically: run it instead."
 msgstr "Bu to‘lov avtomatik o‘tkaziladi: uni hozir o‘tkazing."
+
+#: backend/apps/finance/recurring.py backend/apps/finance/reminders.py
+msgid "Already paid."
+msgstr "Allaqachon to‘langan."
+
+#: backend/apps/finance/recurring.py backend/apps/finance/services.py
+#: backend/apps/payroll/finance_bridge.py
+#, python-format
+msgid "%(account)s holds %(currency)s."
+msgstr "«%(account)s» hisobining valyutasi — %(currency)s."
 
 #: backend/apps/finance/recurring.py
 msgid "A bill is paid with the amount you paid, not run."
@@ -7512,10 +7526,6 @@ msgid_plural "%(count)s debts you look after are due or overdue"
 msgstr[0] "Siz kuzatadigan qarzlar muddati yetdi yoki o‘tdi: %(count)s ta"
 
 #: backend/apps/finance/reminders.py
-msgid "Already paid."
-msgstr "Allaqachon to‘langan."
-
-#: backend/apps/finance/reminders.py
 msgid "Open the dashboard to enter the amount."
 msgstr "Summani kiritish uchun boshqaruv panelini oching."
 
@@ -7570,11 +7580,6 @@ msgstr "%(person)s, qo‘ldagi naqd pul"
 #: backend/apps/finance/services.py
 msgid "Pick the account the money went to or came from."
 msgstr "Pul tushgan yoki chiqqan hisobni tanlang."
-
-#: backend/apps/finance/services.py backend/apps/payroll/finance_bridge.py
-#, python-format
-msgid "%(account)s holds %(currency)s."
-msgstr "«%(account)s» hisobining valyutasi — %(currency)s."
 
 #: backend/apps/finance/services.py
 msgid "This debt was cancelled."
@@ -9088,10 +9093,6 @@ msgstr "Noma’lum bildirishnoma turi."
 #: backend/apps/inbox/serializers.py
 msgid "Give ids or all=true."
 msgstr "ids yoki all=true ni yuboring."
-
-#: backend/apps/inbox/services.py
-msgid "This has already been handled."
-msgstr "Bu allaqachon hal qilingan."
 
 #: backend/apps/inbox/services.py
 msgid "This action isn't available any more."
