@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-06 17:30+0500\n"
+"POT-Creation-Date: 2026-11-07 01:10+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -1769,6 +1769,1174 @@ msgstr "E’lonning amal qilish muddati u yuborilgandan keyin tugashi kerak."
 msgid "You don't have permission to do this."
 msgstr "Bunga ruxsatingiz yo‘q."
 
+#: backend/apps/assets/audit_actions.py
+msgid "Changed the asset policy"
+msgstr "Asosiy vositalar hisob siyosatini o‘zgartirdi"
+
+#: backend/apps/assets/audit_actions.py
+msgid "Added an asset category"
+msgstr "Asosiy vositalar toifasini qo‘shdi"
+
+#: backend/apps/assets/audit_actions.py
+msgid "Changed an asset category"
+msgstr "Asosiy vositalar toifasini o‘zgartirdi"
+
+#: backend/apps/assets/audit_actions.py
+msgid "Deleted an asset category"
+msgstr "Asosiy vositalar toifasini o‘chirdi"
+
+#: backend/apps/assets/audit_actions.py
+msgid "Added an asset"
+msgstr "Asosiy vosita qo‘shdi"
+
+#: backend/apps/assets/audit_actions.py
+msgid "Changed an asset"
+msgstr "Asosiy vositani o‘zgartirdi"
+
+#: backend/apps/assets/audit_actions.py
+msgid "Deleted an asset"
+msgstr "Asosiy vositani o‘chirdi"
+
+#: backend/apps/assets/audit_actions.py
+msgid "Recorded something on an asset"
+msgstr "Asosiy vosita bo‘yicha amal yozdi"
+
+#: backend/apps/assets/audit_actions.py
+msgid "Gave an asset to someone"
+msgstr "Asosiy vositani xodimga berdi"
+
+#: backend/apps/assets/audit_actions.py
+msgid "Took an asset back"
+msgstr "Asosiy vositani qaytarib oldi"
+
+#: backend/apps/assets/audit_actions.py
+msgid "Disposed of an asset"
+msgstr "Asosiy vositani hisobdan chiqardi"
+
+#: backend/apps/assets/audit_actions.py
+msgid "Added a photo or document to an asset"
+msgstr "Asosiy vositaga rasm yoki hujjat qo‘shdi"
+
+#: backend/apps/assets/audit_actions.py
+msgid "Removed a photo or document of an asset"
+msgstr "Asosiy vositaning rasm yoki hujjatini olib tashladi"
+
+#: backend/apps/assets/audit_actions.py
+msgid "Started an asset count"
+msgstr "Inventarizatsiyani boshladi"
+
+#: backend/apps/assets/audit_actions.py
+msgid "Closed an asset count"
+msgstr "Inventarizatsiyani yopdi"
+
+#: backend/apps/assets/defaults.py
+msgid "I.1 Buildings"
+msgstr "I.1 Binolar"
+
+#: backend/apps/assets/defaults.py
+msgid "I.2 Structures"
+msgstr "I.2 Inshootlar"
+
+#: backend/apps/assets/defaults.py
+msgid "II Pipelines, power and communication lines"
+msgstr "II Quvurlar, elektr va aloqa liniyalari"
+
+#: backend/apps/assets/defaults.py
+msgid "III Machinery and equipment"
+msgstr "III Mashina va uskunalar"
+
+#: backend/apps/assets/defaults.py
+msgid "IV.1 Aircraft, ships, railway rolling stock"
+msgstr "IV.1 Havo va suv kemalari, temir yo‘l harakat tarkibi"
+
+#: backend/apps/assets/defaults.py
+msgid "IV.2 Cars, trailers and other transport"
+msgstr "IV.2 Avtomobillar, tirkamalar va boshqa transport"
+
+#: backend/apps/assets/defaults.py
+msgid "V Computers and peripherals"
+msgstr "V Kompyuterlar va periferiya qurilmalari"
+
+#: backend/apps/assets/defaults.py
+msgid "VI Everything else that depreciates"
+msgstr "VI Amortizatsiya qilinadigan boshqa vositalar"
+
+#: backend/apps/assets/defaults.py
+msgid "Pharmacy fridges"
+msgstr "Farmatsevtik muzlatgichlar"
+
+#: backend/apps/assets/defaults.py
+msgid "Air conditioners"
+msgstr "Konditsionerlar"
+
+#: backend/apps/assets/defaults.py
+msgid "Shelves, counters and furniture"
+msgstr "Javonlar, peshtaxtalar va mebel"
+
+#: backend/apps/assets/defaults.py
+msgid "Computers and office equipment"
+msgstr "Kompyuterlar va orgtexnika"
+
+#: backend/apps/assets/defaults.py
+msgid "Cash registers, terminals and scanners"
+msgstr "Kassa apparatlari, terminallar va skanerlar"
+
+#: backend/apps/assets/defaults.py
+msgid "Thermometers, hygrometers and scales"
+msgstr "Termometrlar, gigrometrlar va tarozilar"
+
+#: backend/apps/assets/defaults.py
+msgid "Cameras, alarms and safes"
+msgstr "Kameralar, signalizatsiya va seyflar"
+
+#: backend/apps/assets/defaults.py
+msgid "Vehicles"
+msgstr "Transport vositalari"
+
+#: backend/apps/assets/defaults.py
+msgid "Renovation of rented premises"
+msgstr "Ijaradagi bino ta’miri"
+
+#: backend/apps/assets/defaults.py
+msgid "Buildings"
+msgstr "Binolar"
+
+#: backend/apps/assets/defaults.py
+msgid "Software and licences"
+msgstr "Dasturlar va litsenziyalar"
+
+#: backend/apps/assets/defaults.py
+msgid "Low-value items: uniforms, keys, small tools"
+msgstr "Kam baholi buyumlar: forma, kalitlar, mayda asboblar"
+
+#: backend/apps/assets/hooks.py backend/apps/finance/defaults.py
+msgid "Depreciation"
+msgstr "Amortizatsiya"
+
+#: backend/apps/assets/hooks.py backend/apps/assets/models.py
+msgid "Fixed asset"
+msgstr "Asosiy vosita"
+
+#: backend/apps/assets/hooks.py
+msgid "Equipment upkeep: services, instrument checks, warranties, insurance"
+msgstr "Uskunalarga xizmat: texnik xizmat, qiyoslash, kafolat, sug‘urta"
+
+#: backend/apps/assets/hooks.py
+msgid "Equipment given to you"
+msgstr "Sizga berilgan jihozlar"
+
+#: backend/apps/assets/hooks.py
+msgid "Equipment upkeep"
+msgstr "Uskunalarga xizmat ko‘rsatish"
+
+#: backend/apps/assets/hooks.py
+msgid "Equipment they hold"
+msgstr "Undagi jihozlar"
+
+#: backend/apps/assets/hooks.py
+msgid "Add your equipment"
+msgstr "Jihozlaringizni qo‘shing"
+
+#: backend/apps/assets/hooks.py
+msgid ""
+"Fridges, air conditioners, computers, the courier's car: what you own, what "
+"it is worth today, and its depreciation every month."
+msgstr ""
+"Muzlatgichlar, konditsionerlar, kompyuterlar, kuryer mashinasi: nimaga "
+"egasiz, bugun qancha turadi va har oylik amortizatsiyasi."
+
+#: backend/apps/assets/hooks.py
+msgid "Fixed asset register"
+msgstr "Asosiy vositalar reestri"
+
+#: backend/apps/assets/models.py
+msgid "Straight line (equal monthly amounts)"
+msgstr "Teng ulushli (har oy bir xil)"
+
+#: backend/apps/assets/models.py
+msgid "Declining balance (double rate)"
+msgstr "Kamayib boruvchi qoldiq (ikki baravar norma)"
+
+#: backend/apps/assets/models.py
+msgid "Sum of the years' digits"
+msgstr "Yillar yig‘indisi bo‘yicha"
+
+#: backend/apps/assets/models.py
+msgid "By units of output"
+msgstr "Ish hajmiga mutanosib"
+
+#: backend/apps/assets/models.py
+msgid "Not depreciated"
+msgstr "Amortizatsiya qilinmaydi"
+
+#: backend/apps/assets/models.py
+msgid "From the 1st of the month after it is put into service"
+msgstr "Foydalanishga topshirilgandan keyingi oyning 1-sanasidan"
+
+#: backend/apps/assets/models.py
+msgid "From the day it is put into service"
+msgstr "Foydalanishga topshirilgan kundan"
+
+#: backend/apps/assets/models.py
+msgid "Inventory numbers look like AV-0001."
+msgstr "Inventar raqamlari shunday bo‘ladi: AV-0001."
+
+#: backend/apps/assets/models.py
+msgid ""
+"Cheaper things are suggested as low-value items: tracked, not depreciated "
+"(your accounting policy sets the amount)."
+msgstr ""
+"Bundan arzonlari kam baholi buyum sifatida taklif qilinadi: hisobda turadi, "
+"amortizatsiya qilinmaydi (summani hisob siyosatingiz belgilaydi)."
+
+#: backend/apps/assets/models.py
+msgid ""
+"How much dearer a replacement gets each year, in percent (for planning)."
+msgstr "Har yili yangisi necha foizga qimmatlashadi (rejalashtirish uchun)."
+
+#: backend/apps/assets/models.py
+msgid ""
+"Show the tax depreciation too (straight line at the Tax Code's annual "
+"rates), for companies that pay profit tax."
+msgstr ""
+"Soliq amortizatsiyasini ham ko‘rsatish (Soliq kodeksi yillik normalari "
+"bo‘yicha teng ulushli), foyda solig‘i to‘lovchilar uchun."
+
+#: backend/apps/assets/models.py
+msgid "Days ahead to warn about warranties, checks and insurance."
+msgstr "Kafolat, qiyoslash va sug‘urta haqida necha kun oldin ogohlantirish."
+
+#: backend/apps/assets/models.py
+msgid "Intangible asset"
+msgstr "Nomoddiy aktiv"
+
+#: backend/apps/assets/models.py
+msgid "Low-value item"
+msgstr "Kam baholi buyum"
+
+#: backend/apps/assets/models.py
+msgid "Default useful life, in months."
+msgstr "Standart foydalanish muddati, oylarda."
+
+#: backend/apps/assets/models.py
+msgid "Default residual value, in percent of the cost."
+msgstr "Standart tugatish qiymati, qiymatga nisbatan foizda."
+
+#: backend/apps/assets/models.py
+msgid "The Tax Code group (I–VI), for the tax book."
+msgstr "Soliq kodeksi guruhi (I–VI), soliq hisobi uchun."
+
+#: backend/apps/assets/models.py
+msgid "Annual tax depreciation rate, in percent (at most the Tax Code's)."
+msgstr ""
+"Yillik soliq amortizatsiyasi normasi, foizda (Soliq kodeksidagidan oshmaydi)."
+
+#: backend/apps/assets/models.py
+msgid "Default months between services."
+msgstr "Texnik xizmatlar orasidagi standart oylar."
+
+#: backend/apps/assets/models.py
+msgid "Default months between official instrument checks."
+msgstr "Rasmiy qiyoslashlar orasidagi standart oylar."
+
+#: backend/apps/assets/models.py backend/apps/finance/models.py
+#: backend/apps/projects/models.py
+msgid "A lucide icon name."
+msgstr "Ikonka nomi (lucide to‘plamidan)."
+
+#: backend/apps/assets/models.py
+msgid "In use"
+msgstr "Foydalanishda"
+
+#: backend/apps/assets/models.py
+msgid "In storage"
+msgstr "Omborda"
+
+#: backend/apps/assets/models.py
+msgid "Under repair"
+msgstr "Ta’mirda"
+
+#: backend/apps/assets/models.py
+msgid "Mothballed"
+msgstr "Konservatsiyada"
+
+#: backend/apps/assets/models.py backend/apps/assets/services.py
+msgid "Disposed of"
+msgstr "Hisobdan chiqarilgan"
+
+#: backend/apps/assets/models.py
+msgid "New"
+msgstr "Yangi"
+
+#: backend/apps/assets/models.py
+msgid "Good"
+msgstr "Yaxshi"
+
+#: backend/apps/assets/models.py
+msgid "Worn"
+msgstr "Eskirgan"
+
+#: backend/apps/assets/models.py
+msgid "Damaged"
+msgstr "Shikastlangan"
+
+#: backend/apps/assets/models.py
+msgid "Sold"
+msgstr "Sotildi"
+
+#: backend/apps/assets/models.py
+msgid "Written off (broken, worn out)"
+msgstr "Hisobdan chiqarildi (buzilgan, eskirgan)"
+
+#: backend/apps/assets/models.py
+msgid "Lost or stolen"
+msgstr "Yo‘qolgan yoki o‘g‘irlangan"
+
+#: backend/apps/assets/models.py
+msgid "Given away"
+msgstr "Bepul berildi"
+
+#: backend/apps/assets/models.py
+msgid "Inventory number, unique per company."
+msgstr "Inventar raqami, kompaniyada takrorlanmaydi."
+
+#: backend/apps/assets/models.py
+msgid "Brand and model."
+msgstr "Brendi va modeli."
+
+#: backend/apps/assets/models.py
+msgid "Put into service: depreciation starts from it."
+msgstr "Foydalanishga topshirilgan sana: amortizatsiya shundan boshlanadi."
+
+#: backend/apps/assets/models.py
+msgid "What it cost to buy and set up, in the base currency."
+msgstr "Sotib olish va o‘rnatish qiymati, asosiy valyutada."
+
+#: backend/apps/assets/models.py
+msgid "The price in its own currency."
+msgstr "O‘z valyutasidagi narxi."
+
+#: backend/apps/assets/models.py
+msgid "What it will still be worth at the end."
+msgstr "Muddat oxirida qancha turishi."
+
+#: backend/apps/assets/models.py
+msgid "For the units method: everything it will produce or run in its life."
+msgstr "Ish hajmi usuli uchun: butun muddatda bajaradigan ishi."
+
+#: backend/apps/assets/models.py
+msgid "Units of output: km, hours…"
+msgstr "Ish hajmi birligi: km, soat…"
+
+#: backend/apps/assets/models.py
+msgid "Depreciation before it was entered here (from the old books)."
+msgstr ""
+"Shu yerga kiritilgunga qadar hisoblangan amortizatsiya (eski hisobdan)."
+
+#: backend/apps/assets/models.py
+msgid "Book its monthly depreciation in Finance."
+msgstr "Har oylik amortizatsiyani Moliyaga yozish."
+
+#: backend/apps/assets/models.py
+msgid "Added"
+msgstr "Qo‘shildi"
+
+#: backend/apps/assets/models.py
+msgid "Put into service"
+msgstr "Foydalanishga topshirildi"
+
+#: backend/apps/assets/models.py
+msgid "Moved"
+msgstr "Ko‘chirildi"
+
+#: backend/apps/assets/models.py
+msgid "Given to someone"
+msgstr "Xodimga berildi"
+
+#: backend/apps/assets/models.py
+msgid "Returned"
+msgstr "Qaytarildi"
+
+#: backend/apps/assets/models.py
+msgid "Repaired"
+msgstr "Ta’mirlandi"
+
+#: backend/apps/assets/models.py
+msgid "Serviced"
+msgstr "Texnik xizmat ko‘rsatildi"
+
+#: backend/apps/assets/models.py
+msgid "Instrument check"
+msgstr "Qiyoslash"
+
+#: backend/apps/assets/models.py
+msgid "Improvement added to its cost"
+msgstr "Yaxshilash qiymatiga qo‘shildi"
+
+#: backend/apps/assets/models.py
+msgid "Value written down"
+msgstr "Qiymati pasaytirildi"
+
+#: backend/apps/assets/models.py
+msgid "Useful life or residual value changed"
+msgstr "Muddat yoki tugatish qiymati o‘zgartirildi"
+
+#: backend/apps/assets/models.py
+msgid "Back in use"
+msgstr "Qayta foydalanishda"
+
+#: backend/apps/assets/models.py
+msgid "Units of output recorded"
+msgstr "Ish hajmi yozildi"
+
+#: backend/apps/assets/models.py
+msgid "Problem reported"
+msgstr "Muammo xabar qilindi"
+
+#: backend/apps/assets/models.py
+msgid "Found in a count"
+msgstr "Inventarizatsiyada topildi"
+
+#: backend/apps/assets/models.py backend/apps/projects/hooks.py
+msgid "Note"
+msgstr "Izoh"
+
+#: backend/apps/assets/models.py backend/apps/payroll/models.py
+#: backend/apps/sales/models.py
+msgid "The first day of the month."
+msgstr "Oyning birinchi kuni."
+
+#: backend/apps/assets/models.py
+msgid "Net book value after this month."
+msgstr "Shu oydan keyingi qoldiq qiymati."
+
+#: backend/apps/assets/models.py
+msgid "Before the asset was entered here: never booked in Finance."
+msgstr "Vosita shu yerga kiritilishidan oldin: Moliyaga yozilmaydi."
+
+#: backend/apps/assets/models.py backend/apps/projects/conf.py
+#: backend/apps/tasks/models.py
+msgid "In progress"
+msgstr "Jarayonda"
+
+#: backend/apps/assets/models.py backend/apps/sales/hooks.py
+#: backend/apps/sales/models.py
+msgid "Closed"
+msgstr "Yopilgan"
+
+#: backend/apps/assets/models.py
+msgid "Not checked yet"
+msgstr "Hali tekshirilmagan"
+
+#: backend/apps/assets/models.py
+msgid "Found"
+msgstr "Bor"
+
+#: backend/apps/assets/models.py
+msgid "Found damaged"
+msgstr "Shikastlangan holda bor"
+
+#: backend/apps/assets/models.py
+msgid "Missing"
+msgstr "Yo‘q"
+
+#: backend/apps/assets/models.py backend/apps/hr/models.py
+#: backend/apps/tasks/bot_messages.py backend/apps/tasks/models.py
+msgid "Photo"
+msgstr "Rasm"
+
+#: backend/apps/assets/models.py
+msgid "Document"
+msgstr "Hujjat"
+
+#: backend/apps/assets/notify.py
+#, python-format
+msgid "You were given %(asset)s"
+msgstr "Sizga berildi: %(asset)s"
+
+#: backend/apps/assets/notify.py
+msgid "Check it and confirm in the app that you have it."
+msgstr "Tekshiring va ilovada qabul qilganingizni tasdiqlang."
+
+#: backend/apps/assets/notify.py
+#, python-format
+msgid "Warranty ends %(day)s: %(asset)s"
+msgstr "Kafolat tugaydi (%(day)s): %(asset)s"
+
+#: backend/apps/assets/notify.py
+#, python-format
+msgid "Service due %(day)s: %(asset)s"
+msgstr "Texnik xizmat vaqti (%(day)s): %(asset)s"
+
+#: backend/apps/assets/notify.py
+#, python-format
+msgid "Instrument check due %(day)s: %(asset)s"
+msgstr "Qiyoslash muddati (%(day)s): %(asset)s"
+
+#: backend/apps/assets/notify.py
+#, python-format
+msgid "Insurance ends %(day)s: %(asset)s"
+msgstr "Sug‘urta tugaydi (%(day)s): %(asset)s"
+
+#: backend/apps/assets/notify.py
+msgid "Anything to repair under the warranty? After this day it is paid."
+msgstr "Kafolat bo‘yicha ta’mirlash kerakmi? Bu kundan keyin pullik."
+
+#: backend/apps/assets/notify.py
+msgid "Book the service, then mark it done on the asset's page."
+msgstr ""
+"Texnik xizmatni buyurtma qiling, so‘ng vosita sahifasida bajarilganini "
+"belgilang."
+
+#: backend/apps/assets/notify.py
+msgid ""
+"An instrument without a valid check can't be used for the storage log: book "
+"the check and record it on the asset's page."
+msgstr ""
+"Amaldagi qiyoslashsiz asbob saqlash jurnali uchun yaroqsiz: qiyoslashga "
+"yozing va vosita sahifasida qayd eting."
+
+#: backend/apps/assets/notify.py
+msgid "Renew the insurance, then put the new end date on the asset's page."
+msgstr ""
+"Sug‘urtani yangilang, so‘ng yangi tugash sanasini vosita sahifasiga yozing."
+
+#: backend/apps/assets/owner_api.py
+msgid "Assets aren't switched on for this company."
+msgstr "Bu kompaniyada asosiy vositalar moduli yoqilmagan."
+
+#: backend/apps/assets/owner_api.py backend/apps/assets/services.py
+#: backend/apps/attendance/owner_api.py backend/apps/hr/owner_api.py
+#: backend/apps/lifecycle/owner_api.py backend/apps/payroll/owner_api.py
+msgid "Give a number."
+msgstr "Son kiriting."
+
+#: backend/apps/assets/owner_api.py
+msgid "Pick a branch you work with."
+msgstr "O‘zingiz ishlaydigan filialni tanlang."
+
+#: backend/apps/assets/owner_api.py
+msgid "Pick someone of this company."
+msgstr "Shu kompaniya xodimini tanlang."
+
+#: backend/apps/assets/owner_api.py
+msgid "Pick a category of this company."
+msgstr "Shu kompaniya toifasini tanlang."
+
+#: backend/apps/assets/owner_api.py
+msgid "Pick a supplier of this company."
+msgstr "Shu kompaniyaning yetkazib beruvchisini tanlang."
+
+#: backend/apps/assets/owner_api.py
+msgid "That purchase isn't yours."
+msgstr "Bu xarid sizniki emas."
+
+#: backend/apps/assets/owner_api.py backend/apps/finance/owner_api.py
+#: backend/apps/finance/owner_serializers.py backend/apps/finance/services.py
+msgid "Pick a category."
+msgstr "Toifani tanlang."
+
+#: backend/apps/assets/owner_api.py
+msgid "Pick the branch it is at."
+msgstr "Qaysi filialda turganini tanlang."
+
+#: backend/apps/assets/owner_api.py
+msgid "Use its own action for this."
+msgstr "Buning uchun alohida amaldan foydalaning."
+
+#: backend/apps/assets/owner_api.py
+msgid "Pick an account of this company."
+msgstr "Shu kompaniya hisobini tanlang."
+
+#: backend/apps/assets/owner_api.py
+msgid "Give a year."
+msgstr "Yilni kiriting."
+
+#: backend/apps/assets/owner_api.py
+msgid "By category or by branch."
+msgstr "Toifa yoki filial bo‘yicha."
+
+#: backend/apps/assets/owner_api.py
+msgid "Give the days as YYYY-MM-DD."
+msgstr "Sanalarni YYYY-MM-DD ko‘rinishida kiriting."
+
+#: backend/apps/assets/owner_api.py
+msgid "Pick a range of at most five years."
+msgstr "Ko‘pi bilan besh yillik davrni tanlang."
+
+#: backend/apps/assets/owner_api.py
+msgid "Pick the branch to count."
+msgstr "Inventarizatsiya qilinadigan filialni tanlang."
+
+#: backend/apps/assets/posting.py
+#, python-format
+msgid "Depreciation, %(month)s: %(count)s asset"
+msgid_plural "Depreciation, %(month)s: %(count)s assets"
+msgstr[0] "Amortizatsiya, %(month)s: %(count)s ta asosiy vosita"
+
+#: backend/apps/assets/posting.py
+#, python-format
+msgid "Written off: %(asset)s"
+msgstr "Hisobdan chiqarildi: %(asset)s"
+
+#: backend/apps/assets/posting.py
+#, python-format
+msgid "Value written down: %(asset)s"
+msgstr "Qiymati pasaytirildi: %(asset)s"
+
+#: backend/apps/assets/providers.py
+msgid "Holds no company equipment."
+msgstr "Unda kompaniya jihozlari yo‘q."
+
+#: backend/apps/assets/providers.py
+msgid "Handed back"
+msgstr "Qaytarib berdi"
+
+#: backend/apps/assets/providers.py
+msgid "Not handed back: write it off as lost"
+msgstr "Qaytarmadi: yo‘qolgan deb hisobdan chiqarish"
+
+#: backend/apps/assets/providers.py
+msgid "Leave it with them for now"
+msgstr "Hozircha unda qolsin"
+
+#: backend/apps/assets/providers.py
+msgid "Handed back when they left."
+msgstr "Ishdan ketishda qaytarib berdi."
+
+#: backend/apps/assets/providers.py
+#, python-format
+msgid "Not handed back when %(person)s left."
+msgstr "Ishdan ketishda qaytarilmadi (%(person)s)."
+
+#: backend/apps/assets/providers.py
+#, python-format
+msgid "Service: %(asset)s"
+msgstr "Texnik xizmat: %(asset)s"
+
+#: backend/apps/assets/providers.py
+#, python-format
+msgid "Instrument check: %(asset)s"
+msgstr "Qiyoslash: %(asset)s"
+
+#: backend/apps/assets/providers.py
+#, python-format
+msgid "Warranty ends: %(asset)s"
+msgstr "Kafolat tugaydi: %(asset)s"
+
+#: backend/apps/assets/providers.py
+#, python-format
+msgid "Insurance ends: %(asset)s"
+msgstr "Sug‘urta tugaydi: %(asset)s"
+
+#: backend/apps/assets/providers.py
+msgid "Inventory number"
+msgstr "Inventar raqami"
+
+#: backend/apps/assets/providers.py backend/apps/members/providers.py
+#: backend/apps/reports/hooks.py
+msgid "Name"
+msgstr "Ism"
+
+#: backend/apps/assets/providers.py backend/apps/finance/exporters.py
+msgid "Category"
+msgstr "Toifa"
+
+#: backend/apps/assets/providers.py backend/apps/finance/exporters.py
+#: backend/apps/tasks/hooks.py
+msgid "Kind"
+msgstr "Turi"
+
+#: backend/apps/assets/providers.py backend/apps/finance/exporters.py
+#: backend/apps/payroll/providers.py
+#: backend/apps/payroll/templates/payroll/payslip.html
+#: backend/apps/sales/hooks.py backend/apps/tasks/hooks.py
+msgid "Branch"
+msgstr "Filial"
+
+#: backend/apps/assets/providers.py backend/apps/finance/exporters.py
+#: backend/apps/members/providers.py backend/apps/payroll/providers.py
+#: backend/apps/sales/hooks.py backend/apps/tasks/hooks.py
+#: backend/apps/timeoff/providers.py
+msgid "Status"
+msgstr "Holati"
+
+#: backend/apps/assets/providers.py
+msgid "Condition"
+msgstr "Holati"
+
+#: backend/apps/assets/providers.py
+msgid "Serial number"
+msgstr "Seriya raqami"
+
+#: backend/apps/assets/providers.py
+msgid "Bought"
+msgstr "Sotib olingan"
+
+#: backend/apps/assets/providers.py
+msgid "In service from"
+msgstr "Foydalanishga topshirilgan"
+
+#: backend/apps/assets/providers.py backend/apps/assets/services.py
+msgid "Cost"
+msgstr "Qiymati"
+
+#: backend/apps/assets/providers.py
+msgid "Depreciation so far"
+msgstr "Hisoblangan amortizatsiya"
+
+#: backend/apps/assets/providers.py
+msgid "Book value"
+msgstr "Qoldiq qiymati"
+
+#: backend/apps/assets/providers.py
+msgid "Last month's depreciation"
+msgstr "O‘tgan oy amortizatsiyasi"
+
+#: backend/apps/assets/providers.py
+msgid "Useful life, months"
+msgstr "Foydalanish muddati, oy"
+
+#: backend/apps/assets/providers.py
+msgid "Method"
+msgstr "Usul"
+
+#: backend/apps/assets/providers.py
+msgid "Held by"
+msgstr "Kimda"
+
+#: backend/apps/assets/providers.py
+msgid "Accountable"
+msgstr "Moddiy javobgar"
+
+#: backend/apps/assets/providers.py
+msgid "Warranty until"
+msgstr "Kafolat muddati"
+
+#: backend/apps/assets/providers.py
+msgid "Next service"
+msgstr "Navbatdagi texnik xizmat"
+
+#: backend/apps/assets/providers.py
+msgid "Next instrument check"
+msgstr "Navbatdagi qiyoslash"
+
+#: backend/apps/assets/services.py
+#, python-format
+msgid "%(field)s: give an amount."
+msgstr "%(field)s: summani kiriting."
+
+#: backend/apps/assets/services.py
+#, python-format
+msgid "%(field)s: give an amount above zero."
+msgstr "%(field)s: noldan katta summa kiriting."
+
+#: backend/apps/assets/services.py
+#, python-format
+msgid "%(field)s: that amount is too large."
+msgstr "%(field)s: summa juda katta."
+
+#: backend/apps/assets/services.py
+msgid "Pick something of this company."
+msgstr "Shu kompaniyaga tegishlisini tanlang."
+
+#: backend/apps/assets/services.py
+#, python-format
+msgid "%(field)s can't be in the future."
+msgstr "%(field)s kelajakdagi sana bo‘la olmaydi."
+
+#: backend/apps/assets/services.py
+#, python-format
+msgid "%(field)s: check the year."
+msgstr "%(field)s: yilni tekshiring."
+
+#: backend/apps/assets/services.py
+#, python-format
+msgid "%(person)s isn't an active member."
+msgstr "%(person)s faol xodim emas."
+
+#: backend/apps/assets/services.py
+msgid "This asset was disposed of."
+msgstr "Bu vosita hisobdan chiqarilgan."
+
+#: backend/apps/assets/services.py
+msgid "Pick a rule from the list."
+msgstr "Ro‘yxatdan qoidani tanlang."
+
+#: backend/apps/assets/services.py
+msgid ""
+"Depreciation was already posted under the current rule; the rule can change "
+"only before the first month is posted."
+msgstr ""
+"Amortizatsiya joriy qoida bo‘yicha hisoblangan; qoidani faqat birinchi oy "
+"hisoblanmasdan oldin o‘zgartirish mumkin."
+
+#: backend/apps/assets/services.py
+msgid "A prefix is 1–8 letters or digits."
+msgstr "Prefiks 1–8 ta harf yoki raqamdan iborat."
+
+#: backend/apps/assets/services.py
+msgid "The next number starts at 1."
+msgstr "Navbatdagi raqam kamida 1 bo‘ladi."
+
+#: backend/apps/assets/services.py
+msgid "Threshold"
+msgstr "Chegara"
+
+#: backend/apps/assets/services.py
+msgid "Give a percentage from 0 to 100."
+msgstr "Foizni 0–100 oralig‘ida kiriting."
+
+#: backend/apps/assets/services.py
+msgid "Warn 1 to 180 days ahead."
+msgstr "1–180 kun oldin ogohlantirish mumkin."
+
+#: backend/apps/assets/services.py backend/apps/finance/services.py
+msgid "Give the category a name."
+msgstr "Toifaga nom bering."
+
+#: backend/apps/assets/services.py
+msgid "There is already a category with this name."
+msgstr "Bunday nomli toifa allaqachon bor."
+
+#: backend/apps/assets/services.py
+msgid "Pick a kind from the list."
+msgstr "Ro‘yxatdan turini tanlang."
+
+#: backend/apps/assets/services.py
+msgid "Pick a method from the list."
+msgstr "Ro‘yxatdan usulni tanlang."
+
+#: backend/apps/assets/services.py
+msgid "A useful life is 1 to 1200 months."
+msgstr "Foydalanish muddati: 1–1200 oy."
+
+#: backend/apps/assets/services.py
+msgid "A residual value is 0 to 99 percent."
+msgstr "Tugatish qiymati 0–99 foiz."
+
+#: backend/apps/assets/services.py
+msgid "Pick a Tax Code group from the list."
+msgstr "Ro‘yxatdan Soliq kodeksi guruhini tanlang."
+
+#: backend/apps/assets/services.py
+#, python-format
+msgid "The Tax Code allows at most %(rate)s%% a year for this group."
+msgstr ""
+"Soliq kodeksi bu guruh uchun yiliga ko‘pi bilan %(rate)s%% ruxsat beradi."
+
+#: backend/apps/assets/services.py
+msgid "Give 1 to 120 months."
+msgstr "1–120 oy oralig‘ida kiriting."
+
+#: backend/apps/assets/services.py
+msgid "This category has assets: its kind can't change."
+msgstr "Bu toifada vositalar bor: turini o‘zgartirib bo‘lmaydi."
+
+#: backend/apps/assets/services.py
+msgid "This category has assets: move them first, or switch it off."
+msgstr ""
+"Bu toifada vositalar bor: avval ularni ko‘chiring yoki toifani o‘chiring."
+
+#: backend/apps/assets/services.py
+msgid "Give an inventory number."
+msgstr "Inventar raqamini kiriting."
+
+#: backend/apps/assets/services.py
+#, python-format
+msgid "Inventory number %(number)s is taken."
+msgstr "%(number)s inventar raqami band."
+
+#: backend/apps/assets/services.py
+msgid "That purchase isn't in Finance."
+msgstr "Bunday xarid Moliyada yo‘q."
+
+#: backend/apps/assets/services.py
+msgid "Pick an expense: the money paid for it."
+msgstr "Xarajatni tanlang: unga to‘langan pul."
+
+#: backend/apps/assets/services.py
+msgid "That expense was voided or rejected."
+msgstr "Bu xarajat bekor qilingan yoki rad etilgan."
+
+#: backend/apps/assets/services.py
+msgid "The cost can't be below zero."
+msgstr "Qiymat noldan kam bo‘lmaydi."
+
+#: backend/apps/assets/services.py
+msgid "Give its useful life in months."
+msgstr "Foydalanish muddatini oylarda kiriting."
+
+#: backend/apps/assets/services.py
+msgid "Give everything it will produce in its life (units)."
+msgstr "Butun muddatdagi ish hajmini kiriting."
+
+#: backend/apps/assets/services.py
+msgid "The declining balance factor is 1 to 3."
+msgstr "Kamayish koeffitsienti: 1–3."
+
+#: backend/apps/assets/services.py
+msgid "The residual value must be below the cost."
+msgstr "Tugatish qiymati boshlang‘ich qiymatdan kam bo‘lishi kerak."
+
+#: backend/apps/assets/services.py
+msgid "It can't be put into service before it was bought."
+msgstr "Sotib olinishidan oldin foydalanishga topshirib bo‘lmaydi."
+
+#: backend/apps/assets/services.py
+msgid ""
+"A purchase in Finance starts from zero: leave earlier depreciation empty."
+msgstr ""
+"Moliyadagi xarid noldan boshlanadi: avvalgi amortizatsiyani bo‘sh qoldiring."
+
+#: backend/apps/assets/services.py
+msgid "Earlier depreciation is at most the cost minus the residual value."
+msgstr "Avvalgi amortizatsiya qiymat minus tugatish qiymatidan oshmaydi."
+
+#: backend/apps/assets/services.py
+msgid "Earlier depreciation needs a start before this month."
+msgstr ""
+"Avvalgi amortizatsiya uchun boshlanish sanasi shu oydan oldin bo‘lishi kerak."
+
+#: backend/apps/assets/services.py
+msgid "This category is switched off."
+msgstr "Bu toifa o‘chirilgan."
+
+#: backend/apps/assets/services.py
+msgid "Give the asset a name."
+msgstr "Vositaga nom bering."
+
+#: backend/apps/assets/services.py
+msgid "This expense already bought an asset."
+msgstr "Bu xarajat bilan allaqachon vosita olingan."
+
+#: backend/apps/assets/services.py
+msgid "Price"
+msgstr "Narxi"
+
+#: backend/apps/assets/services.py
+msgid "Pick a currency from the list."
+msgstr "Ro‘yxatdan valyutani tanlang."
+
+#: backend/apps/assets/services.py
+msgid "Give what it cost."
+msgstr "Qiymatini kiriting."
+
+#: backend/apps/assets/services.py
+#, python-format
+msgid ""
+"The cost must be the whole expense (%(amount)s); split a mixed purchase "
+"first."
+msgstr ""
+"Qiymat butun xarajatga teng bo‘lishi kerak (%(amount)s); aralash xaridni "
+"avval ajrating."
+
+#: backend/apps/assets/services.py
+msgid "The purchase day"
+msgstr "Xarid sanasi"
+
+#: backend/apps/assets/services.py
+msgid "The start"
+msgstr "Boshlanish sanasi"
+
+#: backend/apps/assets/services.py
+msgid "Residual value"
+msgstr "Tugatish qiymati"
+
+#: backend/apps/assets/services.py
+msgid "A new asset is in use, in storage or under repair."
+msgstr "Yangi vosita foydalanishda, omborda yoki ta’mirda bo‘ladi."
+
+#: backend/apps/assets/services.py
+msgid "Earlier depreciation"
+msgstr "Avvalgi amortizatsiya"
+
+#: backend/apps/assets/services.py
+msgid "Give the exchange rate of that day."
+msgstr "O‘sha kungi kursni kiriting."
+
+#: backend/apps/assets/services.py
+msgid ""
+"Its depreciation is already in the books: use Change estimate, Add to cost "
+"or Write down instead."
+msgstr ""
+"Amortizatsiyasi allaqachon hisobda: «Muddatni o‘zgartirish», «Qiymatiga "
+"qo‘shish» yoki «Qiymatini pasaytirish»dan foydalaning."
+
+#: backend/apps/assets/services.py
+msgid "It is already in service and depreciating."
+msgstr "U allaqachon foydalanishda va amortizatsiya qilinmoqda."
+
+#: backend/apps/assets/services.py
+msgid "The day"
+msgstr "Sana"
+
+#: backend/apps/assets/services.py
+msgid "Pick in use, in storage or under repair."
+msgstr "Foydalanishda, omborda yoki ta’mirda holatini tanlang."
+
+#: backend/apps/assets/services.py
+msgid "It is mothballed: bring it back into use first."
+msgstr "U konservatsiyada: avval qayta ishga tushiring."
+
+#: backend/apps/assets/services.py
+msgid "It is already there."
+msgstr "U allaqachon shu yerda."
+
+#: backend/apps/assets/services.py
+#, python-format
+msgid "%(person)s has it now: take it back first."
+msgstr "Hozir %(person)s ishlatmoqda: avval qaytarib oling."
+
+#: backend/apps/assets/services.py
+msgid "Pick a condition from the list."
+msgstr "Ro‘yxatdan holatni tanlang."
+
+#: backend/apps/assets/services.py
+msgid "Only the person who got it can confirm it."
+msgstr "Faqat olgan xodim tasdiqlay oladi."
+
+#: backend/apps/assets/services.py
+msgid "It was already handed back."
+msgstr "U allaqachon qaytarilgan."
+
+#: backend/apps/assets/services.py
+msgid "Nobody holds it."
+msgstr "U hech kimda emas."
+
+#: backend/apps/assets/services.py
+msgid "It can't come back before it was given."
+msgstr "Berilishidan oldin qaytarib bo‘lmaydi."
+
+#: backend/apps/assets/services.py
+msgid "Valid until is after the check."
+msgstr "Amal qilish muddati qiyoslashdan keyin bo‘lishi kerak."
+
+#: backend/apps/assets/services.py
+msgid "Give what the improvement cost."
+msgstr "Yaxshilash qiymatini kiriting."
+
+#: backend/apps/assets/services.py
+msgid "The amount must be the whole expense."
+msgstr "Summa butun xarajatga teng bo‘lishi kerak."
+
+#: backend/apps/assets/services.py backend/apps/finance/exporters.py
+#: backend/apps/payroll/templates/payroll/payslip.html
+msgid "Amount"
+msgstr "Summa"
+
+#: backend/apps/assets/services.py
+#, python-format
+msgid "It is worth %(value)s now: write down at most that."
+msgstr "Hozirgi qiymati: %(value)s. Ko‘pi bilan shuncha pasaytiring."
+
+#: backend/apps/assets/services.py
+msgid "Change the useful life, the residual value or the method."
+msgstr "Muddat, tugatish qiymati yoki usulni o‘zgartiring."
+
+#: backend/apps/assets/services.py
+#, python-format
+msgid "It has depreciated for %(months)s months already: give a longer life."
+msgstr ""
+"Allaqachon %(months)s oy amortizatsiya qilingan: uzunroq muddat kiriting."
+
+#: backend/apps/assets/services.py
+msgid "The residual value can't be above what it is worth now."
+msgstr "Tugatish qiymati hozirgi qiymatidan oshmasligi kerak."
+
+#: backend/apps/assets/services.py
+msgid "It is already mothballed."
+msgstr "U allaqachon konservatsiyada."
+
+#: backend/apps/assets/services.py
+msgid "It isn't mothballed."
+msgstr "U konservatsiyada emas."
+
+#: backend/apps/assets/services.py
+msgid "It can't come back before it was mothballed."
+msgstr "Konservatsiyadan oldingi sanaga qaytarib bo‘lmaydi."
+
+#: backend/apps/assets/services.py
+msgid "Only an asset depreciated by units of output records units."
+msgstr ""
+"Ish hajmi faqat shu usul bilan amortizatsiya qilinadigan vosita uchun "
+"yoziladi."
+
+#: backend/apps/assets/services.py
+msgid "Give a number above zero."
+msgstr "Noldan katta son kiriting."
+
+#: backend/apps/assets/services.py
+msgid "That month is already posted."
+msgstr "Bu oy allaqachon hisoblangan."
+
+#: backend/apps/assets/services.py
+msgid "Pick how it left from the list."
+msgstr "Ro‘yxatdan qanday chiqqanini tanlang."
+
+#: backend/apps/assets/services.py
+msgid "It can't leave before it arrived."
+msgstr "Kelishidan oldin chiqib keta olmaydi."
+
+#: backend/apps/assets/services.py
+msgid "Give what it was sold for."
+msgstr "Sotilgan narxini kiriting."
+
+#: backend/apps/assets/services.py
+msgid "Only a sale brings money in."
+msgstr "Faqat sotuvdan pul tushadi."
+
+#: backend/apps/assets/services.py
+msgid "Say why it is written off."
+msgstr "Hisobdan chiqarish sababini yozing."
+
+#: backend/apps/assets/services.py
+msgid "Its depreciation is posted after that day: pick a later day."
+msgstr ""
+"Amortizatsiyasi bu kundan keyin ham hisoblangan: keyinroq sanani tanlang."
+
+#: backend/apps/assets/services.py
+#, python-format
+msgid "Sold: %(asset)s"
+msgstr "Sotildi: %(asset)s"
+
+#: backend/apps/assets/services.py
+msgid "Its depreciation is in the books: dispose of it instead of deleting it."
+msgstr "Amortizatsiyasi hisobda: o‘chirish o‘rniga hisobdan chiqaring."
+
+#: backend/apps/assets/services.py
+msgid "Its purchase is in closed books: dispose of it instead of deleting it."
+msgstr "Xaridi yopilgan davrda: o‘chirish o‘rniga hisobdan chiqaring."
+
+#: backend/apps/assets/services.py
+msgid "A photo or a document."
+msgstr "Rasm yoki hujjat."
+
+#: backend/apps/assets/services.py
+msgid "At most 30 files per asset."
+msgstr "Bitta vositaga ko‘pi bilan 30 ta fayl."
+
+#: backend/apps/assets/services.py
+msgid "A count of this place is already in progress."
+msgstr "Bu joyda inventarizatsiya allaqachon davom etmoqda."
+
+#: backend/apps/assets/services.py
+msgid "There is nothing to count here yet."
+msgstr "Bu yerda hali sanaladigan narsa yo‘q."
+
+#: backend/apps/assets/services.py
+msgid "This count is closed."
+msgstr "Bu inventarizatsiya yopilgan."
+
+#: backend/apps/assets/services.py
+msgid "Pick a result from the list."
+msgstr "Ro‘yxatdan natijani tanlang."
+
+#: backend/apps/assets/services.py
+#, python-format
+msgid "Not found in the count of %(day)s."
+msgstr "%(day)s inventarizatsiyasida topilmadi."
+
 #: backend/apps/attendance/actions.py backend/apps/payroll/actions.py
 msgid "This isn't available any more."
 msgstr "Bu endi mavjud emas."
@@ -2714,11 +3882,6 @@ msgstr ""
 msgid "Give branch ids."
 msgstr "Filial ID’larini kiriting."
 
-#: backend/apps/attendance/owner_api.py backend/apps/hr/owner_api.py
-#: backend/apps/lifecycle/owner_api.py backend/apps/payroll/owner_api.py
-msgid "Give a number."
-msgstr "Son kiriting."
-
 #: backend/apps/attendance/providers.py
 #, python-format
 msgid "came %(time)s"
@@ -3428,6 +4591,10 @@ msgid "Recognition"
 msgstr "Rag‘batlantirish"
 
 #: backend/apps/companies/models.py
+msgid "Assets and equipment"
+msgstr "Asosiy vositalar va jihozlar"
+
+#: backend/apps/companies/models.py
 msgid "How long a rejected person waits before asking to join again."
 msgstr "Rad etilgan odam qayta so‘rov yuborishdan oldin qancha kutadi."
 
@@ -3901,6 +5068,10 @@ msgid "Voided a ledger entry"
 msgstr "Buxgalteriya yozuvini bekor qildi"
 
 #: backend/apps/finance/audit_actions.py
+msgid "Turned an expense into a fixed asset purchase"
+msgstr "Xarajatni asosiy vosita xaridiga aylantirdi"
+
+#: backend/apps/finance/audit_actions.py
 msgid "Attached a receipt"
 msgstr "Chek biriktirdi"
 
@@ -4088,6 +5259,14 @@ msgstr "Kurs farqlari"
 msgid "Other expenses"
 msgstr "Boshqa xarajatlar"
 
+#: backend/apps/finance/defaults.py
+msgid "Fixed assets written off"
+msgstr "Asosiy vositalarni hisobdan chiqarish"
+
+#: backend/apps/finance/defaults.py
+msgid "Sale of fixed assets"
+msgstr "Asosiy vositalar sotuvi"
+
 #: backend/apps/finance/defaults.py backend/apps/finance/models.py
 msgid "Cash desk"
 msgstr "Kassa"
@@ -4100,42 +5279,17 @@ msgstr "Terminal"
 msgid "Date"
 msgstr "Sana"
 
-#: backend/apps/finance/exporters.py backend/apps/tasks/hooks.py
-msgid "Kind"
-msgstr "Turi"
-
-#: backend/apps/finance/exporters.py backend/apps/members/providers.py
-#: backend/apps/payroll/providers.py backend/apps/sales/hooks.py
-#: backend/apps/tasks/hooks.py backend/apps/timeoff/providers.py
-msgid "Status"
-msgstr "Holati"
-
 #: backend/apps/finance/exporters.py
 msgid "Account"
 msgstr "Hisob"
 
 #: backend/apps/finance/exporters.py
-msgid "Category"
-msgstr "Toifa"
-
-#: backend/apps/finance/exporters.py
 msgid "Counterparty"
 msgstr "Kontragent"
-
-#: backend/apps/finance/exporters.py backend/apps/payroll/providers.py
-#: backend/apps/payroll/templates/payroll/payslip.html
-#: backend/apps/sales/hooks.py backend/apps/tasks/hooks.py
-msgid "Branch"
-msgstr "Filial"
 
 #: backend/apps/finance/exporters.py
 msgid "Description"
 msgstr "Tavsif"
-
-#: backend/apps/finance/exporters.py
-#: backend/apps/payroll/templates/payroll/payslip.html
-msgid "Amount"
-msgstr "Summa"
 
 #: backend/apps/finance/exporters.py backend/apps/payroll/providers.py
 msgid "Currency"
@@ -4519,10 +5673,6 @@ msgstr ""
 msgid "Equipment and other long-term purchases."
 msgstr "Jihozlar va boshqa uzoq muddatli xaridlar."
 
-#: backend/apps/finance/models.py backend/apps/projects/models.py
-msgid "A lucide icon name."
-msgstr "Ikonka nomi (lucide to‘plamidan)."
-
 #: backend/apps/finance/models.py backend/apps/finance/services.py
 msgid "Categories go two levels deep at most."
 msgstr "Kategoriyalar ko‘pi bilan ikki darajali bo‘ladi."
@@ -4678,6 +5828,10 @@ msgid "Opening balance"
 msgstr "Boshlang‘ich qoldiq"
 
 #: backend/apps/finance/models.py
+msgid "Non-cash cost"
+msgstr "Pulsiz xarajat"
+
+#: backend/apps/finance/models.py
 msgid "Company-local day; every report groups by it."
 msgstr ""
 "Kompaniya vaqt mintaqasidagi kun; barcha hisobotlar shu kun bo‘yicha "
@@ -4717,6 +5871,14 @@ msgstr ""
 "kamaytiradi."
 
 #: backend/apps/finance/models.py
+msgid ""
+"Bought as a fixed asset: the money left, but the cost reaches the P&L month "
+"by month as depreciation, not at once."
+msgstr ""
+"Asosiy vosita sifatida olingan: pul chiqib ketgan, lekin xarajat foyda va "
+"zarar hisobotiga birdaniga emas, oyma-oy amortizatsiya bo‘lib tushadi."
+
+#: backend/apps/finance/models.py
 msgid "Not read"
 msgstr "O‘qilmagan"
 
@@ -4743,11 +5905,6 @@ msgstr "Bu kompaniyada moliya moduli o‘chirilgan."
 #: backend/apps/finance/owner_api.py
 msgid "Pick one of your accounts."
 msgstr "Hisoblaringizdan birini tanlang."
-
-#: backend/apps/finance/owner_api.py backend/apps/finance/owner_serializers.py
-#: backend/apps/finance/services.py
-msgid "Pick a category."
-msgstr "Toifani tanlang."
 
 #: backend/apps/finance/owner_api.py
 msgid "Pick a counterparty."
@@ -4993,9 +6150,20 @@ msgstr ""
 "bo‘lmaydi."
 
 #: backend/apps/finance/services.py
+msgid "Only a live expense can be the purchase of an asset."
+msgstr "Faqat amaldagi xarajat vosita xaridi bo‘la oladi."
+
+#: backend/apps/finance/services.py
 msgid "This entry is part of a transfer: void the transfer instead."
 msgstr ""
 "Bu yozuv o‘tkazmaning bir qismi: o‘rniga butun o‘tkazmani bekor qiling."
+
+#: backend/apps/finance/services.py
+msgid ""
+"This expense bought a fixed asset: remove or dispose of the asset first."
+msgstr ""
+"Bu xarajat bilan asosiy vosita olingan: avval vositani o‘chiring yoki "
+"hisobdan chiqaring."
 
 #: backend/apps/finance/services.py
 msgid "This entry opened a debt: cancel the debt instead."
@@ -5196,10 +6364,6 @@ msgstr ""
 msgid "This category is still in use: archive it instead."
 msgstr "Bu toifa hali ishlatilmoqda: o‘rniga uni arxivlang."
 
-#: backend/apps/finance/services.py
-msgid "Give the category a name."
-msgstr "Toifaga nom bering."
-
 #: backend/apps/finance/services.py backend/apps/hr/ids.py
 msgid "A number like +998 90 123 45 67."
 msgstr "+998 90 123 45 67 ko‘rinishidagi raqam."
@@ -5235,6 +6399,13 @@ msgstr ""
 #: backend/apps/finance/services.py
 msgid "A void or rejected entry can't be changed."
 msgstr "Bekor qilingan yoki rad etilgan yozuvni o‘zgartirib bo‘lmaydi."
+
+#: backend/apps/finance/services.py
+msgid ""
+"This expense bought a fixed asset: its amount and day change with the asset."
+msgstr ""
+"Bu xarajat bilan asosiy vosita olingan: summasi va sanasi vosita orqali "
+"o‘zgaradi."
 
 #: backend/apps/finance/services.py
 #, python-format
@@ -6078,11 +7249,6 @@ msgstr "Shartnoma"
 #: backend/apps/hr/models.py
 msgid "Confidentiality agreement"
 msgstr "Maxfiylik to‘g‘risidagi kelishuv"
-
-#: backend/apps/hr/models.py backend/apps/tasks/bot_messages.py
-#: backend/apps/tasks/models.py
-msgid "Photo"
-msgstr "Rasm"
 
 #: backend/apps/hr/models.py
 msgid "Higher"
@@ -8107,10 +9273,6 @@ msgid "This is the company's only owner. Make someone else an owner first."
 msgstr ""
 "Bu — kompaniyaning yagona egasi. Avval boshqa kishini ega qilib tayinlang."
 
-#: backend/apps/members/providers.py backend/apps/reports/hooks.py
-msgid "Name"
-msgstr "Ism"
-
 #: backend/apps/members/providers.py backend/apps/payroll/providers.py
 #: backend/apps/payroll/templates/payroll/payslip.html
 #: backend/apps/reports/hooks.py backend/apps/tasks/hooks.py
@@ -9207,10 +10369,6 @@ msgctxt "payroll status"
 msgid "Finalized"
 msgstr "Yakunlangan"
 
-#: backend/apps/payroll/models.py backend/apps/sales/models.py
-msgid "The first day of the month."
-msgstr "Oyning birinchi kuni."
-
 #: backend/apps/payroll/models.py
 msgid "Som per dollar for dollar pay."
 msgstr "Dollarda to‘lanadigan ish haqi uchun 1 dollar kursi (so‘mda)."
@@ -10135,10 +11293,6 @@ msgstr "Navbatda"
 msgid "To do"
 msgstr "Bajarish kerak"
 
-#: backend/apps/projects/conf.py backend/apps/tasks/models.py
-msgid "In progress"
-msgstr "Jarayonda"
-
 #: backend/apps/projects/conf.py
 msgid "Review"
 msgstr "Tekshiruv"
@@ -10166,10 +11320,6 @@ msgstr "Daqiqalar"
 #: backend/apps/projects/hooks.py
 msgid "Hours"
 msgstr "Soatlar"
-
-#: backend/apps/projects/hooks.py
-msgid "Note"
-msgstr "Izoh"
 
 #: backend/apps/projects/hooks.py
 msgid "Billable"
@@ -11615,10 +12765,6 @@ msgstr "Kassir"
 #: backend/apps/sales/hooks.py
 msgid "Opened"
 msgstr "Ochilgan"
-
-#: backend/apps/sales/hooks.py backend/apps/sales/models.py
-msgid "Closed"
-msgstr "Yopilgan"
 
 #: backend/apps/sales/hooks.py
 msgid "Float"

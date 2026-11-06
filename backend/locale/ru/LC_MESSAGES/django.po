@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-06 17:30+0500\n"
+"POT-Creation-Date: 2026-11-07 01:09+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -1810,6 +1810,1167 @@ msgstr "Срок действия должен заканчиваться пос
 msgid "You don't have permission to do this."
 msgstr "У вас нет прав на это действие."
 
+#: backend/apps/assets/audit_actions.py
+msgid "Changed the asset policy"
+msgstr "Изменил учётную политику основных средств"
+
+#: backend/apps/assets/audit_actions.py
+msgid "Added an asset category"
+msgstr "Добавил категорию основных средств"
+
+#: backend/apps/assets/audit_actions.py
+msgid "Changed an asset category"
+msgstr "Изменил категорию основных средств"
+
+#: backend/apps/assets/audit_actions.py
+msgid "Deleted an asset category"
+msgstr "Удалил категорию основных средств"
+
+#: backend/apps/assets/audit_actions.py
+msgid "Added an asset"
+msgstr "Добавил основное средство"
+
+#: backend/apps/assets/audit_actions.py
+msgid "Changed an asset"
+msgstr "Изменил основное средство"
+
+#: backend/apps/assets/audit_actions.py
+msgid "Deleted an asset"
+msgstr "Удалил основное средство"
+
+#: backend/apps/assets/audit_actions.py
+msgid "Recorded something on an asset"
+msgstr "Записал действие по основному средству"
+
+#: backend/apps/assets/audit_actions.py
+msgid "Gave an asset to someone"
+msgstr "Выдал основное средство сотруднику"
+
+#: backend/apps/assets/audit_actions.py
+msgid "Took an asset back"
+msgstr "Принял основное средство обратно"
+
+#: backend/apps/assets/audit_actions.py
+msgid "Disposed of an asset"
+msgstr "Списал или продал основное средство"
+
+#: backend/apps/assets/audit_actions.py
+msgid "Added a photo or document to an asset"
+msgstr "Добавил фото или документ к основному средству"
+
+#: backend/apps/assets/audit_actions.py
+msgid "Removed a photo or document of an asset"
+msgstr "Удалил фото или документ основного средства"
+
+#: backend/apps/assets/audit_actions.py
+msgid "Started an asset count"
+msgstr "Начал инвентаризацию"
+
+#: backend/apps/assets/audit_actions.py
+msgid "Closed an asset count"
+msgstr "Закрыл инвентаризацию"
+
+#: backend/apps/assets/defaults.py
+msgid "I.1 Buildings"
+msgstr "I.1 Здания"
+
+#: backend/apps/assets/defaults.py
+msgid "I.2 Structures"
+msgstr "I.2 Сооружения"
+
+#: backend/apps/assets/defaults.py
+msgid "II Pipelines, power and communication lines"
+msgstr "II Трубопроводы, линии электропередачи и связи"
+
+#: backend/apps/assets/defaults.py
+msgid "III Machinery and equipment"
+msgstr "III Машины и оборудование"
+
+#: backend/apps/assets/defaults.py
+msgid "IV.1 Aircraft, ships, railway rolling stock"
+msgstr "IV.1 Воздушные и морские суда, ж/д подвижной состав"
+
+#: backend/apps/assets/defaults.py
+msgid "IV.2 Cars, trailers and other transport"
+msgstr "IV.2 Автомобили, прицепы и другой транспорт"
+
+#: backend/apps/assets/defaults.py
+msgid "V Computers and peripherals"
+msgstr "V Компьютеры и периферийные устройства"
+
+#: backend/apps/assets/defaults.py
+msgid "VI Everything else that depreciates"
+msgstr "VI Прочие амортизируемые активы"
+
+#: backend/apps/assets/defaults.py
+msgid "Pharmacy fridges"
+msgstr "Фармацевтические холодильники"
+
+#: backend/apps/assets/defaults.py
+msgid "Air conditioners"
+msgstr "Кондиционеры"
+
+#: backend/apps/assets/defaults.py
+msgid "Shelves, counters and furniture"
+msgstr "Стеллажи, прилавки и мебель"
+
+#: backend/apps/assets/defaults.py
+msgid "Computers and office equipment"
+msgstr "Компьютеры и оргтехника"
+
+#: backend/apps/assets/defaults.py
+msgid "Cash registers, terminals and scanners"
+msgstr "Кассы, терминалы и сканеры"
+
+#: backend/apps/assets/defaults.py
+msgid "Thermometers, hygrometers and scales"
+msgstr "Термометры, гигрометры и весы"
+
+#: backend/apps/assets/defaults.py
+msgid "Cameras, alarms and safes"
+msgstr "Камеры, сигнализация и сейфы"
+
+#: backend/apps/assets/defaults.py
+msgid "Vehicles"
+msgstr "Транспорт"
+
+#: backend/apps/assets/defaults.py
+msgid "Renovation of rented premises"
+msgstr "Ремонт арендованных помещений"
+
+#: backend/apps/assets/defaults.py
+msgid "Buildings"
+msgstr "Здания"
+
+#: backend/apps/assets/defaults.py
+msgid "Software and licences"
+msgstr "Программы и лицензии"
+
+#: backend/apps/assets/defaults.py
+msgid "Low-value items: uniforms, keys, small tools"
+msgstr "Малоценные предметы: форма, ключи, мелкий инструмент"
+
+#: backend/apps/assets/hooks.py backend/apps/finance/defaults.py
+msgid "Depreciation"
+msgstr "Амортизация"
+
+#: backend/apps/assets/hooks.py backend/apps/assets/models.py
+msgid "Fixed asset"
+msgstr "Основное средство"
+
+#: backend/apps/assets/hooks.py
+msgid "Equipment upkeep: services, instrument checks, warranties, insurance"
+msgstr "Обслуживание оборудования: ТО, поверка, гарантия, страховка"
+
+#: backend/apps/assets/hooks.py
+msgid "Equipment given to you"
+msgstr "Выданное вам оборудование"
+
+#: backend/apps/assets/hooks.py
+msgid "Equipment upkeep"
+msgstr "Обслуживание оборудования"
+
+#: backend/apps/assets/hooks.py
+msgid "Equipment they hold"
+msgstr "Выданное ему оборудование"
+
+#: backend/apps/assets/hooks.py
+msgid "Add your equipment"
+msgstr "Добавьте оборудование"
+
+#: backend/apps/assets/hooks.py
+msgid ""
+"Fridges, air conditioners, computers, the courier's car: what you own, what "
+"it is worth today, and its depreciation every month."
+msgstr ""
+"Холодильники, кондиционеры, компьютеры, машина курьера: чем вы владеете, "
+"сколько это стоит сегодня и амортизация каждый месяц."
+
+#: backend/apps/assets/hooks.py
+msgid "Fixed asset register"
+msgstr "Реестр основных средств"
+
+#: backend/apps/assets/models.py
+msgid "Straight line (equal monthly amounts)"
+msgstr "Линейный (равными долями)"
+
+#: backend/apps/assets/models.py
+msgid "Declining balance (double rate)"
+msgstr "Уменьшаемого остатка (двойная норма)"
+
+#: backend/apps/assets/models.py
+msgid "Sum of the years' digits"
+msgstr "По сумме чисел лет"
+
+#: backend/apps/assets/models.py
+msgid "By units of output"
+msgstr "Пропорционально объёму работ"
+
+#: backend/apps/assets/models.py
+msgid "Not depreciated"
+msgstr "Не амортизируется"
+
+#: backend/apps/assets/models.py
+msgid "From the 1st of the month after it is put into service"
+msgstr "С 1-го числа месяца после ввода в эксплуатацию"
+
+#: backend/apps/assets/models.py
+msgid "From the day it is put into service"
+msgstr "Со дня ввода в эксплуатацию"
+
+#: backend/apps/assets/models.py
+msgid "Inventory numbers look like AV-0001."
+msgstr "Инвентарные номера выглядят так: AV-0001."
+
+#: backend/apps/assets/models.py
+msgid ""
+"Cheaper things are suggested as low-value items: tracked, not depreciated "
+"(your accounting policy sets the amount)."
+msgstr ""
+"Что дешевле — предлагаем учитывать как малоценное: в учёте, без амортизации "
+"(сумму задаёт учётная политика)."
+
+#: backend/apps/assets/models.py
+msgid ""
+"How much dearer a replacement gets each year, in percent (for planning)."
+msgstr "На сколько процентов в год дорожает замена (для планирования)."
+
+#: backend/apps/assets/models.py
+msgid ""
+"Show the tax depreciation too (straight line at the Tax Code's annual "
+"rates), for companies that pay profit tax."
+msgstr ""
+"Показывать и налоговую амортизацию (линейно по годовым нормам Налогового "
+"кодекса) для плательщиков налога на прибыль."
+
+#: backend/apps/assets/models.py
+msgid "Days ahead to warn about warranties, checks and insurance."
+msgstr "За сколько дней предупреждать о гарантии, поверке и страховке."
+
+#: backend/apps/assets/models.py
+msgid "Intangible asset"
+msgstr "Нематериальный актив"
+
+#: backend/apps/assets/models.py
+msgid "Low-value item"
+msgstr "Малоценный предмет"
+
+#: backend/apps/assets/models.py
+msgid "Default useful life, in months."
+msgstr "Срок по умолчанию, в месяцах."
+
+#: backend/apps/assets/models.py
+msgid "Default residual value, in percent of the cost."
+msgstr "Ликвидационная стоимость по умолчанию, в процентах от стоимости."
+
+#: backend/apps/assets/models.py
+msgid "The Tax Code group (I–VI), for the tax book."
+msgstr "Группа Налогового кодекса (I–VI) для налогового учёта."
+
+#: backend/apps/assets/models.py
+msgid "Annual tax depreciation rate, in percent (at most the Tax Code's)."
+msgstr ""
+"Годовая норма налоговой амортизации, в процентах (не выше Налогового "
+"кодекса)."
+
+#: backend/apps/assets/models.py
+msgid "Default months between services."
+msgstr "Месяцев между обслуживаниями по умолчанию."
+
+#: backend/apps/assets/models.py
+msgid "Default months between official instrument checks."
+msgstr "Месяцев между поверками по умолчанию."
+
+#: backend/apps/assets/models.py backend/apps/finance/models.py
+#: backend/apps/projects/models.py
+msgid "A lucide icon name."
+msgstr "Название иконки из набора lucide."
+
+#: backend/apps/assets/models.py
+msgid "In use"
+msgstr "В эксплуатации"
+
+#: backend/apps/assets/models.py
+msgid "In storage"
+msgstr "На складе"
+
+#: backend/apps/assets/models.py
+msgid "Under repair"
+msgstr "В ремонте"
+
+#: backend/apps/assets/models.py
+msgid "Mothballed"
+msgstr "На консервации"
+
+#: backend/apps/assets/models.py backend/apps/assets/services.py
+msgid "Disposed of"
+msgstr "Выбыло"
+
+#: backend/apps/assets/models.py
+msgid "New"
+msgstr "Новое"
+
+#: backend/apps/assets/models.py
+msgid "Good"
+msgstr "Хорошее"
+
+#: backend/apps/assets/models.py
+msgid "Worn"
+msgstr "Изношено"
+
+#: backend/apps/assets/models.py
+msgid "Damaged"
+msgstr "Повреждено"
+
+#: backend/apps/assets/models.py
+msgid "Sold"
+msgstr "Продано"
+
+#: backend/apps/assets/models.py
+msgid "Written off (broken, worn out)"
+msgstr "Списано (сломано, изношено)"
+
+#: backend/apps/assets/models.py
+msgid "Lost or stolen"
+msgstr "Утеряно или украдено"
+
+#: backend/apps/assets/models.py
+msgid "Given away"
+msgstr "Передано безвозмездно"
+
+#: backend/apps/assets/models.py
+msgid "Inventory number, unique per company."
+msgstr "Инвентарный номер, уникальный в компании."
+
+#: backend/apps/assets/models.py
+msgid "Brand and model."
+msgstr "Марка и модель."
+
+#: backend/apps/assets/models.py
+msgid "Put into service: depreciation starts from it."
+msgstr "Дата ввода в эксплуатацию: с неё начинается амортизация."
+
+#: backend/apps/assets/models.py
+msgid "What it cost to buy and set up, in the base currency."
+msgstr "Стоимость покупки и установки в базовой валюте."
+
+#: backend/apps/assets/models.py
+msgid "The price in its own currency."
+msgstr "Цена в своей валюте."
+
+#: backend/apps/assets/models.py
+msgid "What it will still be worth at the end."
+msgstr "Сколько будет стоить в конце срока."
+
+#: backend/apps/assets/models.py
+msgid "For the units method: everything it will produce or run in its life."
+msgstr "Для метода по выработке: вся выработка за срок службы."
+
+#: backend/apps/assets/models.py
+msgid "Units of output: km, hours…"
+msgstr "Единица выработки: км, часы…"
+
+#: backend/apps/assets/models.py
+msgid "Depreciation before it was entered here (from the old books)."
+msgstr "Амортизация до внесения сюда (из старого учёта)."
+
+#: backend/apps/assets/models.py
+msgid "Book its monthly depreciation in Finance."
+msgstr "Записывать ежемесячную амортизацию в Финансы."
+
+#: backend/apps/assets/models.py
+msgid "Added"
+msgstr "Добавлено"
+
+#: backend/apps/assets/models.py
+msgid "Put into service"
+msgstr "Введено в эксплуатацию"
+
+#: backend/apps/assets/models.py
+msgid "Moved"
+msgstr "Перемещено"
+
+#: backend/apps/assets/models.py
+msgid "Given to someone"
+msgstr "Выдано сотруднику"
+
+#: backend/apps/assets/models.py
+msgid "Returned"
+msgstr "Возвращено"
+
+#: backend/apps/assets/models.py
+msgid "Repaired"
+msgstr "Отремонтировано"
+
+#: backend/apps/assets/models.py
+msgid "Serviced"
+msgstr "Обслужено"
+
+#: backend/apps/assets/models.py
+msgid "Instrument check"
+msgstr "Поверка"
+
+#: backend/apps/assets/models.py
+msgid "Improvement added to its cost"
+msgstr "Улучшение добавлено к стоимости"
+
+#: backend/apps/assets/models.py
+msgid "Value written down"
+msgstr "Стоимость уменьшена"
+
+#: backend/apps/assets/models.py
+msgid "Useful life or residual value changed"
+msgstr "Изменён срок или ликвидационная стоимость"
+
+#: backend/apps/assets/models.py
+msgid "Back in use"
+msgstr "Снова в эксплуатации"
+
+#: backend/apps/assets/models.py
+msgid "Units of output recorded"
+msgstr "Записана выработка"
+
+#: backend/apps/assets/models.py
+msgid "Problem reported"
+msgstr "Сообщено о проблеме"
+
+#: backend/apps/assets/models.py
+msgid "Found in a count"
+msgstr "Найдено при инвентаризации"
+
+#: backend/apps/assets/models.py backend/apps/projects/hooks.py
+msgid "Note"
+msgstr "Заметка"
+
+#: backend/apps/assets/models.py backend/apps/payroll/models.py
+#: backend/apps/sales/models.py
+msgid "The first day of the month."
+msgstr "Первое число месяца."
+
+#: backend/apps/assets/models.py
+msgid "Net book value after this month."
+msgstr "Остаточная стоимость после этого месяца."
+
+#: backend/apps/assets/models.py
+msgid "Before the asset was entered here: never booked in Finance."
+msgstr "До внесения средства сюда: в Финансы не записывается."
+
+#: backend/apps/assets/models.py backend/apps/projects/conf.py
+#: backend/apps/tasks/models.py
+msgid "In progress"
+msgstr "В работе"
+
+#: backend/apps/assets/models.py backend/apps/sales/hooks.py
+#: backend/apps/sales/models.py
+msgid "Closed"
+msgstr "Закрыта"
+
+#: backend/apps/assets/models.py
+msgid "Not checked yet"
+msgstr "Ещё не проверено"
+
+#: backend/apps/assets/models.py
+msgid "Found"
+msgstr "Есть"
+
+#: backend/apps/assets/models.py
+msgid "Found damaged"
+msgstr "Есть, повреждено"
+
+#: backend/apps/assets/models.py
+msgid "Missing"
+msgstr "Нет"
+
+#: backend/apps/assets/models.py backend/apps/hr/models.py
+#: backend/apps/tasks/bot_messages.py backend/apps/tasks/models.py
+msgid "Photo"
+msgstr "Фото"
+
+#: backend/apps/assets/models.py
+msgid "Document"
+msgstr "Документ"
+
+#: backend/apps/assets/notify.py
+#, python-format
+msgid "You were given %(asset)s"
+msgstr "Вам выдано: %(asset)s"
+
+#: backend/apps/assets/notify.py
+msgid "Check it and confirm in the app that you have it."
+msgstr "Проверьте и подтвердите получение в приложении."
+
+#: backend/apps/assets/notify.py
+#, python-format
+msgid "Warranty ends %(day)s: %(asset)s"
+msgstr "Гарантия заканчивается %(day)s: %(asset)s"
+
+#: backend/apps/assets/notify.py
+#, python-format
+msgid "Service due %(day)s: %(asset)s"
+msgstr "Обслуживание %(day)s: %(asset)s"
+
+#: backend/apps/assets/notify.py
+#, python-format
+msgid "Instrument check due %(day)s: %(asset)s"
+msgstr "Поверка до %(day)s: %(asset)s"
+
+#: backend/apps/assets/notify.py
+#, python-format
+msgid "Insurance ends %(day)s: %(asset)s"
+msgstr "Страховка заканчивается %(day)s: %(asset)s"
+
+#: backend/apps/assets/notify.py
+msgid "Anything to repair under the warranty? After this day it is paid."
+msgstr "Нужно что-то починить по гарантии? После этого дня — платно."
+
+#: backend/apps/assets/notify.py
+msgid "Book the service, then mark it done on the asset's page."
+msgstr "Закажите обслуживание, затем отметьте его на странице средства."
+
+#: backend/apps/assets/notify.py
+msgid ""
+"An instrument without a valid check can't be used for the storage log: book "
+"the check and record it on the asset's page."
+msgstr ""
+"Прибор без действующей поверки нельзя использовать для журнала хранения: "
+"запишитесь на поверку и отметьте её на странице средства."
+
+#: backend/apps/assets/notify.py
+msgid "Renew the insurance, then put the new end date on the asset's page."
+msgstr "Продлите страховку и укажите новую дату на странице средства."
+
+#: backend/apps/assets/owner_api.py
+msgid "Assets aren't switched on for this company."
+msgstr "Для этой компании модуль основных средств не включён."
+
+#: backend/apps/assets/owner_api.py backend/apps/assets/services.py
+#: backend/apps/attendance/owner_api.py backend/apps/hr/owner_api.py
+#: backend/apps/lifecycle/owner_api.py backend/apps/payroll/owner_api.py
+msgid "Give a number."
+msgstr "Укажите число."
+
+#: backend/apps/assets/owner_api.py
+msgid "Pick a branch you work with."
+msgstr "Выберите филиал, с которым вы работаете."
+
+#: backend/apps/assets/owner_api.py
+msgid "Pick someone of this company."
+msgstr "Выберите сотрудника этой компании."
+
+#: backend/apps/assets/owner_api.py
+msgid "Pick a category of this company."
+msgstr "Выберите категорию этой компании."
+
+#: backend/apps/assets/owner_api.py
+msgid "Pick a supplier of this company."
+msgstr "Выберите поставщика этой компании."
+
+#: backend/apps/assets/owner_api.py
+msgid "That purchase isn't yours."
+msgstr "Эта покупка не ваша."
+
+#: backend/apps/assets/owner_api.py backend/apps/finance/owner_api.py
+#: backend/apps/finance/owner_serializers.py backend/apps/finance/services.py
+msgid "Pick a category."
+msgstr "Выберите категорию."
+
+#: backend/apps/assets/owner_api.py
+msgid "Pick the branch it is at."
+msgstr "Выберите филиал, где оно находится."
+
+#: backend/apps/assets/owner_api.py
+msgid "Use its own action for this."
+msgstr "Для этого есть отдельное действие."
+
+#: backend/apps/assets/owner_api.py
+msgid "Pick an account of this company."
+msgstr "Выберите счёт этой компании."
+
+#: backend/apps/assets/owner_api.py
+msgid "Give a year."
+msgstr "Укажите год."
+
+#: backend/apps/assets/owner_api.py
+msgid "By category or by branch."
+msgstr "По категориям или по филиалам."
+
+#: backend/apps/assets/owner_api.py
+msgid "Give the days as YYYY-MM-DD."
+msgstr "Укажите даты в виде ГГГГ-ММ-ДД."
+
+#: backend/apps/assets/owner_api.py
+msgid "Pick a range of at most five years."
+msgstr "Выберите период не больше пяти лет."
+
+#: backend/apps/assets/owner_api.py
+msgid "Pick the branch to count."
+msgstr "Выберите филиал для инвентаризации."
+
+#: backend/apps/assets/posting.py
+#, python-format
+msgid "Depreciation, %(month)s: %(count)s asset"
+msgid_plural "Depreciation, %(month)s: %(count)s assets"
+msgstr[0] "Амортизация, %(month)s: %(count)s основное средство"
+msgstr[1] "Амортизация, %(month)s: %(count)s основных средства"
+msgstr[2] "Амортизация, %(month)s: %(count)s основных средств"
+
+#: backend/apps/assets/posting.py
+#, python-format
+msgid "Written off: %(asset)s"
+msgstr "Списано: %(asset)s"
+
+#: backend/apps/assets/posting.py
+#, python-format
+msgid "Value written down: %(asset)s"
+msgstr "Уценено: %(asset)s"
+
+#: backend/apps/assets/providers.py
+msgid "Holds no company equipment."
+msgstr "Оборудования компании у него нет."
+
+#: backend/apps/assets/providers.py
+msgid "Handed back"
+msgstr "Вернул"
+
+#: backend/apps/assets/providers.py
+msgid "Not handed back: write it off as lost"
+msgstr "Не вернул: списать как утерянное"
+
+#: backend/apps/assets/providers.py
+msgid "Leave it with them for now"
+msgstr "Пока оставить у него"
+
+#: backend/apps/assets/providers.py
+msgid "Handed back when they left."
+msgstr "Возвращено при увольнении."
+
+#: backend/apps/assets/providers.py
+#, python-format
+msgid "Not handed back when %(person)s left."
+msgstr "Не возвращено при увольнении (%(person)s)."
+
+#: backend/apps/assets/providers.py
+#, python-format
+msgid "Service: %(asset)s"
+msgstr "Обслуживание: %(asset)s"
+
+#: backend/apps/assets/providers.py
+#, python-format
+msgid "Instrument check: %(asset)s"
+msgstr "Поверка: %(asset)s"
+
+#: backend/apps/assets/providers.py
+#, python-format
+msgid "Warranty ends: %(asset)s"
+msgstr "Конец гарантии: %(asset)s"
+
+#: backend/apps/assets/providers.py
+#, python-format
+msgid "Insurance ends: %(asset)s"
+msgstr "Конец страховки: %(asset)s"
+
+#: backend/apps/assets/providers.py
+msgid "Inventory number"
+msgstr "Инвентарный номер"
+
+#: backend/apps/assets/providers.py backend/apps/members/providers.py
+#: backend/apps/reports/hooks.py
+msgid "Name"
+msgstr "Имя"
+
+#: backend/apps/assets/providers.py backend/apps/finance/exporters.py
+msgid "Category"
+msgstr "Категория"
+
+#: backend/apps/assets/providers.py backend/apps/finance/exporters.py
+#: backend/apps/tasks/hooks.py
+msgid "Kind"
+msgstr "Тип"
+
+#: backend/apps/assets/providers.py backend/apps/finance/exporters.py
+#: backend/apps/payroll/providers.py
+#: backend/apps/payroll/templates/payroll/payslip.html
+#: backend/apps/sales/hooks.py backend/apps/tasks/hooks.py
+msgid "Branch"
+msgstr "Филиал"
+
+#: backend/apps/assets/providers.py backend/apps/finance/exporters.py
+#: backend/apps/members/providers.py backend/apps/payroll/providers.py
+#: backend/apps/sales/hooks.py backend/apps/tasks/hooks.py
+#: backend/apps/timeoff/providers.py
+msgid "Status"
+msgstr "Статус"
+
+#: backend/apps/assets/providers.py
+msgid "Condition"
+msgstr "Состояние"
+
+#: backend/apps/assets/providers.py
+msgid "Serial number"
+msgstr "Серийный номер"
+
+#: backend/apps/assets/providers.py
+msgid "Bought"
+msgstr "Куплено"
+
+#: backend/apps/assets/providers.py
+msgid "In service from"
+msgstr "В эксплуатации с"
+
+#: backend/apps/assets/providers.py backend/apps/assets/services.py
+msgid "Cost"
+msgstr "Стоимость"
+
+#: backend/apps/assets/providers.py
+msgid "Depreciation so far"
+msgstr "Начисленная амортизация"
+
+#: backend/apps/assets/providers.py
+msgid "Book value"
+msgstr "Остаточная стоимость"
+
+#: backend/apps/assets/providers.py
+msgid "Last month's depreciation"
+msgstr "Амортизация за прошлый месяц"
+
+#: backend/apps/assets/providers.py
+msgid "Useful life, months"
+msgstr "Срок, месяцев"
+
+#: backend/apps/assets/providers.py
+msgid "Method"
+msgstr "Метод"
+
+#: backend/apps/assets/providers.py
+msgid "Held by"
+msgstr "У кого"
+
+#: backend/apps/assets/providers.py
+msgid "Accountable"
+msgstr "Материально ответственный"
+
+#: backend/apps/assets/providers.py
+msgid "Warranty until"
+msgstr "Гарантия до"
+
+#: backend/apps/assets/providers.py
+msgid "Next service"
+msgstr "Следующее обслуживание"
+
+#: backend/apps/assets/providers.py
+msgid "Next instrument check"
+msgstr "Следующая поверка"
+
+#: backend/apps/assets/services.py
+#, python-format
+msgid "%(field)s: give an amount."
+msgstr "%(field)s: укажите сумму."
+
+#: backend/apps/assets/services.py
+#, python-format
+msgid "%(field)s: give an amount above zero."
+msgstr "%(field)s: укажите сумму больше нуля."
+
+#: backend/apps/assets/services.py
+#, python-format
+msgid "%(field)s: that amount is too large."
+msgstr "%(field)s: слишком большая сумма."
+
+#: backend/apps/assets/services.py
+msgid "Pick something of this company."
+msgstr "Выберите что-то из этой компании."
+
+#: backend/apps/assets/services.py
+#, python-format
+msgid "%(field)s can't be in the future."
+msgstr "%(field)s не может быть в будущем."
+
+#: backend/apps/assets/services.py
+#, python-format
+msgid "%(field)s: check the year."
+msgstr "%(field)s: проверьте год."
+
+#: backend/apps/assets/services.py
+#, python-format
+msgid "%(person)s isn't an active member."
+msgstr "%(person)s — не активный сотрудник."
+
+#: backend/apps/assets/services.py
+msgid "This asset was disposed of."
+msgstr "Это средство уже выбыло."
+
+#: backend/apps/assets/services.py
+msgid "Pick a rule from the list."
+msgstr "Выберите правило из списка."
+
+#: backend/apps/assets/services.py
+msgid ""
+"Depreciation was already posted under the current rule; the rule can change "
+"only before the first month is posted."
+msgstr ""
+"Амортизация уже начислена по текущему правилу; менять его можно только до "
+"первого начисления."
+
+#: backend/apps/assets/services.py
+msgid "A prefix is 1–8 letters or digits."
+msgstr "Префикс — от 1 до 8 букв или цифр."
+
+#: backend/apps/assets/services.py
+msgid "The next number starts at 1."
+msgstr "Следующий номер начинается с 1."
+
+#: backend/apps/assets/services.py
+msgid "Threshold"
+msgstr "Порог"
+
+#: backend/apps/assets/services.py
+msgid "Give a percentage from 0 to 100."
+msgstr "Укажите процент от 0 до 100."
+
+#: backend/apps/assets/services.py
+msgid "Warn 1 to 180 days ahead."
+msgstr "Предупреждать можно за 1–180 дней."
+
+#: backend/apps/assets/services.py backend/apps/finance/services.py
+msgid "Give the category a name."
+msgstr "Укажите название категории."
+
+#: backend/apps/assets/services.py
+msgid "There is already a category with this name."
+msgstr "Категория с таким названием уже есть."
+
+#: backend/apps/assets/services.py
+msgid "Pick a kind from the list."
+msgstr "Выберите вид из списка."
+
+#: backend/apps/assets/services.py
+msgid "Pick a method from the list."
+msgstr "Выберите метод из списка."
+
+#: backend/apps/assets/services.py
+msgid "A useful life is 1 to 1200 months."
+msgstr "Срок — от 1 до 1200 месяцев."
+
+#: backend/apps/assets/services.py
+msgid "A residual value is 0 to 99 percent."
+msgstr "Ликвидационная стоимость — от 0 до 99 процентов."
+
+#: backend/apps/assets/services.py
+msgid "Pick a Tax Code group from the list."
+msgstr "Выберите группу Налогового кодекса из списка."
+
+#: backend/apps/assets/services.py
+#, python-format
+msgid "The Tax Code allows at most %(rate)s%% a year for this group."
+msgstr "Налоговый кодекс допускает для этой группы не больше %(rate)s%% в год."
+
+#: backend/apps/assets/services.py
+msgid "Give 1 to 120 months."
+msgstr "Укажите от 1 до 120 месяцев."
+
+#: backend/apps/assets/services.py
+msgid "This category has assets: its kind can't change."
+msgstr "В категории есть средства: вид менять нельзя."
+
+#: backend/apps/assets/services.py
+msgid "This category has assets: move them first, or switch it off."
+msgstr ""
+"В категории есть средства: сначала перенесите их или отключите категорию."
+
+#: backend/apps/assets/services.py
+msgid "Give an inventory number."
+msgstr "Укажите инвентарный номер."
+
+#: backend/apps/assets/services.py
+#, python-format
+msgid "Inventory number %(number)s is taken."
+msgstr "Инвентарный номер %(number)s уже занят."
+
+#: backend/apps/assets/services.py
+msgid "That purchase isn't in Finance."
+msgstr "Такой покупки нет в Финансах."
+
+#: backend/apps/assets/services.py
+msgid "Pick an expense: the money paid for it."
+msgstr "Выберите расход: деньги, уплаченные за него."
+
+#: backend/apps/assets/services.py
+msgid "That expense was voided or rejected."
+msgstr "Этот расход аннулирован или отклонён."
+
+#: backend/apps/assets/services.py
+msgid "The cost can't be below zero."
+msgstr "Стоимость не может быть меньше нуля."
+
+#: backend/apps/assets/services.py
+msgid "Give its useful life in months."
+msgstr "Укажите срок в месяцах."
+
+#: backend/apps/assets/services.py
+msgid "Give everything it will produce in its life (units)."
+msgstr "Укажите выработку за весь срок."
+
+#: backend/apps/assets/services.py
+msgid "The declining balance factor is 1 to 3."
+msgstr "Коэффициент ускорения — от 1 до 3."
+
+#: backend/apps/assets/services.py
+msgid "The residual value must be below the cost."
+msgstr "Ликвидационная стоимость должна быть меньше первоначальной."
+
+#: backend/apps/assets/services.py
+msgid "It can't be put into service before it was bought."
+msgstr "Нельзя ввести в эксплуатацию раньше покупки."
+
+#: backend/apps/assets/services.py
+msgid ""
+"A purchase in Finance starts from zero: leave earlier depreciation empty."
+msgstr ""
+"Покупка из Финансов начинается с нуля: оставьте прежнюю амортизацию пустой."
+
+#: backend/apps/assets/services.py
+msgid "Earlier depreciation is at most the cost minus the residual value."
+msgstr "Прежняя амортизация не больше стоимости минус ликвидационная."
+
+#: backend/apps/assets/services.py
+msgid "Earlier depreciation needs a start before this month."
+msgstr "Для прежней амортизации нужна дата ввода раньше этого месяца."
+
+#: backend/apps/assets/services.py
+msgid "This category is switched off."
+msgstr "Эта категория отключена."
+
+#: backend/apps/assets/services.py
+msgid "Give the asset a name."
+msgstr "Укажите название средства."
+
+#: backend/apps/assets/services.py
+msgid "This expense already bought an asset."
+msgstr "На этот расход уже заведено средство."
+
+#: backend/apps/assets/services.py
+msgid "Price"
+msgstr "Цена"
+
+#: backend/apps/assets/services.py
+msgid "Pick a currency from the list."
+msgstr "Выберите валюту из списка."
+
+#: backend/apps/assets/services.py
+msgid "Give what it cost."
+msgstr "Укажите стоимость."
+
+#: backend/apps/assets/services.py
+#, python-format
+msgid ""
+"The cost must be the whole expense (%(amount)s); split a mixed purchase "
+"first."
+msgstr ""
+"Стоимость должна равняться всему расходу (%(amount)s); смешанную покупку "
+"сначала разделите."
+
+#: backend/apps/assets/services.py
+msgid "The purchase day"
+msgstr "Дата покупки"
+
+#: backend/apps/assets/services.py
+msgid "The start"
+msgstr "Дата ввода"
+
+#: backend/apps/assets/services.py
+msgid "Residual value"
+msgstr "Ликвидационная стоимость"
+
+#: backend/apps/assets/services.py
+msgid "A new asset is in use, in storage or under repair."
+msgstr "Новое средство — в эксплуатации, на складе или в ремонте."
+
+#: backend/apps/assets/services.py
+msgid "Earlier depreciation"
+msgstr "Прежняя амортизация"
+
+#: backend/apps/assets/services.py
+msgid "Give the exchange rate of that day."
+msgstr "Укажите курс на тот день."
+
+#: backend/apps/assets/services.py
+msgid ""
+"Its depreciation is already in the books: use Change estimate, Add to cost "
+"or Write down instead."
+msgstr ""
+"Амортизация уже в учёте: используйте «Изменить срок», «Увеличить стоимость» "
+"или «Уменьшить стоимость»."
+
+#: backend/apps/assets/services.py
+msgid "It is already in service and depreciating."
+msgstr "Оно уже в эксплуатации и амортизируется."
+
+#: backend/apps/assets/services.py
+msgid "The day"
+msgstr "Дата"
+
+#: backend/apps/assets/services.py
+msgid "Pick in use, in storage or under repair."
+msgstr "Выберите: в эксплуатации, на складе или в ремонте."
+
+#: backend/apps/assets/services.py
+msgid "It is mothballed: bring it back into use first."
+msgstr "Оно на консервации: сначала верните в эксплуатацию."
+
+#: backend/apps/assets/services.py
+msgid "It is already there."
+msgstr "Оно уже там."
+
+#: backend/apps/assets/services.py
+#, python-format
+msgid "%(person)s has it now: take it back first."
+msgstr "Сейчас у сотрудника %(person)s: сначала примите обратно."
+
+#: backend/apps/assets/services.py
+msgid "Pick a condition from the list."
+msgstr "Выберите состояние из списка."
+
+#: backend/apps/assets/services.py
+msgid "Only the person who got it can confirm it."
+msgstr "Подтвердить может только получивший."
+
+#: backend/apps/assets/services.py
+msgid "It was already handed back."
+msgstr "Оно уже возвращено."
+
+#: backend/apps/assets/services.py
+msgid "Nobody holds it."
+msgstr "Оно ни у кого не находится."
+
+#: backend/apps/assets/services.py
+msgid "It can't come back before it was given."
+msgstr "Нельзя вернуть раньше, чем выдали."
+
+#: backend/apps/assets/services.py
+msgid "Valid until is after the check."
+msgstr "Срок действия должен быть позже поверки."
+
+#: backend/apps/assets/services.py
+msgid "Give what the improvement cost."
+msgstr "Укажите стоимость улучшения."
+
+#: backend/apps/assets/services.py
+msgid "The amount must be the whole expense."
+msgstr "Сумма должна равняться всему расходу."
+
+#: backend/apps/assets/services.py backend/apps/finance/exporters.py
+#: backend/apps/payroll/templates/payroll/payslip.html
+msgid "Amount"
+msgstr "Сумма"
+
+#: backend/apps/assets/services.py
+#, python-format
+msgid "It is worth %(value)s now: write down at most that."
+msgstr "Сейчас стоит %(value)s: уменьшить можно не больше."
+
+#: backend/apps/assets/services.py
+msgid "Change the useful life, the residual value or the method."
+msgstr "Измените срок, ликвидационную стоимость или метод."
+
+#: backend/apps/assets/services.py
+#, python-format
+msgid "It has depreciated for %(months)s months already: give a longer life."
+msgstr "Уже начислено за %(months)s мес.: укажите срок дольше."
+
+#: backend/apps/assets/services.py
+msgid "The residual value can't be above what it is worth now."
+msgstr "Ликвидационная стоимость не может быть выше текущей."
+
+#: backend/apps/assets/services.py
+msgid "It is already mothballed."
+msgstr "Оно уже на консервации."
+
+#: backend/apps/assets/services.py
+msgid "It isn't mothballed."
+msgstr "Оно не на консервации."
+
+#: backend/apps/assets/services.py
+msgid "It can't come back before it was mothballed."
+msgstr "Нельзя вернуть раньше даты консервации."
+
+#: backend/apps/assets/services.py
+msgid "Only an asset depreciated by units of output records units."
+msgstr "Выработку записывают только для средств с методом по выработке."
+
+#: backend/apps/assets/services.py
+msgid "Give a number above zero."
+msgstr "Укажите число больше нуля."
+
+#: backend/apps/assets/services.py
+msgid "That month is already posted."
+msgstr "Этот месяц уже начислен."
+
+#: backend/apps/assets/services.py
+msgid "Pick how it left from the list."
+msgstr "Выберите из списка, как выбыло."
+
+#: backend/apps/assets/services.py
+msgid "It can't leave before it arrived."
+msgstr "Не может выбыть раньше, чем поступило."
+
+#: backend/apps/assets/services.py
+msgid "Give what it was sold for."
+msgstr "Укажите цену продажи."
+
+#: backend/apps/assets/services.py
+msgid "Only a sale brings money in."
+msgstr "Деньги приносит только продажа."
+
+#: backend/apps/assets/services.py
+msgid "Say why it is written off."
+msgstr "Укажите причину списания."
+
+#: backend/apps/assets/services.py
+msgid "Its depreciation is posted after that day: pick a later day."
+msgstr "Амортизация начислена и после этой даты: выберите дату позже."
+
+#: backend/apps/assets/services.py
+#, python-format
+msgid "Sold: %(asset)s"
+msgstr "Продано: %(asset)s"
+
+#: backend/apps/assets/services.py
+msgid "Its depreciation is in the books: dispose of it instead of deleting it."
+msgstr "Амортизация в учёте: спишите вместо удаления."
+
+#: backend/apps/assets/services.py
+msgid "Its purchase is in closed books: dispose of it instead of deleting it."
+msgstr "Покупка в закрытом периоде: спишите вместо удаления."
+
+#: backend/apps/assets/services.py
+msgid "A photo or a document."
+msgstr "Фото или документ."
+
+#: backend/apps/assets/services.py
+msgid "At most 30 files per asset."
+msgstr "Не больше 30 файлов на средство."
+
+#: backend/apps/assets/services.py
+msgid "A count of this place is already in progress."
+msgstr "Здесь уже идёт инвентаризация."
+
+#: backend/apps/assets/services.py
+msgid "There is nothing to count here yet."
+msgstr "Здесь пока нечего считать."
+
+#: backend/apps/assets/services.py
+msgid "This count is closed."
+msgstr "Эта инвентаризация закрыта."
+
+#: backend/apps/assets/services.py
+msgid "Pick a result from the list."
+msgstr "Выберите результат из списка."
+
+#: backend/apps/assets/services.py
+#, python-format
+msgid "Not found in the count of %(day)s."
+msgstr "Не найдено при инвентаризации %(day)s."
+
 #: backend/apps/attendance/actions.py backend/apps/payroll/actions.py
 msgid "This isn't available any more."
 msgstr "Это больше недоступно."
@@ -2738,11 +3899,6 @@ msgstr "%(name)s: отметка прихода в %(distance)s от филиа�
 msgid "Give branch ids."
 msgstr "Укажите ID филиалов."
 
-#: backend/apps/attendance/owner_api.py backend/apps/hr/owner_api.py
-#: backend/apps/lifecycle/owner_api.py backend/apps/payroll/owner_api.py
-msgid "Give a number."
-msgstr "Укажите число."
-
 #: backend/apps/attendance/providers.py
 #, python-format
 msgid "came %(time)s"
@@ -3442,6 +4598,10 @@ msgid "Recognition"
 msgstr "Поощрения"
 
 #: backend/apps/companies/models.py
+msgid "Assets and equipment"
+msgstr "Основные средства и оборудование"
+
+#: backend/apps/companies/models.py
 msgid "How long a rejected person waits before asking to join again."
 msgstr "Сколько отклонённый человек ждёт, прежде чем снова подать заявку."
 
@@ -3904,6 +5064,10 @@ msgid "Voided a ledger entry"
 msgstr "Проводка аннулирована"
 
 #: backend/apps/finance/audit_actions.py
+msgid "Turned an expense into a fixed asset purchase"
+msgstr "Сделал расход покупкой основного средства"
+
+#: backend/apps/finance/audit_actions.py
 msgid "Attached a receipt"
 msgstr "Прикреплён чек"
 
@@ -4091,6 +5255,14 @@ msgstr "Курсовые разницы"
 msgid "Other expenses"
 msgstr "Прочие расходы"
 
+#: backend/apps/finance/defaults.py
+msgid "Fixed assets written off"
+msgstr "Списание основных средств"
+
+#: backend/apps/finance/defaults.py
+msgid "Sale of fixed assets"
+msgstr "Продажа основных средств"
+
 #: backend/apps/finance/defaults.py backend/apps/finance/models.py
 msgid "Cash desk"
 msgstr "Касса"
@@ -4103,42 +5275,17 @@ msgstr "Терминал"
 msgid "Date"
 msgstr "Дата"
 
-#: backend/apps/finance/exporters.py backend/apps/tasks/hooks.py
-msgid "Kind"
-msgstr "Тип"
-
-#: backend/apps/finance/exporters.py backend/apps/members/providers.py
-#: backend/apps/payroll/providers.py backend/apps/sales/hooks.py
-#: backend/apps/tasks/hooks.py backend/apps/timeoff/providers.py
-msgid "Status"
-msgstr "Статус"
-
 #: backend/apps/finance/exporters.py
 msgid "Account"
 msgstr "Счёт"
 
 #: backend/apps/finance/exporters.py
-msgid "Category"
-msgstr "Категория"
-
-#: backend/apps/finance/exporters.py
 msgid "Counterparty"
 msgstr "Контрагент"
-
-#: backend/apps/finance/exporters.py backend/apps/payroll/providers.py
-#: backend/apps/payroll/templates/payroll/payslip.html
-#: backend/apps/sales/hooks.py backend/apps/tasks/hooks.py
-msgid "Branch"
-msgstr "Филиал"
 
 #: backend/apps/finance/exporters.py
 msgid "Description"
 msgstr "Описание"
-
-#: backend/apps/finance/exporters.py
-#: backend/apps/payroll/templates/payroll/payslip.html
-msgid "Amount"
-msgstr "Сумма"
 
 #: backend/apps/finance/exporters.py backend/apps/payroll/providers.py
 msgid "Currency"
@@ -4515,10 +5662,6 @@ msgstr "Для детализации по сотрудникам нужно п�
 msgid "Equipment and other long-term purchases."
 msgstr "Оборудование и другие долгосрочные покупки."
 
-#: backend/apps/finance/models.py backend/apps/projects/models.py
-msgid "A lucide icon name."
-msgstr "Название иконки из набора lucide."
-
 #: backend/apps/finance/models.py backend/apps/finance/services.py
 msgid "Categories go two levels deep at most."
 msgstr "У категорий может быть не больше двух уровней."
@@ -4672,6 +5815,10 @@ msgid "Opening balance"
 msgstr "Начальный остаток"
 
 #: backend/apps/finance/models.py
+msgid "Non-cash cost"
+msgstr "Неденежный расход"
+
+#: backend/apps/finance/models.py
 msgid "Company-local day; every report groups by it."
 msgstr "День по часовому поясу компании; все отчёты группируются по нему."
 
@@ -4707,6 +5854,14 @@ msgid "Reduces its own kind: a refund reduces income."
 msgstr "Уменьшает сумму своего же типа: например, возврат уменьшает доход."
 
 #: backend/apps/finance/models.py
+msgid ""
+"Bought as a fixed asset: the money left, but the cost reaches the P&L month "
+"by month as depreciation, not at once."
+msgstr ""
+"Куплено как основное средство: деньги ушли, но расход попадает в отчёт о "
+"прибыли не сразу, а помесячно амортизацией."
+
+#: backend/apps/finance/models.py
 msgid "Not read"
 msgstr "Не прочитано"
 
@@ -4733,11 +5888,6 @@ msgstr "Модуль «Финансы» для этой компании вык�
 #: backend/apps/finance/owner_api.py
 msgid "Pick one of your accounts."
 msgstr "Выберите один из ваших счетов."
-
-#: backend/apps/finance/owner_api.py backend/apps/finance/owner_serializers.py
-#: backend/apps/finance/services.py
-msgid "Pick a category."
-msgstr "Выберите категорию."
 
 #: backend/apps/finance/owner_api.py
 msgid "Pick a counterparty."
@@ -4978,8 +6128,18 @@ msgid "Owner and opening entries have no category."
 msgstr "У взносов и изъятий владельца и у начальных остатков нет категории."
 
 #: backend/apps/finance/services.py
+msgid "Only a live expense can be the purchase of an asset."
+msgstr "Покупкой средства может быть только действующий расход."
+
+#: backend/apps/finance/services.py
 msgid "This entry is part of a transfer: void the transfer instead."
 msgstr "Эта проводка — часть перевода: аннулируйте весь перевод."
+
+#: backend/apps/finance/services.py
+msgid ""
+"This expense bought a fixed asset: remove or dispose of the asset first."
+msgstr ""
+"На этот расход куплено основное средство: сначала удалите или спишите его."
 
 #: backend/apps/finance/services.py
 msgid "This entry opened a debt: cancel the debt instead."
@@ -5175,10 +6335,6 @@ msgstr ""
 msgid "This category is still in use: archive it instead."
 msgstr "Эта категория ещё используется: лучше отправьте её в архив."
 
-#: backend/apps/finance/services.py
-msgid "Give the category a name."
-msgstr "Укажите название категории."
-
 #: backend/apps/finance/services.py backend/apps/hr/ids.py
 msgid "A number like +998 90 123 45 67."
 msgstr "Номер в формате +998 90 123 45 67."
@@ -5212,6 +6368,13 @@ msgstr "Для расходов больше %(limit)s нужен чек: при
 #: backend/apps/finance/services.py
 msgid "A void or rejected entry can't be changed."
 msgstr "Аннулированную или отклонённую проводку нельзя изменить."
+
+#: backend/apps/finance/services.py
+msgid ""
+"This expense bought a fixed asset: its amount and day change with the asset."
+msgstr ""
+"На этот расход куплено основное средство: сумма и дата меняются через "
+"средство."
 
 #: backend/apps/finance/services.py
 #, python-format
@@ -6058,11 +7221,6 @@ msgstr "Договор"
 #: backend/apps/hr/models.py
 msgid "Confidentiality agreement"
 msgstr "Соглашение о неразглашении"
-
-#: backend/apps/hr/models.py backend/apps/tasks/bot_messages.py
-#: backend/apps/tasks/models.py
-msgid "Photo"
-msgstr "Фото"
 
 #: backend/apps/hr/models.py
 msgid "Higher"
@@ -8078,10 +9236,6 @@ msgid "This is the company's only owner. Make someone else an owner first."
 msgstr ""
 "Это единственный владелец компании. Сначала сделайте владельцем кого-то ещё."
 
-#: backend/apps/members/providers.py backend/apps/reports/hooks.py
-msgid "Name"
-msgstr "Имя"
-
 #: backend/apps/members/providers.py backend/apps/payroll/providers.py
 #: backend/apps/payroll/templates/payroll/payslip.html
 #: backend/apps/reports/hooks.py backend/apps/tasks/hooks.py
@@ -9187,10 +10341,6 @@ msgctxt "payroll status"
 msgid "Finalized"
 msgstr "Утверждено"
 
-#: backend/apps/payroll/models.py backend/apps/sales/models.py
-msgid "The first day of the month."
-msgstr "Первое число месяца."
-
 #: backend/apps/payroll/models.py
 msgid "Som per dollar for dollar pay."
 msgstr "Курс доллара в сумах для оплаты в долларах."
@@ -10108,10 +11258,6 @@ msgstr "В очереди"
 msgid "To do"
 msgstr "К выполнению"
 
-#: backend/apps/projects/conf.py backend/apps/tasks/models.py
-msgid "In progress"
-msgstr "В работе"
-
 #: backend/apps/projects/conf.py
 msgid "Review"
 msgstr "Проверка"
@@ -10139,10 +11285,6 @@ msgstr "Минуты"
 #: backend/apps/projects/hooks.py
 msgid "Hours"
 msgstr "Часы"
-
-#: backend/apps/projects/hooks.py
-msgid "Note"
-msgstr "Заметка"
 
 #: backend/apps/projects/hooks.py
 msgid "Billable"
@@ -11576,10 +12718,6 @@ msgstr "Кассир"
 #: backend/apps/sales/hooks.py
 msgid "Opened"
 msgstr "Открыта"
-
-#: backend/apps/sales/hooks.py backend/apps/sales/models.py
-msgid "Closed"
-msgstr "Закрыта"
 
 #: backend/apps/sales/hooks.py
 msgid "Float"

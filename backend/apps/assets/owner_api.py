@@ -158,7 +158,7 @@ class CategoryViewSet(ModuleOn, OwnerViewSet):
     serializer_class = s.CategorySerializer
 
     def get_queryset(self):
-        return AssetCategory.objects.for_company(self.company).annotate(assets=Count("assets"))
+        return AssetCategory.objects.for_company(self.company).annotate(asset_count=Count("assets"))
 
     def _out(self, category):
         data = {
@@ -180,9 +180,8 @@ class CategoryViewSet(ModuleOn, OwnerViewSet):
                 "system_code",
             )
         }
-        data["assets"] = getattr(category, "assets", None)
-        if data["assets"] is None:
-            data["assets"] = category.assets.count()
+        count = getattr(category, "asset_count", None)
+        data["assets"] = category.assets.count() if count is None else count
         return s.CategorySerializer(data).data
 
     @extend_schema(responses=s.CategorySerializer(many=True))

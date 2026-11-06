@@ -98,11 +98,17 @@ def test_actions_answer_with_the_page(shop, owner, owner_api, fridge, ali, cash)
     assert events[0] == "disposed" and "issued" in events
 
 
-def test_reports(shop, owner, owner_api, fridge):
+def test_categories_list_with_their_counts(shop, owner, owner_api, fridge):
+    rows = owner_api(owner).get(f"{base(shop)}/categories/").json()
+    fridges = next(row for row in rows if row["system_code"] == "fridges")
+    assert fridges["assets"] == 1 and fridges["tax_group"] == "III"
+
+
+def test_reports(shop, owner, owner_api, fridge, category):
     client = owner_api(owner)
     report = client.get(f"{base(shop)}/depreciation/?year=2026&group=category").json()
     assert report["total"] == "300000.00"  # October, November, December: 3 x 100 000
-    assert report["groups"][0]["name"] == "Pharmacy fridges"
+    assert report["groups"][0]["name"] == category.name
     movement = client.get(f"{base(shop)}/movement/?from=2026-01-01&to=2026-10-31").json()
     assert movement["total"]["in_cost"] == "8400000.00"
     assert movement["total"]["depreciation"] == "100000.00"
