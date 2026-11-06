@@ -141,10 +141,13 @@ def _everyone(company) -> list[Membership]:
 
 def _hired(story, keys, member) -> date:
     """The day they were hired: their approval, or the story's own day (Sardor came before
-    the company used the app)."""
+    the company used the app). Someone who left or was blocked has the departure as their
+    last decision, so their hire day comes from the cast list."""
     key = keys.get(member.pk)
     if key == "sardor":
         return story.day(-(2 * 365) + 3)  # two years with the team in three days
+    if key and member.status in (Membership.Status.LEFT, Membership.Status.BLOCKED):
+        return story.joined(key)
     if member.decided_at:
         return timezone.localtime(member.decided_at, story.zone).date()
     return story.joined(key) if key else story.today

@@ -177,6 +177,10 @@ def test_the_leaver_is_settled(with_leavers, owner_api):
     assert run.membership == nodira and run.last_day == date(2026, 10, 14)
     assert run.status == "paid" and run.leave_days == D("9.00")
     payslip = run.payslips.get()
+    # Her days of October are paid: only the days after her last one come off as not employed.
+    assert payslip.base_pay > 0 and payslip.paid_days > 0
+    outside = payslip.lines.filter(kind=PayslipLine.Kind.PRORATION, params__code="not_employed")
+    assert all(line.quantity < payslip.scheduled_days for line in outside)
     payout = payslip.lines.get(kind=PayslipLine.Kind.LEAVE_PAYOUT)
     assert payout.quantity == D("9.00") and payout.amount > 0
     advance = payslip.lines.get(kind=PayslipLine.Kind.ADVANCE)
