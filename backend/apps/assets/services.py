@@ -146,10 +146,19 @@ def _event(asset: Asset, kind: str, *, by, on: date, **fields) -> AssetEvent:
 
 
 def _booked(asset: Asset) -> bool:
-    """Is any month of its depreciation, or its disposal, in Finance?"""
+    """Is any month of its depreciation, or its disposal, sale or write-down, in Finance?"""
+    from apps.finance.models import LIVE_STATUSES, Transaction
+
     return (
         asset.entries.filter(transaction__isnull=False).exists()
         or asset.disposal_transaction_id is not None
+        # Its own rows (written off, written down) point back at it only by their source.
+        or Transaction.objects.filter(
+            company_id=asset.company_id,
+            source_type=posting.SOURCE_ASSET,
+            source_id=asset.pk,
+            status__in=LIVE_STATUSES,
+        ).exists()
     )
 
 
@@ -404,10 +413,19 @@ def _purchase(company, txn):
         if txn is None:
             raise DomainError(_("That purchase isn't in Finance."))
     _same_company(company, txn)
-    if txn.kind != Transaction.Kind.EXPENSE or txn.is_contra:
+    sensitive = txn.category_id is not None and txn.category.is_sensitive  # salaries
+    if txn.kind != Transaction.Kind.EXPENSE or txn.is_contra or sensitive:
         raise DomainError(_("Pick an expense: the money paid for it."))
     if txn.status not in (Transaction.Status.POSTED, Transaction.Status.PENDING):
         raise DomainError(_("That expense was voided or rejected."))
+    # One expense buys one thing once: used again (another asset, another improvement) its cost
+    # would come back twice as depreciation while it left the P&L only once.
+    if (
+        txn.capitalized
+        or Asset.objects.filter(company=company, purchase_transaction=txn).exists()
+        or AssetEvent.objects.filter(company=company, transaction=txn).exists()
+    ):
+        raise DomainError(_("This expense already bought an asset."))
     return txn
 
 
@@ -416,7 +434,9 @@ def _check_facts(asset: Asset) -> None:
     if asset.cost < 0:
         raise DomainError(_("The cost can't be below zero."))
     if asset.category.kind == AssetCategory.Kind.LOW_VALUE:
+        # Never depreciated: its cost was an expense when bought, so Finance books nothing more.
         asset.method = Method.NONE
+        asset.books_depreciation = False
     if asset.method not in Method.values:
         raise DomainError(_("Pick a method from the list."))
     if asset.method != Method.NONE:
@@ -470,9 +490,6 @@ def create_asset(company, *, by: Membership | None, category: AssetCategory, nam
     custodian = _member(company, fields.pop("custodian", None))
     responsible = _member(company, fields.get("responsible"))
     if txn is not None:
-        taken = Asset.objects.filter(company=company, purchase_transaction=txn).exists()
-        if taken:
-            raise DomainError(_("This expense already bought an asset."))
         fields.setdefault("cost", -txn.base_amount)
         fields.setdefault("price", -txn.amount)
         fields.setdefault("price_currency", txn.currency)
@@ -562,7 +579,8 @@ def create_asset(company, *, by: Membership | None, category: AssetCategory, nam
     _check_facts(asset)
     asset.save()
     details = {}
-    if txn is not None:
+    # Its purchase leaves the P&L only when its depreciation brings the cost back.
+    if txn is not None and asset.books_depreciation:
         from apps.finance import services as finance
 
         try:
@@ -619,6 +637,17 @@ def update_asset(asset: Asset, *, by: Membership, **fields) -> Asset:
         )
     if "category" in fields:
         _same_company(company, fields["category"])
+        low = AssetCategory.Kind.LOW_VALUE
+        if (fields["category"].kind == low) != (asset.category.kind == low):
+            # A low-value item never depreciates: the move changes every month of it.
+            if _booked(asset) or _purchases_of(asset):
+                raise DomainError(
+                    _(
+                        "It is in Finance already: it can't become a low-value item or stop "
+                        "being one."
+                    )
+                )
+            facts.add("category")
     if "branch" in fields:
         _same_company(company, fields["branch"])
     if "supplier" in fields:
@@ -634,6 +663,18 @@ def update_asset(asset: Asset, *, by: Membership, **fields) -> Asset:
     for money_field, label in (("cost", _("Cost")), ("salvage_value", _("Residual value"))):
         if money_field in fields:
             fields[money_field] = _money(fields[money_field], name=label, allow_zero=True)
+    txn = asset.purchase_transaction
+    # The purchase left the P&L whole: depreciating another cost would lose or add money.
+    if (
+        "cost" in fields
+        and txn is not None
+        and txn.capitalized
+        and fields["cost"] != -txn.base_amount
+    ):
+        raise DomainError(
+            _("The cost must be the whole expense (%(amount)s); split a mixed purchase first.")
+            % {"amount": -txn.base_amount}
+        )
     if "opening_accumulated" in fields and fields["opening_accumulated"] not in (None, ""):
         fields["opening_accumulated"] = _money(
             fields["opening_accumulated"], name=_("Earlier depreciation"), allow_zero=True
@@ -644,6 +685,8 @@ def update_asset(asset: Asset, *, by: Membership, **fields) -> Asset:
         _check_day(company, fields["purchased_on"], name=_("The purchase day"))
     if "in_service_on" in fields:
         _check_day(company, fields["in_service_on"], name=_("The start"), future_days=366)
+    if "books_depreciation" in fields:
+        _check_books_switch(asset, on=bool(fields["books_depreciation"]))
     old_branch = asset.branch
     before = {name: _plain(getattr(asset, name)) for name in fields}
     for name, value in fields.items():
@@ -674,6 +717,35 @@ def update_asset(asset: Asset, *, by: Membership, **fields) -> Asset:
     _repost(asset)
     _bump(company)
     return asset
+
+
+def _purchases_of(asset: Asset) -> list:
+    """The Finance expenses it was bought or improved with."""
+    rows = [asset.purchase_transaction] if asset.purchase_transaction_id else []
+    events = asset.events.filter(transaction__isnull=False).select_related("transaction")
+    return rows + [event.transaction for event in events]
+
+
+def _check_books_switch(asset: Asset, *, on: bool) -> None:
+    """Booking its depreciation follows its purchases in Finance: a capitalized one comes back
+    to the P&L only through depreciation, and one still an expense must not come back twice."""
+    if on == asset.books_depreciation:
+        return
+    purchases = _purchases_of(asset)
+    if not on and any(txn.capitalized for txn in purchases):
+        raise DomainError(
+            _(
+                "Its purchase left the P&L and comes back as depreciation: booking it can't be "
+                "switched off."
+            )
+        )
+    if on and any(not txn.capitalized for txn in purchases):
+        raise DomainError(
+            _(
+                "Its purchase is already a cost in the P&L: booking its depreciation too would "
+                "count it twice."
+            )
+        )
 
 
 def _plain(value) -> str:
@@ -973,7 +1045,7 @@ def add_to_cost(asset: Asset, *, by: Membership, on: date, amount, note="", purc
         note=note[:500],
         transaction=txn,
     )
-    if txn is not None:
+    if txn is not None and asset.books_depreciation:
         from apps.finance import services as finance
 
         finance.capitalize(txn, by=by)
@@ -1184,12 +1256,9 @@ def dispose(
     posting.book_asset_cost(
         asset, amount=value, day=on, key="disposal", description=posting.text_written_off(asset)
     )
-    if (
-        proceeds
-        and account is not None
-        and posting.finance_on(company)
-        and asset.books_depreciation
-    ):
+    # The money comes in whether or not its depreciation is booked (an asset whose purchase was
+    # an expense sells at a gain of all of it).
+    if proceeds and account is not None and posting.finance_on(company):
         from apps.finance import services as finance
         from apps.finance.sources import Source
 

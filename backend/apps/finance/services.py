@@ -517,6 +517,11 @@ def reject_transaction(txn: Transaction, *, by: Membership, reason: str) -> Tran
     user = _actor(company, by)
     if txn.status != Status.PENDING:
         raise DomainError(_("This entry isn't waiting for approval."))
+    if txn.capitalized:
+        # As with a void: the asset would go on depreciating a purchase that never happened.
+        raise DomainError(
+            _("This expense bought a fixed asset: remove or dispose of the asset first.")
+        )
     txn.status = Status.REJECTED
     txn.voided_by = user
     txn.voided_at = timezone.now()
@@ -569,6 +574,10 @@ def void_transaction(txn: Transaction, *, by: Membership, reason: str) -> Transa
     txn = _lock_row(current)
     if txn.status not in LIVE_STATUSES:
         raise DomainError(_("This entry is already void or rejected."))
+    if txn.capitalized:  # an asset was made from it while this void waited for the lock
+        raise DomainError(
+            _("This expense bought a fixed asset: remove or dispose of the asset first.")
+        )
     if debt is not None and debt.is_locked and not _same_source(debt, txn):
         raise DomainError(_reserved_message(debt))
     rows = [txn, *_follow_ups(company, txn)]

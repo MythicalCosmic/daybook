@@ -270,6 +270,7 @@ def schedule(
                 fraction=fraction,
                 factor=Decimal(facts.factor),
                 units=units,
+                rate_life=state.rate_life,
             )
             amount = min(max(amount, ZERO), max(state.book - state.salvage, ZERO))
         state.book = money(state.book - amount)
@@ -331,6 +332,9 @@ class _State:
         self.suspended = False
         self.basis = _Basis(date.min, ZERO, ZERO, None)
         self.basis_used = ZERO
+        # The declining balance's rate is `factor` over this life: the whole life, or what was
+        # left when an estimate changed. A pause, an improvement or a write-down keeps it.
+        self.rate_life = self.life
 
     def rebase(self, month: date) -> None:
         units = None
@@ -347,6 +351,8 @@ class _State:
             self.salvage = money(change.salvage)
         if change.method is not None:
             self.method = change.method
+        if change.life_months is not None or change.method is not None:
+            self.rate_life = max(self.life - self.used, ZERO)
 
     def adjust(self, change: Change) -> None:
         if change.kind == "addition":
@@ -384,6 +390,7 @@ def _amount(
     fraction: Decimal,
     factor: Decimal,
     units: Decimal,
+    rate_life: Decimal,
 ) -> Decimal:
     depreciable = max(book - salvage, ZERO)
     if depreciable == 0 or fraction == 0:
@@ -398,7 +405,7 @@ def _amount(
     if method == STRAIGHT_LINE:
         return money(straight)
     if method == DECLINING:
-        life = basis.life if basis.life > 0 else left
+        life = rate_life if rate_life > 0 else left
         declining = book * factor / life * fraction
         return money(min(max(declining, straight), depreciable))
     if method == SUM_OF_YEARS:

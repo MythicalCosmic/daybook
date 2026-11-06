@@ -524,12 +524,20 @@ class AssetViewSet(ModuleOn, Scope, OwnerViewSet):
     @extend_schema(request=s.AdditionSerializer, responses=s.AssetDetailSerializer)
     @action(detail=True, methods=["post"])
     def addition(self, request, company_id, pk=None):
-        return self._run(
-            request,
-            pk,
-            s.AdditionSerializer,
-            lambda asset, data: services.add_to_cost(asset, by=self.membership, **data),
-        )
+        from apps.finance.models import Transaction
+
+        def call(asset, data):
+            if data.get("purchase"):
+                # Like the purchase of a new asset: an expense of the caller's branches only.
+                txn = Transaction.objects.for_company(self.company).filter(pk=data["purchase"])
+                txn = txn.first()
+                scope = self.branch_scope
+                if txn is None or (scope is not None and txn.branch_id not in scope):
+                    raise ValidationError({"purchase": [_("That purchase isn't yours.")]})
+                data["purchase"] = txn
+            services.add_to_cost(asset, by=self.membership, **data)
+
+        return self._run(request, pk, s.AdditionSerializer, call)
 
     @extend_schema(request=s.AmountSerializer, responses=s.AssetDetailSerializer)
     @action(detail=True, methods=["post"], url_path="write-down")
@@ -584,18 +592,17 @@ class AssetViewSet(ModuleOn, Scope, OwnerViewSet):
     @extend_schema(request=s.DisposeSerializer, responses=s.AssetDetailSerializer)
     @action(detail=True, methods=["post"])
     def dispose(self, request, company_id, pk=None):
-        from apps.finance.models import MoneyAccount
+        from apps.finance import access
 
         def call(asset, data):
             account = None
             if data.get("account"):
+                # The money lands in Finance: only on an account the person may record on there.
                 account = (
-                    MoneyAccount.objects.for_company(self.company)
-                    .filter(pk=data["account"])
-                    .first()
+                    access.recordable_accounts(self.membership).filter(pk=data["account"]).first()
                 )
                 if account is None:
-                    raise ValidationError({"account": [_("Pick an account of this company.")]})
+                    raise ValidationError({"account": [_("Pick one of your accounts.")]})
             services.dispose(
                 asset,
                 by=self.membership,
@@ -769,27 +776,28 @@ class PurchasesView(ModuleOn, Scope, OwnerAPIView):
 
     @extend_schema(responses=s.PurchaseSerializer(many=True))
     def get(self, request, company_id):
+        from apps.finance import access
+
         rows = queries.purchases(self.company, branch_ids=self.branch_scope)
-        return Response(
-            s.PurchaseSerializer(
-                [
-                    {
-                        "id": txn.pk,
-                        "occurred_on": txn.occurred_on,
-                        "amount": -txn.amount,
-                        "currency": txn.currency,
-                        "base_amount": -txn.base_amount,
-                        "category": txn.category.name if txn.category_id else None,
-                        "counterparty": s.ref(txn.counterparty),
-                        "branch": s.ref(txn.branch),
-                        "account": txn.account.name if txn.account_id else None,
-                        "description": txn.description,
-                    }
-                    for txn in rows
-                ],
-                many=True,
-            ).data
-        )
+        out = []
+        for txn in rows:
+            # Something an employee paid for and was paid back: who, only with payroll.view.
+            masked = access.masks_row(self.membership, txn)
+            out.append(
+                {
+                    "id": txn.pk,
+                    "occurred_on": txn.occurred_on,
+                    "amount": -txn.amount,
+                    "currency": txn.currency,
+                    "base_amount": -txn.base_amount,
+                    "category": txn.category.name if txn.category_id else None,
+                    "counterparty": None if masked else s.ref(txn.counterparty),
+                    "branch": s.ref(txn.branch),
+                    "account": txn.account.name if txn.account_id else None,
+                    "description": "" if masked else txn.description,
+                }
+            )
+        return Response(s.PurchaseSerializer(out, many=True).data)
 
 
 # Counts ------------------------------------------------------------------------------------------
