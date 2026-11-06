@@ -72,3 +72,30 @@ def test_a_bonus_is_paid_once_when_october_is_reopened_around_the_final_run(shop
 
     paid = PayslipLine.objects.filter(adjustment=bonus, payslip__run__status__in=DONE)
     assert sum(line.amount for line in paid) == D("300000.00")
+
+
+def test_a_later_month_that_paid_a_leaver_is_flagged(shop, team, freeze):
+    """HR writes down on 5 November that Ali's last day was Monday 28 September, after
+    September and October were finalized with his whole months. The final run (September's,
+    after the regular one) says what September paid after the 28th, and that October paid him
+    a whole month he didn't work."""
+    staff = team
+    freeze(local(date(2026, 9, 30), 18))
+    september = services.create_run(shop, by=staff.accountant, period="2026-09")
+    services.finalize_run(september, by=staff.owner)
+    freeze(local(date(2026, 10, 31), 18))
+    october = services.create_run(shop, by=staff.accountant, period="2026-10")
+    services.finalize_run(october, by=staff.owner)
+    assert october.payslips.get(membership=staff.ali).base_pay == D("5200000.00")
+    freeze(local(date(2026, 11, 5), 10))
+    leave(staff.ali)
+    staff.ends[staff.ali.pk] = date(2026, 9, 28)
+
+    final = services.create_final_run(staff.ali, by=staff.accountant, last_day=date(2026, 9, 28))
+
+    assert final.after_regular
+    paid_after = {
+        w["month"]: w["amount"] for w in final.warnings if w["code"] == "paid_after_last_day"
+    }
+    # Tuesday 29 and Wednesday 30 September at 200 000; all of October.
+    assert paid_after == {"2026-09-01": "400000.00", "2026-10-01": "5200000.00"}

@@ -226,6 +226,7 @@ def warnings(run: PayrollRun, inputs, people, result, settlement) -> list[dict]:
         month = run.period.isoformat()
         found.append({"code": "after_regular", "level": "info", "member": ref, "month": month})
         found += _paid_after_last_day(run, inputs, people, ref)
+    found += _paid_in_later_months(run, ref)
     start = run.period
     proposed = queries.open_proposals(run.company).filter(membership=member, period=start)
     if count := proposed.count():
@@ -276,6 +277,35 @@ def _paid_after_last_day(run: PayrollRun, inputs, people, ref) -> list[dict]:
             "days": _text(max(ZERO, regular.paid_days - work.paid_days)),
             "month": run.period.isoformat(),
         }
+    ]
+
+
+def _paid_in_later_months(run: PayrollRun, ref) -> list[dict]:
+    """Months after the leaving one whose regular run paid them as if they still worked here
+    (the leaving was written down late): all of that month's pay for days came after the last
+    day."""
+    later = (
+        Payslip.objects.filter(
+            membership=run.membership,
+            run__kind=PayrollRun.Kind.REGULAR,
+            run__period__gt=run.period,
+            run__status__in=queries.DONE_STATUSES,
+            base_pay__gt=0,
+        )
+        .select_related("run")
+        .order_by("run__period")
+    )
+    return [
+        {
+            "code": "paid_after_last_day",
+            "level": "warning",
+            "member": ref,
+            "amount": _text(payslip.base_pay),
+            "currency": payslip.currency,
+            "days": _text(payslip.paid_days),
+            "month": payslip.run.period.isoformat(),
+        }
+        for payslip in later
     ]
 
 
