@@ -408,6 +408,14 @@ def _purchase(company, txn):
         raise DomainError(_("Pick an expense: the money paid for it."))
     if txn.status not in (Transaction.Status.POSTED, Transaction.Status.PENDING):
         raise DomainError(_("That expense was voided or rejected."))
+    # One expense buys one thing once: used again (another asset, another improvement) its cost
+    # would come back twice as depreciation while it left the P&L only once.
+    if (
+        txn.capitalized
+        or Asset.objects.filter(company=company, purchase_transaction=txn).exists()
+        or AssetEvent.objects.filter(company=company, transaction=txn).exists()
+    ):
+        raise DomainError(_("This expense already bought an asset."))
     return txn
 
 
@@ -470,9 +478,6 @@ def create_asset(company, *, by: Membership | None, category: AssetCategory, nam
     custodian = _member(company, fields.pop("custodian", None))
     responsible = _member(company, fields.get("responsible"))
     if txn is not None:
-        taken = Asset.objects.filter(company=company, purchase_transaction=txn).exists()
-        if taken:
-            raise DomainError(_("This expense already bought an asset."))
         fields.setdefault("cost", -txn.base_amount)
         fields.setdefault("price", -txn.amount)
         fields.setdefault("price_currency", txn.currency)
