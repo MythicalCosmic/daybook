@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-07 01:27+0500\n"
+"POT-Creation-Date: 2026-11-07 01:53+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -564,6 +564,10 @@ msgstr "E’lonlar"
 #: backend/apps/ai/agents/custom.py
 msgid "Knowledge base"
 msgstr "Bilimlar bazasi"
+
+#: backend/apps/ai/agents/custom.py
+msgid "Equipment and depreciation"
+msgstr "Jihozlar va amortizatsiya"
 
 #: backend/apps/ai/agents/custom.py backend/apps/tasks/models.py
 msgid "Monday"
@@ -2252,6 +2256,22 @@ msgstr "E’lonning amal qilish muddati u yuborilgandan keyin tugashi kerak."
 msgid "You don't have permission to do this."
 msgstr "Bunga ruxsatingiz yo‘q."
 
+#: backend/apps/assets/ai_tools.py
+msgid ""
+"Fixed assets at a glance: how many, their cost and book value, this month's "
+"and this year's depreciation by category, upkeep coming up or overdue, "
+"replacements due in the next three years, repairs that approach a new one's "
+"price, money sitting idle"
+msgstr ""
+"Asosiy vositalar bir qarashda: soni, boshlang‘ich va qoldiq qiymati, shu oy "
+"va shu yil amortizatsiyasi toifalar bo‘yicha, yaqinlashayotgan yoki muddati "
+"o‘tgan xizmatlar, keyingi uch yilda almashtirish, yangisi narxiga "
+"yaqinlashgan ta’mirlar, bekor turgan pul"
+
+#: backend/apps/assets/api.py backend/apps/assets/owner_api.py
+msgid "Assets aren't switched on for this company."
+msgstr "Bu kompaniyada asosiy vositalar moduli yoqilmagan."
+
 #: backend/apps/assets/audit_actions.py
 msgid "Changed the asset policy"
 msgstr "Asosiy vositalar hisob siyosatini o‘zgartirdi"
@@ -2784,10 +2804,6 @@ msgstr ""
 msgid "Renew the insurance, then put the new end date on the asset's page."
 msgstr ""
 "Sug‘urtani yangilang, so‘ng yangi tugash sanasini vosita sahifasiga yozing."
-
-#: backend/apps/assets/owner_api.py
-msgid "Assets aren't switched on for this company."
-msgstr "Bu kompaniyada asosiy vositalar moduli yoqilmagan."
 
 #: backend/apps/assets/owner_api.py backend/apps/assets/services.py
 #: backend/apps/attendance/owner_api.py backend/apps/hr/owner_api.py
