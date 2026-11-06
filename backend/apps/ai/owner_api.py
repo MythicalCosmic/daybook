@@ -610,7 +610,7 @@ class AICustomDomainOptionSerializer(serializers.Serializer):
     label = serializers.CharField()
     available = serializers.BooleanField(help_text="Whether the asker may read it.")
     reason = serializers.CharField(
-        allow_blank=True, help_text='"", "switch_off" (Settings → AI) or "no_access".'
+        allow_blank=True, help_text='"", "switch_off" (Settings › AI) or "no_access".'
     )
     feature = serializers.CharField(allow_null=True, help_text="Its module, when it has one.")
 

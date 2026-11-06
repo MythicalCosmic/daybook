@@ -167,7 +167,8 @@ async def test_a_menu_command_never_becomes_an_announcement(dp, bot, company, me
     await dp.feed_update(bot, updates.message(tg, "/announce"))
     await dp.feed_update(bot, updates.message(tg, "/expense"))
 
-    assert "You're a member of" in bot.sent_texts()[-1]  # home, not a preview of "/expense"
+    # /expense answers for itself (claims are off here), never as the announcement's text.
+    assert "Expense claims aren't switched on" in bot.sent_texts()[-1]
     await dp.feed_update(bot, updates.message(tg, "Shop closes at 18:00 today"))
     # The draft is gone: plain text is offered as a task (research R1 Q1), not announced.
     assert "Add this as a task?" in bot.sent_texts()[-1]

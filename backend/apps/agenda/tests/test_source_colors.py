@@ -87,6 +87,25 @@ def owner(company, member):
         ends_on=today + timedelta(days=6),
     )
     hr.activate_contract(contract, by=owner)
+    # Payroll: a pay day inside the week, whatever today is.
+    from apps.payroll import conf as payroll_conf
+
+    pay = payroll_conf.get_settings(company)
+    pay.pay_day = min((today + timedelta(days=2)).day, 28)
+    pay.save()
+    # Assets: a fridge whose service is due in three days.
+    from apps.assets import services as assets
+    from apps.assets.models import AssetCategory
+
+    fridges = AssetCategory.objects.create(company=company, name="Fridges", life_months=84)
+    assets.create_asset(
+        company,
+        by=owner,
+        category=fridges,
+        name="Pozis",
+        cost=8_400_000,
+        next_service_on=today + timedelta(days=3),
+    )
     return owner
 
 

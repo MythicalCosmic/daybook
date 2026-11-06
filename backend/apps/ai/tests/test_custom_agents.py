@@ -357,7 +357,11 @@ def test_its_requests_follow_the_rules(crew, fake_claude, sent_messages):
     assert first["max_tokens"] == custom.MAX_OUTPUT_TOKENS
     assert "fallbacks" not in first and "temperature" not in first
     assert "tool_choice" not in first
-    assert {tool["name"] for tool in first["tools"]} == {"tasks_search", "tasks_get"}
+    assert {tool["name"] for tool in first["tools"]} == {
+        "tasks_search",
+        "tasks_get",
+        "tasks_readings",
+    }
     system = system_text(first)
     assert system.startswith(custom.SYSTEM)
     assert system.index(custom.SYSTEM) < system.index(f"<company_instructions>\n{JOB}\n")
@@ -382,7 +386,11 @@ def test_its_tools_are_the_owners_own(crew, fake_claude, sent_messages):
     run_due(row, at(3, 20))
 
     first, second, third = fake_claude.requests
-    assert {tool["name"] for tool in first["tools"]} == {"tasks_search", "tasks_get"}
+    assert {tool["name"] for tool in first["tools"]} == {
+        "tasks_search",
+        "tasks_get",
+        "tasks_readings",
+    }
     [found] = tool_results(second)
     assert [task["id"] for task in found["rows"]] == [here.pk]
     # A tool outside its own is refused, whatever Claude asks for.
