@@ -215,3 +215,42 @@ def test_merging_a_category_moves_its_bills_budgets_and_claims(fin, boss, member
         Budget.objects.filter(company=fin).values_list("month", "category_id", "amount")
     ) == [(month, delivery.pk, Decimal("3000000.00")), (later, delivery.pk, Decimal("500000.00"))]
     assert not Category.objects.filter(pk=taxi.pk).exists()
+
+
+# F4: a budget is "over" once it is spent, not at 99.5 % -----------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("spent", "share", "status"),
+    [
+        ("2385000", "0.79", "ok"),  # 79.5 %: not yet 80 %
+        ("2400000", "0.80", "warning"),
+        ("2985000", "0.99", "warning"),  # 99.5 %: 15 000 left
+        ("3000000", "1.00", "over"),
+    ],
+)
+def test_budget_thresholds_are_reached_not_rounded_to(
+    fin, boss, kassa, today, spent, share, status
+):
+    """The share was rounded half to even before the 80 % / 100 % comparison: 99.5 % of the
+    rent budget read "over budget" and sent the 100 % alert with 15 000 so'm still left."""
+    rent = Category.objects.get(company=fin, system_code="rent")
+    month = today.replace(day=1)
+    budgets.set_budgets(fin, by=boss, month=month, rows=[(rent, "3000000")])
+    services.record_transaction(
+        fin,
+        by=boss,
+        kind="expense",
+        amount=spent,
+        occurred_on=today,
+        account=kassa,
+        category=rent,
+    )
+
+    view = budgets.month_view(fin, month, branch_ids=None, today=today)
+    [row] = [row for row in view["rows"] if row["category"]["id"] == rent.pk]
+    assert (row["share"], row["status"]) == (share, status)
+    budgets.check(fin, month)
+    budget = Budget.objects.get(company=fin, month=month, category=rent)
+    assert (budget.alerted_100_at is not None) == (status == "over")
+    assert (budget.alerted_80_at is not None) == (status in ("warning", "over"))
