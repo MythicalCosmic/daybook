@@ -215,6 +215,54 @@ def seed(company, people, now) -> None:
         reason="Yangi muzlatgich olindi",
     )
     posting.book_company(company)
+    _permits(company, owner, today, first, second, people)
+
+
+def _permits(company, owner, today, first, second, people) -> None:
+    """The papers a pharmacy keeps valid: licences, the lease (ending soon), approvals (one
+    expired three days ago), the cash register's registration and insurance."""
+    from apps.assets.models import Permit
+
+    rows = (
+        (
+            Permit.Kind.PHARMACY_LICENCE,
+            "Farmatsevtika faoliyati litsenziyasi",
+            first,
+            "L-2024-0412",
+            800,
+        ),
+        (
+            Permit.Kind.PHARMACY_LICENCE,
+            "Farmatsevtika faoliyati litsenziyasi",
+            second,
+            "L-2025-1187",
+            1100,
+        ),
+        (Permit.Kind.LEASE, "Ijara shartnomasi (Yunusobod)", second, "IJ-17", 45),
+        (Permit.Kind.SANITARY, "Sanitariya-epidemiologik xulosa", first, "SE-3391", -3),
+        (Permit.Kind.FIRE_SAFETY, "Yong‘in xavfsizligi xulosasi", first, "YX-882", 210),
+        (
+            Permit.Kind.CASH_REGISTER,
+            "Kassa apparatini ro‘yxatdan o‘tkazish",
+            second,
+            "KA-55-019",
+            330,
+        ),
+        (Permit.Kind.INSURANCE, "Mol-mulk sug‘urtasi", None, "SP-2026-7781", 120),
+    )
+    for kind, name, branch, number, days in rows:
+        services.save_permit(
+            company,
+            by=owner,
+            kind=kind,
+            name=name,
+            branch=branch,
+            number=number,
+            issuer="Sog‘liqni saqlash vazirligi" if kind == Permit.Kind.PHARMACY_LICENCE else "",
+            issued_on=today - timedelta(days=365),
+            valid_until=today + timedelta(days=days),
+            responsible=people["manager"],
+        )
 
 
 def _cash(company, branch):
