@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-07 04:52+0500\n"
+"POT-Creation-Date: 2026-11-07 04:58+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -13071,6 +13071,11 @@ msgstr "Yakuniy hisob-varaq allaqachon bor: %(name)s."
 #: backend/apps/payroll/settlement.py
 msgid "Only a final payslip pays out unused leave."
 msgstr "Ta’til kompensatsiyasi faqat yakuniy hisob-varaqda to‘lanadi."
+
+#: backend/apps/payroll/tasks.py
+#, python-format
+msgid "%(company)s: your final payslip for %(month)s, %(amount)s"
+msgstr "%(company)s: %(month)s uchun yakuniy hisob-varaqingiz, %(amount)s"
 
 #: backend/apps/payroll/templates/payroll/payslip.html
 msgid "Employee"

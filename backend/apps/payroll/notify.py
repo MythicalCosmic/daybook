@@ -434,6 +434,11 @@ def _payslips_published(payslip_ids: list[int]) -> None:
                 "amount": _money(payslip.net, payslip.currency),
             }
 
+        if payslip.membership.status != Membership.Status.APPROVED:
+            # Someone who left has no app and no inbox: their final payslip goes as a PDF.
+            if tasks.receives_pdf(payslip):
+                tasks.send_payslip_pdf.delay(payslip.pk)
+            continue
         created = inbox.notify(
             [payslip.membership],
             "payroll.payslip",
