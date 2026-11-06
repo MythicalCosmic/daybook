@@ -776,27 +776,28 @@ class PurchasesView(ModuleOn, Scope, OwnerAPIView):
 
     @extend_schema(responses=s.PurchaseSerializer(many=True))
     def get(self, request, company_id):
+        from apps.finance import access
+
         rows = queries.purchases(self.company, branch_ids=self.branch_scope)
-        return Response(
-            s.PurchaseSerializer(
-                [
-                    {
-                        "id": txn.pk,
-                        "occurred_on": txn.occurred_on,
-                        "amount": -txn.amount,
-                        "currency": txn.currency,
-                        "base_amount": -txn.base_amount,
-                        "category": txn.category.name if txn.category_id else None,
-                        "counterparty": s.ref(txn.counterparty),
-                        "branch": s.ref(txn.branch),
-                        "account": txn.account.name if txn.account_id else None,
-                        "description": txn.description,
-                    }
-                    for txn in rows
-                ],
-                many=True,
-            ).data
-        )
+        out = []
+        for txn in rows:
+            # Something an employee paid for and was paid back: who, only with payroll.view.
+            masked = access.masks_row(self.membership, txn)
+            out.append(
+                {
+                    "id": txn.pk,
+                    "occurred_on": txn.occurred_on,
+                    "amount": -txn.amount,
+                    "currency": txn.currency,
+                    "base_amount": -txn.base_amount,
+                    "category": txn.category.name if txn.category_id else None,
+                    "counterparty": None if masked else s.ref(txn.counterparty),
+                    "branch": s.ref(txn.branch),
+                    "account": txn.account.name if txn.account_id else None,
+                    "description": "" if masked else txn.description,
+                }
+            )
+        return Response(s.PurchaseSerializer(out, many=True).data)
 
 
 # Counts ------------------------------------------------------------------------------------------

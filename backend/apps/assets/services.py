@@ -413,7 +413,8 @@ def _purchase(company, txn):
         if txn is None:
             raise DomainError(_("That purchase isn't in Finance."))
     _same_company(company, txn)
-    if txn.kind != Transaction.Kind.EXPENSE or txn.is_contra:
+    sensitive = txn.category_id is not None and txn.category.is_sensitive  # salaries
+    if txn.kind != Transaction.Kind.EXPENSE or txn.is_contra or sensitive:
         raise DomainError(_("Pick an expense: the money paid for it."))
     if txn.status not in (Transaction.Status.POSTED, Transaction.Status.PENDING):
         raise DomainError(_("That expense was voided or rejected."))

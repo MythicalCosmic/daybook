@@ -6,7 +6,7 @@ from decimal import Decimal as D
 
 import pytest
 
-from apps.assets import services
+from apps.assets import conf, queries, services
 from apps.assets.models import AssetCategory, DepreciationEntry
 from apps.assets.tests.test_posting import buy, depreciation_rows
 from apps.core.exceptions import DomainError
@@ -316,3 +316,55 @@ def test_an_improvement_paid_from_another_branch_is_refused(
     assert reply.status_code == 400, reply.json()
     theirs.refresh_from_db()
     assert not theirs.capitalized
+
+
+def test_salaries_never_show_as_purchases(
+    shop, owner, keeper, owner_api, cash, equipment, chilonzor, ali
+):
+    """Above the capitalization threshold every expense is offered as a purchase, but a salary
+    (per-person pay, payroll.view only) is never equipment and never shown here, and a fridge
+    an employee paid for is offered without who was paid back (Finance masks it the same)."""
+    settings = conf.get_settings(shop)
+    settings.capitalization_threshold = D(1_000_000)
+    settings.save()
+    salary = finance.record_transaction(
+        shop,
+        by=owner,
+        kind="expense",
+        amount=D(4_000_000),
+        occurred_on=date(2026, 11, 5),
+        account=cash,
+        category="salaries",
+        membership=ali,
+        branch=chilonzor,
+        description="Oylik: Ali",
+    )
+    assert queries.purchases(shop, branch_ids=None) == []
+    reply = owner_api(keeper).get(f"{base(shop)}/purchases/")
+    assert reply.status_code == 200 and reply.json() == []
+    with pytest.raises(DomainError):
+        services.create_asset(
+            shop,
+            by=owner,
+            category=AssetCategory.objects.get(company=shop, system_code="fridges"),
+            name="Muzlatgich",
+            purchase_transaction=salary,
+        )
+    finance.open_debt(
+        shop,
+        by=owner,
+        direction="payable",
+        kind="reimbursement",
+        amount=D(2_500_000),
+        currency=shop.base_currency,
+        issued_on=date(2026, 11, 4),
+        membership=ali,
+        category=equipment,
+        branch=chilonzor,
+        description="Ali o‘z pulidan: muzlatgich",
+    )
+    rows = owner_api(keeper).get(f"{base(shop)}/purchases/").json()
+    assert len(rows) == 1 and rows[0]["base_amount"] == "2500000.00"
+    assert rows[0]["description"] == "" and rows[0]["counterparty"] is None
+    rows = owner_api(owner).get(f"{base(shop)}/purchases/").json()
+    assert rows[0]["description"] == "Ali o‘z pulidan: muzlatgich"

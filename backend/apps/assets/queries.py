@@ -612,11 +612,12 @@ def purchases(company, *, branch_ids: list[int] | None, limit: int = 50) -> list
     looks = Q(category__is_capex=True)
     if settings.capitalization_threshold:
         looks |= Q(base_amount__lte=-settings.capitalization_threshold)
-    rows = rows.filter(looks)
+    # A salary is never equipment, and its per-person detail is payroll.view's.
+    rows = rows.filter(looks).exclude(category__is_sensitive=True)
     if branch_ids is not None:
         rows = rows.filter(branch_id__in=branch_ids)
     return list(
-        rows.select_related("category", "counterparty", "account", "branch").order_by(
+        rows.select_related("category", "counterparty", "account", "branch", "debt").order_by(
             "-occurred_on", "-pk"
         )[:limit]
     )
