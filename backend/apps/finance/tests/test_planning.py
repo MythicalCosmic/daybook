@@ -168,6 +168,9 @@ def test_the_forecast_finds_the_low_point_and_the_day_below_zero(fin, boss, kass
     assert data["basis"] == {
         "daily_in": "1000000.00",
         "daily_out": "400000.00",
+        "daily_collected": "0.00",
+        "daily_paid": "0.00",
+        "suppliers_from": due.isoformat(),
         "days_observed": 56,
     }
     assert len(data["points"]) == 31
@@ -186,6 +189,46 @@ def test_the_forecast_finds_the_low_point_and_the_day_below_zero(fin, boss, kass
             "direction": "out",
         }
     ]
+
+
+def test_usual_supplier_payments_carry_on_after_the_known_payables(fin, boss, kassa, today):
+    """A pharmacy pays its distributors every few days: past the last booked payable, the usual
+    daily payments go on (and a rule with a known amount plans its own category)."""
+    distributor = CounterpartyFactory(
+        company=fin, name="Ko‘kterak Farm Distribyutor", kind="supplier"
+    )
+    first = today - timedelta(days=28)
+    deposit(fin, boss, kassa, "50000000", first)
+    for offset in range(0, 28, 7):  # 4 weekly payments of 2 800 000: 400 000 a day
+        day = first + timedelta(days=offset)
+        debt = payable(fin, boss, distributor, "2800000", day, day)
+        services.pay_debt(debt, by=boss, amount=Decimal("2800000"), paid_on=day, account=kassa)
+    spend(fin, boss, kassa, "2800000", first, category="rent")
+    rent = Category.objects.get(company=fin, system_code="rent")
+    recurring.create_rule(
+        fin,
+        by=boss,
+        name="Ijara",
+        kind="expense",
+        mode="bill",
+        frequency="monthly",
+        day=(today + timedelta(days=40)).day,
+        category=rent,
+        amount="2800000",
+        starts_on=today + timedelta(days=35),
+    )
+    due = today + timedelta(days=5)
+    payable(fin, boss, distributor, "1000000", today, due)
+
+    data = planning.forecast(fin, 30, branch_ids=None, today=today)
+
+    assert data["basis"]["daily_paid"] == "400000.00"
+    assert data["basis"]["daily_out"] == "0.00"  # rent is planned by its rule
+    assert data["basis"]["suppliers_from"] == due.isoformat()
+    points = {point["date"]: point for point in data["points"]}
+    assert points[due.isoformat()]["out"] == "1000000.00"  # the booked payable only
+    after = (due + timedelta(days=1)).isoformat()
+    assert points[after]["out"] == "400000.00"  # then the usual payments
 
 
 def test_the_forecast_never_counts_an_overdue_receivable(fin, boss, kassa, today):

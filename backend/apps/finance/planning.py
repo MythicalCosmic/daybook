@@ -11,8 +11,13 @@ Upcoming payments are:
 The forecast starts from the cash on every account in scope, adds the scheduled items above
 (payables on their due day, an overdue payable today; receivables on their due day, never an
 overdue one: it may not come) and the usual daily takings and spending (the average of the last
-eight weeks of posted income and expenses that move money, without the recurring posts it already
-plans), and finds the lowest point and the first day below zero.
+eight weeks of posted income and expenses that move money, without what the recurring rules with
+a known amount already plan), and finds the lowest point and the first day below zero.
+
+A pharmacy buys on credit: what it pays distributors is debt payments, not expenses, and only the
+payables already booked are known. So the usual daily payments to suppliers (and collections of
+what customers owe) are added too, but only after the last known due date of that side, when the
+booked debts no longer cover the days ahead; nothing is counted twice.
 """
 
 from collections import defaultdict
@@ -197,30 +202,52 @@ def _debt_items(company, today: date, until: date, branch_ids) -> list[Item]:
 
 
 def run_rate(company, today: date, *, branch_ids) -> dict:
-    """The usual takings and spending per day: posted income and expenses on accounts over the
-    last eight weeks, without what recurring rules posted (the forecast plans those)."""
+    """The usual money in and out per day over the last eight weeks: posted income and expenses
+    on accounts (without what recurring rules posted, and without the categories that rules with
+    a known amount plan), and debt payments to suppliers and from customers."""
     start = today - timedelta(days=RUN_RATE_DAYS)
-    rows = (
-        queries.posted_rows(company, branch_ids=branch_ids)
-        .filter(
-            kind__in=(Transaction.Kind.INCOME, Transaction.Kind.EXPENSE),
-            account__isnull=False,
-            occurred_on__gte=start,
-            occurred_on__lt=today,
-        )
-        .exclude(source_type=recurring.SOURCE)
+    window = queries.posted_rows(company, branch_ids=branch_ids).filter(
+        account__isnull=False, occurred_on__gte=start, occurred_on__lt=today
     )
-    first = rows.order_by("occurred_on").values_list("occurred_on", flat=True).first()
+    planned = (
+        recurring.visible_rules(company, branch_ids=branch_ids)
+        .filter(is_active=True, amount__gt=0)
+        .values_list("category_id", flat=True)
+    )
+    rows = (
+        window.filter(kind__in=(Transaction.Kind.INCOME, Transaction.Kind.EXPENSE))
+        .exclude(source_type=recurring.SOURCE)
+        .exclude(category_id__in=list(planned))
+    )
+    payments = window.filter(kind=Transaction.Kind.DEBT_PAYMENT, counterparty__isnull=False)
+    first = (
+        window.filter(kind__in=(Transaction.Kind.INCOME, Transaction.Kind.EXPENSE, "debt_payment"))
+        .order_by("occurred_on")
+        .values_list("occurred_on", flat=True)
+        .first()
+    )
     observed = (today - first).days if first else 0
+    if observed <= 0:
+        return {
+            "daily_in": ZERO,
+            "daily_out": ZERO,
+            "daily_collected": ZERO,
+            "daily_paid": ZERO,
+            "days_observed": 0,
+        }
     sums = rows.aggregate(
         income=Sum("base_amount", filter=Q(base_amount__gt=0)),
         expense=Sum("base_amount", filter=Q(base_amount__lt=0)),
     )
-    if observed <= 0:
-        return {"daily_in": ZERO, "daily_out": ZERO, "days_observed": 0}
+    debts = payments.aggregate(
+        collected=Sum("base_amount", filter=Q(debt__direction=Debt.Direction.RECEIVABLE)),
+        paid=Sum("base_amount", filter=Q(debt__direction=Debt.Direction.PAYABLE)),
+    )
     return {
         "daily_in": quantize((sums["income"] or ZERO) / observed),
         "daily_out": quantize(-(sums["expense"] or ZERO) / observed),
+        "daily_collected": quantize((debts["collected"] or ZERO) / observed),
+        "daily_paid": quantize(-(debts["paid"] or ZERO) / observed),
         "days_observed": observed,
     }
 
@@ -235,7 +262,12 @@ def forecast(company, days: int = 90, *, branch_ids, today: date | None = None) 
     basis = run_rate(company, today, branch_ids=branch_ids)
     flows: dict[date, list[Decimal]] = defaultdict(lambda: [ZERO, ZERO])  # day -> [in, out]
     events = []
+    # The last due day of the debts already booked, per side: after it, the usual payments to
+    # suppliers (and collections from customers) carry on.
+    covered = {"payable": today, "receivable": today}
     for item in items(company, today, until, branch_ids=branch_ids):
+        if item.kind in covered and item.date > covered[item.kind]:
+            covered[item.kind] = item.date
         if item.amount is None:
             continue
         if item.direction == "in" and item.overdue:
@@ -263,6 +295,10 @@ def forecast(company, days: int = 90, *, branch_ids, today: date | None = None) 
         if offset > 0:  # today's takings are already on the accounts
             money_in += basis["daily_in"]
             money_out += basis["daily_out"]
+            if day > covered["receivable"]:
+                money_in += basis["daily_collected"]
+            if day > covered["payable"]:
+                money_out += basis["daily_paid"]
         balance = quantize(balance + money_in - money_out)
         points.append(
             {
@@ -288,6 +324,9 @@ def forecast(company, days: int = 90, *, branch_ids, today: date | None = None) 
         "basis": {
             "daily_in": str(basis["daily_in"]),
             "daily_out": str(basis["daily_out"]),
+            "daily_collected": str(basis["daily_collected"]),
+            "daily_paid": str(basis["daily_paid"]),
+            "suppliers_from": covered["payable"].isoformat(),
             "days_observed": basis["days_observed"],
         },
         "events": events,

@@ -225,3 +225,136 @@ def finance_debts(ctx: ToolContext, args: FinanceDebtsInput) -> ToolResult:
             }
         )
     return ToolResult(rows=rows, total=debts.count(), currency=ctx.company.base_currency)
+
+
+# Package I: what is due, budgets and payables --------------------------------------------------
+
+
+class FinanceUpcomingInput(BaseModel):
+    days: int = Field(30, ge=1, le=120, description="How many days ahead (overdue included).")
+    forecast: bool = Field(False, description="Also the cash forecast's low point.")
+
+
+@ai_tool(
+    "finance_upcoming",
+    domain="finance",
+    perm=Perm.FINANCE_VIEW,
+    label=_("Payments coming up: bills, taxes, distributor payables, money owed to us, pay"),
+    input=FinanceUpcomingInput,
+    feature="finance",
+    switch="share_finance",
+)
+def finance_upcoming(ctx: ToolContext, args: FinanceUpcomingInput) -> ToolResult:
+    today = _today(ctx)
+    data = queries.upcoming(ctx.company, args.days, branch_ids=ctx.branch_ids, today=today)
+    rows = [
+        {
+            "id": item["key"],
+            "kind": item["kind"],
+            "title": item["title"],
+            "date": item["date"],
+            "amount": item["amount"],
+            "currency": item["currency"],
+            "direction": item["direction"],
+            "overdue": item["overdue"],
+            "estimate": item["estimate"],
+        }
+        for item in data["items"][:100]
+    ]
+    summary = {"days": data["days"], "totals": data["totals"]}
+    if args.forecast:
+        outlook = queries.forecast(ctx.company, args.days, branch_ids=ctx.branch_ids, today=today)
+        summary["cash_now"] = outlook["start"]
+        summary["low_point"] = outlook["low"]
+        summary["below_zero_on"] = outlook["below_zero_on"]
+    return ToolResult(
+        rows=rows, data=summary, total=len(data["items"]), currency=ctx.company.base_currency
+    )
+
+
+class FinanceBudgetsInput(BaseModel):
+    month: str | None = Field(
+        None, pattern=r"^\d{4}-(0[1-9]|1[0-2])$", description="YYYY-MM. Default: this month."
+    )
+
+
+@ai_tool(
+    "finance_budgets",
+    domain="finance",
+    perm=Perm.FINANCE_VIEW,
+    label=_("Budgets against actual spending by category for a month"),
+    input=FinanceBudgetsInput,
+    feature="finance",
+    switch="share_finance",
+)
+def finance_budgets(ctx: ToolContext, args: FinanceBudgetsInput) -> ToolResult:
+    from apps.finance import budgets
+
+    today = _today(ctx)
+    month = budgets.parse_month(args.month) if args.month else budgets.month_start(today)
+    view = budgets.month_view(ctx.company, month, branch_ids=ctx.branch_ids, today=today)
+    rows = [
+        {
+            "id": row["category"]["id"],
+            "category": row["category"]["name"],
+            "parent": row["category"]["parent_name"],
+            "budget": row["budget"],
+            "actual": row["actual"],
+            "share": row["share"],
+            "status": row["status"],
+        }
+        for row in view["rows"]
+        if row["budget"] is not None or row["actual"] != "0.00"
+    ]
+    return ToolResult(
+        rows=rows,
+        data={"month": view["month"], "days_left": view["days_left"], "totals": view["totals"]},
+        currency=ctx.company.base_currency,
+    )
+
+
+class FinancePayablesInput(BaseModel):
+    overdue_only: bool = False
+
+
+@ai_tool(
+    "finance_payables",
+    domain="finance",
+    perm=Perm.FINANCE_VIEW,
+    label=_("What we owe distributors and other suppliers, by party and due date"),
+    input=FinancePayablesInput,
+    feature="finance",
+    switch="share_finance",
+)
+def finance_payables(ctx: ToolContext, args: FinancePayablesInput) -> ToolResult:
+    from apps.finance import payables
+
+    today = _today(ctx)
+    debts = list(payables.open_payables(ctx.company, branch_ids=ctx.branch_ids)[:500])
+    grouped = payables.grouped(debts, today)
+    rows = []
+    for group in grouped["groups"]:
+        parts = [(debt, part) for debt, part in group["debts"]]
+        if args.overdue_only:
+            parts = [(debt, part) for debt, part in parts if part == "overdue"]
+            if not parts:
+                continue
+        rows.append(
+            {
+                "id": group["counterparty"]["id"],
+                "party": group["counterparty"]["name"],
+                "total": str(group["total"]),
+                "overdue": str(group["overdue"]),
+                "debts": [
+                    {
+                        "id": debt.pk,
+                        "outstanding": str(debt.amount - debt.paid),
+                        "currency": debt.currency,
+                        "due_on": debt.due_on.isoformat() if debt.due_on else None,
+                        "bucket": part,
+                    }
+                    for debt, part in parts[:20]
+                ],
+            }
+        )
+    return ToolResult(rows=rows, data=grouped["totals"], currency=ctx.company.base_currency)

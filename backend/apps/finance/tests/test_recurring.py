@@ -412,6 +412,31 @@ def test_an_overdue_debt_reminds_its_responsible_person_weekly(fin, boss, member
     assert debt.last_reminded_on == today + timedelta(days=7)
 
 
+def test_several_overdue_debts_make_one_digest(fin, boss, member, today):
+    jasur = member(fin, "Employee", first_name="Jasur")
+    for name in ("Shifo klinikasi", "Barakat", "Nur dorixonasi"):
+        recurring.services.open_debt(
+            fin,
+            by=boss,
+            direction="receivable",
+            kind="trade",
+            amount="1000000",
+            currency="UZS",
+            issued_on=today - timedelta(days=30),
+            due_on=today - timedelta(days=2),
+            counterparty=CounterpartyFactory(company=fin, name=name),
+            category="sales",
+            responsible=jasur,
+        )
+
+    assert reminders.remind_debts(fin, today) == 1
+
+    [note] = Notification.objects.filter(kind="finance.debt_due")
+    assert note.title == "3 debts you look after are due or overdue"
+    assert note.body.count("\n") == 2 and "Barakat" in note.body
+    assert reminders.remind_debts(fin, today + timedelta(days=1)) == 0
+
+
 # The API ------------------------------------------------------------------------------------------
 
 
