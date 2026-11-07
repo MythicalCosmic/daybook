@@ -181,9 +181,16 @@ export interface DocumentInput {
   number: string;
   issued_on: string | null;
   expires_on: string | null;
+  /** A diploma's level (higher, college) or a qualification category (highest, first, second). */
+  level?: DocumentLevel | "";
+  specialty?: string;
+  issuer?: string;
   visible_to_employee: boolean;
   file?: File | null;
 }
+
+export const DOCUMENT_LEVELS = ["higher", "college", "highest", "first", "second"] as const;
+export type DocumentLevel = (typeof DOCUMENT_LEVELS)[number];
 
 /** A required document: who must have which kind (position null = everyone). */
 export interface RequiredDocument {
@@ -406,4 +413,115 @@ export interface HrSettings {
   probation_warn_days: number;
   celebrations_enabled: boolean;
   celebrate_anniversaries: boolean;
+  /** Pharmacist coverage (plan §14.9); the positions are chosen through `coverage/pharmacists/`. */
+  coverage_enabled?: boolean;
+  coverage_min?: number;
+  coverage_needs_documents?: boolean;
+  coverage_alert_minutes?: number;
+  coverage_days?: number;
+  unqualified_seller_alert?: boolean;
+  /** Read only: who counts as a pharmacist on duty. */
+  pharmacist_positions?: Named[];
+}
+
+// ─── Pharmacist coverage (plan §14.9) ─────────────────────────────────────
+
+/** ok, or why nothing was checked: off (HR or the rule), setup (no pharmacists chosen), no_roster (attendance off). */
+export type CoverageState = "ok" | "off" | "setup" | "no_roster";
+/** Why someone in a pharmacist position doesn't count that day. */
+export type CoverageReason = "not_approved" | "not_pharmacist" | "missing" | "expired" | "unverified";
+export type PharmacistRole = "head" | "senior" | "pharmacist" | "custom";
+
+/** Part of a pharmacy's open hours with fewer qualified pharmacists planned than it needs. */
+export interface CoverageGap {
+  branch_id: number;
+  /** ISO instants in the company's timezone. */
+  start: string;
+  end: string;
+  minutes: number;
+  have: number;
+  need: number;
+}
+
+/** A shift of someone in a pharmacist position, and whether it counts. */
+export interface CoverageShift {
+  shift_id: number;
+  member: PersonRef;
+  position: string | null;
+  start: string;
+  end: string;
+  published: boolean;
+  counts: boolean;
+  /** Why not; null for viewers without hr.view. */
+  reason: CoverageReason | null;
+  kinds: DocumentKind[];
+}
+
+export interface CoverageDay {
+  date: string;
+  opens: string | null;
+  closes: string | null;
+  /** Why it is closed that day. */
+  closed: "weekday" | "holiday" | "no_hours" | null;
+  shifts: CoverageShift[];
+  gaps: CoverageGap[];
+}
+
+export interface CoverageBranch {
+  branch: BranchRef;
+  open_24h: boolean;
+  opens_at: string | null;
+  closes_at: string | null;
+  days: CoverageDay[];
+  /** The period's gaps, a night across midnight as one. */
+  gaps: CoverageGap[];
+  /** Shifts of anyone planned there in the period. */
+  shifts: number;
+  gap_minutes: number;
+}
+
+/** `GET coverage/?from&to&branch&drafts`. */
+export interface Coverage {
+  state: CoverageState;
+  start: string;
+  end: string;
+  need: number;
+  drafts: boolean;
+  branches: CoverageBranch[];
+}
+
+export interface CoverageParams {
+  from: string;
+  to: string;
+  branch?: number[];
+  drafts?: boolean;
+}
+
+export interface LiveGap {
+  branch: BranchRef;
+  since: string;
+  minutes: number;
+  have: number;
+  need: number;
+  /** Checked in, but not counting. */
+  checked_in: PersonRef[];
+}
+
+/** `GET coverage/live/`: pharmacies open now without enough qualified pharmacists checked in. */
+export interface LiveCoverage {
+  state: CoverageState;
+  at: string;
+  gaps: LiveGap[];
+}
+
+export interface PharmacistPosition {
+  position: Named;
+  /** null: not a pharmacist; custom: counts, with documents changed by hand. */
+  role: PharmacistRole | null;
+  people: number;
+  required: Array<{ kind: DocumentKind; level: string; alternatives: DocumentKind[] }>;
+}
+
+export interface Pharmacists {
+  positions: PharmacistPosition[];
 }

@@ -26,8 +26,9 @@ import { toast } from "@/components/useToast";
 import { useCompanyStore } from "@/stores/company";
 
 import { hrApi, useHrMutation } from "../api";
+import { hasQualificationFields, levelsFor } from "../coverage";
 import { hrAccess, kindGroup, needsSensitive } from "../lib";
-import { DOCUMENT_KINDS, type DocumentKind, type HrDocument } from "../types";
+import { DOCUMENT_KINDS, type DocumentKind, type DocumentLevel, type HrDocument } from "../types";
 
 const open = defineModel<boolean>("open", { default: false });
 const props = withDefaults(defineProps<{ member?: { id: number; name: string } | null; kind?: DocumentKind | null; document?: HrDocument | null }>(), {
@@ -48,6 +49,9 @@ const form = reactive({
   number: "",
   issued_on: null as string | null,
   expires_on: null as string | null,
+  level: "" as DocumentLevel | "",
+  specialty: "",
+  issuer: "",
   visible_to_employee: true,
   files: [] as File[],
 });
@@ -70,11 +74,28 @@ watch(
       number: d && !/[•*]/.test(d.number) ? d.number : "",
       issued_on: d?.issued_on ?? null,
       expires_on: d?.expires_on ?? null,
+      level: (d?.level as DocumentLevel | "" | undefined) ?? "",
+      specialty: d?.specialty ?? "",
+      issuer: d?.issuer ?? "",
       visible_to_employee: d?.visible_to_employee ?? !(props.kind && needsSensitive(props.kind)),
       files: [],
     });
   },
   { immediate: true },
+);
+
+/** A diploma's level or a qualification category: only the kinds that have one. */
+const levels = computed(() => levelsFor(form.kind));
+const levelOptions = computed<SelectOption<DocumentLevel | "">[]>(() => [
+  { value: "", label: t("hr.level.none") },
+  ...levels.value.map((value) => ({ value, label: t(`hr.level.${value}`) })),
+]);
+const qualification = computed(() => hasQualificationFields(form.kind));
+watch(
+  () => form.kind,
+  () => {
+    if (form.level && !levels.value.includes(form.level)) form.level = "";
+  },
 );
 
 const kindOptions = computed<SelectOption<DocumentKind>[]>(() =>
@@ -103,6 +124,8 @@ async function submit(): Promise<void> {
     number: form.number.trim(),
     issued_on: form.issued_on,
     expires_on: form.expires_on,
+    ...(levels.value.length ? { level: form.level } : {}),
+    ...(qualification.value ? { specialty: form.specialty.trim(), issuer: form.issuer.trim() } : {}),
     visible_to_employee: form.visible_to_employee,
     file: form.files[0] ?? null,
   };
@@ -116,7 +139,7 @@ async function submit(): Promise<void> {
   } catch (failure) {
     if (isApiError(failure)) {
       for (const [field, messages] of Object.entries(failure.fieldErrors)) errors[field === "member_id" ? "member" : field] = messages[0];
-      const unshown = unshownFieldError(failure, ["member_id", "kind", "title", "number", "issued_on", "expires_on", "file"]);
+      const unshown = unshownFieldError(failure, ["member_id", "kind", "title", "number", "issued_on", "expires_on", "level", "specialty", "issuer", "file"]);
       if (unshown) toast.error(unshown);
     }
   }
@@ -158,6 +181,19 @@ async function submit(): Promise<void> {
           <IconButton v-if="hiddenNumber" :icon="showNumber ? EyeOff : Eye" :label="showNumber ? t('hr.document.hideNumber') : t('hr.document.showNumber')" variant="secondary" @click="showNumber = !showNumber" />
         </div>
       </FormField>
+
+      <FormField v-if="levels.length" :label="form.kind === 'qualification_category' ? t('hr.field.category') : t('hr.field.level')" :hint="t('hr.document.levelHint')" :error="errors.level" optional>
+        <SelectBox v-model="form.level" :options="levelOptions" data-level />
+      </FormField>
+
+      <div v-if="qualification" class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <FormField :label="t('hr.field.specialty')" :error="errors.specialty" optional>
+          <TextInput v-model="form.specialty" :maxlength="80" :placeholder="t('hr.document.specialtyPlaceholder')" />
+        </FormField>
+        <FormField :label="t('hr.field.issuer')" :error="errors.issuer" optional>
+          <TextInput v-model="form.issuer" :maxlength="150" />
+        </FormField>
+      </div>
 
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <FormField :label="t('hr.field.issuedOn')" :error="errors.issued_on" optional>

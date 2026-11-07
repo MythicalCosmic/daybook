@@ -3,8 +3,9 @@
  * The compliance matrix (plan §6.2 HR): people × the document kinds their position requires, each
  * cell in force / expiring / expired / missing / not checked yet, grouped by position. By default
  * only people who lack something are listed ("who lacks what"). A cell opens the document, or, when
- * it is missing, the upload prefilled with the person and the kind. Phones get one card per person
- * with the gaps as chips.
+ * it is missing, the upload prefilled with the person and the kind; under it, the diploma level or
+ * the qualification category the position asks for. Phones get one card per person with the gaps
+ * as chips.
  */
 import { CircleCheck, CircleDashed, CircleX, Clock4, ListChecks, ShieldQuestion } from "@lucide/vue";
 import { computed, ref } from "vue";
@@ -41,6 +42,11 @@ const noRules = computed(() => !!query.data.value && !query.data.value.kinds.len
 const icons: Record<ComplianceStatus, typeof CircleCheck> = { ok: CircleCheck, expiring: Clock4, expired: CircleX, missing: CircleDashed, unverified: ShieldQuestion };
 const colors: Record<ComplianceStatus, string> = { ok: "text-success", expiring: "text-warning", expired: "text-danger", missing: "text-danger", unverified: "text-info" };
 const LEGEND: readonly ComplianceStatus[] = ["ok", "expiring", "expired", "missing", "unverified"];
+
+/** The kind as the position asks for it: "Pharmacy diploma (higher)". */
+function asked(kind: DocumentKind, level: string | undefined): string {
+  return level ? `${t(`hr.kind.${kind}`)} (${t(`hr.level.${level}`)})` : t(`hr.kind.${kind}`);
+}
 
 function openCell(member: { id: number; name: string }, kind: DocumentKind, status: ComplianceStatus | null, documentId?: number | null): void {
   if (status === null) return;
@@ -120,12 +126,13 @@ function openCell(member: { id: number; name: string }, kind: DocumentKind, stat
                         colors[row.byKind[kind]!],
                         !row.documents[kind] && !canManage && 'cursor-default hover:bg-transparent',
                       ]"
-                      :aria-label="`${t(`hr.kind.${kind}`)}: ${t(`hr.compliance.status.${row.byKind[kind]}`)}`"
-                      :title="t(`hr.compliance.status.${row.byKind[kind]}`)"
+                      :aria-label="`${asked(kind, row.levels[kind])}: ${t(`hr.compliance.status.${row.byKind[kind]}`)}`"
+                      :title="`${asked(kind, row.levels[kind])}: ${t(`hr.compliance.status.${row.byKind[kind]}`)}`"
                       @click="openCell(row.member, kind, row.byKind[kind], row.documents[kind])"
                     >
                       <component :is="icons[row.byKind[kind]!]" :size="18" />
                     </button>
+                    <span v-if="row.levels[kind]" class="block text-[10px] leading-tight text-subtle" data-asked-level>{{ t(`hr.level.${row.levels[kind]}`) }}</span>
                   </td>
                 </tr>
               </template>
@@ -159,11 +166,11 @@ function openCell(member: { id: number; name: string }, kind: DocumentKind, stat
                 <button
                   type="button"
                   class="pressable inline-flex min-h-10 max-w-full items-center gap-1.5 rounded-full border border-line bg-surface px-3 text-sm text-fg hover:bg-highlight"
-                  :aria-label="`${t(`hr.kind.${gap.kind}`)}: ${t(`hr.compliance.status.${gap.status}`)}`"
+                  :aria-label="`${asked(gap.kind, row.levels[gap.kind])}: ${t(`hr.compliance.status.${gap.status}`)}`"
                   @click="openCell(row.member, gap.kind, gap.status, gap.document_id)"
                 >
                   <component :is="icons[gap.status]" :size="16" :class="['shrink-0', colors[gap.status]]" aria-hidden="true" />
-                  <span class="truncate">{{ t(`hr.kind.${gap.kind}`) }}</span>
+                  <span class="truncate">{{ asked(gap.kind, row.levels[gap.kind]) }}</span>
                 </button>
               </li>
             </ul>
