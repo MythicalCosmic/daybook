@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-07 06:42+0500\n"
+"POT-Creation-Date: 2026-11-07 15:50+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -294,11 +294,12 @@ msgstr "Faqat taklif qilinganlar"
 msgid "Doesn't repeat"
 msgstr "Takrorlanmaydi"
 
-#: backend/apps/agenda/models.py backend/apps/tasks/models.py
+#: backend/apps/agenda/models.py backend/apps/learning/models.py
+#: backend/apps/tasks/models.py
 msgid "Every week"
 msgstr "Har hafta"
 
-#: backend/apps/agenda/models.py
+#: backend/apps/agenda/models.py backend/apps/learning/models.py
 msgid "Every month"
 msgstr "Har oy"
 
@@ -673,7 +674,7 @@ msgstr "Ko‘pi bilan %(max)d ta belgi."
 msgid "Write what it should do, in a sentence or more."
 msgstr "U nima qilishi kerakligini kamida bir gap bilan yozing."
 
-#: backend/apps/ai/agents/custom.py
+#: backend/apps/ai/agents/custom.py backend/apps/knowledge/topics.py
 msgid "Pick one of the colours."
 msgstr "Ranglardan birini tanlang."
 
@@ -1733,7 +1734,7 @@ msgstr "Mini ilova"
 msgid "Dashboard"
 msgstr "Boshqaruv paneli"
 
-#: backend/apps/ai/models.py
+#: backend/apps/ai/models.py backend/apps/learning/models.py
 msgid "Queued"
 msgstr "Navbatda"
 
@@ -1746,11 +1747,12 @@ msgid "Understanding"
 msgstr "Tushunilmoqda"
 
 #: backend/apps/ai/models.py backend/apps/exports/models.py
+#: backend/apps/learning/models.py
 msgid "Ready"
 msgstr "Tayyor"
 
 #: backend/apps/ai/models.py backend/apps/exports/models.py
-#: backend/apps/sales/models.py
+#: backend/apps/learning/models.py backend/apps/sales/models.py
 msgid "Failed"
 msgstr "Xatolik"
 
@@ -1769,7 +1771,7 @@ msgstr "Bekor qilingan"
 msgid "Expired"
 msgstr "Muddati o‘tgan"
 
-#: backend/apps/ai/models.py
+#: backend/apps/ai/models.py backend/apps/learning/models.py
 msgid "Rules"
 msgstr "Qoidalar"
 
@@ -1781,14 +1783,14 @@ msgstr "Demo"
 msgid "The model that answered."
 msgstr "Javob bergan model."
 
-#: backend/apps/ai/models.py
+#: backend/apps/ai/models.py backend/apps/learning/models.py
 msgid "Running"
 msgstr "Ishlamoqda"
 
-#: backend/apps/ai/models.py backend/apps/projects/conf.py
-#: backend/apps/projects/models.py backend/apps/reminders/bot_messages.py
-#: backend/apps/sales/models.py backend/apps/tasks/bot_messages.py
-#: backend/apps/tasks/services.py
+#: backend/apps/ai/models.py backend/apps/learning/models.py
+#: backend/apps/projects/conf.py backend/apps/projects/models.py
+#: backend/apps/reminders/bot_messages.py backend/apps/sales/models.py
+#: backend/apps/tasks/bot_messages.py backend/apps/tasks/services.py
 msgid "Done"
 msgstr "Bajarildi"
 
@@ -1888,9 +1890,9 @@ msgstr "Kimning huquqlari bilan o‘qiydi; «menga» deganda kim."
 #: backend/apps/ai/models.py backend/apps/announcements/models.py
 #: backend/apps/attendance/models.py backend/apps/attendance/services.py
 #: backend/apps/finance/models.py backend/apps/inventory/models.py
-#: backend/apps/projects/models.py backend/apps/sales/services.py
-#: backend/apps/tasks/models.py backend/apps/timeoff/models.py
-#: backend/apps/timeoff/services.py
+#: backend/apps/learning/models.py backend/apps/projects/models.py
+#: backend/apps/sales/services.py backend/apps/tasks/models.py
+#: backend/apps/timeoff/models.py backend/apps/timeoff/services.py
 msgid "Cancelled"
 msgstr "Bekor qilindi"
 
@@ -2138,7 +2140,7 @@ msgstr "E’lon: %(title)s · %(total)d kishidan %(read)d tasi o‘qidi"
 
 #: backend/apps/announcements/models.py backend/apps/hr/models.py
 #: backend/apps/inventory/models.py backend/apps/knowledge/providers.py
-#: backend/apps/sales/models.py
+#: backend/apps/learning/models.py backend/apps/sales/models.py
 msgid "Draft"
 msgstr "Qoralama"
 
@@ -2743,8 +2745,8 @@ msgstr "Shu oydan keyingi qoldiq qiymati."
 msgid "Before the asset was entered here: never booked in Finance."
 msgstr "Vosita shu yerga kiritilishidan oldin: Moliyaga yozilmaydi."
 
-#: backend/apps/assets/models.py backend/apps/projects/conf.py
-#: backend/apps/tasks/models.py
+#: backend/apps/assets/models.py backend/apps/learning/models.py
+#: backend/apps/projects/conf.py backend/apps/tasks/models.py
 msgid "In progress"
 msgstr "Jarayonda"
 
@@ -4205,8 +4207,9 @@ msgstr "Rejalashtirilgan"
 
 #: backend/apps/attendance/models.py backend/apps/finance/models.py
 #: backend/apps/inbox/bot_messages.py backend/apps/inventory/models.py
-#: backend/apps/projects/models.py backend/apps/reminders/bot_messages.py
-#: backend/apps/sales/models.py backend/apps/tasks/bot_messages.py
+#: backend/apps/learning/models.py backend/apps/projects/models.py
+#: backend/apps/reminders/bot_messages.py backend/apps/sales/models.py
+#: backend/apps/tasks/bot_messages.py
 msgid "Open"
 msgstr "Ochish"
 
@@ -4930,6 +4933,7 @@ msgid "These shifts have changed since the request."
 msgstr "So‘rovdan keyin bu smenalar o‘zgargan."
 
 #: backend/apps/attendance/services.py backend/apps/inventory/models.py
+#: backend/apps/learning/models.py
 msgid "Accepted"
 msgstr "Qabul qilindi"
 
@@ -4938,7 +4942,7 @@ msgstr "Qabul qilindi"
 msgid "Declined by %(name)s"
 msgstr "%(name)s rad etdi"
 
-#: backend/apps/attendance/services.py
+#: backend/apps/attendance/services.py backend/apps/learning/models.py
 msgid "Declined"
 msgstr "Rad etildi"
 
@@ -5261,6 +5265,10 @@ msgstr "Rag‘batlantirish"
 #: backend/apps/companies/models.py
 msgid "Assets and equipment"
 msgstr "Asosiy vositalar va jihozlar"
+
+#: backend/apps/companies/models.py
+msgid "Training and quizzes"
+msgstr "O‘qitish va testlar"
 
 #: backend/apps/companies/models.py backend/apps/inventory/providers.py
 #: backend/apps/inventory/templates/inventory/controlled_register.html
@@ -9764,7 +9772,7 @@ msgstr "Retseptlar jurnali"
 msgid "Controlled-substance register"
 msgstr "Nazoratdagi moddalar jurnali"
 
-#: backend/apps/inventory/hooks.py
+#: backend/apps/inventory/hooks.py backend/apps/knowledge/topics.py
 msgid "Goods receipt"
 msgstr "Kirim (nakladnoy)"
 
@@ -11678,6 +11686,18 @@ msgstr "Xodimlarga sahifani o‘qishni eslatdi"
 msgid "Changed the knowledge base settings"
 msgstr "Bilimlar bazasi sozlamalarini o‘zgartirdi"
 
+#: backend/apps/knowledge/audit_actions.py
+msgid "Added a topic"
+msgstr "Mavzu qo‘shdi"
+
+#: backend/apps/knowledge/audit_actions.py
+msgid "Changed a topic"
+msgstr "Mavzuni o‘zgartirdi"
+
+#: backend/apps/knowledge/audit_actions.py
+msgid "Archived a topic"
+msgstr "Mavzuni arxivladi"
+
 #: backend/apps/knowledge/bot_messages.py
 #, python-format
 msgid "Page updated, please read it again: %(title)s"
@@ -11776,6 +11796,10 @@ msgstr ""
 "Kompaniyadagi hamma o‘qiydi. Aks holda faqat `positions` dagi lavozimlar."
 
 #: backend/apps/knowledge/models.py
+msgid "A palette key the apps map to a colour."
+msgstr "Ilovalar rangga aylantiradigan palitra kaliti."
+
+#: backend/apps/knowledge/models.py
 msgid "Sanitized HTML from the dashboard editor."
 msgstr "Boshqaruv paneli muharriridan olingan, tozalangan HTML."
 
@@ -11805,6 +11829,23 @@ msgstr ""
 #: backend/apps/knowledge/models.py
 msgid "What changed."
 msgstr "Nima o‘zgargani."
+
+#: backend/apps/knowledge/models.py
+msgid "A new visit starts when the last report is over 30 minutes old."
+msgstr ""
+"Oxirgi xabardan beri 30 daqiqadan ko‘p vaqt o‘tsa, yangi tashrif boshlanadi."
+
+#: backend/apps/knowledge/models.py
+msgid "Time with the page open in front of them, in seconds."
+msgstr "Sahifa ochiq va ko‘z oldida turgan vaqt, soniyalarda."
+
+#: backend/apps/knowledge/models.py
+msgid "The newest version they opened."
+msgstr "Ochgan eng yangi versiyasi."
+
+#: backend/apps/knowledge/models.py
+msgid "How far down the page they got, in percent (the most seen)."
+msgstr "Sahifaning qaysi joyigacha tushgani, foizda (eng ko‘pi)."
 
 #: backend/apps/knowledge/models.py backend/apps/tasks/hooks.py
 msgid "Routine"
@@ -11976,6 +12017,487 @@ msgstr "Bunday vazifa yoki muntazam vazifa yo‘q."
 #: backend/apps/knowledge/services.py
 msgid "Pick a page of this company."
 msgstr "Shu kompaniyadagi sahifani tanlang."
+
+#: backend/apps/knowledge/topics.py
+msgid "Cold chain"
+msgstr "Sovuq zanjir"
+
+#: backend/apps/knowledge/topics.py
+msgid "Prescription medicines"
+msgstr "Retseptli dorilar"
+
+#: backend/apps/knowledge/topics.py
+msgid "Controlled substances"
+msgstr "Nazoratdagi moddalar"
+
+#: backend/apps/knowledge/topics.py
+msgid "Storage and expiry dates"
+msgstr "Saqlash va yaroqlilik muddatlari"
+
+#: backend/apps/knowledge/topics.py
+msgid "Prices and the till"
+msgstr "Narxlar va kassa"
+
+#: backend/apps/knowledge/topics.py
+msgid "Analogues and advice"
+msgstr "Analoglar va maslahat"
+
+#: backend/apps/knowledge/topics.py
+msgid "Customer service"
+msgstr "Xaridorlarga xizmat"
+
+#: backend/apps/knowledge/topics.py
+msgid "Hygiene and sanitary rules"
+msgstr "Gigiyena va sanitariya qoidalari"
+
+#: backend/apps/knowledge/topics.py
+msgid "Only people who manage the knowledge base or training can do this."
+msgstr ""
+"Buni faqat bilimlar bazasi yoki o‘qitishni boshqaradiganlar qila oladi."
+
+#: backend/apps/knowledge/topics.py
+msgid "Give the topic a name."
+msgstr "Mavzuga nom bering."
+
+#: backend/apps/knowledge/topics.py
+#, python-format
+msgid "Keep the name under %(n)d characters."
+msgstr "Nom %(n)d belgidan oshmasin."
+
+#: backend/apps/knowledge/topics.py
+msgid "Pick topics of this company."
+msgstr "Shu kompaniyaning mavzularini tanlang."
+
+#: backend/apps/knowledge/topics.py
+msgid "There is already a topic with this name."
+msgstr "Bu nomli mavzu allaqachon bor."
+
+#: backend/apps/learning/audit_actions.py
+msgid "Changed the training settings"
+msgstr "O‘qitish sozlamalarini o‘zgartirdi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Uploaded a video"
+msgstr "Video yukladi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Deleted a video"
+msgstr "Videoni o‘chirdi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Added a lesson"
+msgstr "Dars qo‘shdi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Changed a lesson"
+msgstr "Darsni o‘zgartirdi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Published a lesson"
+msgstr "Darsni e’lon qildi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Archived a lesson"
+msgstr "Darsni arxivladi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Added a course"
+msgstr "Kurs qo‘shdi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Changed a course"
+msgstr "Kursni o‘zgartirdi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Published a course"
+msgstr "Kursni e’lon qildi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Archived a course"
+msgstr "Kursni arxivladi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Assigned a course"
+msgstr "Kurs biriktirdi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Excused someone from a course"
+msgstr "Xodimni kursdan ozod qildi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Took a course back"
+msgstr "Biriktirilgan kursni bekor qildi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Moved a training deadline"
+msgstr "O‘qish muddatini o‘zgartirdi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Added a question"
+msgstr "Savol qo‘shdi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Changed a question"
+msgstr "Savolni o‘zgartirdi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Archived a question"
+msgstr "Savolni arxivladi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Had questions written from a text"
+msgstr "Matndan savollar tuzdirdi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Added a quiz"
+msgstr "Test qo‘shdi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Changed a quiz"
+msgstr "Testni o‘zgartirdi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Published a quiz"
+msgstr "Testni e’lon qildi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Archived a quiz"
+msgstr "Testni arxivladi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Let someone take a quiz again"
+msgstr "Xodimga testni qayta topshirishga ruxsat berdi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Saved a regular check"
+msgstr "Muntazam tekshiruvni saqladi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Archived a regular check"
+msgstr "Muntazam tekshiruvni arxivladi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Accepted a tutor's suggestion"
+msgstr "Ustoz taklifini qabul qildi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Dismissed a tutor's suggestion"
+msgstr "Ustoz taklifini rad etdi"
+
+#: backend/apps/learning/models.py
+msgid "Published"
+msgstr "E’lon qilingan"
+
+#: backend/apps/learning/models.py
+msgid "Archived"
+msgstr "Arxivda"
+
+#: backend/apps/learning/models.py
+msgid "A video counts as watched once this share of it was played."
+msgstr "Videoning shuncha qismi ko‘rilsa, u ko‘rilgan hisoblanadi."
+
+#: backend/apps/learning/models.py
+msgid "Watching faster than this (percent of normal speed) doesn't count more."
+msgstr ""
+"Bundan tezroq ko‘rish (oddiy tezlikning foizida) ko‘proq hisoblanmaydi."
+
+#: backend/apps/learning/models.py
+msgid "Remind people this many days before a deadline (0: never)."
+msgstr "Muddatdan shuncha kun oldin eslatish (0: hech qachon)."
+
+#: backend/apps/learning/models.py
+msgid "Tell the person's manager after this many days late (0: never)."
+msgstr ""
+"Shuncha kun kechiksa, xodimning rahbariga xabar berish (0: hech qachon)."
+
+#: backend/apps/learning/models.py
+msgid "Give a certificate when someone finishes a course."
+msgstr "Kursni tugatganlarga sertifikat berish."
+
+#: backend/apps/learning/models.py
+msgid "People can open optional courses meant for them on their own."
+msgstr ""
+"Xodimlar o‘zlari uchun mo‘ljallangan ixtiyoriy kurslarni o‘zlari ochishi "
+"mumkin."
+
+#: backend/apps/learning/models.py
+msgid "Send everyone one question on each workday."
+msgstr "Har ish kuni hammaga bitta savol yuborish."
+
+#: backend/apps/learning/models.py
+msgid ""
+"Only people in these positions get the daily question (empty: everyone)."
+msgstr "Kun savolini faqat shu lavozimdagilar oladi (bo‘sh bo‘lsa: hamma)."
+
+#: backend/apps/learning/models.py
+msgid "How much video the company may keep, in megabytes."
+msgstr "Kompaniya saqlashi mumkin bo‘lgan video hajmi, megabaytda."
+
+#: backend/apps/learning/models.py
+msgid "Uploading"
+msgstr "Yuklanmoqda"
+
+#: backend/apps/learning/models.py
+msgid "Processing"
+msgstr "Tayyorlanmoqda"
+
+#: backend/apps/learning/models.py
+msgid "Couldn't be processed"
+msgstr "Tayyorlab bo‘lmadi"
+
+#: backend/apps/learning/models.py
+msgid "Size of the MP4 kept."
+msgstr "Saqlangan MP4 hajmi."
+
+#: backend/apps/learning/models.py
+msgid "Uploaded video"
+msgstr "Yuklangan video"
+
+#: backend/apps/learning/models.py
+msgid "YouTube"
+msgstr "YouTube"
+
+#: backend/apps/learning/models.py
+msgid "Sanitized HTML (knowledge.sanitize)."
+msgstr "Tozalangan HTML (knowledge.sanitize)."
+
+#: backend/apps/learning/models.py
+msgid "Plain text of the notes, for search."
+msgstr "Izohlar matni formatlashsiz, qidiruv uchun."
+
+#: backend/apps/learning/models.py
+msgid "From the video, or the first player report for YouTube."
+msgstr "Videodan yoki YouTube uchun pleyerning birinchi xabaridan."
+
+#: backend/apps/learning/models.py
+msgid "What is said, typed or transcribed."
+msgstr "Videoda aytilganlar: qo‘lda yozilgan yoki ovozdan o‘girilgan."
+
+#: backend/apps/learning/models.py
+msgid "One right answer"
+msgstr "Bitta to‘g‘ri javob"
+
+#: backend/apps/learning/models.py
+msgid "Several right answers"
+msgstr "Bir nechta to‘g‘ri javob"
+
+#: backend/apps/learning/models.py
+msgid "True or false"
+msgstr "To‘g‘ri yoki noto‘g‘ri"
+
+#: backend/apps/learning/models.py
+msgid "Put in order"
+msgstr "Tartib bilan joylash"
+
+#: backend/apps/learning/models.py
+msgid "Match pairs"
+msgstr "Juftlarni moslash"
+
+#: backend/apps/learning/models.py
+msgid "Type the answer"
+msgstr "Javobni yozish"
+
+#: backend/apps/learning/models.py
+msgid "Number"
+msgstr "Son"
+
+#: backend/apps/learning/models.py
+msgid "Easy"
+msgstr "Oson"
+
+#: backend/apps/learning/models.py
+msgid "Medium"
+msgstr "O‘rtacha"
+
+#: backend/apps/learning/models.py
+msgid "Hard"
+msgstr "Qiyin"
+
+#: backend/apps/learning/models.py backend/apps/members/models.py
+#: backend/apps/projects/models.py
+msgid "Active"
+msgstr "Faol"
+
+#: backend/apps/learning/models.py
+msgid "Written by hand"
+msgstr "Qo‘lda yozilgan"
+
+#: backend/apps/learning/models.py
+msgid "Written by AI"
+msgstr "AI yozgan"
+
+#: backend/apps/learning/models.py
+msgid "Made from the text"
+msgstr "Matndan tuzilgan"
+
+#: backend/apps/learning/models.py
+msgid "Copied"
+msgstr "Nusxa olingan"
+
+#: backend/apps/learning/models.py
+msgid "Shown once the person has answered."
+msgstr "Xodim javob bergandan keyin ko‘rsatiladi."
+
+#: backend/apps/learning/models.py
+msgid "The same questions every time"
+msgstr "Har safar bir xil savollar"
+
+#: backend/apps/learning/models.py
+msgid "Questions drawn at random"
+msgstr "Savollar tasodifiy tanlanadi"
+
+#: backend/apps/learning/models.py
+msgid "After each attempt"
+msgstr "Har urinishdan keyin"
+
+#: backend/apps/learning/models.py
+msgid "Only once passed"
+msgstr "Faqat o‘tgandan keyin"
+
+#: backend/apps/learning/models.py
+msgid "Never"
+msgstr "Hech qachon"
+
+#: backend/apps/learning/models.py
+msgid "Empty: every branch."
+msgstr "Bo‘sh bo‘lsa: barcha filiallar."
+
+#: backend/apps/learning/models.py
+msgid "Days to finish once assigned (empty: no deadline)."
+msgstr ""
+"Biriktirilgandan keyin tugatish uchun kunlar (bo‘sh bo‘lsa: muddatsiz)."
+
+#: backend/apps/learning/models.py
+msgid "Assigned again this many months after finishing."
+msgstr "Tugatilgandan shuncha oy o‘tib qayta biriktiriladi."
+
+#: backend/apps/learning/models.py
+msgid "Steps open one after another."
+msgstr "Qadamlar birin-ketin ochiladi."
+
+#: backend/apps/learning/models.py
+msgid "Lesson"
+msgstr "Dars"
+
+#: backend/apps/learning/models.py
+msgid "Page"
+msgstr "Sahifa"
+
+#: backend/apps/learning/models.py
+msgid "Quiz"
+msgstr "Test"
+
+#: backend/apps/learning/models.py
+msgid "Not started"
+msgstr "Boshlanmagan"
+
+#: backend/apps/learning/models.py backend/apps/projects/models.py
+msgid "Completed"
+msgstr "Yakunlangan"
+
+#: backend/apps/learning/models.py
+msgid "Exempt"
+msgstr "Ozod qilingan"
+
+#: backend/apps/learning/models.py
+msgid "Mandatory for their position"
+msgstr "Lavozimi uchun majburiy"
+
+#: backend/apps/learning/models.py
+msgid "Assigned by a manager"
+msgstr "Rahbar biriktirgan"
+
+#: backend/apps/learning/models.py
+msgid "Suggested by the tutor"
+msgstr "Ustoz taklif qilgan"
+
+#: backend/apps/learning/models.py
+msgid "Started on their own"
+msgstr "O‘zi boshlagan"
+
+#: backend/apps/learning/models.py
+msgid "Renewal"
+msgstr "Qayta o‘qish"
+
+#: backend/apps/learning/models.py
+msgid "When the renewal is due (courses that renew)."
+msgstr "Qayta o‘qish muddati (qayta o‘tiladigan kurslar uchun)."
+
+#: backend/apps/learning/models.py
+msgid "Where to resume, in seconds."
+msgstr "Qayerdan davom ettirish, soniyalarda."
+
+#: backend/apps/learning/models.py
+msgid "Paused"
+msgstr "To‘xtatilgan"
+
+#: backend/apps/learning/models.py
+msgid "0 is Monday (weekly checks)."
+msgstr "0 — dushanba (haftalik tekshiruvlar uchun)."
+
+#: backend/apps/learning/models.py
+msgid "1–28 (monthly checks)."
+msgstr "1–28 (oylik tekshiruvlar uchun)."
+
+#: backend/apps/learning/models.py
+msgid "Graded"
+msgstr "Baholangan"
+
+#: backend/apps/learning/models.py
+msgid "Time ran out"
+msgstr "Vaqt tugadi"
+
+#: backend/apps/learning/models.py
+msgid "Abandoned"
+msgstr "Tashlab ketilgan"
+
+#: backend/apps/learning/models.py
+msgid "Option ids in the order shown."
+msgstr "Variantlar identifikatorlari ko‘rsatilgan tartibda."
+
+#: backend/apps/learning/models.py backend/apps/recognition/models.py
+msgid "Regular check"
+msgstr "Muntazam tekshiruv"
+
+#: backend/apps/learning/models.py backend/apps/recognition/models.py
+msgid "Question of the day"
+msgstr "Kun savoli"
+
+#: backend/apps/learning/models.py
+msgid "Claude"
+msgstr "Claude"
+
+#: backend/apps/learning/models.py
+msgid "Assign a course"
+msgstr "Kurs biriktirish"
+
+#: backend/apps/learning/models.py
+msgid "Practise a topic"
+msgstr "Mavzu bo‘yicha mashq qilish"
+
+#: backend/apps/learning/models.py
+msgid "A lesson is missing"
+msgstr "Dars yetishmayapti"
+
+#: backend/apps/learning/models.py
+msgid "Could coach others"
+msgstr "Boshqalarga o‘rgata oladi"
+
+#: backend/apps/learning/models.py
+msgid "Say thanks"
+msgstr "Rahmat aytish"
+
+#: backend/apps/learning/models.py
+msgid "Late with mandatory training"
+msgstr "Majburiy o‘qishni kechiktirgan"
+
+#: backend/apps/learning/models.py
+msgid "Resolved"
+msgstr "Hal bo‘ldi"
+
+#: backend/apps/learning/services.py
+msgid "Only people who manage training can do this."
+msgstr "Buni faqat o‘qitishni boshqaradiganlar qila oladi."
 
 #: backend/apps/lifecycle/ai_tools.py
 msgid ""
@@ -12859,10 +13381,6 @@ msgstr ""
 "Shu bo‘lim va undan quyidagi bo‘limlardagi barchaga vazifa beradi va ishini "
 "tekshiradi."
 
-#: backend/apps/members/models.py backend/apps/projects/models.py
-msgid "Active"
-msgstr "Faol"
-
 #: backend/apps/members/models.py
 msgid "Full"
 msgstr "To‘lgan"
@@ -13177,6 +13695,25 @@ msgstr "Ish samaradorligini baholash va maqsadlar belgilash"
 #: backend/apps/members/permissions.py
 msgid "Write and publish knowledge base pages"
 msgstr "Bilimlar bazasi sahifalarini yozish va e’lon qilish"
+
+#: backend/apps/members/permissions.py
+msgid "See the training, quiz results and skills of the people they see"
+msgstr ""
+"Ko‘radigan xodimlarining o‘qishi, test natijalari va ko‘nikmalarini ko‘rish"
+
+#: backend/apps/members/permissions.py
+msgid ""
+"Make lessons, courses, quizzes and checks; assign training (includes seeing "
+"results)"
+msgstr ""
+"Darslar, kurslar, testlar va tekshiruvlar tuzish; o‘qitishni biriktirish "
+"(natijalarni ko‘rish ham kiradi)"
+
+#: backend/apps/members/permissions.py
+msgid "Hide kudos, correct points and change the recognition settings"
+msgstr ""
+"Rahmatlarni yashirish, ballarni tuzatish va rag‘batlantirish sozlamalarini "
+"o‘zgartirish"
 
 #: backend/apps/members/permissions.py
 msgid "Add company events to the calendar"
@@ -15635,10 +16172,6 @@ msgstr "Rejalashtirilmoqda"
 msgid "On hold"
 msgstr "To‘xtatib turilgan"
 
-#: backend/apps/projects/models.py
-msgid "Completed"
-msgstr "Yakunlangan"
-
 #: backend/apps/projects/models.py backend/apps/tasks/models.py
 msgid "Low"
 msgstr "Past"
@@ -16037,6 +16570,94 @@ msgstr "1 kundan 90 kungacha."
 #: backend/apps/projects/services.py
 msgid "Between 1 and 100 percent."
 msgstr "1 foizdan 100 foizgacha."
+
+#: backend/apps/recognition/models.py
+msgid "The whole company"
+msgstr "Butun kompaniya"
+
+#: backend/apps/recognition/models.py
+msgid "Their branch"
+msgstr "O‘z filiali"
+
+#: backend/apps/recognition/models.py
+msgid "Staff see the leaderboard: the top ten and their own place."
+msgstr "Xodimlar reytingni ko‘radi: birinchi o‘ntalik va o‘z o‘rnini."
+
+#: backend/apps/recognition/models.py
+msgid "Tasks done on time earn points too."
+msgstr "O‘z vaqtida bajarilgan vazifalar ham ball beradi."
+
+#: backend/apps/recognition/models.py
+msgid "Points per reason, where they differ from the defaults."
+msgstr "Har bir sabab uchun ballar, standartdan farq qilsa."
+
+#: backend/apps/recognition/models.py
+msgid "Lesson watched"
+msgstr "Dars ko‘rildi"
+
+#: backend/apps/recognition/models.py
+msgid "Page read"
+msgstr "Sahifa o‘qildi"
+
+#: backend/apps/recognition/models.py
+msgid "Quiz passed"
+msgstr "Test topshirildi"
+
+#: backend/apps/recognition/models.py
+msgid "Perfect score"
+msgstr "A’lo natija"
+
+#: backend/apps/recognition/models.py
+msgid "Course finished"
+msgstr "Kurs tugatildi"
+
+#: backend/apps/recognition/models.py
+msgid "Streak"
+msgstr "Ketma-ket kunlar"
+
+#: backend/apps/recognition/models.py
+msgid "Badge"
+msgstr "Nishon"
+
+#: backend/apps/recognition/models.py
+msgid "Kudos received"
+msgstr "Rahmat olindi"
+
+#: backend/apps/recognition/models.py
+msgid "Task done on time"
+msgstr "Vazifa o‘z vaqtida bajarildi"
+
+#: backend/apps/recognition/models.py
+msgid "Correction"
+msgstr "Tuzatish"
+
+#: backend/apps/recognition/models.py
+msgid "When the person saw the celebration in the app."
+msgstr "Xodim ilovada tabrikni ko‘rgan vaqt."
+
+#: backend/apps/recognition/models.py
+msgid "Thank you"
+msgstr "Rahmat"
+
+#: backend/apps/recognition/models.py
+msgid "Great teamwork"
+msgstr "Ajoyib jamoaviy ish"
+
+#: backend/apps/recognition/models.py
+msgid "Quick help"
+msgstr "Tezkor yordam"
+
+#: backend/apps/recognition/models.py
+msgid "Careful work"
+msgstr "Puxta ish"
+
+#: backend/apps/recognition/models.py
+msgid "Helped a customer"
+msgstr "Xaridorga yordam berdi"
+
+#: backend/apps/recognition/models.py
+msgid "Star of the day"
+msgstr "Kun yulduzi"
 
 #: backend/apps/reminders/api.py backend/apps/reminders/services.py
 msgid "The company's default policy can't be deleted."

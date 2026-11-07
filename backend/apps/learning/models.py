@@ -550,7 +550,7 @@ class Attempt(TenantModel):
 
     class State(models.TextChoices):
         IN_PROGRESS = "in_progress", _("In progress")
-        FINISHED = "finished", _("Finished")
+        FINISHED = "finished", _("Graded")
         EXPIRED = "expired", _("Time ran out")
         ABANDONED = "abandoned", _("Abandoned")
 
@@ -732,7 +732,7 @@ class TutorSuggestion(TenantModel):
     class State(models.TextChoices):
         OPEN = "open", _("Open")
         ACCEPTED = "accepted", _("Accepted")
-        DISMISSED = "dismissed", _("Dismissed")
+        DISMISSED = "dismissed", _("Declined")
         DONE = "done", _("Resolved")
 
     membership = models.ForeignKey(

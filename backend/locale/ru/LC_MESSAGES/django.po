@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-07 06:42+0500\n"
+"POT-Creation-Date: 2026-11-07 15:50+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -295,11 +295,12 @@ msgstr "Только приглашённые"
 msgid "Doesn't repeat"
 msgstr "Не повторяется"
 
-#: backend/apps/agenda/models.py backend/apps/tasks/models.py
+#: backend/apps/agenda/models.py backend/apps/learning/models.py
+#: backend/apps/tasks/models.py
 msgid "Every week"
 msgstr "Каждую неделю"
 
-#: backend/apps/agenda/models.py
+#: backend/apps/agenda/models.py backend/apps/learning/models.py
 msgid "Every month"
 msgstr "Каждый месяц"
 
@@ -676,7 +677,7 @@ msgstr "Не больше %(max)d символов."
 msgid "Write what it should do, in a sentence or more."
 msgstr "Опишите, что он должен делать, хотя бы одним предложением."
 
-#: backend/apps/ai/agents/custom.py
+#: backend/apps/ai/agents/custom.py backend/apps/knowledge/topics.py
 msgid "Pick one of the colours."
 msgstr "Выберите один из цветов."
 
@@ -1769,7 +1770,7 @@ msgstr "Мини-приложение"
 msgid "Dashboard"
 msgstr "Панель управления"
 
-#: backend/apps/ai/models.py
+#: backend/apps/ai/models.py backend/apps/learning/models.py
 msgid "Queued"
 msgstr "В очереди"
 
@@ -1782,11 +1783,12 @@ msgid "Understanding"
 msgstr "Разбираем"
 
 #: backend/apps/ai/models.py backend/apps/exports/models.py
+#: backend/apps/learning/models.py
 msgid "Ready"
 msgstr "Готово"
 
 #: backend/apps/ai/models.py backend/apps/exports/models.py
-#: backend/apps/sales/models.py
+#: backend/apps/learning/models.py backend/apps/sales/models.py
 msgid "Failed"
 msgstr "Ошибка"
 
@@ -1805,7 +1807,7 @@ msgstr "Отброшено"
 msgid "Expired"
 msgstr "Срок истёк"
 
-#: backend/apps/ai/models.py
+#: backend/apps/ai/models.py backend/apps/learning/models.py
 msgid "Rules"
 msgstr "Правила"
 
@@ -1817,14 +1819,14 @@ msgstr "Демо"
 msgid "The model that answered."
 msgstr "Модель, которая ответила."
 
-#: backend/apps/ai/models.py
+#: backend/apps/ai/models.py backend/apps/learning/models.py
 msgid "Running"
 msgstr "Выполняется"
 
-#: backend/apps/ai/models.py backend/apps/projects/conf.py
-#: backend/apps/projects/models.py backend/apps/reminders/bot_messages.py
-#: backend/apps/sales/models.py backend/apps/tasks/bot_messages.py
-#: backend/apps/tasks/services.py
+#: backend/apps/ai/models.py backend/apps/learning/models.py
+#: backend/apps/projects/conf.py backend/apps/projects/models.py
+#: backend/apps/reminders/bot_messages.py backend/apps/sales/models.py
+#: backend/apps/tasks/bot_messages.py backend/apps/tasks/services.py
 msgid "Done"
 msgstr "Готово"
 
@@ -1924,9 +1926,9 @@ msgstr "С чьими правами он читает; кто такой «мн
 #: backend/apps/ai/models.py backend/apps/announcements/models.py
 #: backend/apps/attendance/models.py backend/apps/attendance/services.py
 #: backend/apps/finance/models.py backend/apps/inventory/models.py
-#: backend/apps/projects/models.py backend/apps/sales/services.py
-#: backend/apps/tasks/models.py backend/apps/timeoff/models.py
-#: backend/apps/timeoff/services.py
+#: backend/apps/learning/models.py backend/apps/projects/models.py
+#: backend/apps/sales/services.py backend/apps/tasks/models.py
+#: backend/apps/timeoff/models.py backend/apps/timeoff/services.py
 msgid "Cancelled"
 msgstr "Отменена"
 
@@ -2174,7 +2176,7 @@ msgstr "Объявление: %(title)s · прочитали %(read)d из %(to
 
 #: backend/apps/announcements/models.py backend/apps/hr/models.py
 #: backend/apps/inventory/models.py backend/apps/knowledge/providers.py
-#: backend/apps/sales/models.py
+#: backend/apps/learning/models.py backend/apps/sales/models.py
 msgid "Draft"
 msgstr "Черновик"
 
@@ -2780,8 +2782,8 @@ msgstr "Остаточная стоимость после этого месяц
 msgid "Before the asset was entered here: never booked in Finance."
 msgstr "До внесения средства сюда: в Финансы не записывается."
 
-#: backend/apps/assets/models.py backend/apps/projects/conf.py
-#: backend/apps/tasks/models.py
+#: backend/apps/assets/models.py backend/apps/learning/models.py
+#: backend/apps/projects/conf.py backend/apps/tasks/models.py
 msgid "In progress"
 msgstr "В работе"
 
@@ -4221,8 +4223,9 @@ msgstr "Запланирована"
 
 #: backend/apps/attendance/models.py backend/apps/finance/models.py
 #: backend/apps/inbox/bot_messages.py backend/apps/inventory/models.py
-#: backend/apps/projects/models.py backend/apps/reminders/bot_messages.py
-#: backend/apps/sales/models.py backend/apps/tasks/bot_messages.py
+#: backend/apps/learning/models.py backend/apps/projects/models.py
+#: backend/apps/reminders/bot_messages.py backend/apps/sales/models.py
+#: backend/apps/tasks/bot_messages.py
 msgid "Open"
 msgstr "Открыть"
 
@@ -4933,6 +4936,7 @@ msgid "These shifts have changed since the request."
 msgstr "С момента заявки эти смены изменились."
 
 #: backend/apps/attendance/services.py backend/apps/inventory/models.py
+#: backend/apps/learning/models.py
 msgid "Accepted"
 msgstr "Принято"
 
@@ -4941,7 +4945,7 @@ msgstr "Принято"
 msgid "Declined by %(name)s"
 msgstr "Отклонено: %(name)s"
 
-#: backend/apps/attendance/services.py
+#: backend/apps/attendance/services.py backend/apps/learning/models.py
 msgid "Declined"
 msgstr "Отклонено"
 
@@ -5263,6 +5267,10 @@ msgstr "Поощрения"
 #: backend/apps/companies/models.py
 msgid "Assets and equipment"
 msgstr "Основные средства и оборудование"
+
+#: backend/apps/companies/models.py
+msgid "Training and quizzes"
+msgstr "Обучение и тесты"
 
 #: backend/apps/companies/models.py backend/apps/inventory/providers.py
 #: backend/apps/inventory/templates/inventory/controlled_register.html
@@ -9729,7 +9737,7 @@ msgstr "Журнал регистрации рецептов"
 msgid "Controlled-substance register"
 msgstr "Журнал предметно-количественного учёта"
 
-#: backend/apps/inventory/hooks.py
+#: backend/apps/inventory/hooks.py backend/apps/knowledge/topics.py
 msgid "Goods receipt"
 msgstr "Приход (накладная)"
 
@@ -11647,6 +11655,18 @@ msgstr "Отправлено напоминание прочитать стат�
 msgid "Changed the knowledge base settings"
 msgstr "Изменены настройки базы знаний"
 
+#: backend/apps/knowledge/audit_actions.py
+msgid "Added a topic"
+msgstr "Добавил тему"
+
+#: backend/apps/knowledge/audit_actions.py
+msgid "Changed a topic"
+msgstr "Изменил тему"
+
+#: backend/apps/knowledge/audit_actions.py
+msgid "Archived a topic"
+msgstr "Отправил тему в архив"
+
 #: backend/apps/knowledge/bot_messages.py
 #, python-format
 msgid "Page updated, please read it again: %(title)s"
@@ -11744,6 +11764,10 @@ msgid "Everyone in the company reads it. Otherwise only `positions`."
 msgstr "Читают все в компании. Иначе только должности из `positions`."
 
 #: backend/apps/knowledge/models.py
+msgid "A palette key the apps map to a colour."
+msgstr "Ключ палитры, который приложения превращают в цвет."
+
+#: backend/apps/knowledge/models.py
 msgid "Sanitized HTML from the dashboard editor."
 msgstr "Очищенный HTML из редактора панели управления."
 
@@ -11772,6 +11796,23 @@ msgstr ""
 #: backend/apps/knowledge/models.py
 msgid "What changed."
 msgstr "Что изменилось."
+
+#: backend/apps/knowledge/models.py
+msgid "A new visit starts when the last report is over 30 minutes old."
+msgstr ""
+"Новый визит начинается, если с последнего отчёта прошло больше 30 минут."
+
+#: backend/apps/knowledge/models.py
+msgid "Time with the page open in front of them, in seconds."
+msgstr "Сколько времени страница была открыта перед сотрудником, в секундах."
+
+#: backend/apps/knowledge/models.py
+msgid "The newest version they opened."
+msgstr "Самая новая открытая версия."
+
+#: backend/apps/knowledge/models.py
+msgid "How far down the page they got, in percent (the most seen)."
+msgstr "Как далеко вниз дочитали страницу, в процентах (наибольшее значение)."
 
 #: backend/apps/knowledge/models.py backend/apps/tasks/hooks.py
 msgid "Routine"
@@ -11944,6 +11985,486 @@ msgstr "Такой задачи или регулярной задачи нет.
 #: backend/apps/knowledge/services.py
 msgid "Pick a page of this company."
 msgstr "Выберите страницу этой компании."
+
+#: backend/apps/knowledge/topics.py
+msgid "Cold chain"
+msgstr "Холодовая цепь"
+
+#: backend/apps/knowledge/topics.py
+msgid "Prescription medicines"
+msgstr "Рецептурные препараты"
+
+#: backend/apps/knowledge/topics.py
+msgid "Controlled substances"
+msgstr "Контролируемые вещества"
+
+#: backend/apps/knowledge/topics.py
+msgid "Storage and expiry dates"
+msgstr "Хранение и сроки годности"
+
+#: backend/apps/knowledge/topics.py
+msgid "Prices and the till"
+msgstr "Цены и касса"
+
+#: backend/apps/knowledge/topics.py
+msgid "Analogues and advice"
+msgstr "Аналоги и консультации"
+
+#: backend/apps/knowledge/topics.py
+msgid "Customer service"
+msgstr "Обслуживание покупателей"
+
+#: backend/apps/knowledge/topics.py
+msgid "Hygiene and sanitary rules"
+msgstr "Гигиена и санитарные правила"
+
+#: backend/apps/knowledge/topics.py
+msgid "Only people who manage the knowledge base or training can do this."
+msgstr "Это могут делать только те, кто ведёт базу знаний или обучение."
+
+#: backend/apps/knowledge/topics.py
+msgid "Give the topic a name."
+msgstr "Дайте теме название."
+
+#: backend/apps/knowledge/topics.py
+#, python-format
+msgid "Keep the name under %(n)d characters."
+msgstr "Название должно быть короче %(n)d символов."
+
+#: backend/apps/knowledge/topics.py
+msgid "Pick topics of this company."
+msgstr "Выберите темы этой компании."
+
+#: backend/apps/knowledge/topics.py
+msgid "There is already a topic with this name."
+msgstr "Тема с таким названием уже есть."
+
+#: backend/apps/learning/audit_actions.py
+msgid "Changed the training settings"
+msgstr "Изменил настройки обучения"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Uploaded a video"
+msgstr "Загрузил видео"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Deleted a video"
+msgstr "Удалил видео"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Added a lesson"
+msgstr "Добавил урок"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Changed a lesson"
+msgstr "Изменил урок"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Published a lesson"
+msgstr "Опубликовал урок"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Archived a lesson"
+msgstr "Отправил урок в архив"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Added a course"
+msgstr "Добавил курс"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Changed a course"
+msgstr "Изменил курс"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Published a course"
+msgstr "Опубликовал курс"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Archived a course"
+msgstr "Отправил курс в архив"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Assigned a course"
+msgstr "Назначил курс"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Excused someone from a course"
+msgstr "Освободил сотрудника от курса"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Took a course back"
+msgstr "Отменил назначение курса"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Moved a training deadline"
+msgstr "Перенёс срок обучения"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Added a question"
+msgstr "Добавил вопрос"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Changed a question"
+msgstr "Изменил вопрос"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Archived a question"
+msgstr "Отправил вопрос в архив"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Had questions written from a text"
+msgstr "Составил вопросы по тексту"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Added a quiz"
+msgstr "Добавил тест"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Changed a quiz"
+msgstr "Изменил тест"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Published a quiz"
+msgstr "Опубликовал тест"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Archived a quiz"
+msgstr "Отправил тест в архив"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Let someone take a quiz again"
+msgstr "Разрешил сотруднику пройти тест заново"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Saved a regular check"
+msgstr "Сохранил регулярную проверку"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Archived a regular check"
+msgstr "Отправил регулярную проверку в архив"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Accepted a tutor's suggestion"
+msgstr "Принял предложение наставника"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Dismissed a tutor's suggestion"
+msgstr "Отклонил предложение наставника"
+
+#: backend/apps/learning/models.py
+msgid "Published"
+msgstr "Опубликовано"
+
+#: backend/apps/learning/models.py
+msgid "Archived"
+msgstr "В архиве"
+
+#: backend/apps/learning/models.py
+msgid "A video counts as watched once this share of it was played."
+msgstr "Видео считается просмотренным, когда проиграна такая его часть."
+
+#: backend/apps/learning/models.py
+msgid "Watching faster than this (percent of normal speed) doesn't count more."
+msgstr ""
+"Просмотр быстрее этой скорости (в процентах от обычной) не засчитывается "
+"больше."
+
+#: backend/apps/learning/models.py
+msgid "Remind people this many days before a deadline (0: never)."
+msgstr "Напоминать за столько дней до срока (0 — никогда)."
+
+#: backend/apps/learning/models.py
+msgid "Tell the person's manager after this many days late (0: never)."
+msgstr ""
+"Сообщать руководителю сотрудника после стольких дней просрочки (0 — никогда)."
+
+#: backend/apps/learning/models.py
+msgid "Give a certificate when someone finishes a course."
+msgstr "Выдавать сертификат по окончании курса."
+
+#: backend/apps/learning/models.py
+msgid "People can open optional courses meant for them on their own."
+msgstr ""
+"Сотрудники могут сами открывать необязательные курсы, предназначенные для "
+"них."
+
+#: backend/apps/learning/models.py
+msgid "Send everyone one question on each workday."
+msgstr "Каждый рабочий день отправлять всем один вопрос."
+
+#: backend/apps/learning/models.py
+msgid ""
+"Only people in these positions get the daily question (empty: everyone)."
+msgstr "Вопрос дня получают только сотрудники этих должностей (пусто — все)."
+
+#: backend/apps/learning/models.py
+msgid "How much video the company may keep, in megabytes."
+msgstr "Сколько видео может хранить компания, в мегабайтах."
+
+#: backend/apps/learning/models.py
+msgid "Uploading"
+msgstr "Загружается"
+
+#: backend/apps/learning/models.py
+msgid "Processing"
+msgstr "Обрабатывается"
+
+#: backend/apps/learning/models.py
+msgid "Couldn't be processed"
+msgstr "Не удалось обработать"
+
+#: backend/apps/learning/models.py
+msgid "Size of the MP4 kept."
+msgstr "Размер сохранённого MP4."
+
+#: backend/apps/learning/models.py
+msgid "Uploaded video"
+msgstr "Загруженное видео"
+
+#: backend/apps/learning/models.py
+msgid "YouTube"
+msgstr "YouTube"
+
+#: backend/apps/learning/models.py
+msgid "Sanitized HTML (knowledge.sanitize)."
+msgstr "Очищенный HTML (knowledge.sanitize)."
+
+#: backend/apps/learning/models.py
+msgid "Plain text of the notes, for search."
+msgstr "Текст заметок без оформления, для поиска."
+
+#: backend/apps/learning/models.py
+msgid "From the video, or the first player report for YouTube."
+msgstr "Из видео или из первого отчёта плеера для YouTube."
+
+#: backend/apps/learning/models.py
+msgid "What is said, typed or transcribed."
+msgstr "Что говорится в видео: набрано вручную или распознано."
+
+#: backend/apps/learning/models.py
+msgid "One right answer"
+msgstr "Один правильный ответ"
+
+#: backend/apps/learning/models.py
+msgid "Several right answers"
+msgstr "Несколько правильных ответов"
+
+#: backend/apps/learning/models.py
+msgid "True or false"
+msgstr "Верно или неверно"
+
+#: backend/apps/learning/models.py
+msgid "Put in order"
+msgstr "Расставить по порядку"
+
+#: backend/apps/learning/models.py
+msgid "Match pairs"
+msgstr "Сопоставить пары"
+
+#: backend/apps/learning/models.py
+msgid "Type the answer"
+msgstr "Ввести ответ"
+
+#: backend/apps/learning/models.py
+msgid "Number"
+msgstr "Число"
+
+#: backend/apps/learning/models.py
+msgid "Easy"
+msgstr "Лёгкий"
+
+#: backend/apps/learning/models.py
+msgid "Medium"
+msgstr "Средний"
+
+#: backend/apps/learning/models.py
+msgid "Hard"
+msgstr "Сложный"
+
+#: backend/apps/learning/models.py backend/apps/members/models.py
+#: backend/apps/projects/models.py
+msgid "Active"
+msgstr "Активен"
+
+#: backend/apps/learning/models.py
+msgid "Written by hand"
+msgstr "Написан вручную"
+
+#: backend/apps/learning/models.py
+msgid "Written by AI"
+msgstr "Написан ИИ"
+
+#: backend/apps/learning/models.py
+msgid "Made from the text"
+msgstr "Составлен по тексту"
+
+#: backend/apps/learning/models.py
+msgid "Copied"
+msgstr "Скопирован"
+
+#: backend/apps/learning/models.py
+msgid "Shown once the person has answered."
+msgstr "Показывается после ответа."
+
+#: backend/apps/learning/models.py
+msgid "The same questions every time"
+msgstr "Каждый раз одни и те же вопросы"
+
+#: backend/apps/learning/models.py
+msgid "Questions drawn at random"
+msgstr "Вопросы выбираются случайно"
+
+#: backend/apps/learning/models.py
+msgid "After each attempt"
+msgstr "После каждой попытки"
+
+#: backend/apps/learning/models.py
+msgid "Only once passed"
+msgstr "Только после успешной сдачи"
+
+#: backend/apps/learning/models.py
+msgid "Never"
+msgstr "Никогда"
+
+#: backend/apps/learning/models.py
+msgid "Empty: every branch."
+msgstr "Пусто — все филиалы."
+
+#: backend/apps/learning/models.py
+msgid "Days to finish once assigned (empty: no deadline)."
+msgstr "Сколько дней на прохождение после назначения (пусто — без срока)."
+
+#: backend/apps/learning/models.py
+msgid "Assigned again this many months after finishing."
+msgstr "Назначается повторно через столько месяцев после прохождения."
+
+#: backend/apps/learning/models.py
+msgid "Steps open one after another."
+msgstr "Шаги открываются по очереди."
+
+#: backend/apps/learning/models.py
+msgid "Lesson"
+msgstr "Урок"
+
+#: backend/apps/learning/models.py
+msgid "Page"
+msgstr "Страница"
+
+#: backend/apps/learning/models.py
+msgid "Quiz"
+msgstr "Тест"
+
+#: backend/apps/learning/models.py
+msgid "Not started"
+msgstr "Не начат"
+
+#: backend/apps/learning/models.py backend/apps/projects/models.py
+msgid "Completed"
+msgstr "Завершён"
+
+#: backend/apps/learning/models.py
+msgid "Exempt"
+msgstr "Освобождён"
+
+#: backend/apps/learning/models.py
+msgid "Mandatory for their position"
+msgstr "Обязателен для должности"
+
+#: backend/apps/learning/models.py
+msgid "Assigned by a manager"
+msgstr "Назначен руководителем"
+
+#: backend/apps/learning/models.py
+msgid "Suggested by the tutor"
+msgstr "Предложен наставником"
+
+#: backend/apps/learning/models.py
+msgid "Started on their own"
+msgstr "Начат самостоятельно"
+
+#: backend/apps/learning/models.py
+msgid "Renewal"
+msgstr "Повторное прохождение"
+
+#: backend/apps/learning/models.py
+msgid "When the renewal is due (courses that renew)."
+msgstr "Когда нужно пройти повторно (для курсов с повторением)."
+
+#: backend/apps/learning/models.py
+msgid "Where to resume, in seconds."
+msgstr "С какого места продолжить, в секундах."
+
+#: backend/apps/learning/models.py
+msgid "Paused"
+msgstr "Приостановлена"
+
+#: backend/apps/learning/models.py
+msgid "0 is Monday (weekly checks)."
+msgstr "0 — понедельник (для еженедельных проверок)."
+
+#: backend/apps/learning/models.py
+msgid "1–28 (monthly checks)."
+msgstr "1–28 (для ежемесячных проверок)."
+
+#: backend/apps/learning/models.py
+msgid "Graded"
+msgstr "Проверена"
+
+#: backend/apps/learning/models.py
+msgid "Time ran out"
+msgstr "Время вышло"
+
+#: backend/apps/learning/models.py
+msgid "Abandoned"
+msgstr "Брошена"
+
+#: backend/apps/learning/models.py
+msgid "Option ids in the order shown."
+msgstr "Идентификаторы вариантов в порядке показа."
+
+#: backend/apps/learning/models.py backend/apps/recognition/models.py
+msgid "Regular check"
+msgstr "Регулярная проверка"
+
+#: backend/apps/learning/models.py backend/apps/recognition/models.py
+msgid "Question of the day"
+msgstr "Вопрос дня"
+
+#: backend/apps/learning/models.py
+msgid "Claude"
+msgstr "Claude"
+
+#: backend/apps/learning/models.py
+msgid "Assign a course"
+msgstr "Назначить курс"
+
+#: backend/apps/learning/models.py
+msgid "Practise a topic"
+msgstr "Потренировать тему"
+
+#: backend/apps/learning/models.py
+msgid "A lesson is missing"
+msgstr "Не хватает урока"
+
+#: backend/apps/learning/models.py
+msgid "Could coach others"
+msgstr "Может обучать других"
+
+#: backend/apps/learning/models.py
+msgid "Say thanks"
+msgstr "Сказать спасибо"
+
+#: backend/apps/learning/models.py
+msgid "Late with mandatory training"
+msgstr "Просрочено обязательное обучение"
+
+#: backend/apps/learning/models.py
+msgid "Resolved"
+msgstr "Решено"
+
+#: backend/apps/learning/services.py
+msgid "Only people who manage training can do this."
+msgstr "Это могут делать только те, кто ведёт обучение."
 
 #: backend/apps/lifecycle/ai_tools.py
 msgid ""
@@ -12813,10 +13334,6 @@ msgstr "Должен быть одним из филиалов, где рабо�
 msgid "Gives and checks the work of everyone in this department and below it."
 msgstr "Даёт задания и проверяет работу всех в этом отделе и ниже."
 
-#: backend/apps/members/models.py backend/apps/projects/models.py
-msgid "Active"
-msgstr "Активен"
-
 #: backend/apps/members/models.py
 msgid "Full"
 msgstr "Мест нет"
@@ -13128,6 +13645,24 @@ msgstr "Проведение оценки эффективности и пост
 #: backend/apps/members/permissions.py
 msgid "Write and publish knowledge base pages"
 msgstr "Создание и публикация статей базы знаний"
+
+#: backend/apps/members/permissions.py
+msgid "See the training, quiz results and skills of the people they see"
+msgstr ""
+"Видеть обучение, результаты тестов и навыки сотрудников, которых они видят"
+
+#: backend/apps/members/permissions.py
+msgid ""
+"Make lessons, courses, quizzes and checks; assign training (includes seeing "
+"results)"
+msgstr ""
+"Создание уроков, курсов, тестов и проверок; назначение обучения (включая "
+"просмотр результатов)"
+
+#: backend/apps/members/permissions.py
+msgid "Hide kudos, correct points and change the recognition settings"
+msgstr ""
+"Скрытие благодарностей, исправление баллов и изменение настроек поощрений"
 
 #: backend/apps/members/permissions.py
 msgid "Add company events to the calendar"
@@ -15598,10 +16133,6 @@ msgstr "Планирование"
 msgid "On hold"
 msgstr "Приостановлен"
 
-#: backend/apps/projects/models.py
-msgid "Completed"
-msgstr "Завершён"
-
 #: backend/apps/projects/models.py backend/apps/tasks/models.py
 msgid "Low"
 msgstr "Низкий"
@@ -15997,6 +16528,94 @@ msgstr "От 1 до 90 дней."
 #: backend/apps/projects/services.py
 msgid "Between 1 and 100 percent."
 msgstr "От 1 до 100 процентов."
+
+#: backend/apps/recognition/models.py
+msgid "The whole company"
+msgstr "Вся компания"
+
+#: backend/apps/recognition/models.py
+msgid "Their branch"
+msgstr "Свой филиал"
+
+#: backend/apps/recognition/models.py
+msgid "Staff see the leaderboard: the top ten and their own place."
+msgstr "Сотрудники видят рейтинг: первую десятку и своё место."
+
+#: backend/apps/recognition/models.py
+msgid "Tasks done on time earn points too."
+msgstr "За задачи, выполненные в срок, тоже начисляются баллы."
+
+#: backend/apps/recognition/models.py
+msgid "Points per reason, where they differ from the defaults."
+msgstr "Баллы за каждое основание, если отличаются от стандартных."
+
+#: backend/apps/recognition/models.py
+msgid "Lesson watched"
+msgstr "Урок просмотрен"
+
+#: backend/apps/recognition/models.py
+msgid "Page read"
+msgstr "Страница прочитана"
+
+#: backend/apps/recognition/models.py
+msgid "Quiz passed"
+msgstr "Тест сдан"
+
+#: backend/apps/recognition/models.py
+msgid "Perfect score"
+msgstr "Идеальный результат"
+
+#: backend/apps/recognition/models.py
+msgid "Course finished"
+msgstr "Курс пройден"
+
+#: backend/apps/recognition/models.py
+msgid "Streak"
+msgstr "Серия дней"
+
+#: backend/apps/recognition/models.py
+msgid "Badge"
+msgstr "Значок"
+
+#: backend/apps/recognition/models.py
+msgid "Kudos received"
+msgstr "Получена благодарность"
+
+#: backend/apps/recognition/models.py
+msgid "Task done on time"
+msgstr "Задача выполнена в срок"
+
+#: backend/apps/recognition/models.py
+msgid "Correction"
+msgstr "Корректировка"
+
+#: backend/apps/recognition/models.py
+msgid "When the person saw the celebration in the app."
+msgstr "Когда сотрудник увидел поздравление в приложении."
+
+#: backend/apps/recognition/models.py
+msgid "Thank you"
+msgstr "Спасибо"
+
+#: backend/apps/recognition/models.py
+msgid "Great teamwork"
+msgstr "Отличная командная работа"
+
+#: backend/apps/recognition/models.py
+msgid "Quick help"
+msgstr "Быстрая помощь"
+
+#: backend/apps/recognition/models.py
+msgid "Careful work"
+msgstr "Аккуратная работа"
+
+#: backend/apps/recognition/models.py
+msgid "Helped a customer"
+msgstr "Помог покупателю"
+
+#: backend/apps/recognition/models.py
+msgid "Star of the day"
+msgstr "Звезда дня"
 
 #: backend/apps/reminders/api.py backend/apps/reminders/services.py
 msgid "The company's default policy can't be deleted."
