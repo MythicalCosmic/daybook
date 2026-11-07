@@ -40,6 +40,8 @@ SAFE_EXTENSIONS = {
     ".mp3": ".mp3",
     ".wav": ".wav",
     ".aac": ".aac",
+    # Lesson videos, made by the learning media worker (apps.learning.media), never uploaded as is.
+    ".mp4": ".mp4",
 }
 
 
@@ -65,6 +67,22 @@ class PrivateStorage(FileSystemStorage):
 
 
 private_storage = PrivateStorage()
+
+
+@deconstructible
+class LearningMediaStorage(PrivateStorage):
+    """Lesson videos and their posters (docs/PLAN-LEARNING.md §5), at `LEARNING_MEDIA_ROOT`.
+
+    Private like every other file here (signed links only), but in a volume of its own: videos are
+    big, so the daily private-files backup leaves them out, and in production Caddy serves their
+    bytes (with Range requests) once Django has checked the link (`X-Accel-Redirect`)."""
+
+    @property
+    def base_location(self):
+        return str(settings.LEARNING_MEDIA_ROOT)
+
+
+learning_storage = LearningMediaStorage()
 
 
 @deconstructible

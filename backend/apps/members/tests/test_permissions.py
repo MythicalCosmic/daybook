@@ -102,13 +102,18 @@ ADDITIONS = {
     # controlled register is the owner's to hand out.
     "stock.operate": {"Pharmacist", "Cashier"},
     "stock.controlled": set(),
+    # Learning (docs/PLAN-LEARNING.md §8): whoever runs the routines trains the team; points and
+    # kudos stay the owner's to correct.
+    "learning.view": {"Manager"},
+    "learning.manage": {"Manager"},
+    "recognition.manage": set(),
 }
 
 
 def test_the_registry_has_every_new_permission():
     assert len(OWNER_CONSOLE) == 29
     assert set(OWNER_CONSOLE) | set(ADDITIONS) <= set(Perm.values)
-    assert len(Perm.values) == 14 + 29 + 14
+    assert len(Perm.values) == 14 + 29 + 17
 
 
 @pytest.mark.parametrize("code", [*OWNER_CONSOLE, *ADDITIONS])

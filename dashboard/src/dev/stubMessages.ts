@@ -74,7 +74,33 @@ export const STUB_TITLES: Record<string, { title: Triple; pages: Record<string, 
       reviews: ["Reviews", "Оценка", "Baholash"],
     },
   },
-  recognition: { title: ["Recognition", "Признание", "E’tirof"], pages: { kudos: ["Kudos", "Благодарности", "Rahmatlar"] } },
+  learning: {
+    title: ["Training", "Обучение", "O‘qitish"],
+    pages: {
+      overview: ["Overview", "Обзор", "Umumiy"],
+      courses: ["Courses", "Курсы", "Kurslar"],
+      lessons: ["Lessons", "Уроки", "Darslar"],
+      people: ["People", "Сотрудники", "Xodimlar"],
+    },
+  },
+  quizzes: {
+    title: ["Quizzes and skills", "Тесты и навыки", "Testlar va ko‘nikmalar"],
+    pages: {
+      quizzes: ["Quizzes", "Тесты", "Testlar"],
+      questions: ["Question bank", "Банк вопросов", "Savollar bazasi"],
+      checks: ["Regular checks", "Регулярные проверки", "Muntazam tekshiruvlar"],
+      skills: ["Skills", "Навыки", "Ko‘nikmalar"],
+      tutor: ["Tutor", "Наставник", "Ustoz"],
+    },
+  },
+  recognition: {
+    title: ["Recognition", "Признание", "Rag‘batlantirish"],
+    pages: {
+      leaderboard: ["Leaderboard", "Рейтинг", "Reyting"],
+      kudos: ["Kudos", "Благодарности", "Rahmatlar"],
+      badges: ["Badges", "Значки", "Nishonlar"],
+    },
+  },
   sales: {
     title: ["Sales", "Продажи", "Savdo"],
     pages: {

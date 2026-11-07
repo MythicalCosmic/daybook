@@ -8,6 +8,7 @@ __pycache__/
 backend/staticfiles/
 backend/media/
 backend/private_media/
+backend/learning_media/
 
 # Celery beat
 celerybeat-schedule*

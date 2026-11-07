@@ -3104,9 +3104,10 @@ export interface components {
          *     * `ai` - AI assistant
          *     * `recognition` - Recognition
          *     * `assets` - Assets and equipment
+         *     * `learning` - Training and quizzes
          * @enum {string}
          */
-        CompaniesFeatureEnum: "finance" | "sales" | "stock" | "attendance" | "hr" | "payroll" | "ai" | "recognition" | "assets";
+        CompaniesFeatureEnum: "finance" | "sales" | "stock" | "attendance" | "hr" | "payroll" | "ai" | "recognition" | "assets" | "learning";
         Company: {
             readonly id: number;
             readonly name: string;
@@ -4947,12 +4948,15 @@ export interface components {
          *     * `assets.manage` - Manage equipment and who holds it
          *     * `reviews.manage` - Run performance reviews and set goals
          *     * `knowledge.manage` - Write and publish knowledge base pages
+         *     * `learning.view` - See the training, quiz results and skills of the people they see
+         *     * `learning.manage` - Make lessons, courses, quizzes and checks; assign training (includes seeing results)
+         *     * `recognition.manage` - Hide kudos, correct points and change the recognition settings
          *     * `agenda.manage` - Add company events to the calendar
          *     * `crm.view` - See CRM deals
          *     * `crm.manage` - Manage CRM deals and pipelines
          * @enum {string}
          */
-        PermissionsEnum: "members.view" | "members.approve" | "members.manage" | "roles.manage" | "positions.manage" | "tasks.view_all" | "tasks.assign" | "tasks.templates" | "tasks.confirm" | "reminders.configure" | "groups.manage" | "reports.view" | "time_off.approve" | "announcements.send" | "dashboard.access" | "company.settings" | "audit.view" | "data.export" | "branches.all" | "sales.view" | "sales.operate" | "sales.manage" | "sales.invoices" | "stock.manage" | "stock.operate" | "stock.controlled" | "finance.view" | "finance.record" | "finance.manage" | "finance.approve" | "finance.claim" | "hr.view" | "hr.manage" | "hr.sensitive" | "hr.hiring" | "attendance.view" | "attendance.manage" | "time_off.manage" | "payroll.view" | "payroll.propose" | "payroll.manage" | "payroll.finalize" | "payroll.pay" | "ai.use" | "ai.configure" | "projects.view_all" | "projects.manage" | "projects.time_view" | "hr.discipline" | "hr.suspend" | "hr.terminate" | "assets.manage" | "reviews.manage" | "knowledge.manage" | "agenda.manage" | "crm.view" | "crm.manage";
+        PermissionsEnum: "members.view" | "members.approve" | "members.manage" | "roles.manage" | "positions.manage" | "tasks.view_all" | "tasks.assign" | "tasks.templates" | "tasks.confirm" | "reminders.configure" | "groups.manage" | "reports.view" | "time_off.approve" | "announcements.send" | "dashboard.access" | "company.settings" | "audit.view" | "data.export" | "branches.all" | "sales.view" | "sales.operate" | "sales.manage" | "sales.invoices" | "stock.manage" | "stock.operate" | "stock.controlled" | "finance.view" | "finance.record" | "finance.manage" | "finance.approve" | "finance.claim" | "hr.view" | "hr.manage" | "hr.sensitive" | "hr.hiring" | "attendance.view" | "attendance.manage" | "time_off.manage" | "payroll.view" | "payroll.propose" | "payroll.manage" | "payroll.finalize" | "payroll.pay" | "ai.use" | "ai.configure" | "projects.view_all" | "projects.manage" | "projects.time_view" | "hr.discipline" | "hr.suspend" | "hr.terminate" | "assets.manage" | "reviews.manage" | "knowledge.manage" | "learning.view" | "learning.manage" | "recognition.manage" | "agenda.manage" | "crm.view" | "crm.manage";
         PersonCard: {
             id: number;
             name: string;

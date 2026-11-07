@@ -20,3 +20,6 @@ class KnowledgeAction(models.TextChoices):
     PAGE_UNLINKED = "knowledge.page_unlinked", _("Unlinked a page from a task or routine")
     READERS_REMINDED = "knowledge.readers_reminded", _("Reminded people to read a page")
     SETTINGS_CHANGED = "knowledge.settings_changed", _("Changed the knowledge base settings")
+    TOPIC_CREATED = "knowledge.topic_created", _("Added a topic")
+    TOPIC_CHANGED = "knowledge.topic_changed", _("Changed a topic")
+    TOPIC_ARCHIVED = "knowledge.topic_archived", _("Archived a topic")

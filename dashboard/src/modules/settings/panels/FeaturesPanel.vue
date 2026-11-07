@@ -5,7 +5,7 @@
  * categories, leave types…) and the module appears in the sidebar at once; switching off hides it
  * and keeps every row. The switch moves instantly and moves back if the server refuses.
  */
-import { Banknote, Boxes, Clock, HeartHandshake, IdCard, Sparkles, ShoppingCart, Wallet, type LucideIcon } from "@lucide/vue";
+import { Banknote, Boxes, Clock, GraduationCap, HeartHandshake, IdCard, Sparkles, ShoppingCart, Wallet, type LucideIcon } from "@lucide/vue";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -38,12 +38,14 @@ const ICONS: Record<CompanyFeature, LucideIcon> = {
   ai: Sparkles,
   recognition: HeartHandshake,
   assets: Boxes,
+  learning: GraduationCap,
 };
 /** Modules that work best together (a hint, not a rule). */
 const PAIRS: Partial<Record<CompanyFeature, CompanyFeature[]>> = {
   sales: ["finance"],
   stock: ["sales"],
   payroll: ["attendance", "finance"],
+  learning: ["recognition"],
 };
 
 const enabledCount = computed(() => features.data.value?.features.length ?? 0);

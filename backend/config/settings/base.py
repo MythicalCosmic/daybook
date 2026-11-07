@@ -62,10 +62,12 @@ INSTALLED_APPS = [
     "apps.ai",
     "apps.insights",
     "apps.briefings",
-    "apps.recognition",
     "apps.projects",
     "apps.lifecycle",
     "apps.knowledge",
+    # After knowledge (topics, pages) and before recognition, whose demo awards its points.
+    "apps.learning",
+    "apps.recognition",
     "apps.agenda",
     "apps.crm",
     "apps.assets",
@@ -141,6 +143,8 @@ MEDIA_URL = "media/"
 MEDIA_ROOT = Path(env("MEDIA_ROOT", default=str(BASE_DIR / "media")))
 # Receipts, documents, exports and PDFs: never served directly, only through signed links.
 PRIVATE_MEDIA_ROOT = Path(env("PRIVATE_MEDIA_ROOT", default=str(BASE_DIR / "private_media")))
+# Lesson videos and posters (apps.core.storage.learning_storage): private, in a volume of their own.
+LEARNING_MEDIA_ROOT = Path(env("LEARNING_MEDIA_ROOT", default=str(BASE_DIR / "learning_media")))
 
 REDIS_URL = env("REDIS_URL")
 # Added to every key apps.core.redis writes, so several runs can share one Redis.
@@ -158,7 +162,12 @@ CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 CELERY_TASK_IGNORE_RESULT = True
 CELERY_TIMEZONE = TIME_ZONE
 # AI calls never block the default queue (the ai-worker service consumes "ai").
-CELERY_TASK_ROUTES = {"apps.ai.tasks.*": {"queue": "ai"}}
+# Lesson videos are made by ffmpeg on their own worker ("media", one at a time), never on these.
+CELERY_TASK_ROUTES = {
+    "apps.ai.tasks.*": {"queue": "ai"},
+    "apps.learning.tasks.process_video": {"queue": "media"},
+    "apps.learning.tasks.draft_questions": {"queue": "ai"},
+}
 CELERY_BEAT_SCHEDULE = {
     # Idempotent, so running often just picks up new templates and members sooner.
     "generate-daily-tasks": {

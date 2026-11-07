@@ -9,6 +9,7 @@ export { Badge, CountBadge, Dot, type BadgeTone } from "./Badge";
 export { BottomBar, useNativeButton, type BottomAction } from "./BottomBar";
 export { Button, IconButton, Spinner, type ButtonProps, type ButtonVariant } from "./Button";
 export { Card, CardButton, CardTitle, type CardTone } from "./Card";
+export { celebrate, prefersReducedMotion, type CelebrateOptions } from "./celebrate";
 export { Chip, ChipGroup, type ChipOption } from "./Chip";
 export { cx } from "./cx";
 export { DateInput, TimeInput } from "./DateTime";

@@ -134,6 +134,10 @@ export const EXTENSION_POINTS = [
   "payroll.run.toolbar",
   /** Above the roster grid: HR's pharmacist coverage gaps for the week (context: companyId, branchId, week; §14.5). */
   "attendance.roster.coverage",
+  /** Learning's person page, below their courses: quiz results and skills (Q2), points and badges (R) (context: companyId, memberId; PLAN-LEARNING §11). */
+  "learning.person.panels",
+  /** Learning's overview, after compliance: the tutor's suggestions and weakest topics (Q2), the top learners (R) (context: companyId). */
+  "learning.overview.cards",
 ] as const;
 
 export type ExtensionPoint = (typeof EXTENSION_POINTS)[number];

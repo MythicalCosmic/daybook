@@ -8,11 +8,12 @@ import io
 from datetime import timedelta
 
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.utils import translation
 from PIL import Image, ImageDraw, ImageFont
 
 from apps.core import demo_plan
 from apps.knowledge import services
-from apps.knowledge.models import Page, PageAck, PageVersion, Space
+from apps.knowledge.models import Page, PageAck, PageVersion, Space, Topic
 from apps.members.models import Position
 
 WELCOME = """
@@ -489,6 +490,36 @@ def seed(company, people, now) -> None:
     _timeline(old_till, now, 60)
     services.archive_page(old_till, by=owner)
     Page.objects.filter(pk=old_till.pk).update(archived_at=now - timedelta(days=9))
+
+    # Topics (docs/PLAN-LEARNING.md §2.5): the pharmacy set, tagging the pages they are about,
+    # so lessons, questions and the skill matrix of the learning demo have them to build on.
+    from apps.knowledge import topics as topic_services
+
+    topic_services.add_pharmacy_topics(company, by=owner)
+    named = {topic.name: topic for topic in Topic.objects.filter(company=company)}
+
+    def tag(target, *names):
+        found = [named[name] for name in names if name in named]
+        if found:
+            target.topics.add(*found)
+
+    with translation.override(company.default_language):
+        names = [str(name) for name, _colour in topic_services.PHARMACY_TOPICS]
+    cold_chain, prescriptions, controlled_topic, storage, goods, till_topic, advice = names[:7]
+    service, hygiene = names[7:]
+    tag(cold, cold_chain, storage)
+    tag(rx, prescriptions)
+    tag(controlled, controlled_topic, prescriptions)
+    tag(expired, storage)
+    tag(receiving, goods, storage)
+    tag(prices, till_topic)
+    tag(open_till, till_topic)
+    tag(close_till, till_topic)
+    tag(terminal, till_topic)
+    tag(customers, service, advice)
+    tag(climate, storage, hygiene)
+    tag(dress, hygiene)
+    tag(night, storage)
 
     # Links to routines ("How to do this"), when the demo has them.
     from apps.knowledge import targets

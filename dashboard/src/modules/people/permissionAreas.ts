@@ -16,7 +16,7 @@ export const PERMISSION_AREAS: ReadonlyArray<{ id: PermissionAreaId; perms: read
     id: "people",
     perms: ["members.view", "members.approve", "members.manage", "positions.manage", "attendance.view", "attendance.manage", "time_off.approve", "time_off.manage"],
   },
-  { id: "hr", perms: ["hr.view", "hr.manage", "hr.sensitive", "hr.hiring", "hr.discipline", "hr.suspend", "hr.terminate", "reviews.manage", "assets.manage"] },
+  { id: "hr", perms: ["hr.view", "hr.manage", "hr.sensitive", "hr.hiring", "hr.discipline", "hr.suspend", "hr.terminate", "reviews.manage", "assets.manage", "learning.view", "learning.manage", "recognition.manage"] },
   { id: "payroll", perms: ["payroll.view", "payroll.propose", "payroll.manage", "payroll.finalize", "payroll.pay"] },
   {
     id: "work",
@@ -46,6 +46,8 @@ const BY_PREFIX: Record<string, PermissionAreaId> = {
   hr: "hr",
   reviews: "hr",
   assets: "hr",
+  learning: "hr",
+  recognition: "hr",
   payroll: "payroll",
   tasks: "work",
   reminders: "work",

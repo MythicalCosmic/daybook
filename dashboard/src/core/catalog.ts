@@ -11,6 +11,7 @@
  * Packages (§11, §13.7): W0 lead, A identity and setup, B tasks, C people and announcements,
  * D/I finance, E/J sales and stock, F attendance, G HR and hiring, H payroll, K AI, L leave,
  * N overview, insights, audit, exports, R recognition, T projects, Q knowledge and calendar,
+ * Q1 learning (courses, lessons), Q2 quizzes and the tutor (docs/PLAN-LEARNING.md),
  * S people lifecycle, U CRM.
  */
 import type { CompanyFeature } from "@/core/features";
@@ -188,7 +189,49 @@ export const CATALOG: readonly CatalogEntry[] = [
       { id: "reviews", to: "lifecycle/reviews", perm: "reviews.manage" },
     ],
   },
-  { id: "recognition", group: "people", order: 60, pkg: "R", feature: "recognition", pages: [{ id: "kudos", to: "recognition" }] },
+  {
+    id: "learning",
+    group: "people",
+    order: 55,
+    pkg: "Q1",
+    perm: ["learning.view", "learning.manage"],
+    feature: "learning",
+    hotkey: "l",
+    pages: [
+      { id: "overview", to: "learning" },
+      { id: "courses", to: "learning/courses" },
+      { id: "lessons", to: "learning/lessons" },
+      { id: "people", to: "learning/people" },
+    ],
+  },
+  {
+    id: "quizzes",
+    group: "people",
+    order: 56,
+    pkg: "Q2",
+    perm: ["learning.view", "learning.manage"],
+    feature: "learning",
+    hotkey: "q",
+    pages: [
+      { id: "quizzes", to: "learning/quizzes" },
+      { id: "questions", to: "learning/questions", perm: "learning.manage" },
+      { id: "checks", to: "learning/checks" },
+      { id: "skills", to: "learning/skills" },
+      { id: "tutor", to: "learning/tutor" },
+    ],
+  },
+  {
+    id: "recognition",
+    group: "people",
+    order: 60,
+    pkg: "R",
+    feature: "recognition",
+    pages: [
+      { id: "leaderboard", to: "recognition" },
+      { id: "kudos", to: "recognition/kudos" },
+      { id: "badges", to: "recognition/badges" },
+    ],
+  },
 
   // Money
   {

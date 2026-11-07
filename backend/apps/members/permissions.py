@@ -112,8 +112,20 @@ class Perm(models.TextChoices):
     ASSETS_MANAGE = "assets.manage", _("Manage equipment and who holds it")
     REVIEWS_MANAGE = "reviews.manage", _("Run performance reviews and set goals")
 
-    # Knowledge base, calendar, CRM
+    # Knowledge base, learning, recognition, calendar, CRM
     KNOWLEDGE_MANAGE = "knowledge.manage", _("Write and publish knowledge base pages")
+    LEARNING_VIEW = (
+        "learning.view",
+        _("See the training, quiz results and skills of the people they see"),
+    )
+    LEARNING_MANAGE = (
+        "learning.manage",
+        _("Make lessons, courses, quizzes and checks; assign training (includes seeing results)"),
+    )
+    RECOGNITION_MANAGE = (
+        "recognition.manage",
+        _("Hide kudos, correct points and change the recognition settings"),
+    )
     AGENDA_MANAGE = "agenda.manage", _("Add company events to the calendar")
     CRM_VIEW = "crm.view", _("See CRM deals")
     CRM_MANAGE = "crm.manage", _("Manage CRM deals and pipelines")
@@ -122,11 +134,13 @@ class Perm(models.TextChoices):
 # The roles every new company starts with. Existing companies got theirs through migrations
 # that only add (members/0005 creates Cashier and Accountant; members/0008 gives each role still
 # named like one of these its Phase 2 permissions; members/0009 creates Pharmacist where the
-# name is free; members/0016 gives `stock.operate` to every role that runs a till). A
+# name is free; members/0016 gives `stock.operate` to every role that runs a till; members/0017
+# gives `learning.view` and `learning.manage` to every role that manages routines). A
 # permission added here later needs a migration of its own for existing companies
 # (members/tests/test_phase2_role_migration.py, test_pharmacist_role_migration.py,
-# test_stock_operate_migration.py). Pharmacist is for a pharmacy's qualified staff, who sell at
-# the counter, run its till and look after its stock (docs/PLAN-OWNER.md §14.3, §14.5).
+# test_stock_operate_migration.py, test_learning_migration.py). Pharmacist is for a pharmacy's
+# qualified staff, who sell at the counter, run its till and look after its stock
+# (docs/PLAN-OWNER.md §14.3, §14.5).
 DEFAULT_ROLES = (
     {"name": "Owner", "is_owner": True},
     {
@@ -158,6 +172,8 @@ DEFAULT_ROLES = (
             Perm.PROJECTS_TIME_VIEW,
             Perm.HR_DISCIPLINE,
             Perm.REVIEWS_MANAGE,
+            Perm.LEARNING_VIEW,
+            Perm.LEARNING_MANAGE,
         ],
     },
     {

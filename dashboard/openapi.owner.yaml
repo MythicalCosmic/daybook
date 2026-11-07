@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: 911 Trello API
-  version: 0.4.4
+  version: 0.5.0
   description: API for the employee mini app and the owner dashboard.
 paths:
   /api/v1/owner/auth/dev-login/:
@@ -11723,6 +11723,215 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/KnowledgeReorderRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/knowledge/topics/:
+    get:
+      operationId: companies_knowledge_topics_list
+      description: The company's topics, in order (`?archived=true` adds the archived
+        ones).
+      parameters:
+      - in: query
+        name: archived
+        schema:
+          type: boolean
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/KnowledgeTopic'
+          description: ''
+    post:
+      operationId: companies_knowledge_topics_create
+      description: The company's topics, in order (`?archived=true` adds the archived
+        ones).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KnowledgeTopicWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/KnowledgeTopicWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/KnowledgeTopicWriteRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeTopic'
+          description: ''
+  /api/v1/owner/companies/{company_id}/knowledge/topics/{id}/:
+    patch:
+      operationId: companies_knowledge_topics_partial_update
+      description: The company's topics, in order (`?archived=true` adds the archived
+        ones).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedKnowledgeTopicWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedKnowledgeTopicWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedKnowledgeTopicWriteRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeTopic'
+          description: ''
+  /api/v1/owner/companies/{company_id}/knowledge/topics/{id}/archive/:
+    post:
+      operationId: companies_knowledge_topics_archive_create
+      description: The company's topics, in order (`?archived=true` adds the archived
+        ones).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeTopic'
+          description: ''
+  /api/v1/owner/companies/{company_id}/knowledge/topics/{id}/restore/:
+    post:
+      operationId: companies_knowledge_topics_restore_create
+      description: The company's topics, in order (`?archived=true` adds the archived
+        ones).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeTopic'
+          description: ''
+  /api/v1/owner/companies/{company_id}/knowledge/topics/pharmacy/:
+    post:
+      operationId: companies_knowledge_topics_pharmacy_create
+      description: Add the usual pharmacy topics the company doesn't have yet.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/KnowledgeTopic'
+          description: ''
+  /api/v1/owner/companies/{company_id}/knowledge/topics/reorder/:
+    post:
+      operationId: companies_knowledge_topics_reorder_create
+      description: The company's topics, in order (`?archived=true` adds the archived
+        ones).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KnowledgeTopicOrderRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/KnowledgeTopicOrderRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/KnowledgeTopicOrderRequest'
         required: true
       security:
       - ownerJwtAuth: []
@@ -30604,6 +30813,7 @@ components:
       - ai
       - recognition
       - assets
+      - learning
       type: string
       description: |-
         * `finance` - Finance
@@ -30615,6 +30825,7 @@ components:
         * `ai` - AI assistant
         * `recognition` - Recognition
         * `assets` - Assets and equipment
+        * `learning` - Training and quizzes
     CompaniesInviteCompany:
       type: object
       properties:
@@ -39011,6 +39222,75 @@ components:
       - subtitle
       - title
       - type
+    KnowledgeTopic:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        color:
+          type: string
+          readOnly: true
+          description: A palette key the apps map to a colour.
+        description:
+          type: string
+          readOnly: true
+        position:
+          type: integer
+          readOnly: true
+        archived:
+          type: boolean
+          readOnly: true
+        page_count:
+          type: integer
+          readOnly: true
+          default: 0
+        lesson_count:
+          type: integer
+          readOnly: true
+          default: 0
+        question_count:
+          type: integer
+          readOnly: true
+          default: 0
+      required:
+      - archived
+      - color
+      - description
+      - id
+      - lesson_count
+      - name
+      - page_count
+      - position
+      - question_count
+    KnowledgeTopicOrderRequest:
+      type: object
+      properties:
+        ids:
+          type: array
+          items:
+            type: integer
+          maxItems: 500
+      required:
+      - ids
+    KnowledgeTopicWriteRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        color:
+          type: string
+          maxLength: 16
+        description:
+          type: string
+          maxLength: 300
+      required:
+      - name
     KnowledgeTreeNode:
       type: object
       properties:
@@ -43272,6 +43552,19 @@ components:
           type: array
           items:
             type: integer
+    PatchedKnowledgeTopicWriteRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        color:
+          type: string
+          maxLength: 16
+        description:
+          type: string
+          maxLength: 300
     PatchedLifecycleRecordWriteRequest:
       type: object
       description: A record's fields; multipart with `evidence` (a PDF or a picture).
@@ -46094,6 +46387,9 @@ components:
       - assets.manage
       - reviews.manage
       - knowledge.manage
+      - learning.view
+      - learning.manage
+      - recognition.manage
       - agenda.manage
       - crm.view
       - crm.manage
@@ -46153,6 +46449,9 @@ components:
         * `assets.manage` - Manage equipment and who holds it
         * `reviews.manage` - Run performance reviews and set goals
         * `knowledge.manage` - Write and publish knowledge base pages
+        * `learning.view` - See the training, quiz results and skills of the people they see
+        * `learning.manage` - Make lessons, courses, quizzes and checks; assign training (includes seeing results)
+        * `recognition.manage` - Hide kudos, correct points and change the recognition settings
         * `agenda.manage` - Add company events to the calendar
         * `crm.view` - See CRM deals
         * `crm.manage` - Manage CRM deals and pipelines

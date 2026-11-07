@@ -11,11 +11,16 @@ which an acknowledgement counts (publishing with "ask everyone to read it again"
 
 Pages can be linked to a task or a routine ("How to do this"). Pictures in pages live in private
 storage and are shown through short signed links made for each reader.
+
+**Topics** ("Sovuq zanjir", "Retseptli dorilar") tag pages here and lessons and questions in
+`apps.learning`; the skill matrix is worked out per person and topic (docs/PLAN-LEARNING.md).
+A **page view** is who opened a page, how often and for how long (always on, like the pages).
 """
 
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
+from django.db.models.functions import Lower
 from django.utils.translation import gettext_lazy as _
 
 from apps.companies.models import TenantModel
@@ -44,6 +49,36 @@ class Space(TenantModel):
     class Meta:
         ordering = ["position", "pk"]
         indexes = [models.Index(fields=["company", "archived_at", "position"])]
+
+    def __str__(self):
+        return self.name
+
+
+class Topic(TenantModel):
+    """A subject people learn and are tested on. Pages, lessons and questions carry topics; the
+    skill matrix (docs/PLAN-LEARNING.md §4.6) is per person and topic."""
+
+    name = models.CharField(max_length=80)
+    color = models.CharField(
+        max_length=16, blank=True, help_text=_("A palette key the apps map to a colour.")
+    )
+    description = models.CharField(max_length=300, blank=True)
+    position = models.PositiveIntegerField(default=0)
+    created_by = models.ForeignKey(
+        Membership, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    archived_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["position", "pk"]
+        constraints = [
+            models.UniqueConstraint(
+                "company",
+                Lower("name"),
+                condition=Q(archived_at__isnull=True),
+                name="knowledge_topic_unique_name",
+            )
+        ]
 
     def __str__(self):
         return self.name
@@ -81,6 +116,7 @@ class Page(TenantModel):
         Membership, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
     )
     archived_at = models.DateTimeField(null=True, blank=True)
+    topics = models.ManyToManyField(Topic, blank=True, related_name="pages")
 
     class Meta:
         ordering = ["position", "pk"]
@@ -131,6 +167,38 @@ class PageAck(TenantModel):
             )
         ]
         indexes = [models.Index(fields=["membership", "page", "version"])]
+
+
+class PageView(TenantModel):
+    """`membership` opened `page`: first and last time, visits, active reading time, the newest
+    version seen and how far down they got (docs/PLAN-LEARNING.md §4.1). One row per person."""
+
+    page = models.ForeignKey(Page, on_delete=models.CASCADE, related_name="views")
+    membership = models.ForeignKey(
+        Membership, on_delete=models.CASCADE, related_name="knowledge_views"
+    )
+    first_at = models.DateTimeField()
+    last_at = models.DateTimeField()
+    visits = models.PositiveIntegerField(
+        default=1, help_text=_("A new visit starts when the last report is over 30 minutes old.")
+    )
+    seconds = models.PositiveIntegerField(
+        default=0, help_text=_("Time with the page open in front of them, in seconds.")
+    )
+    version = models.PositiveIntegerField(default=1, help_text=_("The newest version they opened."))
+    scrolled = models.PositiveSmallIntegerField(
+        default=0, help_text=_("How far down the page they got, in percent (the most seen).")
+    )
+
+    class Meta:
+        ordering = ["-last_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["page", "membership"], name="knowledge_unique_view")
+        ]
+        indexes = [
+            models.Index(fields=["company", "page"]),
+            models.Index(fields=["membership", "-last_at"]),
+        ]
 
 
 class PageLink(TenantModel):

@@ -31,6 +31,7 @@ NEW_APPS = (
     "knowledge",
     "agenda",
     "crm",
+    "learning",
 )
 # Rule 2 of docs/PLAN-OWNER.md §2.3. finance/models.py comes with the finance core (W0-F).
 RULE_2_FILES = (

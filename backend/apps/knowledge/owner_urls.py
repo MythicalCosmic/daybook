@@ -17,10 +17,12 @@ from apps.knowledge.owner_api import (
     SettingsView,
     SpaceViewSet,
 )
+from apps.knowledge.owner_api_topics import TopicViewSet
 
 router = SimpleRouter()
 router.register("knowledge/spaces", SpaceViewSet, basename="knowledge-space")
 router.register("knowledge/pages", PageViewSet, basename="knowledge-page")
+router.register("knowledge/topics", TopicViewSet, basename="knowledge-topic")
 
 urlpatterns = [
     path("knowledge/overview/", OverviewView.as_view(), name="knowledge-overview"),

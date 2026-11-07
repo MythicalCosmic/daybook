@@ -102,7 +102,11 @@ def test_the_frozen_lists_cover_todays_default_roles():
     """A Phase 2 permission added to a default role later needs its own migration for the roles
     of existing companies; this fails until there is one (then extend the expected set here)."""
     created_later = {"Pharmacist"}  # members/0009 makes it with its own frozen list
-    granted_later = {"stock.operate"}  # members/0016 gives it to every role that runs a till
+    granted_later = {
+        "stock.operate",  # members/0016 gives it to every role that runs a till
+        "learning.view",  # members/0017 gives both to every role that manages routines
+        "learning.manage",
+    }
     today = {
         definition["name"]: [str(perm) for perm in definition.get("permissions", ())]
         for definition in DEFAULT_ROLES

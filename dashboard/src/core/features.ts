@@ -4,7 +4,7 @@
  * switch off. Existing companies start with none on; the demo company has every one.
  * The §13 modules (projects, knowledge, calendar, CRM) are not switched.
  */
-export const FEATURES = ["finance", "sales", "stock", "attendance", "hr", "payroll", "ai", "recognition", "assets"] as const;
+export const FEATURES = ["finance", "sales", "stock", "attendance", "hr", "payroll", "ai", "recognition", "assets", "learning"] as const;
 
 export type CompanyFeature = (typeof FEATURES)[number];
 

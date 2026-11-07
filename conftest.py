@@ -66,6 +66,13 @@ def private_media(settings, tmp_path):
     return settings.PRIVATE_MEDIA_ROOT
 
 
+@pytest.fixture(autouse=True)
+def learning_media(settings, tmp_path):
+    """Lesson videos and posters (apps.core.storage.learning_storage) as well."""
+    settings.LEARNING_MEDIA_ROOT = tmp_path / "learning_media"
+    return settings.LEARNING_MEDIA_ROOT
+
+
 @pytest.fixture
 def api_as(db):
     """`api_as(member)`: a DRF client signed in to the mini app API as that member's user."""
