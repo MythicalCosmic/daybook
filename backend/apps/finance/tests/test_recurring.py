@@ -385,6 +385,71 @@ def test_the_paid_button_pays_the_reminded_occurrence_only(fin, boss, kassa, tod
     assert bill.last_done_on == today
 
 
+def test_the_payer_gets_one_task_per_bill_that_closes_when_it_is_paid(
+    fin, boss, member, kassa, today
+):
+    """`create_task`: when a bill's reminders start, its payer gets a task due on the bill's day
+    (once per occurrence, with nobody's name on it); paying the bill closes the task, and the
+    next occurrence brings the next task."""
+    from apps.tasks.models import Task
+
+    payer = member.registered(fin, "Accountant", first_name="Sevara")
+    due = today + timedelta(days=2)
+    bill = rule(
+        fin,
+        boss,
+        account=kassa,
+        day=due.day,
+        starts_on=today,
+        remind_days_before=3,
+        payer=payer,
+        create_task=True,
+    )
+    assert bill.next_due_on == due
+
+    reminders.remind(at_morning(today))
+    reminders.remind(at_morning(today) + timedelta(minutes=30))  # the same occurrence: no second
+
+    [task] = Task.objects.filter(assignee=payer)
+    assert task.kind == Task.Kind.ASSIGNED and task.created_by is None and task.is_open
+    assert task.title == "Pay: Rent"
+    assert timezone.localtime(task.due_at, TASHKENT) == datetime(
+        due.year, due.month, due.day, 18, 0, tzinfo=TASHKENT
+    )
+    assert "12 000 000" in task.description.replace("\xa0", " ")
+    bill.refresh_from_db()
+    assert (bill.task, bill.task_for) == (task, due)
+
+    recurring.pay_occurrence(bill, by=boss, account=kassa, occurrence=due)
+
+    task.refresh_from_db()
+    bill.refresh_from_db()
+    assert task.status == Task.Status.DONE and task.proof_text
+    assert bill.task is None and bill.task_for == due
+    later = bill.next_due_on
+    reminders.remind(at_morning(later - timedelta(days=3)))
+    assert Task.objects.filter(assignee=payer).count() == 2
+
+
+def test_a_task_needs_a_payer_and_an_automatic_payment_gets_none(fin, boss, kassa, today):
+    with pytest.raises(DomainError, match="who pays it"):
+        rule(fin, boss, create_task=True)
+    automatic = rule(
+        fin, boss, mode="auto", account=kassa, day=today.day, starts_on=today, create_task=True
+    )
+    assert automatic.create_task is False
+
+
+def test_without_the_switch_the_payer_gets_no_task(fin, boss, member, kassa, today):
+    from apps.tasks.models import Task
+
+    payer = member.registered(fin, "Accountant")
+    rule(fin, boss, account=kassa, day=today.day, starts_on=today, payer=payer)
+    reminders.remind(at_morning(today))
+    assert not Task.objects.filter(assignee=payer).exists()
+    assert Notification.objects.filter(kind="finance.bill_due", recipient=payer).exists()
+
+
 def test_an_overdue_debt_reminds_its_responsible_person_weekly(fin, boss, member, today):
     jasur = member(fin, "Employee", first_name="Jasur")
     clinic = CounterpartyFactory(company=fin, name="Shifo klinikasi")

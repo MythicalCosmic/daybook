@@ -30,7 +30,7 @@ from zoneinfo import ZoneInfo
 
 from django.db import transaction
 from django.db.models import Q
-from django.utils import timezone
+from django.utils import timezone, translation
 from django.utils.translation import gettext as _
 
 from apps.core.exceptions import DomainError
@@ -78,6 +78,7 @@ RULE_FIELDS = (
     "ends_on",
     "remind_days_before",
     "payer",
+    "create_task",
     "is_active",
 )
 SCHEDULE_FIELDS = ("frequency", "interval", "day", "starts_on", "ends_on")
@@ -499,6 +500,20 @@ def _advance(rule: RecurringRule, settled: date) -> None:
     rule.save(
         update_fields=["last_done_on", "next_due_on", "last_reminded_on", "amount", "updated_at"]
     )
+    if rule.task_id is not None and rule.task_for is not None and rule.task_for <= settled:
+        _finish_task(rule)
+
+
+def _finish_task(rule: RecurringRule) -> None:
+    """The payer's task of a settled occurrence closes by itself."""
+    from apps.tasks.services import finish_system_task
+
+    task = rule.task
+    rule.task = None
+    rule.save(update_fields=["task", "updated_at"])
+    if task is not None:
+        with translation.override(task.assignee.user.language or "uz"):
+            finish_system_task(task, note=_("Paid or skipped in Finance."))
 
 
 def _need_open(rule: RecurringRule) -> None:
@@ -582,6 +597,10 @@ def _apply(rule: RecurringRule, fields: dict, *, by: Membership, creating: bool)
         raise DomainError(_("It can't end before it starts."))
     if rule.payer is not None and rule.payer.status != Membership.Status.APPROVED:
         raise DomainError(_("Pick someone who works here."))
+    # A task is for a bill someone pays by hand; an automatic payment posts itself.
+    rule.create_task = bool(rule.create_task) and rule.mode == Mode.BILL
+    if rule.create_task and rule.payer is None:
+        raise DomainError(_("Pick who pays it, so they get the task."))
 
 
 def _snapshot(rule: RecurringRule) -> dict:
@@ -603,6 +622,7 @@ def _snapshot(rule: RecurringRule) -> dict:
         "ends_on": rule.ends_on.isoformat() if rule.ends_on else None,
         "remind_days_before": rule.remind_days_before,
         "payer": rule.payer_id,
+        "create_task": rule.create_task,
         "is_active": rule.is_active,
     }
 

@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-07 04:58+0500\n"
+"POT-Creation-Date: 2026-11-07 05:23+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -7121,6 +7121,17 @@ msgid "Who is reminded to pay it."
 msgstr "Kimga to‘lash eslatiladi."
 
 #: backend/apps/finance/models.py
+msgid ""
+"The payer also gets a task for each bill, closed when it is paid or skipped."
+msgstr ""
+"To‘lovchi har bir to‘lov uchun vazifa ham oladi; to‘langanda yoki o‘tkazib "
+"yuborilganda u yopiladi."
+
+#: backend/apps/finance/models.py
+msgid "The payer's task for the occurrence of `task_for`."
+msgstr "To‘lovchining `task_for` sanasidagi to‘lov uchun vazifasi."
+
+#: backend/apps/finance/models.py
 msgid "Set on rules made from a tax calendar template."
 msgstr "Soliq kalendari shablonidan yaratilgan to‘lovlarda belgilanadi."
 
@@ -7423,6 +7434,10 @@ msgid "Pick the account it is posted on."
 msgstr "To‘lov o‘tkaziladigan hisobni tanlang."
 
 #: backend/apps/finance/recurring.py
+msgid "Paid or skipped in Finance."
+msgstr "Moliyada to‘langan yoki o‘tkazib yuborilgan."
+
+#: backend/apps/finance/recurring.py
 msgid "This recurring payment is switched off."
 msgstr "Bu muntazam to‘lov o‘chirilgan."
 
@@ -7470,6 +7485,10 @@ msgstr "Tugash kuni boshlanishdan oldin bo‘lishi mumkin emas."
 msgid "Pick someone who works here."
 msgstr "Shu yerda ishlaydigan odamni tanlang."
 
+#: backend/apps/finance/recurring.py
+msgid "Pick who pays it, so they get the task."
+msgstr "Kim to‘lashini tanlang: vazifa o‘sha kishiga beriladi."
+
 #: backend/apps/finance/recurring.py backend/apps/payroll/finance_bridge.py
 msgid "Tax office"
 msgstr "Soliq inspeksiyasi"
@@ -7512,6 +7531,19 @@ msgstr "To‘landi, hisob: %(account)s"
 #: backend/apps/finance/reminders.py
 msgid "Tomorrow"
 msgstr "Ertaga"
+
+#: backend/apps/finance/reminders.py
+#, python-format
+msgid "Pay: %(name)s"
+msgstr "To‘lash: %(name)s"
+
+#: backend/apps/finance/reminders.py
+msgid ""
+"Mark it paid in Finance or with Paid in the reminder: this task then closes "
+"by itself."
+msgstr ""
+"Moliyada yoki eslatmadagi to‘lov tugmasi bilan to‘langan deb belgilang: "
+"shunda bu vazifa o‘zi yopiladi."
 
 #: backend/apps/finance/reminders.py
 #, python-format

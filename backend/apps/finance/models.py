@@ -1057,7 +1057,19 @@ class RecurringRule(TenantModel):
         related_name="+",
         help_text=_("Who is reminded to pay it."),
     )
-    create_task = models.BooleanField(default=False)
+    create_task = models.BooleanField(
+        default=False,
+        help_text=_("The payer also gets a task for each bill, closed when it is paid or skipped."),
+    )
+    task = models.ForeignKey(
+        "tasks.Task",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        help_text=_("The payer's task for the occurrence of `task_for`."),
+    )
+    task_for = models.DateField(null=True, blank=True)
     template_key = models.CharField(
         max_length=32, blank=True, help_text=_("Set on rules made from a tax calendar template.")
     )

@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: 911 Trello API
-  version: 0.4.2
+  version: 0.4.4
   description: API for the employee mini app and the owner dashboard.
 paths:
   /api/v1/owner/auth/dev-login/:
@@ -35453,6 +35453,11 @@ components:
         payer:
           type: integer
           nullable: true
+        create_task:
+          type: boolean
+          default: false
+          description: The payer also gets a task for each bill (bill mode, with a
+            payer).
         is_active:
           type: boolean
     PatchedRegisterRequest:
@@ -40388,6 +40393,10 @@ components:
           - $ref: '#/components/schemas/PlanningPersonRef'
           nullable: true
           readOnly: true
+        create_task:
+          type: boolean
+          description: The payer also gets a task for each bill, closed when it is
+            paid or skipped.
         template_key:
           type: string
           description: Set on rules made from a tax calendar template.
@@ -40490,6 +40499,11 @@ components:
         payer:
           type: integer
           nullable: true
+        create_task:
+          type: boolean
+          default: false
+          description: The payer also gets a task for each bill (bill mode, with a
+            payer).
         is_active:
           type: boolean
       required:

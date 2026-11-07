@@ -702,6 +702,63 @@ describe("CalendarPage", () => {
   });
 });
 
+describe("RecurringRuleDialog", () => {
+  const bill = {
+    id: 12,
+    name: "Ijara",
+    kind: "expense",
+    mode: "bill",
+    frequency: "monthly",
+    interval: 1,
+    day: 25,
+    on_holiday: "before",
+    category: { id: 4, name: "Ijara", kind: "expense", color: "", parent_id: null },
+    counterparty: null,
+    account: { id: 5, name: "Asosiy bank hisobi", kind: "bank", currency: "UZS" },
+    branch: null,
+    amount: "12000000.00",
+    currency: "UZS",
+    amount_varies: false,
+    starts_on: "2026-01-25",
+    ends_on: null,
+    next_due_on: "2026-11-25",
+    overdue: false,
+    remind_days_before: 3,
+    payer: { id: 21, name: "Sevara Tursunova" },
+    create_task: false,
+    template_key: "",
+    is_tax: false,
+    is_active: true,
+    last_done_on: "2026-10-25",
+    upcoming: ["2026-11-25", "2026-12-25", "2027-01-25"],
+    created_at: "2026-01-10T10:00:00+05:00",
+  };
+
+  it("offers the payer a task for each bill and saves the choice", async () => {
+    const calls = stub({
+      "GET options/": () => json({ ...options(), members: [{ id: 21, name: "Sevara Tursunova", position: "Buxgalter" }] }),
+      "GET categories/": () => json([{ id: 4, name: "Ijara", kind: "expense", color: "", parent_id: null, is_active: true, system_code: "rent", order: 1, children: [] }]),
+      "PATCH recurring/12/": (call) => json({ ...bill, ...(call.body as object) }),
+    });
+    const app = await testApp("/c/1/finance/recurring");
+    const RecurringRuleDialog = (await import("../components/RecurringRuleDialog.vue")).default;
+    const { wrapper } = mountWithProviders(RecurringRuleDialog, { plugins: app.plugins, props: { open: true, rule: bill } });
+    await flushPromises();
+    await flushPromises();
+    [...document.querySelectorAll<HTMLButtonElement>("button[aria-expanded]")].find((b) => b.textContent?.includes("More"))?.click();
+    await flushPromises();
+    const box = document.querySelector<HTMLElement>("[data-create-task]");
+    expect(box?.textContent).toContain("Also give them a task");
+    box!.querySelector<HTMLElement>("button[role=checkbox], input[type=checkbox]")!.click();
+    await flushPromises();
+    [...document.querySelectorAll<HTMLButtonElement>("button")].find((b) => b.textContent?.trim() === "Save")?.click();
+    await flushPromises();
+    await flushPromises();
+    expect(calls.find((call) => call.method === "PATCH")?.body).toMatchObject({ payer: 21, create_task: true });
+    wrapper.unmount();
+  });
+});
+
 describe("ClaimsPage", () => {
   const claim = (overrides: Record<string, unknown> = {}) => ({
     id: 5,

@@ -68,6 +68,7 @@ interface Form {
   ends_on: string | null;
   remind_days_before: number | null;
   payer: number | null;
+  create_task: boolean;
 }
 
 const form = reactive<Form>(blank());
@@ -93,6 +94,7 @@ function blank(): Form {
     ends_on: null,
     remind_days_before: 3,
     payer: null,
+    create_task: false,
   };
 }
 
@@ -116,6 +118,7 @@ function fromRule(rule: RecurringRule): Form {
     ends_on: rule.ends_on,
     remind_days_before: rule.remind_days_before,
     payer: rule.payer?.id ?? null,
+    create_task: rule.create_task ?? false,
   };
 }
 
@@ -215,10 +218,12 @@ function body(): RecurringInput {
     ends_on: form.ends_on,
     remind_days_before: Math.max(0, form.remind_days_before ?? 0),
     payer: form.payer,
+    // A task is for a bill someone pays by hand, and needs whoever pays it.
+    create_task: !auto.value && form.payer !== null && form.create_task,
   };
 }
 
-const SHOWN = ["name", "kind", "mode", "frequency", "interval", "day", "on_holiday", "category", "counterparty", "account", "branch", "amount", "amount_varies", "starts_on", "ends_on", "remind_days_before", "payer"];
+const SHOWN = ["name", "kind", "mode", "frequency", "interval", "day", "on_holiday", "category", "counterparty", "account", "branch", "amount", "amount_varies", "starts_on", "ends_on", "remind_days_before", "payer", "create_task"];
 
 async function save(): Promise<void> {
   if (!validate()) return;
@@ -233,7 +238,7 @@ async function save(): Promise<void> {
     if (isApiError(failure)) {
       for (const [field, messages] of Object.entries(failure.fieldErrors)) errors[field] = messages[0];
       // Options that live behind "More" open it, so their message is seen.
-      if (["on_holiday", "remind_days_before", "payer", "branch"].some((field) => errors[field])) more.value = true;
+      if (["on_holiday", "remind_days_before", "payer", "create_task", "branch"].some((field) => errors[field])) more.value = true;
     }
     const unshown = unshownFieldError(failure, SHOWN);
     if (unshown) toast.error(unshown);
@@ -339,6 +344,10 @@ const nextDates = computed(() => (props.rule?.upcoming ?? []).map((day) => fmt.d
         <FormField :label="t('finance.recurring.field.payer')" :error="errors.payer" :hint="t('finance.recurring.payerHint')" optional>
           <SelectBox v-model="form.payer" :options="people" clearable :placeholder="t('finance.recurring.payerPlaceholder')" />
         </FormField>
+        <div v-if="!auto && form.payer !== null" class="sm:col-span-2" data-create-task>
+          <CheckBox v-model="form.create_task" :label="t('finance.recurring.createTask')" :description="t('finance.recurring.createTaskHint')" />
+          <p v-if="errors.create_task" class="mt-1 text-sm text-danger">{{ errors.create_task }}</p>
+        </div>
         <FormField :label="t('finance.field.branch')" :error="errors.branch" optional>
           <SelectBox v-model="form.branch" :options="branches" clearable :placeholder="t('finance.quick.branchPlaceholder')" />
         </FormField>
