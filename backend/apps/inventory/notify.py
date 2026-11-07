@@ -469,6 +469,7 @@ def expiry_digest(company, branch, rows: list[dict], today: date) -> int:
         title=title,
         body=body,
         url=_url(company.pk, f"expiry?branch={branch.pk}"),
+        app_screen="stock.expiry",  # a head of pharmacy opens the app's expiry check
         target=branch,
         severity="warning" if expired else None,
         dedupe_key=f"inventory.expiry_digest:{branch.pk}:{today.isoformat()}",

@@ -21,6 +21,7 @@ from __future__ import annotations
 from datetime import timedelta
 from decimal import Decimal
 
+from django.db.models import Count, Q
 from django.utils.translation import gettext as _
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import serializers
@@ -111,6 +112,9 @@ class AppSettingsSerializer(serializers.Serializer):
     show_other_branches = serializers.BooleanField()
     rx_log = serializers.BooleanField()
     fefo_strict = serializers.BooleanField()
+    expiry_steps = serializers.ListField(
+        child=serializers.IntegerField(), help_text="Warning steps in days, largest first."
+    )
 
     class Meta:
         ref_name = "InventoryAppSettings"
@@ -127,6 +131,7 @@ class SettingsView(MemberView):
                     "show_other_branches": row.show_other_branches,
                     "rx_log": row.rx_log,
                     "fefo_strict": row.fefo_strict,
+                    "expiry_steps": sorted(row.expiry_steps or [], reverse=True),
                 }
             ).data
         )
@@ -150,11 +155,16 @@ class LookupRowSerializer(serializers.Serializer):
     rx_required = serializers.BooleanField()
     control_class = serializers.CharField()
     storage = serializers.CharField()
+    dosage_form = serializers.CharField()
+    strength = serializers.CharField()
     units_per_pack = serializers.IntegerField()
     part_label = serializers.CharField()
     sale_price = s.Money()
     part_price = s.Money()
     quantity = s.Qty(allow_null=True, help_text="Parts at my pharmacies.")
+    nearest_expiry = serializers.DateField(
+        allow_null=True, help_text="The earliest expiry of what my pharmacies sell next."
+    )
     elsewhere = ElsewhereSerializer(many=True)
 
     class Meta:
@@ -207,11 +217,22 @@ class LookupView(MemberView):
         return Response(LookupRowSerializer(data, many=True).data)
 
 
+class AppBatchProductSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+
+    class Meta:
+        ref_name = "InventoryAppBatchProduct"
+
+
 class AppBatchSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     batch_id = serializers.IntegerField()
     branch_id = serializers.IntegerField()
     branch = serializers.CharField()
+    product = AppBatchProductSerializer(help_text="Which medicine the batch is.")
+    units_per_pack = serializers.IntegerField()
+    part_label = serializers.CharField()
     series = serializers.CharField()
     expires_on = serializers.DateField()
     days_left = serializers.IntegerField()
@@ -241,6 +262,9 @@ def _app_batch(stock, *, today, settings) -> dict:
         "batch_id": batch.pk,
         "branch_id": stock.branch_id,
         "branch": stock.branch.name,
+        "product": {"id": batch.product_id, "name": batch.product.name},
+        "units_per_pack": batch.product.units_per_pack,
+        "part_label": batch.product.part_label,
         "series": batch.series,
         "expires_on": batch.expires_on,
         "days_left": (batch.expires_on - today).days,
@@ -279,6 +303,8 @@ class ProductView(MemberView):
                         "rx_required": product.rx_required,
                         "control_class": product.control_class,
                         "storage": product.storage,
+                        "dosage_form": product.dosage_form,
+                        "strength": product.strength,
                         "units_per_pack": product.units_per_pack,
                         "part_label": product.part_label,
                         "sale_price": product.sale_price,
@@ -286,6 +312,9 @@ class ProductView(MemberView):
                         "quantity": held.get(product.pk, Decimal(0))
                         if product.track_stock
                         else None,
+                        "nearest_expiry": queries.nearest_expiry(
+                            self.company, [product.pk], branch_ids=self.mine
+                        ).get(product.pk),
                         "elsewhere": others.get(product.pk, []),
                     },
                     "batches": [
@@ -304,6 +333,7 @@ class AppReceiptLineSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     product = s.Ref()
     units_per_pack = serializers.IntegerField()
+    part_label = serializers.CharField()
     series = serializers.CharField()
     expires_on = serializers.DateField()
     packs = s.Qty()
@@ -358,6 +388,7 @@ def _app_receipt(receipt: GoodsReceipt) -> dict:
                 "id": line.pk,
                 "product": shapes.ref(line.product),
                 "units_per_pack": line.product.units_per_pack,
+                "part_label": line.product.part_label,
                 "series": line.series,
                 "expires_on": line.expires_on,
                 "packs": line.packs,
@@ -495,6 +526,90 @@ class AppCountSerializer(serializers.Serializer):
 
     class Meta:
         ref_name = "InventoryAppCount"
+
+
+class AppOpenCountSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    kind = serializers.CharField()
+    branch = s.BranchRef()
+    category = serializers.CharField(allow_null=True)
+    lines = serializers.IntegerField()
+    counted = serializers.IntegerField()
+    created_at = serializers.DateTimeField()
+
+    class Meta:
+        ref_name = "InventoryAppOpenCount"
+
+
+class CountsView(MemberView):
+    """The open counts at my pharmacies, so a counter can find one without its link (never
+    an expected quantity)."""
+
+    perm = OPERATE
+
+    @extend_schema(responses=AppOpenCountSerializer(many=True))
+    def get(self, request, company_id):
+        rows = (
+            StockCount.objects.for_company(self.company)
+            .filter(status=StockCount.Status.OPEN)
+            .select_related("branch", "category")
+            .annotate(
+                total=Count("lines"), done=Count("lines", filter=Q(lines__counted__isnull=False))
+            )
+            .order_by("-created_at", "-pk")
+        )
+        if self.mine is not None:
+            rows = rows.filter(branch_id__in=self.mine)
+        return Response(
+            AppOpenCountSerializer(
+                [
+                    {
+                        "id": row.pk,
+                        "kind": row.kind,
+                        "branch": {
+                            "id": row.branch_id,
+                            "name": row.branch.name,
+                            "code": row.branch.code,
+                        },
+                        "category": row.category.name if row.category_id else None,
+                        "lines": row.total,
+                        "counted": row.done,
+                        "created_at": row.created_at,
+                    }
+                    for row in rows[:50]
+                ],
+                many=True,
+            ).data
+        )
+
+
+class AppSupplierSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+
+    class Meta:
+        ref_name = "InventoryAppSupplier"
+
+
+class SuppliersView(MemberView):
+    """Distributors to start a receipt from: the company's supplier counterparties."""
+
+    perm = OPERATE
+
+    @extend_schema(responses=AppSupplierSerializer(many=True))
+    def get(self, request, company_id):
+        from apps.finance.models import Counterparty
+
+        rows = (
+            Counterparty.objects.for_company(self.company)
+            .filter(kind__in=(Counterparty.Kind.SUPPLIER, Counterparty.Kind.BOTH), is_active=True)
+            .order_by("name", "pk")
+        )
+        return Response(
+            AppSupplierSerializer(
+                [{"id": row.pk, "name": row.name} for row in rows[:200]], many=True
+            ).data
+        )
 
 
 class CountLinesView(MemberView):

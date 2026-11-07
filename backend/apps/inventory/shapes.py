@@ -262,6 +262,7 @@ def transfer_line_out(line: StockTransferLine) -> dict:
         "id": line.pk,
         "product": ref(line.product),
         "units_per_pack": line.product.units_per_pack,
+        "part_label": line.product.part_label,
         "batch_id": line.batch_id,
         "series": batch.series if batch else None,
         "expires_on": batch.expires_on if batch else None,

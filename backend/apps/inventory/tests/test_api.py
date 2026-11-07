@@ -246,3 +246,34 @@ def test_a_distributor_starts_without_the_prescription_log(company):
     company.business_kind = "distributor"
     company.save(update_fields=["business_kind"])
     assert conf.get_settings(company).rx_log is False
+
+
+def test_the_app_says_which_medicine_a_batch_is_and_in_parts(shop, ali, api_as, chilonzor, product):
+    """The mini app's expiry check names the medicine and reads quantities in packs and parts."""
+    opening(chilonzor, product, "OLD", expires_on=DAY - timedelta(days=2), quantity=2)
+    [row] = api_as(ali).get(f"{app(shop)}/expiry/").json()
+    assert row["product"] == {"id": product.pk, "name": product.name}
+    assert row["units_per_pack"] == product.units_per_pack
+    assert row["part_label"] == product.part_label
+
+
+def test_the_app_lookup_reads_form_strength_and_nearest_expiry(shop, ali, api_as, stocked):
+    [row] = api_as(ali).get(f"{app(shop)}/lookup/?q=Parats").json()
+    assert (row["dosage_form"], row["strength"]) == (stocked.dosage_form, stocked.strength)
+    assert row["nearest_expiry"] is not None
+    detail = api_as(ali).get(f"{app(shop)}/products/{stocked.pk}/").json()["product"]
+    assert detail["nearest_expiry"] == row["nearest_expiry"]
+
+
+def test_the_app_lists_open_counts_and_distributors(
+    shop, owner, ali, api_as, stocked, chilonzor, supplier
+):
+    count = services.start_count(chilonzor, by=owner)
+    [open_count] = api_as(ali).get(f"{app(shop)}/counts/").json()
+    assert open_count["id"] == count.pk and open_count["counted"] == 0
+    assert open_count["lines"] == count.lines.count()
+    assert "expected" not in open_count
+    distributors = api_as(ali).get(f"{app(shop)}/suppliers/").json()
+    assert {"id": supplier.pk, "name": supplier.name} in distributors
+    settings = api_as(ali).get(f"{app(shop)}/settings/").json()
+    assert settings["expiry_steps"] == [90, 60, 30]

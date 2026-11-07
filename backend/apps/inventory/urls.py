@@ -24,7 +24,9 @@ urlpatterns = [
         api.ReceiptSubmitView.as_view(),
         name="stock-app-receipt-submit",
     ),
+    path("stock/counts/", api.CountsView.as_view(), name="stock-app-counts"),
     path("stock/counts/<int:pk>/lines/", api.CountLinesView.as_view(), name="stock-app-count"),
+    path("stock/suppliers/", api.SuppliersView.as_view(), name="stock-app-suppliers"),
     path("stock/expiry/", api.ExpiryView.as_view(), name="stock-app-expiry"),
     path(
         "stock/batches/<int:pk>/expiry-action/",

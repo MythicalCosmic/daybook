@@ -742,6 +742,7 @@ class TransferLineSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     product = Ref()
     units_per_pack = serializers.IntegerField()
+    part_label = serializers.CharField()
     batch_id = serializers.IntegerField(allow_null=True)
     series = serializers.CharField(allow_null=True)
     expires_on = serializers.DateField(allow_null=True)

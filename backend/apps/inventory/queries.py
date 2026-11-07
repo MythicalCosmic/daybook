@@ -98,9 +98,10 @@ def quantities(company, product_ids, *, branch_ids: list[int] | None) -> dict[in
 
 def lookup(company, q: str, *, branch_ids: list[int] | None, limit: int = 20) -> list[dict]:
     """Products by name, trade name, INN, barcode or another code, for the counter and the
-    dashboard, with the parts on hand at `branch_ids`."""
+    dashboard, with the parts on hand at `branch_ids` and the nearest expiry there."""
     found = list(_search(company, q).filter(is_active=True).order_by("name", "pk")[:limit])
     held = quantities(company, [product.pk for product in found], branch_ids=branch_ids)
+    soonest = nearest_expiry(company, [product.pk for product in found], branch_ids=branch_ids)
     return [
         {
             "id": product.pk,
@@ -111,10 +112,13 @@ def lookup(company, q: str, *, branch_ids: list[int] | None, limit: int = 20) ->
             "rx_required": product.rx_required,
             "control_class": product.control_class,
             "storage": product.storage,
+            "dosage_form": product.dosage_form,
+            "strength": product.strength,
             "units_per_pack": product.units_per_pack,
             "part_label": product.part_label,
             "sale_price": product.sale_price,
             "quantity": held.get(product.pk, ZERO) if product.track_stock else None,
+            "nearest_expiry": soonest.get(product.pk),
         }
         for product in found
     ]
