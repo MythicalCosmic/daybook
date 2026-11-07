@@ -75,14 +75,15 @@ def reached_step(days_left: int, steps: list[int]) -> int | None:
     return min(reached) if reached else None
 
 
-@transaction.atomic
 def expiry_digests(company, today: date, settings) -> int:
+    """Each batch's newly reached step is claimed with a conditional update (no row locks held
+    while the digests go out: sales keep deducting meanwhile), so a second run tells nothing
+    twice."""
     steps = _steps(settings)
     rows: dict[int, list[dict]] = defaultdict(list)
     branches = {}
     stocks = (
-        BatchStock.objects.select_for_update(of=("self",))
-        .filter(batch__company=company, quantity__gt=0, branch__is_active=True)
+        BatchStock.objects.filter(batch__company=company, quantity__gt=0, branch__is_active=True)
         .select_related("batch__product", "branch")
         .order_by("batch__expires_on", "pk")
     )
@@ -91,8 +92,11 @@ def expiry_digests(company, today: date, settings) -> int:
         step = reached_step((batch.expires_on - today).days, steps)
         if step is None or (stock.notified_step is not None and stock.notified_step <= step):
             continue
-        stock.notified_step = step
-        stock.save(update_fields=["notified_step"])
+        claimed = BatchStock.objects.filter(pk=stock.pk, notified_step=stock.notified_step).update(
+            notified_step=step
+        )
+        if not claimed:
+            continue  # another run told it a moment ago
         branches[stock.branch_id] = stock.branch
         rows[stock.branch_id].append(
             {

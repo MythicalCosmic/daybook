@@ -1492,10 +1492,21 @@ def _lock_batch(batch: StockBatch) -> StockBatch:
     )
 
 
-def _status_event(batch: StockBatch, kind: str, *, by, reason: str) -> None:
+def _lock_for_status(batch: StockBatch) -> tuple[StockBatch, dict]:
+    """The levels of every branch holding the batch, then the batch itself: the order every
+    stock change locks in (levels before batch rows), so a refund and a quarantine of the same
+    batch never wait on each other in a circle."""
+    holders = [
+        stock.branch
+        for stock in BatchStock.objects.filter(batch=batch, quantity__gt=0).select_related("branch")
+    ]
+    levels = lock_levels((branch, batch.product) for branch in holders)
+    return _lock_batch(batch), levels
+
+
+def _status_event(batch: StockBatch, kind: str, levels: dict, *, by, reason: str) -> None:
     """A zero movement per branch holding the batch: it left (or came back to) sale there."""
-    for stock in BatchStock.objects.filter(batch=batch, quantity__gt=0).select_related("branch"):
-        level = engine.lock_level(stock.branch, batch.product)
+    for level in levels.values():
         move(
             level=level,
             batch=batch,
@@ -1510,13 +1521,13 @@ def _status_event(batch: StockBatch, kind: str, *, by, reason: str) -> None:
 @transaction.atomic
 def quarantine(batch: StockBatch, *, by: Membership, reason: str) -> StockBatch:
     """Take a series off sale in every branch (a suspected quality problem)."""
-    batch = _lock_batch(batch)
+    batch, levels = _lock_for_status(batch)
     if batch.status == StockBatch.Status.RECALLED:
         raise DomainError(_("This series is recalled."))
     if batch.status != StockBatch.Status.QUARANTINE:
         batch.status = StockBatch.Status.QUARANTINE
         batch.save(update_fields=["status", "updated_at"])
-        _status_event(batch, Kind.QUARANTINE, by=by, reason=_text(reason, 16))
+        _status_event(batch, Kind.QUARANTINE, levels, by=by, reason=_text(reason, 16))
         engine.refresh_sale_price(batch.product)
         _audit(
             Action.BATCH_QUARANTINED,
@@ -1533,13 +1544,13 @@ def quarantine(batch: StockBatch, *, by: Membership, reason: str) -> StockBatch:
 @transaction.atomic
 def release(batch: StockBatch, *, by: Membership, reason: str) -> StockBatch:
     """Put a quarantined series back on sale (never a recalled one)."""
-    batch = _lock_batch(batch)
+    batch, levels = _lock_for_status(batch)
     if batch.status == StockBatch.Status.RECALLED:
         raise DomainError(_("A recalled series stays off sale until it is written off."))
     if batch.status == StockBatch.Status.QUARANTINE:
         batch.status = StockBatch.Status.SELLABLE
         batch.save(update_fields=["status", "updated_at"])
-        _status_event(batch, Kind.RELEASE, by=by, reason=_text(reason, 16))
+        _status_event(batch, Kind.RELEASE, levels, by=by, reason=_text(reason, 16))
         engine.refresh_sale_price(batch.product)
         _audit(
             Action.BATCH_RELEASED,
@@ -1667,6 +1678,7 @@ def send_transfer(transfer: StockTransfer, *, by: Membership) -> StockTransfer:
     source = transfer.from_branch
     today = engine.local_today(company)
     lines = list(transfer.lines.select_related("product__company", "batch__product"))
+    number = _next_number(company, "next_transfer_number")  # settings before levels, always
     levels = lock_levels((source, line.product) for line in lines)
     document = (TRANSFER, transfer.pk)
     now = timezone.now()
@@ -1724,7 +1736,6 @@ def send_transfer(transfer: StockTransfer, *, by: Membership) -> StockTransfer:
                     transfer=transfer, product=line.product, batch=stock.batch, quantity_sent=take
                 )
             remaining -= take
-    number = _next_number(company, "next_transfer_number")
     transfer.number = f"TR-{_code(source)}-{number:04d}"
     transfer.status = StockTransfer.Status.SENT
     transfer.sent_by, transfer.sent_at = by, now
@@ -2029,6 +2040,9 @@ def approve_writeoff(writeoff: WriteOff, *, by: Membership) -> WriteOff:
     company = writeoff.company
     branch = writeoff.branch
     lines = list(writeoff.lines.select_related("batch__product__company"))
+    # The number first, then the stock: every document locks in this order (settings, then
+    # levels), so two of them never wait on each other in a circle.
+    number = _next_number(company, "next_writeoff_number")
     levels = lock_levels((branch, line.batch.product) for line in lines)
     document = (WRITEOFF, writeoff.pk)
     now = timezone.now()
@@ -2049,7 +2063,6 @@ def approve_writeoff(writeoff: WriteOff, *, by: Membership) -> WriteOff:
         line.value = engine.value_of(batch, line.quantity)
         line.save(update_fields=["unit_cost", "value"])
         total += line.value
-    number = _next_number(company, "next_writeoff_number")
     writeoff.number = f"AKT-{_code(branch)}-{number:04d}"
     writeoff.status = WriteOff.Status.APPROVED
     writeoff.approved_by, writeoff.approved_at = by, now
