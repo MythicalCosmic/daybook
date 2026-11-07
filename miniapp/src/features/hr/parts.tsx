@@ -26,8 +26,11 @@ export function ContractBanner({ contract, onOpen, size = "md" }: { contract: Co
   );
 }
 
-/** A document that ran out or soon will: "Medical book: 12 days left · upload the renewed one". */
-export function DocumentBanner({ document, onOpen, size = "md" }: { document: HrDocument; onOpen: () => void; size?: "md" | "lg" }) {
+/**
+ * A document that ran out or soon will: "Medical book: 12 days left · upload the renewed one";
+ * `renew` (a pharmacist's certificate, opening the upload itself) says "Upload my renewed certificate".
+ */
+export function DocumentBanner({ document, onOpen, size = "md", renew = false }: { document: HrDocument; onOpen: () => void; size?: "md" | "lg"; renew?: boolean }) {
   const t = useHrT();
   return (
     <Banner
@@ -36,7 +39,7 @@ export function DocumentBanner({ document, onOpen, size = "md" }: { document: Hr
       iconTone="accent"
       icon={document.kind === "medical_book" || document.kind === "medical_exam" ? Stethoscope : kindIcon(document.kind)}
       title={attentionText(t, document)}
-      body={t("home.documentBody")}
+      body={renew ? t("home.certificateBody") : t("home.documentBody")}
       chevron
       wrap
       onClick={onOpen}
