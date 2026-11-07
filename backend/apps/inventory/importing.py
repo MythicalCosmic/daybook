@@ -350,3 +350,198 @@ def _category(company, name: str, cache: dict) -> ProductCategory:
             found = ProductCategory.objects.create(company=company, name=name)
         cache[key] = found
     return cache[key]
+
+
+# A distributor's invoice spreadsheet into receipt lines -------------------------------------
+
+LINE_FIELDS = (
+    "code",
+    "barcode",
+    "name",
+    "series",
+    "expires_on",
+    "made_on",
+    "packs",
+    "unit_cost",
+    "vat_percent",
+    "rx",
+)
+LINE_SYNONYMS = {
+    "code": ("code", "kod", "код", "itemcode", "kodtovara", "кодтовара", "artikul", "артикул"),
+    "barcode": SYNONYMS["barcode"],
+    "name": SYNONYMS["name"],
+    "series": ("series", "seriya", "серия", "batch", "lot", "партия"),
+    "expires_on": (
+        "expiry",
+        "expires",
+        "expireson",
+        "yaroqlilikmuddati",
+        "срокгодности",
+        "годендо",
+    ),
+    "made_on": ("made", "madeon", "ishlabchiqarilgan", "датапроизводства"),
+    "packs": ("packs", "qty", "quantity", "soni", "miqdori", "количество", "кол-во", "кол"),
+    "unit_cost": ("price", "cost", "unitcost", "narx", "narxi", "цена", "ценазаед", "цена,сум"),
+    "vat_percent": SYNONYMS["vat_percent"],
+    "rx": SYNONYMS["rx_required"],
+}
+
+
+def guess_line_mapping(header: list[str]) -> dict[str, str]:
+    found: dict[str, str] = {}
+    taken = set()
+    for column in header:
+        key = _key(column)
+        for field in LINE_FIELDS:
+            if field in taken:
+                continue
+            if key == field or key in LINE_SYNONYMS.get(field, ()):
+                found[column] = field
+                taken.add(field)
+                break
+    return found
+
+
+def parse_day(text: str) -> date | None:
+    """31.12.2027, 2027-12-31, 12.2027 or 12/2027 (the last day of that month)."""
+    import calendar
+
+    text = (text or "").strip()
+    if not text:
+        return None
+    try:
+        return date.fromisoformat(text[:10])
+    except ValueError:
+        pass
+    parts = text.replace("/", ".").replace("-", ".").split(".")
+    try:
+        if len(parts) == 3:
+            day, month, year = (int(part) for part in parts)
+            year += 2000 if year < 100 else 0
+            return date(year, month, day)
+        if len(parts) == 2:
+            month, year = (int(part) for part in parts)
+            year += 2000 if year < 100 else 0
+            return date(year, month, calendar.monthrange(year, month)[1])
+    except ValueError:
+        return None
+    return None
+
+
+def _match(company, supplier, values: dict) -> Product | None:
+    from apps.inventory import queries
+    from apps.inventory.models import ProductCode
+
+    code = values.get("code", "").strip()
+    if code:
+        found = (
+            ProductCode.objects.filter(
+                company=company, kind=ProductCode.Kind.SUPPLIER, supplier=supplier, code=code
+            )
+            .select_related("product")
+            .first()
+        )
+        if found is not None:
+            return found.product
+    for key in ("barcode", "code"):
+        if values.get(key) and (product := queries.match_code(company, values[key])):
+            return product
+    name = values.get("name", "").strip()
+    if name:
+        return Product.objects.for_company(company).filter(name__iexact=name).first()
+    return None
+
+
+@transaction.atomic
+def import_lines(receipt, upload, *, by, mapping: dict | None = None, dry_run: bool = True) -> dict:
+    """A distributor's invoice (XLSX or CSV) into lines of a draft receipt. Rows are matched by
+    the distributor's own item code, the barcode, then the exact name; a row that matches
+    nothing is listed for the person to pick its item (remember_code then finds it next time).
+    The column map is remembered per distributor."""
+    from apps.inventory import services
+    from apps.inventory.models import GoodsReceipt, SupplierProfile
+
+    if receipt.status not in (GoodsReceipt.Status.DRAFT, GoodsReceipt.Status.SUBMITTED):
+        raise DomainError(_("A posted or void receipt can't be changed."))
+    header, rows = read_table(upload)
+    profile = SupplierProfile.objects.filter(counterparty_id=receipt.supplier_id).first()
+    saved = (profile.price_list_mapping or {}).get("invoice") if profile else None
+    mapping = mapping or saved or guess_line_mapping(header)
+    mapping = {
+        column: field
+        for column, field in mapping.items()
+        if field in LINE_FIELDS and column in header
+    }
+    if "packs" not in mapping.values() or not {"code", "barcode", "name"} & set(mapping.values()):
+        raise DomainError(_("Pick the columns with the item and the number of packs."))
+    index = {header.index(column): field for column, field in mapping.items()}
+    result = {
+        "dry_run": dry_run,
+        "columns": header,
+        "mapping": mapping,
+        "added": 0,
+        "unmatched": 0,
+        "skipped": 0,
+        "rows": [],
+    }
+    for number, row in enumerate(rows, start=2):
+        values = {
+            field: row[position] if position < len(row) else "" for position, field in index.items()
+        }
+        product = _match(receipt.company, receipt.supplier, values)
+        errors = []
+        packs = unit_cost = vat = None
+        try:
+            packs = _decimal(values.get("packs", ""))
+            unit_cost = _decimal(values.get("unit_cost", "")) or Decimal(0)
+            vat = _decimal(values.get("vat_percent", ""))
+        except ValueError:
+            errors.append(_("A number can't be read."))
+        expires_on = parse_day(values.get("expires_on", ""))
+        if not packs or packs <= 0:
+            errors.append(_("No quantity."))
+        if expires_on is None:
+            errors.append(_("No expiry date."))
+        if not values.get("series", "").strip():
+            errors.append(_("No series."))
+        entry = {
+            "row": number,
+            "action": "add",
+            "name": values.get("name") or values.get("code") or values.get("barcode") or "",
+            "product_id": product.pk if product else None,
+            "errors": [str(error) for error in errors],
+        }
+        if errors:
+            entry["action"] = "skip"
+            result["skipped"] += 1
+        elif product is None:
+            entry["action"] = "unmatched"
+            result["unmatched"] += 1
+        else:
+            result["added"] += 1
+            if not dry_run:
+                try:
+                    with transaction.atomic():
+                        services.add_line(
+                            receipt,
+                            by=by,
+                            product=product,
+                            series=values["series"],
+                            expires_on=expires_on,
+                            made_on=parse_day(values.get("made_on", "")),
+                            packs=packs,
+                            unit_cost=unit_cost,
+                            vat_percent=vat,
+                            supplier_rx=_bool(values["rx"]) if values.get("rx") else None,
+                        )
+                except DomainError as exc:
+                    entry["action"] = "skip"
+                    entry["errors"] = [str(exc)]
+                    result["added"] -= 1
+                    result["skipped"] += 1
+        result["rows"].append(entry)
+    if not dry_run and profile is not None and mapping != saved:
+        profile.price_list_mapping = {**(profile.price_list_mapping or {}), "invoice": mapping}
+        profile.save(update_fields=["price_list_mapping", "updated_at"])
+    result["rows"] = result["rows"][:500]
+    return result

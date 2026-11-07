@@ -1,0 +1,66 @@
+{% extends "core/base_print.html" %}{% load i18n %}
+{% block style %}
+.tags { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3mm; }
+.tag { border: 0.6pt solid #1c1c1c; padding: 2.5mm 3mm; min-height: 38mm; page-break-inside: avoid; display: flex; flex-direction: column; }
+.tag__company { font-size: 7pt; color: #6b6b6b; }
+.tag__name { font-size: 10pt; font-weight: 700; margin: 1mm 0; line-height: 1.2; }
+.tag__maker { font-size: 7.5pt; color: #555; }
+.tag__price { font-size: 16pt; font-weight: 700; margin-top: auto; }
+.tag__part { font-size: 8pt; }
+.tag__foot { display: flex; justify-content: space-between; font-size: 7pt; color: #555; margin-top: 1.5mm; border-top: 0.4pt solid #9a9a9a; padding-top: 1mm; }
+.counter { page-break-before: always; }
+.counter h1 { margin-bottom: 1mm; }
+.counter .warning { font-weight: 700; color: #a33a2a; margin: 0 0 4mm; }
+{% endblock %}
+{% block header %}{% endblock %}
+{% block content %}
+{% if tags %}
+<section class="tags">
+  {% for tag in tags %}
+  <div class="tag">
+    <div class="tag__company">{{ company.name }} · {{ branch }}</div>
+    <div class="tag__name">{{ tag.name }}</div>
+    <div class="tag__maker">{{ tag.maker }}</div>
+    <div class="tag__price">{{ tag.price }}</div>
+    {% if tag.part %}<div class="tag__part">{{ tag.part }}</div>{% endif %}
+    <div class="tag__foot"><span>{{ printed_on }}</span><span>{% translate "Signature" %}: ________</span></div>
+  </div>
+  {% endfor %}
+</section>
+{% endif %}
+{% if counter %}
+<section class="counter">
+  <h1>{% translate "Prescription medicines: prices at the counter" %}</h1>
+  <p class="warning">{% translate "Not for public display." %}</p>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>{% translate "Medicine" %}</th>
+        <th>{% translate "Manufacturer" %}</th>
+        <th class="num">{% translate "Price per pack" %}</th>
+        <th class="num">{% translate "Price per part" %}</th>
+        <th class="num">{% translate "Legal maximum" %}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in counter %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{{ row.name }}</td>
+        <td>{{ row.maker }}</td>
+        <td class="num">{{ row.price }}</td>
+        <td class="num">{{ row.part }}</td>
+        <td class="num">{{ row.cap }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div class="signatures">
+    <div class="signature">{% translate "Responsible person" %}</div>
+    <div class="signature">{{ printed_on }}</div>
+  </div>
+</section>
+{% endif %}
+{% if not tags and not counter %}<p class="muted">{% translate "Nothing to print." %}</p>{% endif %}
+{% endblock %}

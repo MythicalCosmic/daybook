@@ -320,6 +320,8 @@ def analogs(product, *, branch_ids: list[int] | None) -> list[dict]:
             "dosage_form": row.dosage_form,
             "strength": row.strength,
             "manufacturer": row.manufacturer.name if row.manufacturer else "",
+            "units_per_pack": row.units_per_pack,
+            "part_label": row.part_label,
             "rx_required": row.rx_required,
             "sale_price": row.sale_price,
             "quantity": held.get(row.pk, ZERO),
@@ -491,6 +493,32 @@ def sold_after_expiry(company, start: date, end: date, *, branch_ids: list[int] 
     return movements(
         company, start, end, branch_ids=branch_ids, kinds=(StockMovement.Kind.SALE,)
     ).filter(batch__isnull=False, batch__expires_on__lt=F("at__date"))
+
+
+def price_changes(company, branch, since: date) -> list[Product]:
+    """The "price tags to print" list: items whose price changed since `since` (a new batch at
+    the branch, a markdown, a list price changed), in name order."""
+    from apps.audit.models import AuditLog
+
+    since_at, _end = _day_bounds(company, since, since)
+    new = BatchStock.objects.filter(
+        branch=branch, batch__company=company, batch__created_at__gte=since_at
+    ).values_list("batch__product_id", flat=True)
+    changed = AuditLog.objects.filter(
+        company_id=company.pk, action="inventory.price_changed", created_at__gte=since_at
+    )
+    products = set(new)
+    products |= set(changed.filter(target_type="product").values_list("target_id", flat=True))
+    batch_ids = changed.filter(target_type="stockbatch").values_list("target_id", flat=True)
+    products |= set(
+        StockBatch.objects.filter(pk__in=list(batch_ids)).values_list("product_id", flat=True)
+    )
+    return list(
+        Product.objects.for_company(company)
+        .filter(pk__in=products, is_active=True)
+        .select_related("manufacturer")
+        .order_by("name", "pk")
+    )
 
 
 def totals_by_branch(company, *, branch_ids: list[int] | None) -> dict[int, dict]:

@@ -277,3 +277,58 @@ def rx_pdf(branch, month: date, *, invalid: bool, language: str) -> bytes:
 
 def money(value) -> Decimal:
     return quantize(value)
+
+
+def _maker(product) -> str:
+    maker = product.manufacturer
+    if maker is None:
+        return ""
+    return f"{maker.name}, {maker.country}" if maker.country else maker.name
+
+
+def price_tags_pdf(branch, products, *, language: str) -> bytes:
+    """Price tags for the shelf, with a signature line (§14.4 row 16), at the price the branch
+    sells next (its earliest-expiring batch on sale, else the list price). Prescription items
+    aren't displayed to the public: they go on a counter list marked so, with their legal
+    maximum."""
+    from apps.inventory import conf, pricing
+
+    company = branch.company
+    settings = conf.get_settings(company)
+    today = engine.local_today(company)
+    currency = company.base_currency
+    tags, counter = [], []
+    with translation.override(language):
+        for product in products:
+            stocks = engine.fefo_stocks(branch, product, today)
+            batch = stocks[0].batch if stocks else None
+            price = batch.retail_price if batch is not None else product.sale_price
+            part = ""
+            if product.units_per_pack > 1:
+                amount = pricing.part_price(product, batch, settings=settings)
+                part = _("%(price)s per %(part)s") % {
+                    "price": format_money(amount, currency, language),
+                    "part": product.part_label or _("part"),
+                }
+            row = {
+                "name": product.name,
+                "maker": _maker(product),
+                "price": format_money(price, currency, language),
+                "part": part,
+            }
+            if product.rx_required:
+                cost = batch.unit_cost if batch is not None else None
+                cap = pricing.price_ceiling(product, cost, settings)
+                row["cap"] = format_money(cap, currency, language) if cap else ""
+                counter.append(row)
+            else:
+                tags.append(row)
+        context = {
+            "company": company,
+            "title": _("Price tags"),
+            "branch": branch.name,
+            "tags": tags,
+            "counter": counter,
+            "printed_on": today.strftime("%d.%m.%Y"),
+        }
+    return render_pdf("inventory/price_tags.html", context, language=language)

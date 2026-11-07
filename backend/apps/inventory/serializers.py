@@ -7,6 +7,7 @@ anyone without finance.view (the field rule of §5): their serializer fields are
 
 from rest_framework import serializers
 
+from apps.core.models import Language
 from apps.inventory.models import (
     GoodsReceipt,
     GoodsReceiptLine,
@@ -310,6 +311,8 @@ class AnalogSerializer(serializers.Serializer):
     dosage_form = serializers.CharField()
     strength = serializers.CharField()
     manufacturer = serializers.CharField()
+    units_per_pack = serializers.IntegerField()
+    part_label = serializers.CharField()
     rx_required = serializers.BooleanField()
     sale_price = Money()
     quantity = Qty()
@@ -678,6 +681,33 @@ class ReceiptDetailSerializer(serializers.Serializer):
         ref_name = "InventoryReceiptDetail"
 
 
+LINE_IMPORT_ACTIONS = [("add", "add"), ("unmatched", "unmatched"), ("skip", "skip")]
+
+
+class LineImportRowSerializer(serializers.Serializer):
+    row = serializers.IntegerField()
+    action = serializers.ChoiceField(choices=LINE_IMPORT_ACTIONS)
+    name = serializers.CharField()
+    product_id = serializers.IntegerField(allow_null=True)
+    errors = serializers.ListField(child=serializers.CharField())
+
+    class Meta:
+        ref_name = "InventoryLineImportRow"
+
+
+class LineImportResultSerializer(serializers.Serializer):
+    dry_run = serializers.BooleanField()
+    columns = serializers.ListField(child=serializers.CharField())
+    mapping = serializers.DictField(child=serializers.CharField())
+    added = serializers.IntegerField()
+    unmatched = serializers.IntegerField()
+    skipped = serializers.IntegerField()
+    rows = LineImportRowSerializer(many=True)
+
+    class Meta:
+        ref_name = "InventoryLineImportResult"
+
+
 class ReceiptFileSerializer(serializers.Serializer):
     file = serializers.FileField()
 
@@ -1002,6 +1032,8 @@ class FoundRowSerializer(serializers.Serializer):
     quantity = serializers.CharField()
     task_id = serializers.IntegerField(allow_null=True)
     left = Qty()
+    units_per_pack = serializers.IntegerField()
+    part_label = serializers.CharField()
 
     class Meta:
         ref_name = "InventoryFoundRow"
@@ -1041,6 +1073,20 @@ class PricingRuleSerializer(serializers.Serializer):
 
     class Meta:
         ref_name = "InventoryPricingRule"
+
+
+class PriceTagsSerializer(serializers.Serializer):
+    branch = serializers.IntegerField()
+    products = serializers.ListField(
+        child=serializers.IntegerField(), required=False, max_length=500
+    )
+    changed_since = serializers.DateField(
+        required=False, help_text="Items whose price changed since this day (default: 7 days)."
+    )
+    language = serializers.ChoiceField(choices=Language.choices, required=False)
+
+    class Meta:
+        ref_name = "InventoryPriceTags"
 
 
 class RequestSerializer(serializers.Serializer):

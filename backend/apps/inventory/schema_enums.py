@@ -29,4 +29,5 @@ ENUM_NAME_OVERRIDES = {
     "InventoryRxKindEnum": "apps.inventory.models.RxRecord.RxKind",
     "InventoryRxStatusEnum": "apps.inventory.models.RxRecord.Status",
     "InventoryImportActionEnum": "apps.inventory.serializers.IMPORT_ACTIONS",
+    "InventoryLineImportActionEnum": "apps.inventory.serializers.LINE_IMPORT_ACTIONS",
 }

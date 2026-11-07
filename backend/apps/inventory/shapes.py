@@ -384,8 +384,26 @@ def count_line_out(line: StockCountLine, *, blind: bool, cost: bool) -> dict:
 
 
 def recall_out(recall: RecallNotice, *, branch_ids, user, left_by_batch: dict) -> dict:
+    products = {
+        row.pk: row
+        for row in Product.objects.filter(
+            pk__in={row.get("product_id") for row in recall.found or []}
+        )
+    }
+
+    def packs_of(row) -> dict:
+        product = products.get(row.get("product_id"))
+        return {
+            "units_per_pack": product.units_per_pack if product else 1,
+            "part_label": product.part_label if product else "",
+        }
+
     rows = [
-        {**row, "left": left_by_batch.get((row.get("branch_id"), row.get("batch_id")), ZERO)}
+        {
+            **row,
+            **packs_of(row),
+            "left": left_by_batch.get((row.get("branch_id"), row.get("batch_id")), ZERO),
+        }
         for row in recall.found or []
         if branch_ids is None or row.get("branch_id") in branch_ids
     ]

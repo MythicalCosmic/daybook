@@ -9,6 +9,7 @@ P = "stock/"
 urlpatterns = [
     path(f"{P}settings/", v.SettingsView.as_view(), name="stock-settings"),
     path(f"{P}summary/", v.SummaryView.as_view(), name="stock-summary"),
+    path(f"{P}branches/", v.BranchesView.as_view(), name="stock-branches"),
     path(f"{P}products/", v.ProductsView.as_view(), name="stock-products"),
     path(f"{P}products/import/", v.ProductImportView.as_view(), name="stock-products-import"),
     path(f"{P}products/<int:pk>/", v.ProductView.as_view(), name="stock-product"),
@@ -48,6 +49,11 @@ urlpatterns = [
     path(f"{P}receipts/", v.ReceiptsView.as_view(), name="stock-receipts"),
     path(f"{P}receipts/<int:pk>/", v.ReceiptView.as_view(), name="stock-receipt"),
     path(f"{P}receipts/<int:pk>/lines/", v.ReceiptLinesView.as_view(), name="stock-receipt-lines"),
+    path(
+        f"{P}receipts/<int:pk>/lines/import/",
+        v.ReceiptLinesImportView.as_view(),
+        name="stock-receipt-lines-import",
+    ),
     path(
         f"{P}receipts/<int:pk>/lines/<int:line_id>/",
         v.ReceiptLineView.as_view(),
@@ -101,6 +107,7 @@ urlpatterns = [
     path(f"{P}recalls/<int:pk>/close/", v.RecallCloseView.as_view(), name="stock-recall-close"),
     path(f"{P}pricing-rules/", v.PricingRulesView.as_view(), name="stock-pricing-rules"),
     path(f"{P}pricing-rules/<int:pk>/", v.PricingRuleView.as_view(), name="stock-pricing-rule"),
+    path(f"{P}price-tags/", v.PriceTagsView.as_view(), name="stock-price-tags"),
     path(f"{P}defektura/", v.DefekturaView.as_view(), name="stock-defektura"),
     path(f"{P}defektura/<int:pk>/", v.DefekturaItemView.as_view(), name="stock-defektura-item"),
     path(f"{P}journals/rx/", v.RxJournalView.as_view(), name="stock-journal-rx"),

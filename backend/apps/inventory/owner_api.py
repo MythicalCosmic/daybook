@@ -272,6 +272,48 @@ class SummaryView(StockView):
         return Response(s.SummarySerializer(data).data)
 
 
+class StockBranchSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    code = serializers.CharField()
+    kind = serializers.CharField()
+    controlled_licence = serializers.BooleanField()
+    social_pharmacy = serializers.BooleanField()
+    in_scope = serializers.BooleanField(help_text="One of the caller's branches.")
+
+    class Meta:
+        ref_name = "InventoryStockBranch"
+
+
+class BranchesView(StockView):
+    """Every active branch of the company, for picking where a transfer goes (a pharmacy's head
+    sends to the others without seeing their stock)."""
+
+    perm = READ
+
+    @extend_schema(responses=StockBranchSerializer(many=True))
+    def get(self, request, company_id):
+        scope = self.branch_scope
+        rows = self.company.branches.filter(is_active=True).order_by("order", "pk")
+        return Response(
+            StockBranchSerializer(
+                [
+                    {
+                        "id": row.pk,
+                        "name": row.name,
+                        "code": row.code,
+                        "kind": row.kind,
+                        "controlled_licence": row.controlled_licence,
+                        "social_pharmacy": row.social_pharmacy,
+                        "in_scope": scope is None or row.pk in scope,
+                    }
+                    for row in rows
+                ],
+                many=True,
+            ).data
+        )
+
+
 def _has_sales_lines(company) -> bool:
     from apps.inventory.models import StockMovement
 
@@ -1206,6 +1248,28 @@ class ReceiptLineView(ReceiptBase):
         return self.detail(receipt)
 
 
+class ReceiptLinesImportView(ReceiptBase):
+    """POST stock/receipts/{id}/lines/import/: the distributor's invoice spreadsheet into
+    lines, a dry run first."""
+
+    perm = OPERATE
+
+    @extend_schema(request=s.ImportSerializer, responses=s.LineImportResultSerializer)
+    def post(self, request, company_id, pk):
+        receipt = self.get_receipt(pk)
+        serializer = s.ImportSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        mapping = data.get("mapping") or None
+        if mapping is not None and not isinstance(mapping, dict):
+            raise ValidationError({"mapping": [_("Give the columns as a map.")]})
+        upload = uploads.accept_document(data["file"], allowed=("xlsx", "csv"))
+        result = importing.import_lines(
+            receipt, upload, by=self.membership, mapping=mapping, dry_run=data["dry_run"]
+        )
+        return Response(s.LineImportResultSerializer(result).data)
+
+
 class ReceiptFileView(ReceiptBase):
     perm = OPERATE
 
@@ -1885,6 +1949,43 @@ class PricingRuleView(PricingRulesView):
     def delete(self, request, company_id, pk):
         services.delete_pricing_rule(self._rule(pk), by=self.membership)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class PriceTagsView(StockView):
+    """POST stock/price-tags/: the shelf's price tags as a PDF (prescription items on a counter
+    list, not for public display): the items named, else those whose price changed lately."""
+
+    perm = READ
+
+    @extend_schema(request=s.PriceTagsSerializer, responses=FILE_LINK)
+    def post(self, request, company_id):
+        serializer = s.PriceTagsSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        branch = self.branch(data["branch"])
+        if data.get("products"):
+            products = list(
+                Product.objects.for_company(self.company)
+                .filter(pk__in=data["products"], is_active=True)
+                .select_related("manufacturer")
+                .order_by("name", "pk")
+            )
+        else:
+            since = data.get("changed_since") or self.today() - timedelta(days=7)
+            products = queries.price_changes(self.company, branch, since)
+        language = data.get("language") or request.user.language or self.company.default_language
+        pdf = journals.price_tags_pdf(branch, products, language=language)
+        name = f"narx-{branch.code or branch.pk}-{self.today():%Y-%m-%d}-{language}.pdf"
+        return Response(
+            _store_pdf(
+                self.company,
+                request.user,
+                f"tags/{branch.pk}",
+                pdf,
+                name,
+                f"inventory.journal:{branch.pk}",
+            )
+        )
 
 
 class DefekturaView(StockView):
