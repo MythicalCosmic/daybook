@@ -616,7 +616,7 @@
   "sales.lines.col.series": "Series",
   "sales.lines.col.quantity": "Quantity",
   "sales.lines.col.packPrice": "Price a pack",
-  "sales.lines.col.cap": "Legal cap",
+  "sales.lines.cap": "cap {cap}",
   "sales.lines.capHint": "The most a prescription medicine may cost a pack: the batch cost plus the legal markup, never above the reference price.",
   "sales.lines.col.total": "Line total",
   "sales.lines.col.cost": "Cost",

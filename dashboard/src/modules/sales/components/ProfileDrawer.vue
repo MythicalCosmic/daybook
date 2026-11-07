@@ -162,7 +162,7 @@ async function submit(): Promise<void> {
 
 <template>
   <UiDrawer v-model:open="visible" size="xl" :title="profile ? profile.name : t('sales.profile.newTitle')" :description="t('sales.profile.description')">
-    <form class="flex flex-col gap-4" @submit.prevent="submit">
+    <form class="flex flex-col gap-4 p-5 max-sm:p-4" @submit.prevent="submit">
       <PageSection variant="card" :title="t('sales.profile.file')">
         <div class="grid gap-4 sm:grid-cols-2">
           <FormField :label="t('sales.profile.name')" :hint="t('sales.profile.nameHint')" required>

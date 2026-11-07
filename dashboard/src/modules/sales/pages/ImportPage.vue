@@ -81,20 +81,21 @@ async function send(): Promise<void> {
 const table = useDataTable({ id: "sales.imports", url: "f_" });
 const imports = useImports(computed(() => ({ ...table.params.value })));
 const columns = computed<TableColumn<SalesImport>[]>(() => [
-  { id: "created_at", header: t("sales.import.col.when"), width: 150, format: (v) => fmt.instant(String(v), "short") },
-  { id: "profile", header: t("sales.import.col.profile"), minWidth: 160, value: (row) => row.profile.name },
-  { id: "days", header: t("sales.import.col.days"), width: 170, value: (row) => days(row) },
-  { id: "status", header: t("sales.import.col.status"), width: 120 },
-  { id: "receipts", header: t("sales.import.col.receipts"), numeric: true, width: 100 },
+  { id: "created_at", header: t("sales.import.col.when"), width: 124, format: (v) => fmt.instant(String(v), "short") },
+  { id: "profile", header: t("sales.import.col.profile"), minWidth: 120, value: (row) => row.profile.name },
+  { id: "days", header: t("sales.import.col.days"), width: 150, value: (row) => days(row) },
+  { id: "status", header: t("sales.import.col.status"), width: 104 },
+  { id: "receipts", header: t("sales.import.col.receipts"), numeric: true, width: 84 },
   { id: "matched", header: t("sales.import.col.matched"), numeric: true, width: 100 },
-  { id: "unmatched", header: t("sales.import.col.unmatched"), numeric: true, width: 110 },
-  { id: "duplicates", header: t("sales.import.col.duplicates"), numeric: true, width: 110 },
-  { id: "breaches", header: t("sales.import.col.breaches"), numeric: true, width: 120 },
+  { id: "unmatched", header: t("sales.import.col.unmatched"), numeric: true, width: 112, hint: t("sales.import.unmatchedBody") },
+  { id: "duplicates", header: t("sales.import.col.duplicates"), numeric: true, width: 96 },
+  { id: "breaches", header: t("sales.import.col.breaches"), numeric: true, width: 112, hint: t("sales.lines.capHint") },
 ]);
+/** The business days a file brought: "6 Nov", or "2 – 5 Nov" style ranges in the short format. */
 function days(row: SalesImport): string {
   if (!row.first_day) return "—";
-  if (row.first_day === row.last_day || !row.last_day) return fmt.day(row.first_day);
-  return `${fmt.day(row.first_day)} – ${fmt.day(row.last_day)}`;
+  if (row.first_day === row.last_day || !row.last_day) return fmt.day(row.first_day, "short");
+  return `${fmt.day(row.first_day, "short")} – ${fmt.day(row.last_day, "short")}`;
 }
 </script>
 

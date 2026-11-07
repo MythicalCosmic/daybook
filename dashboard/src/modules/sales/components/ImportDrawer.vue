@@ -56,9 +56,9 @@ const matchLink = computed(() => `/c/${company.currentId}/sales/import?tab=match
 
 <template>
   <UiDrawer v-model:open="open" size="lg" :title="row ? row.profile.name : t('sales.import.title')" :description="row ? fmt.instant(row.created_at, 'short') : undefined">
-    <div v-if="query.isPending.value" class="flex flex-col gap-3"><SkeletonBlock v-for="n in 3" :key="n" height="80px" radius="12px" /></div>
-    <ErrorState v-else-if="query.isError.value" :error="query.error.value" :retry="() => query.refetch()" />
-    <div v-else-if="row" class="flex flex-col gap-4">
+    <div v-if="query.isPending.value" class="flex flex-col gap-3 p-5"><SkeletonBlock v-for="n in 3" :key="n" height="80px" radius="12px" /></div>
+    <ErrorState v-else-if="query.isError.value" class="m-5" :error="query.error.value" :retry="() => query.refetch()" />
+    <div v-else-if="row" class="flex flex-col gap-4 p-5 max-sm:p-4">
       <div class="flex flex-wrap items-center gap-2">
         <StatusPill :tone="importTone(row.status)" :label="t(`sales.import.status.${row.status}`)" :live="reading" />
         <span v-if="row.created_by" class="text-sm text-muted">{{ row.created_by.name }}</span>

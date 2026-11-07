@@ -52,7 +52,7 @@ const defs = computed<FilterDef[]>(() => [
 const filters = useUrlFilters(defs);
 const search = useRouteState<string>("q", rs.string(""));
 const importId = useRouteState<number | null>("import", rs.optionalNumber());
-const table = useDataTable({ id: "sales.lines", url: true });
+const table = useDataTable({ id: "sales.lines", url: true, hidden: ["series"] });
 table.resetPageOn(() => [filters.params.value, search.value, importId.value]);
 const query = useLines(
   computed(() => ({
@@ -83,17 +83,15 @@ function quantity(row: SaleLine): string {
 }
 
 const columns = computed<TableColumn<SaleLine>[]>(() => [
-  { id: "sold_at", header: t("sales.col.when"), width: 140, value: (row) => row.receipt.sold_at, format: (v) => fmt.instant(String(v), "short") },
-  { id: "name", header: t("sales.lines.col.item"), minWidth: 240, hideable: false, value: (row) => row.product?.name ?? row.name },
-  { id: "receipt", header: t("sales.lines.col.receipt"), width: 120, value: (row) => row.receipt.number },
-  { id: "branch", header: t("sales.col.branch"), width: 120, value: (row) => row.branch.name },
-  { id: "series", header: t("sales.lines.col.series"), width: 110, value: (row) => row.batch?.series || row.series },
-  { id: "quantity", header: t("sales.lines.col.quantity"), width: 140, numeric: true, value: (row) => quantity(row), csv: (row) => row.quantity },
-  { id: "pack_price", header: t("sales.lines.col.packPrice"), width: 130, numeric: true, csv: (row) => row.pack_price },
-  { id: "cap", header: t("sales.lines.col.cap"), width: 130, numeric: true, hint: t("sales.lines.capHint"), csv: (row) => row.cap ?? "" },
-  { id: "total", header: t("sales.lines.col.total"), width: 130, numeric: true, csv: (row) => row.total },
-  ...(costs.value ? [{ id: "cost", header: t("sales.lines.col.cost"), width: 120, numeric: true, csv: (row: SaleLine) => row.cost ?? "" }] : []),
-  { id: "cashier", header: t("sales.lines.col.cashier"), width: 140, value: (row) => row.cashier?.name || row.cashier?.code || "" },
+  { id: "sold_at", header: t("sales.col.when"), width: 124, value: (row) => row.receipt.sold_at, format: (v) => fmt.instant(String(v), "short") },
+  { id: "name", header: t("sales.lines.col.item"), minWidth: 200, hideable: false, value: (row) => row.product?.name ?? row.name },
+  { id: "receipt", header: t("sales.lines.col.receipt"), width: 120, value: (row) => row.receipt.number, csv: (row) => `${row.receipt.number} · ${row.branch.name}` },
+  { id: "series", header: t("sales.lines.col.series"), width: 96, value: (row) => row.batch?.series || row.series },
+  { id: "quantity", header: t("sales.lines.col.quantity"), width: 116, numeric: true, value: (row) => quantity(row), csv: (row) => row.quantity },
+  { id: "pack_price", header: t("sales.lines.col.packPrice"), width: 160, numeric: true, hint: t("sales.lines.capHint"), csv: (row) => row.pack_price },
+  { id: "total", header: t("sales.lines.col.total"), width: 120, numeric: true, csv: (row) => row.total },
+  ...(costs.value ? [{ id: "cost", header: t("sales.lines.col.cost"), width: 112, numeric: true, csv: (row: SaleLine) => row.cost ?? "" }] : []),
+  { id: "cashier", header: t("sales.lines.col.cashier"), width: 132, value: (row) => row.cashier?.name || row.cashier?.code || "" },
 ]);
 </script>
 
@@ -135,12 +133,18 @@ const columns = computed<TableColumn<SaleLine>[]>(() => [
           </span>
         </span>
       </template>
-      <template #cell-pack_price="{ row }">
-        <span :class="['tabular-nums', row.over_cap ? 'font-semibold text-danger' : 'text-fg']"><MoneyText :value="row.pack_price" /></span>
+      <template #cell-receipt="{ row }">
+        <span class="flex min-w-0 flex-col">
+          <span class="truncate tabular-nums text-fg">{{ row.receipt.number }}</span>
+          <span class="truncate text-xs text-muted">{{ row.branch.name }}</span>
+        </span>
       </template>
-      <template #cell-cap="{ row }">
-        <span v-if="row.cap" class="tabular-nums text-muted"><MoneyText :value="row.cap" /></span>
-        <span v-else class="text-subtle">—</span>
+      <!-- The price a pack, and under it the legal cap it was checked against (prescription items). -->
+      <template #cell-pack_price="{ row }">
+        <span class="flex flex-col items-end">
+          <span :class="['tabular-nums', row.over_cap ? 'font-semibold text-danger' : 'text-fg']"><MoneyText :value="row.pack_price" /></span>
+          <span v-if="row.cap" :class="['whitespace-nowrap text-xs tabular-nums', row.over_cap ? 'text-danger' : 'text-muted']">{{ t("sales.lines.cap", { cap: fmt.money(row.cap) }) }}</span>
+        </span>
       </template>
       <template #cell-total="{ row }">
         <span :class="['font-semibold tabular-nums', row.receipt.kind === 'refund' ? 'text-warning' : 'text-fg']">{{ row.receipt.kind === "refund" ? "−" : "" }}<MoneyText :value="row.total" /></span>
