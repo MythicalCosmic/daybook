@@ -148,6 +148,7 @@ DOMAINS = {
     "people": gettext_lazy("People and time off"),
     "attendance": gettext_lazy("Attendance"),
     "sales": gettext_lazy("Sales and cash"),
+    "inventory": gettext_lazy("Stock and medicines"),
     "finance": gettext_lazy("Finance"),
     "hr": gettext_lazy("HR and documents"),
     "payroll": gettext_lazy("Payroll"),
