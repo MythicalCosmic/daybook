@@ -850,5 +850,22 @@
   "stock.widget.recalls": "{n} open recall | {n} open recalls",
   "stock.widget.mandatory": "{n} mandatory medicine missing | {n} mandatory medicines missing",
   "stock.widget.low": "{n} item below its minimum | {n} items below their minimum",
-  "stock.widget.allClear": "Nothing waiting."
+  "stock.widget.allClear": "Nothing waiting.",
+
+  "stock.lineImport.button": "Lines from the invoice file",
+  "stock.lineImport.title": "Lines from the distributor's invoice",
+  "stock.lineImport.description": "XLSX or CSV of the invoice. Items are found by the distributor's code, the barcode or the exact name; a row that matches nothing is listed for you to add by hand.",
+  "stock.lineImport.columnsHint": "Columns it reads: code, barcode or name; series; expiry date; quantity in packs; price per pack; VAT. The columns you use are remembered for this distributor.",
+  "stock.lineImport.counts": "To add: {added} · not in the catalogue: {unmatched} · skipped: {skipped}",
+  "stock.lineImport.act.add": "Will be added",
+  "stock.lineImport.act.unmatched": "Not in the catalogue",
+  "stock.lineImport.act.skip": "Skipped",
+  "stock.lineImport.run": "Add lines: {n}",
+  "stock.lineImport.doneToast": "Lines added: {n}",
+  "stock.priceTags.button": "Price tags",
+  "stock.priceTags.title": "Print price tags",
+  "stock.priceTags.description": "Items whose price changed lately, at the price this pharmacy sells next, each with a signature line. Prescription medicines print on a separate counter list: they are not displayed to the public.",
+  "stock.priceTags.days": "Price changed in the last days",
+  "stock.priceTags.print": "Make the PDF",
+  "stock.priceTags.failed": "The price tags couldn't be made."
 }

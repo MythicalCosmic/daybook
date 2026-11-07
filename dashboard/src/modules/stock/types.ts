@@ -186,9 +186,22 @@ export interface Analog {
   dosage_form: string;
   strength: string;
   manufacturer: string;
+  units_per_pack: number;
+  part_label: string;
   rx_required: boolean;
   sale_price: Money;
   quantity: Qty;
+}
+
+/** A branch of the company, for picking where a transfer goes (`in_scope`: one of mine). */
+export interface StockBranch {
+  id: number;
+  name: string;
+  code: string;
+  kind: string;
+  controlled_licence: boolean;
+  social_pharmacy: boolean;
+  in_scope: boolean;
 }
 
 export type CodeKind = "barcode" | "supplier" | "pos";
@@ -224,6 +237,27 @@ export interface ImportResult {
   updated: number;
   skipped: number;
   rows: ImportRow[];
+}
+
+/** A distributor's invoice spreadsheet read into a receipt's lines (a dry run first). */
+export type LineImportAction = "add" | "unmatched" | "skip";
+
+export interface LineImportRow {
+  row: number;
+  action: LineImportAction;
+  name: string;
+  product_id: number | null;
+  errors: string[];
+}
+
+export interface LineImportResult {
+  dry_run: boolean;
+  columns: string[];
+  mapping: Record<string, string>;
+  added: number;
+  unmatched: number;
+  skipped: number;
+  rows: LineImportRow[];
 }
 
 export interface Category {
@@ -647,6 +681,8 @@ export interface FoundRow {
   quantity: string;
   task_id: number | null;
   left: Qty;
+  units_per_pack: number;
+  part_label: string;
 }
 
 export interface Recall {

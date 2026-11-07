@@ -850,5 +850,22 @@
   "stock.widget.recalls": "Ochiq brak seriyalar: {n}",
   "stock.widget.mandatory": "Yetishmayotgan majburiy dorilar: {n}",
   "stock.widget.low": "Minimumdan kam dorilar: {n}",
-  "stock.widget.allClear": "Kutayotgan narsa yo‘q."
+  "stock.widget.allClear": "Kutayotgan narsa yo‘q.",
+
+  "stock.lineImport.button": "Nakladnoy faylidan qatorlar",
+  "stock.lineImport.title": "Distribyutor nakladnoyidan qatorlar",
+  "stock.lineImport.description": "Nakladnoyning XLSX yoki CSV fayli. Tovarlar distribyutor kodi, shtrix-kod yoki aniq nomi bo‘yicha topiladi; hech narsaga mos kelmagan qator qo‘lda qo‘shish uchun ko‘rsatiladi.",
+  "stock.lineImport.columnsHint": "O‘qiladigan ustunlar: kod, shtrix-kod yoki nom; seriya; yaroqlilik muddati; qadoqlar soni; qadoq narxi; QQS. Ishlatilgan ustunlar shu distribyutor uchun eslab qolinadi.",
+  "stock.lineImport.counts": "Qo‘shiladi: {added} · katalogda yo‘q: {unmatched} · o‘tkazib yuboriladi: {skipped}",
+  "stock.lineImport.act.add": "Qo‘shiladi",
+  "stock.lineImport.act.unmatched": "Katalogda yo‘q",
+  "stock.lineImport.act.skip": "O‘tkazib yuboriladi",
+  "stock.lineImport.run": "Qatorlarni qo‘shish: {n}",
+  "stock.lineImport.doneToast": "Qo‘shilgan qatorlar: {n}",
+  "stock.priceTags.button": "Narx yorliqlari",
+  "stock.priceTags.title": "Narx yorliqlarini chop etish",
+  "stock.priceTags.description": "So‘nggi kunlarda narxi o‘zgargan tovarlar, shu dorixona keyingi sotadigan narxda, har biri imzo chizig‘i bilan. Retsept bo‘yicha dorilar alohida peshtaxta ro‘yxatiga chiqadi: ular ommaga ko‘rsatilmaydi.",
+  "stock.priceTags.days": "Narxi o‘zgargan, so‘nggi kunlar",
+  "stock.priceTags.print": "PDF tayyorlash",
+  "stock.priceTags.failed": "Narx yorliqlarini tayyorlab bo‘lmadi."
 }

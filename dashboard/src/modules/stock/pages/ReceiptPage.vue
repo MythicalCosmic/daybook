@@ -6,7 +6,7 @@
  * someone with stock.manage: posting puts the batches on stock and opens the payable, which this
  * page links to. Void only while none of its goods moved and nothing was paid.
  */
-import { Ban, FileUp, Pencil, Plus, Send, Stamp, Trash2 } from "@lucide/vue";
+import { Ban, FileSpreadsheet, FileUp, Pencil, Plus, Send, Stamp, Trash2 } from "@lucide/vue";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
@@ -29,6 +29,7 @@ import { useCompanyStore, useCompanyToday } from "@/stores/company";
 
 import { stockApi, useReceipt, useRefresh } from "../api";
 import ProductBadges from "../components/ProductBadges.vue";
+import LineImportDialog from "../components/LineImportDialog.vue";
 import ReceiptLineDialog from "../components/ReceiptLineDialog.vue";
 import { expiryTone, packsAndParts, RECEIPT_TONES, WARNING_TONES } from "../lib";
 import type { ReceiptLine } from "../types";
@@ -66,6 +67,7 @@ const facts = computed(() => {
 });
 
 const lineOpen = ref(false);
+const importOpen = ref(false);
 const editingLine = ref<ReceiptLine | null>(null);
 function addLine(): void {
   editingLine.value = null;
@@ -137,6 +139,7 @@ async function upload(event: Event): Promise<void> {
       <PageHeader :title="title" :back="`/c/${company.currentId}/stock/receipts`">
         <template #meta><StatusPill :tone="RECEIPT_TONES[receipt.status]" :label="t(`stock.receiptStatus.${receipt.status}`)" /></template>
         <template #actions>
+          <UiButton v-if="editable && canOperate" variant="secondary" :icon="FileSpreadsheet" data-testid="receipt-import-lines" @click="importOpen = true">{{ t("stock.lineImport.button") }}</UiButton>
           <UiButton v-if="editable && canOperate" variant="secondary" :icon="Plus" data-testid="receipt-add-line" @click="addLine">{{ t("stock.receipt.addLine") }}</UiButton>
           <UiButton v-if="receipt.status === 'draft' && canOperate" variant="secondary" :icon="Send" :loading="busy === 'submit'" :disabled="!lines.length" @click="submit">{{ t("stock.receipt.submit") }}</UiButton>
           <UiButton v-if="editable && canManage" variant="primary" :icon="Stamp" :loading="busy === 'post'" :disabled="!lines.length || blocked" data-testid="receipt-post" @click="post">{{ t("stock.receipt.post") }}</UiButton>
@@ -207,6 +210,7 @@ async function upload(event: Event): Promise<void> {
       </div>
 
       <ReceiptLineDialog v-model:open="lineOpen" :receipt-id="receipt.id" :line="editingLine" :show-cost="showCost" />
+      <LineImportDialog v-model:open="importOpen" :receipt-id="receipt.id" />
     </template>
   </div>
 </template>

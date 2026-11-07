@@ -850,5 +850,22 @@
   "stock.widget.recalls": "Открытых отзывов: {n}",
   "stock.widget.mandatory": "Нет обязательных препаратов: {n}",
   "stock.widget.low": "Ниже минимума: {n}",
-  "stock.widget.allClear": "Ничего не ждёт."
+  "stock.widget.allClear": "Ничего не ждёт.",
+
+  "stock.lineImport.button": "Строки из файла накладной",
+  "stock.lineImport.title": "Строки из накладной дистрибьютора",
+  "stock.lineImport.description": "XLSX или CSV накладной. Товары ищутся по коду дистрибьютора, штрихкоду или точному названию; строку без совпадения можно добавить вручную.",
+  "stock.lineImport.columnsHint": "Читаются столбцы: код, штрихкод или название; серия; срок годности; количество упаковок; цена за упаковку; НДС. Выбранные столбцы запоминаются для этого дистрибьютора.",
+  "stock.lineImport.counts": "Будет добавлено: {added} · нет в каталоге: {unmatched} · пропущено: {skipped}",
+  "stock.lineImport.act.add": "Будет добавлена",
+  "stock.lineImport.act.unmatched": "Нет в каталоге",
+  "stock.lineImport.act.skip": "Пропущена",
+  "stock.lineImport.run": "Добавить строки: {n}",
+  "stock.lineImport.doneToast": "Добавлено строк: {n}",
+  "stock.priceTags.button": "Ценники",
+  "stock.priceTags.title": "Печать ценников",
+  "stock.priceTags.description": "Товары, цена которых недавно изменилась, по цене, по которой аптека продаёт дальше, с местом для подписи. Рецептурные препараты печатаются отдельным списком для прилавка: в открытой выкладке их нет.",
+  "stock.priceTags.days": "Цена изменилась за последние дни",
+  "stock.priceTags.print": "Сформировать PDF",
+  "stock.priceTags.failed": "Не удалось сформировать ценники."
 }

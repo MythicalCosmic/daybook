@@ -25,7 +25,7 @@ import { toast } from "@/components/useToast";
 import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore } from "@/stores/company";
 
-import { stockApi, useRefresh } from "../api";
+import { stockApi, useRefresh, useStockBranches } from "../api";
 import { partsOf } from "../lib";
 import type { BatchPrefill, Product } from "../types";
 import ProductPicker from "./ProductPicker.vue";
@@ -57,7 +57,11 @@ const errors = reactive<Record<string, string | undefined>>({});
 const saving = ref(false);
 let keys = 0;
 
-const toOptions = computed(() => (company.current?.branches ?? []).filter((b) => b.id !== form.from).map((b) => ({ value: b.id, label: b.name })));
+// Every pharmacy of the company can receive, also those outside my branches.
+const allBranches = useStockBranches(open);
+const toOptions = computed(() =>
+  (allBranches.data.value ?? company.current?.branches ?? []).filter((b) => b.id !== form.from).map((b) => ({ value: b.id, label: b.name })),
+);
 
 function blankLine(): Line {
   return { key: ++keys, product: null, initial: null, unitsPerPack: 1, partLabel: "", batch: null, batchOptions: [], packs: null, parts: null };

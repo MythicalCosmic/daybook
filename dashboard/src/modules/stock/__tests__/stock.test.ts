@@ -19,6 +19,7 @@ import { company, json, me } from "@/test/fixtures";
 import { mountWithProviders as mountRaw, testApp } from "@/test/plugins";
 
 import ImportWizard from "../components/ImportWizard.vue";
+import LineImportDialog from "../components/LineImportDialog.vue";
 import SettingsPanel from "../components/SettingsPanel.vue";
 import en from "../i18n/en.json";
 import ru from "../i18n/ru.json";
@@ -221,6 +222,39 @@ describe("the catalogue", () => {
     await settle();
     expect(wrapper.text()).toContain(en["stock.col.cost"]);
     expect(wrapper.text()).toContain(en["stock.products.import"]);
+  });
+});
+
+describe("a distributor's invoice file", () => {
+  it("becomes receipt lines after a dry run that lists what isn't in the catalogue", async () => {
+    const result = (dry: boolean) => ({
+      dry_run: dry,
+      columns: ["Kod", "Seriya", "Soni"],
+      mapping: { Kod: "code", Seriya: "series", Soni: "packs" },
+      added: 1,
+      unmatched: 1,
+      skipped: 0,
+      rows: [
+        { row: 2, action: "add", name: "KK-77", product_id: 8, errors: [] },
+        { row: 3, action: "unmatched", name: "Noma’lum tovar", product_id: null, errors: [] },
+      ],
+    });
+    const calls = stub({ "POST stock/receipts/42/lines/import/": (call) => json(result(call.form?.get("dry_run") === "true")) });
+    const app = await testApp("/c/1/stock/receipts/42");
+    const { inner } = mountWithProviders(LineImportDialog, { plugins: app.plugins, props: { open: true, receiptId: 42 } });
+    await settle();
+    const state = (inner.vm as unknown as { $: { setupState: { files: File[]; check: () => Promise<void>; run: () => Promise<void> } } }).$.setupState;
+    state.files = [new File(["Kod;Seriya;Soni\n"], "nakladnoy.csv", { type: "text/csv" })];
+    await state.check();
+    await settle();
+    expect(calls[0]!.form?.get("dry_run")).toBe("true");
+    const rows = document.body.querySelector("[data-testid=line-import-rows]")!.textContent ?? "";
+    expect(rows).toContain("Noma’lum tovar");
+    expect(rows).toContain("Not in the catalogue");
+    await state.run();
+    await settle();
+    expect(calls[1]!.form?.get("dry_run")).toBe("false");
+    expect(JSON.parse(String(calls[1]!.form?.get("mapping")))).toEqual({ Kod: "code", Seriya: "series", Soni: "packs" });
   });
 });
 

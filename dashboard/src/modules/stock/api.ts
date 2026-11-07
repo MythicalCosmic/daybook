@@ -42,7 +42,9 @@ import type {
   ReceiptLineInput,
   RequestStatus,
   Resolution,
+  LineImportResult,
   RxJournal,
+  StockBranch,
   StockSettings,
   Summary,
   Supplier,
@@ -63,6 +65,16 @@ export const stockApi = {
   settings: (cid: number) => http.get<StockSettings>(path(cid, "settings/")),
   updateSettings: (cid: number, input: Partial<StockSettings>) => http.patch<StockSettings>(path(cid, "settings/"), input),
   summary: (cid: number, params: Query = {}) => http.get<Summary>(path(cid, "summary/"), params),
+  branches: (cid: number) => http.get<StockBranch[]>(path(cid, "branches/")),
+  priceTags: (cid: number, input: { branch: number; products?: number[]; changed_since?: string }) =>
+    http.post<FileLink>(path(cid, "price-tags/"), input),
+  importLines: (cid: number, id: number, file: File, options: { dryRun: boolean; mapping?: Record<string, string> | null }) => {
+    const form = new FormData();
+    form.append("file", file);
+    form.append("dry_run", options.dryRun ? "true" : "false");
+    if (options.mapping) form.append("mapping", JSON.stringify(options.mapping));
+    return http.form<LineImportResult>(path(cid, `receipts/${id}/lines/import/`), form);
+  },
 
   products: (cid: number, params: Query = {}, signal?: AbortSignal) => http.get<ProductPage>(path(cid, "products/"), params, { signal }),
   product: (cid: number, id: number) => http.get<ProductDetail>(path(cid, `products/${id}/`)),
@@ -198,6 +210,7 @@ function useResource<T>(
 const asQuery = (params: Record<string, unknown>) => params as Query;
 
 export const useStockSettings = (enabled: MaybeRefOrGetter<boolean> = true) => useResource("settings", {}, (cid) => stockApi.settings(cid), { enabled, staleTime: 60_000 });
+export const useStockBranches = (enabled: MaybeRefOrGetter<boolean> = true) => useResource("branches", {}, (cid) => stockApi.branches(cid), { enabled, staleTime: 300_000 });
 export const useSummary = (params: MaybeRefOrGetter<Query>) => useResource("summary", () => ({ ...toValue(params) }), (cid, p) => stockApi.summary(cid, asQuery(p)), { keepPrevious: true });
 export const useProducts = (params: MaybeRefOrGetter<Query>) =>
   useResource("products", () => ({ ...toValue(params) }), (cid, p, signal) => stockApi.products(cid, asQuery(p), signal), { keepPrevious: true });

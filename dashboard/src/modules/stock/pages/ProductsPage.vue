@@ -5,8 +5,8 @@
  * expiry. Filters live in the URL; `?product=<id>` opens an item, `?new=1` the form, `?import=1`
  * the spreadsheet import (Get started links there).
  */
-import { FileUp, Pill, Plus } from "@lucide/vue";
-import { computed } from "vue";
+import { FileUp, Pill, Plus, Printer } from "@lucide/vue";
+import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 
@@ -27,6 +27,7 @@ import { useCompanyStore, useCompanyToday } from "@/stores/company";
 
 import { useCategories, useProducts } from "../api";
 import ImportWizard from "../components/ImportWizard.vue";
+import PriceTagsDialog from "../components/PriceTagsDialog.vue";
 import ProductBadges from "../components/ProductBadges.vue";
 import ProductDrawer from "../components/ProductDrawer.vue";
 import ProductFormDialog from "../components/ProductFormDialog.vue";
@@ -49,6 +50,7 @@ const mandatory = useRouteState("mandatory", rs.boolean(false));
 const inactive = useRouteState("inactive", rs.boolean(false));
 const creating = useRouteState("new", rs.boolean(false));
 const importing = useRouteState("import", rs.boolean(false));
+const tagsOpen = ref(false);
 
 const canManage = computed(() => company.can("stock.manage"));
 const table = useDataTable({ id: "stock.products", pageSize: 50 });
@@ -114,6 +116,7 @@ function clear(): void {
   <div>
     <PageHeader :title="t('stock.nav.products')" :description="t('stock.products.description')">
       <template #actions>
+        <UiButton variant="secondary" :icon="Printer" data-testid="price-tags-open" @click="tagsOpen = true">{{ t("stock.priceTags.button") }}</UiButton>
         <UiButton v-if="canManage" variant="secondary" :icon="FileUp" @click="importing = true">{{ t("stock.products.import") }}</UiButton>
         <UiButton v-if="canManage" variant="primary" :icon="Plus" @click="creating = true">{{ t("stock.products.new") }}</UiButton>
       </template>
@@ -181,5 +184,6 @@ function clear(): void {
     <ProductDrawer />
     <ProductFormDialog v-model:open="creating" @saved="(id) => patchQuery(router, { product: String(id), new: undefined })" />
     <ImportWizard v-model:open="importing" />
+    <PriceTagsDialog v-model:open="tagsOpen" />
   </div>
 </template>
