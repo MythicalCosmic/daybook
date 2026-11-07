@@ -9226,6 +9226,131 @@ paths:
               schema:
                 $ref: '#/components/schemas/HrContract'
           description: ''
+  /api/v1/owner/companies/{company_id}/hr/coverage/:
+    get:
+      operationId: companies_hr_coverage_retrieve
+      description: |-
+        A period of every pharmacy in scope: its open hours, the pharmacists planned and the
+        gaps with fewer qualified pharmacists than it needs. A week from today by default, 62 days
+        at most. Drafts count only for whoever may see them (attendance.manage).
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: array
+          items:
+            type: integer
+        description: Branch ids (in scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: drafts
+        schema:
+          type: boolean
+        description: Count unpublished shifts (the roster).
+      - in: query
+        name: from
+        schema:
+          type: string
+        description: YYYY-MM-DD; today.
+      - in: query
+        name: to
+        schema:
+          type: string
+        description: YYYY-MM-DD; six days after `from`.
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrCoverage'
+          description: ''
+  /api/v1/owner/companies/{company_id}/hr/coverage/live/:
+    get:
+      operationId: companies_hr_coverage_live_retrieve
+      description: Pharmacies in scope open now with fewer qualified pharmacists checked
+        in than they need.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrLiveCoverage'
+          description: ''
+  /api/v1/owner/companies/{company_id}/hr/coverage/pharmacists/:
+    get:
+      operationId: companies_hr_coverage_pharmacists_retrieve
+      description: |-
+        Who counts as a pharmacist on duty: each position, whether it does (and as what), and
+        the documents it asks for. Saving chooses them (the setup step hr.pharmacists).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrPharmacists'
+          description: ''
+    post:
+      operationId: companies_hr_coverage_pharmacists_create
+      description: |-
+        Who counts as a pharmacist on duty: each position, whether it does (and as what), and
+        the documents it asks for. Saving chooses them (the setup step hr.pharmacists).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HrPharmacistsWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HrPharmacistsWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HrPharmacistsWriteRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrPharmacists'
+          description: ''
   /api/v1/owner/companies/{company_id}/hr/documents/:
     get:
       operationId: companies_hr_documents_list
@@ -29214,6 +29339,234 @@ components:
           type: string
           format: binary
           nullable: true
+    HrCoverage:
+      type: object
+      properties:
+        permits:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrPermitWarning'
+          description: Branches licensed for controlled substances without that licence
+            in force.
+        state:
+          allOf:
+          - $ref: '#/components/schemas/HrCoverageStateEnum'
+          description: |-
+            ok, or why nothing was checked: off (HR or the rule), setup (no pharmacist positions chosen), no_roster (attendance off).
+
+            * `ok` - ok
+            * `off` - off
+            * `setup` - setup
+            * `no_roster` - no_roster
+        start:
+          type: string
+          format: date
+        end:
+          type: string
+          format: date
+        need:
+          type: integer
+        drafts:
+          type: boolean
+        branches:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrCoverageBranch'
+      required:
+      - branches
+      - drafts
+      - end
+      - need
+      - permits
+      - start
+      - state
+    HrCoverageBranch:
+      type: object
+      properties:
+        branch:
+          $ref: '#/components/schemas/HrBranchRef'
+        open_24h:
+          type: boolean
+        opens_at:
+          type: string
+          nullable: true
+        closes_at:
+          type: string
+          nullable: true
+        days:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrCoverageDay'
+        gaps:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrCoverageGap'
+          description: Joined across midnight.
+        shifts:
+          type: integer
+          description: Shifts of anyone planned there in the period.
+        gap_minutes:
+          type: integer
+      required:
+      - branch
+      - closes_at
+      - days
+      - gap_minutes
+      - gaps
+      - open_24h
+      - opens_at
+      - shifts
+    HrCoverageClosedEnum:
+      enum:
+      - weekday
+      - holiday
+      - no_hours
+      type: string
+      description: |-
+        * `weekday` - weekday
+        * `holiday` - holiday
+        * `no_hours` - no_hours
+    HrCoverageDay:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        opens:
+          type: string
+          format: date-time
+          nullable: true
+        closes:
+          type: string
+          format: date-time
+          nullable: true
+        closed:
+          nullable: true
+          description: |-
+            Why it is closed.
+
+            * `weekday` - weekday
+            * `holiday` - holiday
+            * `no_hours` - no_hours
+          oneOf:
+          - $ref: '#/components/schemas/HrCoverageClosedEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        shifts:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrCoverageShift'
+          description: Pharmacists planned that day.
+        gaps:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrCoverageGap'
+      required:
+      - closed
+      - closes
+      - date
+      - gaps
+      - opens
+      - shifts
+    HrCoverageGap:
+      type: object
+      properties:
+        branch_id:
+          type: integer
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        minutes:
+          type: integer
+        have:
+          type: integer
+          description: Qualified pharmacists planned then.
+        need:
+          type: integer
+      required:
+      - branch_id
+      - end
+      - have
+      - minutes
+      - need
+      - start
+    HrCoverageReasonEnum:
+      enum:
+      - not_approved
+      - not_pharmacist
+      - missing
+      - expired
+      - unverified
+      type: string
+      description: |-
+        * `not_approved` - not_approved
+        * `not_pharmacist` - not_pharmacist
+        * `missing` - missing
+        * `expired` - expired
+        * `unverified` - unverified
+    HrCoverageShift:
+      type: object
+      properties:
+        shift_id:
+          type: integer
+        member:
+          $ref: '#/components/schemas/HrPersonRef'
+        position:
+          type: string
+          nullable: true
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        published:
+          type: boolean
+        counts:
+          type: boolean
+          description: Counts as a qualified pharmacist that day.
+        reason:
+          nullable: true
+          description: |-
+            Why not; null without hr.view.
+
+            * `not_approved` - not_approved
+            * `not_pharmacist` - not_pharmacist
+            * `missing` - missing
+            * `expired` - expired
+            * `unverified` - unverified
+          oneOf:
+          - $ref: '#/components/schemas/HrCoverageReasonEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        kinds:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrDocumentKindEnum'
+          description: The required documents that fail; empty without hr.view.
+      required:
+      - counts
+      - end
+      - kinds
+      - member
+      - position
+      - published
+      - reason
+      - shift_id
+      - start
+    HrCoverageStateEnum:
+      enum:
+      - ok
+      - 'off'
+      - setup
+      - no_roster
+      type: string
+      description: |-
+        * `ok` - ok
+        * `off` - off
+        * `setup` - setup
+        * `no_roster` - no_roster
     HrDocument:
       type: object
       description: |-
@@ -29576,6 +29929,48 @@ components:
       - joined_30d
       - left_30d
       - suspended
+    HrLiveCoverage:
+      type: object
+      properties:
+        state:
+          $ref: '#/components/schemas/HrCoverageStateEnum'
+        at:
+          type: string
+          format: date-time
+        gaps:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrLiveGap'
+      required:
+      - at
+      - gaps
+      - state
+    HrLiveGap:
+      type: object
+      properties:
+        branch:
+          $ref: '#/components/schemas/HrBranchRef'
+        since:
+          type: string
+          format: date-time
+        minutes:
+          type: integer
+        have:
+          type: integer
+        need:
+          type: integer
+        checked_in:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrPersonRef'
+          description: Checked in, but not counting.
+      required:
+      - branch
+      - checked_in
+      - have
+      - minutes
+      - need
+      - since
     HrNamed:
       type: object
       properties:
@@ -29643,6 +30038,26 @@ components:
         * `cash` - Cash
         * `card` - Card
         * `bank` - Bank transfer
+    HrPermitWarning:
+      type: object
+      properties:
+        branch:
+          $ref: '#/components/schemas/HrBranchRef'
+        kind:
+          type: string
+          description: controlled_licence
+        problem:
+          $ref: '#/components/schemas/ProblemEnum'
+        valid_until:
+          type: string
+          format: date
+          nullable: true
+          description: When the last one ended.
+      required:
+      - branch
+      - kind
+      - problem
+      - valid_until
     HrPersonRef:
       type: object
       properties:
@@ -29657,6 +30072,79 @@ components:
       - id
       - name
       - photo_url
+    HrPharmacistChoiceRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: A position id.
+        role:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/HrPharmacistRoleEnum'
+          - $ref: '#/components/schemas/NullEnum'
+      required:
+      - id
+      - role
+    HrPharmacistPosition:
+      type: object
+      properties:
+        position:
+          $ref: '#/components/schemas/HrNamed'
+        role:
+          nullable: true
+          description: |-
+            head, senior or pharmacist (the standard documents of one), custom (its own documents), or null: not a pharmacist.
+
+            * `head` - head
+            * `senior` - senior
+            * `pharmacist` - pharmacist
+            * `custom` - custom
+          oneOf:
+          - $ref: '#/components/schemas/HrPharmacistRoleEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        people:
+          type: integer
+          description: People in the position now.
+        required:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrRequiredShape'
+      required:
+      - people
+      - position
+      - required
+      - role
+    HrPharmacistRoleEnum:
+      enum:
+      - head
+      - senior
+      - pharmacist
+      - custom
+      type: string
+      description: |-
+        * `head` - head
+        * `senior` - senior
+        * `pharmacist` - pharmacist
+        * `custom` - custom
+    HrPharmacists:
+      type: object
+      properties:
+        positions:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrPharmacistPosition'
+      required:
+      - positions
+    HrPharmacistsWriteRequest:
+      type: object
+      properties:
+        positions:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrPharmacistChoiceRequest'
+      required:
+      - positions
     HrPlaceholders:
       type: object
       properties:
@@ -29907,6 +30395,22 @@ components:
           maxItems: 8
       required:
       - kind
+    HrRequiredShape:
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/HrDocumentKindEnum'
+        level:
+          type: string
+          description: The level asked for; empty for any.
+        alternatives:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrDocumentKindEnum'
+      required:
+      - alternatives
+      - kind
+      - level
     HrSensitive:
       type: object
       properties:
@@ -29951,6 +30455,32 @@ components:
         employer_tin:
           type: string
           maxLength: 9
+        coverage_enabled:
+          type: boolean
+        coverage_min:
+          type: integer
+          maximum: 10
+          minimum: 1
+        coverage_needs_documents:
+          type: boolean
+        coverage_alert_minutes:
+          type: integer
+          maximum: 240
+          minimum: 5
+        coverage_days:
+          type: integer
+          maximum: 31
+          minimum: 1
+        unqualified_seller_alert:
+          type: boolean
+        pharmacist_positions:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrNamed'
+          readOnly: true
+          description: Who counts as a pharmacist on duty (set through coverage/pharmacists/).
+      required:
+      - pharmacist_positions
     HrTerminationReasonEnum:
       enum:
       - resigned
@@ -32378,6 +32908,24 @@ components:
     NullEnum:
       enum:
       - null
+    OffboardReasonEnum:
+      enum:
+      - resignation
+      - mutual_agreement
+      - contract_end
+      - dismissal
+      - probation_failed
+      - redundancy
+      - other
+      type: string
+      description: |-
+        * `resignation` - resignation
+        * `mutual_agreement` - mutual_agreement
+        * `contract_end` - contract_end
+        * `dismissal` - dismissal
+        * `probation_failed` - probation_failed
+        * `redundancy` - redundancy
+        * `other` - other
     OffboardRequest:
       type: object
       properties:
@@ -32386,7 +32934,7 @@ components:
           format: date
           nullable: true
         reason:
-          $ref: '#/components/schemas/ReasonEnum'
+          $ref: '#/components/schemas/OffboardReasonEnum'
         note:
           type: string
           maxLength: 1000
@@ -34757,6 +35305,24 @@ components:
         employer_tin:
           type: string
           maxLength: 9
+        coverage_enabled:
+          type: boolean
+        coverage_min:
+          type: integer
+          maximum: 10
+          minimum: 1
+        coverage_needs_documents:
+          type: boolean
+        coverage_alert_minutes:
+          type: integer
+          maximum: 240
+          minimum: 5
+        coverage_days:
+          type: integer
+          maximum: 31
+          minimum: 1
+        unqualified_seller_alert:
+          type: boolean
     PatchedJoinLinkPatchRequest:
       type: object
       properties:
@@ -38058,6 +38624,14 @@ components:
         * `normal` - Normal
         * `high` - High
         * `urgent` - Urgent
+    ProblemEnum:
+      enum:
+      - missing
+      - expired
+      type: string
+      description: |-
+        * `missing` - missing
+        * `expired` - expired
     Progress:
       type: object
       properties:
@@ -39844,24 +40418,6 @@ components:
         * `broken` - Equipment broken
         * `not_mine` - Not my task
         * `other` - Another reason
-    ReasonEnum:
-      enum:
-      - resignation
-      - mutual_agreement
-      - contract_end
-      - dismissal
-      - probation_failed
-      - redundancy
-      - other
-      type: string
-      description: |-
-        * `resignation` - resignation
-        * `mutual_agreement` - mutual_agreement
-        * `contract_end` - contract_end
-        * `dismissal` - dismissal
-        * `probation_failed` - probation_failed
-        * `redundancy` - redundancy
-        * `other` - other
     ReassignRequest:
       type: object
       properties:

@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-07 05:23+0500\n"
+"POT-Creation-Date: 2026-11-07 05:31+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -8349,6 +8349,20 @@ msgstr ""
 "yetishmayotgan majburiy hujjatlar, kelgusi haftadagi tug‘ilgan kunlar va "
 "ishdagi yubileylar"
 
+#: backend/apps/hr/ai_tools.py
+msgid ""
+"Pharmacist coverage: whether a qualified pharmacist is on the roster for "
+"every hour each pharmacy is open in the coming days (the gaps with their "
+"times), pharmacies with no qualified pharmacist checked in right now, tills "
+"opened by someone who isn't qualified, and the pharmacists who don't count "
+"today and why"
+msgstr ""
+"Smenada farmatsevt: keyingi kunlarda har bir dorixona ochiq bo‘lgan har "
+"soatda smenalar jadvalida malakali farmatsevt bormi (farmatsevtsiz vaqtlar "
+"va ularning soatlari), hozir malakali farmatsevt kelmagan dorixonalar, "
+"malakasiz xodim ochgan kassalar, hamda bugun hisobga olinmaydigan "
+"farmatsevtlar va sababi"
+
 #: backend/apps/hr/api.py backend/apps/hr/owner_api.py
 #: backend/apps/lifecycle/api.py backend/apps/lifecycle/owner_api.py
 msgid "HR isn't switched on for this company."
@@ -8361,6 +8375,10 @@ msgstr "Sizda hali shartnoma yo‘q."
 #: backend/apps/hr/audit_actions.py
 msgid "Changed HR settings"
 msgstr "Kadrlar sozlamalarini o‘zgartirdi"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Chose who counts as a pharmacist"
+msgstr "Farmatsevt hisoblanadigan lavozimlarni tanladi"
 
 #: backend/apps/hr/audit_actions.py
 msgid "Changed an employee profile"
@@ -8591,6 +8609,114 @@ msgstr[0] "Jamoamizda %(years)d yil"
 #, python-format
 msgid "The whole team of «%(company)s» congratulates you."
 msgstr "«%(company)s» jamoasi sizni tabriklaydi."
+
+#: backend/apps/hr/bot_messages.py
+msgid "a required document is missing"
+msgstr "kerakli hujjat yo‘q"
+
+#: backend/apps/hr/bot_messages.py
+msgid "a required document has expired"
+msgstr "kerakli hujjatning muddati o‘tgan"
+
+#: backend/apps/hr/bot_messages.py
+msgid "a document is not verified yet"
+msgstr "hujjat hali tekshirilmagan"
+
+#: backend/apps/hr/bot_messages.py
+msgid "not in a pharmacist position"
+msgstr "farmatsevt lavozimida emas"
+
+#: backend/apps/hr/bot_messages.py
+msgid "not working now"
+msgstr "hozir ishlamayapti"
+
+#: backend/apps/hr/bot_messages.py
+msgid "not qualified"
+msgstr "malakali emas"
+
+#. Translators: %(branch)s is a pharmacy's name, e.g. "Yunusobod".
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "No qualified pharmacist on duty: %(branch)s"
+msgstr "Smenada malakali farmatsevt yo‘q: %(branch)s"
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Since %(time)s nobody qualified has checked in."
+msgstr "Malakali xodim kelganini qayd etmagan. Boshlangan vaqt: %(time)s."
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Checked in: %(names)s"
+msgstr "Kelganlar: %(names)s"
+
+#: backend/apps/hr/bot_messages.py
+msgid "Only people with pharmaceutical education may sell medicines."
+msgstr ""
+"Dori vositalarini faqat farmatsevtik ma’lumotli xodimlar sotishi mumkin."
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Till opened by someone not qualified: %(branch)s"
+msgstr "Kassani malakasiz xodim ochdi: %(branch)s"
+
+#. Translators: %(name)s is a person, %(time)s a clock time, %(reason)s a few words of why.
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Opened at %(time)s. Cashier: %(name)s (%(reason)s)."
+msgstr "Ochilgan vaqt: %(time)s. Kassir: %(name)s (%(reason)s)."
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "No qualified pharmacist in the roster: %(branch)s"
+msgstr "Smenalar jadvalida malakali farmatsevt yo‘q: %(branch)s"
+
+#. Translators: a day (dd.mm.yyyy) and two clock times, e.g. "14.11.2026, 20:00 to 08:00".
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "%(day)s, %(start)s to %(end)s"
+msgstr "%(day)s, %(start)s – %(end)s"
+
+#. Translators: qualified pharmacists planned out of those needed, e.g. "1 of 2".
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "%(have)d of %(need)d"
+msgstr "%(have)d / %(need)d"
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "More gaps: %(count)d"
+msgstr "Yana farmatsevtsiz vaqtlar: %(count)d"
+
+#: backend/apps/hr/bot_messages.py
+msgid "Add a qualified pharmacist to the roster."
+msgstr "Smenalar jadvaliga malakali farmatsevt qo‘shing."
+
+#: backend/apps/hr/hooks.py
+msgid "A pharmacy open without a qualified pharmacist"
+msgstr "Dorixona malakali farmatsevtsiz ochiq"
+
+#: backend/apps/hr/hooks.py
+msgid "A till opened by someone who isn't a qualified pharmacist"
+msgstr "Kassani malakali farmatsevt bo‘lmagan xodim ochdi"
+
+#: backend/apps/hr/hooks.py
+msgid "Roster gaps without a qualified pharmacist"
+msgstr "Smenalar jadvalida malakali farmatsevtsiz vaqt"
+
+#: backend/apps/hr/hooks.py
+msgid "Choose who counts as a pharmacist"
+msgstr "Farmatsevt kim hisoblanishini tanlang"
+
+#: backend/apps/hr/hooks.py
+msgid ""
+"Choose who counts as a pharmacist and upload their diplomas and "
+"certificates, so every hour a pharmacy is open has a qualified pharmacist on "
+"the roster."
+msgstr ""
+"Qaysi lavozimlar farmatsevt hisoblanishini tanlang va ularning diplomlari "
+"hamda sertifikatlarini yuklang: dorixona ochiq har bir soatda smenalar "
+"jadvalida malakali farmatsevt bo‘lsin."
 
 #: backend/apps/hr/hooks.py
 msgid "Documents that expire"
@@ -8826,6 +8952,16 @@ msgstr "Ishdagi yubiley"
 msgid "Pick at most a year, ending after it starts."
 msgstr "Ko‘pi bilan bir yilni tanlang; oxiri boshidan keyin bo‘lsin."
 
+#: backend/apps/hr/owner_api.py
+msgid "Pick at most 62 days, ending after it starts."
+msgstr "Ko‘pi bilan 62 kun tanlang; oxirgi kun birinchi kundan keyin bo‘lsin."
+
+#: backend/apps/hr/owner_api.py backend/apps/hr/services.py
+#: backend/apps/members/join_links.py backend/apps/members/owner_api.py
+#: backend/apps/members/services.py
+msgid "Pick a position of this company."
+msgstr "Shu kompaniyadagi lavozimni tanlang."
+
 #: backend/apps/hr/owner_api.py backend/apps/hr/services.py
 msgid "Pick a kind of document."
 msgstr "Hujjat turini tanlang."
@@ -8886,6 +9022,42 @@ msgid "Probations ending: %(count)d"
 msgstr "Tugayotgan sinov muddatlari: %(count)d"
 
 #: backend/apps/hr/providers.py
+msgid "Pharmacist coverage"
+msgstr "Smenada farmatsevt"
+
+#: backend/apps/hr/providers.py
+#, python-format
+msgid "No qualified pharmacist now: %(branch)s, since %(time)s"
+msgstr "Hozir malakali farmatsevt yo‘q: %(branch)s. Boshlangan vaqt: %(time)s"
+
+#: backend/apps/hr/providers.py
+#, python-format
+msgid "Roster gaps without a qualified pharmacist, next 7 days: %(count)d"
+msgstr "Keyingi 7 kunlik jadvalda malakali farmatsevtsiz vaqtlar: %(count)d"
+
+#: backend/apps/hr/providers.py
+#, python-format
+msgid "Till opened by someone not qualified: %(name)s (%(branch)s)"
+msgstr "Kassani malakasiz xodim ochdi: %(name)s (%(branch)s)"
+
+#: backend/apps/hr/providers.py
+#, python-format
+msgid "Pharmacist certificates to renew within 30 days: %(count)d"
+msgstr ""
+"30 kun ichida yangilanishi kerak bo‘lgan farmatsevt sertifikatlari: %(count)d"
+
+#. Translators: %(date)s is dd.mm.yyyy, %(branch)s a pharmacy's name.
+#: backend/apps/hr/providers.py
+#, python-format
+msgid "Controlled substances licence ended on %(date)s: %(branch)s"
+msgstr "Nazoratdagi moddalar litsenziyasi tugagan (%(date)s): %(branch)s"
+
+#: backend/apps/hr/providers.py
+#, python-format
+msgid "Controlled substances licence not on file: %(branch)s"
+msgstr "Nazoratdagi moddalar litsenziyasi kiritilmagan: %(branch)s"
+
+#: backend/apps/hr/providers.py
 #, python-format
 msgid "Contract ends: %(name)s"
 msgstr "Shartnoma tugaydi: %(name)s"
@@ -8894,6 +9066,10 @@ msgstr "Shartnoma tugaydi: %(name)s"
 #, python-format
 msgid "Probation ends: %(name)s"
 msgstr "Sinov muddati tugaydi: %(name)s"
+
+#: backend/apps/hr/services.py
+msgid "Pick what this position does."
+msgstr "Bu lavozim kim hisoblanishini tanlang."
 
 #: backend/apps/hr/services.py
 msgid "Someone else in the company has this PINFL."
@@ -8947,11 +9123,6 @@ msgstr "Berilgan sana kelajakda bo‘lishi mumkin emas."
 #: backend/apps/hr/services.py
 msgid "A document can't expire before it was issued."
 msgstr "Hujjat muddati berilgan sanadan oldin tugashi mumkin emas."
-
-#: backend/apps/hr/services.py backend/apps/members/join_links.py
-#: backend/apps/members/owner_api.py backend/apps/members/services.py
-msgid "Pick a position of this company."
-msgstr "Shu kompaniyadagi lavozimni tanlang."
 
 #: backend/apps/hr/services.py
 msgid "This document is already required there."

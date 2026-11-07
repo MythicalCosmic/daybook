@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-07 05:23+0500\n"
+"POT-Creation-Date: 2026-11-07 05:31+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -8308,6 +8308,20 @@ msgstr ""
 "или истёк, заканчивающиеся договоры и испытательные сроки, недостающие "
 "обязательные документы, дни рождения и трудовые юбилеи на ближайшую неделю"
 
+#: backend/apps/hr/ai_tools.py
+msgid ""
+"Pharmacist coverage: whether a qualified pharmacist is on the roster for "
+"every hour each pharmacy is open in the coming days (the gaps with their "
+"times), pharmacies with no qualified pharmacist checked in right now, tills "
+"opened by someone who isn't qualified, and the pharmacists who don't count "
+"today and why"
+msgstr ""
+"Фармацевт на смене: есть ли в графике квалифицированный фармацевт на каждый "
+"час работы каждой аптеки в ближайшие дни (окна и их время), аптеки, где "
+"сейчас не отметился ни один квалифицированный фармацевт, кассы, открытые "
+"сотрудником без квалификации, и фармацевты, которые сегодня не учитываются, "
+"с причиной"
+
 #: backend/apps/hr/api.py backend/apps/hr/owner_api.py
 #: backend/apps/lifecycle/api.py backend/apps/lifecycle/owner_api.py
 msgid "HR isn't switched on for this company."
@@ -8320,6 +8334,10 @@ msgstr "У вас пока нет договора."
 #: backend/apps/hr/audit_actions.py
 msgid "Changed HR settings"
 msgstr "Изменены настройки кадров"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Chose who counts as a pharmacist"
+msgstr "Выбраны должности фармацевтов"
 
 #: backend/apps/hr/audit_actions.py
 msgid "Changed an employee profile"
@@ -8557,6 +8575,114 @@ msgstr[3] "%(years)d года в команде"
 msgid "The whole team of «%(company)s» congratulates you."
 msgstr "Вся команда «%(company)s» поздравляет вас."
 
+#: backend/apps/hr/bot_messages.py
+msgid "a required document is missing"
+msgstr "нет обязательного документа"
+
+#: backend/apps/hr/bot_messages.py
+msgid "a required document has expired"
+msgstr "срок обязательного документа истёк"
+
+#: backend/apps/hr/bot_messages.py
+msgid "a document is not verified yet"
+msgstr "документ ещё не проверен"
+
+#: backend/apps/hr/bot_messages.py
+msgid "not in a pharmacist position"
+msgstr "не на должности фармацевта"
+
+#: backend/apps/hr/bot_messages.py
+msgid "not working now"
+msgstr "сейчас не работает"
+
+#: backend/apps/hr/bot_messages.py
+msgid "not qualified"
+msgstr "не квалифицирован"
+
+#. Translators: %(branch)s is a pharmacy's name, e.g. "Yunusobod".
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "No qualified pharmacist on duty: %(branch)s"
+msgstr "Нет квалифицированного фармацевта на смене: %(branch)s"
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Since %(time)s nobody qualified has checked in."
+msgstr "С %(time)s никто из квалифицированных сотрудников не отметил приход."
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Checked in: %(names)s"
+msgstr "На месте: %(names)s"
+
+#: backend/apps/hr/bot_messages.py
+msgid "Only people with pharmaceutical education may sell medicines."
+msgstr ""
+"Отпускать лекарства могут только сотрудники с фармацевтическим образованием."
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Till opened by someone not qualified: %(branch)s"
+msgstr "Кассу открыл сотрудник без квалификации: %(branch)s"
+
+#. Translators: %(name)s is a person, %(time)s a clock time, %(reason)s a few words of why.
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Opened at %(time)s. Cashier: %(name)s (%(reason)s)."
+msgstr "Открыта в %(time)s. Кассир: %(name)s (%(reason)s)."
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "No qualified pharmacist in the roster: %(branch)s"
+msgstr "В графике смен нет квалифицированного фармацевта: %(branch)s"
+
+#. Translators: a day (dd.mm.yyyy) and two clock times, e.g. "14.11.2026, 20:00 to 08:00".
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "%(day)s, %(start)s to %(end)s"
+msgstr "%(day)s, с %(start)s до %(end)s"
+
+#. Translators: qualified pharmacists planned out of those needed, e.g. "1 of 2".
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "%(have)d of %(need)d"
+msgstr "%(have)d из %(need)d"
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "More gaps: %(count)d"
+msgstr "Ещё окна без фармацевта: %(count)d"
+
+#: backend/apps/hr/bot_messages.py
+msgid "Add a qualified pharmacist to the roster."
+msgstr "Добавьте в график смен квалифицированного фармацевта."
+
+#: backend/apps/hr/hooks.py
+msgid "A pharmacy open without a qualified pharmacist"
+msgstr "Аптека открыта без квалифицированного фармацевта"
+
+#: backend/apps/hr/hooks.py
+msgid "A till opened by someone who isn't a qualified pharmacist"
+msgstr "Кассу открыл сотрудник, не являющийся квалифицированным фармацевтом"
+
+#: backend/apps/hr/hooks.py
+msgid "Roster gaps without a qualified pharmacist"
+msgstr "Окна в графике смен без квалифицированного фармацевта"
+
+#: backend/apps/hr/hooks.py
+msgid "Choose who counts as a pharmacist"
+msgstr "Выберите, кто считается фармацевтом"
+
+#: backend/apps/hr/hooks.py
+msgid ""
+"Choose who counts as a pharmacist and upload their diplomas and "
+"certificates, so every hour a pharmacy is open has a qualified pharmacist on "
+"the roster."
+msgstr ""
+"Выберите, кто считается фармацевтом, и загрузите их дипломы и сертификаты, "
+"чтобы в каждый час работы аптеки в графике смен был квалифицированный "
+"фармацевт."
+
 #: backend/apps/hr/hooks.py
 msgid "Documents that expire"
 msgstr "Документы с истекающим сроком"
@@ -8791,6 +8917,16 @@ msgstr "Трудовой юбилей"
 msgid "Pick at most a year, ending after it starts."
 msgstr "Выберите не больше года; конец должен быть позже начала."
 
+#: backend/apps/hr/owner_api.py
+msgid "Pick at most 62 days, ending after it starts."
+msgstr "Выберите не больше 62 дней; последний день — не раньше первого."
+
+#: backend/apps/hr/owner_api.py backend/apps/hr/services.py
+#: backend/apps/members/join_links.py backend/apps/members/owner_api.py
+#: backend/apps/members/services.py
+msgid "Pick a position of this company."
+msgstr "Выберите должность этой компании."
+
 #: backend/apps/hr/owner_api.py backend/apps/hr/services.py
 msgid "Pick a kind of document."
 msgstr "Выберите тип документа."
@@ -8854,6 +8990,42 @@ msgid "Probations ending: %(count)d"
 msgstr "Заканчиваются испытательные сроки: %(count)d"
 
 #: backend/apps/hr/providers.py
+msgid "Pharmacist coverage"
+msgstr "Фармацевт на смене"
+
+#: backend/apps/hr/providers.py
+#, python-format
+msgid "No qualified pharmacist now: %(branch)s, since %(time)s"
+msgstr "Сейчас нет квалифицированного фармацевта: %(branch)s, с %(time)s"
+
+#: backend/apps/hr/providers.py
+#, python-format
+msgid "Roster gaps without a qualified pharmacist, next 7 days: %(count)d"
+msgstr "Окна без квалифицированного фармацевта в графике на 7 дней: %(count)d"
+
+#: backend/apps/hr/providers.py
+#, python-format
+msgid "Till opened by someone not qualified: %(name)s (%(branch)s)"
+msgstr "Кассу открыл сотрудник без квалификации: %(name)s (%(branch)s)"
+
+#: backend/apps/hr/providers.py
+#, python-format
+msgid "Pharmacist certificates to renew within 30 days: %(count)d"
+msgstr ""
+"Сертификаты фармацевтов, которые нужно обновить в течение 30 дней: %(count)d"
+
+#. Translators: %(date)s is dd.mm.yyyy, %(branch)s a pharmacy's name.
+#: backend/apps/hr/providers.py
+#, python-format
+msgid "Controlled substances licence ended on %(date)s: %(branch)s"
+msgstr "Лицензия на подконтрольные вещества закончилась %(date)s: %(branch)s"
+
+#: backend/apps/hr/providers.py
+#, python-format
+msgid "Controlled substances licence not on file: %(branch)s"
+msgstr "Лицензия на подконтрольные вещества не внесена: %(branch)s"
+
+#: backend/apps/hr/providers.py
 #, python-format
 msgid "Contract ends: %(name)s"
 msgstr "Заканчивается договор: %(name)s"
@@ -8862,6 +9034,10 @@ msgstr "Заканчивается договор: %(name)s"
 #, python-format
 msgid "Probation ends: %(name)s"
 msgstr "Заканчивается испытательный срок: %(name)s"
+
+#: backend/apps/hr/services.py
+msgid "Pick what this position does."
+msgstr "Выберите, кем считается эта должность."
 
 #: backend/apps/hr/services.py
 msgid "Someone else in the company has this PINFL."
@@ -8914,11 +9090,6 @@ msgstr "Дата выдачи не может быть в будущем."
 #: backend/apps/hr/services.py
 msgid "A document can't expire before it was issued."
 msgstr "Срок действия не может закончиться раньше даты выдачи."
-
-#: backend/apps/hr/services.py backend/apps/members/join_links.py
-#: backend/apps/members/owner_api.py backend/apps/members/services.py
-msgid "Pick a position of this company."
-msgstr "Выберите должность этой компании."
 
 #: backend/apps/hr/services.py
 msgid "This document is already required there."
