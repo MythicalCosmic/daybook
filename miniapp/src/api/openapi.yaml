@@ -2708,6 +2708,109 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/companies/{company_id}/sales/credit/:
+    post:
+      operationId: v1_companies_sales_credit_create
+      description: |-
+        Nasiya on my open shift: a credit sale to a customer (found by phone, or new), or a
+        customer paying it back (cash goes into the till).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreditRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreditRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreditRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KassaCredit'
+          description: ''
+  /api/v1/companies/{company_id}/sales/credit/{id}/void/:
+    post:
+      operationId: v1_companies_sales_credit_void_create
+      description: Cancel a nasiya entry I typed by mistake, while my shift is open.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SalesReasonRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SalesReasonRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SalesReasonRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KassaCreditVoided'
+          description: ''
+  /api/v1/companies/{company_id}/sales/customers/lookup/:
+    get:
+      operationId: v1_companies_sales_customers_lookup_retrieve
+      description: |-
+        Kassa's nasiya: customers by phone (the whole number or its last digits) or name, with
+        what each owes and may still take.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: phone
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KassaCustomers'
+          description: ''
   /api/v1/companies/{company_id}/sales/entries/:
     post:
       operationId: v1_companies_sales_entries_create
@@ -6357,6 +6460,32 @@ components:
       required:
       - date
       - reason
+    CreditRequest:
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/SalesCreditEntryKindEnum'
+        customer_id:
+          type: integer
+          nullable: true
+        new_customer:
+          allOf:
+          - $ref: '#/components/schemas/KassaNewCustomerRequest'
+          nullable: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        method_id:
+          type: integer
+          nullable: true
+        note:
+          type: string
+          default: ''
+          maxLength: 300
+      required:
+      - amount
+      - kind
     CurrencyEnum:
       enum:
       - UZS
@@ -7000,6 +7129,20 @@ components:
           type: integer
       required:
       - id
+    KassaCredit:
+      type: object
+      properties:
+        id:
+          type: integer
+      required:
+      - id
+    KassaCreditVoided:
+      type: object
+      properties:
+        id:
+          type: integer
+      required:
+      - id
     KassaCurrent:
       type: object
       properties:
@@ -7009,6 +7152,16 @@ components:
           nullable: true
       required:
       - shift
+    KassaCustomers:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+      required:
+      - results
     KassaHandoverAnswer:
       type: object
       properties:
@@ -7029,6 +7182,24 @@ components:
             additionalProperties: {}
       required:
       - results
+    KassaNewCustomerRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        phone:
+          type: string
+          minLength: 1
+          maxLength: 32
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/SalesCustomerKindEnum'
+          default: person
+      required:
+      - name
+      - phone
     KassaSale:
       type: object
       properties:
@@ -10791,6 +10962,26 @@ components:
         * `to_safe` - To the safe
         * `from_safe` - From the safe
         * `to_bank` - To the bank
+    SalesCreditEntryKindEnum:
+      enum:
+      - sale
+      - payment
+      type: string
+      description: |-
+        * `sale` - Sold on credit
+        * `payment` - Paid back
+    SalesCustomerKindEnum:
+      enum:
+      - person
+      - clinic
+      - pharmacy
+      - company
+      type: string
+      description: |-
+        * `person` - Person
+        * `clinic` - Clinic
+        * `pharmacy` - Pharmacy
+        * `company` - Company
     SalesPerson:
       type: object
       properties:

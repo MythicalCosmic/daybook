@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-07 05:31+0500\n"
+"POT-Creation-Date: 2026-11-07 06:10+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -1780,6 +1780,7 @@ msgid "Ready"
 msgstr "Готово"
 
 #: backend/apps/ai/models.py backend/apps/exports/models.py
+#: backend/apps/sales/models.py
 msgid "Failed"
 msgstr "Ошибка"
 
@@ -1815,7 +1816,8 @@ msgstr "Выполняется"
 
 #: backend/apps/ai/models.py backend/apps/projects/conf.py
 #: backend/apps/projects/models.py backend/apps/reminders/bot_messages.py
-#: backend/apps/tasks/bot_messages.py backend/apps/tasks/services.py
+#: backend/apps/sales/models.py backend/apps/tasks/bot_messages.py
+#: backend/apps/tasks/services.py
 msgid "Done"
 msgstr "Готово"
 
@@ -1922,7 +1924,7 @@ msgstr "Отменена"
 
 #: backend/apps/ai/models.py backend/apps/finance/exporters.py
 #: backend/apps/payroll/providers.py backend/apps/projects/hooks.py
-#: backend/apps/timeoff/providers.py
+#: backend/apps/sales/models.py backend/apps/timeoff/providers.py
 msgid "Person"
 msgstr "Сотрудник"
 
@@ -2163,7 +2165,7 @@ msgid "Announcement: %(title)s · %(read)d of %(total)d read"
 msgstr "Объявление: %(title)s · прочитали %(read)d из %(total)d"
 
 #: backend/apps/announcements/models.py backend/apps/hr/models.py
-#: backend/apps/knowledge/providers.py
+#: backend/apps/knowledge/providers.py backend/apps/sales/models.py
 msgid "Draft"
 msgstr "Черновик"
 
@@ -2633,7 +2635,7 @@ msgstr "Изношено"
 msgid "Damaged"
 msgstr "Повреждено"
 
-#: backend/apps/assets/models.py
+#: backend/apps/assets/models.py backend/apps/sales/hooks.py
 msgid "Sold"
 msgstr "Продано"
 
@@ -3076,6 +3078,7 @@ msgstr "Инвентарный номер"
 
 #: backend/apps/assets/providers.py backend/apps/members/providers.py
 #: backend/apps/reports/hooks.py
+#: backend/apps/sales/templates/sales/invoice.html
 msgid "Name"
 msgstr "Имя"
 
@@ -3120,6 +3123,7 @@ msgid "In service from"
 msgstr "В эксплуатации с"
 
 #: backend/apps/assets/providers.py backend/apps/assets/services.py
+#: backend/apps/sales/hooks.py
 msgid "Cost"
 msgstr "Стоимость"
 
@@ -3351,6 +3355,7 @@ msgid "Give the asset a name."
 msgstr "Укажите название средства."
 
 #: backend/apps/assets/services.py
+#: backend/apps/sales/templates/sales/invoice.html
 msgid "Price"
 msgstr "Цена"
 
@@ -3485,6 +3490,7 @@ msgstr "Сумма должна равняться всему расходу."
 
 #: backend/apps/assets/services.py backend/apps/finance/exporters.py
 #: backend/apps/payroll/templates/payroll/payslip.html
+#: backend/apps/sales/templates/sales/invoice.html
 msgid "Amount"
 msgstr "Сумма"
 
@@ -5235,7 +5241,7 @@ msgstr "Поощрения"
 msgid "Assets and equipment"
 msgstr "Основные средства и оборудование"
 
-#: backend/apps/companies/models.py
+#: backend/apps/companies/models.py backend/apps/sales/models.py
 msgid "Pharmacy"
 msgstr "Аптека"
 
@@ -5675,7 +5681,7 @@ msgstr "У вас больше нет прав на выгрузку этих д
 msgid "This export can't be made in that format."
 msgstr "Эту выгрузку нельзя сделать в таком формате."
 
-#: backend/apps/exports/build.py
+#: backend/apps/exports/build.py backend/apps/sales/queries.py
 msgid "Yes"
 msgstr "Да"
 
@@ -5697,7 +5703,7 @@ msgstr "%(label)s · строк: %(count)s"
 msgid "This export took too long. Please try again."
 msgstr "Выгрузка заняла слишком много времени. Пожалуйста, попробуйте ещё раз."
 
-#: backend/apps/exports/models.py
+#: backend/apps/exports/models.py backend/apps/sales/models.py
 msgid "Waiting"
 msgstr "В очереди"
 
@@ -6316,6 +6322,7 @@ msgid "Description"
 msgstr "Описание"
 
 #: backend/apps/finance/exporters.py backend/apps/payroll/providers.py
+#: backend/apps/sales/hooks.py
 msgid "Currency"
 msgstr "Валюта"
 
@@ -6391,15 +6398,19 @@ msgid "Who"
 msgstr "Кто"
 
 #: backend/apps/finance/exporters.py backend/apps/lifecycle/models.py
+#: backend/apps/sales/hooks.py backend/apps/sales/models.py
+#: backend/apps/sales/templates/sales/invoice.html
 msgid "Issued"
 msgstr "Дата возникновения"
 
 #: backend/apps/finance/exporters.py backend/apps/reports/hooks.py
+#: backend/apps/sales/hooks.py backend/apps/sales/templates/sales/invoice.html
 #: backend/apps/tasks/hooks.py
 msgid "Due"
 msgstr "Срок"
 
 #: backend/apps/finance/exporters.py backend/apps/finance/models.py
+#: backend/apps/sales/hooks.py backend/apps/sales/models.py
 msgid "Paid"
 msgstr "Погашен"
 
@@ -6811,7 +6822,8 @@ msgstr "У категорий может быть не больше двух у�
 msgid "A subcategory has its parent's kind."
 msgstr "Подкатегория должна быть того же типа, что и родительская."
 
-#: backend/apps/finance/models.py
+#: backend/apps/finance/models.py backend/apps/sales/hooks.py
+#: backend/apps/sales/templates/sales/invoice.html
 msgid "Customer"
 msgstr "Клиент"
 
@@ -6906,7 +6918,7 @@ msgstr ""
 msgid "Posted"
 msgstr "Проведено"
 
-#: backend/apps/finance/models.py
+#: backend/apps/finance/models.py backend/apps/sales/models.py
 msgid "Void"
 msgstr "Аннулировано"
 
@@ -7113,7 +7125,7 @@ msgstr "В базовой валюте."
 msgid "Company cash I hold"
 msgstr "Деньги компании у меня на руках"
 
-#: backend/apps/finance/models.py
+#: backend/apps/finance/models.py backend/apps/sales/models.py
 msgid "Paid back"
 msgstr "Возмещено"
 
@@ -7236,7 +7248,8 @@ msgstr "Сотрудники (скрыты)"
 msgid "Pick who owes or is owed: a counterparty or an employee."
 msgstr "Выберите, кто должен или кому должны: контрагента или сотрудника."
 
-#: backend/apps/finance/owner_serializers.py backend/apps/sales/services.py
+#: backend/apps/finance/owner_serializers.py backend/apps/sales/owner_api.py
+#: backend/apps/sales/services.py
 msgid "Pick the account."
 msgstr "Выберите счёт."
 
@@ -9285,7 +9298,7 @@ msgstr "Пожалуйста, укажите причину."
 msgid "Two-letter country code (ISO 3166-1), e.g. UZ."
 msgstr "Двухбуквенный код страны (ISO 3166-1), например UZ."
 
-#: backend/apps/inventory/models.py
+#: backend/apps/inventory/models.py backend/apps/sales/hooks.py
 msgid "Medicine"
 msgstr "Лекарственный препарат"
 
@@ -10121,6 +10134,7 @@ msgid "All"
 msgstr "Все"
 
 #: backend/apps/members/admin.py backend/apps/members/providers.py
+#: backend/apps/sales/templates/sales/invoice.html
 msgid "Phone"
 msgstr "Телефон"
 
@@ -14321,6 +14335,32 @@ msgstr ""
 "Показатели каждого кассира за период: смены, продажи, средний чек, как часто "
 "сходилась касса, недостачи и излишки, опоздания с открытием и проверки."
 
+#: backend/apps/sales/ai_tools.py
+msgid ""
+"The medicines sold most in a range of days, from the cash-register program's "
+"sale lines: packs and amount per item, and how many prescription lines were "
+"sold above the legal price."
+msgstr ""
+"Самые продаваемые препараты за период по строкам продаж кассовой программы: "
+"упаковки и сумма по каждому товару и сколько рецептурных строк продано выше "
+"предельной цены."
+
+#: backend/apps/sales/ai_tools.py
+msgid ""
+"What customers owe (nasiya and invoices) by how long it is past due: not due "
+"yet, 0–30, 31–60 and more than 60 days, in total and per customer."
+msgstr ""
+"Долги клиентов (насия и счета) по сроку просрочки: срок не наступил, 0–30, "
+"31–60 и больше 60 дней, всего и по каждому клиенту."
+
+#: backend/apps/sales/ai_tools.py
+msgid ""
+"Invoices issued in a range of days: number, customer, total, paid, left to "
+"pay, due day and whether it is overdue."
+msgstr ""
+"Счета, выставленные за период: номер, клиент, сумма, оплачено, осталось, "
+"срок оплаты и просрочен ли он."
+
 #: backend/apps/sales/alerts.py backend/apps/sales/queries.py
 #: backend/apps/sales/services.py
 msgid "Received"
@@ -14358,6 +14398,15 @@ msgstr "Сначала откройте смену."
 #: backend/apps/sales/api.py
 msgid "Single receipts are off: totals come from the Z-report."
 msgstr "Отдельные чеки отключены: итоги берутся из Z-отчёта."
+
+#: backend/apps/sales/api.py backend/apps/sales/owner_api.py
+#: backend/apps/sales/services.py
+msgid "Pick the customer."
+msgstr "Выберите клиента."
+
+#: backend/apps/sales/api.py backend/apps/sales/services.py
+msgid "Pick how the customer paid."
+msgstr "Выберите, чем заплатил клиент."
 
 #: backend/apps/sales/audit_actions.py
 msgid "Changed the sales settings"
@@ -14442,6 +14491,70 @@ msgstr "Записан чек"
 #: backend/apps/sales/audit_actions.py
 msgid "Voided a receipt"
 msgstr "Чек аннулирован"
+
+#: backend/apps/sales/audit_actions.py
+msgid "Added a sale lines import profile"
+msgstr "Добавлен профиль импорта строк продаж"
+
+#: backend/apps/sales/audit_actions.py
+msgid "Changed a sale lines import profile"
+msgstr "Изменён профиль импорта строк продаж"
+
+#: backend/apps/sales/audit_actions.py
+msgid "Uploaded a sale lines file"
+msgstr "Загружен файл строк продаж"
+
+#: backend/apps/sales/audit_actions.py
+msgid "Read a sale lines file"
+msgstr "Обработан файл строк продаж"
+
+#: backend/apps/sales/audit_actions.py
+msgid "Couldn't read a sale lines file"
+msgstr "Не удалось обработать файл строк продаж"
+
+#: backend/apps/sales/audit_actions.py
+msgid "Matched an item code to a medicine"
+msgstr "Код товара сопоставлен с препаратом"
+
+#: backend/apps/sales/audit_actions.py
+msgid "Marked an item code as not a product"
+msgstr "Код товара отмечен как не товар"
+
+#: backend/apps/sales/audit_actions.py
+msgid "Linked a cash-register cashier to a person"
+msgstr "Кассир кассовой программы связан с сотрудником"
+
+#: backend/apps/sales/audit_actions.py
+msgid "Recorded nasiya"
+msgstr "Записана насия"
+
+#: backend/apps/sales/audit_actions.py
+msgid "Cancelled a nasiya entry"
+msgstr "Отменена запись насии"
+
+#: backend/apps/sales/audit_actions.py
+msgid "Created an invoice"
+msgstr "Создан счёт"
+
+#: backend/apps/sales/audit_actions.py
+msgid "Changed an invoice"
+msgstr "Изменён счёт"
+
+#: backend/apps/sales/audit_actions.py
+msgid "Issued an invoice"
+msgstr "Выставлен счёт"
+
+#: backend/apps/sales/audit_actions.py
+msgid "Recorded a payment on an invoice"
+msgstr "Записана оплата по счёту"
+
+#: backend/apps/sales/audit_actions.py
+msgid "Voided an invoice"
+msgstr "Аннулирован счёт"
+
+#: backend/apps/sales/audit_actions.py
+msgid "Sent an invoice"
+msgstr "Отправлен счёт"
 
 #: backend/apps/sales/bot_messages.py backend/apps/sales/queries.py
 #, python-format
@@ -14924,8 +15037,270 @@ msgid "Verified by"
 msgstr "Кто проверил"
 
 #: backend/apps/sales/hooks.py
+msgid "Invoice"
+msgstr "Счёт"
+
+#: backend/apps/sales/hooks.py backend/apps/sales/models.py
+msgid "Invoices"
+msgstr "Счета-фактуры"
+
+#: backend/apps/sales/hooks.py backend/apps/sales/templates/sales/invoice.html
+msgid "Total"
+msgstr "Итого"
+
+#: backend/apps/sales/hooks.py
+msgid "Left to pay"
+msgstr "Осталось оплатить"
+
+#: backend/apps/sales/hooks.py
+msgid "Overdue"
+msgstr "Просрочен"
+
+#: backend/apps/sales/hooks.py
+msgid "Nasiya at the till"
+msgstr "Насия на кассе"
+
+#: backend/apps/sales/hooks.py
+msgid "Overdue nasiya and invoices"
+msgstr "Просроченная насия и счета"
+
+#: backend/apps/sales/hooks.py
+msgid "Sale lines to match"
+msgstr "Строки продаж для сопоставления"
+
+#: backend/apps/sales/hooks.py
+msgid "Where do your sales lines come from?"
+msgstr "Откуда берутся ваши строки продаж?"
+
+#: backend/apps/sales/hooks.py
+msgid ""
+"Import them from your cash-register program for true stock, margins and the "
+"legal price check, or work without them."
+msgstr ""
+"Импортируйте их из кассовой программы для точных остатков, наценки и "
+"проверки предельных цен или работайте без них."
+
+#: backend/apps/sales/hooks.py
+msgid "Prescription medicines sold above the legal price"
+msgstr "Рецептурные препараты, проданные выше предельной цены"
+
+#: backend/apps/sales/hooks.py
+msgid "A sale lines import didn't finish"
+msgstr "Импорт строк продаж не завершён"
+
+#: backend/apps/sales/hooks.py
+msgid "Sale lines"
+msgstr "Строки продаж"
+
+#: backend/apps/sales/hooks.py
+msgid "Sale or refund"
+msgstr "Продажа или возврат"
+
+#: backend/apps/sales/hooks.py
+msgid "Item code"
+msgstr "Код товара"
+
+#: backend/apps/sales/hooks.py backend/apps/sales/templates/sales/invoice.html
+msgid "Series"
+msgstr "Серия"
+
+#: backend/apps/sales/hooks.py
+msgid "Parts"
+msgstr "Части"
+
+#: backend/apps/sales/hooks.py
+msgid "Parts per pack"
+msgstr "Частей в упаковке"
+
+#: backend/apps/sales/hooks.py
+msgid "Price per pack"
+msgstr "Цена упаковки"
+
+#: backend/apps/sales/hooks.py
+msgid "Line total"
+msgstr "Сумма строки"
+
+#: backend/apps/sales/hooks.py
+msgid "Legal price cap"
+msgstr "Предельная цена"
+
+#: backend/apps/sales/hooks.py
+msgid "Above the cap"
+msgstr "Выше предела"
+
+#: backend/apps/sales/hooks.py
+msgid "Prescription"
+msgstr "Рецепт"
+
+#: backend/apps/sales/hooks.py
 msgid "Kassa"
 msgstr "Касса"
+
+#: backend/apps/sales/importer.py
+#, python-format
+msgid "The file has no row %(row)s with the column names."
+msgstr "В файле нет строки %(row)s с названиями колонок."
+
+#: backend/apps/sales/importer.py
+#, python-format
+msgid "The file has more than %(count)s rows: split it into smaller files."
+msgstr "В файле больше %(count)s строк: разделите его на файлы поменьше."
+
+#: backend/apps/sales/importer.py
+msgid "The file isn't readable as CSV."
+msgstr "Файл не читается как CSV."
+
+#: backend/apps/sales/importer.py
+msgid "The file's text can't be read: pick its encoding in the profile."
+msgstr "Не удалось прочитать текст файла: выберите кодировку в профиле."
+
+#: backend/apps/sales/importer.py
+msgid "The file isn't readable as an Excel workbook."
+msgstr "Файл не читается как книга Excel."
+
+#: backend/apps/sales/importer.py
+#, python-format
+msgid "The file has no column %(column)s (for %(field)s)."
+msgstr "В файле нет колонки %(column)s (для поля «%(field)s»)."
+
+#: backend/apps/sales/importer.py
+#, python-format
+msgid "Unknown columns: %(names)s."
+msgstr "Неизвестные колонки: %(names)s."
+
+#: backend/apps/sales/importer.py
+msgid "the receipt number"
+msgstr "номер чека"
+
+#: backend/apps/sales/importer.py
+msgid "the item code"
+msgstr "код товара"
+
+#: backend/apps/sales/importer.py
+msgid "the quantity"
+msgstr "количество"
+
+#: backend/apps/sales/importer.py
+msgid "the date"
+msgstr "дата"
+
+#: backend/apps/sales/importer.py
+msgid "the line total or the price"
+msgstr "сумма строки или цена"
+
+#: backend/apps/sales/importer.py
+msgid "the pharmacy"
+msgstr "аптека"
+
+#: backend/apps/sales/importer.py
+#, python-format
+msgid "Say which column holds %(fields)s."
+msgstr "Укажите, в какой колонке: %(fields)s."
+
+#: backend/apps/sales/importer.py
+msgid "No receipt number."
+msgstr "Нет номера чека."
+
+#: backend/apps/sales/importer.py
+msgid "No item code."
+msgstr "Нет кода товара."
+
+#: backend/apps/sales/importer.py
+msgid "quantity"
+msgstr "количество"
+
+#: backend/apps/sales/importer.py
+msgid "No quantity."
+msgstr "Нет количества."
+
+#: backend/apps/sales/importer.py
+msgid "price"
+msgstr "цена"
+
+#: backend/apps/sales/importer.py
+msgid "discount"
+msgstr "скидка"
+
+#: backend/apps/sales/importer.py
+msgid "total"
+msgstr "сумма"
+
+#: backend/apps/sales/importer.py
+#, python-format
+msgid "The %(field)s isn't a number."
+msgstr "Это не число: %(field)s."
+
+#: backend/apps/sales/importer.py
+msgid "The date isn't readable."
+msgstr "Не удалось прочитать дату."
+
+#: backend/apps/sales/importer.py
+msgid "The time isn't readable."
+msgstr "Не удалось прочитать время."
+
+#: backend/apps/sales/invoice_print.py backend/apps/sales/services.py
+#, python-format
+msgid "Invoice %(number)s"
+msgstr "Счёт %(number)s"
+
+#: backend/apps/sales/invoice_print.py backend/apps/sales/models.py
+#: backend/apps/sales/queries.py
+msgid "Draft invoice"
+msgstr "Черновик счёта"
+
+#: backend/apps/sales/lines.py
+msgid "Sale line imports are switched off in the sales settings."
+msgstr "Импорт строк продаж выключен в настройках продаж."
+
+#: backend/apps/sales/lines.py
+msgid "The file couldn't be read. Check the profile and try again."
+msgstr "Не удалось прочитать файл. Проверьте профиль и попробуйте снова."
+
+#: backend/apps/sales/lines.py
+#, python-format
+msgid "Unknown branch %(branch)s."
+msgstr "Неизвестная аптека: %(branch)s."
+
+#: backend/apps/sales/lines.py
+#, python-format
+msgid "Receipt %(number)s adds up to nothing."
+msgstr "Чек %(number)s на нулевую сумму."
+
+#: backend/apps/sales/lines.py
+#, python-format
+msgid "%(product)s: the stock wasn't moved (%(reason)s)."
+msgstr "%(product)s: остаток не изменён (%(reason)s)."
+
+#: backend/apps/sales/lines.py
+msgid "Pick a product of this company."
+msgstr "Выберите товар этой компании."
+
+#: backend/apps/sales/lines.py
+msgid "Pick a code to match."
+msgstr "Выберите код для сопоставления."
+
+#: backend/apps/sales/lines.py
+#, python-format
+msgid "%(count)s sale above the legal price at %(branch)s"
+msgid_plural "%(count)s sales above the legal price at %(branch)s"
+msgstr[0] "%(count)s продажа выше предельной цены: %(branch)s"
+msgstr[1] "%(count)s продажи выше предельной цены: %(branch)s"
+msgstr[2] "%(count)s продаж выше предельной цены: %(branch)s"
+
+#: backend/apps/sales/lines.py
+#, python-format
+msgid "%(product)s: %(price)s a pack, the cap is %(cap)s"
+msgstr "%(product)s: %(price)s за упаковку, предел %(cap)s"
+
+#: backend/apps/sales/lines.py
+#, python-format
+msgid "Prescription medicines sold on %(day)s."
+msgstr "Рецептурные препараты, проданные %(day)s."
+
+#: backend/apps/sales/lines.py
+#, python-format
+msgid "The sale lines import didn't finish (%(profile)s)"
+msgstr "Импорт строк продаж не завершён (%(profile)s)"
 
 #: backend/apps/sales/models.py
 msgid "Shift totals from the Z-report"
@@ -14936,8 +15311,16 @@ msgid "Single receipts"
 msgstr "Отдельные чеки"
 
 #: backend/apps/sales/models.py
-msgid "Invoices"
-msgstr "Счета-фактуры"
+msgid "No sale lines"
+msgstr "Без строк продаж"
+
+#: backend/apps/sales/models.py
+msgid "Imported from the cash-register software"
+msgstr "Импорт из кассовой программы"
+
+#: backend/apps/sales/models.py
+msgid "Entered with each receipt"
+msgstr "Вводятся с каждым чеком"
 
 #: backend/apps/sales/models.py
 msgid "Sales before this time belong to the previous business day."
@@ -14990,6 +15373,44 @@ msgstr "Берётся под блокировкой строки при отк�
 #: backend/apps/sales/models.py
 msgid "The last business day whose sales were posted to groups."
 msgstr "Последний торговый день, итоги которого отправлены в группы."
+
+#: backend/apps/sales/models.py
+msgid ""
+"Where sale lines come from. Without them stock moves only through receipts "
+"of goods, transfers, write-offs and counts."
+msgstr ""
+"Откуда берутся строки продаж. Без них остатки меняются только приходами, "
+"перемещениями, списаниями и инвентаризациями."
+
+#: backend/apps/sales/models.py
+msgid "When someone answered where sale lines come from."
+msgstr "Когда ответили, откуда берутся строки продаж."
+
+#: backend/apps/sales/models.py
+msgid "A nasiya (credit sale) is due this many days after the sale."
+msgstr ""
+"Насию (продажу в долг) нужно погасить через столько дней после продажи."
+
+#: backend/apps/sales/models.py
+msgid "Taken under a row lock when an invoice is issued."
+msgstr "Берётся под блокировкой при выставлении счёта."
+
+#: backend/apps/sales/models.py
+msgid "An invoice is due this many days after it is issued."
+msgstr "Счёт нужно оплатить через столько дней после выставления."
+
+#: backend/apps/sales/models.py
+msgid "Printed at the foot of invoices."
+msgstr "Печатается внизу счетов."
+
+#: backend/apps/sales/models.py
+msgid ""
+"A prescription medicine sold by invoice above its batch cost plus this "
+"markup (or above its reference price) warns at issue."
+msgstr ""
+"Если рецептурный препарат продаётся по счёту дороже закупочной цены партии с "
+"этой наценкой (или дороже референтной цены), при выставлении будет "
+"предупреждение."
 
 #: backend/apps/sales/models.py
 msgid "QR or wallet"
@@ -15066,6 +15487,128 @@ msgid "Import"
 msgstr "Импорт"
 
 #: backend/apps/sales/models.py
+msgid "CSV"
+msgstr "CSV"
+
+#: backend/apps/sales/models.py
+msgid "Excel (xlsx)"
+msgstr "Excel (xlsx)"
+
+#: backend/apps/sales/models.py backend/apps/sales/templates/sales/invoice.html
+msgid "Packs"
+msgstr "Упаковки"
+
+#: backend/apps/sales/models.py
+msgid "Parts (blisters, ampoules)"
+msgstr "Части (блистеры, ампулы)"
+
+#: backend/apps/sales/models.py
+msgid "Empty: UTF-8, else Windows-1251."
+msgstr "Пусто: UTF-8, иначе Windows-1251."
+
+#: backend/apps/sales/models.py
+msgid "Empty: found from the file."
+msgstr "Пусто: определяется по файлу."
+
+#: backend/apps/sales/models.py
+msgid "The row that holds the column names."
+msgstr "Строка с названиями колонок."
+
+#: backend/apps/sales/models.py
+msgid "Which column of the file holds what."
+msgstr "Что в какой колонке файла."
+
+#: backend/apps/sales/models.py
+msgid "Empty: the usual formats (\"07.11.2026 14:05\")."
+msgstr "Пусто: обычные форматы («07.11.2026 14:05»)."
+
+#: backend/apps/sales/models.py
+msgid "What a quantity counts when the file has no unit column."
+msgstr "Что считает количество, если в файле нет колонки единицы."
+
+#: backend/apps/sales/models.py
+msgid "The file's branch names and the branches they mean (else code or name)."
+msgstr ""
+"Названия аптек в файле и какие аптеки они означают (иначе код или название)."
+
+#: backend/apps/sales/models.py
+msgid "Reading"
+msgstr "Обработка"
+
+#: backend/apps/sales/models.py
+msgid "Rows read from the file."
+msgstr "Строк прочитано из файла."
+
+#: backend/apps/sales/models.py
+msgid "Receipts added."
+msgstr "Добавлено чеков."
+
+#: backend/apps/sales/models.py
+msgid "Lines found in the file."
+msgstr "Строк найдено в файле."
+
+#: backend/apps/sales/models.py
+msgid "Lines of receipts imported before, left out."
+msgstr "Строки ранее загруженных чеков, пропущены."
+
+#: backend/apps/sales/models.py
+msgid "Rows that couldn't be read."
+msgstr "Строки, которые не удалось прочитать."
+
+#: backend/apps/sales/models.py
+msgid "Prescription lines sold above the legal price."
+msgstr "Рецептурные строки, проданные выше предельной цены."
+
+#: backend/apps/sales/models.py
+msgid "Matched"
+msgstr "Сопоставлена"
+
+#: backend/apps/sales/models.py
+msgid "Waiting for a match"
+msgstr "Ждёт сопоставления"
+
+#: backend/apps/sales/models.py
+msgid "Not a product"
+msgstr "Не товар"
+
+#: backend/apps/sales/models.py
+msgid ""
+"The unit the file counted in; `quantity` is always in parts once matched."
+msgstr "Единица из файла; после сопоставления количество всегда в частях."
+
+#: backend/apps/sales/models.py
+msgid "Per unit, as the file gave it."
+msgstr "За единицу, как в файле."
+
+#: backend/apps/sales/models.py
+msgid "What the customer paid for the line, after the discount."
+msgstr "Сколько покупатель заплатил за строку, после скидки."
+
+#: backend/apps/sales/models.py
+msgid "Partly paid"
+msgstr "Оплачен частично"
+
+#: backend/apps/sales/models.py
+msgid "The id of the e-invoice (e-faktura), when typed."
+msgstr "Номер электронного счёта-фактуры (e-faktura), если введён."
+
+#: backend/apps/sales/models.py
+msgid "Clinic"
+msgstr "Клиника"
+
+#: backend/apps/sales/models.py
+msgid "Company"
+msgstr "Компания"
+
+#: backend/apps/sales/models.py
+msgid "Sold on credit"
+msgstr "Продано в долг"
+
+#: backend/apps/sales/models.py
+msgid "How a payment came in (cash goes into the till)."
+msgstr "Как пришла оплата (наличные — в кассу)."
+
+#: backend/apps/sales/models.py
 msgid "Payout"
 msgstr "Выдача из кассы"
 
@@ -15129,6 +15672,22 @@ msgstr "Неизвестный счёт."
 #: backend/apps/sales/owner_api.py backend/apps/sales/services.py
 msgid "Pick the branch."
 msgstr "Выберите филиал."
+
+#: backend/apps/sales/owner_api.py
+msgid "Pick one of your import profiles."
+msgstr "Выберите один из ваших профилей импорта."
+
+#: backend/apps/sales/owner_api.py
+msgid "Pick a medicine from the catalogue."
+msgstr "Выберите препарат из каталога."
+
+#: backend/apps/sales/owner_api.py
+msgid "No line waits for this code."
+msgstr "Нет строк, ожидающих этот код."
+
+#: backend/apps/sales/owner_api.py
+msgid "Give the customer a name."
+msgstr "Укажите имя клиента."
 
 #: backend/apps/sales/queries.py
 #, python-format
@@ -15204,6 +15763,51 @@ msgstr ""
 msgid "%(count)s shifts on record, %(unverified)s not verified yet."
 msgstr "Всего смен: %(count)s, из них ещё не проверено: %(unverified)s."
 
+#: backend/apps/sales/queries.py
+#, python-format
+msgid "Match %(code)s · %(name)s"
+msgstr "Сопоставить %(code)s · %(name)s"
+
+#: backend/apps/sales/queries.py
+#, python-format
+msgid "%(count)s line waits for it"
+msgid_plural "%(count)s lines wait for it"
+msgstr[0] "Его ждёт %(count)s строка"
+msgstr[1] "Его ждут %(count)s строки"
+msgstr[2] "Его ждут %(count)s строк"
+
+#: backend/apps/sales/queries.py
+#, python-format
+msgid "Sold above the legal price yesterday: %(count)s (%(branches)s)"
+msgstr "Вчера продано выше предельной цены: %(count)s (%(branches)s)"
+
+#: backend/apps/sales/queries.py
+#, python-format
+msgid "The import covers %(percent)s %% of yesterday's tills at %(branch)s"
+msgstr "Импорт покрывает %(percent)s %% вчерашних касс: %(branch)s"
+
+#: backend/apps/sales/queries.py
+#, python-format
+msgid ""
+"%(branch)s: sale lines imported for yesterday, but the tills have no totals"
+msgstr "%(branch)s: строки продаж за вчера загружены, но итогов смен нет"
+
+#: backend/apps/sales/reminders.py
+#, python-format
+msgid "%(customer)s: %(amount)s, %(days)s day overdue"
+msgid_plural "%(customer)s: %(amount)s, %(days)s days overdue"
+msgstr[0] "%(customer)s: %(amount)s, просрочено на %(days)s день"
+msgstr[1] "%(customer)s: %(amount)s, просрочено на %(days)s дня"
+msgstr[2] "%(customer)s: %(amount)s, просрочено на %(days)s дней"
+
+#: backend/apps/sales/reminders.py
+#, python-format
+msgid "%(count)s customer debt is overdue"
+msgid_plural "%(count)s customer debts are overdue"
+msgstr[0] "Просрочен %(count)s долг клиентов"
+msgstr[1] "Просрочены %(count)s долга клиентов"
+msgstr[2] "Просрочено %(count)s долгов клиентов"
+
 #: backend/apps/sales/serializers.py
 msgid "Unknown payment method."
 msgstr "Неизвестный способ оплаты."
@@ -15237,8 +15841,20 @@ msgid "Pick a way of recording sales."
 msgstr "Выберите способ учёта продаж."
 
 #: backend/apps/sales/services.py
-msgid "Invoices mode arrives with the invoices module."
-msgstr "Режим счетов-фактур появится вместе с модулем счетов-фактур."
+msgid "Pick where your sale lines come from."
+msgstr "Выберите, откуда берутся строки продаж."
+
+#: backend/apps/sales/services.py
+msgid "Sale lines typed with each receipt arrive in a later version."
+msgstr "Строки продаж, вводимые с каждым чеком, появятся в следующей версии."
+
+#: backend/apps/sales/services.py
+msgid "An invoice prefix has letters or digits, like INV."
+msgstr "Префикс счёта — буквы или цифры, например INV."
+
+#: backend/apps/sales/services.py
+msgid "The markup is a percentage from 0 to 100."
+msgstr "Наценка — процент от 0 до 100."
 
 #: backend/apps/sales/services.py
 #, python-format
@@ -15430,6 +16046,11 @@ msgid "That till is in another branch."
 msgstr "Эта касса в другом филиале."
 
 #: backend/apps/sales/services.py
+msgid ""
+"Imported receipts come from the cash-register program: correct them there."
+msgstr "Загруженные чеки приходят из кассовой программы: исправляйте их там."
+
+#: backend/apps/sales/services.py
 msgid "This receipt is already void."
 msgstr "Этот чек уже аннулирован."
 
@@ -15439,6 +16060,290 @@ msgid ""
 "This receipt is part of the closed shift %(shift)s: correct the shift "
 "instead."
 msgstr "Этот чек относится к закрытой смене %(shift)s: исправьте саму смену."
+
+#: backend/apps/sales/services.py
+msgid "Give the profile a name, e.g. the cash-register program's."
+msgstr "Дайте профилю название, например название кассовой программы."
+
+#: backend/apps/sales/services.py
+#, python-format
+msgid "There is already a profile called %(name)s."
+msgstr "Профиль с названием %(name)s уже есть."
+
+#: backend/apps/sales/services.py
+msgid "Pick CSV or Excel."
+msgstr "Выберите CSV или Excel."
+
+#: backend/apps/sales/services.py
+msgid "Pick the file's encoding."
+msgstr "Выберите кодировку файла."
+
+#: backend/apps/sales/services.py
+msgid "The delimiter is one character, like ; or ,"
+msgstr "Разделитель — один символ, например ; или ,"
+
+#: backend/apps/sales/services.py
+msgid "The header row is a number."
+msgstr "Строка заголовков — это число."
+
+#: backend/apps/sales/services.py
+msgid "The header row is between 1 and 50."
+msgstr "Строка заголовков — от 1 до 50."
+
+#: backend/apps/sales/services.py
+msgid "A date format looks like \"%d.%m.%Y %H:%M\"."
+msgstr "Формат даты выглядит так: «%d.%m.%Y %H:%M»."
+
+#: backend/apps/sales/services.py
+msgid "Pick packs or parts."
+msgstr "Выберите упаковки или части."
+
+#: backend/apps/sales/services.py
+msgid "The branch map isn't readable."
+msgstr "Не удалось прочитать карту аптек."
+
+#: backend/apps/sales/services.py
+msgid "The branch map names a branch of another company."
+msgstr "В карте аптек указана аптека другой компании."
+
+#: backend/apps/sales/services.py
+msgid "The column map isn't readable."
+msgstr "Не удалось прочитать схему колонок."
+
+#: backend/apps/sales/services.py
+msgid "Turn on imported sale lines in the sales settings first."
+msgstr "Сначала включите импорт строк продаж в настройках продаж."
+
+#: backend/apps/sales/services.py
+msgid "This profile is archived."
+msgstr "Этот профиль в архиве."
+
+#: backend/apps/sales/services.py
+#, python-format
+msgid "%(profile)s reads %(kind)s files."
+msgstr "%(profile)s читает файлы %(kind)s."
+
+#: backend/apps/sales/services.py
+msgid "Pick a code."
+msgstr "Выберите код."
+
+#: backend/apps/sales/services.py
+#, python-format
+msgid "%(person)s isn't on the team now."
+msgstr "%(person)s сейчас не в команде."
+
+#: backend/apps/sales/services.py
+msgid "Pick what kind of customer this is."
+msgstr "Выберите тип клиента."
+
+#: backend/apps/sales/services.py
+#, python-format
+msgid "%(name)s isn't a customer."
+msgstr "%(name)s — не клиент."
+
+#: backend/apps/sales/services.py
+#, python-format
+msgid "%(name)s is archived."
+msgstr "%(name)s в архиве."
+
+#: backend/apps/sales/services.py
+msgid "Pick a credit sale or a payment."
+msgstr "Выберите продажу в долг или погашение."
+
+#: backend/apps/sales/services.py
+#, python-format
+msgid "%(name)s may not take nasiya now."
+msgstr "%(name)s сейчас не может брать в долг."
+
+#: backend/apps/sales/services.py
+#, python-format
+msgid "That goes over %(name)s's limit: %(left)s owed of %(limit)s."
+msgstr "Это больше лимита: %(name)s должен %(left)s из %(limit)s."
+
+#: backend/apps/sales/services.py
+#, python-format
+msgid "%(name)s owes nothing."
+msgstr "%(name)s ничего не должен."
+
+#: backend/apps/sales/services.py
+#, python-format
+msgid "That's more than the %(left)s %(name)s owes."
+msgstr "Это больше долга: %(name)s должен %(left)s."
+
+#: backend/apps/sales/services.py
+msgid "Nasiya can't be paid back with nasiya."
+msgstr "Насию нельзя погасить насией."
+
+#: backend/apps/sales/services.py
+#, python-format
+msgid "Nasiya, %(shift)s"
+msgstr "Насия, %(shift)s"
+
+#: backend/apps/sales/services.py
+msgid "This entry is already void."
+msgstr "Эта запись уже отменена."
+
+#: backend/apps/sales/services.py
+#, python-format
+msgid "This entry is part of the closed shift %(shift)s."
+msgstr "Эта запись относится к закрытой смене %(shift)s."
+
+#: backend/apps/sales/services.py
+msgid "Part of this nasiya was already paid back."
+msgstr "Часть этой насии уже погашена."
+
+#: backend/apps/sales/services.py
+#, python-format
+msgid ""
+"Nasiya on the Z-report is %(typed)s, but %(recorded)s was recorded as credit "
+"sales in this shift (a gap of %(gap)s). Record the missing credit sales with "
+"their customers, or correct the total."
+msgstr ""
+"Насия в Z-отчёте — %(typed)s, а продаж в долг записано на %(recorded)s "
+"(разница %(gap)s). Запишите недостающие продажи в долг с клиентами или "
+"исправьте сумму."
+
+#: backend/apps/sales/services.py
+msgid "Add at least one line."
+msgstr "Добавьте хотя бы одну строку."
+
+#: backend/apps/sales/services.py
+msgid "An invoice holds at most 300 lines."
+msgstr "В счёте не больше 300 строк."
+
+#: backend/apps/sales/services.py
+msgid "Pick medicines of this company's catalogue."
+msgstr "Выберите препараты из каталога этой компании."
+
+#: backend/apps/sales/services.py
+#, python-format
+msgid "Line %(n)s needs a name."
+msgstr "В строке %(n)s нужно название."
+
+#: backend/apps/sales/services.py
+#, python-format
+msgid "Line %(n)s needs a quantity."
+msgstr "В строке %(n)s нужно количество."
+
+#: backend/apps/sales/services.py
+#, python-format
+msgid "Line %(n)s has a discount above its amount."
+msgstr "В строке %(n)s скидка больше суммы."
+
+#: backend/apps/sales/services.py
+msgid "Pick the invoice's currency."
+msgstr "Выберите валюту счёта."
+
+#: backend/apps/sales/services.py
+msgid "Only a draft can be changed."
+msgstr "Изменить можно только черновик."
+
+#: backend/apps/sales/services.py
+msgid "This invoice is already issued."
+msgstr "Этот счёт уже выставлен."
+
+#: backend/apps/sales/services.py
+msgid "Add lines with a price before issuing."
+msgstr "Перед выставлением добавьте строки с ценой."
+
+#: backend/apps/sales/services.py
+msgid "Pick the warehouse or pharmacy the goods leave from."
+msgstr "Выберите склад или аптеку, откуда отпускается товар."
+
+#: backend/apps/sales/services.py
+msgid "Only an issued invoice takes payments."
+msgstr "Оплату принимает только выставленный счёт."
+
+#: backend/apps/sales/services.py
+msgid "This invoice is already void."
+msgstr "Этот счёт уже аннулирован."
+
+#: backend/apps/sales/services.py
+msgid "A payment was made on this invoice: it can't be voided."
+msgstr "По этому счёту была оплата: его нельзя аннулировать."
+
+#: backend/apps/sales/services.py
+msgid "Issue the invoice before sending it."
+msgstr "Перед отправкой выставьте счёт."
+
+#: backend/apps/sales/services.py
+#, python-format
+msgid "Invoice %(number)s from %(company)s"
+msgstr "Счёт %(number)s от %(company)s"
+
+#: backend/apps/sales/templates/sales/invoice.html
+msgid "Taxpayer number"
+msgstr "ИНН"
+
+#: backend/apps/sales/templates/sales/invoice.html
+msgid "Address"
+msgstr "Адрес"
+
+#: backend/apps/sales/templates/sales/invoice.html
+msgid "Contact"
+msgstr "Контактное лицо"
+
+#: backend/apps/sales/templates/sales/invoice.html
+msgid "Bank details"
+msgstr "Банковские реквизиты"
+
+#: backend/apps/sales/templates/sales/invoice.html
+msgid "E-invoice"
+msgstr "Электронный счёт-фактура"
+
+#: backend/apps/sales/templates/sales/invoice.html
+msgid "To pay"
+msgstr "К оплате"
+
+#: backend/apps/sales/templates/sales/invoice.html
+msgid "Item"
+msgstr "Товар"
+
+#: backend/apps/sales/templates/sales/invoice.html
+msgid "MXIK code"
+msgstr "Код ИКПУ"
+
+#: backend/apps/sales/templates/sales/invoice.html
+msgid "Expires"
+msgstr "Срок годности"
+
+#: backend/apps/sales/templates/sales/invoice.html
+msgid "Discount"
+msgstr "Скидка"
+
+#: backend/apps/sales/templates/sales/invoice.html
+#, python-format
+msgid "VAT, %%"
+msgstr "НДС, %%"
+
+#: backend/apps/sales/templates/sales/invoice.html
+msgid "VAT"
+msgstr "НДС"
+
+#: backend/apps/sales/templates/sales/invoice.html
+msgid "Subtotal"
+msgstr "Промежуточный итог"
+
+#: backend/apps/sales/templates/sales/invoice.html
+msgid "VAT included"
+msgstr "В том числе НДС"
+
+#: backend/apps/sales/templates/sales/invoice.html
+msgid ""
+"This is not an electronic invoice (EHF). The legal document between "
+"businesses is the e-invoice issued in the operator's system."
+msgstr ""
+"Это не электронный счёт-фактура (ЭСФ). Юридическим документом между "
+"предприятиями является электронный счёт-фактура, выставленный в системе "
+"оператора."
+
+#: backend/apps/sales/templates/sales/invoice.html
+msgid "Released by"
+msgstr "Отпустил"
+
+#: backend/apps/sales/templates/sales/invoice.html
+msgid "Received by"
+msgstr "Получил"
 
 #: backend/apps/signin/admin.py
 msgid "End the selected sessions"
