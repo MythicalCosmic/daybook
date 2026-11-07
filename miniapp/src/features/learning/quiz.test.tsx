@@ -245,6 +245,40 @@ describe("the player", () => {
     expect(lastSave(4)).toEqual({ order: ["c", "a", "b"] });
   });
 
+  it("takes an answer back when its box is emptied", async () => {
+    play(attemptPlay({ answers: { "6": { text: "2-8" } } }));
+    fireEvent.click(screen.getByRole("button", { name: "Question 6" }));
+    const text = screen.getByRole("textbox", { name: "Type the answer" }) as HTMLInputElement;
+    expect(text.value).toBe("2-8");
+    fireEvent.change(text, { target: { value: "  " } });
+    fireEvent.blur(text);
+    await flush();
+    expect(saves().filter((save) => save.question === 6)).toEqual([{ question: 6, answer: null }]);
+    // Leaving it again with nothing new saves nothing more.
+    fireEvent.blur(text);
+    await flush();
+    expect(saves().filter((save) => save.question === 6)).toHaveLength(1);
+  });
+
+  it("checks the attempt when a save is refused: still running, it carries on; over, its result shows", async () => {
+    let over = false;
+    serve((path, method) => {
+      if (method === "PUT") return new ApiError(400, { detail: over ? "Time is up: your attempt was graded with the answers you saved." : "This answer doesn't fit the question." });
+      if (path.endsWith("/attempts/77/") && method === "GET") return over ? attemptResult({ state: "expired", passed: false, percent: 14, points: null, course_step_done: false }) : attemptPlay();
+      return undefined;
+    });
+    play();
+    fireEvent.click(screen.getByRole("radio", { name: /2–8 °C/ }));
+    await flush();
+    await flush();
+    expect(screen.getByRole("heading", { name: "Question 1 of 7" })).toBeTruthy();
+    expect(server.calls.some((call) => call.path.endsWith("/finish/"))).toBe(false);
+    over = true;
+    fireEvent.click(screen.getByRole("radio", { name: /15–25 °C/ }));
+    expect(await screen.findByRole("heading", { name: "Not passed this time" })).toBeTruthy();
+    expect(server.calls.some((call) => call.path.endsWith("/finish/"))).toBe(false);
+  });
+
   it("counts what has no answer before finishing, and stays when the person says no", async () => {
     vi.mocked(window.confirm).mockReturnValueOnce(false);
     play();

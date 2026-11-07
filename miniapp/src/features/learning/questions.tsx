@@ -22,7 +22,8 @@ export type Commit = "now" | "soon";
 type InputProps = {
   question: QuestionPlay;
   value: Answer | null | undefined;
-  onChange: (answer: Answer, commit: Commit) => void;
+  /** `null` takes the answer back (a box emptied). */
+  onChange: (answer: Answer | null, commit: Commit) => void;
   disabled?: boolean;
 };
 
@@ -368,11 +369,9 @@ function TextInput({ value, onChange, disabled }: InputProps) {
       enterKeyHint="done"
       onChange={(event) => {
         setDraft(event.target.value);
-        onChange({ text: event.target.value }, "soon");
+        onChange(event.target.value.trim() ? { text: event.target.value } : null, "soon");
       }}
-      onBlur={() => {
-        if (draft.trim()) onChange({ text: draft }, "now");
-      }}
+      onBlur={() => onChange(draft.trim() ? { text: draft } : null, "now")}
     />
   );
 }
@@ -397,10 +396,12 @@ function NumberInput({ question, value, onChange, disabled }: InputProps) {
           setDraft(event.target.value);
           const parsed = parseNumber(event.target.value);
           if (parsed !== null) onChange({ value: parsed }, "soon");
+          else if (!event.target.value.trim()) onChange(null, "soon");
         }}
         onBlur={() => {
           const parsed = parseNumber(draft);
           if (parsed !== null) onChange({ value: parsed }, "now");
+          else if (!draft.trim()) onChange(null, "now");
         }}
       />
       {question.unit && <span className="lrn-unit">{question.unit}</span>}
@@ -464,12 +465,14 @@ export function AnswerText({ question, answer }: { question: QuestionPlay; answe
       return <span>{texts.join(` ${t("answer.or")} `) || t("answer.none")}</span>;
     }
     case "number": {
-      if (typeof a.value !== "number") return <span className="lrn-answer-none">{t("answer.none")}</span>;
+      // A decimal may come as a string from the server ("4.5").
+      const value = typeof a.value === "number" ? a.value : typeof a.value === "string" ? parseNumber(a.value) : null;
+      if (value === null || !Number.isFinite(value)) return <span className="lrn-answer-none">{t("answer.none")}</span>;
       const unit = a.unit ?? question.unit;
       const tolerance = a.tolerance ? ` ± ${formatNumber(a.tolerance, locale)}` : "";
       return (
         <span className="num">
-          {formatNumber(a.value, locale)}
+          {formatNumber(value, locale)}
           {tolerance}
           {unit ? ` ${unit}` : ""}
         </span>

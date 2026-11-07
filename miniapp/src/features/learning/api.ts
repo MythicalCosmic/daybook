@@ -152,8 +152,8 @@ export function useAttempt(company: number, id: number) {
   });
 }
 
-/** Autosave one answer (the newest of a question wins; kept while the signal is down). */
-export function saveAnswer(company: number, attempt: number, question: number, answer: Answer): Promise<void> {
+/** Autosave one answer (the newest of a question wins; kept while the signal is down); null takes it back. */
+export function saveAnswer(company: number, attempt: number, question: number, answer: Answer | null): Promise<void> {
   return send<void>({
     kind: "answer",
     key: `answer:${attempt}:${question}`,

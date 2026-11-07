@@ -19,7 +19,7 @@ import { normaliseRanges } from "./tracker";
 
 export type QueueJob =
   | { kind: "progress"; key: string; path: string; method: "POST"; body: ProgressReport }
-  | { kind: "answer"; key: string; path: string; method: "PUT"; body: { question: number; answer: Answer } }
+  | { kind: "answer"; key: string; path: string; method: "PUT"; body: { question: number; answer: Answer | null } }
   | { kind: "view"; key: string; path: string; method: "POST"; body: PageViewReport };
 
 type Waiter = { resolve: (value: unknown) => void; reject: (error: unknown) => void };

@@ -73,7 +73,7 @@ function Player({ play, params }: { play: AttemptPlay; params: PageProps["params
   const [answers, setAnswers] = useState<Record<string, Answer>>(() => ({ ...play.answers }));
   const [index, setIndex] = useState(() => Math.max(0, questions.findIndex((question) => !isAnswered(question, play.answers[String(question.id)]))));
   const [finishing, setFinishing] = useState(false);
-  const typing = useRef(new Map<number, { timer: ReturnType<typeof setTimeout>; question: QuestionPlay; answer: Answer }>());
+  const typing = useRef(new Map<number, { timer: ReturnType<typeof setTimeout>; question: QuestionPlay; answer: Answer | null }>());
   const saving = useQueueState(answersOf(play.id));
   const deadline = play.deadline_at ? Date.parse(play.deadline_at) : null;
   const now = useNow(deadline ? 1_000 : 60_000);
@@ -83,14 +83,28 @@ function Player({ play, params }: { play: AttemptPlay; params: PageProps["params
   const finished = useRef(false);
   const question = questions[Math.min(index, questions.length - 1)];
 
-  const send = (target: QuestionPlay, answer: Answer) => {
+  /** A save the server refused: past the deadline or over elsewhere, the attempt reads as its result. */
+  const checkOver = async () => {
+    const view = await api<AttemptView>(`/companies/${company}/learning/attempts/${play.id}/`).catch(() => null);
+    if (!view || isPlay(view) || finished.current) return;
+    finished.current = true;
+    haptic.notify("warning");
+    afterAttempt(client, company, play.id, view, quizId);
+  };
+  const send = (target: QuestionPlay, answer: Answer | null) => {
     saveAnswer(company, play.id, target.id, answer).catch((error: unknown) => {
-      // Refused after the deadline: the attempt is being graded; the page shows its result.
-      if (error instanceof ApiError && error.status === 400 && !finished.current) void finish(true);
+      if (error instanceof ApiError && error.status === 400 && !finished.current) void checkOver();
     });
   };
-  const change = (target: QuestionPlay, answer: Answer, commit: Commit) => {
-    setAnswers((before) => ({ ...before, [String(target.id)]: answer }));
+  const change = (target: QuestionPlay, answer: Answer | null, commit: Commit) => {
+    // Leaving a box with nothing new typed (a blur) saves nothing again.
+    if (commit === "now" && !typing.current.has(target.id) && JSON.stringify(answers[String(target.id)] ?? null) === JSON.stringify(answer)) return;
+    setAnswers((before) => {
+      const next = { ...before };
+      if (answer) next[String(target.id)] = answer;
+      else delete next[String(target.id)];
+      return next;
+    });
     const waiting = typing.current.get(target.id);
     if (waiting) clearTimeout(waiting.timer);
     typing.current.delete(target.id);

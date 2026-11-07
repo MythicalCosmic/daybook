@@ -178,7 +178,7 @@ export type Answer = SingleAnswer | MultiAnswer | TrueFalseAnswer | OrderAnswer 
  * questions may list every accepted answer and number ones their tolerance and unit.
  */
 export type RightAnswer = Partial<SingleAnswer & MultiAnswer & OrderAnswer & MatchAnswer & TextAnswer> & {
-  value?: number | boolean;
+  value?: number | boolean | string;
   answers?: string[];
   tolerance?: number;
   unit?: string | null;
@@ -226,7 +226,7 @@ export type ReviewItem = {
   /** The part of the points earned, 0 to 1 (partial credit). */
   share: number;
   right_answer: RightAnswer | null;
-  explanation: string;
+  explanation: string | null;
 };
 
 /** POST learning/attempts/{id}/finish/, and GET learning/attempts/{id}/ once it's over. */
@@ -265,8 +265,8 @@ export type DailyView = { daily: DailyQuestion | null; streak: number | null };
 export type DailyResult = {
   correct: boolean;
   share: number;
-  right_answer: RightAnswer;
-  explanation: string;
+  right_answer: RightAnswer | null;
+  explanation: string | null;
   points: number | null;
   streak: number | null;
 };
