@@ -10,7 +10,7 @@ from rest_framework import serializers
 
 from apps.core.files import signed_url
 from apps.core.models import Language
-from apps.hr import ids, queries, services
+from apps.hr import coverage, ids, queries, services
 from apps.hr.models import (
     TERM_KINDS,
     Contract,
@@ -68,10 +68,254 @@ def viewer(context) -> Membership:
 
 
 class SettingsSerializer(serializers.ModelSerializer):
+    pharmacist_positions = serializers.SerializerMethodField(
+        help_text="Who counts as a pharmacist on duty (set through coverage/pharmacists/)."
+    )
+
     class Meta:
         model = HRSettings
-        fields = services.SETTINGS_FIELDS
+        fields = (*services.SETTINGS_FIELDS, "pharmacist_positions")
         ref_name = "HrSettings"
+
+    @extend_schema_field(NamedSerializer(many=True))
+    def get_pharmacist_positions(self, row: HRSettings) -> list[dict]:
+        return [named(position) for position in row.pharmacist_positions.order_by("order", "name")]
+
+
+# Pharmacist coverage (docs/PLAN-OWNER.md §14.9) ------------------------------------------
+
+
+class RequiredShapeSerializer(serializers.Serializer):
+    kind = serializers.ChoiceField(DocumentKind.choices)
+    level = serializers.CharField(help_text="The level asked for; empty for any.")
+    alternatives = serializers.ListField(child=serializers.ChoiceField(DocumentKind.choices))
+
+    class Meta:
+        ref_name = "HrRequiredShape"
+
+
+class PharmacistPositionSerializer(serializers.Serializer):
+    position = NamedSerializer()
+    role = serializers.ChoiceField(
+        services.PHARMACIST_ROLES,
+        allow_null=True,
+        help_text="head, senior or pharmacist (the standard documents of one), custom (its own "
+        "documents), or null: not a pharmacist.",
+    )
+    people = serializers.IntegerField(help_text="People in the position now.")
+    required = RequiredShapeSerializer(many=True)
+
+    class Meta:
+        ref_name = "HrPharmacistPosition"
+
+
+class PharmacistsSerializer(serializers.Serializer):
+    positions = PharmacistPositionSerializer(many=True)
+
+    class Meta:
+        ref_name = "HrPharmacists"
+
+
+class PharmacistChoiceSerializer(serializers.Serializer):
+    id = serializers.IntegerField(help_text="A position id.")
+    role = serializers.ChoiceField(services.PHARMACIST_ROLES, allow_null=True)
+
+    class Meta:
+        ref_name = "HrPharmacistChoice"
+
+
+class PharmacistsWriteSerializer(serializers.Serializer):
+    positions = PharmacistChoiceSerializer(many=True, max_length=200)
+
+    class Meta:
+        ref_name = "HrPharmacistsWrite"
+
+
+class CoverageGapSerializer(serializers.Serializer):
+    branch_id = serializers.IntegerField()
+    start = serializers.DateTimeField()
+    end = serializers.DateTimeField()
+    minutes = serializers.IntegerField()
+    have = serializers.IntegerField(help_text="Qualified pharmacists planned then.")
+    need = serializers.IntegerField()
+
+    class Meta:
+        ref_name = "HrCoverageGap"
+
+
+class CoverageShiftSerializer(serializers.Serializer):
+    shift_id = serializers.IntegerField()
+    member = PersonRefSerializer()
+    position = serializers.CharField(allow_null=True)
+    start = serializers.DateTimeField()
+    end = serializers.DateTimeField()
+    published = serializers.BooleanField()
+    counts = serializers.BooleanField(help_text="Counts as a qualified pharmacist that day.")
+    reason = serializers.ChoiceField(
+        queries.REASONS, allow_null=True, help_text="Why not; null without hr.view."
+    )
+    kinds = serializers.ListField(
+        child=serializers.ChoiceField(DocumentKind.choices),
+        help_text="The required documents that fail; empty without hr.view.",
+    )
+
+    class Meta:
+        ref_name = "HrCoverageShift"
+
+
+class CoverageDaySerializer(serializers.Serializer):
+    date = serializers.DateField()
+    opens = serializers.DateTimeField(allow_null=True)
+    closes = serializers.DateTimeField(allow_null=True)
+    closed = serializers.ChoiceField(
+        coverage.CLOSED, allow_null=True, help_text="Why it is closed."
+    )
+    shifts = CoverageShiftSerializer(many=True, help_text="Pharmacists planned that day.")
+    gaps = CoverageGapSerializer(many=True)
+
+    class Meta:
+        ref_name = "HrCoverageDay"
+
+
+class CoverageBranchSerializer(serializers.Serializer):
+    branch = BranchRefSerializer()
+    open_24h = serializers.BooleanField()
+    opens_at = serializers.CharField(allow_null=True)
+    closes_at = serializers.CharField(allow_null=True)
+    days = CoverageDaySerializer(many=True)
+    gaps = CoverageGapSerializer(many=True, help_text="Joined across midnight.")
+    shifts = serializers.IntegerField(help_text="Shifts of anyone planned there in the period.")
+    gap_minutes = serializers.IntegerField()
+
+    class Meta:
+        ref_name = "HrCoverageBranch"
+
+
+class PermitWarningSerializer(serializers.Serializer):
+    branch = BranchRefSerializer()
+    kind = serializers.CharField(help_text="controlled_licence")
+    problem = serializers.ChoiceField(["missing", "expired"])
+    valid_until = serializers.DateField(allow_null=True, help_text="When the last one ended.")
+
+    class Meta:
+        ref_name = "HrPermitWarning"
+
+
+class CoverageSerializer(serializers.Serializer):
+    permits = PermitWarningSerializer(
+        many=True,
+        help_text="Branches licensed for controlled substances without that licence in force.",
+    )
+    state = serializers.ChoiceField(
+        coverage.STATES,
+        help_text="ok, or why nothing was checked: off (HR or the rule), setup (no pharmacist "
+        "positions chosen), no_roster (attendance off).",
+    )
+    start = serializers.DateField()
+    end = serializers.DateField()
+    need = serializers.IntegerField()
+    drafts = serializers.BooleanField()
+    branches = CoverageBranchSerializer(many=True)
+
+    class Meta:
+        ref_name = "HrCoverage"
+
+
+class LiveGapSerializer(serializers.Serializer):
+    branch = BranchRefSerializer()
+    since = serializers.DateTimeField()
+    minutes = serializers.IntegerField()
+    have = serializers.IntegerField()
+    need = serializers.IntegerField()
+    checked_in = PersonRefSerializer(many=True, help_text="Checked in, but not counting.")
+
+    class Meta:
+        ref_name = "HrLiveGap"
+
+
+class LiveCoverageSerializer(serializers.Serializer):
+    state = serializers.ChoiceField(coverage.STATES)
+    at = serializers.DateTimeField()
+    gaps = LiveGapSerializer(many=True)
+
+    class Meta:
+        ref_name = "HrLiveCoverage"
+
+
+def gap_payload(gap) -> dict:
+    return {
+        "branch_id": gap.branch_id,
+        "start": gap.start,
+        "end": gap.end,
+        "minutes": gap.minutes,
+        "have": gap.have,
+        "need": gap.need,
+    }
+
+
+def permit_warning_payload(rows: list[dict]) -> list[dict]:
+    return [
+        {
+            "branch": branch_ref(row["branch"]),
+            "kind": row["kind"],
+            "problem": row["problem"],
+            "valid_until": row["valid_until"],
+        }
+        for row in rows
+    ]
+
+
+def coverage_payload(found, *, drafts: bool, reasons: bool) -> dict:
+    """The coverage plan as the dashboard reads it; why someone doesn't count only with
+    `reasons` (hr.view)."""
+    branches = []
+    for row in found.branches:
+        branch = row.branch
+        branches.append(
+            {
+                "branch": branch_ref(branch),
+                "open_24h": branch.open_24h,
+                "opens_at": branch.opens_at.strftime("%H:%M") if branch.opens_at else None,
+                "closes_at": branch.closes_at.strftime("%H:%M") if branch.closes_at else None,
+                "days": [
+                    {
+                        "date": day.date,
+                        "opens": day.opens,
+                        "closes": day.closes,
+                        "closed": day.closed,
+                        "shifts": [
+                            {
+                                "shift_id": cover.shift_id,
+                                "member": person_ref(cover.member),
+                                "position": cover.member.position.name
+                                if cover.member.position_id
+                                else None,
+                                "start": cover.start,
+                                "end": cover.end,
+                                "published": cover.published,
+                                "counts": cover.verdict.counts,
+                                "reason": cover.verdict.reason if reasons else None,
+                                "kinds": list(cover.verdict.kinds) if reasons else [],
+                            }
+                            for cover in sorted(day.covers, key=lambda c: (c.start, c.shift_id))
+                        ],
+                        "gaps": [gap_payload(gap) for gap in day.gaps],
+                    }
+                    for day in row.days
+                ],
+                "gaps": [gap_payload(gap) for gap in row.gaps],
+                "shifts": row.shifts,
+                "gap_minutes": sum(gap.minutes for gap in row.gaps),
+            }
+        )
+    return {
+        "state": found.state,
+        "start": found.start,
+        "end": found.end,
+        "need": found.need,
+        "drafts": drafts,
+        "branches": branches,
+    }
 
 
 # Profiles -------------------------------------------------------------------------------

@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from django.db.models import F, QuerySet
+from django.db.models import F, Q, QuerySet
 from django.utils import timezone
 
 from apps.audit.models import AuditLog
@@ -354,6 +354,242 @@ def compliance(
     order = list(DocumentKind.values)
     kinds.sort(key=order.index)
     return {"kinds": kinds, "rows": rows, "totals": totals}
+
+
+# Qualified pharmacists (the coverage rule, docs/PLAN-OWNER.md §14.9) ---------------------
+
+# Why someone doesn't count as a qualified pharmacist on a day (the worst reason first).
+NOT_APPROVED, NOT_PHARMACIST = "not_approved", "not_pharmacist"
+DOCUMENT_REASONS = (MISSING, EXPIRED, UNVERIFIED)
+REASONS = (NOT_APPROVED, NOT_PHARMACIST, *DOCUMENT_REASONS)
+
+
+@dataclass(frozen=True)
+class Verdict:
+    """Whether one person counts as a qualified pharmacist on one day, and if not, why:
+    `reason` is one of REASONS and `kinds` the required documents that fail it."""
+
+    member_id: int
+    counts: bool
+    reason: str | None = None
+    kinds: tuple[str, ...] = ()
+
+
+def standing(required: RequiredDocument, held: list[EmployeeDocument], day: date) -> str:
+    """ok, unverified, expired or missing: the best of `held` (one person's documents) for
+    `required` on `day`. A document issued after `day` doesn't count yet."""
+    matching = [
+        document
+        for document in held
+        if satisfies(document, required)
+        and (document.issued_on is None or document.issued_on <= day)
+    ]
+    if not matching:
+        return MISSING
+    alive = [d for d in matching if d.expires_on is None or d.expires_on >= day]
+    if not alive:
+        return EXPIRED
+    return OK if any(d.verified_at for d in alive) else UNVERIFIED
+
+
+class Qualifier:
+    """Answers "does this person count as a qualified pharmacist on this day?" for many people
+    and days with one read of the settings, the required documents and the documents.
+
+    Someone counts when they are approved (a suspended person never counts), their position is
+    one of `pharmacist_positions`, and, with `coverage_needs_documents`, they meet every
+    document their position requires on that day: one of the kind or an alternative, at the
+    level asked, verified, issued and not expired."""
+
+    def __init__(self, company, member_ids: Iterable[int], *, settings=None):
+        self.settings = settings or conf.get_settings(company)
+        self.positions = conf.pharmacist_position_ids(self.settings)
+        self.members = {
+            member.pk: member
+            for member in Membership.objects.for_company(company).filter(pk__in=list(member_ids))
+        }
+        self.required: dict[int | None, list[RequiredDocument]] = (
+            required_for(company) if self.settings.coverage_needs_documents else {}
+        )
+        self.held: dict[int, list[EmployeeDocument]] = defaultdict(list)
+        if self.settings.coverage_needs_documents:
+            pharmacists = [m.pk for m in self.members.values() if m.position_id in self.positions]
+            for document in EmployeeDocument.objects.filter(membership_id__in=pharmacists):
+                self.held[document.membership_id].append(document)
+        self._memo: dict[tuple[int, date], Verdict] = {}
+
+    def verdict(self, member_id: int, day: date) -> Verdict:
+        key = (member_id, day)
+        if key not in self._memo:
+            self._memo[key] = self._judge(member_id, day)
+        return self._memo[key]
+
+    def counts(self, member_id: int | None, day: date) -> bool:
+        return member_id is not None and self.verdict(member_id, day).counts
+
+    def is_pharmacist(self, member_id: int | None) -> bool:
+        member = self.members.get(member_id)
+        return member is not None and member.position_id in self.positions
+
+    def _judge(self, member_id: int, day: date) -> Verdict:
+        member = self.members.get(member_id)
+        if member is None or member.status != Membership.Status.APPROVED:
+            return Verdict(member_id, False, NOT_APPROVED)
+        if member.position_id not in self.positions:
+            return Verdict(member_id, False, NOT_PHARMACIST)
+        if not self.settings.coverage_needs_documents:
+            return Verdict(member_id, True)
+        failing: dict[str, list[str]] = defaultdict(list)
+        for required in self.required.get(member.position_id, []):
+            status = standing(required, self.held[member_id], day)
+            if status != OK:
+                failing[status].append(required.kind)
+        for reason in DOCUMENT_REASONS:
+            if failing[reason]:
+                kinds = tuple(dict.fromkeys(kind for each in failing.values() for kind in each))
+                return Verdict(member_id, False, reason, kinds)
+        return Verdict(member_id, True)
+
+
+def qualified(company, member_ids: Iterable[int], day: date) -> set[int]:
+    """The members of `member_ids` who count as a qualified pharmacist on `day`."""
+    ids = list(member_ids)
+    qualifier = Qualifier(company, ids)
+    return {member_id for member_id in ids if qualifier.counts(member_id, day)}
+
+
+def qualified_staff(company, *, branch_ids: list[int] | None, day: date) -> list[dict]:
+    """The people in pharmacist positions in scope with what qualifies them on `day` (the
+    inspection pack's staff list, docs/PLAN-OWNER.md §14.16): name, position, whether they
+    count and why not, and for each document their position requires the one on file with its
+    dates. Identity documents are never part of it."""
+    settings = conf.get_settings(company)
+    positions = conf.pharmacist_position_ids(settings)
+    members = list(
+        people(company, branch_ids=branch_ids, statuses=(Membership.Status.APPROVED,))
+        .filter(position_id__in=positions)
+        .select_related("user", "position", "home_branch")
+        .order_by("position__order", "first_name", "last_name", "pk")
+    )
+    qualifier = Qualifier(company, [member.pk for member in members], settings=settings)
+    required = required_for(company)
+    held: dict[int, list[EmployeeDocument]] = defaultdict(list)
+    for document in EmployeeDocument.objects.filter(membership__in=members):
+        held[document.membership_id].append(document)
+    rows = []
+    for member in members:
+        verdict = qualifier.verdict(member.pk, day)
+        documents = []
+        for row in required.get(member.position_id, []):
+            best = _best(row, held[member.pk], day)
+            documents.append(
+                {
+                    "kind": row.kind,
+                    "level_asked": row.level,
+                    "status": standing(row, held[member.pk], day),
+                    "document_id": best.pk if best else None,
+                    "title": best.title if best else "",
+                    "number": best.number if best else "",
+                    "level": best.level if best else "",
+                    "specialty": best.specialty if best else "",
+                    "issuer": best.issuer if best else "",
+                    "issued_on": best.issued_on if best else None,
+                    "expires_on": best.expires_on if best else None,
+                    "verified": bool(best and best.verified_at),
+                }
+            )
+        rows.append(
+            {
+                "member": member,
+                "position": member.position.name if member.position_id else None,
+                "home_branch": member.home_branch,
+                "qualified": verdict.counts,
+                "reason": verdict.reason,
+                "documents": documents,
+            }
+        )
+    return rows
+
+
+# Licences and permits (kept in apps.assets.Permit, read only here) -----------------------
+
+CONTROLLED_LICENCE = "controlled_licence"
+PERMIT_MISSING, PERMIT_EXPIRED = "missing", "expired"
+
+
+def permits(
+    company,
+    *,
+    branch_ids: list[int] | None,
+    kinds: Iterable[str] | None = None,
+    active: bool = True,
+    day: date | None = None,
+):
+    """The company's licences and permits (`apps.assets.models.Permit`, Money > Assets >
+    Licences) in scope, soonest to end first: the inspection pack's list (§14.16). `active`
+    keeps those in force on `day` (today): no end date, or not past it. A permit of the whole
+    company (no branch) is in the list only for the whole scope (§2.6)."""
+    from apps.assets.models import Permit
+
+    rows = Permit.objects.filter(company=company)
+    if branch_ids is not None:
+        rows = rows.filter(branch_id__in=list(branch_ids))
+    if kinds is not None:
+        rows = rows.filter(kind__in=list(kinds))
+    if active:
+        day = day or today(company)
+        rows = rows.filter(Q(valid_until__isnull=True) | Q(valid_until__gte=day))
+    return rows.select_related("branch").order_by(
+        F("valid_until").asc(nulls_last=True), "name", "pk"
+    )
+
+
+def permit_warnings(company, *, branch_ids: list[int] | None, day: date) -> list[dict]:
+    """Branches marked licensed for controlled substances (`Branch.controlled_licence`) without
+    a controlled-substances licence in force on file, at the branch or for the whole company:
+    `problem` is missing (none on file) or expired (with the day the last one ended). Nothing
+    while the assets module, where licences are kept, is off."""
+    from apps.assets.models import Permit
+    from apps.companies.models import Branch
+
+    if not company.has_feature("assets"):
+        return []
+    branches = Branch.objects.filter(company=company, is_active=True, controlled_licence=True)
+    if branch_ids is not None:
+        branches = branches.filter(pk__in=list(branch_ids))
+    licences = list(Permit.objects.filter(company=company, kind=CONTROLLED_LICENCE))
+    found = []
+    for branch in branches.order_by("order", "name", "pk"):
+        own = [p for p in licences if p.branch_id in (branch.pk, None)]
+        if any(p.valid_until is None or p.valid_until >= day for p in own):
+            continue
+        ended = max((p.valid_until for p in own), default=None)
+        found.append(
+            {
+                "branch": branch,
+                "kind": CONTROLLED_LICENCE,
+                "problem": PERMIT_EXPIRED if ended else PERMIT_MISSING,
+                "valid_until": ended,
+            }
+        )
+    return found
+
+
+def _best(required: RequiredDocument, held: list[EmployeeDocument], day: date):
+    """The document that decides `required` on `day`: verified and in force first, then in force,
+    then the one that ended last."""
+    matching = [d for d in held if satisfies(d, required)]
+    if not matching:
+        return None
+    return max(
+        matching,
+        key=lambda d: (
+            d.expires_on is None or d.expires_on >= day,
+            d.verified_at is not None,
+            d.expires_on or date.max,
+            d.pk,
+        ),
+    )
 
 
 # Employment dates (the contract payroll and the people pages read) ----------------------

@@ -54,6 +54,7 @@ export const STUB_TITLES: Record<string, { title: Triple; pages: Record<string, 
     title: ["HR", "Кадры", "Kadrlar"],
     pages: {
       documents: ["Documents", "Документы", "Hujjatlar"],
+      coverage: ["Pharmacist coverage", "Фармацевт на смене", "Smenada farmatsevt"],
       contracts: ["Contracts", "Договоры", "Shartnomalar"],
       templates: ["Contract templates", "Шаблоны договоров", "Shartnoma shablonlari"],
       policies: ["Policies", "Правила", "Qoidalar"],

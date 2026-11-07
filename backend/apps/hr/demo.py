@@ -2,11 +2,16 @@
 
 Demo Dorixona: a profile for everyone (made-up IDs, birthdays, one coming work anniversary),
 the documents a pharmacy keeps (medical books, diplomas, specialist certificates: two medical
-books expire within 30 days, one has expired, a new pharmacist's certificate is missing),
-what each position must have, a contract for everyone (one fixed-term one ends in three weeks,
-one probation ends in five days, a newcomer's waits as a draft, two printed from the company's
-template), and the person who left with their contract ended. The distributor gets profiles
-and contracts. Every number is invented.
+books expire within 30 days, one has expired), what each position must have, a contract for
+everyone (one fixed-term one ends in three weeks, one probation ends in five days, a newcomer's
+waits as a draft, two printed from the company's template), and the person who left with their
+contract ended. The distributor gets profiles and contracts. Every number is invented.
+
+Pharmacist coverage (docs/PLAN-OWNER.md §14.3, §14.9): the head, the senior pharmacists and the
+pharmacists count, each with a verified diploma and specialist certificate. One certificate
+ends in 20 days. The pharmacist on next Saturday's night at Yunusobod has a certificate that
+ends the day before and a renewed one she uploaded herself that HR hasn't verified yet, so that
+night (and her nights after it) show a coverage gap until someone checks it.
 """
 
 from datetime import date, time, timedelta
@@ -84,6 +89,8 @@ CONTACTS = {
     "jasur": [("Tursunov Olim", "Ota", "+998 91 222 33 44")],
 }
 PHARMACISTS = (plan.HEAD, plan.SENIOR, plan.PHARMACIST)
+# The senior pharmacist whose specialist certificate ends in 20 days.
+RENEWS_SOON = "sardor"
 
 
 def seed(company, people, now) -> None:
@@ -197,36 +204,42 @@ def _profiles(company, story, everyone, keys) -> None:
 
 
 def _required(company) -> None:
+    """A medical book for everyone; the pharmacists as the setup step chooses them (the head,
+    the senior pharmacists and the pharmacists, each with its standard documents)."""
+    RequiredDocument.objects.get_or_create(
+        company=company, kind=DocumentKind.MEDICAL_BOOK, position=None
+    )
     positions = {row.name: row for row in Position.objects.filter(company=company)}
-    rows = [
-        (DocumentKind.MEDICAL_BOOK, None, "", []),
-        (DocumentKind.PHARMACY_DIPLOMA, plan.HEAD, "higher", [DocumentKind.MEDICAL_DIPLOMA]),
-        (DocumentKind.PHARMACIST_CERTIFICATE, plan.HEAD, "", []),
-        (DocumentKind.PHARMACY_DIPLOMA, plan.SENIOR, "higher", []),
-        (DocumentKind.PHARMACIST_CERTIFICATE, plan.SENIOR, "", []),
-        (DocumentKind.PHARMACY_DIPLOMA, plan.PHARMACIST, "", []),
-        (DocumentKind.PHARMACIST_CERTIFICATE, plan.PHARMACIST, "", []),
-    ]
-    for kind, position, level, alternatives in rows:
-        if position is not None and position not in positions:
-            continue
-        RequiredDocument.objects.get_or_create(
-            company=company,
-            kind=kind,
-            position=positions.get(position) if position else None,
-            defaults={"level": level, "alternatives": alternatives},
+    roles = {
+        positions[name]: role
+        for name, role in (
+            (plan.HEAD, services.HEAD),
+            (plan.SENIOR, services.SENIOR),
+            (plan.PHARMACIST, services.PHARMACIST),
         )
+        if name in positions
+    }
+    if roles:
+        services.set_pharmacists(company, by=None, roles=roles)
+
+
+def saturday_night(story) -> tuple[date, str | None]:
+    """Next Saturday (after today), and who of the story works its night at Yunusobod."""
+    today = story.today
+    saturday = today + timedelta(days=(5 - today.weekday()) % 7 or 7)
+    nights = [shift for shift in story.working(saturday, branch="Y") if shift.night]
+    return saturday, nights[0].key if nights else None
 
 
 def _documents(company, story, everyone, keys, owner) -> None:
     today = story.today
     verified_at = story.now - timedelta(days=20)
+    saturday, night_key = saturday_night(story)
     for index, member in enumerate(everyone):
         key = keys.get(member.pk)
         if member.status not in CURRENT or key == "owner":
             continue
         position = member.position.name if member.position_id else ""
-        verified = key != "kamola"
         rows = []
         days = MEDICAL_BOOKS.get(key, 90 + index * 17)
         rows.append(
@@ -252,16 +265,33 @@ def _documents(company, story, everyone, keys, owner) -> None:
                     else "Toshkent farmatsevtika kolleji",
                 }
             )
-            if key != "kamola":  # a new graduate: her certificate is on its way
+            certificate = {
+                "kind": DocumentKind.PHARMACIST_CERTIFICATE,
+                "number": f"SRT-{300000 + index * 113}",
+                "issued_on": today - timedelta(days=400 + index * 31),
+                "expires_on": today + timedelta(days=700 + index * 29),
+                "specialty": "Farmatsiya",
+                "issuer": "Sog‘liqni saqlash vazirligi",
+            }
+            if key == RENEWS_SOON:
+                certificate["expires_on"] = today + timedelta(days=20)
+            if key == night_key:
+                # Hers ends the day before next Saturday; the renewed one she sent from the app
+                # waits for HR's check, so that night has no qualified pharmacist yet.
+                certificate["expires_on"] = saturday - timedelta(days=1)
+                certificate["issued_on"] = saturday - timedelta(days=1 + 5 * 365)
                 rows.append(
                     {
-                        "kind": DocumentKind.PHARMACIST_CERTIFICATE,
-                        "number": f"SRT-{300000 + index * 113}",
-                        "issued_on": today - timedelta(days=400 + index * 31),
-                        "expires_on": today + timedelta(days=700 + index * 29),
-                        "issuer": "Sog‘liqni saqlash vazirligi",
+                        **certificate,
+                        "title": "Mutaxassis sertifikati (yangilangan)",
+                        "number": f"SRT-{400000 + index * 113}",
+                        "issued_on": today - timedelta(days=3),
+                        "expires_on": today + timedelta(days=5 * 365),
+                        "verified": False,
+                        "uploaded_by": member.user,
                     }
                 )
+            rows.append(certificate)
         if key in ("worker", "madina", "manager"):
             rows.append(
                 {
@@ -273,10 +303,11 @@ def _documents(company, story, everyone, keys, owner) -> None:
                 }
             )
         for row in rows:
+            verified = row.pop("verified", True)
             EmployeeDocument.objects.create(
                 company=company,
                 membership=member,
-                uploaded_by=owner.user,
+                uploaded_by=row.pop("uploaded_by", owner.user),
                 verified_by=owner.user if verified else None,
                 verified_at=verified_at if verified else None,
                 **row,
@@ -347,8 +378,9 @@ def _contracts(company, story, everyone, keys, owner, templates) -> None:
 
 
 def finish(company, people, now) -> None:
-    """Once every demo is in (payroll's pay setups among them): two contracts printed from
-    the template, and what HR hears this morning."""
+    """Once every demo is in (payroll's pay setups among them, attendance's roster): two
+    contracts printed from the template, what HR hears this morning, and the roster's gaps
+    without a qualified pharmacist (next Saturday night at Yunusobod)."""
     story = plan.Plan(company, people, now)
     owner = people["owner"]
     template = ContractTemplate.objects.filter(company=company, language="uz").first()
@@ -360,3 +392,4 @@ def finish(company, people, now) -> None:
         with moment(story.at(story.today - timedelta(days=1), time(16, 30))):
             services.generate_pdf(contract, by=owner, template=template)
     watch.watch_company(company, now)
+    watch.planned_company(company, now)

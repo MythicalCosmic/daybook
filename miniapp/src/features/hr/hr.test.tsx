@@ -199,13 +199,24 @@ describe("emergency contacts", () => {
 describe("documents", () => {
   it("that need the person: expired first, then the soonest to run out", () => {
     const rows = [
-      document({ id: 1, state: "valid", days_left: 400 }),
-      document({ id: 2, state: "expiring", days_left: 20 }),
-      document({ id: 3, state: "expired", days_left: -9 }),
-      document({ id: 4, state: "expiring", days_left: 5 }),
-      document({ id: 5, state: "no_expiry", days_left: null }),
+      document({ id: 1, kind: "passport", state: "valid", days_left: 400 }),
+      document({ id: 2, kind: "medical_book", state: "expiring", days_left: 20 }),
+      document({ id: 3, kind: "medical_exam", state: "expired", days_left: -9 }),
+      document({ id: 4, kind: "pharmacist_certificate", state: "expiring", days_left: 5 }),
+      document({ id: 5, kind: "diploma", state: "no_expiry", days_left: null, expires_on: null }),
     ];
     expect(needingAttention(rows).map((row) => row.id)).toEqual([3, 4, 2]);
+  });
+
+  it("never asks again once the renewed one is in (HR checks it)", () => {
+    const old = document({ id: 4, kind: "pharmacist_certificate", state: "expiring", days_left: 5, expires_on: "2026-11-07" });
+    const renewed = document({ id: 9, kind: "pharmacist_certificate", state: "valid", days_left: 1800, expires_on: "2031-11-01", verified: false });
+    expect(needingAttention([old]).map((row) => row.id)).toEqual([4]);
+    expect(needingAttention([old, renewed])).toEqual([]);
+    // An older, expired one renews nothing (and is itself replaced); one of another kind neither.
+    const older = { ...renewed, state: "expired" as const, expires_on: "2026-10-01", days_left: -37 };
+    expect(needingAttention([old, older]).map((row) => row.id)).toEqual([4]);
+    expect(needingAttention([old, { ...renewed, kind: "medical_book" }]).map((row) => row.id)).toEqual([4]);
   });
 
   it("are uploaded with the kind, the file and what was typed, nothing empty", () => {
@@ -289,8 +300,16 @@ describe("Home, Me and links", () => {
     expect(navigationState().stack.at(-1)).toEqual({ feature: "hr", page: "documents" });
   });
 
+  it("Home asks a pharmacist for the renewed certificate, opening the upload for it", async () => {
+    serve({ "/hr/documents/": [document({ id: 4, kind: "pharmacist_certificate", state: "expiring", days_left: 20 })] });
+    renderApp(<DocumentCard member={member} summary={undefined} />, { me });
+    expect(await screen.findByText("Upload my renewed certificate")).toBeTruthy();
+    fireEvent.click(screen.getByText("Upload my renewed certificate"));
+    expect(navigationState().sheet).toEqual({ kind: "feature", feature: "hr", sheet: "upload", params: { kind: "pharmacist_certificate" } });
+  });
+
   it("Me's bubble counts the contract to read and the documents to renew", async () => {
-    serve({ "/hr/documents/": [document(), document({ id: 2, state: "expired", days_left: -1 }), document({ id: 3, state: "valid", days_left: 300 })] });
+    serve({ "/hr/documents/": [document(), document({ id: 2, kind: "medical_exam", state: "expired", days_left: -1 }), document({ id: 3, kind: "passport", state: "valid", days_left: 300 })] });
     function Row() {
       const status = hr.meItems![0].useStatus!({ member, summary: undefined });
       return <div data-testid="status">{String(status.badge)}</div>;

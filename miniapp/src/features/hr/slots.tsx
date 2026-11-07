@@ -5,7 +5,7 @@
 import type { MeItemStatus, SlotProps } from "../registry";
 import { useFeatureOpen } from "../useFeatureOpen";
 import { useContract, useDocuments } from "./api";
-import { needingAttention } from "./lib";
+import { needingAttention, RENEW_DIRECTLY } from "./lib";
 import { ContractBanner, DocumentBanner } from "./parts";
 
 export function ContractCard({ member }: SlotProps) {
@@ -20,6 +20,10 @@ export function DocumentCard({ member }: SlotProps) {
   const documents = useDocuments(member.companyId);
   const first = needingAttention(documents.data)[0];
   if (!first) return null;
+  // A pharmacist's certificate: "Upload my renewed certificate" opens the upload for that kind.
+  if (RENEW_DIRECTLY.includes(first.kind)) {
+    return <DocumentBanner size="lg" document={first} renew onOpen={() => go.sheet("upload", { kind: first.kind })} />;
+  }
   return <DocumentBanner size="lg" document={first} onOpen={() => go.page("documents")} />;
 }
 

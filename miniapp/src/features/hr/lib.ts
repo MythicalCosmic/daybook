@@ -76,13 +76,31 @@ export function contactDraft(input: { name: string; relation: string; phone: str
 
 // — documents —
 
-/** Documents that need the person: expired, then expiring, the soonest first. */
+/**
+ * Whether a newer document of the same kind is on file: it hasn't run out and runs longer (or has
+ * no end). The renewed one is in, so the old one needs nobody (HR checks the new one).
+ */
+export function isRenewed(document: HrDocument, documents: readonly HrDocument[]): boolean {
+  return documents.some(
+    (other) =>
+      other.id !== document.id &&
+      other.kind === document.kind &&
+      other.state !== "expired" &&
+      (other.expires_on === null || (document.expires_on !== null && other.expires_on > document.expires_on)),
+  );
+}
+
+/** Documents that need the person: expired, then expiring, the soonest first; never one already renewed. */
 export function needingAttention(documents: readonly HrDocument[] | undefined): HrDocument[] {
+  const all = documents ?? [];
   const rank = (document: HrDocument) => (document.state === "expired" ? 0 : 1);
-  return (documents ?? [])
-    .filter((document) => document.state === "expired" || document.state === "expiring")
+  return all
+    .filter((document) => (document.state === "expired" || document.state === "expiring") && !isRenewed(document, all))
     .sort((a, b) => rank(a) - rank(b) || (a.days_left ?? 0) - (b.days_left ?? 0));
 }
+
+/** Kinds whose renewal Home asks for straight away (the upload opens with the kind chosen). */
+export const RENEW_DIRECTLY: readonly DocumentKind[] = ["pharmacist_certificate", "qualification_category", "state_registration"];
 
 /** The kinds offered for an upload: what a pharmacy asks for most, first. */
 export const UPLOAD_KINDS: readonly DocumentKind[] = [

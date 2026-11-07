@@ -212,6 +212,8 @@ export interface MatrixRow extends ComplianceRow {
   byKind: Record<string, ComplianceStatus | null>;
   /** The document behind each cell, when there is one (it opens on a click). */
   documents: Record<string, number | null>;
+  /** The level the position asks for in each cell ("higher", "first"…); "" for any. */
+  levels: Record<string, string>;
   /** Kinds to fix, worst first (missing and expired before expiring and unverified). */
   gaps: Array<{ kind: DocumentKind; status: ComplianceStatus; document_id?: number | null }>;
 }
@@ -248,10 +250,12 @@ export function shapeCompliance(data: Compliance | null | undefined, options: { 
     people += 1;
     const byKind: Record<string, ComplianceStatus | null> = Object.fromEntries(kinds.map((kind) => [kind, null]));
     const documents: Record<string, number | null> = {};
+    const levels: Record<string, string> = {};
     const gaps: MatrixRow["gaps"] = [];
     for (const cell of row.items) {
       byKind[cell.kind] = cell.status;
       documents[cell.kind] = cell.document_id ?? null;
+      levels[cell.kind] = cell.level ?? "";
       if (GAPS.includes(cell.status)) {
         gaps.push({ kind: cell.kind, status: cell.status, document_id: cell.document_id ?? null });
         gapsByKind[cell.kind] = (gapsByKind[cell.kind] ?? 0) + 1;
@@ -262,7 +266,7 @@ export function shapeCompliance(data: Compliance | null | undefined, options: { 
     if (options.onlyGaps && !gaps.length) continue;
     const key = row.position ? `p${row.position.id}` : "none";
     const group = groups.get(key) ?? { key, position: row.position?.name ?? null, rows: [] };
-    group.rows.push({ ...row, byKind, documents, gaps });
+    group.rows.push({ ...row, byKind, documents, levels, gaps });
     groups.set(key, group);
   }
   const sorted = [...groups.values()].sort((a, b) => (a.position === null ? 1 : b.position === null ? -1 : collator.compare(a.position, b.position)));
