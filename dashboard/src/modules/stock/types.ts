@@ -260,6 +260,19 @@ export interface LineImportResult {
   rows: LineImportRow[];
 }
 
+/** The regulator's rejected-series list read into recalls (a dry run first). */
+export type RecallImportAction = "register" | "known" | "not_carried" | "skip";
+
+export interface RecallImportResult {
+  dry_run: boolean;
+  columns: string[];
+  mapping: Record<string, string>;
+  registered: number;
+  found: number;
+  not_carried: number;
+  rows: Array<{ row: number; name: string; series: string; product_id: number | null; found: number; action: RecallImportAction }>;
+}
+
 export interface Category {
   id: number;
   name: string;

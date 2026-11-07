@@ -867,5 +867,22 @@
   "stock.priceTags.description": "Товары, цена которых недавно изменилась, по цене, по которой аптека продаёт дальше, с местом для подписи. Рецептурные препараты печатаются отдельным списком для прилавка: в открытой выкладке их нет.",
   "stock.priceTags.days": "Цена изменилась за последние дни",
   "stock.priceTags.print": "Сформировать PDF",
-  "stock.priceTags.failed": "Не удалось сформировать ценники."
+  "stock.priceTags.failed": "Не удалось сформировать ценники.",
+
+  "stock.recallImport.button": "Импорт списка",
+  "stock.recallImport.title": "Официальный список забракованных серий",
+  "stock.recallImport.description": "XLSX или CSV списка. Каждая серия препарата из вашего каталога становится отзывом: найденная на остатках, она снимается с продажи во всех аптеках, и каждая получает задачу. Сначала проверка покажет, что найдёт каждая строка.",
+  "stock.recallImport.source": "Список или письмо",
+  "stock.recallImport.sourceHint": "Название, номер и дата, например: Список забракованных серий №44, 01.11.2026",
+  "stock.recallImport.receivedOn": "Дата получения",
+  "stock.recallImport.columnsHint": "Читаются столбцы: название препарата, МНН или штрихкод; серия; причина. Строки препаратов, которых у вас нет, только подсчитываются.",
+  "stock.recallImport.counts": "Будет зарегистрировано: {registered} · найдено на остатках: {found} · нет в ассортименте: {notCarried}",
+  "stock.recallImport.series": "Серия",
+  "stock.recallImport.found": "Партий на остатках",
+  "stock.recallImport.act.register": "Будет отозвана",
+  "stock.recallImport.act.known": "Уже отозвана",
+  "stock.recallImport.act.not_carried": "Нет в ассортименте",
+  "stock.recallImport.act.skip": "Пропущена",
+  "stock.recallImport.run": "Зарегистрировать отзывы: {n}",
+  "stock.recallImport.doneToast": "Зарегистрировано отзывов: {n}"
 }

@@ -43,6 +43,7 @@ import type {
   RequestStatus,
   Resolution,
   LineImportResult,
+  RecallImportResult,
   RxJournal,
   StockBranch,
   StockSettings,
@@ -166,6 +167,15 @@ export const stockApi = {
   recalls: (cid: number, params: Query = {}) => http.get<Recall[]>(path(cid, "recalls/"), params),
   recall: (cid: number, id: number) => http.get<Recall>(path(cid, `recalls/${id}/`)),
   createRecall: (cid: number, input: RecallInput) => http.post<Recall>(path(cid, "recalls/"), input),
+  importRecalls: (cid: number, file: File, options: { dryRun: boolean; source: string; receivedOn: string; mapping?: Record<string, string> | null }) => {
+    const form = new FormData();
+    form.append("file", file);
+    form.append("dry_run", options.dryRun ? "true" : "false");
+    form.append("source", options.source);
+    form.append("received_on", options.receivedOn);
+    if (options.mapping) form.append("mapping", JSON.stringify(options.mapping));
+    return http.form<RecallImportResult>(path(cid, "recalls/import/"), form);
+  },
   closeRecall: (cid: number, id: number) => http.post<Recall>(path(cid, `recalls/${id}/close/`), {}),
 
   pricingRules: (cid: number) => http.get<PricingRule[]>(path(cid, "pricing-rules/")),

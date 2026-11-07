@@ -5,7 +5,7 @@
  * a "remove this series" task. A recall closes once every found pack was written off. A row opens
  * it (`?recall=<id>`); `?new=1` registers one.
  */
-import { PackageX, Plus, ShieldAlert } from "@lucide/vue";
+import { FileSpreadsheet, PackageX, Plus, ShieldAlert } from "@lucide/vue";
 import { computed, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
@@ -33,6 +33,7 @@ import { useCompanyStore, useCompanyToday } from "@/stores/company";
 
 import { stockApi, useRecalls, useRefresh } from "../api";
 import ProductPicker from "../components/ProductPicker.vue";
+import RecallImportDialog from "../components/RecallImportDialog.vue";
 import WriteOffFormDialog from "../components/WriteOffFormDialog.vue";
 import { num, qtyText } from "../lib";
 import type { BatchPrefill, FoundRow, Recall } from "../types";
@@ -124,6 +125,7 @@ async function close(recall: Recall): Promise<void> {
 }
 
 const writeoffOpen = ref(false);
+const importOpen = ref(false);
 const writeoffBranch = ref<number | null>(null);
 const writeoffPrefill = ref<BatchPrefill[]>([]);
 function writeOff(recall: Recall, row: FoundRow): void {
@@ -138,6 +140,7 @@ function writeOff(recall: Recall, row: FoundRow): void {
   <div>
     <PageHeader :title="t('stock.nav.recalls')" :description="t('stock.recalls.description')">
       <template #actions>
+        <UiButton v-if="canManage" variant="secondary" :icon="FileSpreadsheet" data-testid="recall-import-open" @click="importOpen = true">{{ t("stock.recallImport.button") }}</UiButton>
         <UiButton v-if="canManage" variant="primary" :icon="Plus" @click="creating = true">{{ t("stock.recalls.new") }}</UiButton>
       </template>
     </PageHeader>
@@ -232,5 +235,6 @@ function writeOff(recall: Recall, row: FoundRow): void {
     </UiDialog>
 
     <WriteOffFormDialog v-model:open="writeoffOpen" :branch="writeoffBranch" reason="recall" :prefill="writeoffPrefill" :recall="selected?.id ?? null" @saved="(id) => router.push(`/c/${company.currentId}/stock/write-offs/${id}`)" />
+    <RecallImportDialog v-model:open="importOpen" />
   </div>
 </template>

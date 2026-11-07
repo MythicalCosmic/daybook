@@ -867,5 +867,22 @@
   "stock.priceTags.description": "So‘nggi kunlarda narxi o‘zgargan tovarlar, shu dorixona keyingi sotadigan narxda, har biri imzo chizig‘i bilan. Retsept bo‘yicha dorilar alohida peshtaxta ro‘yxatiga chiqadi: ular ommaga ko‘rsatilmaydi.",
   "stock.priceTags.days": "Narxi o‘zgargan, so‘nggi kunlar",
   "stock.priceTags.print": "PDF tayyorlash",
-  "stock.priceTags.failed": "Narx yorliqlarini tayyorlab bo‘lmadi."
+  "stock.priceTags.failed": "Narx yorliqlarini tayyorlab bo‘lmadi.",
+
+  "stock.recallImport.button": "Ro‘yxatni import qilish",
+  "stock.recallImport.title": "Brak seriyalarning rasmiy ro‘yxati",
+  "stock.recallImport.description": "Ro‘yxatning XLSX yoki CSV fayli. Katalogingizdagi dorining har bir seriyasi brak sifatida qayd etiladi: omborda topilsa, barcha dorixonalarda sotuvdan olinadi va har biriga vazifa beriladi. Avval sinov tekshiruvi har bir qator nimani topishini ko‘rsatadi.",
+  "stock.recallImport.source": "Ro‘yxat yoki xat",
+  "stock.recallImport.sourceHint": "Nomi, raqami va sanasi, masalan: Brak seriyalar ro‘yxati №44, 01.11.2026",
+  "stock.recallImport.receivedOn": "Olingan sana",
+  "stock.recallImport.columnsHint": "O‘qiladigan ustunlar: dorining nomi, XPN yoki shtrix-kodi; seriya; sabab. Siz sotmaydigan dorilar qatorlari faqat sanaladi.",
+  "stock.recallImport.counts": "Qayd etiladi: {registered} · omborda topildi: {found} · sotilmaydi: {notCarried}",
+  "stock.recallImport.series": "Seriya",
+  "stock.recallImport.found": "Ombordagi seriyalar",
+  "stock.recallImport.act.register": "Brak qilinadi",
+  "stock.recallImport.act.known": "Allaqachon brak qilingan",
+  "stock.recallImport.act.not_carried": "Sotilmaydi",
+  "stock.recallImport.act.skip": "O‘tkazib yuborildi",
+  "stock.recallImport.run": "Brakni qayd etish: {n}",
+  "stock.recallImport.doneToast": "Qayd etilgan brak seriyalar: {n}"
 }

@@ -20,6 +20,7 @@ import { mountWithProviders as mountRaw, testApp } from "@/test/plugins";
 
 import ImportWizard from "../components/ImportWizard.vue";
 import LineImportDialog from "../components/LineImportDialog.vue";
+import RecallImportDialog from "../components/RecallImportDialog.vue";
 import SettingsPanel from "../components/SettingsPanel.vue";
 import en from "../i18n/en.json";
 import ru from "../i18n/ru.json";
@@ -255,6 +256,42 @@ describe("a distributor's invoice file", () => {
     await settle();
     expect(calls[1]!.form?.get("dry_run")).toBe("false");
     expect(JSON.parse(String(calls[1]!.form?.get("mapping")))).toEqual({ Kod: "code", Seriya: "series", Soni: "packs" });
+  });
+});
+
+describe("the regulator's rejected-series list", () => {
+  it("is checked with a dry run, then registered with the list's title and date", async () => {
+    const result = (dry: boolean) => ({
+      dry_run: dry,
+      columns: ["Nomi", "Seriya"],
+      mapping: { Nomi: "name", Seriya: "series" },
+      registered: 1,
+      found: 1,
+      not_carried: 1,
+      rows: [
+        { row: 2, name: "Paratsetamol 500 mg tabletka №20", series: "PRC2209", product_id: 8, found: 2, action: "register" },
+        { row: 3, name: "Boshqa dori", series: "X-1", product_id: null, found: 0, action: "not_carried" },
+      ],
+    });
+    const calls = stub({ "POST stock/recalls/import/": (call) => json(result(call.form?.get("dry_run") === "true")) });
+    const app = await testApp("/c/1/stock/recalls");
+    const { inner } = mountWithProviders(RecallImportDialog, { plugins: app.plugins, props: { open: true } });
+    await settle();
+    const state = (inner.vm as unknown as { $: { setupState: { files: File[]; form: { source: string; receivedOn: string }; check: () => Promise<void>; run: () => Promise<void> } } }).$.setupState;
+    state.form.source = "Brak seriyalar ro‘yxati №44";
+    state.form.receivedOn = "2026-11-06";
+    state.files = [new File(["Nomi;Seriya\n"], "royxat.csv", { type: "text/csv" })];
+    await state.check();
+    await settle();
+    expect(calls[0]!.form?.get("dry_run")).toBe("true");
+    expect(calls[0]!.form?.get("source")).toBe("Brak seriyalar ro‘yxati №44");
+    const rows = document.body.querySelector("[data-testid=recall-import-rows]")!.textContent ?? "";
+    expect(rows).toContain("PRC2209");
+    expect(rows).toContain("Not carried");
+    await state.run();
+    await settle();
+    expect(calls[1]!.form?.get("dry_run")).toBe("false");
+    expect(calls[1]!.form?.get("received_on")).toBe("2026-11-06");
   });
 });
 

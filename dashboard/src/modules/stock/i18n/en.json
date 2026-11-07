@@ -867,5 +867,22 @@
   "stock.priceTags.description": "Items whose price changed lately, at the price this pharmacy sells next, each with a signature line. Prescription medicines print on a separate counter list: they are not displayed to the public.",
   "stock.priceTags.days": "Price changed in the last days",
   "stock.priceTags.print": "Make the PDF",
-  "stock.priceTags.failed": "The price tags couldn't be made."
+  "stock.priceTags.failed": "The price tags couldn't be made.",
+
+  "stock.recallImport.button": "Import the list",
+  "stock.recallImport.title": "The regulator's list of rejected series",
+  "stock.recallImport.description": "XLSX or CSV of the list. Each series of a medicine in your catalogue becomes a recall: found in stock, it leaves sale in every pharmacy and each of them gets a task. A dry run shows what each row finds first.",
+  "stock.recallImport.source": "List or letter",
+  "stock.recallImport.sourceHint": "Title, number and date, e.g. Rejected series list No. 44, 01.11.2026",
+  "stock.recallImport.receivedOn": "Received",
+  "stock.recallImport.columnsHint": "Columns it reads: the medicine's name, INN or barcode; the series; the reason. Rows of medicines you don't carry are only counted.",
+  "stock.recallImport.counts": "To register: {registered} · found in stock: {found} · not carried: {notCarried}",
+  "stock.recallImport.series": "Series",
+  "stock.recallImport.found": "Batches in stock",
+  "stock.recallImport.act.register": "Will be recalled",
+  "stock.recallImport.act.known": "Already recalled",
+  "stock.recallImport.act.not_carried": "Not carried",
+  "stock.recallImport.act.skip": "Skipped",
+  "stock.recallImport.run": "Register recalls: {n}",
+  "stock.recallImport.doneToast": "Recalls registered: {n}"
 }
