@@ -43,7 +43,9 @@ const refresh = useRefresh();
 
 const within = useRouteState("within", rs.number(90));
 const bucket = useRouteState("bucket", rs.string("all"));
-const branch = computed(() => (company.branchFilter.length === 1 ? company.branchFilter[0] : undefined));
+// The expiry digest links here with its pharmacy (`?branch=`); otherwise the top bar's filter.
+const branchParam = useRouteState("branch", rs.optionalNumber());
+const branch = computed(() => branchParam.value ?? (company.branchFilter.length === 1 ? company.branchFilter[0] : undefined));
 const board = useExpiry(computed(() => ({ branch: branch.value, within: within.value })));
 const table = useDataTable({ id: "stock.expiry", pageSize: 500 });
 const canManage = computed(() => company.can("stock.manage"));

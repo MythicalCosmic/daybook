@@ -34,7 +34,7 @@ import { useCompanyStore, useCompanyToday } from "@/stores/company";
 import { stockApi, useRecalls, useRefresh } from "../api";
 import ProductPicker from "../components/ProductPicker.vue";
 import WriteOffFormDialog from "../components/WriteOffFormDialog.vue";
-import { num, packsAndParts } from "../lib";
+import { num, qtyText } from "../lib";
 import type { BatchPrefill, FoundRow, Recall } from "../types";
 
 const { t } = useI18n();
@@ -188,7 +188,7 @@ function writeOff(recall: Recall, row: FoundRow): void {
                 <span class="block text-xs text-muted">{{ row.product }} · {{ t("stock.batch.series", { series: row.series }) }}</span>
               </span>
               <span :class="['tabular-nums', num(row.left) > 0 ? 'font-medium text-danger' : 'text-success']">
-                {{ num(row.left) > 0 ? t("stock.recall.leftQty", { qty: packsAndParts(row.left, 1, "", t) }) : t("stock.recall.writtenOff") }}
+                {{ num(row.left) > 0 ? t("stock.recall.leftQty", { qty: t("stock.qty.parts", { n: qtyText(row.left) }, num(row.left)) }) : t("stock.recall.writtenOff") }}
               </span>
               <UiButton v-if="num(row.left) > 0 && canPropose && selected.status === 'open'" size="sm" variant="secondary" :icon="PackageX" @click="writeOff(selected, row)">{{ t("stock.recall.writeOff") }}</UiButton>
             </li>

@@ -484,7 +484,8 @@ describe("the controlled register", () => {
     await settle();
     const table = wrapper.find("[data-testid=controlled-rows]").text();
     expect(table).toContain("Tramadol 50 mg kapsula №10");
-    expect(table).toContain("20 packs");
+    expect(table).toContain("20");
+    expect(table).not.toContain("20 packs");
     expect(wrapper.find("[data-testid=close-month]").attributes("disabled")).toBeUndefined();
   });
 });

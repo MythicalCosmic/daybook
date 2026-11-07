@@ -31,7 +31,7 @@ import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore, useCompanyToday } from "@/stores/company";
 
 import { stockApi, useControlled, useRefresh, useRxJournal, useStockSettings } from "../api";
-import { num, packsAndParts, previousMonth } from "../lib";
+import { num, previousMonth, qtyText } from "../lib";
 import type { ControlledRow } from "../types";
 
 const { t } = useI18n();
@@ -42,7 +42,9 @@ const refresh = useRefresh();
 const settings = useStockSettings();
 
 const tab = useRouteState("tab", rs.string("controlled"));
-const month = useRouteState("month", rs.string(previousMonth(today.value)));
+const monthParam = useRouteState("month", rs.string(previousMonth(today.value)));
+// "YYYY-MM"; notifications link with the month's first day ("2026-10-01").
+const month = computed({ get: () => monthParam.value.slice(0, 7), set: (value: string) => (monthParam.value = value) });
 const branchParam = useRouteState("branch", rs.optionalNumber());
 
 const scopedBranches = computed(() => company.current?.branches ?? []);
@@ -82,7 +84,7 @@ const rows = computed(() => register.data.value?.rows ?? []);
 const isPast = computed(() => month.value < today.value.slice(0, 7));
 const canClose = computed(() => isPast.value && rows.value.length > 0 && !rows.value.some((row) => row.reported_on));
 
-const qty = (value: string | null) => (value === null ? "—" : packsAndParts(value, 1, "", t));
+const qty = (value: string | null) => (value === null ? "—" : qtyText(value));
 
 const closing = reactive({ open: false, note: "", counted: {} as Record<number, number | null> });
 function startClose(): void {

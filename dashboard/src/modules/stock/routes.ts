@@ -43,6 +43,16 @@ export const routes: RouteRecordRaw[] = [
     component: () => lazy().then((m) => m.pages.transfers()),
     meta: { title: "stock.nav.transfers", perm: READ },
   },
+  // Notifications and Needs you link to a transfer or a recall by its path: their pages open them
+  // in a side panel.
+  {
+    path: "stock/transfers/:transferId(\\d+)",
+    redirect: (to) => ({ path: `/c/${String(to.params.companyId)}/stock/transfers`, query: { transfer: String(to.params.transferId) } }),
+  },
+  {
+    path: "stock/recalls/:recallId(\\d+)",
+    redirect: (to) => ({ path: `/c/${String(to.params.companyId)}/stock/recalls`, query: { recall: String(to.params.recallId), status: "all" } }),
+  },
   {
     path: "stock/write-offs",
     name: "stock.writeoffs",

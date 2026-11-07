@@ -25,7 +25,7 @@ import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore, useCompanyToday } from "@/stores/company";
 
 import { stockApi, useProduct, useProductBatches, useProductMovements, useRefresh } from "../api";
-import { BATCH_TONES, expiryTone, packsAndParts } from "../lib";
+import { BATCH_TONES, expiryTone, num, packsAndParts, qtyText } from "../lib";
 import type { CodeKind } from "../types";
 import ProductBadges from "./ProductBadges.vue";
 import ProductFormDialog from "./ProductFormDialog.vue";
@@ -186,7 +186,7 @@ async function removeCode(codeId: number): Promise<void> {
             </span>
             <span class="shrink-0 text-end text-xs text-muted">
               <MoneyText :value="row.sale_price" decimals="never" />
-              <span class="block tabular-nums">{{ packsAndParts(row.quantity, 1, "", t) }}</span>
+              <span class="block tabular-nums">{{ t("stock.qty.parts", { n: qtyText(row.quantity) }, num(row.quantity)) }}</span>
             </span>
           </li>
           <li v-if="!(detail.data.value?.analogs ?? []).length" class="px-3 py-3 text-sm text-muted">{{ t("stock.drawer.noAnalogs") }}</li>
