@@ -94,20 +94,6 @@ def test_a_small_video_keeps_its_size_and_the_client_name_is_never_used(
     assert "passwd" not in video.file.name and ".." not in video.file.name
 
 
-@needs_ffmpeg
-def test_a_text_file_named_mp4_fails_with_a_message(
-    company, boss, django_capture_on_commit_callbacks
-):
-    video = upload(company, boss, b"this is not a video at all\n" * 40, name="notes.mp4")
-    with django_capture_on_commit_callbacks(execute=True):
-        media.finish_upload(video, by=boss)
-    video.refresh_from_db()
-    assert video.state == Video.State.FAILED
-    assert video.error == "This file isn't a video we can read."
-    assert not video.file
-    assert not learning_storage.exists(media.part_name(video))
-
-
 def test_a_2_gb_and_one_byte_upload_is_refused(company, boss):
     with pytest.raises(DomainError, match="2 GB"):
         media.start_upload(company, by=boss, name="big.mp4", size=media.MAX_VIDEO_BYTES + 1)
@@ -209,25 +195,139 @@ def test_a_video_a_lesson_uses_cant_be_deleted(company, boss, django_capture_on_
 def test_probe_rules():
     good = {
         "format": {"format_name": "mov,mp4,m4a,3gp,3g2,mj2", "duration": "12.5"},
-        "streams": [{"codec_type": "video", "avg_frame_rate": "30000/1001"}],
+        "streams": [
+            {"index": 0, "codec_type": "video", "avg_frame_rate": "30000/1001"},
+            {"index": 1, "codec_type": "data"},  # a phone's timecode track: left out
+            {"index": 2, "codec_type": "audio"},
+        ],
     }
-    assert media.check_source(good)[0] == 12.5
+    found = media.check_source(good, "mov")
+    assert (found.duration, found.video["index"], found.audio["index"]) == (12.5, 0, 2)
+    # ffprobe must agree with what the first bytes said.
+    with pytest.raises(media.ProcessingFailed, match="read"):
+        media.check_source(good, "matroska")
     cover = {
         "format": {"format_name": "mov,mp4,m4a", "duration": "12"},
         "streams": [
-            {"codec_type": "audio"},
-            {"codec_type": "video", "disposition": {"attached_pic": 1}},
+            {"index": 0, "codec_type": "audio"},
+            {"index": 1, "codec_type": "video", "disposition": {"attached_pic": 1}},
         ],
     }
     with pytest.raises(media.ProcessingFailed, match="only sound"):
-        media.check_source(cover)
-    with pytest.raises(media.ProcessingFailed, match="type"):
-        media.check_source({"format": {"format_name": "gif"}, "streams": []})
+        media.check_source(cover, "mov")
+    for kind in ("subtitle", "attachment"):
+        extra = {
+            "format": {"format_name": "matroska,webm", "duration": "12"},
+            "streams": [{"index": 0, "codec_type": "video"}, {"index": 1, "codec_type": kind}],
+        }
+        with pytest.raises(media.ProcessingFailed, match="subtitles"):
+            media.check_source(extra, "matroska")
     long = {
         "format": {"format_name": "matroska,webm", "duration": str(3 * 3600 + 1)},
-        "streams": [{"codec_type": "video"}],
+        "streams": [{"index": 0, "codec_type": "video"}],
     }
     with pytest.raises(media.ProcessingFailed, match="3 hours"):
-        media.check_source(long)
+        media.check_source(long, "matroska")
     assert "fps=30" in media._filters({"avg_frame_rate": "60/1"})
     assert "fps" not in media._filters({"avg_frame_rate": "25/1"})
+
+
+# Crafted uploads ------------------------------------------------------------------------
+
+PLAYLIST = b"#EXTM3U\n#EXT-X-MEDIA-SEQUENCE:0\n#EXTINF:10.0,\nfile:///proc/self/environ\n"
+CONCAT = b"ffconcat version 1.0\nfile '/etc/passwd'\n"
+AVI = b"RIFF\x24\x00\x00\x00AVI LIST\x00\x00\x00\x00hdrlavih" + b"\x00" * 64
+
+
+@pytest.fixture
+def no_programs(monkeypatch):
+    """Fails the test if ffprobe or ffmpeg would run."""
+    calls = []
+
+    def refuse(*args, **kwargs):
+        calls.append(args)
+        raise AssertionError("A program ran on a file that should have been refused.")
+
+    monkeypatch.setattr(media.subprocess, "run", refuse)
+    return calls
+
+
+@pytest.mark.parametrize(
+    ("data", "message"),
+    [
+        (b"this is not a video at all\n" * 40, "This file isn't a video we can read."),
+        (PLAYLIST, "This file isn't a video we can read."),
+        (CONCAT, "This file isn't a video we can read."),
+        (b"\x00\x00\x00\x18" + b"fake" + b"\x00" * 40, "This file isn't a video we can read."),
+        (AVI, "Videos of this type can't be used. Upload an MP4, MOV, WebM or MKV file."),
+    ],
+    ids=["text", "hls-playlist", "concat-list", "unknown-box", "avi"],
+)
+def test_a_crafted_upload_is_refused_before_any_program_reads_it(
+    company, boss, no_programs, django_capture_on_commit_callbacks, data, message
+):
+    video = upload(company, boss, data, name="lesson.mp4")
+    with django_capture_on_commit_callbacks(execute=True):
+        media.finish_upload(video, by=boss)
+    video.refresh_from_db()
+    assert video.state == Video.State.FAILED
+    assert video.error == message
+    assert no_programs == []
+    assert not learning_storage.exists(media.part_name(video))
+
+
+def test_the_first_bytes_pick_the_demuxer(tmp_path):
+    cases = {
+        b"\x00\x00\x00\x20ftypisom": "mov",
+        b"\x00\x00\x00\x20ftypqt  ": "mov",
+        b"\x00\x00\x00\x08wide": "mov",
+        b"\x00\x00\x10\x00mdat": "mov",
+        b"\x1a\x45\xdf\xa3\x9f\x42\x86\x81": "matroska",
+    }
+    for head, demuxer in cases.items():
+        path = tmp_path / "x.part"
+        path.write_bytes(head + b"\x00" * 32)
+        assert media.sniff(path) == demuxer
+
+
+def test_programs_open_only_the_local_file_with_the_chosen_demuxer(tmp_path, monkeypatch):
+    seen = []
+
+    def record(args, **kwargs):
+        seen.append((list(args), kwargs))
+        target = tmp_path / "out.mp4"
+        target.write_bytes(b"x")
+        return subprocess.CompletedProcess(args, 0, b'{"format": {}, "streams": []}', b"")
+
+    monkeypatch.setattr(media.subprocess, "run", record)
+    source = tmp_path / "in.part"
+    found = media.Source(
+        duration=10, video={"index": 3, "avg_frame_rate": "25/1"}, audio={"index": 5}
+    )
+    media.probe(source, "matroska")
+    media.transcode(source, tmp_path / "out.mp4", demuxer="mov", found=found)
+    probe_args, probe_kwargs = seen[0]
+    ffmpeg_args, ffmpeg_kwargs = seen[1]
+    for args in (probe_args, ffmpeg_args):
+        at = args.index("-i")
+        before = args[:at]
+        assert before[before.index("-protocol_whitelist") + 1] == "file"
+        assert args[at + 1].startswith("file:")
+        assert "-f" in before
+    assert probe_args[probe_args.index("-f") + 1] == "matroska"
+    assert ffmpeg_args[ffmpeg_args.index("-f") + 1] == "mov"
+    assert ffmpeg_args[ffmpeg_args.index("-enable_drefs") + 1] == "0"
+    maps = [ffmpeg_args[i + 1] for i, arg in enumerate(ffmpeg_args) if arg == "-map"]
+    assert maps == ["0:3", "0:5"]
+    assert {"-sn", "-dn"} <= set(ffmpeg_args)
+    assert ffmpeg_args[ffmpeg_args.index("-map_metadata") + 1] == "-1"
+    # Nothing of the worker's environment (database password, secret key, bot tokens).
+    for kwargs in (probe_kwargs, ffmpeg_kwargs):
+        assert kwargs["env"] == {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8"}
+        assert "shell" not in kwargs
+
+
+def test_no_sound_means_no_sound_map(tmp_path):
+    found = media.Source(duration=5, video={"index": 0}, audio=None)
+    args = media.transcode_args(tmp_path / "a", tmp_path / "b", demuxer="mov", found=found)
+    assert [args[i + 1] for i, arg in enumerate(args) if arg == "-map"] == ["0:0"]

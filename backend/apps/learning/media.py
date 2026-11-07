@@ -26,6 +26,7 @@ import math
 import os
 import shutil
 import subprocess
+from dataclasses import dataclass
 from datetime import timedelta
 from pathlib import Path
 
@@ -62,9 +63,6 @@ MAX_FPS = 30
 PROBE_TIMEOUT = 120
 POSTER_TIMEOUT = 120
 POSTER_MAX_SIDE = 1280
-# ffprobe's demuxer names (`format_name` is a comma-separated list of them).
-CONTAINERS = {"mov", "mp4", "m4v", "3gp", "3g2", "mj2", "matroska", "webm", "avi"}
-NICE = ("nice", "-n", "10")
 
 
 class OffsetMismatch(DomainError):
@@ -138,7 +136,7 @@ def _megabytes(size: int) -> str:
 # Upload ---------------------------------------------------------------------------------
 
 
-def _ensure_on(company) -> None:
+def ensure_on(company) -> None:
     if not conf.is_on(company):
         raise PermissionDenied(_("Training isn't switched on for this company."))
 
@@ -146,7 +144,7 @@ def _ensure_on(company) -> None:
 @transaction.atomic
 def start_upload(company, *, by: Membership | None, name: str, size: int) -> Video:
     """A new upload of `size` bytes; the pieces follow (`receive_chunk`)."""
-    _ensure_on(company)
+    ensure_on(company)
     ensure_manager(by)
     size = int(size or 0)
     if size <= 0:
@@ -278,6 +276,60 @@ def _drop(video: Video) -> None:
 
 
 # Processing -----------------------------------------------------------------------------
+#
+# Uploads are hostile until proven otherwise. ffmpeg picks a demuxer from a file's contents,
+# and some demuxers open other files: a "video" that is really an HLS or concat playlist (or
+# carries one) would have ffmpeg read local files, the worker's own environment included, into
+# the MP4 the uploader then watches. So the first bytes decide the demuxer here (ISO BMFF:
+# MP4, MOV, M4V, 3GP; EBML: MKV, WebM) and anything else is refused before a program reads
+# it; ffprobe and ffmpeg get that demuxer explicitly, may open nothing but the local file, run
+# with an empty environment, and only the first picture and sound streams reach the output.
+
+
+@dataclass(frozen=True)
+class Source:
+    """What ffprobe found in an upload: its length and the streams to keep."""
+
+    duration: float
+    video: dict
+    audio: dict | None
+
+
+# A file's first bytes decide the only demuxer ffmpeg may use on it.
+ISO_BOXES = {b"ftyp", b"moov", b"mdat", b"wide", b"free"}
+EBML = b"\x1a\x45\xdf\xa3"
+# Streams a source may carry: the picture, the sound, and data tracks (timecodes, a phone's
+# motion data) that are left out. Subtitles and attached files are refused.
+ALLOWED_STREAMS = {"video", "audio", "data"}
+CHILD_ENV = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8"}
+# The mov demuxer never follows references to other files (its default, said out loud).
+DEMUXER_OPTIONS = {"mov": ["-enable_drefs", "0"], "matroska": []}
+
+
+def sniff(path: Path) -> str:
+    """The demuxer for an upload from its first bytes: "mov" or "matroska". Everything else
+    is refused here, before ffprobe or ffmpeg read a byte of it."""
+    try:
+        with open(path, "rb") as handle:
+            head = handle.read(200)
+    except OSError:
+        raise ProcessingFailed(_("The upload isn't complete. Upload the video again.")) from None
+    if len(head) >= 8 and head[4:8] in ISO_BOXES:
+        return "mov"
+    if head[:4] == EBML:
+        return "matroska"
+    known = (
+        (head[:4] == b"RIFF" and head[8:12] == b"AVI ")  # AVI
+        or head[:3] == b"FLV"
+        or head[:4] == b"\x30\x26\xb2\x75"  # ASF, WMV
+        or head[:4] == b"\x00\x00\x01\xba"  # MPEG program stream
+        or (len(head) > 188 and head[0] == 0x47 and head[188] == 0x47)  # MPEG transport stream
+    )
+    if known:
+        raise ProcessingFailed(
+            _("Videos of this type can't be used. Upload an MP4, MOV, WebM or MKV file.")
+        )
+    raise ProcessingFailed(_("This file isn't a video we can read."))
 
 
 def _binary(name: str) -> str:
@@ -287,20 +339,39 @@ def _binary(name: str) -> str:
     return found
 
 
+def _nice() -> list[str]:
+    found = shutil.which("nice")
+    return [found, "-n", "10"] if found else []
+
+
 def _run(args: list[str], *, timeout: float) -> subprocess.CompletedProcess:
-    """Run a program from an argument list (never a shell), killed after `timeout`."""
+    """Run a program from an argument list (never a shell), with an empty environment (no
+    secrets to read from /proc), killed after `timeout`."""
     return subprocess.run(
         args,
         stdin=subprocess.DEVNULL,
         capture_output=True,
         timeout=timeout,
         check=False,
+        env=dict(CHILD_ENV),
     )
 
 
-def probe(path: Path) -> dict:
-    """ffprobe's JSON about a file: `{"format": {...}, "streams": [...]}`."""
-    args = [
+def _input(demuxer: str, path: Path) -> list[str]:
+    """How ffprobe and ffmpeg open a file: only as a local file, with the demuxer we chose."""
+    return [
+        "-protocol_whitelist",
+        "file",
+        *DEMUXER_OPTIONS[demuxer],
+        "-f",
+        demuxer,
+        "-i",
+        f"file:{path}",
+    ]
+
+
+def probe_args(path: Path, demuxer: str) -> list[str]:
+    return [
         _binary("ffprobe"),
         "-v",
         "error",
@@ -308,10 +379,14 @@ def probe(path: Path) -> dict:
         "json",
         "-show_format",
         "-show_streams",
-        str(path),
+        *_input(demuxer, path),
     ]
+
+
+def probe(path: Path, demuxer: str) -> dict:
+    """ffprobe's JSON about a file: `{"format": {...}, "streams": [...]}`."""
     try:
-        result = _run(args, timeout=PROBE_TIMEOUT)
+        result = _run(probe_args(path, demuxer), timeout=PROBE_TIMEOUT)
     except subprocess.TimeoutExpired:
         raise ProcessingFailed(_("This file isn't a video we can read.")) from None
     if result.returncode != 0:
@@ -331,14 +406,19 @@ def _rate(value: str | None) -> float:
         return 0.0
 
 
-def check_source(info: dict) -> tuple[float, dict]:
-    """The duration and the video stream of a probed upload, or why it can't be used."""
+def check_source(info: dict, demuxer: str) -> Source:
+    """The duration and the streams to keep of a probed upload, or why it can't be used."""
     names = set((info.get("format", {}).get("format_name") or "").split(","))
-    if not names & CONTAINERS:
-        raise ProcessingFailed(
-            _("Videos of this type can't be used. Upload an MP4, MOV, WebM, MKV or AVI file.")
-        )
+    if demuxer not in names:
+        raise ProcessingFailed(_("This file isn't a video we can read."))
     streams = info.get("streams") or []
+    if {stream.get("codec_type") for stream in streams} - ALLOWED_STREAMS:
+        raise ProcessingFailed(
+            _(
+                "This video carries subtitles or attached files. Export it again with just "
+                "the picture and the sound."
+            )
+        )
     video = next(
         (
             stream
@@ -350,6 +430,7 @@ def check_source(info: dict) -> tuple[float, dict]:
     )
     if video is None:
         raise ProcessingFailed(_("This file has no picture, only sound."))
+    audio = next((stream for stream in streams if stream.get("codec_type") == "audio"), None)
     try:
         duration = float(info.get("format", {}).get("duration") or video.get("duration") or 0)
     except TypeError, ValueError:
@@ -358,7 +439,7 @@ def check_source(info: dict) -> tuple[float, dict]:
         raise ProcessingFailed(_("We couldn't tell how long this video is."))
     if duration > MAX_DURATION_SECONDS:
         raise ProcessingFailed(_("A video can be at most 3 hours long."))
-    return duration, video
+    return Source(duration=duration, video=video, audio=audio)
 
 
 def _filters(stream: dict) -> str:
@@ -370,9 +451,17 @@ def _filters(stream: dict) -> str:
     return ",".join(filters)
 
 
-def transcode(source: Path, target: Path, *, duration: float, stream: dict) -> None:
-    args = [
-        *NICE,
+def _maps(found: Source) -> list[str]:
+    """Only the chosen picture stream and the first sound stream reach the output."""
+    maps = ["-map", f"0:{int(found.video['index'])}"]
+    if found.audio is not None:
+        maps += ["-map", f"0:{int(found.audio['index'])}"]
+    return maps
+
+
+def transcode_args(source: Path, target: Path, *, demuxer: str, found: Source) -> list[str]:
+    return [
+        *_nice(),
         _binary("ffmpeg"),
         "-nostdin",
         "-hide_banner",
@@ -381,14 +470,10 @@ def transcode(source: Path, target: Path, *, duration: float, stream: dict) -> N
         "-y",
         "-threads",
         "2",
-        "-i",
-        str(source),
-        "-map",
-        "0:v:0",
-        "-map",
-        "0:a:0?",
+        *_input(demuxer, source),
+        *_maps(found),
         "-vf",
-        _filters(stream),
+        _filters(found.video),
         "-c:v",
         "libx264",
         "-preset",
@@ -417,10 +502,14 @@ def transcode(source: Path, target: Path, *, duration: float, stream: dict) -> N
         "+faststart",
         "-f",
         "mp4",
-        str(target),
+        f"file:{target}",
     ]
+
+
+def transcode(source: Path, target: Path, *, demuxer: str, found: Source) -> None:
+    args = transcode_args(source, target, demuxer=demuxer, found=found)
     try:
-        result = _run(args, timeout=4 * duration + 300)
+        result = _run(args, timeout=4 * found.duration + 300)
     except subprocess.TimeoutExpired:
         raise ProcessingFailed(
             _("Making the video took too long. Try a shorter or smaller file.")
@@ -435,11 +524,12 @@ def transcode(source: Path, target: Path, *, duration: float, stream: dict) -> N
 
 
 def poster_bytes(video_path: Path, *, at: float) -> bytes | None:
-    """One frame as JPEG bytes (`at` seconds in, else the first frame), or None."""
+    """One frame of our own MP4 as JPEG bytes (`at` seconds in, else the first frame), or
+    None."""
     target = video_path.with_name(f"{video_path.stem}.poster.jpg")
     for moment in (at, 0.0):
         args = [
-            *NICE,
+            *_nice(),
             _binary("ffmpeg"),
             "-nostdin",
             "-hide_banner",
@@ -448,15 +538,18 @@ def poster_bytes(video_path: Path, *, at: float) -> bytes | None:
             "-y",
             "-ss",
             f"{moment:.2f}",
-            "-i",
-            str(video_path),
+            *_input("mov", video_path),
+            "-map",
+            "0:v:0",
             "-frames:v",
             "1",
             "-q:v",
             "3",
+            "-update",
+            "1",
             "-f",
             "image2",
-            str(target),
+            f"file:{target}",
         ]
         try:
             result = _run(args, timeout=POSTER_TIMEOUT)
@@ -483,13 +576,13 @@ def process_video(video_id: int) -> str:
     try:
         if not source.exists() or source.stat().st_size != video.original_bytes:
             raise ProcessingFailed(_("The upload isn't complete. Upload the video again."))
-        duration, stream = check_source(probe(source))
+        demuxer = sniff(source)
+        found = check_source(probe(source, demuxer), demuxer)
         working.parent.mkdir(parents=True, exist_ok=True)
-        transcode(source, working, duration=duration, stream=stream)
-        made = probe(working)
-        out_duration, out_stream = check_source(made)
+        transcode(source, working, demuxer=demuxer, found=found)
+        made = check_source(probe(working, "mov"), "mov")
         os.replace(working, target)
-        poster = poster_bytes(target, at=out_duration * 0.1)
+        poster = poster_bytes(target, at=made.duration * 0.1)
     except ProcessingFailed as failure:
         working.unlink(missing_ok=True)
         _fail(video, failure)
@@ -516,9 +609,9 @@ def process_video(video_id: int) -> str:
             if clean is not None:
                 locked.poster.save(clean.name, clean, save=False)
         locked.size_bytes = target.stat().st_size
-        locked.duration_seconds = max(1, round(out_duration))
-        locked.width = int(out_stream.get("width") or 0)
-        locked.height = int(out_stream.get("height") or 0)
+        locked.duration_seconds = max(1, round(made.duration))
+        locked.width = int(made.video.get("width") or 0)
+        locked.height = int(made.video.get("height") or 0)
         locked.state = Video.State.READY
         locked.error = ""
         locked.processed_at = timezone.now()
