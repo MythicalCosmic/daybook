@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-07 15:50+0500\n"
+"POT-Creation-Date: 2026-11-07 16:22+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -21687,6 +21687,14 @@ msgstr "/new: yana bir kompaniya yaratish"
 
 #: owner_bot/ownerbot/bot_messages.py
 msgid ""
+"Or just write a question: when AI is on, I answer it from your company's "
+"data."
+msgstr ""
+"Yoki shunchaki savol yozing: AI yoqilgan bo‘lsa, kompaniyangiz ma’lumotlari "
+"asosida javob beraman."
+
+#: owner_bot/ownerbot/bot_messages.py
+msgid ""
 "Here you create your company, confirm dashboard sign-ins and get approvals "
 "and alerts from your business."
 msgstr ""
@@ -21846,6 +21854,41 @@ msgstr "Qaysi kompaniya?"
 #, python-format
 msgid "Approvals (%(count)d)"
 msgstr "Tasdiqlash uchun (%(count)d)"
+
+#: owner_bot/ownerbot/bot_messages.py
+msgid "Thinking…"
+msgstr "O‘ylayapman…"
+
+#: owner_bot/ownerbot/bot_messages.py
+msgid "Write the question again, please."
+msgstr "Savolni yana bir bor yozing, iltimos."
+
+#: owner_bot/ownerbot/bot_messages.py
+msgid "Which company is the question about?"
+msgstr "Savol qaysi kompaniya haqida?"
+
+#: owner_bot/ownerbot/bot_messages.py
+msgid "Open the conversation"
+msgstr "Suhbatni ochish"
+
+#: owner_bot/ownerbot/bot_messages.py
+msgid "I have no answer to that."
+msgstr "Bunga javobim yo‘q."
+
+#: owner_bot/ownerbot/bot_messages.py
+msgid ""
+"This one takes longer. The answer will be in the dashboard, under Ask AI."
+msgstr ""
+"Bu biroz uzoqroq vaqt oladi. Javob boshqaruv panelida, «AI bilan suhbat» "
+"bo‘limida bo‘ladi."
+
+#: owner_bot/ownerbot/bot_messages.py
+msgid "The question was cancelled."
+msgstr "Savol bekor qilindi."
+
+#: owner_bot/ownerbot/bot_messages.py
+msgid "I couldn't answer that just now. Try again in a minute."
+msgstr "Hozir javob bera olmadim. Bir daqiqadan keyin qayta urinib ko‘ring."
 
 #: owner_bot/ownerbot/brief.py
 msgid "open"

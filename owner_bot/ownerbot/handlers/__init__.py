@@ -1,6 +1,7 @@
 from aiogram import Dispatcher
 
 from apps.core.bot_runtime import on_error
+from ownerbot.handlers.ask import router as ask_router
 from ownerbot.handlers.inbox_actions import router as inbox_actions_router
 from ownerbot.handlers.invite import router as invite_router
 from ownerbot.handlers.language import router as language_router
@@ -15,8 +16,9 @@ from ownerbot.handlers.voice import router as voice_router
 def register_all_handlers(dp: Dispatcher) -> None:
     # Buttons with their own callback data first (notifications, sign-in); then /start and the
     # menu commands, which end any conversation; voice notes (tasks by voice, outside /new);
-    # the /new conversation, so its "waiting for text" handlers never swallow a command; and
-    # last the home message for anything else said outside a conversation.
+    # the /new conversation, so its "waiting for text" handlers never swallow a command; a
+    # question typed outside a conversation (Ask AI, where the person has it); and last the
+    # home message for anything else said outside a conversation.
     dp.include_routers(
         inbox_actions_router,
         signin_router,
@@ -26,6 +28,7 @@ def register_all_handlers(dp: Dispatcher) -> None:
         invite_router,
         voice_router,
         new_company_router,
+        ask_router,
         fallback_router,
     )
     # A handler that fails still answers the tap or the message (research R1 F1).

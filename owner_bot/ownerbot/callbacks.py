@@ -47,3 +47,9 @@ class InviteNew(CallbackData, prefix="oin"):
     branch: int = -1
     places: int = -1
     days: int = -1
+
+
+class AskPick(CallbackData, prefix="oak"):
+    """Which company a typed question is about, when the owner has several."""
+
+    company: int

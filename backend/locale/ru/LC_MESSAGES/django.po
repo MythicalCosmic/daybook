@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-07 15:50+0500\n"
+"POT-Creation-Date: 2026-11-07 16:22+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -21604,6 +21604,14 @@ msgstr "/new: создать ещё одну компанию"
 
 #: owner_bot/ownerbot/bot_messages.py
 msgid ""
+"Or just write a question: when AI is on, I answer it from your company's "
+"data."
+msgstr ""
+"Или просто напишите вопрос: если ИИ включён, я отвечу по данным вашей "
+"компании."
+
+#: owner_bot/ownerbot/bot_messages.py
+msgid ""
 "Here you create your company, confirm dashboard sign-ins and get approvals "
 "and alerts from your business."
 msgstr ""
@@ -21759,6 +21767,41 @@ msgstr "Какую компанию показать?"
 #, python-format
 msgid "Approvals (%(count)d)"
 msgstr "На одобрение (%(count)d)"
+
+#: owner_bot/ownerbot/bot_messages.py
+msgid "Thinking…"
+msgstr "Думаю…"
+
+#: owner_bot/ownerbot/bot_messages.py
+msgid "Write the question again, please."
+msgstr "Напишите вопрос ещё раз, пожалуйста."
+
+#: owner_bot/ownerbot/bot_messages.py
+msgid "Which company is the question about?"
+msgstr "О какой компании вопрос?"
+
+#: owner_bot/ownerbot/bot_messages.py
+msgid "Open the conversation"
+msgstr "Открыть беседу"
+
+#: owner_bot/ownerbot/bot_messages.py
+msgid "I have no answer to that."
+msgstr "На это у меня нет ответа."
+
+#: owner_bot/ownerbot/bot_messages.py
+msgid ""
+"This one takes longer. The answer will be in the dashboard, under Ask AI."
+msgstr ""
+"Это займёт больше времени. Ответ будет в панели управления, в разделе "
+"«Спросить ИИ»."
+
+#: owner_bot/ownerbot/bot_messages.py
+msgid "The question was cancelled."
+msgstr "Вопрос отменён."
+
+#: owner_bot/ownerbot/bot_messages.py
+msgid "I couldn't answer that just now. Try again in a minute."
+msgstr "Сейчас не получилось ответить. Попробуйте ещё раз через минуту."
 
 #: owner_bot/ownerbot/brief.py
 msgid "open"

@@ -10,7 +10,8 @@ from django.utils.translation import gettext as _
 from django.utils.translation import gettext_noop, ngettext
 
 from apps.accounts.models import User
-from ownerbot.callbacks import NewCompanyStep, TodayPick
+from ownerbot import answers
+from ownerbot.callbacks import AskPick, NewCompanyStep, TodayPick
 
 type BotMessage = tuple[str, InlineKeyboardMarkup | None]
 
@@ -67,6 +68,8 @@ def welcome(user: User, companies: list[dict] | None = None) -> BotMessage:
             _("/invite: a QR code that adds your staff"),
             _("/dashboard: open the dashboard"),
             _("/new: create another company"),
+            "",
+            _("Or just write a question: when AI is on, I answer it from your company's data."),
         ]
     else:
         lines += [
@@ -264,3 +267,44 @@ def today_keyboard(company_id: int, waiting: int) -> InlineKeyboardMarkup | None
     if opened:
         rows.append([opened])
     return InlineKeyboardMarkup(inline_keyboard=rows) if rows else None
+
+
+# Questions typed to the bot (handlers/ask.py) ------------------------------------------------
+
+
+def ask_thinking() -> str:
+    return _("Thinking…")
+
+
+def ask_refused(reason: str) -> str:
+    return html.quote(reason)
+
+
+def ask_again() -> str:
+    return _("Write the question again, please.")
+
+
+def ask_which_company(companies: list[tuple[int, str]]) -> BotMessage:
+    rows = [
+        [InlineKeyboardButton(text=name, callback_data=AskPick(company=pk).pack())]
+        for pk, name in companies
+    ]
+    return _("Which company is the question about?"), InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def ask_answer(status: str, text: str, company_id: int, conversation_id: int) -> BotMessage:
+    """The answer in place of "Thinking…", with the whole conversation one tap away."""
+    button = web_app_button(
+        _("Open the conversation"), f"c/{company_id}/ai/ask?c={conversation_id}"
+    )
+    markup = InlineKeyboardMarkup(inline_keyboard=[[button]]) if button else None
+    if status == "done":
+        return answers.to_telegram(text) or _("I have no answer to that."), markup
+    if status == "late":
+        return (
+            _("This one takes longer. The answer will be in the dashboard, under Ask AI."),
+            markup,
+        )
+    if status == "cancelled":
+        return _("The question was cancelled."), None
+    return _("I couldn't answer that just now. Try again in a minute."), markup
