@@ -245,6 +245,35 @@ describe("the player", () => {
     expect(lastSave(4)).toEqual({ order: ["c", "a", "b"] });
   });
 
+  it("moves an order row by dragging its handle, and puts it back when the drag is cancelled", async () => {
+    // jsdom lays nothing out: rows 60 px tall, 8 px apart.
+    vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(60);
+    vi.spyOn(HTMLElement.prototype, "offsetTop", "get").mockImplementation(function (this: HTMLElement) {
+      return [...(this.parentElement?.children ?? [])].indexOf(this) * 68;
+    });
+    play(attemptPlay({ answers: { "1": { option: "a" }, "2": { options: ["c"] }, "3": { value: true } } }));
+    const rows = () => [...document.querySelectorAll(".lrn-order-text")].map((node) => node.textContent);
+    const grip = () => screen.getAllByRole("img", { name: "Drag to move" })[0];
+    fireEvent.pointerDown(grip(), { pointerId: 1, clientY: 100 });
+    fireEvent.pointerMove(grip(), { pointerId: 1, clientY: 150 });
+    // The rows stay in place while the finger moves; the one passed steps aside.
+    expect(rows()).toEqual(["Hujjatga kiritish", "Nakladnoyni tekshirish", "Seriya va muddatni ko‘rish"]);
+    expect((document.querySelectorAll(".lrn-order-row")[1] as HTMLElement).style.transform).toBe("translateY(-68px)");
+    fireEvent.pointerUp(grip(), { pointerId: 1, clientY: 150 });
+    await flush();
+    expect(rows()).toEqual(["Nakladnoyni tekshirish", "Hujjatga kiritish", "Seriya va muddatni ko‘rish"]);
+    expect(lastSave(4)).toEqual({ order: ["a", "c", "b"] });
+    expect((document.querySelectorAll(".lrn-order-row")[1] as HTMLElement).style.transform).toBe("");
+
+    const before = saves().length;
+    fireEvent.pointerDown(grip(), { pointerId: 2, clientY: 100 });
+    fireEvent.pointerMove(grip(), { pointerId: 2, clientY: 260 });
+    fireEvent.pointerCancel(grip(), { pointerId: 2, clientY: 260 });
+    await flush();
+    expect(rows()).toEqual(["Nakladnoyni tekshirish", "Hujjatga kiritish", "Seriya va muddatni ko‘rish"]);
+    expect(saves()).toHaveLength(before);
+  });
+
   it("takes an answer back when its box is emptied", async () => {
     play(attemptPlay({ answers: { "6": { text: "2-8" } } }));
     fireEvent.click(screen.getByRole("button", { name: "Question 6" }));

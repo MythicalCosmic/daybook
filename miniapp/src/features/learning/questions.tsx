@@ -183,26 +183,47 @@ export function moveItem<T>(list: readonly T[], from: number, to: number): T[] {
   return next;
 }
 
+/** A row's place in the list as laid out (transforms aside). */
+export type RowBox = { top: number; height: number };
+
 /**
- * Where a dragged row goes: past half of the neighbour's height it swaps with it. `offset` is how
- * far the finger moved since the drag (re)started; the caller moves its start by the swapped
- * row's height so the row stays under the finger.
+ * Where a dragged row lands: past the middle of a neighbour it takes that neighbour's place, and
+ * so on down (or up) the list. The rows stay where they are in the page while the finger moves
+ * (moving them would make the phone let go of the finger); only their pictures shift.
  */
-export function dragStep(index: number, offset: number, heights: readonly number[]): { to: number; shift: number } {
-  if (offset > 0 && index < heights.length - 1 && offset > heights[index + 1] / 2) return { to: index + 1, shift: heights[index + 1] };
-  if (offset < 0 && index > 0 && -offset > heights[index - 1] / 2) return { to: index - 1, shift: -heights[index - 1] };
-  return { to: index, shift: 0 };
+export function dropIndex(from: number, offset: number, boxes: readonly RowBox[]): number {
+  const me = boxes[from];
+  if (!me) return from;
+  let to = from;
+  if (offset > 0) {
+    const bottom = me.top + me.height + offset;
+    while (to + 1 < boxes.length && bottom > boxes[to + 1].top + boxes[to + 1].height / 2) to += 1;
+  } else if (offset < 0) {
+    const top = me.top + offset;
+    while (to - 1 >= 0 && top < boxes[to - 1].top + boxes[to - 1].height / 2) to -= 1;
+  }
+  return to;
 }
+
+/** How far the other rows step aside for the dragged one: its height and the gap after it. */
+function slotOf(from: number, boxes: readonly RowBox[]): number {
+  const me = boxes[from];
+  const next = boxes[from + 1];
+  const previous = boxes[from - 1];
+  if (next) return next.top - me.top;
+  if (previous) return me.top - previous.top;
+  return me?.height ?? 0;
+}
+
+type Drag = { id: string; from: number; startY: number; pointer: number; boxes: RowBox[]; release: () => void };
 
 function OrderInput({ question, value, onChange, disabled }: InputProps) {
   const t = useLearningT();
   const order = orderOf(question, value);
   const byId = new Map(question.options.map((option) => [option.id, option] as const));
   const list = useRef<HTMLOListElement>(null);
-  const drag = useRef<{ id: string; startY: number; pointer: number; release: () => void } | null>(null);
-  const [dragging, setDragging] = useState<{ id: string; offset: number } | null>(null);
-  const live = useRef(order);
-  live.current = order;
+  const drag = useRef<Drag | null>(null);
+  const [dragging, setDragging] = useState<{ from: number; to: number; offset: number; slot: number } | null>(null);
 
   const move = (from: number, to: number) => {
     if (to < 0 || to >= order.length || from === to) return;
@@ -210,58 +231,71 @@ function OrderInput({ question, value, onChange, disabled }: InputProps) {
     onChange({ order: moveItem(order, from, to) }, "now");
   };
 
-  const heights = () => [...(list.current?.children ?? [])].map((row) => (row as HTMLElement).getBoundingClientRect().height);
-
   const onPointerDown = (event: ReactPointerEvent<HTMLSpanElement>, id: string) => {
     if (disabled || drag.current) return;
     event.preventDefault();
-    event.currentTarget.setPointerCapture?.(event.pointerId);
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch {
+      // An old webview without pointer capture: the moves still reach the handle mostly.
+    }
+    const boxes = [...(list.current?.children ?? [])].map((row) => ({ top: (row as HTMLElement).offsetTop, height: (row as HTMLElement).offsetHeight }));
+    const from = order.indexOf(id);
     // While a finger drags a row, Telegram's swipe-down must not close the app.
-    drag.current = { id, startY: event.clientY, pointer: event.pointerId, release: disableVerticalSwipes() };
-    setDragging({ id, offset: 0 });
+    drag.current = { id, from, startY: event.clientY, pointer: event.pointerId, boxes, release: disableVerticalSwipes() };
+    setDragging({ from, to: from, offset: 0, slot: slotOf(from, boxes) });
     haptic.impact("light");
   };
   const onPointerMove = (event: ReactPointerEvent<HTMLSpanElement>) => {
     const state = drag.current;
     if (!state || event.pointerId !== state.pointer) return;
-    const current = live.current;
-    const index = current.indexOf(state.id);
     const offset = event.clientY - state.startY;
-    const step = dragStep(index, offset, heights());
-    if (step.to !== index) {
-      state.startY += step.shift;
-      haptic.select();
-      onChange({ order: moveItem(current, index, step.to) }, "now");
-      setDragging({ id: state.id, offset: offset - step.shift });
-    } else {
-      setDragging({ id: state.id, offset });
-    }
+    const to = dropIndex(state.from, offset, state.boxes);
+    setDragging((before) => {
+      if (before && before.to !== to) haptic.select();
+      return { from: state.from, to, offset, slot: slotOf(state.from, state.boxes) };
+    });
   };
-  const onPointerEnd = (event: ReactPointerEvent<HTMLSpanElement>) => {
+  /** The finger lifts: the row takes its new place (a cancelled drag puts it back). */
+  const finish = (event: ReactPointerEvent<HTMLSpanElement>) => {
     const state = drag.current;
     if (!state || event.pointerId !== state.pointer) return;
     state.release();
     drag.current = null;
+    const to = dropIndex(state.from, event.clientY - state.startY, state.boxes);
     setDragging(null);
+    if (to !== state.from && event.type === "pointerup") onChange({ order: moveItem(order, state.from, to) }, "now");
   };
   // A page closed mid-drag gives the swipe back.
   useEffect(() => () => drag.current?.release(), []);
 
+  /** Where each row is drawn while one is dragged: the dragged one under the finger, the rows it passed one slot aside. */
+  const shift = (index: number): number => {
+    if (!dragging) return 0;
+    const { from, to, offset, slot } = dragging;
+    if (index === from) return offset;
+    if (from < to && index > from && index <= to) return -slot;
+    if (to < from && index >= to && index < from) return slot;
+    return 0;
+  };
+
   return (
-    <ol ref={list} className="lrn-order" aria-label={t("q.order")}>
+    <ol ref={list} className={cx("lrn-order", dragging && "lrn-order--dragging")} aria-label={t("q.order")}>
       {order.map((id, index) => {
         const item = byId.get(id);
-        const lifted = dragging?.id === id;
+        const lifted = dragging?.from === index;
+        const moved = shift(index);
         return (
-          <li key={id} className={cx("lrn-order-row", lifted && "lrn-order-row--lifted")} style={lifted ? { transform: `translateY(${dragging.offset}px)` } : undefined}>
+          <li key={id} className={cx("lrn-order-row", lifted && "lrn-order-row--lifted")} style={moved ? { transform: `translateY(${moved}px)` } : undefined}>
             <span
               className="lrn-order-grip"
               role="img"
               aria-label={t("q.drag")}
               onPointerDown={(event) => onPointerDown(event, id)}
               onPointerMove={onPointerMove}
-              onPointerUp={onPointerEnd}
-              onPointerCancel={onPointerEnd}
+              onPointerUp={finish}
+              onPointerCancel={finish}
+              onLostPointerCapture={finish}
             >
               <GripVertical size={20} strokeWidth={2.4} aria-hidden />
             </span>

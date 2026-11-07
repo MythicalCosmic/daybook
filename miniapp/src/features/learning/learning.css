@@ -804,13 +804,17 @@ button.lrn-strip-seg::before {
   padding: 6px 4px 6px 2px;
   border-radius: var(--radius-md);
   background: var(--color-bg);
-  transition: box-shadow 0.15s ease, transform 0.15s ease;
+  transition: box-shadow 0.15s ease;
+}
+
+/* While a row is dragged, the ones it passes glide aside; on the drop everything just sits. */
+.lrn-order--dragging .lrn-order-row:not(.lrn-order-row--lifted) {
+  transition: transform 0.18s ease, box-shadow 0.15s ease;
 }
 
 .lrn-order-row--lifted {
   z-index: 2;
   box-shadow: var(--shadow-lg);
-  transition: box-shadow 0.15s ease;
 }
 
 .lrn-order-grip {
@@ -1124,6 +1128,7 @@ button.lrn-strip-seg::before {
   .lrn-match-cell,
   .lrn-step,
   .lrn-order-row,
+  .lrn-order--dragging .lrn-order-row:not(.lrn-order-row--lifted),
   .lrn-strip-seg {
     transition: none;
   }

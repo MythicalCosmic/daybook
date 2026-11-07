@@ -16,6 +16,7 @@ import CoursePage from "./CoursePage";
 import LearningHome from "./LearningHome";
 import { continueStep, dueText, isAnswered, openMandatory, parseNumber, sortTodo, whenText } from "./lib";
 import { messages } from "./messages";
+import { dropIndex, moveItem } from "./questions";
 import { TrainingCard } from "./slots";
 import type { CourseDetail } from "./types";
 
@@ -91,6 +92,17 @@ describe("the rules", () => {
     expect(continueStep(courseDetail())?.id).toBe(103);
     expect(continueStep({ steps: [step({ id: 1, required: false }), step({ id: 2 })] })?.id).toBe(2);
     expect(continueStep({ steps: [step({ id: 1, done: true }), step({ id: 2, locked: true })] })).toBeNull();
+  });
+
+  it("drops a dragged row past the middle of the rows it passes", () => {
+    const boxes = [0, 68, 136].map((top) => ({ top, height: 60 }));
+    expect(dropIndex(0, 20, boxes)).toBe(0);
+    expect(dropIndex(0, 50, boxes)).toBe(1);
+    expect(dropIndex(0, 120, boxes)).toBe(2);
+    expect(dropIndex(0, 999, boxes)).toBe(2);
+    expect(dropIndex(2, -50, boxes)).toBe(1);
+    expect(dropIndex(2, -120, boxes)).toBe(0);
+    expect(moveItem(["a", "b", "c"], 0, 2)).toEqual(["b", "c", "a"]);
   });
 
   it("reads numbers as people type them, and knows a whole answer", () => {
