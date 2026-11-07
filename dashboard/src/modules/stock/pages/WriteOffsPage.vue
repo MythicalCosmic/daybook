@@ -11,7 +11,6 @@ import { useRouter } from "vue-router";
 
 import DataTable from "@/components/DataTable.vue";
 import EmptyState from "@/components/EmptyState.vue";
-import ExportButton from "@/components/ExportButton.vue";
 import MoneyText from "@/components/MoneyText.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import SegmentedControl from "@/components/SegmentedControl.vue";
@@ -71,7 +70,6 @@ function open(row: WriteOff): void {
   <div>
     <PageHeader :title="t('stock.nav.writeoffs')" :description="t('stock.writeoffs.description')">
       <template #actions>
-        <ExportButton kind="inventory.writeoffs" :params="{ branch }" />
         <UiButton v-if="canPropose" variant="primary" :icon="Plus" @click="creating = true">{{ t("stock.writeoffs.new") }}</UiButton>
       </template>
     </PageHeader>
@@ -92,6 +90,8 @@ function open(row: WriteOff): void {
       clickable
       hide-pagination
       csv-name="write-offs"
+      export-kind="inventory.writeoffs"
+      :export-params="{ branch }"
       @row-click="open"
     >
       <template #toolbar>

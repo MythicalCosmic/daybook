@@ -12,7 +12,6 @@ import { useRouter } from "vue-router";
 
 import DataTable from "@/components/DataTable.vue";
 import EmptyState from "@/components/EmptyState.vue";
-import ExportButton from "@/components/ExportButton.vue";
 import FormField from "@/components/FormField.vue";
 import IconButton from "@/components/IconButton.vue";
 import InlineAlert from "@/components/InlineAlert.vue";
@@ -96,9 +95,10 @@ const hasCost = computed(() => (levels.data.value ?? []).some((row) => row.value
 const columns = computed<TableColumn<Level>[]>(() => [
   { id: "product", header: t("stock.col.name"), minWidth: 280, sticky: true, value: (row) => row.product.name },
   { id: "branch", header: t("stock.col.branch"), minWidth: 120, value: (row) => row.branch.name },
-  { id: "quantity", header: t("stock.col.onHand"), numeric: true, width: 170 },
-  { id: "sellable", header: t("stock.col.onSale"), numeric: true, width: 170, hint: t("stock.col.onSaleHint") },
-  { id: "limits", header: t("stock.col.limits"), width: 150 },
+  // "9 qadoq 1 blister" fits; the limits column is a button.
+  { id: "quantity", header: t("stock.col.onHand"), numeric: true, width: 150 },
+  { id: "sellable", header: t("stock.col.onSale"), numeric: true, width: 150, hint: t("stock.col.onSaleHint") },
+  { id: "limits", header: t("stock.col.limits"), width: 100 },
   { id: "nearest_expiry", header: t("stock.col.nearestExpiry"), width: 140 },
   { id: "sale_price", header: t("stock.col.price"), numeric: true, width: 120 },
   ...(hasCost.value ? [{ id: "value", header: t("stock.col.valueCost"), numeric: true, width: 140 } as TableColumn<Level>] : []),
@@ -149,7 +149,6 @@ function clear(): void {
   <div>
     <PageHeader :title="t('stock.nav.levels')" :description="t('stock.levels.description')">
       <template #actions>
-        <ExportButton kind="inventory.levels" :params="{ branch }" />
         <UiButton v-if="canManage" variant="secondary" :icon="PackageOpen" @click="opening = true">{{ t("stock.levels.opening") }}</UiButton>
       </template>
     </PageHeader>
@@ -177,6 +176,8 @@ function clear(): void {
       hide-pagination
       :filtered="filtered"
       csv-name="stock"
+      export-kind="inventory.levels"
+      :export-params="{ branch }"
       @row-click="open"
       @clear-filters="clear"
     >
@@ -193,7 +194,7 @@ function clear(): void {
       </template>
       <template #cell-product="{ row }">
         <span class="flex min-w-0 flex-col gap-0.5">
-          <span class="truncate font-medium text-fg">{{ row.product.name }}</span>
+          <span class="line-clamp-2 font-medium leading-snug text-fg" :title="row.product.name">{{ row.product.name }}</span>
           <ProductBadges :rx="row.rx_required" :control="row.control_class" :storage="row.storage" :mandatory="row.mandatory_list" />
         </span>
       </template>

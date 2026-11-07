@@ -12,7 +12,6 @@ import { useRouter } from "vue-router";
 
 import DataTable from "@/components/DataTable.vue";
 import EmptyState from "@/components/EmptyState.vue";
-import ExportButton from "@/components/ExportButton.vue";
 import FormField from "@/components/FormField.vue";
 import MoneyInput from "@/components/MoneyInput.vue";
 import MoneyText from "@/components/MoneyText.vue";
@@ -62,10 +61,11 @@ const withinOptions = computed(() => [30, 60, 90].map((value) => ({ value, label
 
 const columns = computed<TableColumn<ExpiryRow>[]>(() => [
   { id: "product", header: t("stock.col.name"), minWidth: 260, sticky: true },
-  { id: "series", header: t("stock.col.series"), width: 130 },
-  { id: "branch", header: t("stock.col.branch"), width: 130 },
-  { id: "expires_on", header: t("stock.col.expiresOn"), width: 160 },
-  { id: "quantity", header: t("stock.col.onHand"), numeric: true, width: 160 },
+  { id: "series", header: t("stock.col.series"), width: 120 },
+  { id: "branch", header: t("stock.col.branch"), width: 120 },
+  // "muddati o‘tgan: 26-okt, 2026" and "13-noy, 2026 · 6 kun" must read whole.
+  { id: "expires_on", header: t("stock.col.expiresOn"), width: 230 },
+  { id: "quantity", header: t("stock.col.onHand"), numeric: true, width: 130 },
   { id: "retail_value", header: t("stock.col.valueRetail"), numeric: true, width: 140 },
   ...(hasCost.value ? [{ id: "value", header: t("stock.col.valueCost"), numeric: true, width: 140 } as TableColumn<ExpiryRow>] : []),
 ]);
@@ -157,7 +157,6 @@ async function applyMarkdown(clear: () => void): Promise<void> {
     <PageHeader :title="t('stock.nav.expiry')" :description="t('stock.expiry.description')">
       <template #actions>
         <SegmentedControl v-model="within" :options="withinOptions" size="sm" />
-        <ExportButton kind="inventory.expiry" :params="{ branch, within }" />
       </template>
     </PageHeader>
 
@@ -197,11 +196,13 @@ async function applyMarkdown(clear: () => void): Promise<void> {
       clickable
       hide-pagination
       csv-name="expiry"
+      export-kind="inventory.expiry"
+      :export-params="{ branch, within }"
       @row-click="open"
     >
       <template #cell-product="{ row }">
         <span class="flex min-w-0 flex-col">
-          <span class="truncate font-medium text-fg">{{ row.product }}</span>
+          <span class="line-clamp-2 font-medium leading-snug text-fg" :title="row.product">{{ row.product }}</span>
           <StatusPill v-if="row.status !== 'sellable'" :tone="BATCH_TONES[row.status]" size="sm" :label="t(`stock.batchStatus.${row.status}`)" />
         </span>
       </template>
