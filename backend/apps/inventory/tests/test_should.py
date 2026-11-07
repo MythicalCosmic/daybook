@@ -137,3 +137,49 @@ def test_every_branch_for_a_transfer(shop, head, owner_api, chilonzor, yunusobod
         ("Chilonzor", True),
         ("Yunusobod", False),
     }
+
+
+def test_the_regulators_list_becomes_recalls(
+    shop, owner, owner_api, chilonzor, yunusobod, product, rx, django_capture_on_commit_callbacks
+):
+    from apps.inbox.models import Notification
+    from apps.inventory.models import RecallNotice, StockBatch
+
+    opening(chilonzor, product, "BAD-7", expires_on=date(2027, 6, 1), quantity=4)
+    opening(yunusobod, product, "BAD-7", expires_on=date(2027, 6, 1), quantity=2)
+    text = (
+        "Nomi;Seriya;Sabab\n"
+        f"{product.name};BAD-7;Falsifikat\n"
+        f"{rx.name};NOT-HERE;Sifatsiz\n"
+        "Boshqa dori 5 mg;X-1;Sifatsiz\n"
+        ";;\n"
+    )
+    upload = SimpleUploadedFile("list.csv", text.encode(), content_type="text/csv")
+    client = owner_api(owner)
+    form = {"source": "Rejected series list No. 44, 01.11.2026", "received_on": "2026-11-06"}
+    result = client.post(
+        f"{base(shop)}/recalls/import/",
+        {**form, "file": upload, "dry_run": "true"},
+        format="multipart",
+    ).json()
+    assert [(row["action"], row["found"]) for row in result["rows"][:3]] == [
+        ("register", 2),
+        ("register", 0),
+        ("not_carried", 0),
+    ]
+    assert not RecallNotice.objects.exists()
+    upload.seek(0)
+    with django_capture_on_commit_callbacks(execute=True):
+        result = client.post(
+            f"{base(shop)}/recalls/import/",
+            {**form, "file": upload, "dry_run": "false"},
+            format="multipart",
+        ).json()
+    assert result["registered"] == 2 and result["found"] == 1
+    assert set(StockBatch.objects.filter(series="BAD-7").values_list("status", flat=True)) == {
+        "recalled"
+    }
+    # Managers hear only of the series found in stock.
+    assert Notification.objects.filter(kind="inventory.recall").count() == 1
+    found = RecallNotice.objects.get(series="BAD-7").found
+    assert {row["branch"] for row in found} == {"Chilonzor", "Yunusobod"}

@@ -1022,6 +1022,53 @@ class RecallWriteSerializer(serializers.Serializer):
         ref_name = "InventoryRecallWrite"
 
 
+RECALL_IMPORT_ACTIONS = [
+    ("register", "register"),
+    ("known", "known"),
+    ("not_carried", "not_carried"),
+    ("skip", "skip"),
+]
+
+
+class RecallImportSerializer(serializers.Serializer):
+    file = serializers.FileField()
+    source = serializers.CharField(
+        max_length=200, help_text="The list's title, number and date, as the regulator gives it."
+    )
+    received_on = serializers.DateField()
+    reason = serializers.CharField(max_length=200, allow_blank=True, required=False)
+    mapping = serializers.JSONField(required=False)
+    dry_run = serializers.BooleanField(default=True)
+
+    class Meta:
+        ref_name = "InventoryRecallImport"
+
+
+class RecallImportRowSerializer(serializers.Serializer):
+    row = serializers.IntegerField()
+    name = serializers.CharField()
+    series = serializers.CharField()
+    product_id = serializers.IntegerField(allow_null=True)
+    found = serializers.IntegerField(help_text="Batches with stock that carry the series.")
+    action = serializers.ChoiceField(choices=RECALL_IMPORT_ACTIONS)
+
+    class Meta:
+        ref_name = "InventoryRecallImportRow"
+
+
+class RecallImportResultSerializer(serializers.Serializer):
+    dry_run = serializers.BooleanField()
+    columns = serializers.ListField(child=serializers.CharField())
+    mapping = serializers.DictField(child=serializers.CharField())
+    registered = serializers.IntegerField()
+    found = serializers.IntegerField()
+    not_carried = serializers.IntegerField()
+    rows = RecallImportRowSerializer(many=True)
+
+    class Meta:
+        ref_name = "InventoryRecallImportResult"
+
+
 class FoundRowSerializer(serializers.Serializer):
     branch_id = serializers.IntegerField()
     branch = serializers.CharField()

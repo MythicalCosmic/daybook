@@ -1853,6 +1853,33 @@ class RecallsView(RecallBase):
         return Response(s.RecallSerializer(self.out(recall)).data, status=201)
 
 
+class RecallImportView(RecallBase):
+    """POST stock/recalls/import/: the regulator's rejected-series list, a dry run first."""
+
+    perm = MANAGE
+
+    @extend_schema(request=s.RecallImportSerializer, responses=s.RecallImportResultSerializer)
+    def post(self, request, company_id):
+        serializer = s.RecallImportSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        mapping = data.get("mapping") or None
+        if mapping is not None and not isinstance(mapping, dict):
+            raise ValidationError({"mapping": [_("Give the columns as a map.")]})
+        upload = uploads.accept_document(data["file"], allowed=("xlsx", "csv"))
+        result = importing.import_recalls(
+            self.company,
+            upload,
+            by=self.membership,
+            source=data["source"],
+            received_on=data["received_on"],
+            reason=data.get("reason", ""),
+            mapping=mapping,
+            dry_run=data["dry_run"],
+        )
+        return Response(s.RecallImportResultSerializer(result).data)
+
+
 class RecallView(RecallBase):
     perm = READ
 

@@ -103,6 +103,7 @@ urlpatterns = [
     path(f"{P}counts/<int:pk>/submit/", v.CountSubmitView.as_view(), name="stock-count-submit"),
     path(f"{P}counts/<int:pk>/apply/", v.CountApplyView.as_view(), name="stock-count-apply"),
     path(f"{P}recalls/", v.RecallsView.as_view(), name="stock-recalls"),
+    path(f"{P}recalls/import/", v.RecallImportView.as_view(), name="stock-recalls-import"),
     path(f"{P}recalls/<int:pk>/", v.RecallView.as_view(), name="stock-recall"),
     path(f"{P}recalls/<int:pk>/close/", v.RecallCloseView.as_view(), name="stock-recall-close"),
     path(f"{P}pricing-rules/", v.PricingRulesView.as_view(), name="stock-pricing-rules"),

@@ -545,3 +545,137 @@ def import_lines(receipt, upload, *, by, mapping: dict | None = None, dry_run: b
         profile.save(update_fields=["price_list_mapping", "updated_at"])
     result["rows"] = result["rows"][:500]
     return result
+
+
+# The regulator's list of rejected series into recalls ---------------------------------------
+
+RECALL_FIELDS = ("series", "name", "barcode", "reason")
+RECALL_SYNONYMS = {
+    "series": LINE_SYNONYMS["series"],
+    "name": (*SYNONYMS["name"], *SYNONYMS["inn"], "dori", "препарат", "наименованиепрепарата"),
+    "barcode": SYNONYMS["barcode"],
+    "reason": ("reason", "sabab", "причина", "основание", "nomuvofiqlik", "несоответствие"),
+}
+
+
+def guess_recall_mapping(header: list[str]) -> dict[str, str]:
+    found: dict[str, str] = {}
+    taken = set()
+    for column in header:
+        key = _key(column)
+        for field in RECALL_FIELDS:
+            if field in taken:
+                continue
+            if key == field or key in RECALL_SYNONYMS.get(field, ()):
+                found[column] = field
+                taken.add(field)
+                break
+    return found
+
+
+def _recall_product(company, values: dict) -> Product | None:
+    from apps.inventory import queries
+    from apps.inventory.services import normalize_inn
+
+    if values.get("barcode") and (product := queries.match_code(company, values["barcode"])):
+        return product
+    name = (values.get("name") or "").strip()
+    if not name:
+        return None
+    rows = Product.objects.for_company(company)
+    return (
+        rows.filter(name__iexact=name).first()
+        or rows.filter(trade_name__iexact=name).first()
+        or rows.filter(inn=normalize_inn(name)).order_by("pk").first()
+    )
+
+
+@transaction.atomic
+def import_recalls(
+    company,
+    upload,
+    *,
+    by,
+    source: str,
+    received_on: date,
+    reason: str = "",
+    mapping: dict | None = None,
+    dry_run: bool = True,
+) -> dict:
+    """The regulator's rejected-series list (XLSX or CSV) into recalls: one per row whose
+    medicine is in the catalogue (by barcode, name, trade name or INN), each finding its series
+    in every branch. Rows of medicines the company doesn't carry are only counted. A dry run
+    says what each row would find and changes nothing."""
+    from apps.inventory import services
+    from apps.inventory.models import RecallNotice
+
+    header, rows = read_table(upload)
+    mapping = mapping or guess_recall_mapping(header)
+    mapping = {
+        column: field
+        for column, field in mapping.items()
+        if field in RECALL_FIELDS and column in header
+    }
+    if "series" not in mapping.values() or not {"name", "barcode"} & set(mapping.values()):
+        raise DomainError(_("Pick the columns with the medicine and its series."))
+    index = {header.index(column): field for column, field in mapping.items()}
+    result = {
+        "dry_run": dry_run,
+        "columns": header,
+        "mapping": mapping,
+        "registered": 0,
+        "found": 0,
+        "not_carried": 0,
+        "rows": [],
+    }
+    for number, row in enumerate(rows, start=2):
+        values = {
+            field: row[position] if position < len(row) else "" for position, field in index.items()
+        }
+        series = (values.get("series") or "").strip()
+        product = _recall_product(company, values)
+        entry = {
+            "row": number,
+            "name": values.get("name") or values.get("barcode") or "",
+            "series": series,
+            "product_id": product.pk if product else None,
+            "found": 0,
+            "action": "skip",
+        }
+        result["rows"].append(entry)
+        if not series:
+            continue
+        if product is None:
+            entry["action"] = "not_carried"
+            result["not_carried"] += 1
+            continue
+        known = RecallNotice.objects.filter(
+            company=company,
+            product=product,
+            series__iexact=series,
+            status=RecallNotice.Status.OPEN,
+        ).exists()
+        if known:
+            entry["action"] = "known"
+            continue
+        held = services._matching_batches(
+            company, product=product, inn_or_name="", series=series
+        ).filter(stocks__quantity__gt=0)
+        entry["found"] = held.distinct().count()
+        entry["action"] = "register"
+        result["registered"] += 1
+        result["found"] += int(entry["found"] > 0)
+        if not dry_run:
+            services.register_recall(
+                company,
+                by=by,
+                series=series,
+                reason=(values.get("reason") or reason or "").strip()[:200]
+                or _("On the regulator's list of rejected series"),
+                source=source,
+                received_on=received_on,
+                product=product,
+                announce=entry["found"] > 0,
+            )
+    result["rows"] = result["rows"][:500]
+    return result

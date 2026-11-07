@@ -2409,10 +2409,12 @@ def register_recall(
     product=None,
     inn_or_name: str = "",
     file=None,
+    announce: bool = True,
 ) -> RecallNotice:
     """A rejected or recalled series: every matching batch in every branch is set `recalled`
     (off sale), what was found is recorded, and each branch holding it gets one task "Remove
-    series X from sale"."""
+    series X from sale". `announce=False` (a list imported row by row) tells the managers only
+    when something was found."""
     from apps.inventory import notify
 
     _same_company(company.pk, product)
@@ -2477,7 +2479,8 @@ def register_recall(
         series=series,
         found=len(found),
     )
-    transaction.on_commit(partial(notify.recall, recall.pk))
+    if announce or found:
+        transaction.on_commit(partial(notify.recall, recall.pk))
     _bump(company.pk, "inventory.recalls")
     return recall
 
