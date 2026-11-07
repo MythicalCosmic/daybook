@@ -93,11 +93,18 @@ class SettingsSerializer(serializers.ModelSerializer):
             "late_open_minutes",
             "close_alert_minutes",
             "sales_lines",
+            "credit_days",
+            "invoice_prefix",
+            "invoice_terms_days",
+            "invoice_footer",
+            "rx_wholesale_max_markup_percent",
         )
         extra_kwargs = {
             "handover_confirm_hours": {"min_value": 0, "max_value": 72},
             "late_open_minutes": {"min_value": 1, "max_value": 240},
             "close_alert_minutes": {"min_value": 1, "max_value": 720},
+            "credit_days": {"min_value": 1, "max_value": 365},
+            "invoice_terms_days": {"min_value": 0, "max_value": 365},
         }
 
 

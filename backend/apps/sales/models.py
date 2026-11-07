@@ -120,6 +120,24 @@ class SalesSettings(models.Model):
     credit_days = models.PositiveSmallIntegerField(
         default=30, help_text=_("A nasiya (credit sale) is due this many days after the sale.")
     )
+    # Invoices (§3.8, §14.7).
+    next_invoice_number = models.PositiveIntegerField(
+        default=1, help_text=_("Taken under a row lock when an invoice is issued.")
+    )
+    invoice_prefix = models.CharField(max_length=8, default="INV")
+    invoice_terms_days = models.PositiveSmallIntegerField(
+        default=7, help_text=_("An invoice is due this many days after it is issued.")
+    )
+    invoice_footer = models.TextField(blank=True, help_text=_("Printed at the foot of invoices."))
+    rx_wholesale_max_markup_percent = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=15,
+        help_text=_(
+            "A prescription medicine sold by invoice above its batch cost plus this markup "
+            "(or above its reference price) warns at issue."
+        ),
+    )
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -630,6 +648,111 @@ class SaleLine(models.Model):
         constraints = [
             models.CheckConstraint(condition=Q(quantity__gt=0), name="sales_line_quantity"),
             models.CheckConstraint(condition=Q(total__gte=0), name="sales_line_total"),
+        ]
+
+    def __str__(self):
+        return f"{self.name} × {self.quantity}"
+
+
+class Invoice(TenantModel, Voidable):
+    """A sale by invoice to a clinic, another pharmacy or a company (§3.8). A draft gets its
+    number when it is issued (`next_invoice_number` under a row lock, so numbers never repeat);
+    issuing opens one receivable through finance (its income booked as an accrual) and takes the
+    stock of its medicines (one line row per batch, with series and expiry printed). Payments go
+    through `finance.services.pay_debt`; it can be voided only before any payment, which cancels
+    the receivable and puts the goods back on sale. The legal B2B document is the e-invoice
+    (§14.4): `e_invoice_ref` keeps its id when someone types it."""
+
+    class Status(models.TextChoices):
+        DRAFT = "draft", _("Draft")
+        ISSUED = "issued", _("Issued")
+        PARTLY_PAID = "partly_paid", _("Partly paid")
+        PAID = "paid", _("Paid")
+        VOID = "void", _("Void")
+
+    number = models.CharField(max_length=24, blank=True)
+    branch = models.ForeignKey(
+        Branch, on_delete=models.PROTECT, null=True, blank=True, related_name="invoices"
+    )
+    counterparty = models.ForeignKey(
+        "finance.Counterparty", on_delete=models.PROTECT, related_name="invoices"
+    )
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.DRAFT)
+    issued_on = models.DateField(null=True, blank=True)
+    due_on = models.DateField(null=True, blank=True)
+    currency = CurrencyField()
+    subtotal = MoneyField(default=0)
+    discount = MoneyField(default=0)
+    total = MoneyField(default=0)
+    notes = models.TextField(blank=True)
+    debt = models.ForeignKey(
+        "finance.Debt", on_delete=models.PROTECT, null=True, blank=True, related_name="+"
+    )
+    pdf = models.FileField(
+        storage=private_storage, upload_to=private_upload_to("sales/invoices"), blank=True
+    )
+    sent_at = models.DateTimeField(null=True, blank=True)
+    e_invoice_ref = models.CharField(
+        max_length=64, blank=True, help_text=_("The id of the e-invoice (e-faktura), when typed.")
+    )
+    warnings = models.JSONField(default=list, blank=True)
+    created_by = models.ForeignKey(
+        Membership, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+
+    class Meta:
+        ordering = ["-created_at", "-pk"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["company", "number"],
+                condition=~Q(number=""),
+                name="sales_unique_invoice_number",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["company", "status"], name="sales_invoice_status"),
+            models.Index(fields=["company", "due_on"], name="sales_invoice_due"),
+        ]
+
+    def __str__(self):
+        return self.number or str(_("Draft invoice"))
+
+    @property
+    def is_draft(self) -> bool:
+        return self.status == self.Status.DRAFT
+
+
+class InvoiceLine(models.Model):
+    """One line of an invoice: a medicine (or free text), its quantity in packs, price,
+    discount and total. Issued, a line of a stock-tracked medicine is one row per batch it took
+    stock from (same `line_number`), carrying the batch's series and expiry and the MXIK code and
+    VAT rate printed on the invoice."""
+
+    invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name="lines")
+    line_number = models.PositiveSmallIntegerField(default=1)
+    product = models.ForeignKey(
+        "inventory.Product", on_delete=models.PROTECT, null=True, blank=True, related_name="+"
+    )
+    batch = models.ForeignKey(
+        "inventory.StockBatch", on_delete=models.PROTECT, null=True, blank=True, related_name="+"
+    )
+    name = models.CharField(max_length=200)
+    quantity = models.DecimalField(max_digits=12, decimal_places=3)
+    unit = models.CharField(max_length=6, default="pack")
+    price = MoneyField(default=0)
+    discount = MoneyField(default=0)
+    total = MoneyField(default=0)
+    vat_percent = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)
+    mxik_code = models.CharField(max_length=17, blank=True)
+    series = models.CharField(max_length=40, blank=True)
+    expires_on = models.DateField(null=True, blank=True)
+    cost = MoneyField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["invoice_id", "line_number", "pk"]
+        constraints = [
+            models.CheckConstraint(condition=Q(quantity__gt=0), name="sales_invoice_line_quantity"),
+            models.CheckConstraint(condition=Q(total__gte=0), name="sales_invoice_line_total"),
         ]
 
     def __str__(self):

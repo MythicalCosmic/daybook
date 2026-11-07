@@ -1542,3 +1542,262 @@ class AgingView(SalesView):
         return Response(
             queries.aging(self.company, business_day(self.company), branch_ids=self.branch_scope)
         )
+
+
+# Invoices (§3.8, §4.8) ---------------------------------------------------------------------
+#
+#   GET/POST    sales/invoices/?status&customer&from&to&overdue&q · GET/PATCH sales/invoices/{id}/
+#   POST        sales/invoices/{id}/issue/ · void/ {reason} · send/ · payments/ {account_id, amount,
+#               paid_on, debt_amount?}
+#   GET         sales/invoices/{id}/pdf/   a short-lived link to the PDF (a draft's preview too)
+#
+# Read with sales.view or sales.invoices, write with sales.invoices, payments with
+# finance.record. An invoice of another branch than the caller's answers 404.
+
+
+class InvoiceLineInputSerializer(serializers.Serializer):
+    product_id = serializers.IntegerField(required=False, allow_null=True)
+    name = serializers.CharField(max_length=200, required=False, allow_blank=True, default="")
+    quantity = serializers.DecimalField(max_digits=12, decimal_places=3, min_value=Decimal("0.001"))
+    price = serializers.DecimalField(max_digits=18, decimal_places=2, min_value=0)
+    discount = serializers.DecimalField(
+        max_digits=18, decimal_places=2, min_value=0, required=False, default=Decimal(0)
+    )
+
+    class Meta:
+        ref_name = "SalesInvoiceLineInput"
+
+
+class InvoiceWriteSerializer(serializers.Serializer):
+    customer_id = serializers.IntegerField(required=False)
+    branch_id = serializers.IntegerField(required=False, allow_null=True)
+    currency = serializers.CharField(max_length=3, required=False)
+    notes = serializers.CharField(max_length=4000, required=False, allow_blank=True)
+    e_invoice_ref = serializers.CharField(max_length=64, required=False, allow_blank=True)
+    lines = InvoiceLineInputSerializer(many=True, required=False)
+
+    class Meta:
+        ref_name = "SalesInvoiceWrite"
+
+
+class InvoicePaymentSerializer(serializers.Serializer):
+    account_id = serializers.IntegerField()
+    amount = serializers.DecimalField(max_digits=18, decimal_places=2, min_value=Decimal("0.01"))
+    paid_on = serializers.DateField()
+    debt_amount = serializers.DecimalField(
+        max_digits=18, decimal_places=2, min_value=Decimal("0.01"), required=False, allow_null=True
+    )
+
+    class Meta:
+        ref_name = "SalesInvoicePayment"
+
+
+InvoiceDetailSerializer = inline_serializer(
+    "SalesInvoiceDetail",
+    {
+        "id": serializers.IntegerField(),
+        "number": serializers.CharField(),
+        "status": serializers.CharField(),
+        "total": serializers.CharField(),
+        "lines": serializers.ListField(child=serializers.DictField()),
+    },
+)
+
+
+class InvoiceViewSet(SalesViewSet):
+    """Invoices to clinics, pharmacies and companies: drafts, issue (number, stock, receivable),
+    payments, void before payment, the PDF and sending it."""
+
+    perm = AnyOf(Perm.SALES_VIEW, Perm.SALES_INVOICES)
+    perms_by_action = {
+        "create": Perm.SALES_INVOICES,
+        "partial_update": Perm.SALES_INVOICES,
+        "issue": Perm.SALES_INVOICES,
+        "void": Perm.SALES_INVOICES,
+        "send": Perm.SALES_INVOICES,
+        "payments": Perm.FINANCE_RECORD,
+    }
+
+    def _invoice(self, pk):
+        from apps.sales.models import Invoice
+
+        found = (
+            queries.restrict(Invoice.objects.for_company(self.company), self.branch_scope)
+            .select_related("company", "counterparty", "branch", "debt")
+            .filter(pk=pk)
+            .first()
+        )
+        if found is None:
+            raise NotFound
+        return found
+
+    def _detail(self, invoice):
+        return queries.invoice_detail(
+            invoice,
+            business_day(self.company),
+            costs=self.membership.has_perm(Perm.FINANCE_VIEW),
+        )
+
+    def _values(self, data: dict) -> dict:
+        values = {}
+        if "customer_id" in data:
+            party = queries._customers(self.company).filter(pk=data["customer_id"]).first()
+            if party is None:
+                raise ValidationError({"customer_id": [_("Pick the customer.")]})
+            values["counterparty"] = party
+        if "branch_id" in data:
+            values["branch"] = (
+                _branch(self.membership, data["branch_id"]) if data["branch_id"] else None
+            )
+            if values["branch"] is None and self.branch_scope is not None:
+                raise ValidationError({"branch_id": [_("Pick one of your branches.")]})
+        for key in ("currency", "notes", "e_invoice_ref"):
+            if key in data:
+                values[key] = data[key]
+        if "lines" in data:
+            values["lines"] = [dict(row) for row in data["lines"]]
+        return values
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter("status", str, many=True),
+            OpenApiParameter("customer", int),
+            OpenApiParameter("from", str),
+            OpenApiParameter("to", str),
+            OpenApiParameter("overdue", bool),
+            OpenApiParameter("q", str),
+        ],
+        responses=inline_serializer(
+            "SalesInvoicePage", {"results": serializers.ListField(child=serializers.DictField())}
+        ),
+    )
+    def list(self, request, company_id):
+        params = request.query_params
+        filters = {
+            "status": [s for s in params.getlist("status") if s],
+            "customer": _int(params, "customer"),
+            "from": _day(params, "from"),
+            "to": _day(params, "to"),
+            "overdue": _flag(params, "overdue"),
+            "q": params.get("q", ""),
+        }
+        rows = queries.invoices(self.company, filters, branch_ids=self.branch_scope)
+        page = self.paginate_queryset(rows)
+        today = business_day(self.company)
+        return self.get_paginated_response([queries.invoice_row(row, today) for row in page])
+
+    @extend_schema(responses=InvoiceDetailSerializer)
+    def retrieve(self, request, company_id, pk):
+        return Response(self._detail(self._invoice(pk)))
+
+    @extend_schema(request=InvoiceWriteSerializer, responses=InvoiceDetailSerializer)
+    def create(self, request, company_id):
+        data = InvoiceWriteSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        values = self._values(data.validated_data)
+        if "counterparty" not in values:
+            raise ValidationError({"customer_id": [_("Pick the customer.")]})
+        if self.branch_scope is not None and not values.get("branch"):
+            raise ValidationError({"branch_id": [_("Pick one of your branches.")]})
+        invoice = services.create_invoice(
+            self.company,
+            by=self.membership,
+            counterparty=values["counterparty"],
+            lines=values.get("lines") or [],
+            branch=values.get("branch"),
+            currency=values.get("currency") or self.company.base_currency,
+            notes=values.get("notes", ""),
+        )
+        return Response(self._detail(invoice), status=status.HTTP_201_CREATED)
+
+    @extend_schema(request=InvoiceWriteSerializer, responses=InvoiceDetailSerializer)
+    def partial_update(self, request, company_id, pk):
+        invoice = self._invoice(pk)
+        data = InvoiceWriteSerializer(data=request.data, partial=True)
+        data.is_valid(raise_exception=True)
+        invoice = services.update_invoice(
+            invoice, by=self.membership, **self._values(data.validated_data)
+        )
+        return Response(self._detail(invoice))
+
+    @extend_schema(request=None, responses=InvoiceDetailSerializer)
+    @action(detail=True, methods=["post"])
+    def issue(self, request, company_id, pk):
+        invoice = services.issue_invoice(self._invoice(pk), by=self.membership)
+        return Response(self._detail(invoice))
+
+    @extend_schema(request=ReasonSerializer, responses=InvoiceDetailSerializer)
+    @action(detail=True, methods=["post"])
+    def void(self, request, company_id, pk):
+        data = ReasonSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        invoice = services.void_invoice(
+            self._invoice(pk), by=self.membership, reason=data.validated_data["reason"]
+        )
+        return Response(self._detail(invoice))
+
+    @extend_schema(
+        request=None,
+        responses=inline_serializer(
+            "SalesInvoiceSent",
+            {"delivered": serializers.CharField(), "url": serializers.CharField(required=False)},
+        ),
+    )
+    @action(detail=True, methods=["post"])
+    def send(self, request, company_id, pk):
+        return Response(services.send_invoice(self._invoice(pk), by=self.membership))
+
+    @extend_schema(request=InvoicePaymentSerializer, responses=InvoiceDetailSerializer)
+    @action(detail=True, methods=["post"])
+    def payments(self, request, company_id, pk):
+        invoice = self._invoice(pk)
+        data = InvoicePaymentSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        values = data.validated_data
+        account = (
+            (
+                queries.restrict(
+                    MoneyAccount.objects.filter(company=self.company, is_active=True),
+                    self.branch_scope,
+                )
+                if self.branch_scope is not None
+                else MoneyAccount.objects.filter(company=self.company, is_active=True)
+            )
+            .filter(pk=values["account_id"])
+            .first()
+        )
+        if account is None:
+            raise ValidationError({"account_id": [_("Pick the account.")]})
+        invoice = services.record_invoice_payment(
+            invoice,
+            by=self.membership,
+            account=account,
+            amount=values["amount"],
+            paid_on=values["paid_on"],
+            debt_amount=values.get("debt_amount"),
+        )
+        return Response(self._detail(invoice))
+
+    @extend_schema(responses=inline_serializer("SalesInvoicePdf", {"url": serializers.CharField()}))
+    @action(detail=True, methods=["get"])
+    def pdf(self, request, company_id, pk):
+        """The invoice as a PDF, rendered now (a draft's preview too), as a short-lived link."""
+        from django.core.files.base import ContentFile
+
+        from apps.core.files import signed_url
+
+        invoice = self._invoice(pk)
+        data = services.invoice_pdf(invoice, language=self.membership_language())
+        invoice.pdf.save(f"{invoice.number or invoice.pk}.pdf", ContentFile(data), save=True)
+        url = signed_url(
+            invoice.pdf,
+            user=request.user,
+            company_id=self.company.pk,
+            check=f"sales.invoice_pdf:{invoice.pk}",
+            filename=f"{invoice.number or 'invoice'}.pdf",
+        )
+        return Response({"url": url})
+
+    def membership_language(self) -> str:
+        user = self.membership.user
+        return (getattr(user, "language", "") or self.company.default_language or "uz")[:2]

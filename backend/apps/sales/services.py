@@ -13,6 +13,7 @@ settings row, then the register, the shift, the movement, then whatever finance 
 from __future__ import annotations
 
 import logging
+from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date, datetime, time
 from decimal import Decimal, InvalidOperation
@@ -218,6 +219,11 @@ SETTINGS_FIELDS = (
     "late_open_minutes",
     "close_alert_minutes",
     "sales_lines",
+    "credit_days",
+    "invoice_prefix",
+    "invoice_terms_days",
+    "invoice_footer",
+    "rx_wholesale_max_markup_percent",
 )
 
 
@@ -230,8 +236,6 @@ def update_settings(company, *, by: Membership, **fields) -> SalesSettings:
     settings = SalesSettings.objects.select_for_update().get(pk=get_settings(company).pk)
     if "mode" in fields and fields["mode"] not in SalesSettings.Mode.values:
         raise DomainError(_("Pick a way of recording sales."))
-    if fields.get("mode") == SalesSettings.Mode.INVOICES:
-        raise DomainError(_("Invoices mode arrives with the invoices module."))
     if "sales_lines" in fields:
         if fields["sales_lines"] not in SalesSettings.Lines.values:
             raise DomainError(_("Pick where your sale lines come from."))
@@ -242,6 +246,23 @@ def update_settings(company, *, by: Membership, **fields) -> SalesSettings:
             settings.sales_lines_confirmed_at = timezone.now()
             settings.save(update_fields=["sales_lines_confirmed_at", "updated_at"])
             _bump(company.pk, PULSE_SETUP)
+    if "invoice_prefix" in fields:
+        prefix = "".join(ch for ch in str(fields["invoice_prefix"] or "").upper() if ch.isalnum())
+        if not prefix:
+            raise DomainError(_("An invoice prefix has letters or digits, like INV."))
+        fields["invoice_prefix"] = prefix[:8]
+    if "invoice_footer" in fields:
+        fields["invoice_footer"] = (fields["invoice_footer"] or "").strip()[:2000]
+    if "rx_wholesale_max_markup_percent" in fields:
+        try:
+            markup = Decimal(str(fields["rx_wholesale_max_markup_percent"])).quantize(
+                Decimal("0.01")
+            )
+        except InvalidOperation, ValueError:
+            raise DomainError(_("The markup is a percentage from 0 to 100.")) from None
+        if not 0 <= markup <= 100:
+            raise DomainError(_("The markup is a percentage from 0 to 100."))
+        fields["rx_wholesale_max_markup_percent"] = markup
     for key in ("cash_tolerance", "big_payout_alert"):
         if fields.get(key) not in (None, ""):
             fields[key] = money(fields[key], allow_zero=True)
@@ -1824,3 +1845,477 @@ def check_credit_total(shift: CashShift, lines: list[PaymentLine]) -> None:
                 "gap": msg_money(abs(typed - recorded), currency),
             }
         )
+
+
+# Invoices (§3.8, §14.7) -------------------------------------------------------------------
+
+INVOICE = "sales.invoice"
+INVOICE_PULSE = "sales.invoices"
+QUANTITY_STEP = Decimal("0.001")
+
+
+def _invoice_customer(company, counterparty):
+    from apps.finance.models import Counterparty
+
+    _same_company(company, counterparty)
+    if counterparty is None:
+        raise DomainError(_("Pick the customer."))
+    if counterparty.kind not in (Counterparty.Kind.CUSTOMER, Counterparty.Kind.BOTH):
+        raise DomainError(_("%(name)s isn't a customer.") % {"name": counterparty})
+    return counterparty
+
+
+def _invoice_lines(company, lines) -> list[dict]:
+    """Draft lines: [{"product_id"?, "name", "quantity", "price", "discount"?}], quantities in
+    packs, checked and with their totals."""
+    from apps.inventory.models import Product
+
+    if not lines:
+        raise DomainError(_("Add at least one line."))
+    if len(lines) > 300:
+        raise DomainError(_("An invoice holds at most 300 lines."))
+    product_ids = {int(row["product_id"]) for row in lines if row.get("product_id")}
+    products = Product.objects.for_company(company).in_bulk(product_ids)
+    if len(products) != len(product_ids):
+        raise DomainError(_("Pick medicines of this company's catalogue."))
+    cleaned = []
+    for number, row in enumerate(lines, start=1):
+        product = products.get(int(row["product_id"])) if row.get("product_id") else None
+        name = (row.get("name") or (product.name if product else "")).strip()[:200]
+        if not name:
+            raise DomainError(_("Line %(n)s needs a name.") % {"n": number})
+        try:
+            quantity = Decimal(str(row.get("quantity"))).quantize(QUANTITY_STEP)
+        except InvalidOperation, ValueError, TypeError:
+            raise DomainError(_("Line %(n)s needs a quantity.") % {"n": number}) from None
+        if quantity <= 0 or quantity > 1_000_000:
+            raise DomainError(_("Line %(n)s needs a quantity.") % {"n": number})
+        price = money(
+            row.get("price") if row.get("price") not in (None, "") else 0, allow_zero=True
+        )
+        discount = money(row.get("discount") or 0, allow_zero=True)
+        gross = quantize(quantity * price)
+        if discount > gross:
+            raise DomainError(_("Line %(n)s has a discount above its amount.") % {"n": number})
+        cleaned.append(
+            {
+                "line_number": number,
+                "product": product,
+                "name": name,
+                "quantity": quantity,
+                "price": price,
+                "discount": discount,
+                "total": gross - discount,
+            }
+        )
+    return cleaned
+
+
+def _write_invoice_lines(invoice, cleaned: list[dict]) -> None:
+    from apps.sales.models import InvoiceLine
+
+    invoice.lines.all().delete()
+    InvoiceLine.objects.bulk_create(InvoiceLine(invoice=invoice, **row) for row in cleaned)
+    invoice.subtotal = sum((quantize(row["quantity"] * row["price"]) for row in cleaned), ZERO)
+    invoice.discount = sum((row["discount"] for row in cleaned), ZERO)
+    invoice.total = invoice.subtotal - invoice.discount
+
+
+def _invoice_currency(company, currency: str) -> str:
+    from apps.core.money import Currency
+
+    currency = (currency or company.base_currency).upper()
+    if currency not in Currency.values:
+        raise DomainError(_("Pick the invoice's currency."))
+    return currency
+
+
+@transaction.atomic
+def create_invoice(
+    company,
+    *,
+    by: Membership,
+    counterparty,
+    lines,
+    branch=None,
+    currency="UZS",
+    notes="",
+):
+    """A draft invoice to `counterparty` (a customer: a clinic, a pharmacy, a company). `lines`
+    are `[{"product_id"?, "name", "quantity", "price", "discount"?}]`, quantities in packs. The
+    fixed signature the CRM package calls (§14.13); nothing moves until it is issued."""
+    from apps.sales.models import Invoice
+
+    _need_person(by)
+    _same_company(company, branch)
+    counterparty = _invoice_customer(company, counterparty)
+    cleaned = _invoice_lines(company, lines)
+    invoice = Invoice.objects.create(
+        company=company,
+        counterparty=counterparty,
+        branch=branch,
+        currency=_invoice_currency(company, currency),
+        notes=(notes or "").strip()[:4000],
+        created_by=by,
+    )
+    _write_invoice_lines(invoice, cleaned)
+    invoice.save(update_fields=["subtotal", "discount", "total", "updated_at"])
+    _record(
+        SalesAction.INVOICE_CREATED,
+        company,
+        by,
+        invoice,
+        counterparty=counterparty.pk,
+        total=invoice.total,
+        currency=invoice.currency,
+        lines=len(cleaned),
+    )
+    _bump(company.pk, INVOICE_PULSE, PULSE_CUSTOMERS)
+    return invoice
+
+
+def _lock_invoice(invoice):
+    from apps.sales.models import Invoice
+
+    return (
+        Invoice.objects.select_for_update(of=("self",))
+        .select_related("company", "branch", "counterparty", "debt")
+        .get(pk=invoice.pk)
+    )
+
+
+@transaction.atomic
+def update_invoice(invoice, *, by: Membership, **fields):
+    """Change a draft: customer, branch, currency, notes, lines. The e-invoice id may be typed at
+    any time."""
+    _need_person(by)
+    invoice = _lock_invoice(invoice)
+    company = invoice.company
+    allowed = {"counterparty", "lines", "branch", "currency", "notes", "e_invoice_ref"}
+    if unknown := set(fields) - allowed:
+        raise ValueError(f"Unknown invoice fields: {sorted(unknown)}")
+    if set(fields) - {"e_invoice_ref"} and not invoice.is_draft:
+        raise DomainError(_("Only a draft can be changed."))
+    changes = {}
+    if "counterparty" in fields:
+        invoice.counterparty = _invoice_customer(company, fields["counterparty"])
+        changes["counterparty"] = invoice.counterparty.pk
+    if "branch" in fields:
+        _same_company(company, fields["branch"])
+        invoice.branch = fields["branch"]
+        changes["branch"] = invoice.branch.pk if invoice.branch else None
+    if "currency" in fields:
+        invoice.currency = _invoice_currency(company, fields["currency"])
+        changes["currency"] = invoice.currency
+    if "notes" in fields:
+        invoice.notes = (fields["notes"] or "").strip()[:4000]
+        changes["notes"] = invoice.notes
+    if "e_invoice_ref" in fields:
+        invoice.e_invoice_ref = (fields["e_invoice_ref"] or "").strip()[:64]
+        changes["e_invoice_ref"] = invoice.e_invoice_ref
+    if "lines" in fields:
+        _write_invoice_lines(invoice, _invoice_lines(company, fields["lines"]))
+        changes["lines"] = invoice.lines.count()
+        changes["total"] = invoice.total
+    invoice.save()
+    if changes:
+        _record(SalesAction.INVOICE_CHANGED, company, by, invoice, changes=changes)
+        _bump(company.pk, INVOICE_PULSE)
+    return invoice
+
+
+def _wholesale_cap(product, batch, markup: Decimal):
+    """The most a prescription medicine may cost a pack by invoice: its batch cost plus the
+    wholesale markup cap, never above its reference price (None when neither is known)."""
+    if not product.rx_required:
+        return None
+    caps = []
+    if batch is not None:
+        caps.append(quantize(batch.unit_cost * (1 + markup / 100)))
+    if product.reference_price is not None:
+        caps.append(product.reference_price)
+    return min(caps) if caps else None
+
+
+@transaction.atomic
+def issue_invoice(invoice, *, by: Membership, issued_on: date | None = None):
+    """Issue a draft: its number (under the settings row's lock, so numbers never repeat), the
+    stock of its medicines (FEFO; one row per batch with series and expiry), one receivable with
+    its income booked now, due after the invoice terms. A prescription medicine priced above the
+    wholesale cap warns; nothing else is refused but a missing pharmacy for stock lines."""
+    from datetime import timedelta
+
+    from apps.finance import services as finance
+    from apps.finance.sources import Source
+    from apps.inventory import services as stock
+    from apps.inventory.models import StockBatch
+    from apps.sales import integrations
+    from apps.sales.models import Invoice, InvoiceLine
+
+    _need_person(by)
+    company = Invoice.objects.select_related("company").get(pk=invoice.pk).company
+    # The settings row first (the one lock order), then the invoice.
+    settings = SalesSettings.objects.select_for_update().get(pk=get_settings(company).pk)
+    invoice = _lock_invoice(invoice)
+    if not invoice.is_draft:
+        raise DomainError(_("This invoice is already issued."))
+    lines = list(invoice.lines.select_related("product").order_by("line_number", "pk"))
+    if not lines or invoice.total <= 0:
+        raise DomainError(_("Add lines with a price before issuing."))
+    stocked = [line for line in lines if line.product_id and line.product.track_stock]
+    if stocked and invoice.branch_id is None:
+        raise DomainError(_("Pick the warehouse or pharmacy the goods leave from."))
+    issued_on = issued_on or business_day(company, ends_at=settings.business_day_ends_at)
+    number = settings.next_invoice_number
+    SalesSettings.objects.filter(pk=settings.pk).update(
+        next_invoice_number=F("next_invoice_number") + 1
+    )
+    code = (invoice.branch.code if invoice.branch_id else "") or "S"
+    invoice.number = f"{settings.invoice_prefix or 'INV'}-{code.upper()}-{number:04d}"[:24]
+    vat = integrations.vat_percent(company)
+    markup = settings.rx_wholesale_max_markup_percent
+    warnings = []
+    for line in lines:
+        product = line.product
+        line.vat_percent = (
+            product.vat_percent if product is not None and product.vat_percent is not None else vat
+        )
+        line.mxik_code = product.mxik_code if product is not None else ""
+        if not (product is not None and product.track_stock):
+            line.save()
+            continue
+        per_pack = max(int(product.units_per_pack or 1), 1)
+        parts = (line.quantity * per_pack).quantize(QUANTITY_STEP)
+        found = stock.deduct(
+            invoice.branch,
+            product,
+            parts,
+            by=by,
+            document=(INVOICE, invoice.pk),
+            kind="sale",
+        )
+        allocations = [a for a in found if a.quantity and a.quantity > 0] or []
+        covered = sum((a.quantity for a in allocations), ZERO)
+        if covered < parts:
+            from apps.inventory.services import Allocation
+
+            allocations.append(Allocation(None, parts - covered, None))
+        batches = StockBatch.objects.in_bulk([a.batch_id for a in allocations if a.batch_id])
+        left_total, left_discount = line.total, line.discount
+        for index, allocation in enumerate(allocations):
+            last = index == len(allocations) - 1
+            share = allocation.quantity / parts
+            row = line if index == 0 else InvoiceLine(invoice=invoice, line_number=line.line_number)
+            batch = batches.get(allocation.batch_id)
+            row.product, row.name, row.unit, row.price = product, line.name, line.unit, line.price
+            row.vat_percent, row.mxik_code = line.vat_percent, line.mxik_code
+            row.quantity = (allocation.quantity / per_pack).quantize(QUANTITY_STEP)
+            row.total = left_total if last else quantize(line.total * share)
+            row.discount = left_discount if last else quantize(line.discount * share)
+            left_total -= row.total
+            left_discount -= row.discount
+            row.batch = batch
+            row.series = batch.series if batch else ""
+            row.expires_on = batch.expires_on if batch else None
+            row.cost = (
+                quantize(allocation.unit_cost * allocation.quantity)
+                if allocation.unit_cost is not None
+                else None
+            )
+            row.save()
+            cap = _wholesale_cap(product, batch, markup)
+            pack = quantize(row.total / row.quantity) if row.quantity else ZERO
+            if cap is not None and pack > cap:
+                warnings.append(
+                    {
+                        "line": line.line_number,
+                        "product": product.name,
+                        "price": str(pack),
+                        "cap": str(cap),
+                    }
+                )
+    invoice.issued_on = issued_on
+    invoice.due_on = issued_on + timedelta(days=settings.invoice_terms_days)
+    invoice.warnings = warnings
+    invoice.status = Invoice.Status.ISSUED
+    invoice.save()
+    invoice.debt = finance.open_debt(
+        company,
+        by=by,
+        direction="receivable",
+        kind="trade",
+        amount=invoice.total,
+        currency=invoice.currency,
+        issued_on=issued_on,
+        counterparty=invoice.counterparty,
+        due_on=invoice.due_on,
+        category="sales",
+        branch=invoice.branch,
+        description=(_("Invoice %(number)s") % {"number": invoice.number})[:300],
+        responsible=by,
+        source=Source(INVOICE, invoice.pk, "issue"),
+    )
+    invoice.save(update_fields=["debt", "updated_at"])
+    _record(
+        SalesAction.INVOICE_ISSUED,
+        company,
+        by,
+        invoice,
+        number=invoice.number,
+        total=invoice.total,
+        currency=invoice.currency,
+        warnings=warnings,
+    )
+    _bump(company.pk, INVOICE_PULSE, PULSE_CUSTOMERS)
+    return invoice
+
+
+@transaction.atomic
+def record_invoice_payment(
+    invoice, *, by: Membership, account, amount, paid_on: date, debt_amount=None
+):
+    """A payment on an issued invoice (part of it, or in another currency: `amount` is in the
+    account's currency, `debt_amount` what it settles when that differs)."""
+    from apps.finance import services as finance
+    from apps.sales.models import Invoice
+
+    _need_person(by)
+    invoice = _lock_invoice(invoice)
+    if invoice.status not in (Invoice.Status.ISSUED, Invoice.Status.PARTLY_PAID):
+        raise DomainError(_("Only an issued invoice takes payments."))
+    _same_company(invoice.company, account)
+    finance.pay_debt(
+        invoice.debt,
+        by=by,
+        amount=amount,
+        paid_on=paid_on,
+        account=account,
+        debt_amount=debt_amount,
+    )
+    invoice.debt.refresh_from_db()
+    invoice.status = (
+        Invoice.Status.PAID if invoice.debt.status == "paid" else Invoice.Status.PARTLY_PAID
+    )
+    invoice.save(update_fields=["status", "updated_at"])
+    _record(
+        SalesAction.INVOICE_PAID,
+        invoice.company,
+        by,
+        invoice,
+        amount=str(amount),
+        account=account.pk,
+        paid_on=paid_on,
+    )
+    _bump(invoice.company_id, INVOICE_PULSE, PULSE_CUSTOMERS)
+    return invoice
+
+
+@transaction.atomic
+def void_invoice(invoice, *, by: Membership, reason: str):
+    """Void a draft, or an issued invoice nobody paid anything on yet: its receivable is
+    cancelled and its goods go back on sale (they never left)."""
+    from apps.finance import services as finance
+    from apps.inventory import services as stock
+    from apps.inventory.services import Allocation
+    from apps.sales.models import Invoice
+
+    _need_person(by)
+    reason = _reason(reason)
+    invoice = _lock_invoice(invoice)
+    if invoice.status == Invoice.Status.VOID:
+        raise DomainError(_("This invoice is already void."))
+    if invoice.status in (Invoice.Status.PARTLY_PAID, Invoice.Status.PAID) or (
+        invoice.debt_id and invoice.debt.paid
+    ):
+        raise DomainError(_("A payment was made on this invoice: it can't be voided."))
+    if invoice.status == Invoice.Status.ISSUED:
+        if invoice.debt_id:
+            finance.cancel_debt(invoice.debt, by=by, reason=reason)
+        by_line: dict[int, list] = defaultdict(list)
+        for row in invoice.lines.select_related("product").order_by("line_number", "pk"):
+            if row.product_id and row.product.track_stock:
+                per_pack = max(int(row.product.units_per_pack or 1), 1)
+                parts = (row.quantity * per_pack).quantize(QUANTITY_STEP)
+                unit_cost = (row.cost / parts).quantize(Decimal("0.01")) if row.cost else None
+                by_line[row.line_number].append(Allocation(row.batch_id, parts, unit_cost))
+        for allocations in by_line.values():
+            stock.restock(
+                invoice.branch,
+                allocations,
+                by=by,
+                document=(INVOICE, invoice.pk),
+                kind="refund",
+                status="sellable",
+            )
+    invoice.status = Invoice.Status.VOID
+    invoice.voided_at = timezone.now()
+    invoice.voided_by = by.user
+    invoice.void_reason = reason
+    invoice.save(update_fields=["status", "voided_at", "voided_by", "void_reason", "updated_at"])
+    _record(SalesAction.INVOICE_VOIDED, invoice.company, by, invoice, reason=reason)
+    _bump(invoice.company_id, INVOICE_PULSE, PULSE_CUSTOMERS)
+    return invoice
+
+
+def invoice_pdf(invoice, *, language: str) -> bytes:
+    """The invoice as a PDF: the company and the customer, each line with its MXIK code, VAT,
+    series and expiry, and the footer saying it isn't the electronic invoice (EHF)."""
+    from apps.core.pdf import render_pdf
+    from apps.sales.invoice_print import context
+
+    return render_pdf("sales/invoice.html", context(invoice), language=language)
+
+
+@transaction.atomic
+def send_invoice(invoice, *, by: Membership) -> dict:
+    """Send an issued invoice: its PDF to the customer's Telegram when they started the bot
+    (their username is on the customer card), else a link for the owner to pass on (valid 7
+    days). Returns {"delivered": "telegram"} or {"delivered": "link", "url": …}."""
+    from django.core.files.base import ContentFile
+
+    from apps.accounts.models import User
+    from apps.core.files import MAX_TTL, signed_url
+    from apps.sales.models import Invoice
+
+    _need_person(by)
+    invoice = _lock_invoice(invoice)
+    if invoice.status in (Invoice.Status.DRAFT, Invoice.Status.VOID):
+        raise DomainError(_("Issue the invoice before sending it."))
+    company = invoice.company
+    data = invoice_pdf(invoice, language=company.default_language)
+    invoice.pdf.save(f"{invoice.number or invoice.pk}.pdf", ContentFile(data), save=False)
+    invoice.sent_at = timezone.now()
+    invoice.save(update_fields=["pdf", "sent_at", "updated_at"])
+    username = (invoice.counterparty.telegram_username or "").strip().lstrip("@")
+    person = (
+        User.objects.filter(telegram_username__iexact=username, telegram_id__isnull=False).first()
+        if username
+        else None
+    )
+    if person is not None:
+        path, chat, name = invoice.pdf.name, person.telegram_id, f"{invoice.number}.pdf"
+        caption = _("Invoice %(number)s from %(company)s") % {
+            "number": invoice.number,
+            "company": company.name,
+        }
+
+        def deliver():
+            from apps.notifications.telegram import send_document
+
+            send_document("employee", chat, path, storage="private", caption=caption, filename=name)
+
+        transaction.on_commit(deliver)
+        result = {"delivered": "telegram"}
+    else:
+        url = signed_url(
+            invoice.pdf,
+            user=by.user,
+            company_id=company.pk,
+            check=f"sales.invoice_pdf:{invoice.pk}",
+            ttl=MAX_TTL,
+            filename=f"{invoice.number}.pdf",
+        )
+        result = {"delivered": "link", "url": url}
+    _record(SalesAction.INVOICE_SENT, company, by, invoice, delivered=result["delivered"])
+    _bump(company.pk, INVOICE_PULSE)
+    return result

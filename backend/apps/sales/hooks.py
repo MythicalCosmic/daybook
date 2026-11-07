@@ -297,6 +297,66 @@ register_exporter(
 )
 
 
+# Invoices (§3.8, §11.4): the receivable they open links back to them; their PDF is private.
+sources.register(
+    "sales.invoice", label=_("Invoice"), url_template="/c/{company_id}/sales/invoices?invoice={id}"
+)
+
+
+def check_invoice_pdf(user, company_id, object_id) -> bool:
+    from apps.sales.models import Invoice
+
+    invoice = Invoice.objects.for_company(company_id).filter(pk=object_id).first()
+    if invoice is None:
+        return False
+    member = (
+        Membership.objects.select_related("role")
+        .filter(user=user, company_id=company_id, status=Membership.Status.APPROVED)
+        .first()
+    )
+    if member is None:
+        return False
+    if not (member.has_perm(Perm.SALES_VIEW) or member.has_perm(Perm.SALES_INVOICES)):
+        return False
+    branch_ids = scope.branch_ids(member)
+    if invoice.branch_id is None:
+        return branch_ids is None
+    return scope.allows(branch_ids, invoice.branch_id)
+
+
+register_file_check("sales.invoice_pdf", check_invoice_pdf)
+registry.register_pulse("sales.invoices", perm=Perm.SALES_VIEW, count=None, feature=FEATURE)
+registry.register_pulse(
+    "sales.invoices_overdue",
+    perm=Perm.SALES_VIEW,
+    count=queries.overdue_invoices,
+    feature=FEATURE,
+)
+registry.register_search(
+    "sales.invoice", perm=Perm.SALES_VIEW, search=queries.search_invoices, feature=FEATURE
+)
+register_exporter(
+    "sales.invoices",
+    perm=Perm.SALES_VIEW,
+    label=_("Invoices"),
+    columns=[
+        Column("number", _("Invoice")),
+        Column("status", _("Status")),
+        Column("customer", _("Customer")),
+        Column("branch", _("Branch")),
+        Column("issued_on", _("Issued"), "date"),
+        Column("due_on", _("Due"), "date"),
+        Column("currency", _("Currency")),
+        Column("total", _("Total"), "money"),
+        Column("paid", _("Paid"), "money"),
+        Column("left", _("Left to pay"), "money"),
+        Column("overdue", _("Overdue")),
+    ],
+    rows=queries.export_invoices,
+    feature=FEATURE,
+)
+
+
 # Customers and nasiya (§11.4): the credit sales and payments at the till book receivables.
 sources.register(
     "sales.creditentry",

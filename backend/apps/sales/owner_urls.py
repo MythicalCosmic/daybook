@@ -27,6 +27,7 @@ router.register("sales/imports", owner_api.ImportViewSet, basename="sales-import
 router.register("sales/lines", owner_api.LineViewSet, basename="sales-line")
 router.register("sales/pos-cashiers", owner_api.PosCashierViewSet, basename="sales-pos-cashier")
 router.register("sales/customers", owner_api.CustomerViewSet, basename="sales-customer")
+router.register("sales/invoices", owner_api.InvoiceViewSet, basename="sales-invoice")
 
 urlpatterns = [
     path("sales/products/", owner_api.ProductLookupView.as_view(), name="sales-products"),

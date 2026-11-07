@@ -2081,3 +2081,172 @@ def search_customers(member: Membership, q: str, limit: int) -> list[SearchHit]:
         )
         for party in rows
     ]
+
+
+# Invoices (§3.8) -----------------------------------------------------------------------------
+
+
+def invoices(company, filters: dict, *, branch_ids: list[int] | None) -> QuerySet:
+    """Invoices in the caller's branches (one without a branch only for people who see every
+    branch). Filters: status (list), customer, from/to (issue days), overdue, q (number or
+    customer)."""
+    from apps.sales.models import Invoice
+
+    rows = restrict(
+        Invoice.objects.for_company(company).select_related("counterparty", "branch", "debt"),
+        branch_ids,
+    )
+    if statuses := filters.get("status"):
+        rows = rows.filter(status__in=statuses)
+    if customer := filters.get("customer"):
+        rows = rows.filter(counterparty_id=customer)
+    if start := filters.get("from"):
+        rows = rows.filter(issued_on__gte=start)
+    if end := filters.get("to"):
+        rows = rows.filter(issued_on__lte=end)
+    if filters.get("overdue"):
+        today = filters.get("today") or business_day(company)
+        rows = rows.filter(
+            status__in=(Invoice.Status.ISSUED, Invoice.Status.PARTLY_PAID), due_on__lt=today
+        )
+    if q := (filters.get("q") or "").strip():
+        rows = rows.filter(Q(number__icontains=q) | Q(counterparty__name__icontains=q))
+    return rows.order_by("-created_at", "-pk")
+
+
+def invoice_row(invoice, today: date) -> dict:
+    from apps.sales.models import Invoice
+
+    debt = invoice.debt
+    paid = debt.paid if debt is not None else ZERO
+    open_ = invoice.status in (Invoice.Status.ISSUED, Invoice.Status.PARTLY_PAID)
+    return {
+        "id": invoice.pk,
+        "number": invoice.number,
+        "status": invoice.status,
+        "customer": {"id": invoice.counterparty_id, "name": invoice.counterparty.name},
+        "branch": {"id": invoice.branch_id, "name": invoice.branch.name}
+        if invoice.branch_id
+        else None,
+        "currency": invoice.currency,
+        "subtotal": m(invoice.subtotal),
+        "discount": m(invoice.discount),
+        "total": m(invoice.total),
+        "paid": m(paid),
+        "left": m(invoice.total - paid if open_ else ZERO),
+        "issued_on": invoice.issued_on.isoformat() if invoice.issued_on else None,
+        "due_on": invoice.due_on.isoformat() if invoice.due_on else None,
+        "overdue": bool(open_ and invoice.due_on and invoice.due_on < today),
+        "sent_at": invoice.sent_at.isoformat() if invoice.sent_at else None,
+        "e_invoice_ref": invoice.e_invoice_ref,
+        "created_at": invoice.created_at.isoformat(),
+    }
+
+
+def invoice_detail(invoice, today: date, *, costs: bool) -> dict:
+    """An invoice with its lines (one row per batch once issued), its warnings and payments.
+    Batch costs only for finance.view."""
+    from apps.finance.models import LIVE_STATUSES, Transaction
+
+    rows = []
+    for line in invoice.lines.select_related("product", "batch").order_by("line_number", "pk"):
+        row = {
+            "id": line.pk,
+            "line_number": line.line_number,
+            "product": {
+                "id": line.product_id,
+                "name": line.product.name,
+                "rx_required": line.product.rx_required,
+            }
+            if line.product_id
+            else None,
+            "name": line.name,
+            "quantity": str(line.quantity),
+            "unit": line.unit,
+            "price": m(line.price),
+            "discount": m(line.discount),
+            "total": m(line.total),
+            "vat_percent": str(line.vat_percent) if line.vat_percent is not None else None,
+            "mxik_code": line.mxik_code,
+            "series": line.series,
+            "expires_on": line.expires_on.isoformat() if line.expires_on else None,
+        }
+        if costs:
+            row["cost"] = m(line.cost) if line.cost is not None else None
+        rows.append(row)
+    payments = []
+    if invoice.debt_id:
+        for payment in (
+            Transaction.objects.filter(
+                debt_id=invoice.debt_id, kind="debt_payment", status__in=LIVE_STATUSES
+            )
+            .select_related("account")
+            .order_by("occurred_on", "pk")
+        ):
+            payments.append(
+                {
+                    "id": payment.pk,
+                    "paid_on": payment.occurred_on.isoformat(),
+                    "amount": m(abs(payment.amount)),
+                    "currency": payment.currency,
+                    "account": {"id": payment.account_id, "name": payment.account.name}
+                    if payment.account_id
+                    else None,
+                }
+            )
+    return {
+        **invoice_row(invoice, today),
+        "notes": invoice.notes,
+        "warnings": invoice.warnings,
+        "lines": rows,
+        "payments": payments,
+        "has_pdf": bool(invoice.pdf),
+        "void_reason": invoice.void_reason,
+    }
+
+
+def overdue_invoices(member: Membership) -> int:
+    """The sidebar badge: issued invoices past their due day, in the member's branches."""
+    company = member.company
+    return invoices(company, {"overdue": True}, branch_ids=scope.branch_ids(member)).count()
+
+
+def search_invoices(member: Membership, q: str, limit: int) -> list[SearchHit]:
+    rows = invoices(member.company, {"q": q}, branch_ids=scope.branch_ids(member))[:limit]
+    return [
+        SearchHit(
+            type="sales.invoice",
+            id=invoice.pk,
+            title=invoice.number or _("Draft invoice"),
+            subtitle=invoice.counterparty.name,
+            url=f"/c/{member.company_id}/sales/invoices?invoice={invoice.pk}",
+        )
+        for invoice in rows
+    ]
+
+
+def export_invoices(member: Membership, params: dict):
+    company = member.company
+    today = business_day(company)
+    filters = {
+        "from": _param_day(params.get("from")),
+        "to": _param_day(params.get("to")),
+        "overdue": params.get("overdue") in (True, "true", "1"),
+    }
+    for invoice in invoices(company, filters, branch_ids=_export_scope(member, params)).iterator(
+        chunk_size=500
+    ):
+        row = invoice_row(invoice, today)
+        yield {
+            "number": invoice.number,
+            "status": invoice.get_status_display(),
+            "customer": invoice.counterparty.name,
+            "branch": invoice.branch.name if invoice.branch_id else "",
+            "issued_on": invoice.issued_on,
+            "due_on": invoice.due_on,
+            "currency": invoice.currency,
+            "total": invoice.total,
+            "paid": Decimal(row["paid"]),
+            "left": Decimal(row["left"]),
+            "overdue": _("Yes") if row["overdue"] else "",
+        }
