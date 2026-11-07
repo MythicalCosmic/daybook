@@ -1600,6 +1600,269 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/companies/{company_id}/stock/batches/{id}/expiry-action/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["v1_companies_stock_batches_expiry_action_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/stock/counts/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The open counts at my pharmacies, so a counter can find one without its link (never
+         *     an expected quantity).
+         */
+        get: operations["v1_companies_stock_counts_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/stock/counts/{id}/lines/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The counter's view of a count: product, series and expiry, never the expected quantity. */
+        get: operations["v1_companies_stock_counts_lines_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description The counter's view of a count: product, series and expiry, never the expected quantity. */
+        patch: operations["v1_companies_stock_counts_lines_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/stock/defektura/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["v1_companies_stock_defektura_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/stock/expiry/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["v1_companies_stock_expiry_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/stock/lookup/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["v1_companies_stock_lookup_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/stock/products/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["v1_companies_stock_products_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/stock/receipts/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["v1_companies_stock_receipts_list"];
+        put?: never;
+        post: operations["v1_companies_stock_receipts_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/stock/receipts/{id}/lines/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["v1_companies_stock_receipts_lines_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/stock/receipts/{id}/lines/{line_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["v1_companies_stock_receipts_lines_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["v1_companies_stock_receipts_lines_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/stock/receipts/{id}/submit/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["v1_companies_stock_receipts_submit_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/stock/rx/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["v1_companies_stock_rx_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/stock/settings/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["v1_companies_stock_settings_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/stock/suppliers/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Distributors to start a receipt from: the company's supplier counterparties. */
+        get: operations["v1_companies_stock_suppliers_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/stock/transfers/{id}/receive/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["v1_companies_stock_transfers_receive_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/stock/transfers/incoming/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["v1_companies_stock_transfers_incoming_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/companies/{company_id}/summary/": {
         parameters: {
             query?: never;
@@ -2211,13 +2474,6 @@ export interface components {
             access: string;
         };
         /**
-         * @description * `reassign` - reassign
-         *     * `new_due` - new_due
-         *     * `cancel` - cancel
-         * @enum {string}
-         */
-        ActionEnum: "reassign" | "new_due" | "cancel";
-        /**
          * @description * `start` - start
          *     * `complete` - complete
          *     * `confirm` - confirm
@@ -2608,8 +2864,15 @@ export interface components {
             /** @default  */
             note: string;
         };
+        /**
+         * @description * `reassign` - reassign
+         *     * `new_due` - new_due
+         *     * `cancel` - cancel
+         * @enum {string}
+         */
+        BlockerResolveActionEnum: "reassign" | "new_due" | "cancel";
         BlockerResolveRequest: {
-            action: components["schemas"]["ActionEnum"];
+            action: components["schemas"]["BlockerResolveActionEnum"];
             assignee_id?: number | null;
             /** Format: date-time */
             due_at?: string | null;
@@ -3202,6 +3465,388 @@ export interface components {
          * @enum {string}
          */
         InboxSeverityEnum: "info" | "warning" | "critical";
+        InventoryAnalog: {
+            id: number;
+            name: string;
+            trade_name: string;
+            inn: string;
+            dosage_form: string;
+            strength: string;
+            manufacturer: string;
+            units_per_pack: number;
+            part_label: string;
+            rx_required: boolean;
+            /** Format: decimal */
+            sale_price: string;
+            /** Format: decimal */
+            quantity: string;
+        };
+        InventoryAppBatch: {
+            id: number;
+            batch_id: number;
+            branch_id: number;
+            branch: string;
+            /** @description Which medicine the batch is. */
+            product: components["schemas"]["InventoryAppBatchProduct"];
+            units_per_pack: number;
+            part_label: string;
+            series: string;
+            /** Format: date */
+            expires_on: string;
+            days_left: number;
+            expired: boolean;
+            status: string;
+            /** Format: decimal */
+            quantity: string;
+            /** Format: decimal */
+            retail_price: string;
+            /** Format: decimal */
+            part_price: string;
+        };
+        InventoryAppBatchProduct: {
+            id: number;
+            name: string;
+        };
+        InventoryAppCount: {
+            id: number;
+            kind: string;
+            status: string;
+            branch: components["schemas"]["InventoryBranchRef"];
+            lines: components["schemas"]["InventoryCountLine"][];
+        };
+        InventoryAppLineWriteRequest: {
+            product: number;
+            series: string;
+            /** Format: date */
+            expires_on: string;
+            /** Format: date */
+            made_on?: string | null;
+            /** Format: decimal */
+            packs: string;
+            /**
+             * Format: decimal
+             * @default 0.00
+             */
+            unit_cost: string;
+            supplier_rx?: boolean | null;
+        };
+        InventoryAppOpenCount: {
+            id: number;
+            kind: string;
+            branch: components["schemas"]["InventoryBranchRef"];
+            category: string | null;
+            lines: number;
+            counted: number;
+            /** Format: date-time */
+            created_at: string;
+        };
+        InventoryAppProduct: {
+            product: components["schemas"]["InventoryLookupRow"];
+            batches: components["schemas"]["InventoryAppBatch"][];
+            analogs: components["schemas"]["InventoryAnalog"][];
+        };
+        InventoryAppReceipt: {
+            id: number;
+            status: string;
+            branch: components["schemas"]["InventoryBranchRef"];
+            supplier: components["schemas"]["InventoryRef"];
+            supplier_invoice_number: string;
+            /** Format: date */
+            supplier_invoice_date: string;
+            lines: components["schemas"]["InventoryAppReceiptLine"][];
+            /** Format: date-time */
+            created_at: string;
+        };
+        InventoryAppReceiptLine: {
+            id: number;
+            product: components["schemas"]["InventoryRef"];
+            units_per_pack: number;
+            part_label: string;
+            series: string;
+            /** Format: date */
+            expires_on: string;
+            /** Format: decimal */
+            packs: string;
+            /** Format: decimal */
+            quantity: string;
+            warnings: string[];
+        };
+        InventoryAppReceiptWriteRequest: {
+            branch?: number;
+            supplier: number;
+            supplier_invoice_number?: string;
+            /** Format: date */
+            supplier_invoice_date: string;
+            note?: string;
+            /** Format: binary */
+            file?: string;
+        };
+        InventoryAppRequestRequest: {
+            product?: number | null;
+            name?: string;
+            /** Format: decimal */
+            packs?: string;
+            customer_phone?: string;
+        };
+        InventoryAppRxRequest: {
+            product: number;
+            batch?: number | null;
+            /** Format: decimal */
+            quantity: string;
+            prescription_number?: string;
+            /** Format: date */
+            prescribed_on?: string | null;
+            prescriber?: string;
+            facility?: string;
+            rx_kind?: components["schemas"]["InventoryRxKindEnum"];
+            status?: components["schemas"]["InventoryRxStatusEnum"];
+            invalid_reason?: string;
+            e_prescription_id?: string;
+            /** Format: binary */
+            photo?: string;
+        };
+        InventoryAppSettings: {
+            camera_scanning: boolean;
+            show_other_branches: boolean;
+            rx_log: boolean;
+            fefo_strict: boolean;
+            /** @description Warning steps in days, largest first. */
+            expiry_steps: number[];
+        };
+        InventoryAppSupplier: {
+            id: number;
+            name: string;
+        };
+        InventoryAppTransfer: {
+            transfer: components["schemas"]["InventoryTransfer"];
+            lines: components["schemas"]["InventoryTransferLine"][];
+        };
+        InventoryBranchRef: {
+            id: number;
+            name: string;
+            code: string;
+        };
+        /**
+         * @description An answer shape: an optional field the dict doesn't carry is left out of the answer (a
+         *     cost field without finance.view), even when its value could be null.
+         */
+        InventoryCountLine: {
+            id: number;
+            product: components["schemas"]["InventoryRef"];
+            units_per_pack: number;
+            part_label: string;
+            batch_id: number | null;
+            series: string;
+            /** Format: date */
+            expires_on: string | null;
+            /** Format: decimal */
+            counted: string | null;
+            /**
+             * Format: decimal
+             * @description Only once the count is counted, never while open.
+             */
+            expected?: string;
+            /** Format: decimal */
+            difference?: string | null;
+            /** Format: decimal */
+            value_difference?: string;
+        };
+        InventoryCountedLineRequest: {
+            line: number;
+            /** Format: decimal */
+            counted: string | null;
+        };
+        InventoryElsewhere: {
+            branch_id: number;
+            branch: string;
+            /** Format: decimal */
+            quantity: string;
+        };
+        /**
+         * @description * `on_shelf` - on_shelf
+         *     * `propose_writeoff` - propose_writeoff
+         * @enum {string}
+         */
+        InventoryExpiryActionActionEnum: "on_shelf" | "propose_writeoff";
+        InventoryExpiryActionRequest: {
+            action: components["schemas"]["InventoryExpiryActionActionEnum"];
+            reason?: components["schemas"]["InventoryWriteOffReasonEnum"];
+            /** Format: binary */
+            photo?: string;
+        };
+        InventoryExpiryResult: {
+            action: string;
+            writeoff_id: number | null;
+        };
+        InventoryLookupRow: {
+            id: number;
+            name: string;
+            trade_name: string;
+            inn: string;
+            barcode: string;
+            rx_required: boolean;
+            control_class: string;
+            storage: string;
+            dosage_form: string;
+            strength: string;
+            units_per_pack: number;
+            part_label: string;
+            /** Format: decimal */
+            sale_price: string;
+            /** Format: decimal */
+            part_price: string;
+            /**
+             * Format: decimal
+             * @description Parts at my pharmacies.
+             */
+            quantity: string | null;
+            /**
+             * Format: date
+             * @description The earliest expiry of what my pharmacies sell next.
+             */
+            nearest_expiry: string | null;
+            elsewhere: components["schemas"]["InventoryElsewhere"][];
+        };
+        InventoryPersonRef: {
+            id: number;
+            name: string;
+            photo_url: string | null;
+        };
+        InventoryReceiveRequest: {
+            lines?: components["schemas"]["InventoryReceivedLineRequest"][];
+        };
+        InventoryReceivedLineRequest: {
+            line: number;
+            /** Format: decimal */
+            quantity: string;
+        };
+        InventoryRef: {
+            id: number;
+            name: string;
+        };
+        InventoryRequest: {
+            readonly id: number;
+            readonly branch_ref: components["schemas"]["InventoryBranchRef"];
+            readonly product_ref: components["schemas"]["InventoryRef"] | null;
+            name?: string;
+            /** Format: decimal */
+            packs?: string;
+            readonly source: components["schemas"]["InventoryRequestSourceEnum"];
+            status?: components["schemas"]["InventoryRequestStatusEnum"];
+            customer_phone?: string;
+            /** Format: date-time */
+            readonly requested_at: string;
+            readonly requested_by: components["schemas"]["InventoryPersonRef"] | null;
+        };
+        /**
+         * @description * `counter` - Asked at the counter
+         *     * `mandatory` - Mandatory list
+         * @enum {string}
+         */
+        InventoryRequestSourceEnum: "counter" | "mandatory";
+        /**
+         * @description * `open` - Open
+         *     * `ordered` - Ordered
+         *     * `fulfilled` - Arrived
+         *     * `cancelled` - Cancelled
+         * @enum {string}
+         */
+        InventoryRequestStatusEnum: "open" | "ordered" | "fulfilled" | "cancelled";
+        /**
+         * @description * `regular` - Regular
+         *     * `benefit` - Preferential
+         *     * `narcotic` - Narcotic
+         *     * `psychotropic` - Psychotropic
+         *     * `listed` - Strong-acting (listed)
+         * @enum {string}
+         */
+        InventoryRxKindEnum: "regular" | "benefit" | "narcotic" | "psychotropic" | "listed";
+        InventoryRxRecord: {
+            id: number;
+            branch: components["schemas"]["InventoryBranchRef"];
+            product: components["schemas"]["InventoryRef"];
+            series: string | null;
+            /** Format: decimal */
+            quantity: string;
+            prescription_number: string;
+            /** Format: date */
+            prescribed_on: string | null;
+            prescriber: string;
+            facility: string;
+            rx_kind: components["schemas"]["InventoryRxKindEnum"];
+            status: components["schemas"]["InventoryRxStatusEnum"];
+            invalid_reason: string;
+            /** Format: date-time */
+            facility_notified_at: string | null;
+            e_prescription_id: string;
+            /** Format: date */
+            keep_until: string;
+            /** Format: date-time */
+            recorded_at: string;
+            recorded_by: components["schemas"]["InventoryPersonRef"] | null;
+            flags: string[];
+        };
+        /**
+         * @description * `dispensed` - Dispensed
+         *     * `invalid` - Invalid prescription
+         * @enum {string}
+         */
+        InventoryRxStatusEnum: "dispensed" | "invalid";
+        InventoryTransfer: {
+            id: number;
+            number: string;
+            status: components["schemas"]["InventoryTransferStatusEnum"];
+            from_branch: components["schemas"]["InventoryBranchRef"];
+            to_branch: components["schemas"]["InventoryBranchRef"];
+            note: string;
+            lines_count: number;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            sent_at: string | null;
+            sent_by: components["schemas"]["InventoryPersonRef"] | null;
+            /** Format: date-time */
+            received_at: string | null;
+            received_by: components["schemas"]["InventoryPersonRef"] | null;
+            resolution: string;
+            /** Format: date-time */
+            resolved_at: string | null;
+            void_reason: string;
+        };
+        InventoryTransferLine: {
+            id: number;
+            product: components["schemas"]["InventoryRef"];
+            units_per_pack: number;
+            part_label: string;
+            batch_id: number | null;
+            series: string | null;
+            /** Format: date */
+            expires_on: string | null;
+            /** Format: decimal */
+            quantity_sent: string;
+            /** Format: decimal */
+            quantity_received: string | null;
+        };
+        /**
+         * @description * `draft` - Draft
+         *     * `sent` - On the way
+         *     * `received` - Received
+         *     * `disputed` - Disputed
+         *     * `void` - Void
+         * @enum {string}
+         */
+        InventoryTransferStatusEnum: "draft" | "sent" | "received" | "disputed" | "void";
+        /**
+         * @description * `expired` - Expired
+         *     * `damaged` - Damaged
+         *     * `recall` - Recalled series
+         *     * `quality` - Quality defect
+         *     * `shortage` - Shortage
+         *     * `internal_use` - Used by the pharmacy
+         *     * `other` - Other
+         * @enum {string}
+         */
+        InventoryWriteOffReasonEnum: "expired" | "damaged" | "recall" | "quality" | "shortage" | "internal_use" | "other";
         KassaClosed: {
             id: number;
         };
@@ -3851,6 +4496,25 @@ export interface components {
             city?: string;
             show_birthday?: boolean;
             payout_card?: string;
+        };
+        PatchedInventoryAppLineWriteRequest: {
+            product?: number;
+            series?: string;
+            /** Format: date */
+            expires_on?: string;
+            /** Format: date */
+            made_on?: string | null;
+            /** Format: decimal */
+            packs?: string;
+            /**
+             * Format: decimal
+             * @default 0.00
+             */
+            unit_cost: string;
+            supplier_rx?: boolean | null;
+        };
+        PatchedInventoryCountedRequest: {
+            lines?: components["schemas"]["InventoryCountedLineRequest"][];
         };
         PatchedMeRequest: {
             language?: components["schemas"]["LanguageEnum"];
@@ -7827,6 +8491,467 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["KassaCurrent"];
+                };
+            };
+        };
+    };
+    v1_companies_stock_batches_expiry_action_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InventoryExpiryActionRequest"];
+                "multipart/form-data": components["schemas"]["InventoryExpiryActionRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["InventoryExpiryActionRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryExpiryResult"];
+                };
+            };
+        };
+    };
+    v1_companies_stock_counts_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryAppOpenCount"][];
+                };
+            };
+        };
+    };
+    v1_companies_stock_counts_lines_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryAppCount"];
+                };
+            };
+        };
+    };
+    v1_companies_stock_counts_lines_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedInventoryCountedRequest"];
+                "multipart/form-data": components["schemas"]["PatchedInventoryCountedRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedInventoryCountedRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryAppCount"];
+                };
+            };
+        };
+    };
+    v1_companies_stock_defektura_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["InventoryAppRequestRequest"];
+                "multipart/form-data": components["schemas"]["InventoryAppRequestRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["InventoryAppRequestRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryRequest"];
+                };
+            };
+        };
+    };
+    v1_companies_stock_expiry_list: {
+        parameters: {
+            query?: {
+                within?: number;
+            };
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryAppBatch"][];
+                };
+            };
+        };
+    };
+    v1_companies_stock_lookup_list: {
+        parameters: {
+            query: {
+                q: string;
+            };
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryLookupRow"][];
+                };
+            };
+        };
+    };
+    v1_companies_stock_products_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryAppProduct"];
+                };
+            };
+        };
+    };
+    v1_companies_stock_receipts_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryAppReceipt"][];
+                };
+            };
+        };
+    };
+    v1_companies_stock_receipts_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InventoryAppReceiptWriteRequest"];
+                "multipart/form-data": components["schemas"]["InventoryAppReceiptWriteRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["InventoryAppReceiptWriteRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryAppReceipt"];
+                };
+            };
+        };
+    };
+    v1_companies_stock_receipts_lines_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InventoryAppLineWriteRequest"];
+                "multipart/form-data": components["schemas"]["InventoryAppLineWriteRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["InventoryAppLineWriteRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryAppReceipt"];
+                };
+            };
+        };
+    };
+    v1_companies_stock_receipts_lines_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+                line_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    v1_companies_stock_receipts_lines_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+                line_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedInventoryAppLineWriteRequest"];
+                "multipart/form-data": components["schemas"]["PatchedInventoryAppLineWriteRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedInventoryAppLineWriteRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryAppReceipt"];
+                };
+            };
+        };
+    };
+    v1_companies_stock_receipts_submit_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryAppReceipt"];
+                };
+            };
+        };
+    };
+    v1_companies_stock_rx_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InventoryAppRxRequest"];
+                "multipart/form-data": components["schemas"]["InventoryAppRxRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["InventoryAppRxRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryRxRecord"];
+                };
+            };
+        };
+    };
+    v1_companies_stock_settings_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryAppSettings"];
+                };
+            };
+        };
+    };
+    v1_companies_stock_suppliers_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryAppSupplier"][];
+                };
+            };
+        };
+    };
+    v1_companies_stock_transfers_receive_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["InventoryReceiveRequest"];
+                "multipart/form-data": components["schemas"]["InventoryReceiveRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["InventoryReceiveRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryAppTransfer"];
+                };
+            };
+        };
+    };
+    v1_companies_stock_transfers_incoming_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryAppTransfer"][];
                 };
             };
         };
