@@ -21,7 +21,7 @@ from django.db.models import F, OuterRef, Q, QuerySet, Subquery, Sum, Value
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 from django.utils.translation import gettext as _
-from django.utils.translation import pgettext
+from django.utils.translation import ngettext, pgettext
 
 from apps.companies.models import Branch
 from apps.console import contracts
@@ -1681,7 +1681,10 @@ def unmatched_items(member: Membership, limit: int) -> list[QueueItem]:
                 kind="sales.import_unmatched",
                 id=row["code"],
                 title=_("Match %(code)s · %(name)s") % {"code": row["code"], "name": row["name"]},
-                subtitle=_("%(count)s lines wait for it") % {"count": row["lines"]},
+                subtitle=ngettext(
+                    "%(count)s line waits for it", "%(count)s lines wait for it", row["lines"]
+                )
+                % {"count": row["lines"]},
                 created_at=row["last_sold_at"],
                 url=f"/c/{company.pk}/sales/import?tab=match&code={row['code']}",
                 actions=[],

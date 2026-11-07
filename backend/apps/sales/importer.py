@@ -384,7 +384,18 @@ def check_columns(columns: dict, *, needs_branch: bool) -> None:
     if needs_branch and "branch" not in named:
         missing.append("branch")
     if missing:
-        raise DomainError(_("Say which column holds: %(fields)s.") % {"fields": ", ".join(missing)})
+        labels = {
+            "receipt": _("the receipt number"),
+            "code": _("the item code"),
+            "quantity": _("the quantity"),
+            "sold_at": _("the date"),
+            "total": _("the line total or the price"),
+            "branch": _("the pharmacy"),
+        }
+        raise DomainError(
+            _("Say which column holds %(fields)s.")
+            % {"fields": ", ".join(str(labels[field]) for field in missing)}
+        )
 
 
 # Rows ------------------------------------------------------------------------------------
