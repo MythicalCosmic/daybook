@@ -1,5 +1,65 @@
 # Changelog
 
+## 0.5.0 — 2026-11-07
+
+### New: stock and medicines (Money › Stock)
+A module an owner switches on per company (Settings › Modules: **Stock**). Until then nothing changes.
+- **The medicines catalogue**: name, trade name, active ingredient (INN), form and strength, parts per pack
+  ("3 qadoq 1 blister"), Rx, e-prescription, controlled and cold-chain flags, MXIK and registration
+  numbers, the mandatory-list and socially significant flags, the reference price; import from Excel/CSV
+  with a dry run.
+- **Every unit belongs to a batch** (series, expiry date, distributor, cost, retail price) and sales take
+  the earliest-expiring batch first (FEFO); quarantined, recalled and expired batches are never sold.
+- **Legal prices**: a prescription medicine's batch is never priced above its markup cap (20 %, 10 % for
+  socially significant ones) or the reference price; pricing rules, rounding, and price tags to print.
+- **Kirim (nakladnoy)**: goods received from a distributor, line by line with series and expiry (or from
+  the distributor's Excel file), with warnings (short shelf life, cost jump, a recalled series, over the
+  price cap, a branch not licensed for the item); posting opens the payable with the distributor's
+  payment terms.
+- **Transfers** between pharmacies (the same batches; a short arrival is disputed), **write-offs** with
+  approval and the destruction act PDF (uz/ru, the commission, method, place), **blind counts** as tasks,
+  **quarantine and recalls** (type one or import the regulator's list: every pharmacy holding the series
+  gets a task to remove it).
+- **Expiry board** (90 / 60 / 30 days and expired, with their value), a morning digest per step, and on
+  the 1st an "Expiry shelf check" task for each pharmacy.
+- **Compliance**: the mandatory assortment check, defektura (what customers asked for and you didn't
+  have), the prescription log and its PDF, and the controlled-substance register at the pharmacies
+  licensed for it (computed from stock movements, monthly close, a discrepancy alert with the reminder
+  to report it within 3 days).
+- Ask AI and your own agents read stock: find an item, analogs (same active ingredient, form and
+  strength), what expires, receipts to post, stock levels, defektura.
+- **The pharmacist's screens in the mini app** (Me › Stock, the Home cards, the (+) button): look a
+  medicine up by name, active ingredient or barcode (the phone's camera reads barcodes where it can),
+  see its batches here, at the other pharmacies and its analogs; the expiry check (mark a batch as on
+  the near-expiry shelf, propose a write-off with a photo); incoming transfers ("Received"); the blind
+  count; receiving goods from a distributor; defektura; prescription entries.
+
+### New: sales lines from your cash-register software (Money › Sales)
+- **Import** the receipts' lines your cash-register program exports (CSV/XLSX), with a saved column map
+  per program: matched to the catalogue, taken from stock by FEFO, never counted as money twice (the
+  tills stay the money truth), and checked against the tills day by day.
+- **The legal price check**: a prescription medicine sold above its cap or the reference price is listed
+  and the pharmacy's managers hear about it once a day.
+- **24-hour pharmacies**: no "not opened" alerts and no closing time; a till open more than 26 hours alerts.
+- **Customers and nasiya**: find a regular by phone at the till, sell on credit or take a payment; at the
+  close the nasiya total must match the credit sales; receivables by age (0–30, 31–60, 60+) and morning
+  reminders.
+- **Invoices** for distributors and sales to clinics: product lines by batch with series and expiry, the
+  wholesale price-cap warning, partial payments, void before payment, the PDF (MXIK, VAT, "not an
+  electronic invoice") and sending it to the customer's Telegram or as a link.
+
+### New: a qualified pharmacist whenever a pharmacy is open (People › HR › Coverage)
+- Choose which positions are pharmacists and the diplomas and certificates they need; Coverage shows
+  each pharmacy's week, gaps in red, "Fix in roster"; the roster shows the week's gaps too.
+- The pharmacy's head and the owners hear at once when an open pharmacy has no qualified pharmacist
+  checked in, or when someone unqualified opens a till; planned gaps two weeks ahead.
+- A warning when a pharmacy is marked licensed for controlled substances without that licence on file;
+  "Upload my renewed certificate" in the mini app. Runs once HR is on and pharmacist positions are chosen.
+
+### New
+- **A recurring bill can give its payer a task** (Finance › Recurring › More: "Also give them a task"):
+  one task per bill, due on its day, closed by itself when the bill is paid or skipped.
+
 ## 0.4.4 — 2026-11-07
 
 ### Fixed
