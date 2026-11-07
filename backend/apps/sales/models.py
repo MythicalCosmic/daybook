@@ -117,6 +117,9 @@ class SalesSettings(models.Model):
     sales_lines_confirmed_at = models.DateTimeField(
         null=True, blank=True, help_text=_("When someone answered where sale lines come from.")
     )
+    credit_days = models.PositiveSmallIntegerField(
+        default=30, help_text=_("A nasiya (credit sale) is due this many days after the sale.")
+    )
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -631,6 +634,69 @@ class SaleLine(models.Model):
 
     def __str__(self):
         return f"{self.name} × {self.quantity}"
+
+
+class CustomerKind(models.TextChoices):
+    """A customer in pharmacy words (§14.7), kept as a tag of its `finance.Counterparty`."""
+
+    PERSON = "person", _("Person")
+    CLINIC = "clinic", _("Clinic")
+    PHARMACY = "pharmacy", _("Pharmacy")
+    COMPANY = "company", _("Company")
+
+
+class CreditEntry(TenantModel, Voidable):
+    """Nasiya at the till (§11.4): goods given on credit to a known customer, or the customer
+    paying it back. A credit sale opens one receivable (`finance.services.open_debt`, kind
+    trade, its income booked as an accrual); a payment settles the customer's oldest receivables
+    first (`pay_debt`), into the till for cash. At close the shift's Nasiya total must equal the
+    credit sales recorded in it."""
+
+    class Kind(models.TextChoices):
+        SALE = "sale", _("Sold on credit")
+        PAYMENT = "payment", _("Paid back")
+
+    kind = models.CharField(max_length=8, choices=Kind.choices)
+    customer = models.ForeignKey(
+        "finance.Counterparty", on_delete=models.PROTECT, related_name="credit_entries"
+    )
+    branch = models.ForeignKey(Branch, on_delete=models.PROTECT, related_name="credit_entries")
+    shift = models.ForeignKey(
+        CashShift, on_delete=models.PROTECT, null=True, blank=True, related_name="credit_entries"
+    )
+    register = models.ForeignKey(
+        Register, on_delete=models.PROTECT, null=True, blank=True, related_name="credit_entries"
+    )
+    method = models.ForeignKey(
+        PaymentMethod,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="+",
+        help_text=_("How a payment came in (cash goes into the till)."),
+    )
+    amount = MoneyField()
+    business_day = models.DateField()
+    debt = models.ForeignKey(
+        "finance.Debt", on_delete=models.PROTECT, null=True, blank=True, related_name="+"
+    )
+    note = models.CharField(max_length=300, blank=True)
+    created_by = models.ForeignKey(
+        Membership, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+
+    class Meta:
+        ordering = ["-created_at", "-pk"]
+        constraints = [
+            models.CheckConstraint(condition=Q(amount__gt=0), name="sales_credit_positive"),
+        ]
+        indexes = [
+            models.Index(fields=["company", "customer"], name="sales_credit_customer"),
+            models.Index(fields=["company", "business_day"], name="sales_credit_day"),
+        ]
+
+    def __str__(self):
+        return f"{self.get_kind_display()} {self.amount}"
 
 
 class CashMovement(TenantModel, Voidable):

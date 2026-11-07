@@ -297,6 +297,25 @@ register_exporter(
 )
 
 
+# Customers and nasiya (§11.4): the credit sales and payments at the till book receivables.
+sources.register(
+    "sales.creditentry",
+    label=_("Nasiya at the till"),
+    url_template="/c/{company_id}/sales/customers?entry={id}",
+)
+registry.register_pulse("sales.customers", perm=Perm.SALES_VIEW, count=None, feature=FEATURE)
+registry.register_search(
+    "sales.customer", perm=Perm.SALES_VIEW, search=queries.search_customers, feature=FEATURE
+)
+register_kind(
+    "sales.customer_debt_due",
+    label=_("Overdue nasiya and invoices"),
+    audience="owner",
+    default_telegram=True,
+    severity="warning",
+)
+
+
 # Sale lines from the cash-register software (PLAN-OWNER §14.7). Nothing here does anything
 # while a company's sale lines don't come from imports (`SalesSettings.sales_lines`).
 registry.register_pulse("sales.lines", perm=Perm.SALES_VIEW, count=None, feature=FEATURE)

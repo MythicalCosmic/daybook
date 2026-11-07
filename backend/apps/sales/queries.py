@@ -1800,3 +1800,284 @@ __all__ = [
     "targets",
     "today",
 ]
+
+
+# Customers, nasiya and receivables (§11.4) ----------------------------------------------
+
+AGING = ("not_due", "d0_30", "d31_60", "d60_plus")
+
+
+def _customers(company):
+    from apps.finance.models import Counterparty
+
+    return Counterparty.objects.filter(
+        company=company, kind__in=(Counterparty.Kind.CUSTOMER, Counterparty.Kind.BOTH)
+    )
+
+
+def _receivables(company, *, branch_ids: list[int] | None):
+    """Open receivables of customers in the caller's branches (a debt without a branch only
+    for people who see every branch)."""
+    from apps.finance.models import Counterparty, Debt
+
+    rows = Debt.objects.filter(
+        company=company,
+        direction=Debt.Direction.RECEIVABLE,
+        status=Debt.Status.OPEN,
+        counterparty__kind__in=(Counterparty.Kind.CUSTOMER, Counterparty.Kind.BOTH),
+    )
+    return restrict(rows, branch_ids)
+
+
+def owed_by(company, customer_ids, *, branch_ids: list[int] | None) -> dict[int, Decimal]:
+    """What each customer still owes in the base currency."""
+    found: dict[int, Decimal] = defaultdict(lambda: ZERO)
+    for party_id, amount, paid in (
+        _receivables(company, branch_ids=branch_ids)
+        .filter(counterparty_id__in=list(customer_ids), currency=company.base_currency)
+        .values_list("counterparty_id", "amount", "paid")
+    ):
+        found[party_id] += amount - paid
+    return found
+
+
+def customers(company, filters: dict, *, branch_ids: list[int] | None):
+    """Customers (the party directory's customers), with q (name, phone, taxpayer number),
+    kind (person, clinic, pharmacy, company) and owing (only those who owe)."""
+    from apps.sales.services import CUSTOMER_KINDS
+
+    rows = _customers(company)
+    if q := (filters.get("q") or "").strip():
+        digits = "".join(ch for ch in q if ch.isdigit())
+        match = Q(name__icontains=q)
+        if len(digits) >= 4:
+            match |= Q(phone__contains=digits) | Q(tin__contains=digits)
+        rows = rows.filter(match)
+    if (kind := filters.get("kind")) in CUSTOMER_KINDS:
+        rows = (
+            rows.filter(tags__contains=[kind])
+            if kind != "person"
+            else rows.exclude(tags__overlap=[k for k in CUSTOMER_KINDS if k != "person"])
+        )
+    if filters.get("active") is not False:
+        rows = rows.filter(is_active=True)
+    if filters.get("owing"):
+        owing = _receivables(company, branch_ids=branch_ids).values("counterparty_id")
+        rows = rows.filter(pk__in=owing)
+    return rows.order_by("name", "pk")
+
+
+def customer_row(party, owed: Decimal, currency: str) -> dict:
+    from apps.sales.services import customer_kind
+
+    return {
+        "id": party.pk,
+        "name": party.name,
+        "kind": customer_kind(party),
+        "phone": party.phone,
+        "tin": party.tin,
+        "telegram_username": party.telegram_username,
+        "contact_person": party.contact_person,
+        "address": party.address,
+        "notes": party.notes,
+        "credit_limit": m(party.credit_limit) if party.credit_limit is not None else None,
+        "credit_blocked": party.credit_blocked,
+        "is_active": party.is_active,
+        "owed": m(owed),
+        "currency": currency,
+    }
+
+
+def _age(debt, today: date) -> str:
+    if debt.due_on is not None and debt.due_on >= today:
+        return "not_due"
+    days = (today - (debt.due_on or debt.issued_on)).days
+    if days <= 30:
+        return "d0_30"
+    if days <= 60:
+        return "d31_60"
+    return "d60_plus"
+
+
+def aging(company, today: date, *, branch_ids: list[int] | None) -> dict:
+    """Receivables aging: what customers owe by how long it is past due (or, without a due
+    date, since the sale): not due yet, 0 to 30, 31 to 60 and more than 60 days."""
+    currency = company.base_currency
+    totals = dict.fromkeys(AGING, ZERO)
+    per: dict[int, dict] = {}
+    names = {}
+    for debt in (
+        _receivables(company, branch_ids=branch_ids)
+        .filter(currency=currency)
+        .select_related("counterparty")
+    ):
+        bucket = _age(debt, today)
+        left = debt.amount - debt.paid
+        totals[bucket] += left
+        row = per.setdefault(debt.counterparty_id, dict.fromkeys(AGING, ZERO))
+        row[bucket] += left
+        names[debt.counterparty_id] = debt.counterparty
+    from apps.sales.services import customer_kind
+
+    rows = [
+        {
+            "id": party_id,
+            "name": names[party_id].name,
+            "kind": customer_kind(names[party_id]),
+            "total": m(sum(row.values(), ZERO)),
+            **{key: m(value) for key, value in row.items()},
+        }
+        for party_id, row in per.items()
+    ]
+    rows.sort(key=lambda row: (-Decimal(row["d60_plus"]), -Decimal(row["total"])))
+    return {
+        "currency": currency,
+        "today": today.isoformat(),
+        "totals": {key: m(value) for key, value in totals.items()},
+        "total": m(sum(totals.values(), ZERO)),
+        "customers": rows,
+    }
+
+
+def credit_row(entry) -> dict:
+    return {
+        "id": entry.pk,
+        "kind": entry.kind,
+        "customer": {"id": entry.customer_id, "name": entry.customer.name},
+        "amount": m(entry.amount),
+        "business_day": entry.business_day.isoformat(),
+        "created_at": entry.created_at.isoformat(),
+        "branch": {"id": entry.branch_id, "name": entry.branch.name},
+        "method": {"id": entry.method_id, "name": entry.method.name} if entry.method_id else None,
+        "note": entry.note,
+        "by": person(entry.created_by),
+        "voided_at": entry.voided_at.isoformat() if entry.voided_at else None,
+    }
+
+
+def customer_detail(party, today: date, *, branch_ids: list[int] | None) -> dict:
+    """A customer's page: what they owe and since when, their receivables (nasiya and
+    invoices), their nasiya at the tills and their receipts."""
+    from apps.finance.models import Debt
+    from apps.sales.models import CreditEntry
+
+    company = party.company
+    currency = company.base_currency
+    debts = restrict(
+        Debt.objects.filter(
+            company=company, counterparty=party, direction=Debt.Direction.RECEIVABLE
+        ).exclude(status=Debt.Status.CANCELLED),
+        branch_ids,
+    ).order_by("-issued_on", "-pk")[:100]
+    owed = owed_by(company, [party.pk], branch_ids=branch_ids)[party.pk]
+    buckets = dict.fromkeys(AGING, ZERO)
+    debt_rows = []
+    for debt in debts:
+        left = debt.amount - debt.paid
+        if debt.status == Debt.Status.OPEN and debt.currency == currency:
+            buckets[_age(debt, today)] += left
+        debt_rows.append(
+            {
+                "id": debt.pk,
+                "status": debt.status,
+                "source": debt.source_type,
+                "description": debt.description,
+                "amount": m(debt.amount),
+                "paid": m(debt.paid),
+                "left": m(left),
+                "currency": debt.currency,
+                "issued_on": debt.issued_on.isoformat(),
+                "due_on": debt.due_on.isoformat() if debt.due_on else None,
+                "overdue": bool(
+                    debt.status == Debt.Status.OPEN and debt.due_on and debt.due_on < today
+                ),
+            }
+        )
+    entries = restrict(
+        CreditEntry.objects.filter(company=company, customer=party).select_related(
+            "customer", "branch", "method", "created_by__user"
+        ),
+        branch_ids,
+    ).order_by("-created_at", "-pk")[:100]
+    sales = restrict(
+        Sale.objects.money().filter(company=company, counterparty=party, voided_at__isnull=True),
+        branch_ids,
+    ).order_by("-sold_at")[:50]
+    return {
+        **customer_row(party, owed, currency),
+        "aging": {key: m(value) for key, value in buckets.items()},
+        "debts": debt_rows,
+        "credit": [credit_row(entry) for entry in entries],
+        "purchases": [
+            {
+                "id": sale.pk,
+                "number": sale.number,
+                "kind": sale.kind,
+                "total": m(sale.total),
+                "sold_at": sale.sold_at.isoformat(),
+            }
+            for sale in sales
+        ],
+    }
+
+
+def lookup_customers(company, text: str, limit: int = 8) -> list[dict]:
+    """Kassa's nasiya lookup: by phone (the whole number or its last digits, at least four) or
+    by name, with what each customer owes and may still take."""
+    from apps.finance.services import normalize_phone
+
+    text = (text or "").strip()
+    digits = "".join(ch for ch in text if ch.isdigit())
+    rows = _customers(company).filter(is_active=True)
+    exact = None
+    if len(digits) >= 9:
+        try:
+            exact = normalize_phone(digits)
+        except Exception:  # a number that isn't Uzbek: fall back to the digits
+            exact = None
+    if exact:
+        found = list(rows.filter(phone=exact)[:limit]) or list(
+            rows.filter(phone__endswith=digits[-9:])[:limit]
+        )
+    elif len(digits) >= 4:
+        found = list(rows.filter(phone__endswith=digits).order_by("name")[:limit])
+    elif len(text) >= 2:
+        found = list(rows.filter(name__icontains=text).order_by("name")[:limit])
+    else:
+        found = []
+    balances = owed_by(company, [party.pk for party in found], branch_ids=None)
+    currency = company.base_currency
+    out = []
+    for party in found:
+        owed = balances[party.pk]
+        room = None
+        if party.credit_limit is not None:
+            room = max(party.credit_limit - owed, ZERO)
+        out.append(
+            {
+                "id": party.pk,
+                "name": party.name,
+                "phone": party.phone,
+                "owed": m(owed),
+                "credit_limit": m(party.credit_limit) if party.credit_limit is not None else None,
+                "can_take": m(room) if room is not None else None,
+                "credit_blocked": party.credit_blocked,
+                "currency": currency,
+            }
+        )
+    return out
+
+
+def search_customers(member: Membership, q: str, limit: int) -> list[SearchHit]:
+    """The command palette: customers by name or phone."""
+    rows = customers(member.company, {"q": q}, branch_ids=scope.branch_ids(member))[:limit]
+    return [
+        SearchHit(
+            type="sales.customer",
+            id=party.pk,
+            title=party.name,
+            subtitle=party.phone or "",
+            url=f"/c/{member.company_id}/sales/customers?customer={party.pk}",
+        )
+        for party in rows
+    ]

@@ -37,3 +37,5 @@ class SalesAction(models.TextChoices):
     CODE_MATCHED = "sales.code_matched", _("Matched an item code to a medicine")
     CODE_SKIPPED = "sales.code_skipped", _("Marked an item code as not a product")
     CASHIER_MAPPED = "sales.cashier_mapped", _("Linked a cash-register cashier to a person")
+    CREDIT_RECORDED = "sales.credit_recorded", _("Recorded nasiya")
+    CREDIT_VOIDED = "sales.credit_voided", _("Cancelled a nasiya entry")

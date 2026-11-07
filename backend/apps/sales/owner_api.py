@@ -7,6 +7,7 @@ lets the services audit and bump the pulse keys.
 """
 
 from datetime import date, datetime, time, timedelta
+from decimal import Decimal
 from zoneinfo import ZoneInfo
 
 from django.db.models import Count, Max, Q
@@ -45,6 +46,7 @@ from apps.sales.days import business_day
 from apps.sales.models import (
     CashMovement,
     CashShift,
+    CustomerKind,
     DailySales,
     PaymentMethod,
     PosCashier,
@@ -1403,3 +1405,140 @@ class ProductLookupView(SalesView):
             for row in found
         ]
         return Response({"results": results})
+
+
+# Customers and receivables (§11.4) -----------------------------------------------------------
+#
+#   GET/POST    sales/customers/?q&kind&owing · GET/PATCH sales/customers/{id}/
+#   GET         sales/receivables/aging/
+#
+# Read with sales.view, write with sales.manage. Customers are company-wide (the one party
+# directory); what they owe counts only the debts in the caller's branches.
+
+
+class CustomerWriteSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=200, required=False)
+    phone = serializers.CharField(max_length=32, required=False, allow_blank=True)
+    kind = serializers.ChoiceField(choices=CustomerKind.choices, required=False)
+    credit_limit = serializers.DecimalField(
+        max_digits=18, decimal_places=2, min_value=0, required=False, allow_null=True
+    )
+    credit_blocked = serializers.BooleanField(required=False)
+    tin = serializers.CharField(max_length=20, required=False, allow_blank=True)
+    telegram_username = serializers.CharField(max_length=64, required=False, allow_blank=True)
+    contact_person = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    address = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    notes = serializers.CharField(max_length=4000, required=False, allow_blank=True)
+    is_active = serializers.BooleanField(required=False)
+
+    class Meta:
+        ref_name = "SalesCustomerWrite"
+
+
+class CustomerSerializer(serializers.Serializer):
+    """A customer row (`queries.customer_row`): money as strings."""
+
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    kind = serializers.ChoiceField(choices=CustomerKind.choices)
+    phone = serializers.CharField()
+    tin = serializers.CharField()
+    telegram_username = serializers.CharField()
+    contact_person = serializers.CharField()
+    address = serializers.CharField()
+    notes = serializers.CharField()
+    credit_limit = serializers.CharField(allow_null=True)
+    credit_blocked = serializers.BooleanField()
+    is_active = serializers.BooleanField()
+    owed = serializers.CharField()
+    currency = serializers.CharField()
+
+    class Meta:
+        ref_name = "SalesCustomer"
+
+
+class CustomerViewSet(SalesViewSet):
+    """Customers: regulars who take nasiya, clinics, other pharmacies and companies, with what
+    each owes, their receivables by age, their nasiya at the tills and their receipts."""
+
+    perms_by_action = {"create": Perm.SALES_MANAGE, "partial_update": Perm.SALES_MANAGE}
+
+    def _party(self, pk):
+        party = queries._customers(self.company).filter(pk=pk).first()
+        if party is None:
+            raise NotFound
+        return party
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter("q", str),
+            OpenApiParameter("kind", str, enum=list(services.CUSTOMER_KINDS)),
+            OpenApiParameter("owing", bool),
+        ],
+        responses=CustomerSerializer(many=True),
+    )
+    def list(self, request, company_id):
+        params = request.query_params
+        filters = {
+            "q": params.get("q", ""),
+            "kind": params.get("kind"),
+            "owing": _flag(params, "owing"),
+        }
+        rows = queries.customers(self.company, filters, branch_ids=self.branch_scope)
+        page = self.paginate_queryset(rows)
+        owed = queries.owed_by(self.company, [p.pk for p in page], branch_ids=self.branch_scope)
+        currency = self.company.base_currency
+        return self.get_paginated_response(
+            [queries.customer_row(party, owed[party.pk], currency) for party in page]
+        )
+
+    @extend_schema(
+        responses=inline_serializer("SalesCustomerDetail", {"id": serializers.IntegerField()})
+    )
+    def retrieve(self, request, company_id, pk):
+        party = self._party(pk)
+        return Response(
+            queries.customer_detail(party, business_day(self.company), branch_ids=self.branch_scope)
+        )
+
+    @extend_schema(request=CustomerWriteSerializer, responses=CustomerSerializer)
+    def create(self, request, company_id):
+        data = CustomerWriteSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        values = dict(data.validated_data)
+        if not values.get("name"):
+            raise ValidationError({"name": [_("Give the customer a name.")]})
+        party = services.create_customer(self.company, by=self.membership, **values)
+        return Response(
+            queries.customer_row(party, Decimal(0), self.company.base_currency),
+            status=status.HTTP_201_CREATED,
+        )
+
+    @extend_schema(request=CustomerWriteSerializer, responses=CustomerSerializer)
+    def partial_update(self, request, company_id, pk):
+        party = self._party(pk)
+        data = CustomerWriteSerializer(data=request.data, partial=True)
+        data.is_valid(raise_exception=True)
+        party = services.update_customer(party, by=self.membership, **data.validated_data)
+        owed = queries.owed_by(self.company, [party.pk], branch_ids=self.branch_scope)
+        return Response(queries.customer_row(party, owed[party.pk], self.company.base_currency))
+
+
+class AgingView(SalesView):
+    """What customers owe by how long it is past due: not due yet, 0 to 30, 31 to 60 and more
+    than 60 days, in total and per customer."""
+
+    @extend_schema(
+        responses=inline_serializer(
+            "SalesReceivablesAging",
+            {
+                "currency": serializers.CharField(),
+                "totals": serializers.DictField(child=serializers.CharField()),
+                "customers": serializers.ListField(child=serializers.DictField()),
+            },
+        )
+    )
+    def get(self, request, company_id):
+        return Response(
+            queries.aging(self.company, business_day(self.company), branch_ids=self.branch_scope)
+        )

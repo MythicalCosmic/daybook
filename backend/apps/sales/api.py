@@ -13,7 +13,12 @@ from datetime import timedelta
 from django.utils import timezone
 from django.utils.translation import gettext as _
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import extend_schema, extend_schema_field, inline_serializer
+from drf_spectacular.utils import (
+    OpenApiParameter,
+    extend_schema,
+    extend_schema_field,
+    inline_serializer,
+)
 from rest_framework import serializers, status
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.generics import ListAPIView
@@ -32,7 +37,15 @@ from apps.members.models import Membership
 from apps.members.permissions import Perm
 from apps.sales import cash, queries, services
 from apps.sales.conf import get_settings
-from apps.sales.models import CashMovement, CashShift, PaymentMethod, Register, Sale
+from apps.sales.models import (
+    CashMovement,
+    CashShift,
+    CreditEntry,
+    CustomerKind,
+    PaymentMethod,
+    Register,
+    Sale,
+)
 from apps.sales.queries import m, person
 from apps.sales.serializers import (
     MovementSerializer,
@@ -149,6 +162,7 @@ def shift_data(shift: CashShift, request, *, blind: bool, detail: bool = False) 
                 kind: m(total) for kind, total in cash.movement_totals_by_kind(shift).items()
             },
             "receipts_recorded": _receipts_recorded(shift),
+            "credit": _credit(shift),
             "entries": _entries(shift),
             "photos": {
                 "z_photo": _signed(shift, "z_photo", request),
@@ -188,6 +202,24 @@ def _entries(shift: CashShift, limit: int = 30) -> list[dict]:
         }
         for sale in rows
     ]
+
+
+def _credit(shift: CashShift) -> dict:
+    """The shift's nasiya: credit sales recorded (what the Nasiya total at close must equal),
+    payments taken, and the entries, so a mistyped one can be cancelled while the shift is open."""
+    from apps.sales.models import CreditEntry
+
+    rows = (
+        CreditEntry.objects.filter(shift=shift)
+        .select_related("customer", "branch", "method", "created_by__user")
+        .order_by("-created_at", "-pk")[:50]
+    )
+    live = [entry for entry in rows if entry.voided_at is None]
+    return {
+        "sales": m(sum((e.amount for e in live if e.kind == CreditEntry.Kind.SALE), 0)),
+        "payments": m(sum((e.amount for e in live if e.kind == CreditEntry.Kind.PAYMENT), 0)),
+        "entries": [queries.credit_row(entry) for entry in rows],
+    }
 
 
 def _signed(shift: CashShift, attr: str, request) -> str | None:
@@ -286,6 +318,10 @@ class CurrentView(APIView):
                     "blind_cash_count": settings.blind_cash_count,
                     "require_z_photo": settings.require_z_photo,
                     "require_terminal_photo": settings.require_terminal_photo,
+                    # Nasiya at the till: there is a credit payment method to record it on.
+                    "credit": PaymentMethod.objects.for_company(company)
+                    .filter(kind=PaymentMethod.Kind.CREDIT, is_active=True)
+                    .exists(),
                     "currency": company.base_currency,
                 },
                 "registers": [
@@ -658,3 +694,127 @@ class HandoverAnswerView(APIView):
                 movement, by=self.membership, reason=data.validated_data["reason"]
             )
         return Response({"id": movement.pk, "status": movement.status})
+
+
+# customers/lookup/ and credit/ (nasiya) ------------------------------------------------------
+
+
+class CustomerLookupView(APIView):
+    """Kassa's nasiya: customers by phone (the whole number or its last digits) or name, with
+    what each owes and may still take."""
+
+    permission_classes = OPERATE
+    membership: Membership
+
+    @extend_schema(
+        parameters=[OpenApiParameter("phone", str)],
+        responses=inline_serializer(
+            "KassaCustomers", {"results": serializers.ListField(child=serializers.DictField())}
+        ),
+    )
+    def get(self, request, company_id):
+        text = (request.query_params.get("phone") or request.query_params.get("q") or "")[:64]
+        return Response({"results": queries.lookup_customers(self.membership.company, text)})
+
+
+class NewCustomerSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=200)
+    phone = serializers.CharField(max_length=32)
+    kind = serializers.ChoiceField(choices=CustomerKind.choices, default=CustomerKind.PERSON)
+
+    class Meta:
+        ref_name = "KassaNewCustomer"
+
+
+class CreditSerializer(serializers.Serializer):
+    kind = serializers.ChoiceField(choices=CreditEntry.Kind.choices)
+    customer_id = serializers.IntegerField(required=False, allow_null=True)
+    new_customer = NewCustomerSerializer(required=False, allow_null=True)
+    amount = MoneySerializerField()
+    method_id = serializers.IntegerField(required=False, allow_null=True)
+    note = serializers.CharField(required=False, allow_blank=True, max_length=300, default="")
+
+
+class CreditView(APIView):
+    """Nasiya on my open shift: a credit sale to a customer (found by phone, or new), or a
+    customer paying it back (cash goes into the till)."""
+
+    permission_classes = OPERATE
+    membership: Membership
+
+    @extend_schema(
+        request=CreditSerializer,
+        responses=inline_serializer("KassaCredit", {"id": serializers.IntegerField()}),
+    )
+    def post(self, request, company_id):
+        from django.db import transaction
+
+        from apps.finance.models import Counterparty
+
+        member = self.membership
+        data = CreditSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        values = data.validated_data
+        with transaction.atomic():
+            if values.get("customer_id"):
+                customer = Counterparty.objects.filter(
+                    company=member.company, pk=values["customer_id"]
+                ).first()
+                if customer is None:
+                    raise ValidationError({"customer_id": [_("Pick the customer.")]})
+            elif values.get("new_customer") and values["kind"] == "sale":
+                fresh = values["new_customer"]
+                customer = services.create_customer(
+                    member.company,
+                    by=member,
+                    name=fresh["name"],
+                    phone=fresh["phone"],
+                    kind=fresh["kind"],
+                )
+            else:
+                raise ValidationError({"customer_id": [_("Pick the customer.")]})
+            method = None
+            if values.get("method_id"):
+                method = (
+                    PaymentMethod.objects.for_company(member.company)
+                    .filter(pk=values["method_id"])
+                    .first()
+                )
+                if method is None:
+                    raise ValidationError({"method_id": [_("Pick how the customer paid.")]})
+            entry = services.record_credit(
+                by=member,
+                kind=values["kind"],
+                customer=customer,
+                amount=values["amount"],
+                method=method,
+                note=values.get("note", ""),
+            )
+        owed = services.owed(customer, currency=member.company.base_currency)
+        return Response(
+            {**queries.credit_row(entry), "owed": m(owed)}, status=status.HTTP_201_CREATED
+        )
+
+
+class CreditVoidView(APIView):
+    """Cancel a nasiya entry I typed by mistake, while my shift is open."""
+
+    permission_classes = OPERATE
+    membership: Membership
+
+    @extend_schema(
+        request=ReasonSerializer,
+        responses=inline_serializer("KassaCreditVoided", {"id": serializers.IntegerField()}),
+    )
+    def post(self, request, company_id, pk):
+        from apps.sales.models import CreditEntry
+
+        entry = CreditEntry.objects.filter(
+            pk=pk, company=self.membership.company, shift__cashier=self.membership
+        ).first()
+        if entry is None:
+            raise NotFound
+        data = ReasonSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        services.void_credit(entry, by=self.membership, reason=data.validated_data["reason"])
+        return Response({"id": entry.pk})

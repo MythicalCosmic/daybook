@@ -34,11 +34,13 @@ from apps.inbox import services as inbox
 from apps.members.models import Membership
 from apps.sales import alerts, cash, finance_bridge, importer, lines, signals, tasks
 from apps.sales.audit_actions import SalesAction
+from apps.sales.bot_messages import money as msg_money
 from apps.sales.conf import get_settings
 from apps.sales.days import business_day
 from apps.sales.models import (
     CashMovement,
     CashShift,
+    CustomerKind,
     PaymentMethod,
     PosCashier,
     Register,
@@ -71,6 +73,7 @@ PULSE_ENTRIES = "sales.entries"
 PULSE_TARGETS = "sales.targets"
 PULSE_LINES = lines.PULSE_LINES  # the Import and Lines pages
 PULSE_UNMATCHED = lines.PULSE_UNMATCHED  # the match list's badge
+PULSE_CUSTOMERS = "sales.customers"
 
 
 @dataclass(frozen=True)
@@ -603,13 +606,33 @@ def open_shift(
 
 
 def receipt_lines(shift: CashShift) -> list[PaymentLine]:
-    """Receipts mode: the shift's totals per method from its recorded receipts."""
+    """Receipts mode: the shift's totals per method from its recorded receipts, the credit
+    sales recorded with their customers on the credit (Nasiya) method."""
     found = cash.receipts_by_method(shift)
     methods = PaymentMethod.objects.filter(pk__in=found)
-    return [
+    lines = [
         PaymentLine(m, found[m.pk]["sales"], found[m.pk]["refunds"], found[m.pk]["receipts"])
         for m in methods
     ]
+    credit = credit_total(shift)
+    if credit:
+        nasiya = (
+            PaymentMethod.objects.filter(
+                company_id=shift.company_id, kind=PaymentMethod.Kind.CREDIT
+            )
+            .order_by("-is_active", "order", "pk")
+            .first()
+        )
+        if nasiya is not None:
+            for index, line in enumerate(lines):
+                if line.method.pk == nasiya.pk:
+                    lines[index] = PaymentLine(
+                        line.method, line.sales + credit, line.refunds, line.receipts
+                    )
+                    break
+            else:
+                lines.append(PaymentLine(nasiya, credit, ZERO, 0))
+    return lines
 
 
 def _check_lines(company, lines: list[PaymentLine]) -> list[PaymentLine]:
@@ -688,9 +711,12 @@ def close_shift(
     if shift.status != Status.OPEN:
         raise DomainError(_("This shift is already closed."))
     settings = get_settings(company)
+    typed = payments is not None
     if payments is None:
         payments = receipt_lines(shift) if settings.mode == SalesSettings.Mode.RECEIPTS else []
     lines = _check_lines(company, payments)
+    if typed:
+        check_credit_total(shift, lines)
     count, counted = _counted(closing_count, counted_cash)
     if counted is None:
         raise DomainError(_("Count the cash in the till."))
@@ -1485,3 +1511,316 @@ def map_cashier(pos: PosCashier, *, by: Membership, membership: Membership | Non
     )
     _bump(company.pk, PULSE_LINES)
     return pos
+
+
+# Customers and nasiya (§11.4, §3.8) ------------------------------------------------------
+
+# A customer's kind in pharmacy words, kept as a tag of its counterparty (§14.7).
+CUSTOMER_KINDS = tuple(CustomerKind.values)
+CUSTOMER_FIELDS = (
+    "name",
+    "phone",
+    "kind",
+    "credit_limit",
+    "credit_blocked",
+    "tin",
+    "telegram_username",
+    "contact_person",
+    "address",
+    "notes",
+    "bank_details",
+    "is_active",
+)
+CREDIT = "sales.creditentry"
+
+
+def customer_kind(party) -> str:
+    """The pharmacy word for a customer (its first kind tag), "person" by default."""
+    tags = {str(tag).lower() for tag in (party.tags or [])}
+    return next((kind for kind in CUSTOMER_KINDS if kind in tags), "person")
+
+
+def _customer_values(party, fields: dict) -> dict:
+    if unknown := set(fields) - set(CUSTOMER_FIELDS):
+        raise ValueError(f"Unknown customer fields: {sorted(unknown)}")
+    values = dict(fields)
+    if "kind" in values:
+        kind = values.pop("kind") or "person"
+        if kind not in CUSTOMER_KINDS:
+            raise DomainError(_("Pick what kind of customer this is."))
+        others = [t for t in (party.tags if party else []) if str(t).lower() not in CUSTOMER_KINDS]
+        values["tags"] = [kind, *others]
+    return values
+
+
+@transaction.atomic
+def create_customer(company, *, by: Membership, name: str, **fields):
+    """A customer in the one party directory (`finance.Counterparty`, kind customer): a regular
+    who takes nasiya, a clinic, another pharmacy or a company. The phone is normalized
+    (+998…) and unique in the company (finance's rules)."""
+    from apps.finance import services as finance
+
+    _need_person(by)
+    values = _customer_values(None, {"kind": "person", **fields})
+    return finance.create_counterparty(company, by=by, name=name, kind="customer", **values)
+
+
+@transaction.atomic
+def update_customer(party, *, by: Membership, **fields):
+    from apps.finance import services as finance
+
+    _need_person(by)
+    values = _customer_values(party, fields)
+    return finance.update_counterparty(party, by=by, **values)
+
+
+def _customer_for_credit(company, customer):
+    """The customer's row, fresh and locked: two credit sales to one customer at once wait for
+    each other, so both can't pass the credit limit."""
+    from apps.finance.models import Counterparty
+
+    _same_company(company, customer)
+    customer = Counterparty.objects.select_for_update().get(pk=customer.pk)
+    if customer.kind not in (Counterparty.Kind.CUSTOMER, Counterparty.Kind.BOTH):
+        raise DomainError(_("%(name)s isn't a customer.") % {"name": customer})
+    if not customer.is_active:
+        raise DomainError(_("%(name)s is archived.") % {"name": customer})
+    return customer
+
+
+def open_receivables(customer, *, currency: str):
+    """The customer's open receivables in `currency`, oldest first (the order payments settle
+    them in)."""
+    from apps.finance.models import Debt
+
+    return Debt.objects.filter(
+        company_id=customer.company_id,
+        counterparty=customer,
+        direction=Debt.Direction.RECEIVABLE,
+        status=Debt.Status.OPEN,
+        currency=currency,
+    ).order_by("issued_on", "pk")
+
+
+def owed(customer, *, currency: str) -> Decimal:
+    """What the customer still owes in `currency`."""
+    total = ZERO
+    for amount, paid in open_receivables(customer, currency=currency).values_list("amount", "paid"):
+        total += amount - paid
+    return total
+
+
+@transaction.atomic
+def record_credit(
+    *,
+    by: Membership,
+    kind: str,
+    customer,
+    amount,
+    method: PaymentMethod | None = None,
+    note: str = "",
+):
+    """Nasiya on `by`'s open shift: a credit sale opens one receivable (its income booked now,
+    due after `SalesSettings.credit_days`); a payment settles the customer's oldest receivables
+    first, cash into the till (it counts in the till's expected cash)."""
+    from datetime import timedelta
+
+    from apps.finance import services as finance
+    from apps.finance.sources import Source
+    from apps.sales.models import CreditEntry
+
+    _need_person(by)
+    company = by.company
+    if kind not in CreditEntry.Kind.values:
+        raise DomainError(_("Pick a credit sale or a payment."))
+    amount = money(amount)
+    # The shift first, then the customer (a finance row): the one lock order of this module.
+    shift = (
+        CashShift.objects.select_for_update(of=("self",))
+        .select_related("branch__manager", "register__cash_account")
+        .filter(cashier=by, status=Status.OPEN)
+        .first()
+    )
+    if shift is None:
+        raise DomainError(_("Open a shift first."))
+    customer = _customer_for_credit(company, customer)
+    currency = company.base_currency
+    left = owed(customer, currency=currency)
+    if kind == CreditEntry.Kind.SALE:
+        if customer.credit_blocked:
+            raise DomainError(_("%(name)s may not take nasiya now.") % {"name": customer})
+        if customer.credit_limit is not None and left + amount > customer.credit_limit:
+            raise DomainError(
+                _("That goes over %(name)s's limit: %(left)s owed of %(limit)s.")
+                % {
+                    "name": customer,
+                    "left": msg_money(left, currency),
+                    "limit": msg_money(customer.credit_limit, currency),
+                }
+            )
+        method = None
+    else:
+        if left <= 0:
+            raise DomainError(_("%(name)s owes nothing.") % {"name": customer})
+        if amount > left:
+            raise DomainError(
+                _("That's more than the %(left)s %(name)s owes.")
+                % {"left": msg_money(left, currency), "name": customer}
+            )
+        if method is None:
+            method = (
+                PaymentMethod.objects.filter(
+                    company=company, kind=PaymentMethod.Kind.CASH, is_active=True
+                )
+                .order_by("order", "pk")
+                .first()
+            )
+        if method is None or method.company_id != company.pk or not method.is_active:
+            raise DomainError(_("Pick how the customer paid."))
+        if method.is_credit:
+            raise DomainError(_("Nasiya can't be paid back with nasiya."))
+    entry = CreditEntry.objects.create(
+        company=company,
+        kind=kind,
+        customer=customer,
+        branch=shift.branch,
+        shift=shift,
+        register=shift.register,
+        method=method,
+        amount=amount,
+        business_day=shift.business_day,
+        note=(note or "").strip()[:300],
+        created_by=by,
+    )
+    label = _("Nasiya, %(shift)s") % {"shift": shift.code}
+    if kind == CreditEntry.Kind.SALE:
+        terms = get_settings(company).credit_days
+        entry.debt = finance.open_debt(
+            company,
+            by=by,
+            direction="receivable",
+            kind="trade",
+            amount=amount,
+            currency=currency,
+            issued_on=shift.business_day,
+            counterparty=customer,
+            due_on=shift.business_day + timedelta(days=terms),
+            category="sales",
+            branch=shift.branch,
+            description=(entry.note or label)[:300],
+            responsible=shift.branch.manager or by,
+            source=Source(CREDIT, entry.pk),
+        )
+        entry.save(update_fields=["debt", "updated_at"])
+    else:
+        account = finance_bridge.payment_account(shift.register, method)
+        rest = amount
+        for debt in open_receivables(customer, currency=currency):
+            if rest <= 0:
+                break
+            part = min(rest, debt.amount - debt.paid)
+            if part <= 0:
+                continue
+            finance.pay_debt(
+                debt,
+                by=by,
+                amount=part,
+                paid_on=shift.business_day,
+                account=account,
+                source=Source(CREDIT, entry.pk, f"d{debt.pk}"),
+            )
+            rest -= part
+    _record(
+        SalesAction.CREDIT_RECORDED,
+        company,
+        by,
+        entry,
+        kind=kind,
+        customer=customer.pk,
+        amount=amount,
+        shift=shift.pk,
+    )
+    _bump(company.pk, PULSE_CUSTOMERS, PULSE_SHIFTS, PULSE_CASH)
+    return entry
+
+
+@transaction.atomic
+def void_credit(entry, *, by: Membership, reason: str):
+    """Cancel a nasiya entry typed by mistake, while its shift is open: a credit sale's
+    receivable is cancelled (refused once anything was paid on it), a payment's rows are voided
+    and the receivables it settled are owed again."""
+    from apps.finance import services as finance
+    from apps.finance.models import LIVE_STATUSES, Transaction
+    from apps.sales.models import CreditEntry
+
+    _need_person(by)
+    reason = _reason(reason)
+    entry = (
+        CreditEntry.objects.select_for_update(of=("self",))
+        .select_related("shift", "debt", "company")
+        .get(pk=entry.pk)
+    )
+    if entry.voided_at is not None:
+        raise DomainError(_("This entry is already void."))
+    if entry.shift_id and entry.shift.status != Status.OPEN:
+        raise DomainError(
+            _("This entry is part of the closed shift %(shift)s.") % {"shift": entry.shift.code}
+        )
+    if entry.kind == CreditEntry.Kind.SALE and entry.debt_id:
+        if entry.debt.paid:
+            raise DomainError(_("Part of this nasiya was already paid back."))
+        finance.cancel_debt(entry.debt, by=by, reason=reason)
+    else:
+        for row in Transaction.objects.filter(
+            company_id=entry.company_id,
+            source_type=CREDIT,
+            source_id=entry.pk,
+            status__in=LIVE_STATUSES,
+        ).order_by("-pk"):
+            finance.void_transaction(row, by=by, reason=reason)
+    entry.voided_at = timezone.now()
+    entry.voided_by = by.user
+    entry.void_reason = reason
+    entry.save(update_fields=["voided_at", "voided_by", "void_reason", "updated_at"])
+    _record(SalesAction.CREDIT_VOIDED, entry.company, by, entry, reason=reason)
+    _bump(entry.company_id, PULSE_CUSTOMERS, PULSE_SHIFTS, PULSE_CASH)
+    return entry
+
+
+def credit_total(shift: CashShift) -> Decimal:
+    """The credit sales recorded in a shift (what its Nasiya total must equal)."""
+    from django.db.models import Sum
+
+    from apps.sales.models import CreditEntry
+
+    return (
+        CreditEntry.objects.filter(
+            shift=shift, kind=CreditEntry.Kind.SALE, voided_at__isnull=True
+        ).aggregate(total=Sum("amount"))["total"]
+        or ZERO
+    )
+
+
+def check_credit_total(shift: CashShift, lines: list[PaymentLine]) -> None:
+    """At close: the Nasiya the Z-report shows must be the credit sales recorded in the shift,
+    once the company records nasiya at all (until then nothing changes)."""
+    from apps.sales.models import CreditEntry
+
+    if not CreditEntry.objects.filter(company_id=shift.company_id).exists():
+        return
+    typed = sum((line.sales for line in lines if line.method.is_credit), ZERO)
+    recorded = credit_total(shift)
+    if typed != recorded:
+        currency = shift.company.base_currency
+        raise DomainError(
+            _(
+                "Nasiya on the Z-report is %(typed)s, but %(recorded)s was recorded as credit "
+                "sales in this shift (a gap of %(gap)s). Record the missing credit sales with "
+                "their customers, or correct the total."
+            )
+            % {
+                "typed": msg_money(typed, currency),
+                "recorded": msg_money(recorded, currency),
+                "gap": msg_money(abs(typed - recorded), currency),
+            }
+        )
