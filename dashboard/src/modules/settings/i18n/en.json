@@ -47,7 +47,7 @@
   "settings.panel.knowledge.hint": "News on publish, must-read reminders",
   "settings.panel.knowledge.description": "Telegram news when a page is published, and the reminder for pages people must confirm.",
   "settings.panel.hr.hint": "Reminders before dates, celebrations",
-  "settings.panel.hr.description": "How many days ahead documents, contracts and probation endings are flagged, and whether birthdays and work anniversaries are celebrated.",
+  "settings.panel.hr.description": "Pharmacist coverage at each pharmacy, how many days ahead documents, contracts and probation endings are flagged, and whether birthdays and work anniversaries are celebrated.",
   "settings.cmd.company": "Company settings",
   "settings.cmd.branches": "Branches",
   "settings.cmd.addBranch": "Add a branch",
