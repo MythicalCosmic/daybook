@@ -100,6 +100,10 @@ export interface Analog {
   dosage_form: string;
   strength: string;
   manufacturer: string;
+  /** Sent from J1's 1a52517 on (absent before). */
+  units_per_pack?: number;
+  /** Sent from J1's 1a52517 on (absent before). */
+  part_label?: string;
   rx_required: boolean;
   sale_price: string;
   /** Parts at my pharmacies. */

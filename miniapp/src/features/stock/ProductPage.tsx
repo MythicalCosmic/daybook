@@ -156,12 +156,19 @@ function Analogs({ analogs }: { analogs: Analog[] }) {
           {sortAnalogs(analogs).map((analog) => {
             const held = num(analog.quantity);
             const about = [analog.trade_name, analog.manufacturer].filter(Boolean).join(" · ");
+            // The exact quantity needs the analog's pack; without it, only whether it is here.
+            const here =
+              held <= 0
+                ? t("row.none")
+                : analog.units_per_pack
+                  ? t("row.here", { qty: qtyText(analog.quantity, analog.units_per_pack, analog.part_label ?? "", t) })
+                  : t("row.have");
             return (
               <ListRow
                 key={analog.id}
                 icon={Pill}
                 title={analog.name}
-                subtitle={[about, t(held > 0 ? "row.have" : "row.none")].filter(Boolean).join(" · ")}
+                subtitle={[about, here].filter(Boolean).join(" · ")}
                 value={money(analog.sale_price)}
                 onClick={() => open.page("product", { id: analog.id })}
               />

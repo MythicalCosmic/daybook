@@ -302,6 +302,14 @@ describe("the product", () => {
     expect(names[0]).toContain("Tolzor");
     expect(names[0]).toContain("In stock here");
     expect(names[1]).toContain("None here");
+    cleanup();
+    // Once the analogs carry their pack (J1's later API), the exact quantity shows.
+    serve((path) =>
+      path.endsWith("/stock/products/41/") ? detail({ analogs: detail().analogs.map((analog) => ({ ...analog, units_per_pack: 2, part_label: "blister" })) }) : undefined,
+    );
+    renderApp(<ProductPage params={{ id: 41 }} />, { me });
+    const region = await screen.findByRole("region", { name: "Same active ingredient, form and strength" });
+    expect(within(region).getAllByRole("button")[0].textContent).toContain("Here: 2 packs");
     fireEvent.click(await screen.findByRole("button", { name: "Record a prescription" }));
     expect(navigationState().stack.at(-1)).toEqual({ feature: "stock", page: "rx", params: { product: 41 } });
   });
