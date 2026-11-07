@@ -122,7 +122,8 @@ def search_receipts(member: Membership, q: str, limit: int) -> list[SearchHit]:
         SearchHit(
             type="inventory.receipt",
             id=row.pk,
-            title=_("Receipt %(number)s") % {"number": row.number or row.supplier_invoice_number},
+            title=_("Goods receipt %(number)s")
+            % {"number": row.number or row.supplier_invoice_number},
             subtitle=f"{row.supplier.name} · {row.supplier_invoice_date:%d.%m.%Y}",
             url=_url(member.company_id, f"receipts/{row.pk}"),
         )
@@ -646,7 +647,7 @@ CONTROLLED_COLUMNS = (
     ("product", _("Medicine")),
     ("opening", _("Opening")),
     ("received", _("Received")),
-    ("issued", _("Issued")),
+    ("issued", _("Issued from stock")),
     ("written_off", _("Written off")),
     ("closing", _("Closing")),
     ("counted", _("Counted")),

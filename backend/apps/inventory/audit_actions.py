@@ -26,7 +26,7 @@ class InventoryAction(models.TextChoices):
     TRANSFER_SENT = "inventory.transfer_sent", _("Sent a transfer")
     TRANSFER_RECEIVED = "inventory.transfer_received", _("Received a transfer")
     TRANSFER_RESOLVED = "inventory.transfer_resolved", _("Resolved a disputed transfer")
-    TRANSFER_VOIDED = "inventory.transfer_voided", _("Voided a transfer")
+    TRANSFER_VOIDED = "inventory.transfer_voided", _("Voided a transfer between pharmacies")
     WRITEOFF_PROPOSED = "inventory.writeoff_proposed", _("Proposed a write-off")
     WRITEOFF_APPROVED = "inventory.writeoff_approved", _("Approved a write-off")
     WRITEOFF_DESTROYED = "inventory.writeoff_destroyed", _("Recorded a destruction")
