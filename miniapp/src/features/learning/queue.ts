@@ -36,6 +36,7 @@ const listeners = new Set<() => void>();
 let retryTimer: ReturnType<typeof setTimeout> | undefined;
 let retries = 0;
 let version = 0;
+let restored = false;
 
 /** Two reports of one key as one: the older's content first, the newer's state on top. */
 export function mergeJobs(older: QueueJob, newer: QueueJob): QueueJob {
@@ -148,6 +149,7 @@ export function retryAll(): void {
  * (merged with others of its key, perhaps much later), or rejects when the server refused it.
  */
 export function send<T>(job: QueueJob): Promise<T> {
+  restoreOnce();
   return new Promise<T>((resolve, reject) => {
     const slot = slotOf(job.key);
     const entry: Entry = { job, at: Date.now(), waiters: [{ resolve: resolve as (value: unknown) => void, reject }] };
@@ -208,6 +210,13 @@ export function useQueueState(prefix: string): QueueState {
   return queueState(prefix);
 }
 
+/** The reports a closed app left behind, once per start: from Home's cards or the first report. */
+export function restoreOnce(): void {
+  if (restored) return;
+  restored = true;
+  restore();
+}
+
 /** Reports a closed app left behind: they go out again (merged per key). */
 export function restore(): void {
   let saved: { job: QueueJob; at: number }[] = [];
@@ -232,6 +241,7 @@ export function restore(): void {
 /** Only for tests: forget everything. */
 export function resetQueue(): void {
   slots.clear();
+  restored = false;
   if (retryTimer !== undefined) clearTimeout(retryTimer);
   retryTimer = undefined;
   retries = 0;

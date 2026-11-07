@@ -17,20 +17,14 @@ import { useChecks, useDaily, useLearningHome, useQuiz } from "./api";
 import { DailyBody } from "./Daily";
 import { dueText, isAhead, openMandatory, whenText } from "./lib";
 import { CourseTile } from "./parts";
-import { restore } from "./queue";
+import { restoreOnce } from "./queue";
 import { useLearningT } from "./text";
 import type { CheckEntry } from "./types";
 import "./learning.css";
 
-let restored = false;
-
 /** Reports a closed app left behind go out once, when training first shows. */
 function useRestoreQueue(): void {
-  useEffect(() => {
-    if (restored) return;
-    restored = true;
-    restore();
-  }, []);
+  useEffect(() => restoreOnce(), []);
 }
 
 /** Home: the open mandatory courses, late first, at most three. */
