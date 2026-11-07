@@ -478,7 +478,7 @@ def _share(kind: str, data: dict, order: list[str], answer: dict, partial: bool)
     if kind == Kind.TRUE_FALSE:
         return Fraction(int(answer["value"] == data["answer"]))
     if kind == Kind.ORDER:
-        given = [_real_order_id(order, value) for value in answer["order"]]
+        given = [real_order_id(order, value) for value in answer["order"]]
         right = [item["id"] for item in data["items"]]
         if given == right:
             return Fraction(1)
@@ -493,7 +493,7 @@ def _share(kind: str, data: dict, order: list[str], answer: dict, partial: bool)
         hits = 0
         for index, pair in enumerate(pairs):
             chosen = answer["pairs"].get(f"{LEFT_ID}{index + 1}")
-            if chosen is not None and _real_right_id(order, chosen) == pair["id"]:
+            if chosen is not None and real_right_id(order, chosen) == pair["id"]:
                 hits += 1
         if hits == len(pairs):
             return Fraction(1)
@@ -511,12 +511,12 @@ def _share(kind: str, data: dict, order: list[str], answer: dict, partial: bool)
     return Fraction(0)
 
 
-def _real_order_id(order: list[str], shown: str) -> str | None:
+def real_order_id(order: list[str], shown: str) -> str | None:
     index = _position(shown, ORDER_ID)
     return order[index] if index is not None and index < len(order) else None
 
 
-def _real_right_id(order: list[str], shown: str) -> str | None:
+def real_right_id(order: list[str], shown: str) -> str | None:
     index = _position(shown, RIGHT_ID)
     return order[index] if index is not None and index < len(order) else None
 

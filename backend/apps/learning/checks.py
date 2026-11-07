@@ -52,3 +52,8 @@ def card(entry: CheckEntry) -> dict:
         "done": done,
         "passed": bool(attempt.passed) if done else None,
     }
+
+
+def run_checks(now: datetime | None = None) -> int:
+    """The job (every ten minutes): rounds to start, remind and close (built in the next step)."""
+    return 0

@@ -3,16 +3,24 @@ stays free of the services: each looks its service up when it runs."""
 
 
 def draft_questions(job_id: int) -> int:
-    return 0  # Q2: apps.learning.drafting
+    from apps.learning import drafting
+
+    return drafting.run_job(job_id)
 
 
 def send_daily_questions() -> int:
-    return 0  # Q2: apps.learning.daily
+    from apps.learning import daily
+
+    return daily.send_daily_questions()
 
 
 def run_checks() -> int:
-    return 0  # Q2: apps.learning.checks
+    from apps.learning import checks
+
+    return checks.run_checks()
 
 
 def expire_attempts() -> int:
-    return 0  # Q2: apps.learning.attempts
+    from apps.learning import attempts
+
+    return attempts.expire_attempts()
