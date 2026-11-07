@@ -786,5 +786,19 @@
   "sales.invoices.paidOn": "To‘langan sana",
   "sales.invoices.paidToast": "To‘lov yozildi",
   "sales.invoices.emptyTitle": "Hali hisob-fakturalar yo‘q",
-  "sales.invoices.emptyBody": "Klinikalar, dorixonalar va kompaniyalarga hisob-faktura: avval qoralama, keyin chiqarish."
+  "sales.invoices.emptyBody": "Klinikalar, dorixonalar va kompaniyalarga hisob-faktura: avval qoralama, keyin chiqarish.",
+
+  "sales.settings.days": "kun",
+  "sales.settings.invoices.title": "Hisob-fakturalar va nasiya",
+  "sales.settings.invoices.hint": "Hisob-fakturalar qanday raqamlanishi hamda ular va nasiya qachon to‘lanishi.",
+  "sales.settings.invoices.prefix": "Hisob-faktura raqami prefiksi",
+  "sales.settings.invoices.prefixHint": "INV-CHL-0042: prefiks, filial kodi, raqam.",
+  "sales.settings.invoices.terms": "Hisob-faktura to‘lov muddati",
+  "sales.settings.invoices.termsHint": "Chiqarilgandan keyingi kunlar.",
+  "sales.settings.invoices.creditDays": "Nasiya to‘lov muddati",
+  "sales.settings.invoices.creditDaysHint": "Qarzga sotuvdan keyingi kunlar; muddati o‘tgach mas’ul xodimga eslatiladi.",
+  "sales.settings.invoices.rxMarkup": "Rx ulgurji ustama chegarasi, %",
+  "sales.settings.invoices.rxMarkupHint": "Retseptli dori hisob-fakturada partiya xarid narxi va shu ustamadan (yoki referent narxdan) qimmat bo‘lsa, chiqarishda ogohlantiriladi. Odatda 15 % (aniqlashtiring).",
+  "sales.settings.invoices.footer": "Hisob-faktura pastki matni",
+  "sales.settings.invoices.footerHint": "Har bir hisob-faktura pastida chop etiladi: rekvizitlar, minnatdorchilik."
 }

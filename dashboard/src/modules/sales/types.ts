@@ -32,6 +32,12 @@ export interface SalesSettings {
   late_open_minutes: number;
   close_alert_minutes: number;
   sales_lines: LinesSource;
+  /** Nasiya and invoices (§11.4). */
+  credit_days: number;
+  invoice_prefix: string;
+  invoice_terms_days: number;
+  invoice_footer: string;
+  rx_wholesale_max_markup_percent: string;
 }
 
 /** `sales/payment-methods/` */

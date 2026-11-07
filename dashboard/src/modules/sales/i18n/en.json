@@ -786,5 +786,19 @@
   "sales.invoices.paidOn": "Paid on",
   "sales.invoices.paidToast": "Payment recorded",
   "sales.invoices.emptyTitle": "No invoices yet",
-  "sales.invoices.emptyBody": "Invoice clinics, other pharmacies and companies: a draft first, then issue it."
+  "sales.invoices.emptyBody": "Invoice clinics, other pharmacies and companies: a draft first, then issue it.",
+
+  "sales.settings.days": "days",
+  "sales.settings.invoices.title": "Invoices and nasiya",
+  "sales.settings.invoices.hint": "How invoices are numbered and when they and nasiya are due.",
+  "sales.settings.invoices.prefix": "Invoice number prefix",
+  "sales.settings.invoices.prefixHint": "INV-CHL-0042: the prefix, the branch code, the number.",
+  "sales.settings.invoices.terms": "An invoice is due after",
+  "sales.settings.invoices.termsHint": "Days after it is issued.",
+  "sales.settings.invoices.creditDays": "Nasiya is due after",
+  "sales.settings.invoices.creditDaysHint": "Days after the credit sale; the responsible person is reminded once it is overdue.",
+  "sales.settings.invoices.rxMarkup": "Rx wholesale markup cap, %",
+  "sales.settings.invoices.rxMarkupHint": "A prescription medicine invoiced above its batch cost plus this (or its reference price) warns at issue. 15 % by default (confirm).",
+  "sales.settings.invoices.footer": "Invoice footer",
+  "sales.settings.invoices.footerHint": "Printed at the foot of every invoice: bank details, thanks."
 }

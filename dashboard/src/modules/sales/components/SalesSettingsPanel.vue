@@ -17,6 +17,8 @@ import PageSection from "@/components/PageSection.vue";
 import RadioCards from "@/components/RadioCards.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import StickyActionBar from "@/components/StickyActionBar.vue";
+import TextArea from "@/components/TextArea.vue";
+import TextInput from "@/components/TextInput.vue";
 import TimePicker from "@/components/TimePicker.vue";
 import ToggleSwitch from "@/components/ToggleSwitch.vue";
 import UiButton from "@/components/UiButton.vue";
@@ -46,6 +48,11 @@ const form = reactive<SalesSettings>({
   late_open_minutes: 10,
   close_alert_minutes: 60,
   sales_lines: "none",
+  credit_days: 30,
+  invoice_prefix: "INV",
+  invoice_terms_days: 7,
+  invoice_footer: "",
+  rx_wholesale_max_markup_percent: "15.00",
 });
 const loaded = ref("");
 watch(
@@ -105,6 +112,25 @@ async function submit(): Promise<void> {
       </PageSection>
       <PageSection variant="card" :title="t('sales.settings.lines.title')" :description="t('sales.settings.lines.hint')">
         <RadioCards v-model="form.sales_lines" :options="lineSources" :columns="3" :disabled="!canEdit" />
+      </PageSection>
+      <PageSection variant="card" :title="t('sales.settings.invoices.title')" :description="t('sales.settings.invoices.hint')">
+        <div class="grid gap-4 sm:grid-cols-2">
+          <FormField :label="t('sales.settings.invoices.prefix')" :hint="t('sales.settings.invoices.prefixHint')">
+            <TextInput v-model="form.invoice_prefix" :maxlength="8" :disabled="!canEdit" />
+          </FormField>
+          <FormField :label="t('sales.settings.invoices.terms')" :hint="t('sales.settings.invoices.termsHint')">
+            <NumberInput v-model="form.invoice_terms_days" :min="0" :max="365" :suffix="t('sales.settings.days')" :disabled="!canEdit" />
+          </FormField>
+          <FormField :label="t('sales.settings.invoices.creditDays')" :hint="t('sales.settings.invoices.creditDaysHint')">
+            <NumberInput v-model="form.credit_days" :min="1" :max="365" :suffix="t('sales.settings.days')" :disabled="!canEdit" />
+          </FormField>
+          <FormField :label="t('sales.settings.invoices.rxMarkup')" :hint="t('sales.settings.invoices.rxMarkupHint')">
+            <TextInput v-model="form.rx_wholesale_max_markup_percent" inputmode="decimal" :disabled="!canEdit" />
+          </FormField>
+          <FormField class="sm:col-span-2" :label="t('sales.settings.invoices.footer')" :hint="t('sales.settings.invoices.footerHint')" optional>
+            <TextArea v-model="form.invoice_footer" :rows="2" :maxlength="2000" :disabled="!canEdit" />
+          </FormField>
+        </div>
       </PageSection>
       <PageSection variant="card" :title="t('sales.settings.control')" :description="t('sales.settings.controlHint')">
         <div class="flex flex-col divide-y divide-line">

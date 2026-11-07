@@ -786,5 +786,19 @@
   "sales.invoices.paidOn": "Дата оплаты",
   "sales.invoices.paidToast": "Оплата записана",
   "sales.invoices.emptyTitle": "Счетов пока нет",
-  "sales.invoices.emptyBody": "Выставляйте счета клиникам, аптекам и компаниям: сначала черновик, затем выставление."
+  "sales.invoices.emptyBody": "Выставляйте счета клиникам, аптекам и компаниям: сначала черновик, затем выставление.",
+
+  "sales.settings.days": "дн.",
+  "sales.settings.invoices.title": "Счета и насия",
+  "sales.settings.invoices.hint": "Как нумеруются счета и когда их и насию нужно оплатить.",
+  "sales.settings.invoices.prefix": "Префикс номера счёта",
+  "sales.settings.invoices.prefixHint": "INV-CHL-0042: префикс, код филиала, номер.",
+  "sales.settings.invoices.terms": "Срок оплаты счёта",
+  "sales.settings.invoices.termsHint": "Дней после выставления.",
+  "sales.settings.invoices.creditDays": "Срок погашения насии",
+  "sales.settings.invoices.creditDaysHint": "Дней после продажи в долг; ответственному напомнят, когда срок пройдёт.",
+  "sales.settings.invoices.rxMarkup": "Предельная оптовая наценка на Rx, %",
+  "sales.settings.invoices.rxMarkupHint": "Если рецептурный препарат в счёте дороже закупки партии с этой наценкой (или референтной цены), при выставлении будет предупреждение. По умолчанию 15 % (уточнить).",
+  "sales.settings.invoices.footer": "Подвал счёта",
+  "sales.settings.invoices.footerHint": "Печатается внизу каждого счёта: реквизиты, благодарность."
 }
