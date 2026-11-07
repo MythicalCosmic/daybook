@@ -283,3 +283,13 @@
   align-items: flex-end;
   justify-content: space-between;
 }
+
+/* — receiving — */
+.stk-form {
+  gap: var(--space-3);
+}
+.stk-expiry-pick {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+  gap: 8px;
+}

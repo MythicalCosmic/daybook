@@ -10,7 +10,7 @@
  * Deep links (inline [Open] of the stock notices): `stock` (the lookup), `stock.expiry`,
  * `stock.transfer:<id>`, `stock.count:<id>`, `stock.receive:<id>`.
  */
-import { FilePlus2, Pill } from "lucide-react";
+import { FilePlus2, PackagePlus, Pill } from "lucide-react";
 import { lazy } from "react";
 
 import { defineFeature } from "../registry";
@@ -30,6 +30,7 @@ export default defineFeature({
     transfer: lazy(() => import("./TransferPage")),
     counts: lazy(() => import("./CountsPage")),
     count: lazy(() => import("./CountPage")),
+    receive: lazy(() => import("./ReceivePage")),
   },
   sheets: {
     scan: lazy(() => import("./ScanSheet")),
@@ -42,7 +43,10 @@ export default defineFeature({
     { id: "expiry", component: ExpiryCard, order: 25, visible: operatesStock },
   ],
   meItems: [{ id: "stock", group: "work", label: "me.stock", icon: Pill, open: { page: "home" }, order: 20, useStatus: useMeStatus }],
-  plusActions: [{ id: "defektura", label: "plus.defektura", icon: FilePlus2, open: { sheet: "defektura" }, order: 50, visible: operatesStock }],
+  plusActions: [
+    { id: "defektura", label: "plus.defektura", icon: FilePlus2, open: { sheet: "defektura" }, order: 50, visible: operatesStock },
+    { id: "receive", label: "plus.receive", icon: PackagePlus, open: { page: "receive" }, order: 55, visible: operatesStock },
+  ],
   // The expiry shelf check's own block, before "How to do this" (knowledge, 10).
   taskActions: [{ id: "shelfCheck", component: ShelfCheckBlock, order: 6 }],
   routes: {
@@ -50,5 +54,6 @@ export default defineFeature({
     "stock.expiry": { page: "expiry" },
     "stock.transfer": { page: "transfer" },
     "stock.count": { page: "count" },
+    "stock.receive": { page: "receive" },
   },
 });

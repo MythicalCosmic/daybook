@@ -10,9 +10,10 @@ import { ApiError } from "../../api/client";
 import { resolveScreen } from "../../state/deeplink";
 import { membership, navigationState, person, renderApp } from "../../test/harness";
 import { features } from "../registry";
-import { blind, type Count, type IncomingTransfer } from "./api";
+import { blind, type Count, type IncomingTransfer, type Receipt } from "./api";
 import CountPage from "./CountPage";
 import CountsPage from "./CountsPage";
+import ReceivePage from "./ReceivePage";
 import { IncomingCard } from "./slots";
 import TransferPage from "./TransferPage";
 import TransfersPage from "./TransfersPage";
@@ -92,6 +93,8 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
+  delete (URL as unknown as Record<string, unknown>).createObjectURL;
+  delete (URL as unknown as Record<string, unknown>).revokeObjectURL;
 });
 
 describe("transfers in", () => {
@@ -275,5 +278,123 @@ describe("the blind count", () => {
     fireEvent.click(await screen.findByRole("button", { name: /Full count/ }));
     expect(navigationState().stack.at(-1)).toEqual({ feature: "stock", page: "count", params: { id: 5 } });
     expect(resolveScreen({ name: "stock.count", arg: "5" }, features)).toEqual({ tab: "home", stack: [{ feature: "stock", page: "count", params: { id: 5 } }] });
+  });
+});
+
+function receipt(over: Partial<Receipt> = {}): Receipt {
+  return {
+    id: 31,
+    status: "draft",
+    branch: { id: 1, name: "Chilonzor", code: "CHL" },
+    supplier: { id: 9, name: "Ko‘kterak Farm Distribyutor" },
+    supplier_invoice_number: "N-1180",
+    supplier_invoice_date: "2026-11-06",
+    lines: [],
+    created_at: "2026-11-07T09:00:00+05:00",
+    ...over,
+  };
+}
+
+const LINE = { id: 311, product: { id: 41, name: "Amoksitsillin 500 mg kapsula №16" }, units_per_pack: 2, series: "230415", expires_on: "2027-03-31", packs: "2.000", quantity: "4.000", warnings: ["short_shelf_life", "something_new"] };
+
+describe("receiving", () => {
+  it("starts a receipt with the distributor, the nakladnoy's number, date and photo", async () => {
+    serve((path, method) => {
+      if (path.endsWith("/stock/receipts/") && method === "GET") return [];
+      if (path.endsWith("/stock/suppliers/")) return [{ id: 9, name: "Ko‘kterak Farm Distribyutor" }, { id: 10, name: "Oqtosh Med Ta’minot" }];
+      if (path.endsWith("/stock/receipts/") && method === "POST") return receipt();
+      return undefined;
+    });
+    Object.defineProperty(URL, "createObjectURL", { configurable: true, value: () => "blob:x" });
+    Object.defineProperty(URL, "revokeObjectURL", { configurable: true, value: () => undefined });
+    renderApp(<ReceivePage params={{}} />, { me, init: { stack: [{ feature: "stock", page: "receive" }] } });
+    const start = await screen.findByRole("button", { name: "Start the receipt" });
+    expect((start as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.change(await screen.findByRole("combobox", { name: "Distributor" }), { target: { value: "10" } });
+    fireEvent.change(screen.getByRole("textbox", { name: "Nakladnoy number" }), { target: { value: "OM-77" } });
+    const photo = new File(["jpeg"], "nakladnoy.jpg", { type: "image/jpeg" });
+    fireEvent.change(document.querySelector('input[type="file"][capture]') as HTMLInputElement, { target: { files: [photo] } });
+    fireEvent.click(start);
+    await waitFor(() => expect(calls("/stock/receipts/")).toHaveLength(1));
+    const body = calls("/stock/receipts/")[0].body as Record<string, unknown>;
+    expect(body).toMatchObject({ supplier: 10, supplier_invoice_number: "OM-77", file: photo });
+    expect(body.supplier_invoice_date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    await waitFor(() => expect(navigationState().stack).toEqual([{ feature: "stock", page: "receive", params: { id: 31 } }]));
+  });
+
+  it("offers the distributors of recent receipts until the app has a list, and says when there are none", async () => {
+    serve((path, method) => {
+      if (path.endsWith("/stock/receipts/") && method === "GET") return [receipt({ status: "submitted", lines: [LINE] })];
+      if (path.endsWith("/stock/suppliers/")) return new ApiError(404, null);
+      return undefined;
+    });
+    renderApp(<ReceivePage params={{}} />, { me });
+    expect(await screen.findByText("Ko‘kterak Farm Distribyutor", { selector: ".row-title" })).toBeTruthy();
+    expect(screen.getByText(/No\. N-1180 of 06\.11\.2026 · 1 line · Waiting for posting/)).toBeTruthy();
+    const select = screen.getByRole("combobox", { name: "Distributor" }) as HTMLSelectElement;
+    expect(select.value).toBe("9");
+    cleanup();
+
+    serve((path, method) => {
+      if (path.endsWith("/stock/receipts/") && method === "GET") return [];
+      if (path.endsWith("/stock/suppliers/")) return new ApiError(404, null);
+      return undefined;
+    });
+    renderApp(<ReceivePage params={{}} />, { me });
+    expect(await screen.findByText(/No distributor is set up for the app yet/)).toBeTruthy();
+    expect((screen.getByRole("button", { name: "Start the receipt" }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("adds a line with series, the expiry month and year, packs and cost, and shows the server's warnings", async () => {
+    serve((path, method) => {
+      if (path.endsWith("/stock/receipts/") && method === "GET") return [receipt()];
+      if (path.includes("/stock/lookup/")) return [{ id: 41, name: "Amoksitsillin 500 mg kapsula №16", inn: "amoxicillin", barcode: "4780000000014" }];
+      if (path.endsWith("/stock/receipts/31/lines/") && method === "POST") return receipt({ lines: [LINE] });
+      return undefined;
+    });
+    renderApp(<ReceivePage params={{ id: 31 }} />, { me });
+    const form = await screen.findByTestId("add-line");
+    fireEvent.change(within(form).getByRole("searchbox", { name: "Medicine" }), { target: { value: "amox" } });
+    fireEvent.click(await within(form).findByRole("button", { name: /Amoksitsillin 500 mg kapsula №16/ }));
+    fireEvent.change(within(form).getByRole("textbox", { name: "Series" }), { target: { value: "230415" } });
+    fireEvent.change(within(form).getByRole("combobox", { name: "Month" }), { target: { value: "3" } });
+    const year = within(form).getByRole("combobox", { name: "Year" }) as HTMLSelectElement;
+    fireEvent.change(year, { target: { value: year.options[2].value } });
+    fireEvent.click(within(form).getByRole("button", { name: "More" }));
+    fireEvent.change(within(form).getByRole("textbox", { name: "Cost per pack" }), { target: { value: "15000" } });
+    fireEvent.click(within(form).getByRole("button", { name: "Add to the receipt" }));
+    await waitFor(() => expect(calls("/stock/receipts/31/lines/")).toHaveLength(1));
+    expect(calls("/stock/receipts/31/lines/")[0].body).toEqual({ product: 41, series: "230415", expires_on: `${year.options[2].value}-03-31`, packs: "2", unit_cost: "15000" });
+    const line = await screen.findByTestId("receipt-line");
+    expect(line.textContent).toContain("Series 230415 · expires 31.03.2027 · 2 packs");
+    expect(within(line).getByText("Short shelf life")).toBeTruthy();
+    expect(within(line).getByText("something_new")).toBeTruthy();
+    // The form is ready for the next line.
+    expect((within(screen.getByTestId("add-line")).getByRole("textbox", { name: "Series" }) as HTMLInputElement).value).toBe("");
+  });
+
+  it("sends the receipt for posting", async () => {
+    serve((path, method) => {
+      if (path.endsWith("/stock/receipts/") && method === "GET") return [receipt({ lines: [LINE] })];
+      if (path.endsWith("/stock/receipts/31/submit/") && method === "POST") return receipt({ status: "submitted", lines: [LINE] });
+      return undefined;
+    });
+    renderApp(<ReceivePage params={{ id: 31 }} />, { me });
+    fireEvent.click(await screen.findByRole("button", { name: "Send for posting" }));
+    expect(await screen.findByText("Sent: the head checks and posts it")).toBeTruthy();
+    expect(await screen.findByText("Waiting for posting: the head checks it.")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Remove" })).toBeNull();
+  });
+
+  it("removes a line while the receipt is a draft", async () => {
+    serve((path, method) => {
+      if (path.endsWith("/stock/receipts/") && method === "GET") return [receipt({ lines: [LINE] })];
+      if (path.endsWith("/stock/receipts/31/lines/311/") && method === "DELETE") return receipt();
+      return undefined;
+    });
+    renderApp(<ReceivePage params={{ id: 31 }} />, { me });
+    fireEvent.click(await screen.findByRole("button", { name: "Remove" }));
+    await waitFor(() => expect(screen.queryByTestId("receipt-line")).toBeNull());
+    expect(calls("/stock/receipts/31/lines/311/", "DELETE")).toHaveLength(1);
   });
 });
