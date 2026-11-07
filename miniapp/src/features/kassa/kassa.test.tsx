@@ -21,7 +21,7 @@ import { draftKey, emptyDraft, hasContent, photoStore, readDraft, writeDraft } f
 import { KassaHero } from "./KassaHero";
 import KassaPage from "./KassaPage";
 import { ReceivedCards } from "./Received";
-import { PayoutSheet } from "./sheets";
+import { NasiyaSheet, PayoutSheet } from "./sheets";
 import { features, findFeature } from "../registry";
 
 // Through the registry, as the app loads it (the folder's index imports the registry).
@@ -571,5 +571,103 @@ describe("the draft store", () => {
     expect(hasContent({ ...emptyDraft(), counts: { "1000": 3 } })).toBe(true);
     writeDraft(1, 5, { ...emptyDraft(), zNumber: "12" });
     expect(readDraft(1, 5)?.zNumber).toBe("12");
+  });
+});
+
+
+describe("nasiya", () => {
+  const nasiyaKassa = (extra: Partial<ShiftDetail> = {}, tracked = true) =>
+    kassa({
+      shift: shift(extra),
+      settings: { ...kassa().settings, credit: true, credit_tracked: tracked },
+      methods: [...kassa().methods, { id: 13, name: "Nasiya", kind: "credit" }],
+    });
+
+  it("finds a regular by the last digits of the phone and records a credit sale", async () => {
+    serve({
+      "/sales/shifts/current/": nasiyaKassa(),
+      "/sales/customers/lookup/?phone=4567": {
+        results: [{ id: 41, name: "Saida opa", phone: "+998901234567", owed: "150000.00", credit_limit: "500000.00", can_take: "350000.00", credit_blocked: false, currency: "UZS" }],
+      },
+    }, () => ({ id: 9, kind: "sale", customer: { id: 41, name: "Saida opa" }, amount: "45000.00", owed: "195000.00" }));
+    const close = vi.fn();
+    wrap(<NasiyaSheet params={{ kind: "sale" }} close={close} />);
+    fireEvent.change(await screen.findByLabelText("Customer"), { target: { value: "4567" } });
+    fireEvent.click(await screen.findByRole("button", { name: /Saida opa/ }));
+    expect(screen.getByText(/Owes 150,000\sUZS · may take 350,000\sUZS more/)).toBeTruthy();
+    for (const key of ["4", "5", "000"]) fireEvent.click(screen.getByRole("button", { name: key }));
+    fireEvent.click(screen.getByRole("button", { name: /Record 45,000\sUZS on credit/ }));
+    await waitFor(() =>
+      expect(client.api).toHaveBeenCalledWith("/companies/1/sales/credit/", {
+        method: "POST",
+        json: { kind: "sale", customer_id: 41, new_customer: null, amount: "45000", method_id: null, note: "" },
+      }),
+    );
+    await waitFor(() => expect(close).toHaveBeenCalled());
+  });
+
+  it("adds a new customer from the till", async () => {
+    serve({ "/sales/shifts/current/": nasiyaKassa(), "/sales/customers/lookup/?phone=Rustam": { results: [] } }, () => ({
+      id: 10,
+      kind: "sale",
+      customer: { id: 42, name: "Rustam aka" },
+      amount: "30000.00",
+      owed: "30000.00",
+    }));
+    wrap(<NasiyaSheet params={{ kind: "sale" }} close={vi.fn()} />);
+    fireEvent.change(await screen.findByLabelText("Customer"), { target: { value: "Rustam" } });
+    expect(await screen.findByText("No customer with this number or name.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "New customer" }));
+    expect((screen.getByLabelText("Name") as HTMLInputElement).value).toBe("Rustam");
+    fireEvent.change(screen.getByLabelText("Phone"), { target: { value: "93 555 66 77" } });
+    for (const key of ["3", "0", "000"]) fireEvent.click(screen.getByRole("button", { name: key }));
+    fireEvent.click(screen.getByRole("button", { name: /Record 30,000\sUZS on credit/ }));
+    await waitFor(() =>
+      expect(client.api).toHaveBeenCalledWith("/companies/1/sales/credit/", {
+        method: "POST",
+        json: { kind: "sale", customer_id: null, new_customer: { name: "Rustam", phone: "93 555 66 77" }, amount: "30000", method_id: null, note: "" },
+      }),
+    );
+  });
+
+  it("offers nasiya on the shift and lists its entries", async () => {
+    const credit = {
+      sales: "45000.00",
+      payments: "0.00",
+      entries: [{ id: 9, kind: "sale" as const, customer: { id: 41, name: "Saida opa" }, amount: "45000.00", business_day: "2026-10-21", created_at: "2026-10-21T07:10:00Z", branch: { id: 3, name: "Chilonzor" }, method: null, note: "", by: null, voided_at: null }],
+    };
+    serve({ "/sales/shifts/current/": nasiyaKassa({ credit }), "/sales/handovers/pending/": { results: [] } });
+    wrap(<KassaPage params={{}} />);
+    expect(await screen.findByRole("button", { name: /Nasiya paid/ })).toBeTruthy();
+    expect(screen.getByText(/On credit 45,000\sUZS · paid back 0\sUZS/)).toBeTruthy();
+    expect(screen.getByText(/Saida opa · On credit/)).toBeTruthy();
+  });
+
+  it("shows the gap between the Z-report's Nasiya and the credit sales recorded, and won't send it", async () => {
+    const credit = { sales: "120000.00", payments: "0.00", entries: [] };
+    serve({ "/sales/shifts/current/": nasiyaKassa({ credit }) });
+    writeDraft(1, 5, {
+      ...emptyDraft(),
+      step: "review",
+      lines: { "11": { sales: "450000", refunds: "" }, "13": { sales: "150000", refunds: "" } },
+      counts: { "100000": 4, "50000": 1 },
+    });
+    wrap(<ClosePage params={{ id: 5 }} />);
+    expect(await screen.findByText(/Nasiya doesn.t match: 30,000\sUZS apart/)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Slide to close the shift" })).toBeNull();
+  });
+
+  it("starts the Nasiya line from the recorded credit sales", async () => {
+    const credit = { sales: "120000.00", payments: "0.00", entries: [] };
+    serve({ "/sales/shifts/current/": nasiyaKassa({ credit }) });
+    wrap(<ClosePage params={{ id: 5 }} />);
+    expect(within(await screen.findByRole("tab", { name: /Nasiya/ })).getByText("120,000")).toBeTruthy();
+  });
+
+  it("asks for no Nasiya total while the company records no nasiya", async () => {
+    serve({ "/sales/shifts/current/": nasiyaKassa({}, false) });
+    wrap(<ClosePage params={{ id: 5 }} />);
+    expect(await screen.findByRole("tab", { name: /Cash/ })).toBeTruthy();
+    expect(screen.queryByRole("tab", { name: /Nasiya/ })).toBeNull();
   });
 });

@@ -322,6 +322,8 @@ class CurrentView(APIView):
                     "credit": PaymentMethod.objects.for_company(company)
                     .filter(kind=PaymentMethod.Kind.CREDIT, is_active=True)
                     .exists(),
+                    # Once nasiya is recorded, the close checks the Nasiya total against it.
+                    "credit_tracked": CreditEntry.objects.filter(company=company).exists(),
                     "currency": company.base_currency,
                 },
                 "registers": [

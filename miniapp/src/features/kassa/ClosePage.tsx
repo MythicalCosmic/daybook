@@ -31,7 +31,7 @@ import {
   useObjectUrl,
 } from "../../ui";
 import type { PageProps } from "../registry";
-import { closeShift, fetchShift, isNetworkError, kassaKeys, tillMethods, useKassa, useShift, type Kassa, type PaymentLine, type ShiftDetail } from "./api";
+import { closeMethods, closeShift, fetchShift, isNetworkError, kassaKeys, tillMethods, tracksCredit, useKassa, useShift, type Kassa, type PaymentLine, type ShiftDetail } from "./api";
 import { clearDraft, emptyDraft, STEPS, useCloseDraft, type CloseDraft, type Line, type PhotoKind, type Step } from "./draft";
 import { downscale } from "../../lib/image";
 import { digits, useKassaT, useMoney, type KassaT } from "./lib";
@@ -172,6 +172,9 @@ function freshDraft(kassa: Kassa, shift: ShiftDetail): CloseDraft {
       lines[id] = { sales: isZero(totals.sales) ? "" : String(Number(totals.sales)), refunds: isZero(totals.refunds) ? "" : String(Number(totals.refunds)) };
     }
   }
+  // The Nasiya line starts from the credit sales recorded in the shift (the Z-report should agree).
+  const credit = shift.credit && !isZero(shift.credit.sales) ? closeMethods(kassa, shift).find((method) => method.kind === "credit") : undefined;
+  if (credit && !lines[String(credit.id)]) lines[String(credit.id)] = { sales: String(Number(shift.credit!.sales)), refunds: "" };
   return emptyDraft(lines, tillMethods(kassa.methods)[0]?.id ?? null);
 }
 
@@ -190,7 +193,7 @@ function CloseWizard({ kassa, shift, onClosed }: { kassa: Kassa; shift: ShiftDet
   const latestPhotos = useRef(photos);
   latestPhotos.current = photos;
 
-  const methods = tillMethods(kassa.methods);
+  const methods = closeMethods(kassa, shift);
   const lineOf = (id: number): Line => draft.lines[String(id)] ?? { sales: "", refunds: "" };
   const netOf = (id: number) => subtractMoney(amountOf(lineOf(id).sales), amountOf(lineOf(id).refunds));
   const net = sumMoney(methods.map((method) => netOf(method.id)));
@@ -214,6 +217,12 @@ function CloseWizard({ kassa, shift, onClosed }: { kassa: Kassa; shift: ShiftDet
   const payments: PaymentLine[] = methods
     .map((method) => ({ method_id: method.id, sales: amountOf(lineOf(method.id).sales), refunds: amountOf(lineOf(method.id).refunds) }))
     .filter((line) => !isZero(line.sales) || !isZero(line.refunds));
+  // Nasiya on the Z-report against the credit sales recorded with their customers: the server
+  // refuses a gap, so the cashier sees it before sliding.
+  const nasiya = methods.find((method) => method.kind === "credit");
+  const recordedCredit = shift.credit?.sales ?? "0";
+  const typedCredit = nasiya ? amountOf(lineOf(nasiya.id).sales) : "0";
+  const creditGap = tracksCredit(kassa, shift) && Number(typedCredit) !== Number(recordedCredit) ? subtractMoney(typedCredit, recordedCredit) : null;
 
   const submit = useCloseSubmit(member.companyId, shift.id, {
     build: () => ({
@@ -375,9 +384,11 @@ function CloseWizard({ kassa, shift, onClosed }: { kassa: Kassa; shift: ShiftDet
               currency={currency}
               label={t(field === "sales" ? "close.salesOf" : "close.refundsOf", { method: selected.name })}
               hint={
-                kassa.settings.mode === "receipts" && shift.receipts_recorded[String(selected.id)]
-                  ? t("close.recorded", { amount: money(shift.receipts_recorded[String(selected.id)][field]) })
-                  : t("close.fromZ")
+                selected.kind === "credit"
+                  ? t("close.nasiyaRecorded", { amount: money(recordedCredit) })
+                  : kassa.settings.mode === "receipts" && shift.receipts_recorded[String(selected.id)]
+                    ? t("close.recorded", { amount: money(shift.receipts_recorded[String(selected.id)][field]) })
+                    : t("close.fromZ")
               }
             />
             <div className="kassa-net">
@@ -452,8 +463,18 @@ function CloseWizard({ kassa, shift, onClosed }: { kassa: Kassa; shift: ShiftDet
           </div>
         )}
         {draft.step === "review" && submit.state === "failed" && submit.error && <Banner tone="accent" icon={CircleAlert} title={submit.error} />}
+        {draft.step === "review" && creditGap !== null && (
+          <Banner
+            tone="accent"
+            icon={CircleAlert}
+            wrap
+            title={t("close.nasiyaGap", { gap: money(creditGap.replace("-", "")) })}
+            body={t("close.nasiyaGapBody", { typed: money(typedCredit), recorded: money(recordedCredit) })}
+            onClick={() => go("sales")}
+          />
+        )}
       </Screen>
-      {draft.step === "review" && (
+      {draft.step === "review" && creditGap === null && (
         <div className="action-bar kassa-slide">
           <SlideToConfirm label={t("close.slide")} doneLabel={t("close.sending")} state={busy ? "loading" : "idle"} onConfirm={() => void submit.send()} />
         </div>

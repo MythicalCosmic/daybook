@@ -1044,3 +1044,35 @@
   flex: none;
   min-width: 0;
 }
+
+/* Nasiya: the chosen customer and what they owe. */
+.kassa-customer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--color-surface);
+}
+.kassa-customer-text {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+.kassa-customer-name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.kassa-customer-owed {
+  font-size: 13px;
+  color: var(--muted);
+}
+.kassa-customer-warn,
+.kassa-owed {
+  color: var(--color-accent-700);
+  font-weight: 600;
+}
