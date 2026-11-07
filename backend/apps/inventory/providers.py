@@ -220,7 +220,7 @@ def disputed_transfers(member: Membership, limit: int) -> list[QueueItem]:
             kind="inventory.transfers_disputed",
             id=row.pk,
             title=_("Transfer %(number)s arrived short") % {"number": row.number or f"#{row.pk}"},
-            subtitle=f"{row.from_branch.name} → {row.to_branch.name}",
+            subtitle=f"{row.from_branch.name} – {row.to_branch.name}",
             created_at=row.received_at,
             url=_url(member.company_id, f"transfers/{row.pk}"),
             actions=(),

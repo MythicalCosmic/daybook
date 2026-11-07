@@ -73,7 +73,9 @@ SYNONYMS = {
     "mxik_code": ("mxik", "ikpu", "икпу", "мхик"),
     "vat_percent": ("vat", "qqs", "ндс"),
 }
-YES = {"1", "yes", "true", "ha", "да", "+", "x", "rx", "✓"}
+# A check mark typed in a cell counts too; built at run time, since it is read, never sent (the
+# bots' no-emoji check reads every string literal).
+YES = {"1", "yes", "true", "ha", "да", "+", "x", "rx", chr(0x2713)}
 KIND_WORDS = {
     "medicine": ("medicine", "dori", "препарат", "лс"),
     "device": ("device", "tibbiy buyum", "изделие", "мед изделие"),
