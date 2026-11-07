@@ -33,7 +33,7 @@ from decimal import Decimal
 from django.apps import apps as django_apps
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
-from django.db import transaction
+from django.db import models, transaction
 from django.db.models import F, ProtectedError, Q, RestrictedError
 from django.utils import timezone, translation
 
@@ -284,7 +284,7 @@ class Command(BaseCommand):
             for model in remaining:
                 try:
                     with transaction.atomic():
-                        model.objects.filter(company=company).delete()
+                        self._delete_rows(model, company)
                 # PROTECT and RESTRICT links (a job title's role) both wait for their rows to go.
                 except ProtectedError, RestrictedError:
                     blocked.append(model)
@@ -292,6 +292,31 @@ class Command(BaseCommand):
                 raise CommandError(f"Can't remove the demo: {blocked} keep pointing at it.")
             remaining = blocked
         company.delete()
+
+    @staticmethod
+    def _delete_rows(model, company: Company) -> None:
+        """The company's rows of `model`. A tree whose own link is PROTECT (a product category's
+        parent) goes leaves first: a parent and its children can't go in one delete."""
+        rows = model.objects.filter(company=company)
+        tree = [
+            field
+            for field in model._meta.get_fields()
+            if field.many_to_one
+            and field.related_model is model
+            and field.remote_field.on_delete is models.PROTECT
+        ]
+        if not tree:
+            rows.delete()
+            return
+        while rows.exists():
+            leaves = rows
+            for field in tree:
+                parents = model.objects.filter(**{f"{field.name}__isnull": False})
+                leaves = leaves.exclude(pk__in=parents.values(field.attname))
+            if not leaves.exists():
+                rows.delete()  # a loop: let the PROTECT error say so
+                return
+            leaves.delete()
 
     # Building ---------------------------------------------------------------------------------
 

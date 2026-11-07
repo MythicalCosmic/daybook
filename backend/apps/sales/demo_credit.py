@@ -64,6 +64,15 @@ ITEMS_SMALL = [
 ]
 
 
+def _open_day(company, day):
+    """`day`, or the first day after the finance demo's closed period: a demo row dated in
+    closed books would be refused (the period lock moves with the seed day)."""
+    from apps.finance import conf as finance_conf
+
+    locked = finance_conf.get_settings(company).locked_until
+    return locked + timedelta(days=1) if locked is not None and day <= locked else day
+
+
 def seed_credit(company, people, now: datetime) -> None:
     """Demo Dorixona's nasiya: written as of their days (as a manager records them from a
     customer's card), and one credit sale on a till open now through the till's own path."""
@@ -80,7 +89,7 @@ def seed_credit(company, people, now: datetime) -> None:
         customers.append(party)
     terms = services.get_settings(company).credit_days
     for index, days_ago, amount, note in CREDIT:
-        day = now.astimezone(zone).date() - timedelta(days=days_ago)
+        day = _open_day(company, now.astimezone(zone).date() - timedelta(days=days_ago))
         at = datetime.combine(day, time(17, 20), tzinfo=zone)
         if CreditEntry.objects.filter(
             company=company, customer=customers[index], business_day=day
@@ -125,7 +134,7 @@ def seed_credit(company, people, now: datetime) -> None:
         card is not None
         and not CreditEntry.objects.filter(company=company, customer=saida, kind="payment").exists()
     ):
-        day = now.astimezone(zone).date() - timedelta(days=5)
+        day = _open_day(company, now.astimezone(zone).date() - timedelta(days=5))
         account = card.account or finance.account_for_branch(
             branch, kind="clearing", currency=company.base_currency
         )
@@ -206,7 +215,7 @@ def seed_invoices(company, people, now: datetime) -> None:
         (1, 0, [(1, 20, "27500")], "draft"),
     ]
     for customer, days_ago, items, story in plans:
-        day = now.astimezone(zone).date() - timedelta(days=days_ago)
+        day = _open_day(company, now.astimezone(zone).date() - timedelta(days=days_ago))
         at = datetime.combine(day, time(10, 30), tzinfo=zone)
         with moment(at):
             invoice = services.create_invoice(

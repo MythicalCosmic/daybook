@@ -3,7 +3,7 @@
 Owners and heads of pharmacy (stock.manage who see the branch) get the expiry digest, recalls,
 disputed transfers, destruction dates and receipts waiting for posting, with an [Open] button
 into the dashboard. A pharmacy's staff (stock.operate) hear of a transfer coming to them, with
-[Received ✓] (receives every line as sent; differences need the screen) and [Open] into the
+[Received] (receives every line as sent; differences need the screen) and [Open] into the
 app. Owners hear of a count shortage above the tolerance; stock.controlled holders of the
 controlled register's month and its differences. Each notice goes out once: `dedupe_key`
 names the record and the step.
@@ -37,7 +37,7 @@ RECEIPT_WAITING = "inventory.receipt_waiting"
 WRITEOFF_WAITING = "inventory.writeoff_waiting"
 
 RECEIVED = "received"
-RECEIVED_LABEL = gettext_lazy("Received ✓")
+RECEIVED_LABEL = gettext_lazy("Received")
 
 
 def _day(day: date) -> str:
@@ -187,7 +187,7 @@ def transfer_incoming(transfer_id: int) -> int:
         ),
         body=lambda person: (
             _(
-                "%(number)s. Check it when it arrives: Received ✓ takes every line as sent; a "
+                "%(number)s. Check it when it arrives: Received takes every line as sent; a "
                 "difference is entered in the app."
             )
             % {"number": transfer.number}
@@ -202,7 +202,7 @@ def transfer_incoming(transfer_id: int) -> int:
 
 
 def received_action(notification, by: Membership, reason: str) -> str:
-    """[Received ✓]: every line as sent."""
+    """[Received]: every line as sent."""
     from apps.core.exceptions import DomainError
     from apps.inventory import services
     from apps.inventory.models import StockTransfer
