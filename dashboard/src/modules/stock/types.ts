@@ -674,6 +674,44 @@ export interface RecallInput {
   received_on: string;
 }
 
+// Pricing rules and defektura -------------------------------------------------------------------
+
+export interface PricingRule {
+  id: number;
+  category: number | null;
+  category_name: string | null;
+  cost_from: Money | null;
+  cost_to: Money | null;
+  markup_percent: string;
+  order: number;
+  is_active: boolean;
+}
+
+export type PricingRuleInput = Partial<Omit<PricingRule, "id" | "category_name">>;
+
+export type RequestStatus = "open" | "ordered" | "fulfilled" | "cancelled";
+
+export interface MissingRequest {
+  id: number;
+  branch_ref: BranchRef;
+  product_ref: Ref | null;
+  name: string;
+  packs: string;
+  source: "counter" | "mandatory";
+  status: RequestStatus;
+  customer_phone: string;
+  requested_at: string;
+  requested_by: PersonRef | null;
+}
+
+export interface MissingRequestInput {
+  branch: number;
+  product?: number | null;
+  name?: string;
+  packs?: string;
+  customer_phone?: string;
+}
+
 // Journals -------------------------------------------------------------------------------------
 
 export interface ControlledRow {

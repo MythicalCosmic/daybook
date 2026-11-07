@@ -34,6 +34,7 @@ export default defineModule({
     { key: "writeoffs", title: "stock.nav.writeoffs", to: "stock/write-offs" },
     { key: "counts", title: "stock.nav.counts", to: "stock/counts" },
     { key: "recalls", title: "stock.nav.recalls", to: "stock/recalls" },
+    { key: "defektura", title: "stock.nav.defektura", to: "stock/defektura" },
     { key: "suppliers", title: "stock.nav.suppliers", to: "stock/suppliers" },
     { key: "journals", title: "stock.nav.journals", to: "stock/journals", perm: "stock.controlled" },
   ],
@@ -81,6 +82,10 @@ export default defineModule({
       perm: "stock.manage",
       run: () => ctx.go("stock/recalls?new=1"),
     },
+  ],
+  widgets: [
+    { id: "stock.kpi.expiring_30d", span: 1, order: 34, kind: "kpi", perm: READ, feature: "stock", component: defineAsyncComponent(() => import("./widgets/ExpiringWidget.vue")) },
+    { id: "stock.attention", span: 1, order: 35, kind: "card", perm: READ, feature: "stock", component: defineAsyncComponent(() => import("./widgets/AttentionWidget.vue")) },
   ],
   settings: [
     {

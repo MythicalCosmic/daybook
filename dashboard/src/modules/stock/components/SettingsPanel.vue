@@ -8,22 +8,27 @@
  * (the log, keeping times by kind, validity); and the mini app. Legal defaults are the values the
  * law gave on 21.10.2026; changing one is the company's decision.
  */
+import { Pencil, Plus, Trash2 } from "@lucide/vue";
 import { computed, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import { isApiError } from "@/api/http";
 import FormField from "@/components/FormField.vue";
+import IconButton from "@/components/IconButton.vue";
 import InlineAlert from "@/components/InlineAlert.vue";
 import MoneyInput from "@/components/MoneyInput.vue";
+import MoneyText from "@/components/MoneyText.vue";
 import NumberInput from "@/components/NumberInput.vue";
+import SelectBox from "@/components/SelectBox.vue";
 import TextInput from "@/components/TextInput.vue";
 import ToggleSwitch from "@/components/ToggleSwitch.vue";
 import UiButton from "@/components/UiButton.vue";
+import UiDialog from "@/components/UiDialog.vue";
 import { toast } from "@/components/useToast";
 import { useCompanyStore } from "@/stores/company";
 
-import { stockApi, useRefresh, useStockSettings } from "../api";
-import type { RxKind, StockSettings } from "../types";
+import { stockApi, useCategories, usePricingRules, useRefresh, useStockSettings } from "../api";
+import type { PricingRule, RxKind, StockSettings } from "../types";
 
 const { t } = useI18n();
 const company = useCompanyStore();
@@ -106,6 +111,54 @@ function steps(text: string): number[] | null {
   return [...new Set(numbers)].sort((a, b) => b - a);
 }
 
+// Pricing rules: markup bands by category and cost, the first match wins ---------------------------
+
+const rules = usePricingRules();
+const categories = useCategories();
+const categoryOptions = computed(() => (categories.data.value ?? []).map((row) => ({ value: row.id, label: row.name })));
+const ruleDialog = ref(false);
+const editingRule = ref<PricingRule | null>(null);
+const ruleBusy = ref(false);
+const rule = reactive({ category: null as number | null, cost_from: null as string | null, cost_to: null as string | null, markup: 30 as number | null, active: true });
+function editRule(row: PricingRule | null): void {
+  editingRule.value = row;
+  Object.assign(rule, {
+    category: row?.category ?? null,
+    cost_from: row?.cost_from ?? null,
+    cost_to: row?.cost_to ?? null,
+    markup: row ? Number(row.markup_percent) : 30,
+    active: row?.is_active ?? true,
+  });
+  ruleDialog.value = true;
+}
+async function saveRule(): Promise<void> {
+  ruleBusy.value = true;
+  const input = {
+    category: rule.category,
+    cost_from: rule.cost_from || null,
+    cost_to: rule.cost_to || null,
+    markup_percent: String(rule.markup ?? 0),
+    is_active: rule.active,
+    order: editingRule.value?.order ?? (rules.data.value?.length ?? 0),
+  };
+  try {
+    const cid = company.currentId ?? 0;
+    if (editingRule.value) await stockApi.updatePricingRule(cid, editingRule.value.id, input);
+    else await stockApi.createPricingRule(cid, input);
+    toast.success(t("stock.rules.saved"));
+    refresh();
+    ruleDialog.value = false;
+  } catch (error) {
+    toast.error(isApiError(error) ? error.message : t("common.error.generic"));
+  } finally {
+    ruleBusy.value = false;
+  }
+}
+async function removeRule(row: PricingRule): Promise<void> {
+  await stockApi.deletePricingRule(company.currentId ?? 0, row.id);
+  refresh();
+}
+
 const saving = ref(false);
 async function save(): Promise<void> {
   for (const key of Object.keys(errors)) delete errors[key];
@@ -184,6 +237,35 @@ async function save(): Promise<void> {
         </FormField>
       </div>
       <ToggleSwitch v-model="form.cap_enforced" :label="t('stock.settings.capEnforced')" :description="t('stock.settings.capEnforcedHint')" :disabled="!canEdit" />
+    </section>
+
+    <section class="flex flex-col gap-3" data-testid="pricing-rules">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <h3 class="text-md font-semibold text-fg">{{ t("stock.rules.title") }}</h3>
+          <p class="mt-1 text-sm text-muted">{{ t("stock.rules.body") }}</p>
+        </div>
+        <UiButton v-if="canEdit" size="sm" variant="secondary" :icon="Plus" @click="editRule(null)">{{ t("stock.rules.add") }}</UiButton>
+      </div>
+      <ul v-if="rules.data.value?.length" class="divide-y divide-line rounded-[12px] border border-line">
+        <li v-for="row in rules.data.value" :key="row.id" class="flex items-center gap-3 px-3 py-2.5 text-sm" :class="{ 'opacity-60': !row.is_active }">
+          <span class="min-w-0 flex-1">
+            <span class="block truncate text-fg">{{ row.category_name ?? t("stock.rules.anyCategory") }}</span>
+            <span class="block text-xs text-muted">
+              <template v-if="row.cost_from || row.cost_to">
+                <MoneyText v-if="row.cost_from" :value="row.cost_from" decimals="never" /><template v-else>0</template> – <MoneyText v-if="row.cost_to" :value="row.cost_to" decimals="never" /><template v-else>∞</template>
+              </template>
+              <template v-else>{{ t("stock.rules.anyCost") }}</template>
+            </span>
+          </span>
+          <span class="font-semibold tabular-nums text-fg">{{ row.markup_percent }} %</span>
+          <template v-if="canEdit">
+            <IconButton :icon="Pencil" size="sm" :label="t('common.edit')" @click="editRule(row)" />
+            <IconButton :icon="Trash2" size="sm" :label="t('common.delete')" @click="removeRule(row)" />
+          </template>
+        </li>
+      </ul>
+      <p v-else class="text-sm text-muted">{{ t("stock.rules.none") }}</p>
     </section>
 
     <section class="flex flex-col gap-3">
@@ -267,5 +349,29 @@ async function save(): Promise<void> {
     </section>
 
     <div v-if="canEdit"><UiButton variant="primary" :loading="saving" data-testid="stock-settings-save" @click="save">{{ t("common.save") }}</UiButton></div>
+
+    <UiDialog v-model:open="ruleDialog" :title="editingRule ? t('stock.rules.editTitle') : t('stock.rules.add')" :description="t('stock.rules.dialogBody')" size="sm">
+      <div class="flex flex-col gap-3">
+        <FormField :label="t('stock.field.category')">
+          <SelectBox v-model="rule.category" :options="categoryOptions" clearable :placeholder="t('stock.rules.anyCategory')" />
+        </FormField>
+        <div class="grid grid-cols-2 gap-3">
+          <FormField :label="t('stock.rules.costFrom')" optional>
+            <MoneyInput v-model="rule.cost_from" />
+          </FormField>
+          <FormField :label="t('stock.rules.costTo')" optional>
+            <MoneyInput v-model="rule.cost_to" />
+          </FormField>
+        </div>
+        <FormField :label="t('stock.rules.markup')" :hint="t('stock.rules.markupHint')">
+          <NumberInput v-model="rule.markup" :min="0" :max="500" :decimals="2" suffix="%" />
+        </FormField>
+        <ToggleSwitch v-model="rule.active" :label="t('stock.rules.active')" />
+      </div>
+      <template #footer>
+        <UiButton variant="ghost" @click="ruleDialog = false">{{ t("common.cancel") }}</UiButton>
+        <UiButton variant="primary" :loading="ruleBusy" @click="saveRule">{{ t("common.save") }}</UiButton>
+      </template>
+    </UiDialog>
   </div>
 </template>

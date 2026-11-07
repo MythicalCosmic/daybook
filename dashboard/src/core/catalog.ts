@@ -228,6 +228,7 @@ export const CATALOG: readonly CatalogEntry[] = [
       { id: "writeoffs", to: "stock/write-offs" },
       { id: "counts", to: "stock/counts" },
       { id: "recalls", to: "stock/recalls" },
+      { id: "defektura", to: "stock/defektura" },
       { id: "suppliers", to: "stock/suppliers" },
       { id: "journals", to: "stock/journals", perm: "stock.controlled" },
     ],

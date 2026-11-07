@@ -11,6 +11,7 @@ export const pages = {
   counts: () => import("./pages/CountsPage.vue"),
   count: () => import("./pages/CountPage.vue"),
   recalls: () => import("./pages/RecallsPage.vue"),
+  defektura: () => import("./pages/DefekturaPage.vue"),
   suppliers: () => import("./pages/SuppliersPage.vue"),
   journals: () => import("./pages/JournalsPage.vue"),
 };

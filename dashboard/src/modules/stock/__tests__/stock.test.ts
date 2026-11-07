@@ -26,7 +26,9 @@ import uz from "../i18n/uz.json";
 import { daysUntil, expiryTone, packsAndParts, partsOf, previousMonth, qtyText } from "../lib";
 import CountPage from "../pages/CountPage.vue";
 import ExpiryPage from "../pages/ExpiryPage.vue";
+import DefekturaPage from "../pages/DefekturaPage.vue";
 import JournalsPage from "../pages/JournalsPage.vue";
+import AttentionWidget from "../widgets/AttentionWidget.vue";
 import ProductsPage from "../pages/ProductsPage.vue";
 import ReceiptPage from "../pages/ReceiptPage.vue";
 import { routes } from "../routes";
@@ -490,7 +492,95 @@ describe("the controlled register", () => {
   });
 });
 
+describe("defektura", () => {
+  it("lists the requests and changes their status", async () => {
+    const calls = stub({
+      "GET stock/defektura/": () =>
+        json([
+          {
+            id: 3,
+            branch_ref: { id: 1, name: "Chilonzor", code: "CHL" },
+            product_ref: null,
+            name: "Insulin glargin 100 TB/ml",
+            packs: "1.000",
+            source: "counter",
+            status: "open",
+            customer_phone: "+998901112233",
+            requested_at: "2026-11-07T10:00:00+05:00",
+            requested_by: { id: 4, name: "Ali Valiyev", photo_url: null },
+          },
+        ]),
+      "PATCH stock/defektura/3/": () => json({}),
+    });
+    const app = await pageApp("/c/1/stock/defektura", ["dashboard.access", "stock.operate"]);
+    const { wrapper } = mountWithProviders(DefekturaPage, { plugins: app.plugins });
+    await settle();
+    expect(wrapper.text()).toContain("Insulin glargin 100 TB/ml");
+    expect(wrapper.text()).toContain("Ali Valiyev");
+    const vm = wrapper.findComponent(DefekturaPage).vm as unknown as { $: { setupState: { change: (row: unknown, value: string) => Promise<void> } } };
+    await vm.$.setupState.change({ id: 3, status: "open" }, "ordered");
+    await settle();
+    expect(calls.find((call) => call.method === "PATCH")?.body).toEqual({ status: "ordered" });
+  });
+});
+
+describe("the Overview tile", () => {
+  it("lists only what needs doing, each with its page", async () => {
+    stub({
+      "GET stock/summary/": () =>
+        json({
+          products: 60,
+          low: 2,
+          negative: 0,
+          expiring_30d: 8,
+          expiring_30d_retail: "420000.00",
+          expired: 3,
+          stock_retail_value: "88000000.00",
+          receipts_to_post: 1,
+          drafts: 1,
+          writeoffs_to_approve: 0,
+          transfers_disputed: 1,
+          transfers_incoming: 0,
+          recalls_open: 0,
+          mandatory_missing: 1,
+          controlled_branches: 1,
+          estimate: true,
+        }),
+    });
+    const app = await testApp("/c/1");
+    const { wrapper } = mountWithProviders(AttentionWidget, { plugins: app.plugins, props: { companyId: 1 } });
+    await settle();
+    const text = wrapper.text();
+    expect(text).toContain("1 receipt to post");
+    expect(text).toContain("1 transfer arrived short");
+    expect(text).toContain("2 items below their minimum");
+    expect(text).not.toContain("write-off");
+    expect(wrapper.find("a[href='/c/1/stock/levels?mandatory=1']").exists()).toBe(true);
+  });
+});
+
 describe("Settings › Stock", () => {
+  it("shows the pricing rules, first match first", async () => {
+    const settingsStub = { expiry_steps: [90, 60, 30], rx_keep_months: { regular: 3, benefit: 36, narcotic: 60, psychotropic: 12, listed: 12 } };
+    stub({
+      "GET stock/settings/": () => json(settingsStub),
+      "GET stock/pricing-rules/": () =>
+        json([
+          { id: 1, category: 2, category_name: "Vitaminlar", cost_from: null, cost_to: null, markup_percent: "40.00", order: 0, is_active: true },
+          { id: 2, category: null, category_name: null, cost_from: "100000.00", cost_to: null, markup_percent: "18.00", order: 1, is_active: true },
+        ]),
+      "GET stock/categories/": () => json([]),
+    });
+    const app = await testApp("/c/1/settings/stock");
+    as(["dashboard.access", "stock.manage"]);
+    const { wrapper } = mountWithProviders(SettingsPanel, { plugins: app.plugins });
+    await settle();
+    const rules = wrapper.find("[data-testid=pricing-rules]").text();
+    expect(rules.indexOf("Vitaminlar")).toBeLessThan(rules.indexOf(en["stock.rules.anyCategory"]));
+    expect(rules).toContain("40.00 %");
+    expect(rules).toContain("18.00 %");
+  });
+
   it("sends every setting, the expiry steps as day counts", async () => {
     const settings: StockSettings = {
       expiry_steps: [90, 60, 30],

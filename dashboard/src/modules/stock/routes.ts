@@ -84,6 +84,12 @@ export const routes: RouteRecordRaw[] = [
     meta: { title: "stock.nav.recalls", perm: READ },
   },
   {
+    path: "stock/defektura",
+    name: "stock.defektura",
+    component: () => lazy().then((m) => m.pages.defektura()),
+    meta: { title: "stock.nav.defektura", perm: READ },
+  },
+  {
     path: "stock/suppliers",
     name: "stock.suppliers",
     component: () => lazy().then((m) => m.pages.suppliers()),

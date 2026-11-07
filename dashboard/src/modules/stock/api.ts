@@ -25,7 +25,11 @@ import type {
   ImportResult,
   Level,
   Manufacturer,
+  MissingRequest,
+  MissingRequestInput,
   Movement,
+  PricingRule,
+  PricingRuleInput,
   ProductCode,
   ProductDetail,
   ProductInput,
@@ -36,6 +40,7 @@ import type {
   ReceiptDetail,
   ReceiptInput,
   ReceiptLineInput,
+  RequestStatus,
   Resolution,
   RxJournal,
   StockSettings,
@@ -151,6 +156,15 @@ export const stockApi = {
   createRecall: (cid: number, input: RecallInput) => http.post<Recall>(path(cid, "recalls/"), input),
   closeRecall: (cid: number, id: number) => http.post<Recall>(path(cid, `recalls/${id}/close/`), {}),
 
+  pricingRules: (cid: number) => http.get<PricingRule[]>(path(cid, "pricing-rules/")),
+  createPricingRule: (cid: number, input: PricingRuleInput) => http.post<PricingRule[]>(path(cid, "pricing-rules/"), input),
+  updatePricingRule: (cid: number, id: number, input: PricingRuleInput) => http.patch<PricingRule[]>(path(cid, `pricing-rules/${id}/`), input),
+  deletePricingRule: (cid: number, id: number) => http.delete(path(cid, `pricing-rules/${id}/`)),
+
+  requests: (cid: number, params: Query = {}) => http.get<MissingRequest[]>(path(cid, "defektura/"), params),
+  addRequest: (cid: number, input: MissingRequestInput) => http.post<MissingRequest>(path(cid, "defektura/"), input),
+  setRequestStatus: (cid: number, id: number, status: RequestStatus) => http.patch<MissingRequest>(path(cid, `defektura/${id}/`), { status }),
+
   controlled: (cid: number, params: Query) => http.get<ControlledRegister>(path(cid, "journals/controlled/"), params),
   controlledPdf: (cid: number, params: Query) => http.get<FileLink>(path(cid, "journals/controlled/pdf/"), params),
   closeMonth: (cid: number, input: { branch: number; month: string; counted?: Array<{ product: number; counted: string }>; note?: string }) =>
@@ -211,6 +225,8 @@ export const useWriteoff = (id: MaybeRefOrGetter<number>) => useResource("writeo
 export const useCounts = (params: MaybeRefOrGetter<Query>) => useResource("counts", () => ({ ...toValue(params) }), (cid, p) => stockApi.counts(cid, asQuery(p)), { keepPrevious: true });
 export const useCount = (id: MaybeRefOrGetter<number>) => useResource("count", () => ({ id: toValue(id) }), (cid, p) => stockApi.count(cid, Number(p.id)), { enabled: () => toValue(id) > 0 });
 export const useRecalls = (params: MaybeRefOrGetter<Query>) => useResource("recalls", () => ({ ...toValue(params) }), (cid, p) => stockApi.recalls(cid, asQuery(p)), { keepPrevious: true });
+export const usePricingRules = (enabled: MaybeRefOrGetter<boolean> = true) => useResource("pricing-rules", {}, (cid) => stockApi.pricingRules(cid), { enabled, staleTime: 60_000 });
+export const useRequests = (params: MaybeRefOrGetter<Query>) => useResource("defektura", () => ({ ...toValue(params) }), (cid, p) => stockApi.requests(cid, asQuery(p)), { keepPrevious: true });
 export const useControlled = (params: MaybeRefOrGetter<Query>, enabled: MaybeRefOrGetter<boolean> = true) =>
   useResource("controlled", () => ({ ...toValue(params) }), (cid, p) => stockApi.controlled(cid, asQuery(p)), { keepPrevious: true, enabled });
 export const useRxJournal = (params: MaybeRefOrGetter<Query>, enabled: MaybeRefOrGetter<boolean> = true) =>
