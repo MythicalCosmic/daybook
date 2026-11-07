@@ -32,6 +32,13 @@ export function VideoPlayer({
     if (!active) element.current?.pause();
   }, [active]);
 
+  useEffect(() => {
+    const media = element.current;
+    if (!media) return;
+    watcher.sampler(() => (media.paused || media.seeking ? null : [media.currentTime, media.playbackRate || 1]));
+    return () => watcher.sampler(null);
+  }, [watcher]);
+
   return (
     <video
       ref={element}
@@ -176,16 +183,17 @@ export function YouTubePlayer({
     loadYouTube().then(
       (YT) => {
         if (cancelled) return;
-        player.current = new YT.Player(frame, {
+        const made = new YT.Player(frame, {
           events: {
             onReady: (event) => watcher.duration(event.target.getDuration()),
             onStateChange: (event) => {
               const target = event.target;
               if (event.data === YT.PlayerState.PLAYING) {
                 watcher.duration(target.getDuration());
-                watcher.play(target.getCurrentTime());
+                // The poll first, so the 10 s report that falls on the same second sees the newest time.
                 stopPolling();
                 poll = setInterval(() => watcher.time(target.getCurrentTime(), target.getPlaybackRate() || 1), POLL_MS);
+                watcher.play(target.getCurrentTime());
               } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
                 stopPolling();
                 watcher.time(target.getCurrentTime(), target.getPlaybackRate() || 1);
@@ -197,6 +205,8 @@ export function YouTubePlayer({
             onError: () => fail.current(),
           },
         });
+        player.current = made;
+        watcher.sampler(() => (made.getPlayerState?.() === YT.PlayerState.PLAYING ? [made.getCurrentTime(), made.getPlaybackRate() || 1] : null));
       },
       () => {
         if (!cancelled) fail.current();
@@ -205,6 +215,7 @@ export function YouTubePlayer({
     return () => {
       cancelled = true;
       stopPolling();
+      watcher.sampler(null);
       try {
         player.current?.destroy();
       } catch {

@@ -25,6 +25,11 @@ export type Watcher = {
   pause: (position: number) => void;
   /** The media's length once the player knows it (YouTube: from its first report). */
   duration: (seconds: number) => void;
+  /**
+   * How to read the player's position and rate right now (null while it isn't playing), so each
+   * report counts up to this very moment, not to the last event or poll.
+   */
+  sampler: (read: (() => [number, number] | null) | null) => void;
 };
 
 type Reason = "start" | "tick" | "pause" | "seek" | "hidden" | "leave";
@@ -53,6 +58,7 @@ export function useWatchReporter({
     sent: null as { position: number; playing: boolean } | null,
     tick: undefined as ReturnType<typeof setInterval> | undefined,
     seekTimer: undefined as ReturnType<typeof setTimeout> | undefined,
+    read: null as (() => [number, number] | null) | null,
   });
 
   const watcher = useMemo(() => {
@@ -61,6 +67,15 @@ export function useWatchReporter({
       // Nothing to say before anything played; without the length the server can't place a
       // range: wait for the player to know it.
       if (!s.started || !(s.duration > 0)) return;
+      try {
+        const now = s.read?.();
+        if (now) {
+          s.position = now[0];
+          s.tracker.time(now[0], now[1]);
+        }
+      } catch {
+        // A player on its way out: the last position seen will do.
+      }
       const ranges = s.tracker.take(s.duration);
       const position = Math.max(0, Math.min(Math.floor(s.position), Math.floor(s.duration)));
       const same = s.sent && s.sent.position === position && s.sent.playing === s.playing;
@@ -76,22 +91,28 @@ export function useWatchReporter({
       if (s.tick !== undefined) clearInterval(s.tick);
       s.tick = undefined;
     };
+    const soon = () => {
+      if (s.seekTimer !== undefined) clearTimeout(s.seekTimer);
+      s.seekTimer = setTimeout(() => {
+        s.seekTimer = undefined;
+        report("seek");
+      }, SEEK_REPORT_MS);
+    };
     const watcher: Watcher & { report: (reason: Reason) => void; stop: () => void } = {
       time: (position, rate) => {
         s.position = position;
-        if (s.tracker.time(position, rate) === "jump" && s.playing) watcher.seek();
+        // A jump the player didn't announce (YouTube) is a seek: the range closed, a report follows.
+        if (s.tracker.time(position, rate) === "jump" && s.playing) soon();
       },
       seek: () => {
         s.tracker.seek();
-        if (s.seekTimer !== undefined) clearTimeout(s.seekTimer);
-        s.seekTimer = setTimeout(() => {
-          s.seekTimer = undefined;
-          report("seek");
-        }, SEEK_REPORT_MS);
+        soon();
       },
       play: (position) => {
         s.position = position;
         s.playing = true;
+        // Playing starts here: the first step from this position counts.
+        s.tracker.time(position, 1);
         if (!s.started) {
           s.started = true;
           report("start");
@@ -107,6 +128,9 @@ export function useWatchReporter({
       },
       duration: (seconds) => {
         if (Number.isFinite(seconds) && seconds > 0) s.duration = seconds;
+      },
+      sampler: (read) => {
+        s.read = read;
       },
       report,
       stop: () => {
