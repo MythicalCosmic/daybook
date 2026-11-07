@@ -13,8 +13,15 @@ import type { Page } from "@/api/types";
 import { useCompanyId } from "@/stores/company";
 
 import type {
+  Aging,
   CashierScore,
   CashPositions,
+  Customer,
+  CustomerDetail,
+  CustomerInput,
+  InvoiceDetail,
+  InvoiceInput,
+  InvoiceRow,
   Entry,
   EntryInput,
   FileKind,
@@ -121,6 +128,23 @@ export const salesApi = {
   posCashiers: (cid: number) => http.get<PosCashier[]>(path(cid, "pos-cashiers/")),
   mapCashier: (cid: number, id: number, memberId: number | null) => http.patch<PosCashier>(path(cid, `pos-cashiers/${id}/`), { member_id: memberId }),
   products: (cid: number, q: string, signal?: AbortSignal) => http.get<{ results: ProductHit[] }>(path(cid, "products/"), { q }, { signal }),
+
+  // Customers, nasiya and invoices (§11.4).
+  customers: (cid: number, params: Query) => http.get<Page<Customer>>(path(cid, "customers/"), params),
+  customer: (cid: number, id: number) => http.get<CustomerDetail>(path(cid, `customers/${id}/`)),
+  createCustomer: (cid: number, input: CustomerInput) => http.post<Customer>(path(cid, "customers/"), input),
+  updateCustomer: (cid: number, id: number, input: CustomerInput) => http.patch<Customer>(path(cid, `customers/${id}/`), input),
+  aging: (cid: number) => http.get<Aging>(path(cid, "receivables/aging/")),
+  invoices: (cid: number, params: Query) => http.get<Page<InvoiceRow>>(path(cid, "invoices/"), params),
+  invoice: (cid: number, id: number) => http.get<InvoiceDetail>(path(cid, `invoices/${id}/`)),
+  createInvoice: (cid: number, input: InvoiceInput) => http.post<InvoiceDetail>(path(cid, "invoices/"), input),
+  updateInvoice: (cid: number, id: number, input: InvoiceInput) => http.patch<InvoiceDetail>(path(cid, `invoices/${id}/`), input),
+  issueInvoice: (cid: number, id: number) => http.post<InvoiceDetail>(path(cid, `invoices/${id}/issue/`)),
+  voidInvoice: (cid: number, id: number, reason: string) => http.post<InvoiceDetail>(path(cid, `invoices/${id}/void/`), { reason }),
+  sendInvoice: (cid: number, id: number) => http.post<{ delivered: "telegram" | "link"; url?: string }>(path(cid, `invoices/${id}/send/`)),
+  payInvoice: (cid: number, id: number, input: { account_id: number; amount: string; paid_on: string; debt_amount?: string | null }) =>
+    http.post<InvoiceDetail>(path(cid, `invoices/${id}/payments/`), input),
+  invoicePdf: (cid: number, id: number) => http.get<{ url: string }>(path(cid, `invoices/${id}/pdf/`)),
 };
 
 // ─── Keys and queries ────────────────────────────────────────────────────────
@@ -203,6 +227,35 @@ export function useLines(params: MaybeRefOrGetter<Record<string, unknown>>) {
 
 export function useCodes(status: MaybeRefOrGetter<"waiting" | "skipped">) {
   return useResource("codes", () => ({ status: toValue(status) }), (cid, p) => salesApi.codes(cid, p.status as "waiting" | "skipped"), { keep: true });
+}
+
+export function useCustomers(params: MaybeRefOrGetter<Record<string, unknown>>) {
+  return useResource("customers", params, (cid, p) => salesApi.customers(cid, p as Query), { keep: true });
+}
+export const useAging = () => useResource("aging", {}, (cid) => salesApi.aging(cid));
+
+export function useCustomer(id: MaybeRefOrGetter<number | null>) {
+  const cid = useCompanyId();
+  return useQuery({
+    queryKey: computed(() => salesKeys.resource(cid.value, "customer", { id: toValue(id) })),
+    queryFn: () => salesApi.customer(cid.value, toValue(id)!),
+    enabled: computed(() => cid.value > 0 && !!toValue(id)),
+    staleTime: 10_000,
+  });
+}
+
+export function useInvoices(params: MaybeRefOrGetter<Record<string, unknown>>) {
+  return useResource("invoices", params, (cid, p) => salesApi.invoices(cid, p as Query), { keep: true });
+}
+
+export function useInvoice(id: MaybeRefOrGetter<number | null>) {
+  const cid = useCompanyId();
+  return useQuery({
+    queryKey: computed(() => salesKeys.resource(cid.value, "invoice", { id: toValue(id) })),
+    queryFn: () => salesApi.invoice(cid.value, toValue(id)!),
+    enabled: computed(() => cid.value > 0 && !!toValue(id)),
+    staleTime: 10_000,
+  });
 }
 
 export function useTargets(month: MaybeRefOrGetter<string>) {

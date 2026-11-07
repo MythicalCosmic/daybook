@@ -33,6 +33,8 @@ export default defineModule({
     { key: "entries", title: "sales.nav.entries", to: "sales/entries", perm: "sales.view" },
     { key: "lines", title: "sales.nav.lines", to: "sales/lines", perm: "sales.view" },
     { key: "import", title: "sales.nav.import", to: "sales/import", perm: "sales.manage", badge: counter("sales.unmatched") },
+    { key: "customers", title: "sales.nav.customers", to: "sales/customers", perm: "sales.view" },
+    { key: "invoices", title: "sales.nav.invoices", to: "sales/invoices", perm: ["sales.view", "sales.invoices"], badge: counter("sales.invoices_overdue") },
     { key: "setup", title: "sales.nav.setup", to: "sales/setup", perm: "sales.view" },
   ],
   // Shifts closed and waiting for a manager's check.

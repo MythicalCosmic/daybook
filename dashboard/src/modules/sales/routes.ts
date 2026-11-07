@@ -61,6 +61,18 @@ export const routes: RouteRecordRaw[] = [
     meta: { title: "sales.nav.lines", perm: "sales.view" },
   },
   {
+    path: "sales/customers",
+    name: "sales.customers",
+    component: () => import("./pages/CustomersPage.vue"),
+    meta: { title: "sales.nav.customers", perm: "sales.view" },
+  },
+  {
+    path: "sales/invoices",
+    name: "sales.invoices",
+    component: () => import("./pages/InvoicesPage.vue"),
+    meta: { title: "sales.nav.invoices", perm: ["sales.view", "sales.invoices"] },
+  },
+  {
     path: "sales/setup",
     name: "sales.setup",
     component: () => import("./pages/SetupPage.vue"),

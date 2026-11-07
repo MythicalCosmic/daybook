@@ -559,3 +559,111 @@ export interface ProductHit {
   rx_required: boolean;
   sale_price: Money;
 }
+
+// ─── Customers, nasiya and invoices (§11.4) ──────────────────────────────────
+
+export type CustomerKind = "person" | "clinic" | "pharmacy" | "company";
+export type AgingKey = "not_due" | "d0_30" | "d31_60" | "d60_plus";
+export type InvoiceStatus = "draft" | "issued" | "partly_paid" | "paid" | "void";
+
+/** `sales/customers/` */
+export interface Customer {
+  id: number;
+  name: string;
+  kind: CustomerKind;
+  phone: string;
+  tin: string;
+  telegram_username: string;
+  contact_person: string;
+  address: string;
+  notes: string;
+  credit_limit: Money | null;
+  credit_blocked: boolean;
+  is_active: boolean;
+  owed: Money;
+  currency: Currency;
+}
+
+export interface CustomerInput {
+  name?: string;
+  phone?: string;
+  kind?: CustomerKind;
+  credit_limit?: string | null;
+  credit_blocked?: boolean;
+  tin?: string;
+  telegram_username?: string;
+  address?: string;
+  notes?: string;
+}
+
+/** `sales/customers/{id}/` */
+export interface CustomerDetail extends Customer {
+  aging: Record<AgingKey, Money>;
+  debts: Array<{ id: number; status: string; source: string; description: string; amount: Money; paid: Money; left: Money; currency: Currency; issued_on: string; due_on: string | null; overdue: boolean }>;
+  credit: Array<{ id: number; kind: "sale" | "payment"; amount: Money; business_day: string; created_at: string; branch: Ref; method: Ref | null; note: string; by: PersonRef | null; voided_at: string | null }>;
+  purchases: Array<{ id: number; number: string; kind: string; total: Money; sold_at: string }>;
+}
+
+/** `sales/receivables/aging/` */
+export interface Aging {
+  currency: Currency;
+  today: string;
+  totals: Record<AgingKey, Money>;
+  total: Money;
+  customers: Array<{ id: number; name: string; kind: CustomerKind; total: Money } & Record<AgingKey, Money>>;
+}
+
+/** `sales/invoices/` */
+export interface InvoiceRow {
+  id: number;
+  number: string;
+  status: InvoiceStatus;
+  customer: Ref;
+  branch: Ref | null;
+  currency: Currency;
+  subtotal: Money;
+  discount: Money;
+  total: Money;
+  paid: Money;
+  left: Money;
+  issued_on: string | null;
+  due_on: string | null;
+  overdue: boolean;
+  sent_at: string | null;
+  e_invoice_ref: string;
+  created_at: string;
+}
+
+/** `sales/invoices/{id}/` */
+export interface InvoiceDetail extends InvoiceRow {
+  notes: string;
+  warnings: Array<{ line: number; product: string; price: Money; cap: Money }>;
+  lines: Array<{
+    id: number;
+    line_number: number;
+    product: { id: number; name: string; rx_required: boolean } | null;
+    name: string;
+    quantity: string;
+    unit: string;
+    price: Money;
+    discount: Money;
+    total: Money;
+    vat_percent: string | null;
+    mxik_code: string;
+    series: string;
+    expires_on: string | null;
+    cost?: Money | null;
+  }>;
+  payments: Array<{ id: number; paid_on: string; amount: Money; currency: Currency; account: Ref | null }>;
+  has_pdf: boolean;
+  void_reason: string;
+}
+
+export interface InvoiceInput {
+  customer_id?: number;
+  branch_id?: number | null;
+  currency?: Currency;
+  notes?: string;
+  e_invoice_ref?: string;
+  lines?: Array<{ product_id?: number | null; name: string; quantity: string; price: string; discount?: string }>;
+}
