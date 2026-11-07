@@ -187,6 +187,16 @@ def seed(company, people, now) -> None:
     rollup.rebuild_range(company, first_day, story.today)
 
 
+def finish(company, people, now) -> None:
+    """Once every demo has seeded (the stock demo's catalogue is there): the sale lines of the
+    pharmacy's cash-register program, matching the tills (apps/sales/demo_lines.py)."""
+    if not company.has_feature(Feature.SALES):
+        return
+    from apps.sales import demo_lines
+
+    demo_lines.seed_lines(company, people, now)
+
+
 @contextmanager
 def _quiet_alerts(back: int):
     """The routine alerts of shifts older than three days (closed, checked, cash handed over)

@@ -107,6 +107,13 @@ def external_id(profile_id: int, register: str, day: date, number: str) -> str:
     return value
 
 
+def register_key(profile: SalesImportProfile, branch_id: int, register: str) -> str:
+    """The register part of a receipt's external id. A profile fixed to one pharmacy uses the
+    program's register as it is; a file with a pharmacy column prefixes the branch, because two
+    pharmacies' tills are often both called "1" and both restart their numbers every day."""
+    return register if profile.branch_id else f"{branch_id}/{register}"
+
+
 def layout(profile: SalesImportProfile) -> importer.Layout:
     return importer.Layout(
         file_kind=profile.file_kind,
@@ -233,8 +240,9 @@ def _write(imp: SalesImport, rows: list[importer.Row], outcome: Outcome) -> None
         day = business_day(company, row.sold_at, ends_at=settings.business_day_ends_at)
         receipts[(branch.pk, row.register, day, row.receipt)].append(row)
     cache = _Cache(company)
-    for (branch_id, register, day, number), found in receipts.items():
+    for (branch_id, till, day, number), found in receipts.items():
         branch = branches.by_id[branch_id]
+        register = register_key(imp.profile, branch_id, till)
         sold = [row for row in found if not row.refund]
         returned = [row for row in found if row.refund]
         if sold:

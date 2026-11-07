@@ -262,6 +262,40 @@ def test_the_same_file_twice_adds_nothing_and_numbers_repeat_per_day_and_registe
     assert f"{profile}:1:2026-10-22:1" in ids
 
 
+def test_a_file_with_a_pharmacy_column_keeps_each_pharmacys_receipts(pharmacy):
+    """Two pharmacies whose tills are both "1" restart their numbers every day: receipt 1 of
+    each is its own receipt, and the file again adds nothing."""
+    profile = services.create_import_profile(
+        pharmacy.company,
+        by=pharmacy.owner,
+        name="Chain export",
+        columns={**COLUMNS, "branch": "Аптека"},
+    )
+    header = HEADER + ";Аптека"
+    rows = [line(receipt="1") + ";CHL", line(receipt="1") + ";Yunusobod", line() + ";Sergeli"]
+    text = "\n".join([header, *rows]) + "\n"
+
+    def upload():
+        imp = services.start_import(
+            profile,
+            by=pharmacy.owner,
+            file=SimpleUploadedFile("chain.csv", text.encode(), content_type="text/csv"),
+        )
+        lines.process(imp.pk)
+        imp.refresh_from_db()
+        return imp
+
+    first = upload()
+    assert (first.receipts, first.duplicates) == (2, 0)
+    assert first.problems == [{"row": 4, "message": "Unknown branch Sergeli."}]
+    assert set(Sale.objects.filter(sales_import=first).values_list("branch_id", flat=True)) == {
+        pharmacy.branch.pk,
+        pharmacy.other_branch.pk,
+    }
+    again = upload()
+    assert (again.receipts, again.duplicates) == (0, 2)
+
+
 def test_a_long_external_id_is_its_sha1():
     long = lines.external_id(12, "Kassa-" + "x" * 40, date(2026, 10, 21), "R" * 30)
     assert len(long) == 40 and ":" not in long
