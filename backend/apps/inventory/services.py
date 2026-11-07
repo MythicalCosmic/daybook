@@ -180,7 +180,9 @@ def deduct(
 
     Quarantined, recalled and expired batches are never picked. A caller may name a `series`;
     with `fefo_strict`, naming a later batch while an earlier sellable one has stock needs a
-    `reason` (stored on the movement). A sale of a named series that isn't on sale (expired,
+    `reason` (stored on the movement), except for a deduction recorded as of an earlier moment
+    (`at`, an imported sale): that happened, so the series is taken and the movement flagged
+    "not_fefo". A sale of a named series that isn't on sale (expired,
     in quarantine, recalled) is still recorded from it, because it happened; the movement
     says why ("expired", "quarantine", "recalled"). With `allow_negative`, what the batches
     can't cover is booked as a shortfall (`batch_id` None) that the next delivery settles;
@@ -222,7 +224,11 @@ def deduct(
                 for stock in fefo
                 if stock.pk != pick.pk and stock.batch.expires_on < pick.batch.expires_on
             ]
-            if earlier and settings.fefo_strict and not reason:
+            if earlier and settings.fefo_strict and not reason and at is not None:
+                # A sale recorded as of an earlier moment (an imported sales line) happened:
+                # the named series is taken and the movement says FEFO was skipped.
+                named_reason = "not_fefo"
+            elif earlier and settings.fefo_strict and not reason:
                 first = earlier[0].batch
                 raise DomainError(
                     _(
@@ -297,7 +303,9 @@ def restock(
     so the batch itself stays on sale). An allocation without a batch (a shortfall, or a refund
     whose sale the file doesn't name) books against the batch most recently deducted for that
     product at that branch; with status="sellable" it first takes back the shortfall it made.
-    Its product comes from the other allocations of the call."""
+    Its product comes from the other allocations of the call, else from the shortfall the same
+    `document` booked (a voided invoice's line that had no stock); a refund that names neither
+    is refused (`restock_product` books it when the caller knows the product)."""
     if kind not in RESTOCK_KINDS:
         raise ValueError(f"restock() books {sorted(RESTOCK_KINDS)}, not {kind!r}.")
     if status not in (StockBatch.Status.QUARANTINE, StockBatch.Status.SELLABLE):
@@ -321,7 +329,11 @@ def restock(
         batch = batches.get(row.batch_id) if row.batch_id else None
         product = batch.product if batch is not None else hint
         if product is None:
-            raise DomainError(_("Name the batch the goods came from to put them back."))
+            product = _shortfall_product(branch, document, quantity)
+        if product is None:
+            raise DomainError(
+                _("The refund doesn't say which sale it returns: its parts weren't put back.")
+            )
         plan.append((product, batch, quantity))
     if not plan:
         return
@@ -364,6 +376,62 @@ def restock(
     for product in {product.pk: product for product, _b, _q in plan}.values():
         engine.refresh_sale_price(product)
     _bump(branch.company_id)
+
+
+def _shortfall_product(branch, document, quantity) -> Product | None:
+    """The product whose shortfall `document` booked at the branch and that isn't taken back
+    yet, the one owed exactly `quantity` first (a voided invoice's line that had no stock)."""
+    if not document:
+        return None
+    document_type, document_id = document
+    owed = (
+        StockMovement.objects.filter(
+            branch=branch,
+            batch__isnull=True,
+            document_type=document_type,
+            document_id=document_id,
+        )
+        .values("product_id")
+        .annotate(total=Sum("quantity"))
+        .order_by("product_id")
+    )
+    candidates = [(row["product_id"], -row["total"]) for row in owed if row["total"] < 0]
+    if not candidates:
+        return None
+    exact = [product_id for product_id, left in candidates if left == quantity]
+    enough = [product_id for product_id, left in candidates if left >= quantity]
+    product_id = (exact or enough or [candidates[0][0]])[0]
+    return Product.objects.select_related("company").get(pk=product_id)
+
+
+@transaction.atomic
+def restock_product(
+    branch,
+    product,
+    quantity,
+    *,
+    by,
+    document: tuple[str, int],
+    kind: str = "refund",
+    status: str = "quarantine",
+) -> None:
+    """Put back parts of `product` when the deduction they came from isn't known (a refund
+    whose sale the file doesn't name): against the batch most recently deducted for it at the
+    branch, like `restock`."""
+    _same_company(branch.company_id, product)
+    batch = _last_deducted(branch, product)
+    if batch is None:
+        raise DomainError(
+            _("Nothing of %(product)s was sold here to take back.") % {"product": product.name}
+        )
+    restock(
+        branch,
+        [Allocation(batch.pk, parts(quantity), None)],
+        by=by,
+        document=document,
+        kind=kind,
+        status=status,
+    )
 
 
 def _last_deducted(branch, product) -> StockBatch | None:
