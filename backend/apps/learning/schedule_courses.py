@@ -3,7 +3,9 @@ stays free of the services: each looks its service up when it runs."""
 
 
 def process_video(video_id: int) -> str:
-    return "not built"  # Q1: apps.learning.media
+    from apps.learning import media
+
+    return media.process_video_job(video_id)
 
 
 def sync_audiences() -> int:
@@ -19,4 +21,6 @@ def renew_due() -> int:
 
 
 def clean_uploads() -> int:
-    return 0  # Q1: apps.learning.media
+    from apps.learning import media
+
+    return media.clean_uploads()
