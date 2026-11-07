@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.4.4 — 2026-11-07
+
+### Fixed
+- **Someone who left now gets their final payslip**: publishing it sends the PDF to them in the employee
+  bot, with the company, the month and the amount (the app and its notifications are for working
+  members only, so it used to reach nobody).
+- **An expense claim still waiting when its day's books were closed** can be approved: it is booked on
+  the first open day, like depreciation, and keeps the day the money was spent (it could only be
+  rejected).
+- **The cash forecast** no longer drops the usual distributor payments because of a bank loan or a
+  bill due later: only goods and services on credit hold them back.
+- **/expense in the bot** shows every category, ten at a time with "More ›" and "‹ Back" (it showed the
+  first 12, so categories an owner added never appeared).
+
 ## 0.4.3 — 2026-11-07
 
 ### New
