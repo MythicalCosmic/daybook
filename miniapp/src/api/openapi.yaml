@@ -3183,6 +3183,575 @@ paths:
               schema:
                 $ref: '#/components/schemas/KassaCurrent'
           description: ''
+  /api/v1/companies/{company_id}/stock/batches/{id}/expiry-action/:
+    post:
+      operationId: v1_companies_stock_batches_expiry_action_create
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryExpiryActionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryExpiryActionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryExpiryActionRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryExpiryResult'
+          description: ''
+  /api/v1/companies/{company_id}/stock/counts/:
+    get:
+      operationId: v1_companies_stock_counts_list
+      description: |-
+        The open counts at my pharmacies, so a counter can find one without its link (never
+        an expected quantity).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryAppOpenCount'
+          description: ''
+  /api/v1/companies/{company_id}/stock/counts/{id}/lines/:
+    get:
+      operationId: v1_companies_stock_counts_lines_retrieve
+      description: 'The counter''s view of a count: product, series and expiry, never
+        the expected quantity.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryAppCount'
+          description: ''
+    patch:
+      operationId: v1_companies_stock_counts_lines_partial_update
+      description: 'The counter''s view of a count: product, series and expiry, never
+        the expected quantity.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedInventoryCountedRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedInventoryCountedRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedInventoryCountedRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryAppCount'
+          description: ''
+  /api/v1/companies/{company_id}/stock/defektura/:
+    post:
+      operationId: v1_companies_stock_defektura_create
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryAppRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryAppRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryAppRequestRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryRequest'
+          description: ''
+  /api/v1/companies/{company_id}/stock/expiry/:
+    get:
+      operationId: v1_companies_stock_expiry_list
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: within
+        schema:
+          type: integer
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryAppBatch'
+          description: ''
+  /api/v1/companies/{company_id}/stock/lookup/:
+    get:
+      operationId: v1_companies_stock_lookup_list
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: q
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryLookupRow'
+          description: ''
+  /api/v1/companies/{company_id}/stock/products/{id}/:
+    get:
+      operationId: v1_companies_stock_products_retrieve
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryAppProduct'
+          description: ''
+  /api/v1/companies/{company_id}/stock/receipts/:
+    get:
+      operationId: v1_companies_stock_receipts_list
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryAppReceipt'
+          description: ''
+    post:
+      operationId: v1_companies_stock_receipts_create
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryAppReceiptWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryAppReceiptWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryAppReceiptWriteRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryAppReceipt'
+          description: ''
+  /api/v1/companies/{company_id}/stock/receipts/{id}/lines/:
+    post:
+      operationId: v1_companies_stock_receipts_lines_create
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryAppLineWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryAppLineWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryAppLineWriteRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryAppReceipt'
+          description: ''
+  /api/v1/companies/{company_id}/stock/receipts/{id}/lines/{line_id}/:
+    patch:
+      operationId: v1_companies_stock_receipts_lines_partial_update
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: line_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedInventoryAppLineWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedInventoryAppLineWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedInventoryAppLineWriteRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryAppReceipt'
+          description: ''
+    delete:
+      operationId: v1_companies_stock_receipts_lines_destroy
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: line_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/companies/{company_id}/stock/receipts/{id}/submit/:
+    post:
+      operationId: v1_companies_stock_receipts_submit_create
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryAppReceipt'
+          description: ''
+  /api/v1/companies/{company_id}/stock/rx/:
+    post:
+      operationId: v1_companies_stock_rx_create
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryAppRxRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryAppRxRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryAppRxRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryRxRecord'
+          description: ''
+  /api/v1/companies/{company_id}/stock/settings/:
+    get:
+      operationId: v1_companies_stock_settings_retrieve
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryAppSettings'
+          description: ''
+  /api/v1/companies/{company_id}/stock/suppliers/:
+    get:
+      operationId: v1_companies_stock_suppliers_list
+      description: 'Distributors to start a receipt from: the company''s supplier
+        counterparties.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryAppSupplier'
+          description: ''
+  /api/v1/companies/{company_id}/stock/transfers/{id}/receive/:
+    post:
+      operationId: v1_companies_stock_transfers_receive_create
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryReceiveRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryReceiveRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryReceiveRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryAppTransfer'
+          description: ''
+  /api/v1/companies/{company_id}/stock/transfers/incoming/:
+    get:
+      operationId: v1_companies_stock_transfers_incoming_list
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryAppTransfer'
+          description: ''
   /api/v1/companies/{company_id}/summary/:
     get:
       operationId: v1_companies_summary_retrieve
@@ -4770,16 +5339,6 @@ components:
             again.
       required:
       - access
-    ActionEnum:
-      enum:
-      - reassign
-      - new_due
-      - cancel
-      type: string
-      description: |-
-        * `reassign` - reassign
-        * `new_due` - new_due
-        * `cancel` - cancel
     ActionsEnum:
       enum:
       - start
@@ -5649,11 +6208,21 @@ components:
           maxLength: 300
       required:
       - reason_code
+    BlockerResolveActionEnum:
+      enum:
+      - reassign
+      - new_due
+      - cancel
+      type: string
+      description: |-
+        * `reassign` - reassign
+        * `new_due` - new_due
+        * `cancel` - cancel
     BlockerResolveRequest:
       type: object
       properties:
         action:
-          $ref: '#/components/schemas/ActionEnum'
+          $ref: '#/components/schemas/BlockerResolveActionEnum'
         assignee_id:
           type: integer
           nullable: true
@@ -7122,6 +7691,934 @@ components:
         * `info` - Info
         * `warning` - Warning
         * `critical` - Critical
+    InventoryAnalog:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        trade_name:
+          type: string
+        inn:
+          type: string
+        dosage_form:
+          type: string
+        strength:
+          type: string
+        manufacturer:
+          type: string
+        units_per_pack:
+          type: integer
+        part_label:
+          type: string
+        rx_required:
+          type: boolean
+        sale_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        quantity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+      required:
+      - dosage_form
+      - id
+      - inn
+      - manufacturer
+      - name
+      - part_label
+      - quantity
+      - rx_required
+      - sale_price
+      - strength
+      - trade_name
+      - units_per_pack
+    InventoryAppBatch:
+      type: object
+      properties:
+        id:
+          type: integer
+        batch_id:
+          type: integer
+        branch_id:
+          type: integer
+        branch:
+          type: string
+        product:
+          allOf:
+          - $ref: '#/components/schemas/InventoryAppBatchProduct'
+          description: Which medicine the batch is.
+        units_per_pack:
+          type: integer
+        part_label:
+          type: string
+        series:
+          type: string
+        expires_on:
+          type: string
+          format: date
+        days_left:
+          type: integer
+        expired:
+          type: boolean
+        status:
+          type: string
+        quantity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+        retail_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        part_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+      required:
+      - batch_id
+      - branch
+      - branch_id
+      - days_left
+      - expired
+      - expires_on
+      - id
+      - part_label
+      - part_price
+      - product
+      - quantity
+      - retail_price
+      - series
+      - status
+      - units_per_pack
+    InventoryAppBatchProduct:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
+    InventoryAppCount:
+      type: object
+      properties:
+        id:
+          type: integer
+        kind:
+          type: string
+        status:
+          type: string
+        branch:
+          $ref: '#/components/schemas/InventoryBranchRef'
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryCountLine'
+      required:
+      - branch
+      - id
+      - kind
+      - lines
+      - status
+    InventoryAppLineWriteRequest:
+      type: object
+      properties:
+        product:
+          type: integer
+        series:
+          type: string
+          minLength: 1
+          maxLength: 40
+        expires_on:
+          type: string
+          format: date
+        made_on:
+          type: string
+          format: date
+          nullable: true
+        packs:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
+        unit_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          default: '0.00'
+        supplier_rx:
+          type: boolean
+          nullable: true
+      required:
+      - expires_on
+      - packs
+      - product
+      - series
+    InventoryAppOpenCount:
+      type: object
+      properties:
+        id:
+          type: integer
+        kind:
+          type: string
+        branch:
+          $ref: '#/components/schemas/InventoryBranchRef'
+        category:
+          type: string
+          nullable: true
+        lines:
+          type: integer
+        counted:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+      required:
+      - branch
+      - category
+      - counted
+      - created_at
+      - id
+      - kind
+      - lines
+    InventoryAppProduct:
+      type: object
+      properties:
+        product:
+          $ref: '#/components/schemas/InventoryLookupRow'
+        batches:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryAppBatch'
+        analogs:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryAnalog'
+      required:
+      - analogs
+      - batches
+      - product
+    InventoryAppReceipt:
+      type: object
+      properties:
+        id:
+          type: integer
+        status:
+          type: string
+        branch:
+          $ref: '#/components/schemas/InventoryBranchRef'
+        supplier:
+          $ref: '#/components/schemas/InventoryRef'
+        supplier_invoice_number:
+          type: string
+        supplier_invoice_date:
+          type: string
+          format: date
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryAppReceiptLine'
+        created_at:
+          type: string
+          format: date-time
+      required:
+      - branch
+      - created_at
+      - id
+      - lines
+      - status
+      - supplier
+      - supplier_invoice_date
+      - supplier_invoice_number
+    InventoryAppReceiptLine:
+      type: object
+      properties:
+        id:
+          type: integer
+        product:
+          $ref: '#/components/schemas/InventoryRef'
+        units_per_pack:
+          type: integer
+        part_label:
+          type: string
+        series:
+          type: string
+        expires_on:
+          type: string
+          format: date
+        packs:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+        quantity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+        warnings:
+          type: array
+          items:
+            type: string
+      required:
+      - expires_on
+      - id
+      - packs
+      - part_label
+      - product
+      - quantity
+      - series
+      - units_per_pack
+      - warnings
+    InventoryAppReceiptWriteRequest:
+      type: object
+      properties:
+        branch:
+          type: integer
+        supplier:
+          type: integer
+        supplier_invoice_number:
+          type: string
+          maxLength: 40
+        supplier_invoice_date:
+          type: string
+          format: date
+        note:
+          type: string
+        file:
+          type: string
+          format: binary
+      required:
+      - supplier
+      - supplier_invoice_date
+    InventoryAppRequestRequest:
+      type: object
+      properties:
+        product:
+          type: integer
+          nullable: true
+        name:
+          type: string
+          maxLength: 200
+        packs:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
+        customer_phone:
+          type: string
+          maxLength: 16
+    InventoryAppRxRequest:
+      type: object
+      properties:
+        product:
+          type: integer
+        batch:
+          type: integer
+          nullable: true
+        quantity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+        prescription_number:
+          type: string
+          maxLength: 40
+        prescribed_on:
+          type: string
+          format: date
+          nullable: true
+        prescriber:
+          type: string
+          maxLength: 120
+        facility:
+          type: string
+          maxLength: 120
+        rx_kind:
+          $ref: '#/components/schemas/InventoryRxKindEnum'
+        status:
+          $ref: '#/components/schemas/InventoryRxStatusEnum'
+        invalid_reason:
+          type: string
+          maxLength: 200
+        e_prescription_id:
+          type: string
+          maxLength: 64
+        photo:
+          type: string
+          format: binary
+      required:
+      - product
+      - quantity
+    InventoryAppSettings:
+      type: object
+      properties:
+        camera_scanning:
+          type: boolean
+        show_other_branches:
+          type: boolean
+        rx_log:
+          type: boolean
+        fefo_strict:
+          type: boolean
+        expiry_steps:
+          type: array
+          items:
+            type: integer
+          description: Warning steps in days, largest first.
+      required:
+      - camera_scanning
+      - expiry_steps
+      - fefo_strict
+      - rx_log
+      - show_other_branches
+    InventoryAppSupplier:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
+    InventoryAppTransfer:
+      type: object
+      properties:
+        transfer:
+          $ref: '#/components/schemas/InventoryTransfer'
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryTransferLine'
+      required:
+      - lines
+      - transfer
+    InventoryBranchRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        code:
+          type: string
+      required:
+      - code
+      - id
+      - name
+    InventoryCountLine:
+      type: object
+      description: |-
+        An answer shape: an optional field the dict doesn't carry is left out of the answer (a
+        cost field without finance.view), even when its value could be null.
+      properties:
+        id:
+          type: integer
+        product:
+          $ref: '#/components/schemas/InventoryRef'
+        units_per_pack:
+          type: integer
+        part_label:
+          type: string
+        batch_id:
+          type: integer
+          nullable: true
+        series:
+          type: string
+        expires_on:
+          type: string
+          format: date
+          nullable: true
+        counted:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+          nullable: true
+        expected:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+          description: Only once the count is counted, never while open.
+        difference:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+          nullable: true
+        value_difference:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+      required:
+      - batch_id
+      - counted
+      - expires_on
+      - id
+      - part_label
+      - product
+      - series
+      - units_per_pack
+    InventoryCountedLineRequest:
+      type: object
+      properties:
+        line:
+          type: integer
+        counted:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+          nullable: true
+      required:
+      - counted
+      - line
+    InventoryElsewhere:
+      type: object
+      properties:
+        branch_id:
+          type: integer
+        branch:
+          type: string
+        quantity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+      required:
+      - branch
+      - branch_id
+      - quantity
+    InventoryExpiryActionActionEnum:
+      enum:
+      - on_shelf
+      - propose_writeoff
+      type: string
+      description: |-
+        * `on_shelf` - on_shelf
+        * `propose_writeoff` - propose_writeoff
+    InventoryExpiryActionRequest:
+      type: object
+      properties:
+        action:
+          $ref: '#/components/schemas/InventoryExpiryActionActionEnum'
+        reason:
+          $ref: '#/components/schemas/InventoryWriteOffReasonEnum'
+        photo:
+          type: string
+          format: binary
+      required:
+      - action
+    InventoryExpiryResult:
+      type: object
+      properties:
+        action:
+          type: string
+        writeoff_id:
+          type: integer
+          nullable: true
+      required:
+      - action
+      - writeoff_id
+    InventoryLookupRow:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        trade_name:
+          type: string
+        inn:
+          type: string
+        barcode:
+          type: string
+        rx_required:
+          type: boolean
+        control_class:
+          type: string
+        storage:
+          type: string
+        dosage_form:
+          type: string
+        strength:
+          type: string
+        units_per_pack:
+          type: integer
+        part_label:
+          type: string
+        sale_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        part_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        quantity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+          nullable: true
+          description: Parts at my pharmacies.
+        nearest_expiry:
+          type: string
+          format: date
+          nullable: true
+          description: The earliest expiry of what my pharmacies sell next.
+        elsewhere:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryElsewhere'
+      required:
+      - barcode
+      - control_class
+      - dosage_form
+      - elsewhere
+      - id
+      - inn
+      - name
+      - nearest_expiry
+      - part_label
+      - part_price
+      - quantity
+      - rx_required
+      - sale_price
+      - storage
+      - strength
+      - trade_name
+      - units_per_pack
+    InventoryPersonRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        photo_url:
+          type: string
+          nullable: true
+      required:
+      - id
+      - name
+      - photo_url
+    InventoryReceiveRequest:
+      type: object
+      properties:
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryReceivedLineRequest'
+    InventoryReceivedLineRequest:
+      type: object
+      properties:
+        line:
+          type: integer
+        quantity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+      required:
+      - line
+      - quantity
+    InventoryRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
+    InventoryRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        branch_ref:
+          allOf:
+          - $ref: '#/components/schemas/InventoryBranchRef'
+          readOnly: true
+        product_ref:
+          allOf:
+          - $ref: '#/components/schemas/InventoryRef'
+          readOnly: true
+          nullable: true
+        name:
+          type: string
+          maxLength: 200
+        packs:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
+        source:
+          allOf:
+          - $ref: '#/components/schemas/InventoryRequestSourceEnum'
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/InventoryRequestStatusEnum'
+        customer_phone:
+          type: string
+          maxLength: 16
+        requested_at:
+          type: string
+          format: date-time
+          readOnly: true
+        requested_by:
+          allOf:
+          - $ref: '#/components/schemas/InventoryPersonRef'
+          readOnly: true
+          nullable: true
+      required:
+      - branch_ref
+      - id
+      - product_ref
+      - requested_at
+      - requested_by
+      - source
+    InventoryRequestSourceEnum:
+      enum:
+      - counter
+      - mandatory
+      type: string
+      description: |-
+        * `counter` - Asked at the counter
+        * `mandatory` - Mandatory list
+    InventoryRequestStatusEnum:
+      enum:
+      - open
+      - ordered
+      - fulfilled
+      - cancelled
+      type: string
+      description: |-
+        * `open` - Open
+        * `ordered` - Ordered
+        * `fulfilled` - Arrived
+        * `cancelled` - Cancelled
+    InventoryRxKindEnum:
+      enum:
+      - regular
+      - benefit
+      - narcotic
+      - psychotropic
+      - listed
+      type: string
+      description: |-
+        * `regular` - Regular
+        * `benefit` - Preferential
+        * `narcotic` - Narcotic
+        * `psychotropic` - Psychotropic
+        * `listed` - Strong-acting (listed)
+    InventoryRxRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+        branch:
+          $ref: '#/components/schemas/InventoryBranchRef'
+        product:
+          $ref: '#/components/schemas/InventoryRef'
+        series:
+          type: string
+          nullable: true
+        quantity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+        prescription_number:
+          type: string
+        prescribed_on:
+          type: string
+          format: date
+          nullable: true
+        prescriber:
+          type: string
+        facility:
+          type: string
+        rx_kind:
+          $ref: '#/components/schemas/InventoryRxKindEnum'
+        status:
+          $ref: '#/components/schemas/InventoryRxStatusEnum'
+        invalid_reason:
+          type: string
+        facility_notified_at:
+          type: string
+          format: date-time
+          nullable: true
+        e_prescription_id:
+          type: string
+        keep_until:
+          type: string
+          format: date
+        recorded_at:
+          type: string
+          format: date-time
+        recorded_by:
+          allOf:
+          - $ref: '#/components/schemas/InventoryPersonRef'
+          nullable: true
+        flags:
+          type: array
+          items:
+            type: string
+      required:
+      - branch
+      - e_prescription_id
+      - facility
+      - facility_notified_at
+      - flags
+      - id
+      - invalid_reason
+      - keep_until
+      - prescribed_on
+      - prescriber
+      - prescription_number
+      - product
+      - quantity
+      - recorded_at
+      - recorded_by
+      - rx_kind
+      - series
+      - status
+    InventoryRxStatusEnum:
+      enum:
+      - dispensed
+      - invalid
+      type: string
+      description: |-
+        * `dispensed` - Dispensed
+        * `invalid` - Invalid prescription
+    InventoryTransfer:
+      type: object
+      properties:
+        id:
+          type: integer
+        number:
+          type: string
+        status:
+          $ref: '#/components/schemas/InventoryTransferStatusEnum'
+        from_branch:
+          $ref: '#/components/schemas/InventoryBranchRef'
+        to_branch:
+          $ref: '#/components/schemas/InventoryBranchRef'
+        note:
+          type: string
+        lines_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        sent_at:
+          type: string
+          format: date-time
+          nullable: true
+        sent_by:
+          allOf:
+          - $ref: '#/components/schemas/InventoryPersonRef'
+          nullable: true
+        received_at:
+          type: string
+          format: date-time
+          nullable: true
+        received_by:
+          allOf:
+          - $ref: '#/components/schemas/InventoryPersonRef'
+          nullable: true
+        resolution:
+          type: string
+        resolved_at:
+          type: string
+          format: date-time
+          nullable: true
+        void_reason:
+          type: string
+      required:
+      - created_at
+      - from_branch
+      - id
+      - lines_count
+      - note
+      - number
+      - received_at
+      - received_by
+      - resolution
+      - resolved_at
+      - sent_at
+      - sent_by
+      - status
+      - to_branch
+      - void_reason
+    InventoryTransferLine:
+      type: object
+      properties:
+        id:
+          type: integer
+        product:
+          $ref: '#/components/schemas/InventoryRef'
+        units_per_pack:
+          type: integer
+        part_label:
+          type: string
+        batch_id:
+          type: integer
+          nullable: true
+        series:
+          type: string
+          nullable: true
+        expires_on:
+          type: string
+          format: date
+          nullable: true
+        quantity_sent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+        quantity_received:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+          nullable: true
+      required:
+      - batch_id
+      - expires_on
+      - id
+      - part_label
+      - product
+      - quantity_received
+      - quantity_sent
+      - series
+      - units_per_pack
+    InventoryTransferStatusEnum:
+      enum:
+      - draft
+      - sent
+      - received
+      - disputed
+      - void
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `sent` - On the way
+        * `received` - Received
+        * `disputed` - Disputed
+        * `void` - Void
+    InventoryWriteOffReasonEnum:
+      enum:
+      - expired
+      - damaged
+      - recall
+      - quality
+      - shortage
+      - internal_use
+      - other
+      type: string
+      description: |-
+        * `expired` - Expired
+        * `damaged` - Damaged
+        * `recall` - Recalled series
+        * `quality` - Quality defect
+        * `shortage` - Shortage
+        * `internal_use` - Used by the pharmacy
+        * `other` - Other
     KassaClosed:
       type: object
       properties:
@@ -8776,6 +10273,41 @@ components:
         payout_card:
           type: string
           maxLength: 30
+    PatchedInventoryAppLineWriteRequest:
+      type: object
+      properties:
+        product:
+          type: integer
+        series:
+          type: string
+          minLength: 1
+          maxLength: 40
+        expires_on:
+          type: string
+          format: date
+        made_on:
+          type: string
+          format: date
+          nullable: true
+        packs:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
+        unit_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          default: '0.00'
+        supplier_rx:
+          type: boolean
+          nullable: true
+    PatchedInventoryCountedRequest:
+      type: object
+      properties:
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryCountedLineRequest'
     PatchedMeRequest:
       type: object
       properties:

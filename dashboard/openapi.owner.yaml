@@ -20598,6 +20598,3039 @@ paths:
               schema:
                 $ref: '#/components/schemas/Setup'
           description: ''
+  /api/v1/owner/companies/{company_id}/stock/batches/:
+    get:
+      operationId: companies_stock_batches_list
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: One branch (in scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: expires_before
+        schema:
+          type: string
+        description: YYYY-MM-DD
+      - in: query
+        name: product
+        schema:
+          type: integer
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Series or product.
+      - in: query
+        name: status
+        schema:
+          type: string
+        description: sellable, quarantine, recalled or expired
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryBatch'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/batches/{id}/markdown/:
+    post:
+      operationId: companies_stock_batches_markdown_create
+      description: 'POST stock/batches/{id}/quarantine|release|markdown/ ({id}: the
+        batch''s stock row).'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryPriceRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryPriceRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryPriceRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryBatch'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/batches/{id}/quarantine/:
+    post:
+      operationId: companies_stock_batches_quarantine_create
+      description: 'POST stock/batches/{id}/quarantine|release|markdown/ ({id}: the
+        batch''s stock row).'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryReasonRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryReasonRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryReasonRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryBatch'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/batches/{id}/release/:
+    post:
+      operationId: companies_stock_batches_release_create
+      description: 'POST stock/batches/{id}/quarantine|release|markdown/ ({id}: the
+        batch''s stock row).'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryOptionalReasonRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryOptionalReasonRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryOptionalReasonRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryBatch'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/batches/opening/:
+    post:
+      operationId: companies_stock_batches_opening_create
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryOpeningRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryOpeningRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryOpeningRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryBatch'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/branches/:
+    get:
+      operationId: companies_stock_branches_list
+      description: |-
+        Every active branch of the company, for picking where a transfer goes (a pharmacy's head
+        sends to the others without seeing their stock).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryStockBranch'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/categories/:
+    get:
+      operationId: companies_stock_categories_list
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryCategory'
+          description: ''
+    post:
+      operationId: companies_stock_categories_create
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryCategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryCategoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryCategoryRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryCategory'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/categories/{id}/:
+    patch:
+      operationId: companies_stock_categories_partial_update
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedInventoryCategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedInventoryCategoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedInventoryCategoryRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryCategory'
+          description: ''
+    delete:
+      operationId: companies_stock_categories_destroy
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/stock/counts/:
+    get:
+      operationId: companies_stock_counts_list
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: One branch (in scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: status
+        schema:
+          type: string
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryCount'
+          description: ''
+    post:
+      operationId: companies_stock_counts_create
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryCountWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryCountWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryCountWriteRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryCountDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/counts/{id}/:
+    get:
+      operationId: companies_stock_counts_retrieve
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryCountDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/counts/{id}/apply/:
+    post:
+      operationId: companies_stock_counts_apply_create
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryCountDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/counts/{id}/found/:
+    post:
+      operationId: companies_stock_counts_found_create
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryFoundRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryFoundRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryFoundRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryCountDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/counts/{id}/lines/:
+    post:
+      operationId: companies_stock_counts_lines_create
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryCountedRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryCountedRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryCountedRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryCountDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/counts/{id}/submit/:
+    post:
+      operationId: companies_stock_counts_submit_create
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryCountDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/defektura/:
+    get:
+      operationId: companies_stock_defektura_list
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: One branch (in scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: status
+        schema:
+          type: string
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryRequest'
+          description: ''
+    post:
+      operationId: companies_stock_defektura_create
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryRequestRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryRequest'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/defektura/{id}/:
+    patch:
+      operationId: companies_stock_defektura_partial_update
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedInventoryRequestStatusRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedInventoryRequestStatusRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedInventoryRequestStatusRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryRequest'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/expiry/:
+    get:
+      operationId: companies_stock_expiry_retrieve
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: One branch (in scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: within
+        schema:
+          type: integer
+        description: Days, max 365.
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryExpiryBoard'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/journals/controlled/:
+    get:
+      operationId: companies_stock_journals_controlled_retrieve
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: month
+        schema:
+          type: string
+        description: YYYY-MM
+        required: true
+      - in: query
+        name: product
+        schema:
+          type: integer
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryControlledRegister'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/journals/controlled/{id}/reported/:
+    post:
+      operationId: companies_stock_journals_controlled_reported_create
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryReportedRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryReportedRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryReportedRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryControlledRow'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/journals/controlled/close/:
+    post:
+      operationId: companies_stock_journals_controlled_close_create
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryCloseMonthRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryCloseMonthRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryCloseMonthRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryControlledRegister'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/journals/controlled/pdf/:
+    get:
+      operationId: companies_stock_journals_controlled_pdf_retrieve
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: month
+        schema:
+          type: string
+        description: YYYY-MM
+        required: true
+      - in: query
+        name: product
+        schema:
+          type: integer
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryFileLink'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/journals/rx/:
+    get:
+      operationId: companies_stock_journals_rx_retrieve
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: month
+        schema:
+          type: string
+        description: YYYY-MM
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryRxJournal'
+          description: ''
+    post:
+      operationId: companies_stock_journals_rx_create
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryRxWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryRxWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryRxWriteRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryRxRecord'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/journals/rx/pdf/:
+    get:
+      operationId: companies_stock_journals_rx_pdf_retrieve
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: invalid
+        schema:
+          type: boolean
+      - in: query
+        name: month
+        schema:
+          type: string
+        description: YYYY-MM
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryFileLink'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/levels/:
+    get:
+      operationId: companies_stock_levels_list
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: One branch (in scope).
+      - in: query
+        name: category
+        schema:
+          type: integer
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: control
+        schema:
+          type: boolean
+      - in: query
+        name: low
+        schema:
+          type: boolean
+      - in: query
+        name: mandatory
+        schema:
+          type: boolean
+      - in: query
+        name: negative
+        schema:
+          type: boolean
+      - in: query
+        name: q
+        schema:
+          type: string
+      - in: query
+        name: rx
+        schema:
+          type: boolean
+      - in: query
+        name: storage
+        schema:
+          type: string
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryLevel'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/levels/{id}/:
+    patch:
+      operationId: companies_stock_levels_partial_update
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedInventoryLevelLimitsRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedInventoryLevelLimitsRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedInventoryLevelLimitsRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryLevelLimits'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/manufacturers/:
+    get:
+      operationId: companies_stock_manufacturers_list
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryManufacturer'
+          description: ''
+    post:
+      operationId: companies_stock_manufacturers_create
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryManufacturerRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryManufacturerRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryManufacturerRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryManufacturer'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/manufacturers/{id}/:
+    patch:
+      operationId: companies_stock_manufacturers_partial_update
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedInventoryManufacturerRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedInventoryManufacturerRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedInventoryManufacturerRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryManufacturer'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/movements/:
+    get:
+      operationId: companies_stock_movements_list
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: One branch (in scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: from
+        schema:
+          type: string
+      - in: query
+        name: kind
+        schema:
+          type: string
+      - in: query
+        name: product
+        schema:
+          type: integer
+      - in: query
+        name: to
+        schema:
+          type: string
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryMovement'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/price-tags/:
+    post:
+      operationId: companies_stock_price_tags_create
+      description: |-
+        POST stock/price-tags/: the shelf's price tags as a PDF (prescription items on a counter
+        list, not for public display): the items named, else those whose price changed lately.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryPriceTagsRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryPriceTagsRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryPriceTagsRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryFileLink'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/pricing-rules/:
+    get:
+      operationId: companies_stock_pricing_rules_list
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryPricingRule'
+          description: ''
+    post:
+      operationId: companies_stock_pricing_rules_create
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryPricingRuleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryPricingRuleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryPricingRuleRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryPricingRule'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/pricing-rules/{id}/:
+    patch:
+      operationId: companies_stock_pricing_rules_partial_update
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedInventoryPricingRuleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedInventoryPricingRuleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedInventoryPricingRuleRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryPricingRule'
+          description: ''
+    delete:
+      operationId: companies_stock_pricing_rules_destroy
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/stock/products/:
+    get:
+      operationId: companies_stock_products_list
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: query
+        name: active
+        schema:
+          type: boolean
+        description: Default true.
+      - in: query
+        name: category
+        schema:
+          type: integer
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: control
+        schema:
+          type: boolean
+        description: Any controlled class.
+      - in: query
+        name: kind
+        schema:
+          type: string
+      - in: query
+        name: mandatory
+        schema:
+          type: boolean
+      - in: query
+        name: page
+        schema:
+          type: integer
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+      - in: query
+        name: q
+        schema:
+          type: string
+      - in: query
+        name: rx
+        schema:
+          type: boolean
+      - in: query
+        name: storage
+        schema:
+          type: string
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryProductPage'
+          description: ''
+    post:
+      operationId: companies_stock_products_create
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryProductWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryProductWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryProductWriteRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryProduct'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/products/{id}/:
+    get:
+      operationId: companies_stock_products_retrieve
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryProductDetail'
+          description: ''
+    patch:
+      operationId: companies_stock_products_partial_update
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedInventoryProductWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedInventoryProductWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedInventoryProductWriteRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryProductDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/products/{id}/analogs/:
+    get:
+      operationId: companies_stock_products_analogs_list
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryAnalog'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/products/{id}/batches/:
+    get:
+      operationId: companies_stock_products_batches_list
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: One branch (in scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryBatch'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/products/{id}/codes/:
+    get:
+      operationId: companies_stock_products_codes_list
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryProductCode'
+          description: ''
+    post:
+      operationId: companies_stock_products_codes_create
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryProductCodeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryProductCodeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryProductCodeRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryProductCode'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/products/{id}/codes/{code_id}/:
+    delete:
+      operationId: companies_stock_products_codes_destroy
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: code_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/stock/products/{id}/merge/:
+    post:
+      operationId: companies_stock_products_merge_create
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryMergeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryMergeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryMergeRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryProduct'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/products/{id}/movements/:
+    get:
+      operationId: companies_stock_products_movements_list
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: One branch (in scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryMovement'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/products/import/:
+    post:
+      operationId: companies_stock_products_import_create
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryImportRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryImportRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryImportRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryImportResult'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/recalls/:
+    get:
+      operationId: companies_stock_recalls_list
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: status
+        schema:
+          type: string
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryRecall'
+          description: ''
+    post:
+      operationId: companies_stock_recalls_create
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryRecallWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryRecallWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryRecallWriteRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryRecall'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/recalls/{id}/:
+    get:
+      operationId: companies_stock_recalls_retrieve
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryRecall'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/recalls/{id}/close/:
+    post:
+      operationId: companies_stock_recalls_close_create
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryRecall'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/recalls/import/:
+    post:
+      operationId: companies_stock_recalls_import_create
+      description: 'POST stock/recalls/import/: the regulator''s rejected-series list,
+        a dry run first.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryRecallImportRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryRecallImportRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryRecallImportRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryRecallImportResult'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/receipts/:
+    get:
+      operationId: companies_stock_receipts_list
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: One branch (in scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: q
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+      - in: query
+        name: supplier
+        schema:
+          type: integer
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryReceipt'
+          description: ''
+    post:
+      operationId: companies_stock_receipts_create
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryReceiptWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryReceiptWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryReceiptWriteRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryReceiptDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/receipts/{id}/:
+    get:
+      operationId: companies_stock_receipts_retrieve
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryReceiptDetail'
+          description: ''
+    patch:
+      operationId: companies_stock_receipts_partial_update
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedInventoryReceiptWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedInventoryReceiptWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedInventoryReceiptWriteRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryReceiptDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/receipts/{id}/file/:
+    post:
+      operationId: companies_stock_receipts_file_create
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryReceiptFileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryReceiptFileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryReceiptFileRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryReceiptDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/receipts/{id}/lines/:
+    post:
+      operationId: companies_stock_receipts_lines_create
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryReceiptLineWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryReceiptLineWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryReceiptLineWriteRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryReceiptDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/receipts/{id}/lines/{line_id}/:
+    patch:
+      operationId: companies_stock_receipts_lines_partial_update
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: line_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedInventoryReceiptLineWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedInventoryReceiptLineWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedInventoryReceiptLineWriteRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryReceiptDetail'
+          description: ''
+    delete:
+      operationId: companies_stock_receipts_lines_destroy
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: line_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/stock/receipts/{id}/lines/import/:
+    post:
+      operationId: companies_stock_receipts_lines_import_create
+      description: |-
+        POST stock/receipts/{id}/lines/import/: the distributor's invoice spreadsheet into
+        lines, a dry run first.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryImportRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryImportRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryImportRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryLineImportResult'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/receipts/{id}/post/:
+    post:
+      operationId: companies_stock_receipts_post_create
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryReceiptDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/receipts/{id}/submit/:
+    post:
+      operationId: companies_stock_receipts_submit_create
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryReceiptDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/receipts/{id}/void/:
+    post:
+      operationId: companies_stock_receipts_void_create
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryReasonRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryReasonRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryReasonRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryReceiptDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/settings/:
+    get:
+      operationId: companies_stock_settings_retrieve
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventorySettings'
+          description: ''
+    patch:
+      operationId: companies_stock_settings_partial_update
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedInventorySettingsRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedInventorySettingsRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedInventorySettingsRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventorySettings'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/summary/:
+    get:
+      operationId: companies_stock_summary_retrieve
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: One branch (in scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventorySummary'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/suppliers/:
+    get:
+      operationId: companies_stock_suppliers_list
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventorySupplier'
+          description: ''
+    post:
+      operationId: companies_stock_suppliers_create
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventorySupplierRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventorySupplierRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventorySupplierRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventorySupplier'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/suppliers/{id}/:
+    patch:
+      operationId: companies_stock_suppliers_partial_update
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedInventorySupplierRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedInventorySupplierRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedInventorySupplierRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventorySupplier'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/transfers/:
+    get:
+      operationId: companies_stock_transfers_list
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: One branch (in scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: status
+        schema:
+          type: string
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryTransfer'
+          description: ''
+    post:
+      operationId: companies_stock_transfers_create
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryTransferWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryTransferWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryTransferWriteRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryTransferDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/transfers/{id}/:
+    get:
+      operationId: companies_stock_transfers_retrieve
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryTransferDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/transfers/{id}/receive/:
+    post:
+      operationId: companies_stock_transfers_receive_create
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryReceiveRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryReceiveRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryReceiveRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryTransferDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/transfers/{id}/resolve/:
+    post:
+      operationId: companies_stock_transfers_resolve_create
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryResolveRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryResolveRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryResolveRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryTransferDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/transfers/{id}/send/:
+    post:
+      operationId: companies_stock_transfers_send_create
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryTransferDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/transfers/{id}/void/:
+    post:
+      operationId: companies_stock_transfers_void_create
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryReasonRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryReasonRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryReasonRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryTransferDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/write-offs/:
+    get:
+      operationId: companies_stock_write_offs_list
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: One branch (in scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: reason
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryWriteOff'
+          description: ''
+    post:
+      operationId: companies_stock_write_offs_create
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryWriteOffWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryWriteOffWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryWriteOffWriteRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryWriteOffDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/write-offs/{id}/:
+    get:
+      operationId: companies_stock_write_offs_retrieve
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryWriteOffDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/write-offs/{id}/act/:
+    get:
+      operationId: companies_stock_write_offs_act_retrieve
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: language
+        schema:
+          type: string
+        description: uz or ru; your own by default.
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryFileLink'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/write-offs/{id}/approve/:
+    post:
+      operationId: companies_stock_write_offs_approve_create
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryWriteOffDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/write-offs/{id}/destroyed/:
+    post:
+      operationId: companies_stock_write_offs_destroyed_create
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryDestroyedRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryDestroyedRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryDestroyedRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryWriteOffDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/write-offs/{id}/files/:
+    post:
+      operationId: companies_stock_write_offs_files_create
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryWriteOffUploadRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryWriteOffUploadRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryWriteOffUploadRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryWriteOffDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stock/write-offs/{id}/void/:
+    post:
+      operationId: companies_stock_write_offs_void_create
+      description: 'The base of the stock endpoints: the module switch, the branch
+        scope and the cost rule.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryReasonRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryReasonRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryReasonRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryWriteOffDetail'
+          description: ''
   /api/v1/owner/companies/{company_id}/stream/:
     get:
       operationId: companies_stream_retrieve
@@ -31649,6 +34682,3342 @@ components:
             $ref: '#/components/schemas/InstallmentRowRequest'
       required:
       - installments
+    InventoryAnalog:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        trade_name:
+          type: string
+        inn:
+          type: string
+        dosage_form:
+          type: string
+        strength:
+          type: string
+        manufacturer:
+          type: string
+        units_per_pack:
+          type: integer
+        part_label:
+          type: string
+        rx_required:
+          type: boolean
+        sale_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        quantity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+      required:
+      - dosage_form
+      - id
+      - inn
+      - manufacturer
+      - name
+      - part_label
+      - quantity
+      - rx_required
+      - sale_price
+      - strength
+      - trade_name
+      - units_per_pack
+    InventoryBatch:
+      type: object
+      description: |-
+        An answer shape: an optional field the dict doesn't carry is left out of the answer (a
+        cost field without finance.view), even when its value could be null.
+      properties:
+        id:
+          type: integer
+          description: The batch's stock row at the branch.
+        batch_id:
+          type: integer
+        branch:
+          $ref: '#/components/schemas/InventoryBranchRef'
+        product:
+          $ref: '#/components/schemas/InventoryRef'
+        series:
+          type: string
+        expires_on:
+          type: string
+          format: date
+        made_on:
+          type: string
+          format: date
+          nullable: true
+        days_left:
+          type: integer
+        expired:
+          type: boolean
+        status:
+          $ref: '#/components/schemas/InventoryBatchStatusEnum'
+        supplier:
+          allOf:
+          - $ref: '#/components/schemas/InventoryRef'
+          nullable: true
+        quantity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+        retail_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        part_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        price_cap:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        unit_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        retail_value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        receipt_id:
+          type: integer
+          nullable: true
+      required:
+      - batch_id
+      - branch
+      - days_left
+      - expired
+      - expires_on
+      - id
+      - made_on
+      - part_price
+      - price_cap
+      - product
+      - quantity
+      - receipt_id
+      - retail_price
+      - retail_value
+      - series
+      - status
+      - supplier
+    InventoryBatchStatusEnum:
+      enum:
+      - sellable
+      - quarantine
+      - recalled
+      type: string
+      description: |-
+        * `sellable` - On sale
+        * `quarantine` - In quarantine
+        * `recalled` - Recalled
+    InventoryBranchQuantity:
+      type: object
+      properties:
+        branch_id:
+          type: integer
+        branch:
+          type: string
+        quantity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+        shortfall:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+        min_qty:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+          nullable: true
+        max_qty:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+          nullable: true
+      required:
+      - branch
+      - branch_id
+      - max_qty
+      - min_qty
+      - quantity
+      - shortfall
+    InventoryBranchRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        code:
+          type: string
+      required:
+      - code
+      - id
+      - name
+    InventoryBranchRefRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          minLength: 1
+        code:
+          type: string
+          minLength: 1
+      required:
+      - code
+      - id
+      - name
+    InventoryCategory:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        parent:
+          type: integer
+          nullable: true
+        order:
+          type: integer
+          minimum: 0
+        products:
+          type: integer
+          readOnly: true
+      required:
+      - id
+      - name
+      - products
+    InventoryCategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        parent:
+          type: integer
+          nullable: true
+        order:
+          type: integer
+          minimum: 0
+      required:
+      - name
+    InventoryCloseMonthRequest:
+      type: object
+      properties:
+        branch:
+          type: integer
+        month:
+          type: string
+          format: date
+        counted:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryCountedProductRequest'
+        note:
+          type: string
+      required:
+      - branch
+      - month
+    InventoryCodeKindEnum:
+      enum:
+      - barcode
+      - supplier
+      - pos
+      type: string
+      description: |-
+        * `barcode` - Barcode
+        * `supplier` - Distributor's code
+        * `pos` - Cash register code
+    InventoryCommissionMember:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 150
+        organisation:
+          type: string
+          maxLength: 150
+        role:
+          type: string
+          maxLength: 100
+      required:
+      - name
+    InventoryCommissionMemberRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        organisation:
+          type: string
+          maxLength: 150
+        role:
+          type: string
+          maxLength: 100
+      required:
+      - name
+    InventoryControlClassEnum:
+      enum:
+      - none
+      - narcotic
+      - psychotropic
+      - precursor
+      - strong
+      type: string
+      description: |-
+        * `none` - Not controlled
+        * `narcotic` - Narcotic
+        * `psychotropic` - Psychotropic
+        * `precursor` - Contains a precursor
+        * `strong` - Strong-acting (listed)
+    InventoryControlledRegister:
+      type: object
+      properties:
+        branch:
+          $ref: '#/components/schemas/InventoryBranchRef'
+        month:
+          type: string
+          format: date
+        closed:
+          type: boolean
+        close_by:
+          type: string
+          format: date
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryControlledRow'
+        branches:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryBranchRef'
+          description: The licensed branches in scope.
+      required:
+      - branch
+      - branches
+      - close_by
+      - closed
+      - month
+      - rows
+    InventoryControlledRow:
+      type: object
+      properties:
+        id:
+          type: integer
+        product_id:
+          type: integer
+        product:
+          type: string
+        inn:
+          type: string
+        control_class:
+          type: string
+        units_per_pack:
+          type: integer
+        opening:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+        received:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+        issued:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+        written_off:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+        adjusted:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+        closing:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+        unrecorded_issues:
+          type: integer
+        period_id:
+          type: integer
+          nullable: true
+        counted:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+          nullable: true
+        difference:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+          nullable: true
+        closed_at:
+          type: string
+          format: date-time
+          nullable: true
+        reported_on:
+          type: string
+          format: date
+          nullable: true
+      required:
+      - adjusted
+      - closed_at
+      - closing
+      - control_class
+      - counted
+      - difference
+      - id
+      - inn
+      - issued
+      - opening
+      - period_id
+      - product
+      - product_id
+      - received
+      - reported_on
+      - units_per_pack
+      - unrecorded_issues
+      - written_off
+    InventoryCount:
+      type: object
+      description: |-
+        An answer shape: an optional field the dict doesn't carry is left out of the answer (a
+        cost field without finance.view), even when its value could be null.
+      properties:
+        id:
+          type: integer
+        kind:
+          $ref: '#/components/schemas/InventoryCountKindEnum'
+        status:
+          $ref: '#/components/schemas/InventoryCountStatusEnum'
+        branch:
+          $ref: '#/components/schemas/InventoryBranchRef'
+        category:
+          allOf:
+          - $ref: '#/components/schemas/InventoryRef'
+          nullable: true
+        lines_count:
+          type: integer
+        counted_count:
+          type: integer
+        started_by:
+          allOf:
+          - $ref: '#/components/schemas/InventoryPersonRef'
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        submitted_at:
+          type: string
+          format: date-time
+          nullable: true
+        applied_at:
+          type: string
+          format: date-time
+          nullable: true
+        value_difference:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+      required:
+      - applied_at
+      - branch
+      - category
+      - counted_count
+      - created_at
+      - id
+      - kind
+      - lines_count
+      - started_by
+      - status
+      - submitted_at
+    InventoryCountDetail:
+      type: object
+      properties:
+        count:
+          $ref: '#/components/schemas/InventoryCount'
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryCountLine'
+      required:
+      - count
+      - lines
+    InventoryCountKindEnum:
+      enum:
+      - full
+      - partial
+      - handover
+      type: string
+      description: |-
+        * `full` - Full count
+        * `partial` - Partial count
+        * `handover` - Handover count
+    InventoryCountLine:
+      type: object
+      description: |-
+        An answer shape: an optional field the dict doesn't carry is left out of the answer (a
+        cost field without finance.view), even when its value could be null.
+      properties:
+        id:
+          type: integer
+        product:
+          $ref: '#/components/schemas/InventoryRef'
+        units_per_pack:
+          type: integer
+        part_label:
+          type: string
+        batch_id:
+          type: integer
+          nullable: true
+        series:
+          type: string
+        expires_on:
+          type: string
+          format: date
+          nullable: true
+        counted:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+          nullable: true
+        expected:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+          description: Only once the count is counted, never while open.
+        difference:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+          nullable: true
+        value_difference:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+      required:
+      - batch_id
+      - counted
+      - expires_on
+      - id
+      - part_label
+      - product
+      - series
+      - units_per_pack
+    InventoryCountStatusEnum:
+      enum:
+      - open
+      - submitted
+      - applied
+      type: string
+      description: |-
+        * `open` - Counting
+        * `submitted` - Counted
+        * `applied` - Applied
+    InventoryCountWriteRequest:
+      type: object
+      properties:
+        branch:
+          type: integer
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/InventoryCountKindEnum'
+          default: partial
+        category:
+          type: integer
+          nullable: true
+      required:
+      - branch
+    InventoryCountedLineRequest:
+      type: object
+      properties:
+        line:
+          type: integer
+        counted:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+          nullable: true
+      required:
+      - counted
+      - line
+    InventoryCountedProductRequest:
+      type: object
+      properties:
+        product:
+          type: integer
+        counted:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+      required:
+      - counted
+      - product
+    InventoryCountedRequest:
+      type: object
+      properties:
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryCountedLineRequest'
+      required:
+      - lines
+    InventoryDestroyedRequest:
+      type: object
+      properties:
+        method:
+          $ref: '#/components/schemas/InventoryDestructionMethodEnum'
+        place:
+          type: string
+          minLength: 1
+          maxLength: 200
+        destroyed_at:
+          type: string
+          format: date-time
+        responsible:
+          type: string
+          minLength: 1
+          maxLength: 150
+        order_number:
+          type: string
+          minLength: 1
+          maxLength: 40
+        commission:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryCommissionMemberRequest'
+        sent_to:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 150
+      required:
+      - commission
+      - destroyed_at
+      - method
+      - order_number
+      - place
+      - responsible
+    InventoryDestructionMethodEnum:
+      enum:
+      - crush
+      - dilute
+      - incinerate
+      - disposal
+      - decontaminate
+      - other
+      type: string
+      description: |-
+        * `crush` - Crushing
+        * `dilute` - Dilution
+        * `incinerate` - Incineration
+        * `disposal` - Handed to a disposal company
+        * `decontaminate` - Decontamination
+        * `other` - Other method
+    InventoryDosageFormEnum:
+      enum:
+      - tablet
+      - capsule
+      - syrup
+      - suspension
+      - solution
+      - injection
+      - powder
+      - ointment
+      - cream
+      - gel
+      - eye_drops
+      - ear_drops
+      - nasal
+      - spray
+      - suppository
+      - patch
+      - other
+      type: string
+      description: |-
+        * `tablet` - Tablet
+        * `capsule` - Capsule
+        * `syrup` - Syrup
+        * `suspension` - Suspension
+        * `solution` - Solution
+        * `injection` - Injection
+        * `powder` - Powder
+        * `ointment` - Ointment
+        * `cream` - Cream
+        * `gel` - Gel
+        * `eye_drops` - Eye drops
+        * `ear_drops` - Ear drops
+        * `nasal` - Nasal drops or spray
+        * `spray` - Spray
+        * `suppository` - Suppository
+        * `patch` - Patch
+        * `other` - Other form
+    InventoryExpiryBoard:
+      type: object
+      properties:
+        as_of:
+          type: string
+          format: date
+        within:
+          type: integer
+        buckets:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryExpiryBucket'
+      required:
+      - as_of
+      - buckets
+      - within
+    InventoryExpiryBucket:
+      type: object
+      description: |-
+        An answer shape: an optional field the dict doesn't carry is left out of the answer (a
+        cost field without finance.view), even when its value could be null.
+      properties:
+        key:
+          type: string
+        days:
+          type: integer
+        count:
+          type: integer
+        value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        retail_value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryExpiryRow'
+      required:
+      - count
+      - days
+      - key
+      - retail_value
+      - rows
+    InventoryExpiryRow:
+      type: object
+      description: |-
+        An answer shape: an optional field the dict doesn't carry is left out of the answer (a
+        cost field without finance.view), even when its value could be null.
+      properties:
+        id:
+          type: integer
+        batch_id:
+          type: integer
+        branch_id:
+          type: integer
+        branch:
+          type: string
+        product_id:
+          type: integer
+        product:
+          type: string
+        series:
+          type: string
+        expires_on:
+          type: string
+          format: date
+        days_left:
+          type: integer
+        expired:
+          type: boolean
+        status:
+          type: string
+        quantity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+        units_per_pack:
+          type: integer
+        value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        retail_value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+      required:
+      - batch_id
+      - branch
+      - branch_id
+      - days_left
+      - expired
+      - expires_on
+      - id
+      - product
+      - product_id
+      - quantity
+      - retail_value
+      - series
+      - status
+      - units_per_pack
+    InventoryFileLink:
+      type: object
+      properties:
+        url:
+          type: string
+        name:
+          type: string
+        expires_in:
+          type: integer
+      required:
+      - expires_in
+      - name
+      - url
+    InventoryFoundRequest:
+      type: object
+      properties:
+        product:
+          type: integer
+        series:
+          type: string
+          minLength: 1
+          maxLength: 40
+        expires_on:
+          type: string
+          format: date
+        counted:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+      required:
+      - counted
+      - expires_on
+      - product
+      - series
+    InventoryFoundRow:
+      type: object
+      properties:
+        branch_id:
+          type: integer
+        branch:
+          type: string
+        batch_id:
+          type: integer
+        product_id:
+          type: integer
+        product:
+          type: string
+        series:
+          type: string
+        quantity:
+          type: string
+        task_id:
+          type: integer
+          nullable: true
+        left:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+        units_per_pack:
+          type: integer
+        part_label:
+          type: string
+      required:
+      - batch_id
+      - branch
+      - branch_id
+      - left
+      - part_label
+      - product
+      - product_id
+      - quantity
+      - series
+      - task_id
+      - units_per_pack
+    InventoryImportActionEnum:
+      enum:
+      - create
+      - update
+      - skip
+      type: string
+      description: |-
+        * `create` - create
+        * `update` - update
+        * `skip` - skip
+    InventoryImportRequest:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+        mapping: {}
+        dry_run:
+          type: boolean
+          default: true
+      required:
+      - file
+    InventoryImportResult:
+      type: object
+      properties:
+        dry_run:
+          type: boolean
+        columns:
+          type: array
+          items:
+            type: string
+        mapping:
+          type: object
+          additionalProperties:
+            type: string
+        created:
+          type: integer
+        updated:
+          type: integer
+        skipped:
+          type: integer
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryImportRow'
+      required:
+      - columns
+      - created
+      - dry_run
+      - mapping
+      - rows
+      - skipped
+      - updated
+    InventoryImportRow:
+      type: object
+      properties:
+        row:
+          type: integer
+        action:
+          $ref: '#/components/schemas/InventoryImportActionEnum'
+        name:
+          type: string
+        product_id:
+          type: integer
+          nullable: true
+        errors:
+          type: array
+          items:
+            type: string
+      required:
+      - action
+      - errors
+      - name
+      - product_id
+      - row
+    InventoryLevel:
+      type: object
+      description: |-
+        An answer shape: an optional field the dict doesn't carry is left out of the answer (a
+        cost field without finance.view), even when its value could be null.
+      properties:
+        id:
+          type: integer
+        branch:
+          $ref: '#/components/schemas/InventoryBranchRef'
+        product:
+          $ref: '#/components/schemas/InventoryRef'
+        inn:
+          type: string
+        rx_required:
+          type: boolean
+        control_class:
+          type: string
+        storage:
+          type: string
+        mandatory_list:
+          type: boolean
+        units_per_pack:
+          type: integer
+        part_label:
+          type: string
+        quantity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+        sellable:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+        shortfall:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+        min_qty:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+          nullable: true
+        max_qty:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+          nullable: true
+        low:
+          type: boolean
+        nearest_expiry:
+          type: string
+          format: date
+          nullable: true
+        sale_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+      required:
+      - branch
+      - control_class
+      - id
+      - inn
+      - low
+      - mandatory_list
+      - max_qty
+      - min_qty
+      - nearest_expiry
+      - part_label
+      - product
+      - quantity
+      - rx_required
+      - sale_price
+      - sellable
+      - shortfall
+      - storage
+      - units_per_pack
+    InventoryLevelLimits:
+      type: object
+      properties:
+        min_qty:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+          nullable: true
+        max_qty:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+          nullable: true
+      required:
+      - max_qty
+      - min_qty
+    InventoryLineImportActionEnum:
+      enum:
+      - add
+      - unmatched
+      - skip
+      type: string
+      description: |-
+        * `add` - add
+        * `unmatched` - unmatched
+        * `skip` - skip
+    InventoryLineImportResult:
+      type: object
+      properties:
+        dry_run:
+          type: boolean
+        columns:
+          type: array
+          items:
+            type: string
+        mapping:
+          type: object
+          additionalProperties:
+            type: string
+        added:
+          type: integer
+        unmatched:
+          type: integer
+        skipped:
+          type: integer
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryLineImportRow'
+      required:
+      - added
+      - columns
+      - dry_run
+      - mapping
+      - rows
+      - skipped
+      - unmatched
+    InventoryLineImportRow:
+      type: object
+      properties:
+        row:
+          type: integer
+        action:
+          $ref: '#/components/schemas/InventoryLineImportActionEnum'
+        name:
+          type: string
+        product_id:
+          type: integer
+          nullable: true
+        errors:
+          type: array
+          items:
+            type: string
+      required:
+      - action
+      - errors
+      - name
+      - product_id
+      - row
+    InventoryManufacturer:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 120
+        country:
+          type: string
+          maxLength: 2
+      required:
+      - id
+      - name
+    InventoryManufacturerRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        country:
+          type: string
+          maxLength: 2
+      required:
+      - name
+    InventoryMergeRequest:
+      type: object
+      properties:
+        other:
+          type: integer
+      required:
+      - other
+    InventoryMovement:
+      type: object
+      description: |-
+        An answer shape: an optional field the dict doesn't carry is left out of the answer (a
+        cost field without finance.view), even when its value could be null.
+      properties:
+        id:
+          type: integer
+        at:
+          type: string
+          format: date-time
+        branch:
+          $ref: '#/components/schemas/InventoryBranchRef'
+        product:
+          $ref: '#/components/schemas/InventoryRef'
+        series:
+          type: string
+          nullable: true
+        kind:
+          $ref: '#/components/schemas/InventoryMovementKindEnum'
+        quantity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+        unit_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        document_type:
+          type: string
+        document_id:
+          type: integer
+          nullable: true
+        reason:
+          type: string
+        by:
+          allOf:
+          - $ref: '#/components/schemas/InventoryPersonRef'
+          nullable: true
+      required:
+      - at
+      - branch
+      - by
+      - document_id
+      - document_type
+      - id
+      - kind
+      - product
+      - quantity
+      - reason
+      - series
+    InventoryMovementKindEnum:
+      enum:
+      - opening
+      - receipt
+      - sale
+      - refund
+      - writeoff
+      - transfer_out
+      - transfer_in
+      - count_adjustment
+      - quarantine
+      - release
+      type: string
+      description: |-
+        * `opening` - Opening stock
+        * `receipt` - Delivery
+        * `sale` - Sale
+        * `refund` - Refund
+        * `writeoff` - Write-off
+        * `transfer_out` - Sent to another pharmacy
+        * `transfer_in` - Received from another pharmacy
+        * `count_adjustment` - Count adjustment
+        * `quarantine` - Quarantine
+        * `release` - Back on sale
+    InventoryOpeningRequest:
+      type: object
+      properties:
+        branch:
+          type: integer
+        product:
+          type: integer
+        series:
+          type: string
+          minLength: 1
+          maxLength: 40
+        expires_on:
+          type: string
+          format: date
+        made_on:
+          type: string
+          format: date
+          nullable: true
+        packs:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
+        parts:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+          default: '0.000'
+        unit_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        retail_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+      required:
+      - branch
+      - expires_on
+      - packs
+      - product
+      - series
+      - unit_cost
+    InventoryOptionalReasonRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 200
+    InventoryOrderChannelEnum:
+      enum:
+      - telegram
+      - email
+      - phone
+      - portal
+      - other
+      type: string
+      description: |-
+        * `telegram` - Telegram
+        * `email` - Email
+        * `phone` - Phone
+        * `portal` - Their website
+        * `other` - Other
+    InventoryPersonRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        photo_url:
+          type: string
+          nullable: true
+      required:
+      - id
+      - name
+      - photo_url
+    InventoryPersonRefRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          minLength: 1
+        photo_url:
+          type: string
+          nullable: true
+          minLength: 1
+      required:
+      - id
+      - name
+      - photo_url
+    InventoryPriceRequest:
+      type: object
+      properties:
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+      required:
+      - price
+    InventoryPriceTagsRequest:
+      type: object
+      properties:
+        branch:
+          type: integer
+        products:
+          type: array
+          items:
+            type: integer
+          maxItems: 500
+        changed_since:
+          type: string
+          format: date
+          description: 'Items whose price changed since this day (default: 7 days).'
+        language:
+          $ref: '#/components/schemas/LanguageEnum'
+      required:
+      - branch
+    InventoryPricingRule:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        category:
+          type: integer
+          nullable: true
+        category_name:
+          type: string
+          readOnly: true
+          nullable: true
+        cost_from:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        cost_to:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        markup_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        order:
+          type: integer
+          minimum: 0
+        is_active:
+          type: boolean
+      required:
+      - category_name
+      - id
+      - markup_percent
+    InventoryPricingRuleRequest:
+      type: object
+      properties:
+        category:
+          type: integer
+          nullable: true
+        cost_from:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        cost_to:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        markup_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        order:
+          type: integer
+          minimum: 0
+        is_active:
+          type: boolean
+      required:
+      - markup_percent
+    InventoryProduct:
+      type: object
+      description: |-
+        An answer shape: an optional field the dict doesn't carry is left out of the answer (a
+        cost field without finance.view), even when its value could be null.
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        trade_name:
+          type: string
+        inn:
+          type: string
+        kind:
+          $ref: '#/components/schemas/InventoryProductKindEnum'
+        dosage_form:
+          type: string
+        strength:
+          type: string
+        units_per_pack:
+          type: integer
+        part_label:
+          type: string
+        manufacturer:
+          allOf:
+          - $ref: '#/components/schemas/InventoryRef'
+          nullable: true
+        category:
+          allOf:
+          - $ref: '#/components/schemas/InventoryRef'
+          nullable: true
+        rx_required:
+          type: boolean
+        e_rx_group:
+          type: boolean
+        control_class:
+          $ref: '#/components/schemas/InventoryControlClassEnum'
+        restricted_channel:
+          type: boolean
+        storage:
+          $ref: '#/components/schemas/InventoryStorageEnum'
+        light_sensitive:
+          type: boolean
+        barcode:
+          type: string
+        sku:
+          type: string
+        mxik_code:
+          type: string
+        package_code:
+          type: string
+        registration_number:
+          type: string
+        registration_until:
+          type: string
+          format: date
+          nullable: true
+        marking_required:
+          type: boolean
+        vat_percent:
+          type: string
+          nullable: true
+        socially_significant:
+          type: boolean
+        mandatory_list:
+          type: boolean
+        reference_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        reference_price_on:
+          type: string
+          format: date
+          nullable: true
+        sale_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        part_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        effective_part_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        cost_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        track_stock:
+          type: boolean
+        is_active:
+          type: boolean
+        quantity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+          nullable: true
+        nearest_expiry:
+          type: string
+          format: date
+          nullable: true
+      required:
+      - barcode
+      - category
+      - control_class
+      - dosage_form
+      - e_rx_group
+      - effective_part_price
+      - id
+      - inn
+      - is_active
+      - kind
+      - light_sensitive
+      - mandatory_list
+      - manufacturer
+      - marking_required
+      - mxik_code
+      - name
+      - nearest_expiry
+      - package_code
+      - part_label
+      - part_price
+      - quantity
+      - reference_price
+      - reference_price_on
+      - registration_number
+      - registration_until
+      - restricted_channel
+      - rx_required
+      - sale_price
+      - sku
+      - socially_significant
+      - storage
+      - strength
+      - track_stock
+      - trade_name
+      - units_per_pack
+      - vat_percent
+    InventoryProductCode:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        kind:
+          $ref: '#/components/schemas/InventoryCodeKindEnum'
+        code:
+          type: string
+          maxLength: 64
+        supplier:
+          allOf:
+          - $ref: '#/components/schemas/InventoryRef'
+          readOnly: true
+          nullable: true
+      required:
+      - code
+      - id
+      - kind
+      - supplier
+    InventoryProductCodeRequest:
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/InventoryCodeKindEnum'
+        code:
+          type: string
+          minLength: 1
+          maxLength: 64
+        supplier_id:
+          type: integer
+          writeOnly: true
+          nullable: true
+      required:
+      - code
+      - kind
+    InventoryProductDetail:
+      type: object
+      properties:
+        product:
+          $ref: '#/components/schemas/InventoryProduct'
+        branches:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryBranchQuantity'
+        codes:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryProductCode'
+        analogs:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryAnalog'
+        price_cap:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+      required:
+      - analogs
+      - branches
+      - codes
+      - price_cap
+      - product
+    InventoryProductKindEnum:
+      enum:
+      - medicine
+      - device
+      - supplement
+      - cosmetic
+      - other
+      - service
+      type: string
+      description: |-
+        * `medicine` - Medicine
+        * `device` - Medical device
+        * `supplement` - Supplement
+        * `cosmetic` - Cosmetics and hygiene
+        * `other` - Other goods
+        * `service` - Service
+    InventoryProductPage:
+      type: object
+      properties:
+        count:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryProduct'
+      required:
+      - count
+      - results
+    InventoryProductWriteRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        trade_name:
+          type: string
+          maxLength: 120
+        inn:
+          type: string
+          maxLength: 200
+        kind:
+          $ref: '#/components/schemas/InventoryProductKindEnum'
+        dosage_form:
+          oneOf:
+          - $ref: '#/components/schemas/InventoryDosageFormEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        strength:
+          type: string
+          maxLength: 40
+        units_per_pack:
+          type: integer
+          maximum: 1000
+          minimum: 1
+        part_label:
+          type: string
+          maxLength: 12
+        manufacturer:
+          type: integer
+          nullable: true
+        category:
+          type: integer
+          nullable: true
+        rx_required:
+          type: boolean
+        e_rx_group:
+          type: boolean
+        control_class:
+          $ref: '#/components/schemas/InventoryControlClassEnum'
+        restricted_channel:
+          type: boolean
+        storage:
+          $ref: '#/components/schemas/InventoryStorageEnum'
+        light_sensitive:
+          type: boolean
+        barcode:
+          type: string
+          maxLength: 32
+        sku:
+          type: string
+          maxLength: 64
+        mxik_code:
+          type: string
+          maxLength: 17
+        package_code:
+          type: string
+          maxLength: 20
+        registration_number:
+          type: string
+          maxLength: 40
+        registration_until:
+          type: string
+          format: date
+          nullable: true
+        marking_required:
+          type: boolean
+        vat_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+          nullable: true
+        socially_significant:
+          type: boolean
+        mandatory_list:
+          type: boolean
+        reference_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        reference_price_on:
+          type: string
+          format: date
+          nullable: true
+        sale_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        part_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        track_stock:
+          type: boolean
+        is_active:
+          type: boolean
+      required:
+      - name
+    InventoryReasonRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 200
+      required:
+      - reason
+    InventoryRecall:
+      type: object
+      properties:
+        id:
+          type: integer
+        product:
+          allOf:
+          - $ref: '#/components/schemas/InventoryRef'
+          nullable: true
+        inn_or_name:
+          type: string
+        series:
+          type: string
+        reason:
+          type: string
+        source:
+          type: string
+        received_on:
+          type: string
+          format: date
+        status:
+          $ref: '#/components/schemas/InventoryRecallStatusEnum'
+        found:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryFoundRow'
+        left:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+        file_url:
+          type: string
+          nullable: true
+        closed_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+      required:
+      - closed_at
+      - created_at
+      - file_url
+      - found
+      - id
+      - inn_or_name
+      - left
+      - product
+      - reason
+      - received_on
+      - series
+      - source
+      - status
+    InventoryRecallImportActionEnum:
+      enum:
+      - register
+      - known
+      - not_carried
+      - skip
+      type: string
+      description: |-
+        * `register` - register
+        * `known` - known
+        * `not_carried` - not_carried
+        * `skip` - skip
+    InventoryRecallImportRequest:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+        source:
+          type: string
+          minLength: 1
+          description: The list's title, number and date, as the regulator gives it.
+          maxLength: 200
+        received_on:
+          type: string
+          format: date
+        reason:
+          type: string
+          maxLength: 200
+        mapping: {}
+        dry_run:
+          type: boolean
+          default: true
+      required:
+      - file
+      - received_on
+      - source
+    InventoryRecallImportResult:
+      type: object
+      properties:
+        dry_run:
+          type: boolean
+        columns:
+          type: array
+          items:
+            type: string
+        mapping:
+          type: object
+          additionalProperties:
+            type: string
+        registered:
+          type: integer
+        found:
+          type: integer
+        not_carried:
+          type: integer
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryRecallImportRow'
+      required:
+      - columns
+      - dry_run
+      - found
+      - mapping
+      - not_carried
+      - registered
+      - rows
+    InventoryRecallImportRow:
+      type: object
+      properties:
+        row:
+          type: integer
+        name:
+          type: string
+        series:
+          type: string
+        product_id:
+          type: integer
+          nullable: true
+        found:
+          type: integer
+          description: Batches with stock that carry the series.
+        action:
+          $ref: '#/components/schemas/InventoryRecallImportActionEnum'
+      required:
+      - action
+      - found
+      - name
+      - product_id
+      - row
+      - series
+    InventoryRecallStatusEnum:
+      enum:
+      - open
+      - closed
+      type: string
+      description: |-
+        * `open` - Open
+        * `closed` - Closed
+    InventoryRecallWriteRequest:
+      type: object
+      properties:
+        product:
+          type: integer
+          nullable: true
+        inn_or_name:
+          type: string
+          maxLength: 200
+        series:
+          type: string
+          minLength: 1
+          maxLength: 40
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 200
+        source:
+          type: string
+          minLength: 1
+          maxLength: 200
+        received_on:
+          type: string
+          format: date
+        file:
+          type: string
+          format: binary
+      required:
+      - reason
+      - received_on
+      - series
+      - source
+    InventoryReceipt:
+      type: object
+      description: |-
+        An answer shape: an optional field the dict doesn't carry is left out of the answer (a
+        cost field without finance.view), even when its value could be null.
+      properties:
+        id:
+          type: integer
+        number:
+          type: string
+        status:
+          $ref: '#/components/schemas/InventoryReceiptStatusEnum'
+        branch:
+          $ref: '#/components/schemas/InventoryBranchRef'
+        supplier:
+          $ref: '#/components/schemas/InventoryRef'
+        supplier_invoice_number:
+          type: string
+        supplier_invoice_date:
+          type: string
+          format: date
+        currency:
+          type: string
+        due_on:
+          type: string
+          format: date
+          nullable: true
+        note:
+          type: string
+        e_invoice_ref:
+          type: string
+        lines_count:
+          type: integer
+        warnings:
+          type: array
+          items:
+            type: string
+        received_by:
+          allOf:
+          - $ref: '#/components/schemas/InventoryPersonRef'
+          nullable: true
+        posted_by:
+          allOf:
+          - $ref: '#/components/schemas/InventoryPersonRef'
+          nullable: true
+        submitted_at:
+          type: string
+          format: date-time
+          nullable: true
+        posted_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        file_url:
+          type: string
+          nullable: true
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        vat_total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        debt_id:
+          type: integer
+          nullable: true
+        debt_status:
+          type: string
+          nullable: true
+        debt_paid:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        void_reason:
+          type: string
+      required:
+      - branch
+      - created_at
+      - currency
+      - due_on
+      - e_invoice_ref
+      - file_url
+      - id
+      - lines_count
+      - note
+      - number
+      - posted_at
+      - posted_by
+      - received_by
+      - status
+      - submitted_at
+      - supplier
+      - supplier_invoice_date
+      - supplier_invoice_number
+      - void_reason
+      - warnings
+    InventoryReceiptDetail:
+      type: object
+      properties:
+        receipt:
+          $ref: '#/components/schemas/InventoryReceipt'
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryReceiptLine'
+      required:
+      - lines
+      - receipt
+    InventoryReceiptFileRequest:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+      required:
+      - file
+    InventoryReceiptLine:
+      type: object
+      description: |-
+        An answer shape: an optional field the dict doesn't carry is left out of the answer (a
+        cost field without finance.view), even when its value could be null.
+      properties:
+        id:
+          type: integer
+        product:
+          $ref: '#/components/schemas/InventoryRef'
+        units_per_pack:
+          type: integer
+        rx_required:
+          type: boolean
+        control_class:
+          type: string
+        series:
+          type: string
+        expires_on:
+          type: string
+          format: date
+        made_on:
+          type: string
+          format: date
+          nullable: true
+        packs:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+        quantity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+        vat_percent:
+          type: string
+          nullable: true
+        retail_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        price_cap:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        supplier_rx:
+          type: boolean
+          nullable: true
+        warnings:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryReceiptWarningEnum'
+        unit_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        batch_id:
+          type: integer
+          nullable: true
+      required:
+      - batch_id
+      - control_class
+      - expires_on
+      - id
+      - made_on
+      - packs
+      - price_cap
+      - product
+      - quantity
+      - retail_price
+      - rx_required
+      - series
+      - supplier_rx
+      - units_per_pack
+      - vat_percent
+      - warnings
+    InventoryReceiptLineWriteRequest:
+      type: object
+      properties:
+        product:
+          type: integer
+        series:
+          type: string
+          minLength: 1
+          maxLength: 40
+        expires_on:
+          type: string
+          format: date
+        made_on:
+          type: string
+          format: date
+          nullable: true
+        packs:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
+        unit_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        vat_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+          nullable: true
+        retail_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        supplier_rx:
+          type: boolean
+          nullable: true
+      required:
+      - expires_on
+      - packs
+      - product
+      - series
+      - unit_cost
+    InventoryReceiptStatusEnum:
+      enum:
+      - draft
+      - submitted
+      - posted
+      - void
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `submitted` - Waiting for posting
+        * `posted` - Posted
+        * `void` - Void
+    InventoryReceiptWarningEnum:
+      enum:
+      - short_shelf_life
+      - cost_jump
+      - recalled_series
+      - over_price_cap
+      - registration_expired
+      - rx_flag_mismatch
+      - not_official_dealer
+      - over_month_need
+      - not_licensed_branch
+      type: string
+      description: |-
+        * `short_shelf_life` - Short shelf life
+        * `cost_jump` - Cost jumped
+        * `recalled_series` - Recalled series
+        * `over_price_cap` - Price lowered to the legal cap
+        * `registration_expired` - Registration expired
+        * `rx_flag_mismatch` - Prescription flag differs
+        * `not_official_dealer` - Not an official dealer
+        * `over_month_need` - More than a month's need
+        * `not_licensed_branch` - Branch not licensed for it
+    InventoryReceiptWriteRequest:
+      type: object
+      properties:
+        branch:
+          type: integer
+        supplier:
+          type: integer
+        supplier_invoice_number:
+          type: string
+          maxLength: 40
+        supplier_invoice_date:
+          type: string
+          format: date
+        currency:
+          type: string
+          minLength: 1
+          maxLength: 3
+        due_on:
+          type: string
+          format: date
+          nullable: true
+        note:
+          type: string
+        e_invoice_ref:
+          type: string
+          maxLength: 64
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryReceiptLineWriteRequest'
+      required:
+      - branch
+      - supplier
+      - supplier_invoice_date
+    InventoryReceiveRequest:
+      type: object
+      properties:
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryReceivedLineRequest'
+    InventoryReceivedLineRequest:
+      type: object
+      properties:
+        line:
+          type: integer
+        quantity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+      required:
+      - line
+      - quantity
+    InventoryRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
+    InventoryRefRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          minLength: 1
+      required:
+      - id
+      - name
+    InventoryReportedRequest:
+      type: object
+      properties:
+        reported_on:
+          type: string
+          format: date
+      required:
+      - reported_on
+    InventoryRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        branch_ref:
+          allOf:
+          - $ref: '#/components/schemas/InventoryBranchRef'
+          readOnly: true
+        product_ref:
+          allOf:
+          - $ref: '#/components/schemas/InventoryRef'
+          readOnly: true
+          nullable: true
+        name:
+          type: string
+          maxLength: 200
+        packs:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
+        source:
+          allOf:
+          - $ref: '#/components/schemas/InventoryRequestSourceEnum'
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/InventoryRequestStatusEnum'
+        customer_phone:
+          type: string
+          maxLength: 16
+        requested_at:
+          type: string
+          format: date-time
+          readOnly: true
+        requested_by:
+          allOf:
+          - $ref: '#/components/schemas/InventoryPersonRef'
+          readOnly: true
+          nullable: true
+      required:
+      - branch_ref
+      - id
+      - product_ref
+      - requested_at
+      - requested_by
+      - source
+    InventoryRequestRequest:
+      type: object
+      properties:
+        branch:
+          type: integer
+          writeOnly: true
+        product:
+          type: integer
+          writeOnly: true
+          nullable: true
+        name:
+          type: string
+          maxLength: 200
+        packs:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
+        status:
+          $ref: '#/components/schemas/InventoryRequestStatusEnum'
+        customer_phone:
+          type: string
+          maxLength: 16
+      required:
+      - branch
+    InventoryRequestSourceEnum:
+      enum:
+      - counter
+      - mandatory
+      type: string
+      description: |-
+        * `counter` - Asked at the counter
+        * `mandatory` - Mandatory list
+    InventoryRequestStatusEnum:
+      enum:
+      - open
+      - ordered
+      - fulfilled
+      - cancelled
+      type: string
+      description: |-
+        * `open` - Open
+        * `ordered` - Ordered
+        * `fulfilled` - Arrived
+        * `cancelled` - Cancelled
+    InventoryResolveRequest:
+      type: object
+      properties:
+        outcome:
+          $ref: '#/components/schemas/InventoryTransferResolutionEnum'
+        note:
+          type: string
+      required:
+      - outcome
+    InventoryRxJournal:
+      type: object
+      properties:
+        branch:
+          $ref: '#/components/schemas/InventoryBranchRef'
+        month:
+          type: string
+          format: date
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryRxRecord'
+      required:
+      - branch
+      - month
+      - rows
+    InventoryRxKeep:
+      type: object
+      properties:
+        regular:
+          type: integer
+          maximum: 240
+          minimum: 0
+        benefit:
+          type: integer
+          maximum: 240
+          minimum: 0
+        narcotic:
+          type: integer
+          maximum: 240
+          minimum: 0
+        psychotropic:
+          type: integer
+          maximum: 240
+          minimum: 0
+        listed:
+          type: integer
+          maximum: 240
+          minimum: 0
+      required:
+      - benefit
+      - listed
+      - narcotic
+      - psychotropic
+      - regular
+    InventoryRxKeepRequest:
+      type: object
+      properties:
+        regular:
+          type: integer
+          maximum: 240
+          minimum: 0
+        benefit:
+          type: integer
+          maximum: 240
+          minimum: 0
+        narcotic:
+          type: integer
+          maximum: 240
+          minimum: 0
+        psychotropic:
+          type: integer
+          maximum: 240
+          minimum: 0
+        listed:
+          type: integer
+          maximum: 240
+          minimum: 0
+      required:
+      - benefit
+      - listed
+      - narcotic
+      - psychotropic
+      - regular
+    InventoryRxKindEnum:
+      enum:
+      - regular
+      - benefit
+      - narcotic
+      - psychotropic
+      - listed
+      type: string
+      description: |-
+        * `regular` - Regular
+        * `benefit` - Preferential
+        * `narcotic` - Narcotic
+        * `psychotropic` - Psychotropic
+        * `listed` - Strong-acting (listed)
+    InventoryRxRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+        branch:
+          $ref: '#/components/schemas/InventoryBranchRef'
+        product:
+          $ref: '#/components/schemas/InventoryRef'
+        series:
+          type: string
+          nullable: true
+        quantity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+        prescription_number:
+          type: string
+        prescribed_on:
+          type: string
+          format: date
+          nullable: true
+        prescriber:
+          type: string
+        facility:
+          type: string
+        rx_kind:
+          $ref: '#/components/schemas/InventoryRxKindEnum'
+        status:
+          $ref: '#/components/schemas/InventoryRxStatusEnum'
+        invalid_reason:
+          type: string
+        facility_notified_at:
+          type: string
+          format: date-time
+          nullable: true
+        e_prescription_id:
+          type: string
+        keep_until:
+          type: string
+          format: date
+        recorded_at:
+          type: string
+          format: date-time
+        recorded_by:
+          allOf:
+          - $ref: '#/components/schemas/InventoryPersonRef'
+          nullable: true
+        flags:
+          type: array
+          items:
+            type: string
+      required:
+      - branch
+      - e_prescription_id
+      - facility
+      - facility_notified_at
+      - flags
+      - id
+      - invalid_reason
+      - keep_until
+      - prescribed_on
+      - prescriber
+      - prescription_number
+      - product
+      - quantity
+      - recorded_at
+      - recorded_by
+      - rx_kind
+      - series
+      - status
+    InventoryRxStatusEnum:
+      enum:
+      - dispensed
+      - invalid
+      type: string
+      description: |-
+        * `dispensed` - Dispensed
+        * `invalid` - Invalid prescription
+    InventoryRxWriteRequest:
+      type: object
+      properties:
+        branch:
+          type: integer
+        product:
+          type: integer
+        batch:
+          type: integer
+          nullable: true
+        quantity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+        prescription_number:
+          type: string
+          maxLength: 40
+        prescribed_on:
+          type: string
+          format: date
+          nullable: true
+        prescriber:
+          type: string
+          maxLength: 120
+        facility:
+          type: string
+          maxLength: 120
+        rx_kind:
+          $ref: '#/components/schemas/InventoryRxKindEnum'
+        status:
+          $ref: '#/components/schemas/InventoryRxStatusEnum'
+        invalid_reason:
+          type: string
+          maxLength: 200
+        e_prescription_id:
+          type: string
+          maxLength: 64
+      required:
+      - branch
+      - product
+      - quantity
+    InventorySettings:
+      type: object
+      properties:
+        expiry_steps:
+          type: array
+          items:
+            type: integer
+            maximum: 730
+            minimum: 1
+          maxItems: 6
+        min_shelf_days:
+          type: integer
+          maximum: 3650
+          minimum: 0
+        fefo_strict:
+          type: boolean
+        allow_negative:
+          type: boolean
+        default_markup_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        rx_max_markup_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        social_max_markup_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        cap_enforced:
+          type: boolean
+        price_rounding:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        price_jump_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        writeoff_approval:
+          type: boolean
+        show_other_branches:
+          type: boolean
+        camera_scanning:
+          type: boolean
+        rx_log:
+          type: boolean
+        count_tolerance:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        destroy_within_days:
+          type: integer
+          maximum: 365
+          minimum: 1
+        destroy_commission_min:
+          type: integer
+          maximum: 20
+          minimum: 1
+        rx_keep_months:
+          $ref: '#/components/schemas/InventoryRxKeep'
+        rx_destroy_commission_min:
+          type: integer
+          maximum: 20
+          minimum: 1
+        narcotic_rx_valid_days:
+          type: integer
+          maximum: 365
+          minimum: 1
+        psychotropic_rx_valid_months:
+          type: integer
+          maximum: 24
+          minimum: 1
+        psychotropic_stock_months:
+          type: integer
+          maximum: 24
+          minimum: 1
+        controlled_close_day:
+          type: integer
+          maximum: 28
+          minimum: 1
+        controlled_report_days:
+          type: integer
+          maximum: 60
+          minimum: 1
+      required:
+      - allow_negative
+      - camera_scanning
+      - cap_enforced
+      - controlled_close_day
+      - controlled_report_days
+      - count_tolerance
+      - default_markup_percent
+      - destroy_commission_min
+      - destroy_within_days
+      - expiry_steps
+      - fefo_strict
+      - min_shelf_days
+      - narcotic_rx_valid_days
+      - price_jump_percent
+      - price_rounding
+      - psychotropic_rx_valid_months
+      - psychotropic_stock_months
+      - rx_destroy_commission_min
+      - rx_keep_months
+      - rx_log
+      - rx_max_markup_percent
+      - show_other_branches
+      - social_max_markup_percent
+      - writeoff_approval
+    InventoryStockBranch:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        code:
+          type: string
+        kind:
+          type: string
+        controlled_licence:
+          type: boolean
+        social_pharmacy:
+          type: boolean
+        in_scope:
+          type: boolean
+          description: One of the caller's branches.
+      required:
+      - code
+      - controlled_licence
+      - id
+      - in_scope
+      - kind
+      - name
+      - social_pharmacy
+    InventoryStorageEnum:
+      enum:
+      - room
+      - cool
+      - cold
+      - frozen
+      type: string
+      description: |-
+        * `room` - Room temperature, 15–25 °C
+        * `cool` - Cool place, 8–15 °C
+        * `cold` - Fridge, 2–8 °C
+        * `frozen` - Freezer, −18 °C or colder
+    InventorySummary:
+      type: object
+      description: |-
+        An answer shape: an optional field the dict doesn't carry is left out of the answer (a
+        cost field without finance.view), even when its value could be null.
+      properties:
+        products:
+          type: integer
+        low:
+          type: integer
+        negative:
+          type: integer
+        expiring_30d:
+          type: integer
+        expiring_30d_retail:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        expiring_30d_value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        expired:
+          type: integer
+        expired_value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        stock_value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        stock_retail_value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        receipts_to_post:
+          type: integer
+        drafts:
+          type: integer
+        writeoffs_to_approve:
+          type: integer
+        transfers_disputed:
+          type: integer
+        transfers_incoming:
+          type: integer
+        recalls_open:
+          type: integer
+        mandatory_missing:
+          type: integer
+        controlled_branches:
+          type: integer
+        estimate:
+          type: boolean
+          description: 'True until sales lines flow in: stock moves only by documents.'
+      required:
+      - controlled_branches
+      - drafts
+      - estimate
+      - expired
+      - expiring_30d
+      - expiring_30d_retail
+      - low
+      - mandatory_missing
+      - negative
+      - products
+      - recalls_open
+      - receipts_to_post
+      - stock_retail_value
+      - transfers_disputed
+      - transfers_incoming
+      - writeoffs_to_approve
+    InventorySupplier:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+          description: The counterparty's id.
+        name:
+          type: string
+          maxLength: 200
+        phone:
+          type: string
+          readOnly: true
+        tin:
+          type: string
+          readOnly: true
+        payment_terms_days:
+          type: integer
+          maximum: 365
+          minimum: 0
+          nullable: true
+        official_dealer:
+          type: boolean
+        delivery_days:
+          type: integer
+          maximum: 60
+          minimum: 0
+        min_order:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        order_channel:
+          $ref: '#/components/schemas/InventoryOrderChannelEnum'
+        telegram_username:
+          type: string
+          maxLength: 64
+        notes:
+          type: string
+        receipts:
+          type: integer
+          readOnly: true
+      required:
+      - id
+      - name
+      - phone
+      - receipts
+      - tin
+    InventorySupplierRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        payment_terms_days:
+          type: integer
+          maximum: 365
+          minimum: 0
+          nullable: true
+        official_dealer:
+          type: boolean
+        delivery_days:
+          type: integer
+          maximum: 60
+          minimum: 0
+        min_order:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        order_channel:
+          $ref: '#/components/schemas/InventoryOrderChannelEnum'
+        telegram_username:
+          type: string
+          maxLength: 64
+        notes:
+          type: string
+      required:
+      - name
+    InventoryTransfer:
+      type: object
+      properties:
+        id:
+          type: integer
+        number:
+          type: string
+        status:
+          $ref: '#/components/schemas/InventoryTransferStatusEnum'
+        from_branch:
+          $ref: '#/components/schemas/InventoryBranchRef'
+        to_branch:
+          $ref: '#/components/schemas/InventoryBranchRef'
+        note:
+          type: string
+        lines_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        sent_at:
+          type: string
+          format: date-time
+          nullable: true
+        sent_by:
+          allOf:
+          - $ref: '#/components/schemas/InventoryPersonRef'
+          nullable: true
+        received_at:
+          type: string
+          format: date-time
+          nullable: true
+        received_by:
+          allOf:
+          - $ref: '#/components/schemas/InventoryPersonRef'
+          nullable: true
+        resolution:
+          type: string
+        resolved_at:
+          type: string
+          format: date-time
+          nullable: true
+        void_reason:
+          type: string
+      required:
+      - created_at
+      - from_branch
+      - id
+      - lines_count
+      - note
+      - number
+      - received_at
+      - received_by
+      - resolution
+      - resolved_at
+      - sent_at
+      - sent_by
+      - status
+      - to_branch
+      - void_reason
+    InventoryTransferDetail:
+      type: object
+      properties:
+        transfer:
+          $ref: '#/components/schemas/InventoryTransfer'
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryTransferLine'
+      required:
+      - lines
+      - transfer
+    InventoryTransferLine:
+      type: object
+      properties:
+        id:
+          type: integer
+        product:
+          $ref: '#/components/schemas/InventoryRef'
+        units_per_pack:
+          type: integer
+        part_label:
+          type: string
+        batch_id:
+          type: integer
+          nullable: true
+        series:
+          type: string
+          nullable: true
+        expires_on:
+          type: string
+          format: date
+          nullable: true
+        quantity_sent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+        quantity_received:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+          nullable: true
+      required:
+      - batch_id
+      - expires_on
+      - id
+      - part_label
+      - product
+      - quantity_received
+      - quantity_sent
+      - series
+      - units_per_pack
+    InventoryTransferLineWriteRequest:
+      type: object
+      properties:
+        product:
+          type: integer
+        batch:
+          type: integer
+          nullable: true
+        quantity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+      required:
+      - product
+      - quantity
+    InventoryTransferResolutionEnum:
+      enum:
+      - shortage
+      - found
+      - returned
+      type: string
+      description: |-
+        * `shortage` - Lost on the way: written off
+        * `found` - Found at the receiving pharmacy
+        * `returned` - Back at the sending pharmacy
+    InventoryTransferStatusEnum:
+      enum:
+      - draft
+      - sent
+      - received
+      - disputed
+      - void
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `sent` - On the way
+        * `received` - Received
+        * `disputed` - Disputed
+        * `void` - Void
+    InventoryTransferWriteRequest:
+      type: object
+      properties:
+        from_branch:
+          type: integer
+        to_branch:
+          type: integer
+        note:
+          type: string
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryTransferLineWriteRequest'
+        send:
+          type: boolean
+          default: false
+      required:
+      - from_branch
+      - lines
+      - to_branch
+    InventoryWriteOff:
+      type: object
+      description: |-
+        An answer shape: an optional field the dict doesn't carry is left out of the answer (a
+        cost field without finance.view), even when its value could be null.
+      properties:
+        id:
+          type: integer
+        number:
+          type: string
+        status:
+          $ref: '#/components/schemas/InventoryWriteOffStatusEnum'
+        reason:
+          $ref: '#/components/schemas/InventoryWriteOffReasonEnum'
+        branch:
+          $ref: '#/components/schemas/InventoryBranchRef'
+        note:
+          type: string
+        lines_count:
+          type: integer
+        needs_destruction:
+          type: boolean
+        proposed_by:
+          allOf:
+          - $ref: '#/components/schemas/InventoryPersonRef'
+          nullable: true
+        approved_by:
+          allOf:
+          - $ref: '#/components/schemas/InventoryPersonRef'
+          nullable: true
+        approved_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        destroy_by:
+          type: string
+          format: date
+          nullable: true
+        responsible:
+          type: string
+        order_number:
+          type: string
+        commission:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryCommissionMember'
+        method:
+          type: string
+        place:
+          type: string
+        destroyed_at:
+          type: string
+          format: date-time
+          nullable: true
+        sent_to:
+          type: array
+          items:
+            type: string
+        act_url:
+          type: string
+          nullable: true
+        recall_id:
+          type: integer
+          nullable: true
+        transfer_id:
+          type: integer
+          nullable: true
+        value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        void_reason:
+          type: string
+      required:
+      - act_url
+      - approved_at
+      - approved_by
+      - branch
+      - commission
+      - created_at
+      - destroy_by
+      - destroyed_at
+      - id
+      - lines_count
+      - method
+      - needs_destruction
+      - note
+      - number
+      - order_number
+      - place
+      - proposed_by
+      - reason
+      - recall_id
+      - responsible
+      - sent_to
+      - status
+      - transfer_id
+      - void_reason
+    InventoryWriteOffDetail:
+      type: object
+      properties:
+        writeoff:
+          $ref: '#/components/schemas/InventoryWriteOff'
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryWriteOffLine'
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryWriteOffFileOut'
+        commission_min:
+          type: integer
+      required:
+      - commission_min
+      - files
+      - lines
+      - writeoff
+    InventoryWriteOffFileKindEnum:
+      enum:
+      - photo
+      - video
+      - signed_act
+      - order
+      - other
+      type: string
+      description: |-
+        * `photo` - Photo
+        * `video` - Video
+        * `signed_act` - Signed act
+        * `order` - Order
+        * `other` - Other
+    InventoryWriteOffFileOut:
+      type: object
+      properties:
+        id:
+          type: integer
+        kind:
+          $ref: '#/components/schemas/InventoryWriteOffFileKindEnum'
+        url:
+          type: string
+        at:
+          type: string
+          format: date-time
+      required:
+      - at
+      - id
+      - kind
+      - url
+    InventoryWriteOffLine:
+      type: object
+      description: |-
+        An answer shape: an optional field the dict doesn't carry is left out of the answer (a
+        cost field without finance.view), even when its value could be null.
+      properties:
+        id:
+          type: integer
+        batch_id:
+          type: integer
+        product:
+          $ref: '#/components/schemas/InventoryRef'
+        units_per_pack:
+          type: integer
+        series:
+          type: string
+        expires_on:
+          type: string
+          format: date
+        quantity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+        unit_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+      required:
+      - batch_id
+      - expires_on
+      - id
+      - product
+      - quantity
+      - series
+      - units_per_pack
+    InventoryWriteOffLineWriteRequest:
+      type: object
+      properties:
+        batch:
+          type: integer
+        quantity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+      required:
+      - batch
+      - quantity
+    InventoryWriteOffReasonEnum:
+      enum:
+      - expired
+      - damaged
+      - recall
+      - quality
+      - shortage
+      - internal_use
+      - other
+      type: string
+      description: |-
+        * `expired` - Expired
+        * `damaged` - Damaged
+        * `recall` - Recalled series
+        * `quality` - Quality defect
+        * `shortage` - Shortage
+        * `internal_use` - Used by the pharmacy
+        * `other` - Other
+    InventoryWriteOffStatusEnum:
+      enum:
+      - proposed
+      - approved
+      - destroyed
+      - void
+      type: string
+      description: |-
+        * `proposed` - Waiting for approval
+        * `approved` - Approved
+        * `destroyed` - Destroyed
+        * `void` - Void
+    InventoryWriteOffUploadRequest:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/InventoryWriteOffFileKindEnum'
+          default: photo
+      required:
+      - file
+    InventoryWriteOffWriteRequest:
+      type: object
+      properties:
+        branch:
+          type: integer
+        reason:
+          $ref: '#/components/schemas/InventoryWriteOffReasonEnum'
+        note:
+          type: string
+        recall:
+          type: integer
+          nullable: true
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryWriteOffLineWriteRequest'
+      required:
+      - branch
+      - lines
+      - reason
     Invite:
       type: object
       properties:
@@ -36469,6 +42838,354 @@ components:
           minimum: 1
         unqualified_seller_alert:
           type: boolean
+    PatchedInventoryCategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        parent:
+          type: integer
+          nullable: true
+        order:
+          type: integer
+          minimum: 0
+    PatchedInventoryLevelLimitsRequest:
+      type: object
+      properties:
+        min_qty:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+          nullable: true
+        max_qty:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+          nullable: true
+    PatchedInventoryManufacturerRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        country:
+          type: string
+          maxLength: 2
+    PatchedInventoryPricingRuleRequest:
+      type: object
+      properties:
+        category:
+          type: integer
+          nullable: true
+        cost_from:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        cost_to:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        markup_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        order:
+          type: integer
+          minimum: 0
+        is_active:
+          type: boolean
+    PatchedInventoryProductWriteRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        trade_name:
+          type: string
+          maxLength: 120
+        inn:
+          type: string
+          maxLength: 200
+        kind:
+          $ref: '#/components/schemas/InventoryProductKindEnum'
+        dosage_form:
+          oneOf:
+          - $ref: '#/components/schemas/InventoryDosageFormEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        strength:
+          type: string
+          maxLength: 40
+        units_per_pack:
+          type: integer
+          maximum: 1000
+          minimum: 1
+        part_label:
+          type: string
+          maxLength: 12
+        manufacturer:
+          type: integer
+          nullable: true
+        category:
+          type: integer
+          nullable: true
+        rx_required:
+          type: boolean
+        e_rx_group:
+          type: boolean
+        control_class:
+          $ref: '#/components/schemas/InventoryControlClassEnum'
+        restricted_channel:
+          type: boolean
+        storage:
+          $ref: '#/components/schemas/InventoryStorageEnum'
+        light_sensitive:
+          type: boolean
+        barcode:
+          type: string
+          maxLength: 32
+        sku:
+          type: string
+          maxLength: 64
+        mxik_code:
+          type: string
+          maxLength: 17
+        package_code:
+          type: string
+          maxLength: 20
+        registration_number:
+          type: string
+          maxLength: 40
+        registration_until:
+          type: string
+          format: date
+          nullable: true
+        marking_required:
+          type: boolean
+        vat_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+          nullable: true
+        socially_significant:
+          type: boolean
+        mandatory_list:
+          type: boolean
+        reference_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        reference_price_on:
+          type: string
+          format: date
+          nullable: true
+        sale_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        part_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        track_stock:
+          type: boolean
+        is_active:
+          type: boolean
+    PatchedInventoryReceiptLineWriteRequest:
+      type: object
+      properties:
+        product:
+          type: integer
+        series:
+          type: string
+          minLength: 1
+          maxLength: 40
+        expires_on:
+          type: string
+          format: date
+        made_on:
+          type: string
+          format: date
+          nullable: true
+        packs:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
+        unit_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        vat_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+          nullable: true
+        retail_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        supplier_rx:
+          type: boolean
+          nullable: true
+    PatchedInventoryReceiptWriteRequest:
+      type: object
+      properties:
+        branch:
+          type: integer
+        supplier:
+          type: integer
+        supplier_invoice_number:
+          type: string
+          maxLength: 40
+        supplier_invoice_date:
+          type: string
+          format: date
+        currency:
+          type: string
+          minLength: 1
+          maxLength: 3
+        due_on:
+          type: string
+          format: date
+          nullable: true
+        note:
+          type: string
+        e_invoice_ref:
+          type: string
+          maxLength: 64
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryReceiptLineWriteRequest'
+    PatchedInventoryRequestStatusRequest:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/InventoryRequestStatusEnum'
+    PatchedInventorySettingsRequest:
+      type: object
+      properties:
+        expiry_steps:
+          type: array
+          items:
+            type: integer
+            maximum: 730
+            minimum: 1
+          maxItems: 6
+        min_shelf_days:
+          type: integer
+          maximum: 3650
+          minimum: 0
+        fefo_strict:
+          type: boolean
+        allow_negative:
+          type: boolean
+        default_markup_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        rx_max_markup_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        social_max_markup_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        cap_enforced:
+          type: boolean
+        price_rounding:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        price_jump_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        writeoff_approval:
+          type: boolean
+        show_other_branches:
+          type: boolean
+        camera_scanning:
+          type: boolean
+        rx_log:
+          type: boolean
+        count_tolerance:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        destroy_within_days:
+          type: integer
+          maximum: 365
+          minimum: 1
+        destroy_commission_min:
+          type: integer
+          maximum: 20
+          minimum: 1
+        rx_keep_months:
+          $ref: '#/components/schemas/InventoryRxKeepRequest'
+        rx_destroy_commission_min:
+          type: integer
+          maximum: 20
+          minimum: 1
+        narcotic_rx_valid_days:
+          type: integer
+          maximum: 365
+          minimum: 1
+        psychotropic_rx_valid_months:
+          type: integer
+          maximum: 24
+          minimum: 1
+        psychotropic_stock_months:
+          type: integer
+          maximum: 24
+          minimum: 1
+        controlled_close_day:
+          type: integer
+          maximum: 28
+          minimum: 1
+        controlled_report_days:
+          type: integer
+          maximum: 60
+          minimum: 1
+    PatchedInventorySupplierRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        payment_terms_days:
+          type: integer
+          maximum: 365
+          minimum: 0
+          nullable: true
+        official_dealer:
+          type: boolean
+        delivery_days:
+          type: integer
+          maximum: 60
+          minimum: 0
+        min_order:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        order_channel:
+          $ref: '#/components/schemas/InventoryOrderChannelEnum'
+        telegram_username:
+          type: string
+          maxLength: 64
+        notes:
+          type: string
     PatchedJoinLinkPatchRequest:
       type: object
       properties:

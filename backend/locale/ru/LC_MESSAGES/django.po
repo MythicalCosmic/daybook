@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-07 06:10+0500\n"
+"POT-Creation-Date: 2026-11-07 06:42+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -12,9 +12,12 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=4; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || (n%100>=11 && n%100<=14)? 2 : 3);\n"
+"Plural-Forms: nplurals=4; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || "
+"(n%100>=11 && n%100<=14)? 2 : 3);\n"
 
-#: backend/apps/accounts/admin.py backend/apps/members/providers.py
+#: backend/apps/accounts/admin.py backend/apps/inventory/models.py
+#: backend/apps/members/providers.py
 msgid "Telegram"
 msgstr "Telegram"
 
@@ -199,8 +202,7 @@ msgstr "Через %(minutes)d мин: %(title)s"
 msgid "I'll come"
 msgstr "Приду"
 
-#. Translators: the attendee's own answer on a button ("I can't come"), not
-#. their status.
+#. Translators: the attendee's own answer on a button ("I can't come"), not their status.
 #: backend/apps/agenda/bot_messages.py
 msgctxt "event answer button"
 msgid "Can't come"
@@ -276,7 +278,8 @@ msgstr "Крайний срок"
 
 #: backend/apps/agenda/models.py backend/apps/assets/models.py
 #: backend/apps/finance/models.py backend/apps/hr/models.py
-#: backend/apps/lifecycle/models.py backend/apps/sales/models.py
+#: backend/apps/inventory/models.py backend/apps/lifecycle/models.py
+#: backend/apps/sales/models.py
 msgid "Other"
 msgstr "Другое"
 
@@ -534,6 +537,10 @@ msgstr "Посещаемость"
 msgid "Sales and cash"
 msgstr "Продажи и касса"
 
+#: backend/apps/ai/agents/custom.py
+msgid "Stock and medicines"
+msgstr "Склад и препараты"
+
 #: backend/apps/ai/agents/custom.py backend/apps/companies/models.py
 #: owner_bot/ownerbot/brief.py
 msgid "Finance"
@@ -731,13 +738,13 @@ msgstr "Вечерний отчёт"
 msgid ""
 "Every workday evening, sum up the day in a few lines: how many tasks were "
 "done and how many are late (name the late ones and whose they are), who came "
-"to work late today, and today's sales at each pharmacy compared with the same"
-" weekday last week. Put anything unusual first."
+"to work late today, and today's sales at each pharmacy compared with the "
+"same weekday last week. Put anything unusual first."
 msgstr ""
 "Каждый рабочий вечер подведи итоги дня в нескольких строках: сколько задач "
 "выполнено и сколько просрочено (назови просроченные и чьи они), кто сегодня "
-"опоздал на работу и как прошли сегодняшние продажи каждой аптеки по сравнению"
-" с тем же днём прошлой недели. Необычное — в начале."
+"опоздал на работу и как прошли сегодняшние продажи каждой аптеки по "
+"сравнению с тем же днём прошлой недели. Необычное — в начале."
 
 #: backend/apps/ai/agents/custom_templates.py
 msgid "Monday: the best of last week"
@@ -761,12 +768,12 @@ msgstr "Кто на работе в 10:00"
 #: backend/apps/ai/agents/custom_templates.py
 msgid ""
 "Every workday at 10:00: who has not come to work yet, who came late today, "
-"and which pharmacy is short of people right now. If everyone is in, say so in"
-" one line."
+"and which pharmacy is short of people right now. If everyone is in, say so "
+"in one line."
 msgstr ""
-"Каждый рабочий день в 10:00: кто ещё не пришёл на работу, кто сегодня опоздал"
-" и в какой аптеке сейчас не хватает людей. Если все на месте — скажи об этом "
-"одной строкой."
+"Каждый рабочий день в 10:00: кто ещё не пришёл на работу, кто сегодня "
+"опоздал и в какой аптеке сейчас не хватает людей. Если все на месте — скажи "
+"об этом одной строкой."
 
 #: backend/apps/ai/agents/custom_templates.py
 msgid "Last week's biggest expenses"
@@ -789,8 +796,8 @@ msgstr "Месяц вкратце"
 #: backend/apps/ai/agents/custom_templates.py
 msgid ""
 "On the 1st of each month: last month in short. Sales and profit, the biggest "
-"expenses, how many tasks the team did on time, and what changed most from the"
-" month before. Five to eight lines."
+"expenses, how many tasks the team did on time, and what changed most from "
+"the month before. Five to eight lines."
 msgstr ""
 "1-го числа каждого месяца: прошлый месяц вкратце. Продажи и прибыль, "
 "крупнейшие расходы, сколько задач команда выполнила в срок и что изменилось "
@@ -816,15 +823,15 @@ msgstr "Аптека продала меньше обычного"
 
 #: backend/apps/ai/agents/custom_templates.py
 msgid ""
-"Every evening, compare today's sales at each pharmacy with its usual for this"
-" weekday (the average of the last four same weekdays). Name every pharmacy "
-"that sold more than 15 percent below its usual, with both numbers. If all are"
-" as usual, say so in one line."
+"Every evening, compare today's sales at each pharmacy with its usual for "
+"this weekday (the average of the last four same weekdays). Name every "
+"pharmacy that sold more than 15 percent below its usual, with both numbers. "
+"If all are as usual, say so in one line."
 msgstr ""
-"Каждый вечер сравни сегодняшние продажи каждой аптеки с её обычными для этого"
-" дня недели (среднее за последние четыре таких дня). Назови каждую аптеку, "
-"которая продала больше чем на 15 процентов меньше обычного, с обеими цифрами."
-" Если всё как обычно — скажи об этом одной строкой."
+"Каждый вечер сравни сегодняшние продажи каждой аптеки с её обычными для "
+"этого дня недели (среднее за последние четыре таких дня). Назови каждую "
+"аптеку, которая продала больше чем на 15 процентов меньше обычного, с обеими "
+"цифрами. Если всё как обычно — скажи об этом одной строкой."
 
 #: backend/apps/ai/agents/custom_templates.py
 msgid "Late work every morning"
@@ -917,8 +924,8 @@ msgstr ""
 "Каждое рабочее утро сообщает кадровикам, что требует внимания: истекающие "
 "документы и договоры, испытательные сроки, ожидаемые объяснительные и дни "
 "рождения. Перед днём зарплаты рассчитывает черновик и говорит, что ему "
-"мешает; может предложить премии тем, кто лучше всех выполняет задачи вовремя,"
-" а утверждает их человек."
+"мешает; может предложить премии тем, кто лучше всех выполняет задачи "
+"вовремя, а утверждает их человек."
 
 #: backend/apps/ai/agents/hr_assistant.py
 msgid "The morning HR note"
@@ -1078,8 +1085,8 @@ msgstr "Разошлёт утренние планы"
 #: backend/apps/ai/agents/morning_plan.py
 #, python-format
 msgid ""
-"Morning plan for %(to)s: %(due_today)s due today, %(late)s late, %(to_check)s"
-" to check"
+"Morning plan for %(to)s: %(due_today)s due today, %(late)s late, "
+"%(to_check)s to check"
 msgstr ""
 "Утренний план (%(to)s): сегодня к сроку — %(due_today)s, опаздывают — "
 "%(late)s, на проверке — %(to_check)s"
@@ -1451,8 +1458,7 @@ msgstr "Изменить в приложении"
 msgid "Late task"
 msgstr "Просроченная задача"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
-#. on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: backend/apps/ai/bot_messages.py backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "For: %(name)s"
@@ -1793,7 +1799,8 @@ msgid "Discarded"
 msgstr "Отброшено"
 
 #: backend/apps/ai/models.py backend/apps/attendance/models.py
-#: backend/apps/attendance/services.py backend/apps/members/models.py
+#: backend/apps/attendance/services.py backend/apps/inventory/models.py
+#: backend/apps/inventory/providers.py backend/apps/members/models.py
 #: backend/apps/signin/models.py
 msgid "Expired"
 msgstr "Срок истёк"
@@ -1916,9 +1923,10 @@ msgstr "С чьими правами он читает; кто такой «мн
 
 #: backend/apps/ai/models.py backend/apps/announcements/models.py
 #: backend/apps/attendance/models.py backend/apps/attendance/services.py
-#: backend/apps/finance/models.py backend/apps/projects/models.py
-#: backend/apps/sales/services.py backend/apps/tasks/models.py
-#: backend/apps/timeoff/models.py backend/apps/timeoff/services.py
+#: backend/apps/finance/models.py backend/apps/inventory/models.py
+#: backend/apps/projects/models.py backend/apps/sales/services.py
+#: backend/apps/tasks/models.py backend/apps/timeoff/models.py
+#: backend/apps/timeoff/services.py
 msgid "Cancelled"
 msgstr "Отменена"
 
@@ -2165,7 +2173,8 @@ msgid "Announcement: %(title)s · %(read)d of %(total)d read"
 msgstr "Объявление: %(title)s · прочитали %(read)d из %(total)d"
 
 #: backend/apps/announcements/models.py backend/apps/hr/models.py
-#: backend/apps/knowledge/providers.py backend/apps/sales/models.py
+#: backend/apps/inventory/models.py backend/apps/knowledge/providers.py
+#: backend/apps/sales/models.py
 msgid "Draft"
 msgstr "Черновик"
 
@@ -2286,6 +2295,7 @@ msgstr "Срок действия должен заканчиваться пос
 #: backend/apps/attendance/services.py backend/apps/console/base.py
 #: backend/apps/finance/api.py backend/apps/finance/claims.py
 #: backend/apps/hr/services.py backend/apps/inbox/services.py
+#: backend/apps/inventory/api.py backend/apps/inventory/notify.py
 #: backend/apps/knowledge/owner_api.py backend/apps/lifecycle/services.py
 #: backend/apps/members/departments.py backend/apps/members/join_links.py
 #: backend/apps/members/services.py backend/apps/payroll/runs.py
@@ -2550,8 +2560,8 @@ msgstr "На сколько процентов в год дорожает зам
 
 #: backend/apps/assets/models.py
 msgid ""
-"Show the tax depreciation too (straight line at the Tax Code's annual rates),"
-" for companies that pay profit tax."
+"Show the tax depreciation too (straight line at the Tax Code's annual "
+"rates), for companies that pay profit tax."
 msgstr ""
 "Показывать и налоговую амортизацию (линейно по годовым нормам Налогового "
 "кодекса) для плательщиков налога на прибыль."
@@ -2631,7 +2641,7 @@ msgstr "Хорошее"
 msgid "Worn"
 msgstr "Изношено"
 
-#: backend/apps/assets/models.py
+#: backend/apps/assets/models.py backend/apps/inventory/models.py
 msgid "Damaged"
 msgstr "Повреждено"
 
@@ -2757,7 +2767,8 @@ msgid "Note"
 msgstr "Заметка"
 
 #: backend/apps/assets/models.py backend/apps/finance/models.py
-#: backend/apps/payroll/models.py backend/apps/sales/models.py
+#: backend/apps/inventory/models.py backend/apps/payroll/models.py
+#: backend/apps/sales/models.py
 msgid "The first day of the month."
 msgstr "Первое число месяца."
 
@@ -2774,8 +2785,8 @@ msgstr "До внесения средства сюда: в Финансы не 
 msgid "In progress"
 msgstr "В работе"
 
-#: backend/apps/assets/models.py backend/apps/sales/hooks.py
-#: backend/apps/sales/models.py
+#: backend/apps/assets/models.py backend/apps/inventory/models.py
+#: backend/apps/sales/hooks.py backend/apps/sales/models.py
 msgid "Closed"
 msgstr "Закрыта"
 
@@ -2796,11 +2807,13 @@ msgid "Missing"
 msgstr "Нет"
 
 #: backend/apps/assets/models.py backend/apps/hr/models.py
-#: backend/apps/tasks/bot_messages.py backend/apps/tasks/models.py
+#: backend/apps/inventory/models.py backend/apps/tasks/bot_messages.py
+#: backend/apps/tasks/models.py
 msgid "Photo"
 msgstr "Фото"
 
-#: backend/apps/assets/models.py
+#: backend/apps/assets/models.py backend/apps/inventory/providers.py
+#: backend/apps/inventory/templates/inventory/controlled_register.html
 msgid "Document"
 msgstr "Документ"
 
@@ -2918,11 +2931,12 @@ msgstr ""
 
 #: backend/apps/assets/owner_api.py backend/apps/assets/services.py
 #: backend/apps/attendance/owner_api.py backend/apps/hr/owner_api.py
+#: backend/apps/inventory/api.py backend/apps/inventory/owner_api.py
 #: backend/apps/lifecycle/owner_api.py backend/apps/payroll/owner_api.py
 msgid "Give a number."
 msgstr "Укажите число."
 
-#: backend/apps/assets/owner_api.py
+#: backend/apps/assets/owner_api.py backend/apps/inventory/owner_api.py
 msgid "Pick a branch you work with."
 msgstr "Выберите филиал, с которым вы работаете."
 
@@ -2945,7 +2959,7 @@ msgstr "Эта покупка не ваша."
 #: backend/apps/assets/owner_api.py backend/apps/finance/owner_api.py
 #: backend/apps/finance/owner_serializers.py
 #: backend/apps/finance/planning_api.py backend/apps/finance/recurring.py
-#: backend/apps/finance/services.py
+#: backend/apps/finance/services.py backend/apps/inventory/owner_api.py
 msgid "Pick a category."
 msgstr "Выберите категорию."
 
@@ -3076,8 +3090,9 @@ msgstr "Конец страховки: %(asset)s"
 msgid "Inventory number"
 msgstr "Инвентарный номер"
 
-#: backend/apps/assets/providers.py backend/apps/members/providers.py
-#: backend/apps/reports/hooks.py
+#: backend/apps/assets/providers.py
+#: backend/apps/inventory/templates/inventory/writeoff_act.html
+#: backend/apps/members/providers.py backend/apps/reports/hooks.py
 #: backend/apps/sales/templates/sales/invoice.html
 msgid "Name"
 msgstr "Имя"
@@ -3087,6 +3102,8 @@ msgid "Category"
 msgstr "Категория"
 
 #: backend/apps/assets/providers.py backend/apps/finance/exporters.py
+#: backend/apps/inventory/providers.py
+#: backend/apps/inventory/templates/inventory/rx_journal.html
 #: backend/apps/tasks/hooks.py
 msgid "Kind"
 msgstr "Тип"
@@ -3100,9 +3117,9 @@ msgid "Branch"
 msgstr "Филиал"
 
 #: backend/apps/assets/providers.py backend/apps/finance/exporters.py
-#: backend/apps/members/providers.py backend/apps/payroll/providers.py
-#: backend/apps/sales/hooks.py backend/apps/tasks/hooks.py
-#: backend/apps/timeoff/providers.py
+#: backend/apps/inventory/providers.py backend/apps/members/providers.py
+#: backend/apps/payroll/providers.py backend/apps/sales/hooks.py
+#: backend/apps/tasks/hooks.py backend/apps/timeoff/providers.py
 msgid "Status"
 msgstr "Статус"
 
@@ -3144,6 +3161,7 @@ msgid "Useful life, months"
 msgstr "Срок, месяцев"
 
 #: backend/apps/assets/providers.py
+#: backend/apps/inventory/templates/inventory/writeoff_act.html
 msgid "Method"
 msgstr "Метод"
 
@@ -3238,6 +3256,7 @@ msgid "Warn 1 to 180 days ahead."
 msgstr "Предупреждать можно за 1–180 дней."
 
 #: backend/apps/assets/services.py backend/apps/finance/services.py
+#: backend/apps/inventory/services.py
 msgid "Give the category a name."
 msgstr "Укажите название категории."
 
@@ -3402,8 +3421,8 @@ msgstr "Укажите курс на тот день."
 
 #: backend/apps/assets/services.py
 msgid ""
-"Its depreciation is already in the books: use Change estimate, Add to cost or"
-" Write down instead."
+"Its depreciation is already in the books: use Change estimate, Add to cost "
+"or Write down instead."
 msgstr ""
 "Амортизация уже в учёте: используйте «Изменить срок», «Увеличить стоимость» "
 "или «Уменьшить стоимость»."
@@ -3417,16 +3436,16 @@ msgstr ""
 
 #: backend/apps/assets/services.py
 msgid ""
-"Its purchase left the P&L and comes back as depreciation: booking it can't be"
-" switched off."
+"Its purchase left the P&L and comes back as depreciation: booking it can't "
+"be switched off."
 msgstr ""
 "Покупка исключена из отчёта о прибыли и возвращается амортизацией: учёт "
 "амортизации нельзя отключить."
 
 #: backend/apps/assets/services.py
 msgid ""
-"Its purchase is already a cost in the P&L: booking its depreciation too would"
-" count it twice."
+"Its purchase is already a cost in the P&L: booking its depreciation too "
+"would count it twice."
 msgstr ""
 "Покупка уже учтена в расходах отчёта о прибыли: учёт амортизации посчитал бы "
 "её дважды."
@@ -3589,7 +3608,7 @@ msgstr "Здесь уже идёт инвентаризация."
 msgid "There is nothing to count here yet."
 msgstr "Здесь пока нечего считать."
 
-#: backend/apps/assets/services.py
+#: backend/apps/assets/services.py backend/apps/inventory/services.py
 msgid "This count is closed."
 msgstr "Эта инвентаризация закрыта."
 
@@ -3657,13 +3676,13 @@ msgstr "Запрос отправлен! Руководитель подтвер
 
 #: backend/apps/attendance/ai_tools.py
 msgid ""
-"Attendance between two days: totals (present, late, absent, on-time %, worked"
-" hours) and per person scheduled, attended, absent and late days with worked "
-"hours"
+"Attendance between two days: totals (present, late, absent, on-time %, "
+"worked hours) and per person scheduled, attended, absent and late days with "
+"worked hours"
 msgstr ""
 "Посещаемость за период между двумя датами: итоги (пришли, опоздали, "
-"отсутствовали, % вовремя, отработанные часы) и по каждому сотруднику — дни по"
-" графику, дни присутствия, отсутствия и опозданий, отработанные часы"
+"отсутствовали, % вовремя, отработанные часы) и по каждому сотруднику — дни "
+"по графику, дни присутствия, отсутствия и опозданий, отработанные часы"
 
 #: backend/apps/attendance/api.py backend/apps/attendance/owner_api.py
 #: backend/apps/attendance/services.py
@@ -3676,8 +3695,9 @@ msgid "Give a day as YYYY-MM-DD."
 msgstr "Укажите день в формате YYYY-MM-DD."
 
 #: backend/apps/attendance/api.py backend/apps/attendance/owner_api.py
-#: backend/apps/finance/budgets.py backend/apps/payroll/api.py
-#: backend/apps/payroll/owner_api.py backend/apps/payroll/periods.py
+#: backend/apps/finance/budgets.py backend/apps/inventory/owner_api.py
+#: backend/apps/payroll/api.py backend/apps/payroll/owner_api.py
+#: backend/apps/payroll/periods.py
 msgid "Give a month as YYYY-MM."
 msgstr "Укажите месяц в формате YYYY-MM."
 
@@ -3857,7 +3877,8 @@ msgid ""
 "No shift is planned for you today; it will be marked as an extra day."
 msgstr ""
 "<b>Отметка прихода</b>\n"
-"На сегодня у вас нет смены, поэтому день будет отмечен как дополнительный рабочий."
+"На сегодня у вас нет смены, поэтому день будет отмечен как дополнительный "
+"рабочий."
 
 #: backend/apps/attendance/bot_messages.py
 msgid "Send your location with the button below."
@@ -4199,9 +4220,9 @@ msgid "Planned"
 msgstr "Запланирована"
 
 #: backend/apps/attendance/models.py backend/apps/finance/models.py
-#: backend/apps/inbox/bot_messages.py backend/apps/projects/models.py
-#: backend/apps/reminders/bot_messages.py backend/apps/sales/models.py
-#: backend/apps/tasks/bot_messages.py
+#: backend/apps/inbox/bot_messages.py backend/apps/inventory/models.py
+#: backend/apps/projects/models.py backend/apps/reminders/bot_messages.py
+#: backend/apps/sales/models.py backend/apps/tasks/bot_messages.py
 msgid "Open"
 msgstr "Открыть"
 
@@ -4250,15 +4271,18 @@ msgid "Waiting for a colleague"
 msgstr "Ждёт ответа коллеги"
 
 #: backend/apps/attendance/models.py backend/apps/finance/models.py
-#: backend/apps/timeoff/models.py
+#: backend/apps/inventory/models.py backend/apps/timeoff/models.py
 msgid "Waiting for approval"
 msgstr "Ждёт одобрения"
 
 #: backend/apps/attendance/models.py backend/apps/attendance/services.py
-#: backend/apps/finance/models.py backend/apps/members/models.py
-#: backend/apps/members/providers.py backend/apps/members/services.py
-#: backend/apps/signin/models.py backend/apps/timeoff/models.py
-#: backend/apps/timeoff/providers.py backend/apps/timeoff/services.py
+#: backend/apps/finance/models.py backend/apps/inventory/models.py
+#: backend/apps/inventory/providers.py
+#: backend/apps/inventory/templates/inventory/writeoff_act.html
+#: backend/apps/members/models.py backend/apps/members/providers.py
+#: backend/apps/members/services.py backend/apps/signin/models.py
+#: backend/apps/timeoff/models.py backend/apps/timeoff/providers.py
+#: backend/apps/timeoff/services.py
 #: employee_bot/bot/handlers/admin/approvals.py
 msgid "Approved"
 msgstr "Одобрено"
@@ -4341,11 +4365,11 @@ msgid "Edited by a manager"
 msgstr "Изменено руководителем"
 
 #: backend/apps/attendance/notify.py backend/apps/attendance/providers.py
-#: backend/apps/finance/claims.py backend/apps/members/bot_messages.py
-#: backend/apps/members/notifications.py backend/apps/members/providers.py
-#: backend/apps/payroll/notify.py backend/apps/payroll/providers.py
-#: backend/apps/timeoff/bot_messages.py backend/apps/timeoff/notifications.py
-#: backend/apps/timeoff/providers.py
+#: backend/apps/finance/claims.py backend/apps/inventory/providers.py
+#: backend/apps/members/bot_messages.py backend/apps/members/notifications.py
+#: backend/apps/members/providers.py backend/apps/payroll/notify.py
+#: backend/apps/payroll/providers.py backend/apps/timeoff/bot_messages.py
+#: backend/apps/timeoff/notifications.py backend/apps/timeoff/providers.py
 msgid "Approve"
 msgstr "Одобрить"
 
@@ -4908,7 +4932,7 @@ msgstr "Вы не можете взять эту смену."
 msgid "These shifts have changed since the request."
 msgstr "С момента заявки эти смены изменились."
 
-#: backend/apps/attendance/services.py
+#: backend/apps/attendance/services.py backend/apps/inventory/models.py
 msgid "Accepted"
 msgstr "Принято"
 
@@ -5220,7 +5244,7 @@ msgstr "Включённые модули"
 msgid "Unknown timezone: %(value)s"
 msgstr "Неизвестный часовой пояс: %(value)s"
 
-#: backend/apps/companies/models.py
+#: backend/apps/companies/models.py backend/apps/inventory/providers.py
 msgid "Stock"
 msgstr "Склад"
 
@@ -5240,11 +5264,14 @@ msgstr "Поощрения"
 msgid "Assets and equipment"
 msgstr "Основные средства и оборудование"
 
-#: backend/apps/companies/models.py backend/apps/sales/models.py
+#: backend/apps/companies/models.py backend/apps/inventory/providers.py
+#: backend/apps/inventory/templates/inventory/controlled_register.html
+#: backend/apps/inventory/templates/inventory/writeoff_act.html
+#: backend/apps/sales/models.py
 msgid "Pharmacy"
 msgstr "Аптека"
 
-#: backend/apps/companies/models.py
+#: backend/apps/companies/models.py backend/apps/inventory/providers.py
 msgid "Distributor"
 msgstr "Дистрибьютор"
 
@@ -5633,7 +5660,7 @@ msgstr "Доллар США"
 msgid "This isn't a recording we can play. Record it again."
 msgstr "Эту запись не открыть. Запишите ещё раз."
 
-#: backend/apps/core/uploads.py
+#: backend/apps/core/uploads.py backend/apps/inventory/importing.py
 msgid "The file is empty."
 msgstr "Файл пустой."
 
@@ -5702,7 +5729,8 @@ msgstr "%(label)s · строк: %(count)s"
 msgid "This export took too long. Please try again."
 msgstr "Выгрузка заняла слишком много времени. Пожалуйста, попробуйте ещё раз."
 
-#: backend/apps/exports/models.py backend/apps/sales/models.py
+#: backend/apps/exports/models.py backend/apps/inventory/models.py
+#: backend/apps/sales/models.py
 msgid "Waiting"
 msgstr "В очереди"
 
@@ -5721,8 +5749,8 @@ msgstr "Также отправить файл в Telegram тому, кто ег
 #: backend/apps/exports/models.py
 msgid "Salaries, IDs or per-person money: copied from the exporter."
 msgstr ""
-"Зарплаты, номера документов или суммы по конкретным людям. Копируется из типа"
-" выгрузки."
+"Зарплаты, номера документов или суммы по конкретным людям. Копируется из "
+"типа выгрузки."
 
 #: backend/apps/exports/services.py
 msgid "This export doesn't exist."
@@ -5748,8 +5776,8 @@ msgstr "Деньги на каждом счёте (кассы, банк, кар�
 msgid ""
 "Open debts (nasiya): who owes us, whom we owe, due dates and overdue days"
 msgstr ""
-"Открытые долги (насия): кто должен нам, кому должны мы, сроки погашения и дни"
-" просрочки"
+"Открытые долги (насия): кто должен нам, кому должны мы, сроки погашения и "
+"дни просрочки"
 
 #: backend/apps/finance/ai_tools.py
 msgid ""
@@ -6100,8 +6128,8 @@ msgstr "Бюджет: %(budget)s."
 msgid ""
 "%(category)s: %(percent)s%% of the %(month)s budget used, %(days)s days left"
 msgstr ""
-"%(category)s: использовано %(percent)s%% бюджета на %(month)s, осталось дней:"
-" %(days)s"
+"%(category)s: использовано %(percent)s%% бюджета на %(month)s, осталось "
+"дней: %(days)s"
 
 #: backend/apps/finance/budgets.py
 #, python-format
@@ -6304,6 +6332,8 @@ msgid "Card terminal"
 msgstr "Терминал"
 
 #: backend/apps/finance/exporters.py
+#: backend/apps/inventory/templates/inventory/controlled_register.html
+#: backend/apps/inventory/templates/inventory/rx_journal.html
 #: backend/apps/tasks/templates/tasks/readings_journal.html
 msgid "Date"
 msgstr "Дата"
@@ -6375,6 +6405,7 @@ msgid "Account or line"
 msgstr "Счёт или статья"
 
 #: backend/apps/finance/exporters.py
+#: backend/apps/inventory/templates/inventory/controlled_register.html
 msgid "Balance"
 msgstr "Остаток"
 
@@ -6382,7 +6413,9 @@ msgstr "Остаток"
 msgid "In base currency"
 msgstr "В базовой валюте"
 
-#: backend/apps/finance/exporters.py backend/apps/payroll/providers.py
+#: backend/apps/finance/exporters.py backend/apps/inventory/providers.py
+#: backend/apps/inventory/templates/inventory/controlled_register.html
+#: backend/apps/payroll/providers.py
 #: backend/apps/payroll/templates/payroll/payslip.html
 #: backend/apps/tasks/templates/tasks/readings_journal.html
 msgid "Month"
@@ -6814,6 +6847,7 @@ msgid "Equipment and other long-term purchases."
 msgstr "Оборудование и другие долгосрочные покупки."
 
 #: backend/apps/finance/models.py backend/apps/finance/services.py
+#: backend/apps/inventory/services.py
 msgid "Categories go two levels deep at most."
 msgstr "У категорий может быть не больше двух уровней."
 
@@ -6878,7 +6912,9 @@ msgstr "Возмещение расходов"
 msgid "Tax"
 msgstr "Налог"
 
-#: backend/apps/finance/models.py
+#: backend/apps/finance/models.py backend/apps/inventory/journals.py
+#: backend/apps/inventory/providers.py
+#: backend/apps/inventory/templates/inventory/controlled_register.html
 msgid "Written off"
 msgstr "Списан"
 
@@ -6896,8 +6932,8 @@ msgid ""
 "is settled, so a payment at another rate books the exchange difference."
 msgstr ""
 "UZS за 1 USD на день открытия долга (1 — для долга в базовой валюте). По "
-"этому курсу оценивается погашенная сумма, поэтому при оплате по другому курсу"
-" проводится курсовая разница."
+"этому курсу оценивается погашенная сумма, поэтому при оплате по другому "
+"курсу проводится курсовая разница."
 
 #: backend/apps/finance/models.py
 msgid "Who chases it."
@@ -6913,11 +6949,12 @@ msgstr ""
 "Закреплён за этим источником (например, утверждённым расчётным листком); "
 "оплатить можно только через него."
 
-#: backend/apps/finance/models.py
+#: backend/apps/finance/models.py backend/apps/inventory/models.py
 msgid "Posted"
 msgstr "Проведено"
 
-#: backend/apps/finance/models.py backend/apps/sales/models.py
+#: backend/apps/finance/models.py backend/apps/inventory/models.py
+#: backend/apps/sales/models.py
 msgid "Void"
 msgstr "Аннулировано"
 
@@ -6950,7 +6987,7 @@ msgstr "Новый долг"
 msgid "Debt payment"
 msgstr "Погашение долга"
 
-#: backend/apps/finance/models.py
+#: backend/apps/finance/models.py backend/apps/inventory/models.py
 msgid "Write-off"
 msgstr "Списание"
 
@@ -6963,6 +7000,7 @@ msgid "Owner contribution or draw"
 msgstr "Взнос или изъятие владельца"
 
 #: backend/apps/finance/models.py backend/apps/finance/owner_api.py
+#: backend/apps/inventory/templates/inventory/controlled_register.html
 msgid "Opening balance"
 msgstr "Начальный остаток"
 
@@ -7190,8 +7228,8 @@ msgstr "Загрузите чек ещё раз."
 msgid ""
 "Only finance managers change entries, or whoever made one within 24 hours."
 msgstr ""
-"Изменять проводки могут только ответственные за финансы, а автор проводки — в"
-" течение 24 часов."
+"Изменять проводки могут только ответственные за финансы, а автор проводки — "
+"в течение 24 часов."
 
 #: backend/apps/finance/owner_api.py backend/apps/finance/services.py
 msgid "This entry isn't waiting for approval."
@@ -7344,8 +7382,8 @@ msgstr "%(account)s: %(balance)s"
 #, python-format
 msgid "%(person)s holds %(amount)s. Choose where to move it, or move it first."
 msgstr ""
-"%(person)s: на руках %(amount)s. Выберите, куда перевести деньги, или сначала"
-" переведите их."
+"%(person)s: на руках %(amount)s. Выберите, куда перевести деньги, или "
+"сначала переведите их."
 
 #: backend/apps/finance/providers.py
 #, python-format
@@ -7947,7 +7985,8 @@ msgstr "Введите курс валюты."
 msgid "That exchange rate can't be right."
 msgstr "Похоже, курс указан неверно."
 
-#: backend/apps/finance/services.py backend/apps/payroll/services.py
+#: backend/apps/finance/services.py backend/apps/inventory/services.py
+#: backend/apps/payroll/services.py
 msgid "Say why."
 msgstr "Укажите причину."
 
@@ -8107,8 +8146,7 @@ msgstr "Группа подключена к компании <b>%(company)s</b>
 msgid "Whose news: %(who)s"
 msgstr "Чьи новости: %(who)s"
 
-#. Translators: closes the group's settings ("Tayyor" / "Готово"), not a task's
-#. status.
+#. Translators: closes the group's settings ("Tayyor" / "Готово"), not a task's status.
 #: backend/apps/groups/bot_messages.py
 msgctxt "group settings"
 msgid "Done"
@@ -8150,18 +8188,20 @@ msgstr "все"
 
 #: backend/apps/groups/bot_messages.py
 msgid ""
-"Hi! I post this team's task news here: finished work, late tasks and daily summaries.\n"
+"Hi! I post this team's task news here: finished work, late tasks and daily "
+"summaries.\n"
 "A manager can link me to the company by sending /connect."
 msgstr ""
-"Здравствуйте! Я присылаю сюда новости команды по задачам: выполненные дела, просрочки и итоги дня.\n"
+"Здравствуйте! Я присылаю сюда новости команды по задачам: выполненные дела, "
+"просрочки и итоги дня.\n"
 "Руководитель может подключить меня к компании командой /connect."
 
 #: backend/apps/groups/bot_messages.py
 msgid ""
 "This group isn't connected to a company yet. A manager can send /connect."
 msgstr ""
-"Эта группа ещё не подключена к компании. Руководитель может отправить "
-"/connect."
+"Эта группа ещё не подключена к компании. Руководитель может отправить /"
+"connect."
 
 #: backend/apps/groups/bot_messages.py
 msgid ""
@@ -8173,8 +8213,8 @@ msgstr ""
 
 #: backend/apps/groups/bot_messages.py
 msgid ""
-"Disconnected. I won't post here any more. A manager can send /connect to link"
-" this group again."
+"Disconnected. I won't post here any more. A manager can send /connect to "
+"link this group again."
 msgstr ""
 "Отключено. Больше не буду сюда писать. Руководитель может снова подключить "
 "группу командой /connect."
@@ -8271,8 +8311,8 @@ msgstr "Выключается, когда бота удаляют или гру
 msgid ""
 "Only a company manager can connect this group. Ask one to send /connect here."
 msgstr ""
-"Подключить группу может только руководитель компании. Попросите его отправить"
-" сюда /connect."
+"Подключить группу может только руководитель компании. Попросите его "
+"отправить сюда /connect."
 
 #: backend/apps/groups/services.py
 msgid "This group is already connected to another company."
@@ -8315,8 +8355,8 @@ msgid ""
 "expired, contracts and probation that end, missing required documents, "
 "birthdays and work anniversaries of the coming week"
 msgstr ""
-"Кадры кратко: численность и её динамика, документы, срок которых истекает или"
-" истёк, заканчивающиеся договоры и испытательные сроки, недостающие "
+"Кадры кратко: численность и её динамика, документы, срок которых истекает "
+"или истёк, заканчивающиеся договоры и испытательные сроки, недостающие "
 "обязательные документы, дни рождения и трудовые юбилеи на ближайшую неделю"
 
 #: backend/apps/hr/ai_tools.py
@@ -8330,8 +8370,8 @@ msgstr ""
 "Фармацевт на смене: есть ли в графике квалифицированный фармацевт на каждый "
 "час работы каждой аптеки в ближайшие дни (окна и их время), аптеки, где "
 "сейчас не отметился ни один квалифицированный фармацевт, кассы, открытые "
-"сотрудником без квалификации, и фармацевты, которые сегодня не учитываются, с"
-" причиной"
+"сотрудником без квалификации, и фармацевты, которые сегодня не учитываются, "
+"с причиной"
 
 #: backend/apps/hr/api.py backend/apps/hr/owner_api.py
 #: backend/apps/lifecycle/api.py backend/apps/lifecycle/owner_api.py
@@ -8461,8 +8501,8 @@ msgstr "Ваш трудовой договор"
 #: backend/apps/hr/bot_messages.py
 #, python-format
 msgid ""
-"Contract %(number)s is in force. Read it in the app and confirm you have read"
-" it."
+"Contract %(number)s is in force. Read it in the app and confirm you have "
+"read it."
 msgstr ""
 "Договор № %(number)s вступил в силу. Прочитайте его в приложении и "
 "подтвердите, что ознакомились."
@@ -8636,8 +8676,7 @@ msgstr ""
 msgid "Till opened by someone not qualified: %(branch)s"
 msgstr "Кассу открыл сотрудник без квалификации: %(branch)s"
 
-#. Translators: %(name)s is a person, %(time)s a clock time, %(reason)s a few
-#. words of why.
+#. Translators: %(name)s is a person, %(time)s a clock time, %(reason)s a few words of why.
 #: backend/apps/hr/bot_messages.py
 #, python-format
 msgid "Opened at %(time)s. Cashier: %(name)s (%(reason)s)."
@@ -8648,15 +8687,13 @@ msgstr "Открыта в %(time)s. Кассир: %(name)s (%(reason)s)."
 msgid "No qualified pharmacist in the roster: %(branch)s"
 msgstr "В графике смен нет квалифицированного фармацевта: %(branch)s"
 
-#. Translators: a day (dd.mm.yyyy) and two clock times, e.g. "14.11.2026, 20:00
-#. to 08:00".
+#. Translators: a day (dd.mm.yyyy) and two clock times, e.g. "14.11.2026, 20:00 to 08:00".
 #: backend/apps/hr/bot_messages.py
 #, python-format
 msgid "%(day)s, %(start)s to %(end)s"
 msgstr "%(day)s, с %(start)s до %(end)s"
 
-#. Translators: qualified pharmacists planned out of those needed, e.g. "1 of
-#. 2".
+#. Translators: qualified pharmacists planned out of those needed, e.g. "1 of 2".
 #: backend/apps/hr/bot_messages.py
 #, python-format
 msgid "%(have)d of %(need)d"
@@ -8689,8 +8726,9 @@ msgstr "Выберите, кто считается фармацевтом"
 
 #: backend/apps/hr/hooks.py
 msgid ""
-"Choose who counts as a pharmacist and upload their diplomas and certificates,"
-" so every hour a pharmacy is open has a qualified pharmacist on the roster."
+"Choose who counts as a pharmacist and upload their diplomas and "
+"certificates, so every hour a pharmacy is open has a qualified pharmacist on "
+"the roster."
 msgstr ""
 "Выберите, кто считается фармацевтом, и загрузите их дипломы и сертификаты, "
 "чтобы в каждый час работы аптеки в графике смен был квалифицированный "
@@ -9294,11 +9332,726 @@ msgstr "Это действие больше недоступно."
 msgid "Please give a reason."
 msgstr "Пожалуйста, укажите причину."
 
+#: backend/apps/inventory/ai_tools.py
+msgid ""
+"Find a medicine or other item in the catalogue by name, active ingredient "
+"(INN) or barcode: parts on hand per pharmacy, the price per pack and per "
+"part, whether it is prescription-only or controlled, and the nearest expiry "
+"date on hand"
+msgstr ""
+"Поиск препарата или другого товара в каталоге по названию, МНН или "
+"штрихкоду: остаток в частях по каждой аптеке, цена за упаковку и за часть, "
+"отпускается ли он по рецепту и подконтрольный ли он, ближайший срок годности "
+"в наличии"
+
+#: backend/apps/inventory/ai_tools.py
+msgid ""
+"Catalogue items with the same active ingredient, form and strength as an "
+"item, with the parts on hand and the price: a catalogue fact for the "
+"pharmacist to choose from, never a recommendation"
+msgstr ""
+"Позиции каталога с тем же МНН, формой и дозировкой, что у выбранного товара, "
+"с остатком в частях и ценой: сведения каталога для выбора фармацевтом, а не "
+"рекомендация"
+
+#: backend/apps/inventory/ai_tools.py
+msgid ""
+"Batches that expire within a number of days (or already expired) per "
+"pharmacy: series, expiry date, parts on hand and their value at retail (and "
+"at cost when finance data is shared)"
+msgstr ""
+"Серии, у которых срок годности истекает в течение заданного числа дней (или "
+"уже истёк), по аптекам: серия, срок годности, остаток в частях и его сумма в "
+"розничных ценах (и по себестоимости, если открыт доступ к финансовым данным)"
+
+#: backend/apps/inventory/ai_tools.py
+msgid ""
+"Goods receipts (distributors' invoices): distributor, invoice number and "
+"date, pharmacy, status, due date, and the amount and how much of the payable "
+"is paid when finance data is shared"
+msgstr ""
+"Приходы (накладные дистрибьюторов): дистрибьютор, номер и дата накладной, "
+"аптека, статус, срок оплаты, а при открытом доступе к финансовым данным — "
+"сумма и сколько из долга уже оплачено"
+
+#: backend/apps/inventory/ai_tools.py
+msgid ""
+"Stock per pharmacy and item: parts on hand, parts sold before their delivery "
+"was recorded, the minimum, and whether it is low"
+msgstr ""
+"Остатки по аптекам и товарам: остаток в частях, сколько частей продано до "
+"внесения прихода, минимум и не опустился ли остаток ниже него"
+
+#: backend/apps/inventory/ai_tools.py
+msgid ""
+"Defektura: what customers asked for that a pharmacy didn't have, how many "
+"packs, when, and whether it was ordered or arrived"
+msgstr ""
+"Дефектура: что спрашивали покупатели и чего не было в аптеке, сколько "
+"упаковок, когда, заказано ли и поступило ли"
+
+#: backend/apps/inventory/api.py backend/apps/inventory/owner_api.py
+msgid "Stock isn't switched on for this company."
+msgstr "Модуль «Склад» в этой компании не включён."
+
+#: backend/apps/inventory/api.py
+msgid "Pick a pharmacy you work at."
+msgstr "Выберите аптеку, в которой вы работаете."
+
+#: backend/apps/inventory/api.py
+msgid "You don't work at any pharmacy yet."
+msgstr "Вы пока не работаете ни в одной аптеке."
+
+#: backend/apps/inventory/api.py backend/apps/inventory/owner_api.py
+msgid "Pick an item of the catalogue."
+msgstr "Выберите позицию каталога."
+
+#: backend/apps/inventory/api.py backend/apps/inventory/owner_api.py
+msgid "Pick a distributor."
+msgstr "Выберите дистрибьютора."
+
+#: backend/apps/inventory/api.py
+msgid "None of this series is here any more."
+msgstr "Этой серии здесь больше нет."
+
+#: backend/apps/inventory/api.py backend/apps/inventory/owner_api.py
+msgid "The prescription log is off, or this item needs no prescription."
+msgstr ""
+"Журнал регистрации рецептов выключен, или этот препарат отпускается без "
+"рецепта."
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Changed the stock settings"
+msgstr "Изменил настройки склада"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Added an item to the catalogue"
+msgstr "Добавил позицию в каталог"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Changed a catalogue item"
+msgstr "Изменил позицию каталога"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Imported the catalogue"
+msgstr "Импортировал каталог"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Merged two catalogue items"
+msgstr "Объединил две позиции каталога"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Saved a product code"
+msgstr "Сохранил код товара"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Saved a product category"
+msgstr "Сохранил категорию товаров"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Deleted a product category"
+msgstr "Удалил категорию товаров"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Saved a manufacturer"
+msgstr "Сохранил производителя"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Saved a distributor's terms"
+msgstr "Сохранил условия дистрибьютора"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Entered opening stock"
+msgstr "Внёс начальные остатки"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Changed a minimum or maximum stock"
+msgstr "Изменил минимальный или максимальный остаток"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Started a goods receipt"
+msgstr "Создал приход"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Changed a goods receipt"
+msgstr "Изменил приход"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Sent a goods receipt for posting"
+msgstr "Отправил приход на проведение"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Posted a goods receipt"
+msgstr "Провёл приход"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Voided a goods receipt"
+msgstr "Аннулировал приход"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Started a transfer"
+msgstr "Создал перемещение"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Sent a transfer"
+msgstr "Отправил перемещение"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Received a transfer"
+msgstr "Принял перемещение"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Resolved a disputed transfer"
+msgstr "Урегулировал недостачу по перемещению"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Voided a transfer between pharmacies"
+msgstr "Аннулировал перемещение"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Proposed a write-off"
+msgstr "Предложил списание"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Approved a write-off"
+msgstr "Утвердил списание"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Recorded a destruction"
+msgstr "Оформил уничтожение"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Voided a write-off"
+msgstr "Аннулировал списание"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Added a photo or document to a write-off"
+msgstr "Добавил фото или документ к списанию"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Started a stock count"
+msgstr "Начал инвентаризацию"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Finished counting"
+msgstr "Закончил подсчёт"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Applied a stock count"
+msgstr "Провёл результаты инвентаризации"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Put a series in quarantine"
+msgstr "Поместил серию в карантин"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Put a series back on sale"
+msgstr "Вернул серию в продажу"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Changed a price"
+msgstr "Изменил цену"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Checked a series close to expiry on the shelf"
+msgstr "Проверил на полке серию с истекающим сроком"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Registered a recall"
+msgstr "Зарегистрировал отзыв серии"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Closed a recall"
+msgstr "Закрыл отзыв серии"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Closed a month of the controlled register"
+msgstr "Закрыл месяц в журнале ПКУ"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Reported a controlled difference"
+msgstr "Сообщил о расхождении по журналу ПКУ"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Saved a pricing rule"
+msgstr "Сохранил правило ценообразования"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Deleted a pricing rule"
+msgstr "Удалил правило ценообразования"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Recorded a defektura request"
+msgstr "Записал запрос в дефектуру"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Recorded a prescription"
+msgstr "Записал рецепт"
+
+#: backend/apps/inventory/audit_actions.py
+msgid "Changed a prescription record"
+msgstr "Изменил запись о рецепте"
+
+#: backend/apps/inventory/defaults.py
+msgid "Medicines"
+msgstr "Препараты"
+
+#: backend/apps/inventory/defaults.py
+msgid "Antibiotics and antivirals"
+msgstr "Антибиотики и противовирусные"
+
+#: backend/apps/inventory/defaults.py
+msgid "Pain and fever"
+msgstr "Боль и температура"
+
+#: backend/apps/inventory/defaults.py
+msgid "Heart and blood pressure"
+msgstr "Сердце и давление"
+
+#: backend/apps/inventory/defaults.py
+msgid "Stomach and digestion"
+msgstr "Желудок и пищеварение"
+
+#: backend/apps/inventory/defaults.py
+msgid "Allergy"
+msgstr "Аллергия"
+
+#: backend/apps/inventory/defaults.py
+msgid "Cough and cold"
+msgstr "Кашель и простуда"
+
+#: backend/apps/inventory/defaults.py
+msgid "Hormones and diabetes"
+msgstr "Гормоны и диабет"
+
+#: backend/apps/inventory/defaults.py
+msgid "Nervous system"
+msgstr "Нервная система"
+
+#: backend/apps/inventory/defaults.py
+msgid "Vitamins and supplements"
+msgstr "Витамины и БАДы"
+
+#: backend/apps/inventory/defaults.py
+msgid "Medical devices"
+msgstr "Медицинские изделия"
+
+#: backend/apps/inventory/defaults.py
+msgid "Hygiene and baby care"
+msgstr "Гигиена и уход за малышами"
+
+#: backend/apps/inventory/engine.py backend/apps/inventory/services.py
+#, python-format
+msgid "Only %(left)s of series %(series)s is here."
+msgstr "Серии %(series)s здесь только %(left)s шт."
+
+#: backend/apps/inventory/hooks.py
+msgid "Goods receipts to post"
+msgstr "Приходы на проведение"
+
+#: backend/apps/inventory/hooks.py
+msgid "Write-offs to approve"
+msgstr "Списания на утверждение"
+
+#: backend/apps/inventory/hooks.py
+msgid "Transfers that arrived short"
+msgstr "Перемещения с недостачей"
+
+#: backend/apps/inventory/hooks.py
+msgid "Import your medicines"
+msgstr "Импортируйте препараты"
+
+#: backend/apps/inventory/hooks.py
+msgid ""
+"Your catalogue from a spreadsheet: names, active ingredients, barcodes, "
+"prescription flags and prices. A dry run shows what will change first."
+msgstr ""
+"Ваш каталог из таблицы: названия, МНН, штрихкоды, признаки рецептурности и "
+"цены. Пробная проверка сначала покажет, что изменится."
+
+#: backend/apps/inventory/hooks.py
+msgid "Enter opening stock with series and expiry"
+msgstr "Внесите начальные остатки с сериями и сроками годности"
+
+#: backend/apps/inventory/hooks.py
+msgid ""
+"What is on the shelves today, by series, expiry date and cost, so expiry "
+"warnings and the legal price caps work from day one."
+msgstr ""
+"Что сегодня на полках — по сериям, срокам годности и цене закупки, чтобы "
+"предупреждения о сроках и предельные цены работали с первого дня."
+
+#: backend/apps/inventory/hooks.py
+msgid "Add distributors and their payment terms"
+msgstr "Добавьте дистрибьюторов и их условия оплаты"
+
+#: backend/apps/inventory/hooks.py
+msgid ""
+"Each delivery opens a payable due after the distributor's terms, so you see "
+"what you owe and when."
+msgstr ""
+"Каждый приход открывает долг со сроком оплаты по условиям дистрибьютора: "
+"видно, сколько и когда нужно заплатить."
+
+#: backend/apps/inventory/hooks.py
+msgid "Medicine categories"
+msgstr "Категории препаратов"
+
+#: backend/apps/inventory/hooks.py
+msgid "Stock settings and pricing rules"
+msgstr "Настройки склада и правила ценообразования"
+
+#: backend/apps/inventory/hooks.py
+msgid "Stock by pharmacy"
+msgstr "Остатки по аптекам"
+
+#: backend/apps/inventory/hooks.py
+msgid "Batches on hand"
+msgstr "Серии в наличии"
+
+#: backend/apps/inventory/hooks.py
+msgid "Stock movements"
+msgstr "Движение товаров"
+
+#: backend/apps/inventory/hooks.py
+msgid "Expiring medicines"
+msgstr "Препараты с истекающим сроком"
+
+#: backend/apps/inventory/hooks.py
+msgid "Write-offs"
+msgstr "Списания"
+
+#: backend/apps/inventory/hooks.py backend/apps/inventory/journals.py
+msgid "Prescription log"
+msgstr "Журнал регистрации рецептов"
+
+#: backend/apps/inventory/hooks.py backend/apps/inventory/journals.py
+msgid "Controlled-substance register"
+msgstr "Журнал предметно-количественного учёта"
+
+#: backend/apps/inventory/hooks.py
+msgid "Goods receipt"
+msgstr "Приход (накладная)"
+
+#: backend/apps/inventory/hooks.py
+msgid ""
+"Medicines reaching their expiry warning, and mandatory medicines missing"
+msgstr ""
+"Препараты с истекающим сроком годности и отсутствующие обязательные препараты"
+
+#: backend/apps/inventory/hooks.py
+msgid "Goods sent to your pharmacy"
+msgstr "Товар, отправленный в вашу аптеку"
+
+#: backend/apps/inventory/hooks.py
+msgid "Recalled series found in stock"
+msgstr "Отозванные серии, найденные в наличии"
+
+#: backend/apps/inventory/hooks.py
+msgid "Stock count shortages above the tolerance"
+msgstr "Недостачи по инвентаризации сверх допустимого"
+
+#: backend/apps/inventory/hooks.py
+msgid "Distributors raising their prices"
+msgstr "Рост цен у дистрибьюторов"
+
+#: backend/apps/inventory/hooks.py
+msgid "Unfit goods to destroy"
+msgstr "Непригодный товар к уничтожению"
+
+#: backend/apps/inventory/hooks.py
+msgid "Closing the month of the controlled-substance register"
+msgstr "Закрытие месяца в журнале ПКУ"
+
+#: backend/apps/inventory/hooks.py
+msgid "Differences in the controlled-substance register"
+msgstr "Расхождения в журнале ПКУ"
+
+#: backend/apps/inventory/hooks.py
+msgid "Goods receipts waiting for posting"
+msgstr "Приходы, ждущие проведения"
+
+#: backend/apps/inventory/hooks.py
+msgid "Write-offs waiting for approval"
+msgstr "Списания, ждущие утверждения"
+
+#: backend/apps/inventory/importing.py
+msgid "The file's text can't be read: save it as UTF-8 CSV or XLSX."
+msgstr ""
+"Не удаётся прочитать текст файла: сохраните его как CSV в UTF-8 или как XLSX."
+
+#: backend/apps/inventory/importing.py
+#, python-format
+msgid "At most %(count)s rows at a time."
+msgstr "Не больше %(count)s строк за раз."
+
+#: backend/apps/inventory/importing.py
+#, python-format
+msgid "%(field)s: “%(value)s” can't be read"
+msgstr "%(field)s: не удалось прочитать «%(value)s»"
+
+#: backend/apps/inventory/importing.py
+msgid "No name."
+msgstr "Нет наименования."
+
+#: backend/apps/inventory/importing.py
+msgid "Pick the column with the item's name."
+msgstr "Выберите столбец с наименованием."
+
+#: backend/apps/inventory/importing.py
+msgid "The barcode repeats an earlier row."
+msgstr "Штрихкод повторяет одну из строк выше."
+
+#: backend/apps/inventory/importing.py backend/apps/inventory/services.py
+msgid "A posted or void receipt can't be changed."
+msgstr "Проведённый или аннулированный приход нельзя изменить."
+
+#: backend/apps/inventory/importing.py
+msgid "Pick the columns with the item and the number of packs."
+msgstr "Выберите столбцы с товаром и количеством упаковок."
+
+#: backend/apps/inventory/importing.py
+msgid "A number can't be read."
+msgstr "Не удалось прочитать число."
+
+#: backend/apps/inventory/importing.py backend/apps/sales/importer.py
+msgid "No quantity."
+msgstr "Нет количества."
+
+#: backend/apps/inventory/importing.py
+msgid "No expiry date."
+msgstr "Нет срока годности."
+
+#: backend/apps/inventory/importing.py
+msgid "No series."
+msgstr "Нет серии."
+
+#: backend/apps/inventory/importing.py
+msgid "Pick the columns with the medicine and its series."
+msgstr "Выберите столбцы с препаратом и его серией."
+
+#: backend/apps/inventory/importing.py
+msgid "On the regulator's list of rejected series"
+msgstr "В официальном списке забракованных серий"
+
+#: backend/apps/inventory/journals.py
+#, python-format
+msgid "%(packs)s packs"
+msgstr "%(packs)s упак."
+
+#: backend/apps/inventory/journals.py
+msgid "parts"
+msgstr "шт."
+
+#: backend/apps/inventory/journals.py
+#, python-format
+msgid "%(packs)s packs %(rest)s %(label)s"
+msgstr "%(packs)s упак. %(rest)s %(label)s"
+
+#: backend/apps/inventory/journals.py
+#, python-format
+msgid "Destruction act %(number)s"
+msgstr "Акт уничтожения %(number)s"
+
+#: backend/apps/inventory/journals.py
+msgid "Pick a journal: prescriptions, invalid prescriptions or controlled."
+msgstr "Выберите журнал: рецепты, неправильно выписанные рецепты или ПКУ."
+
+#: backend/apps/inventory/journals.py
+msgid "Register of narcotic medicines"
+msgstr "Журнал учёта наркотических лекарственных средств"
+
+#: backend/apps/inventory/journals.py
+msgid "Register of psychotropic medicines and precursors"
+msgstr "Журнал учёта психотропных лекарственных средств и прекурсоров"
+
+#: backend/apps/inventory/journals.py
+msgid "Register of strong-acting medicines"
+msgstr "Журнал учёта сильнодействующих лекарственных средств"
+
+#: backend/apps/inventory/journals.py backend/apps/inventory/models.py
+msgid "Opening stock"
+msgstr "Начальный остаток"
+
+#: backend/apps/inventory/journals.py backend/apps/inventory/models.py
+#: backend/apps/inventory/notify.py backend/apps/inventory/providers.py
+#: backend/apps/inventory/templates/inventory/controlled_register.html
+#: backend/apps/sales/alerts.py backend/apps/sales/queries.py
+#: backend/apps/sales/services.py
+msgid "Received"
+msgstr "Получено"
+
+#: backend/apps/inventory/journals.py
+msgid "Received by transfer"
+msgstr "Получено перемещением"
+
+#: backend/apps/inventory/journals.py backend/apps/inventory/models.py
+msgid "Dispensed"
+msgstr "Отпущено"
+
+#: backend/apps/inventory/journals.py
+msgid "Returned by a customer"
+msgstr "Возврат от покупателя"
+
+#: backend/apps/inventory/journals.py
+msgid "Sent by transfer"
+msgstr "Отправлено перемещением"
+
+#: backend/apps/inventory/journals.py backend/apps/inventory/models.py
+msgid "Count adjustment"
+msgstr "Корректировка по инвентаризации"
+
+#: backend/apps/inventory/journals.py
+msgid "Invalid prescriptions log"
+msgstr "Журнал неправильно выписанных рецептов"
+
+#: backend/apps/inventory/journals.py
+#, python-format
+msgid "%(price)s per %(part)s"
+msgstr "%(part)s: %(price)s"
+
+#: backend/apps/inventory/journals.py
+msgid "part"
+msgstr "часть"
+
+#: backend/apps/inventory/journals.py
+msgid "Price tags"
+msgstr "Ценники"
+
+#: backend/apps/inventory/models.py
+msgid ""
+"Days before expiry to warn, e.g. 90, 60, 30. The expiry day always warns."
+msgstr ""
+"За сколько дней до истечения срока предупреждать, например 90, 60, 30. В "
+"день истечения срока предупреждение будет всегда."
+
+#: backend/apps/inventory/models.py
+msgid "A delivery expiring sooner than this many days gets a warning."
+msgstr ""
+"Приход, у которого до истечения срока осталось меньше этого числа дней, "
+"получает предупреждение."
+
+#: backend/apps/inventory/models.py
+msgid ""
+"Taking a later-expiring batch while an earlier one is on sale needs a reason."
+msgstr ""
+"Чтобы взять серию с более поздним сроком, пока в продаже есть серия с более "
+"ранним, нужна причина."
+
+#: backend/apps/inventory/models.py
+msgid ""
+"Sales recorded before their delivery take stock below zero (flagged) instead "
+"of being refused."
+msgstr ""
+"Продажи, внесённые до прихода, не отклоняются, а уводят остаток ниже нуля (с "
+"отметкой)."
+
+#: backend/apps/inventory/models.py
+msgid "Markup on the purchase price for OTC goods."
+msgstr "Наценка на цену закупки для безрецептурных товаров."
+
+#: backend/apps/inventory/models.py
+msgid ""
+"Legal maximum retail markup of a prescription medicine on its purchase price."
+msgstr ""
+"Предельная по закону розничная наценка на рецептурный препарат от цены "
+"закупки."
+
+#: backend/apps/inventory/models.py
+msgid "Legal maximum markup of a socially significant medicine."
+msgstr "Предельная по закону наценка на социально значимый препарат."
+
+#: backend/apps/inventory/models.py
+msgid "A price above a legal cap is refused, not just flagged."
+msgstr "Цена выше предельной не просто отмечается, а отклоняется."
+
+#: backend/apps/inventory/models.py
+msgid "Prices round up to this step, and down when a cap would be crossed."
+msgstr ""
+"Цены округляются вверх до этого шага, а если так будет превышен предел, вниз."
+
+#: backend/apps/inventory/models.py
+msgid "A delivery cost higher than the last one by more than this warns."
+msgstr ""
+"Если цена закупки в приходе выше прошлой больше чем на эту величину, будет "
+"предупреждение."
+
+#: backend/apps/inventory/models.py
+msgid "Write-offs wait for a manager's approval."
+msgstr "Списания ждут утверждения руководителя."
+
+#: backend/apps/inventory/models.py
+msgid "The app's stock lookup shows what the other pharmacies have."
+msgstr ""
+"Поиск остатков в приложении показывает и то, что есть в других аптеках."
+
+#: backend/apps/inventory/models.py
+msgid ""
+"The app offers barcode scanning with the camera where the phone supports it."
+msgstr ""
+"Приложение предлагает сканировать штрихкод камерой, если телефон это "
+"поддерживает."
+
+#: backend/apps/inventory/models.py
+msgid "Keep the prescription log of dispensed prescriptions."
+msgstr "Вести журнал регистрации рецептов по отпущенным рецептам."
+
+#: backend/apps/inventory/models.py
+msgid "A stock count shortage above this, at cost, notifies the owners."
+msgstr ""
+"О недостаче по инвентаризации больше этой суммы (по себестоимости) "
+"сообщается владельцам."
+
+#: backend/apps/inventory/models.py
+msgid "Unfit goods are destroyed within this many days of approval."
+msgstr ""
+"Непригодный товар уничтожается в течение этого числа дней после утверждения."
+
+#: backend/apps/inventory/models.py
+msgid "Members a destruction commission needs at least."
+msgstr "Минимальное число членов комиссии по уничтожению."
+
+#: backend/apps/inventory/models.py
+msgid "Months a prescription is kept, by its kind."
+msgstr "Сколько месяцев хранится рецепт, по видам рецептов."
+
+#: backend/apps/inventory/models.py
+msgid "Members needed to destroy narcotic and psychotropic prescriptions."
+msgstr ""
+"Сколько членов комиссии нужно, чтобы уничтожить рецепты на наркотические и "
+"психотропные препараты."
+
+#: backend/apps/inventory/models.py
+msgid "Days a narcotic prescription is valid."
+msgstr "Сколько дней действует рецепт на наркотический препарат."
+
+#: backend/apps/inventory/models.py
+msgid "Months a psychotropic prescription is valid."
+msgstr "Сколько месяцев действует рецепт на психотропный препарат."
+
+#: backend/apps/inventory/models.py
+msgid "Psychotropic stock on hand may cover at most this many months."
+msgstr ""
+"Запас психотропных препаратов может покрывать не больше этого числа месяцев."
+
+#: backend/apps/inventory/models.py
+msgid "The controlled-substance month is closed by this day."
+msgstr "Месяц в журнале ПКУ закрывается не позднее этого числа."
+
+#: backend/apps/inventory/models.py
+msgid "Days to report a controlled-substance difference."
+msgstr "Срок в днях, чтобы сообщить о расхождении по подконтрольным веществам."
+
 #: backend/apps/inventory/models.py
 msgid "Two-letter country code (ISO 3166-1), e.g. UZ."
 msgstr "Двухбуквенный код страны (ISO 3166-1), например UZ."
 
-#: backend/apps/inventory/models.py backend/apps/sales/hooks.py
+#: backend/apps/inventory/models.py backend/apps/inventory/providers.py
+#: backend/apps/inventory/templates/inventory/controlled_register.html
+#: backend/apps/inventory/templates/inventory/price_tags.html
+#: backend/apps/inventory/templates/inventory/rx_journal.html
+#: backend/apps/inventory/templates/inventory/writeoff_act.html
+#: backend/apps/sales/hooks.py
 msgid "Medicine"
 msgstr "Лекарственный препарат"
 
@@ -9542,13 +10295,1282 @@ msgstr ""
 msgid "Per pack; a prescription batch is never priced above its legal cap."
 msgstr "За упаковку; рецептурная серия никогда не дороже предельной цены."
 
-#: backend/apps/inventory/services.py
-msgid "Stock counts arrive with the stock module."
-msgstr "Инвентаризация появится вместе с модулем остатков."
+#: backend/apps/inventory/models.py
+msgid ""
+"The delivery line it came with; empty for opening stock or a count surplus."
+msgstr ""
+"Строка прихода, с которой пришла серия; пусто для начальных остатков и "
+"излишков по инвентаризации."
+
+#: backend/apps/inventory/models.py
+msgid ""
+"For refunded goods held apart in quarantine: the batch they were sold from."
+msgstr ""
+"Для возвращённого товара, который хранится отдельно в карантине: серия, из "
+"которой он был продан."
+
+#: backend/apps/inventory/models.py
+msgid "Barcode"
+msgstr "Штрихкод"
+
+#: backend/apps/inventory/models.py
+msgid "Distributor's code"
+msgstr "Код дистрибьютора"
+
+#: backend/apps/inventory/models.py
+msgid "Cash register code"
+msgstr "Код кассовой программы"
+
+#: backend/apps/inventory/models.py
+msgid "Email"
+msgstr "Эл. почта"
+
+#: backend/apps/inventory/models.py backend/apps/members/admin.py
+#: backend/apps/members/providers.py
+#: backend/apps/sales/templates/sales/invoice.html
+msgid "Phone"
+msgstr "Телефон"
+
+#: backend/apps/inventory/models.py
+msgid "Their website"
+msgstr "Их сайт"
+
+#: backend/apps/inventory/models.py
+msgid "Days to pay for a delivery: its due date. Empty: paid on delivery."
+msgstr ""
+"Дней на оплату прихода: по ним считается срок оплаты. Пусто: оплата при "
+"поставке."
+
+#: backend/apps/inventory/models.py
+msgid "The importer or an official dealer of the imported medicines it brings."
+msgstr "Импортёр или официальный дилер привозимых им импортных препаратов."
+
+#: backend/apps/inventory/models.py
+msgid "Parts sold without stock, waiting for a delivery."
+msgstr "Части, проданные без остатка и ждущие прихода."
+
+#: backend/apps/inventory/models.py
+msgid "Delivery"
+msgstr "Приход"
+
+#: backend/apps/inventory/models.py backend/apps/sales/models.py
+msgid "Sale"
+msgstr "Продажа"
+
+#: backend/apps/inventory/models.py backend/apps/sales/models.py
+msgid "Refund"
+msgstr "Возврат"
+
+#: backend/apps/inventory/models.py
+msgid "Sent to another pharmacy"
+msgstr "Перемещено в другую аптеку"
+
+#: backend/apps/inventory/models.py
+msgid "Received from another pharmacy"
+msgstr "Получено из другой аптеки"
+
+#: backend/apps/inventory/models.py
+msgid "Quarantine"
+msgstr "Карантин"
+
+#: backend/apps/inventory/models.py
+msgid "Back on sale"
+msgstr "Возврат в продажу"
+
+#: backend/apps/inventory/models.py
+msgid "Per part, at the batch's cost."
+msgstr "За часть, по себестоимости серии."
+
+#: backend/apps/inventory/models.py
+msgid "Waiting for posting"
+msgstr "Ждёт проведения"
+
+#: backend/apps/inventory/models.py backend/apps/tasks/models.py
+msgid "Not needed"
+msgstr "Не нужно"
+
+#: backend/apps/inventory/models.py
+msgid "Short shelf life"
+msgstr "Малый остаточный срок"
+
+#: backend/apps/inventory/models.py
+msgid "Cost jumped"
+msgstr "Цена закупки выросла"
+
+#: backend/apps/inventory/models.py
+msgid "Recalled series"
+msgstr "Отозванная серия"
+
+#: backend/apps/inventory/models.py
+msgid "Price lowered to the legal cap"
+msgstr "Цена снижена до предельной"
+
+#: backend/apps/inventory/models.py
+msgid "Registration expired"
+msgstr "Регистрация истекла"
+
+#: backend/apps/inventory/models.py
+msgid "Prescription flag differs"
+msgstr "Расходится признак рецептурности"
+
+#: backend/apps/inventory/models.py
+msgid "Not an official dealer"
+msgstr "Не официальный дилер"
+
+#: backend/apps/inventory/models.py
+msgid "More than a month's need"
+msgstr "Больше месячной потребности"
+
+#: backend/apps/inventory/models.py
+msgid "Branch not licensed for it"
+msgstr "У аптеки нет лицензии"
+
+#: backend/apps/inventory/models.py
+msgid "Parts: packs times parts per pack."
+msgstr "Части: число упаковок, умноженное на число частей в упаковке."
+
+#: backend/apps/inventory/models.py
+msgid "Per pack, as the invoice charges it (VAT included)."
+msgstr "За упаковку, по накладной (с НДС)."
+
+#: backend/apps/inventory/models.py
+msgid "What the distributor's file says about prescription."
+msgstr "Что указано о рецептурности в файле дистрибьютора."
+
+#: backend/apps/inventory/models.py
+msgid "On the way"
+msgstr "В пути"
+
+#: backend/apps/inventory/models.py backend/apps/sales/models.py
+#: backend/apps/sales/services.py
+msgid "Disputed"
+msgstr "Оспорена"
+
+#: backend/apps/inventory/models.py
+msgid "Lost on the way: written off"
+msgstr "Утеряно в пути: списано"
+
+#: backend/apps/inventory/models.py
+msgid "Found at the receiving pharmacy"
+msgstr "Найдено в аптеке-получателе"
+
+#: backend/apps/inventory/models.py
+msgid "Back at the sending pharmacy"
+msgstr "Возвращено в аптеку-отправитель"
+
+#: backend/apps/inventory/models.py
+msgid "Quality defect"
+msgstr "Брак по качеству"
+
+#: backend/apps/inventory/models.py
+msgid "Shortage"
+msgstr "Недостача"
+
+#: backend/apps/inventory/models.py
+msgid "Used by the pharmacy"
+msgstr "Нужды аптеки"
+
+#: backend/apps/inventory/models.py backend/apps/inventory/providers.py
+#: backend/apps/inventory/templates/inventory/writeoff_act.html
+msgid "Destroyed"
+msgstr "Уничтожено"
+
+#: backend/apps/inventory/models.py
+msgid "Crushing"
+msgstr "Измельчение"
+
+#: backend/apps/inventory/models.py
+msgid "Dilution"
+msgstr "Разведение"
+
+#: backend/apps/inventory/models.py
+msgid "Incineration"
+msgstr "Сжигание"
+
+#: backend/apps/inventory/models.py
+msgid "Handed to a disposal company"
+msgstr "Передача утилизирующей организации"
+
+#: backend/apps/inventory/models.py
+msgid "Decontamination"
+msgstr "Обезвреживание"
+
+#: backend/apps/inventory/models.py
+msgid "Other method"
+msgstr "Другой способ"
+
+#: backend/apps/inventory/models.py
+msgid "At the batches' cost, frozen when approved."
+msgstr "По себестоимости серий, фиксируется при утверждении."
+
+#: backend/apps/inventory/models.py
+msgid "Video"
+msgstr "Видео"
+
+#: backend/apps/inventory/models.py
+msgid "Signed act"
+msgstr "Подписанный акт"
+
+#: backend/apps/inventory/models.py
+msgid "Order"
+msgstr "Приказ"
+
+#: backend/apps/inventory/models.py
+msgid "Full count"
+msgstr "Полная инвентаризация"
+
+#: backend/apps/inventory/models.py
+msgid "Partial count"
+msgstr "Частичная инвентаризация"
+
+#: backend/apps/inventory/models.py
+msgid "Handover count"
+msgstr "Инвентаризация при передаче"
+
+#: backend/apps/inventory/models.py
+msgid "Counting"
+msgstr "Идёт подсчёт"
+
+#: backend/apps/inventory/models.py backend/apps/inventory/providers.py
+#: backend/apps/inventory/templates/inventory/controlled_register.html
+msgid "Counted"
+msgstr "Подсчитано"
+
+#: backend/apps/inventory/models.py
+msgid "Applied"
+msgstr "Проведено"
+
+#: backend/apps/inventory/models.py
+msgid "Never shown to counters."
+msgstr "Никогда не показывается считающим."
+
+#: backend/apps/inventory/models.py
+msgid "The regulator's list or letter: its number and date."
+msgstr "Перечень или письмо регулятора: номер и дата."
+
+#: backend/apps/inventory/models.py
+msgid "Asked at the counter"
+msgstr "Спросили у прилавка"
+
+#: backend/apps/inventory/models.py
+msgid "Mandatory list"
+msgstr "Обязательный ассортимент"
+
+#: backend/apps/inventory/models.py
+msgid "Ordered"
+msgstr "Заказан"
+
+#: backend/apps/inventory/models.py
+msgid "Arrived"
+msgstr "Поступил"
+
+#: backend/apps/inventory/models.py
+msgid "Regular"
+msgstr "Обычный"
+
+#: backend/apps/inventory/models.py
+msgid "Preferential"
+msgstr "Льготный"
+
+#: backend/apps/inventory/models.py
+msgid "Invalid prescription"
+msgstr "Неправильно выписанный рецепт"
+
+#: backend/apps/inventory/notify.py
+#, python-format
+msgid "Receipt %(invoice)s from %(supplier)s is still a draft"
+msgstr "Приход %(invoice)s от %(supplier)s всё ещё черновик"
+
+#: backend/apps/inventory/notify.py
+#, python-format
+msgid "Receipt %(invoice)s from %(supplier)s waits for posting"
+msgstr "Приход %(invoice)s от %(supplier)s ждёт проведения"
+
+#: backend/apps/inventory/notify.py
+#, python-format
+msgid "%(branch)s, invoice of %(day)s."
+msgstr "%(branch)s, накладная от %(day)s."
+
+#: backend/apps/inventory/notify.py
+#, python-format
+msgid "%(supplier)s raised the price of %(count)d item"
+msgid_plural "%(supplier)s raised the price of %(count)d items"
+msgstr[0] "%(supplier)s: выросла цена на %(count)d позицию"
+msgstr[1] "%(supplier)s: выросли цены на %(count)d позиции"
+msgstr[2] "%(supplier)s: выросли цены на %(count)d позиций"
+
+#: backend/apps/inventory/notify.py
+#, python-format
+msgid "Receipt %(number)s: %(names)s."
+msgstr "Приход %(number)s: %(names)s."
+
+#: backend/apps/inventory/notify.py
+#, python-format
+msgid "Transfer from %(branch)s: %(count)d item"
+msgid_plural "Transfer from %(branch)s: %(count)d items"
+msgstr[0] "Перемещение из аптеки %(branch)s: %(count)d позиция"
+msgstr[1] "Перемещение из аптеки %(branch)s: %(count)d позиции"
+msgstr[2] "Перемещение из аптеки %(branch)s: %(count)d позиций"
+
+#: backend/apps/inventory/notify.py
+#, python-format
+msgid ""
+"%(number)s. Check it when it arrives: Received takes every line as sent; a "
+"difference is entered in the app."
+msgstr ""
+"%(number)s. Проверьте при получении: «Получено» принимает все строки как "
+"отправлены; расхождение вносится в приложении."
+
+#: backend/apps/inventory/notify.py
+msgid "This transfer is gone."
+msgstr "Этого перемещения больше нет."
+
+#: backend/apps/inventory/notify.py
+msgid "This transfer goes to another pharmacy."
+msgstr "Это перемещение идёт в другую аптеку."
+
+#: backend/apps/inventory/notify.py
+#, python-format
+msgid "Transfer %(number)s arrived short at %(branch)s"
+msgstr "Перемещение %(number)s пришло в аптеку %(branch)s с недостачей"
+
+#: backend/apps/inventory/notify.py
+#, python-format
+msgid ""
+"The missing goods stay on the way until a manager decides: lost, found or "
+"back at %(branch)s."
+msgstr ""
+"Недостающий товар числится в пути, пока руководитель не решит: утерян, "
+"найден или вернулся в аптеку %(branch)s."
+
+#: backend/apps/inventory/notify.py
+#, python-format
+msgid "Write-off at %(branch)s waits for approval: %(count)d series"
+msgid_plural "Write-off at %(branch)s waits for approval: %(count)d series"
+msgstr[0] "Списание в аптеке %(branch)s ждёт утверждения: %(count)d серия"
+msgstr[1] "Списание в аптеке %(branch)s ждёт утверждения: %(count)d серии"
+msgstr[2] "Списание в аптеке %(branch)s ждёт утверждения: %(count)d серий"
+
+#: backend/apps/inventory/notify.py
+#, python-format
+msgid "Destroy the goods of %(number)s today"
+msgstr "Акт %(number)s: уничтожьте товар сегодня"
+
+#: backend/apps/inventory/notify.py
+#, python-format
+msgid "Destroy the goods of %(number)s by %(day)s"
+msgstr "Акт %(number)s: уничтожьте товар до %(day)s"
+
+#: backend/apps/inventory/notify.py
+#, python-format
+msgid ""
+"Unfit goods are destroyed within the legal term, by a commission, with "
+"photos and an act: %(branch)s."
+msgstr ""
+"Непригодный товар уничтожается в установленный законом срок комиссией, с "
+"фото и актом: %(branch)s."
+
+#: backend/apps/inventory/notify.py
+#, python-format
+msgid "Stock count at %(branch)s: %(amount)s short"
+msgstr "Инвентаризация в аптеке %(branch)s: недостача %(amount)s"
+
+#: backend/apps/inventory/notify.py
+msgid "At cost. The count's page shows each series."
+msgstr "По себестоимости. Все серии — на странице инвентаризации."
+
+#: backend/apps/inventory/notify.py
+msgid "Not found in stock."
+msgstr "В наличии не найдено."
+
+#: backend/apps/inventory/notify.py
+#, python-format
+msgid "%(quantity)s parts at %(branch)s"
+msgstr "%(branch)s: %(quantity)s шт."
+
+#: backend/apps/inventory/notify.py
+#, python-format
+msgid "Recall: series %(series)s of %(product)s"
+msgstr "Отзыв серии: %(product)s, серия %(series)s"
+
+#: backend/apps/inventory/notify.py
+#, python-format
+msgid "%(branch)s: %(count)d batch reaches its expiry warning, %(amount)s"
+msgid_plural ""
+"%(branch)s: %(count)d batches reach their expiry warning, %(amount)s"
+msgstr[0] ""
+"%(branch)s: предупреждение о сроке годности — %(count)d серия, %(amount)s"
+msgstr[1] ""
+"%(branch)s: предупреждение о сроке годности — %(count)d серии, %(amount)s"
+msgstr[2] ""
+"%(branch)s: предупреждение о сроке годности — %(count)d серий, %(amount)s"
+
+#: backend/apps/inventory/notify.py
+#, python-format
+msgid "%(branch)s: %(count)d mandatory medicine is missing"
+msgid_plural "%(branch)s: %(count)d mandatory medicines are missing"
+msgstr[0] "%(branch)s: отсутствует %(count)d обязательный препарат"
+msgstr[1] "%(branch)s: отсутствуют %(count)d обязательных препарата"
+msgstr[2] "%(branch)s: отсутствуют %(count)d обязательных препаратов"
+
+#: backend/apps/inventory/notify.py
+#, python-format
+msgid "Expired, off sale: %(names)s."
+msgstr "Просрочено, снято с продажи: %(names)s."
+
+#: backend/apps/inventory/notify.py
+#, python-format
+msgid "%(product)s, series %(series)s: expires %(day)s"
+msgstr "%(product)s, серия %(series)s: срок истекает %(day)s"
+
+#: backend/apps/inventory/notify.py
+#, python-format
+msgid "Mandatory list, none on sale: %(names)s."
+msgstr "Обязательный ассортимент, нет в продаже: %(names)s."
+
+#: backend/apps/inventory/notify.py
+#, python-format
+msgid "Close %(month)s in the controlled register at %(branch)s: it is late"
+msgstr "Закройте %(month)s в журнале ПКУ аптеки %(branch)s: срок прошёл"
+
+#: backend/apps/inventory/notify.py
+#, python-format
+msgid "Count the controlled medicines at %(branch)s and close %(month)s"
+msgstr ""
+"Посчитайте подконтрольные препараты в аптеке %(branch)s и закройте %(month)s"
+
+#: backend/apps/inventory/notify.py
+#, python-format
+msgid "The monthly inventory of the controlled register is due by the %(day)s."
+msgstr ""
+"Ежемесячная инвентаризация по журналу ПКУ проводится не позднее %(day)s "
+"числа."
+
+#: backend/apps/inventory/notify.py
+#, python-format
+msgid "Controlled register difference: %(product)s at %(branch)s"
+msgstr "Расхождение в журнале ПКУ: %(product)s, аптека %(branch)s"
+
+#: backend/apps/inventory/notify.py
+#, python-format
+msgid ""
+"Counted %(counted)s, the register says %(closing)s. Report it to the "
+"internal affairs bodies and the Ministry of Health within %(days)s days, "
+"then mark it reported."
+msgstr ""
+"Подсчитано %(counted)s, по журналу %(closing)s. Сообщите в органы внутренних "
+"дел и Минздрав в течение %(days)s дн., затем отметьте, что сообщено."
+
+#: backend/apps/inventory/owner_api.py
+msgid "Give a date as YYYY-MM-DD."
+msgstr "Укажите дату в формате YYYY-MM-DD."
+
+#: backend/apps/inventory/owner_api.py
+msgid "Pick a manufacturer."
+msgstr "Выберите производителя."
+
+#: backend/apps/inventory/owner_api.py
+msgid "Give the columns as a map."
+msgstr "Передайте столбцы в виде соответствия (map)."
+
+#: backend/apps/inventory/owner_api.py
+msgid "Pick a pharmacy of this company."
+msgstr "Выберите аптеку этой компании."
+
+#: backend/apps/inventory/owner_api.py
+msgid "Pick a series of this company."
+msgstr "Выберите серию этой компании."
+
+#: backend/apps/inventory/owner_api.py
+msgid "The act is made once the write-off is approved."
+msgstr "Акт составляется после утверждения списания."
+
+#: backend/apps/inventory/prescriptions.py backend/apps/inventory/services.py
+#: backend/apps/projects/services.py
+msgid "That belongs to another company."
+msgstr "Это относится к другой компании."
+
+#: backend/apps/inventory/prescriptions.py backend/apps/inventory/services.py
+msgid "Give a quantity above zero."
+msgstr "Укажите количество больше нуля."
+
+#: backend/apps/inventory/prescriptions.py backend/apps/inventory/services.py
+msgid "That series is of another item."
+msgstr "Эта серия относится к другому товару."
+
+#: backend/apps/inventory/prescriptions.py
+msgid "Pick the kind of prescription."
+msgstr "Выберите вид рецепта."
+
+#: backend/apps/inventory/prescriptions.py
+msgid "Pick whether it was dispensed or refused."
+msgstr "Выберите, отпущено или отказано."
+
+#: backend/apps/inventory/prescriptions.py
+msgid "Say what was wrong with the prescription."
+msgstr "Укажите, что было не так с рецептом."
+
+#: backend/apps/inventory/providers.py
+#: backend/apps/inventory/templates/inventory/rx_journal.html
+#: backend/apps/sales/hooks.py
+msgid "Prescription"
+msgstr "Рецепт"
+
+#: backend/apps/inventory/providers.py
+#, python-format
+msgid "%(count)s parts"
+msgstr "%(count)s шт."
+
+#: backend/apps/inventory/providers.py
+#, python-format
+msgid "Series %(series)s: %(product)s"
+msgstr "Серия %(series)s: %(product)s"
+
+#: backend/apps/inventory/providers.py
+#, python-format
+msgid "Goods receipt %(number)s"
+msgstr "Приход %(number)s"
+
+#: backend/apps/inventory/providers.py
+#, python-format
+msgid "Receipt %(invoice)s from %(supplier)s"
+msgstr "Приход %(invoice)s от %(supplier)s"
+
+#: backend/apps/inventory/providers.py
+msgid "Post"
+msgstr "Провести"
+
+#: backend/apps/inventory/providers.py
+#, python-format
+msgid "Write-off at %(branch)s: %(reason)s"
+msgstr "Списание в аптеке %(branch)s: %(reason)s"
+
+#: backend/apps/inventory/providers.py
+#, python-format
+msgid "Transfer %(number)s arrived short"
+msgstr "Перемещение %(number)s пришло с недостачей"
+
+#: backend/apps/inventory/providers.py
+#, python-format
+msgid "Expiring within 30 days: %(count)d batches, %(amount)s"
+msgstr "Срок истекает в течение 30 дней — серий: %(count)d, на %(amount)s"
+
+#: backend/apps/inventory/providers.py
+#, python-format
+msgid "Expired, still on stock: %(count)d batches"
+msgstr "Просрочено, ещё на остатке — серий: %(count)d"
+
+#: backend/apps/inventory/providers.py
+#, python-format
+msgid "Below their minimum: %(count)d items"
+msgstr "Позиций ниже минимума: %(count)d"
+
+#: backend/apps/inventory/providers.py
+#, python-format
+msgid "Mandatory medicines missing: %(count)d"
+msgstr "Нет обязательных препаратов: %(count)d"
+
+#: backend/apps/inventory/providers.py
+#, python-format
+msgid "Receipts waiting for posting: %(count)d"
+msgstr "Приходы, ждущие проведения: %(count)d"
+
+#: backend/apps/inventory/providers.py
+#, python-format
+msgid "Open recalls: %(count)d"
+msgstr "Открытых отзывов: %(count)d"
+
+#: backend/apps/inventory/providers.py
+msgid "INN"
+msgstr "МНН"
+
+#: backend/apps/inventory/providers.py
+msgid "Parts on hand"
+msgstr "Остаток в частях"
+
+#: backend/apps/inventory/providers.py backend/apps/sales/models.py
+#: backend/apps/sales/templates/sales/invoice.html
+msgid "Packs"
+msgstr "Упаковок"
+
+#: backend/apps/inventory/providers.py
+msgid "Sold without stock"
+msgstr "Продано без остатка"
+
+#: backend/apps/inventory/providers.py
+msgid "Minimum"
+msgstr "Минимум"
+
+#: backend/apps/inventory/providers.py
+msgid "Maximum"
+msgstr "Максимум"
+
+#: backend/apps/inventory/providers.py
+#: backend/apps/inventory/templates/inventory/price_tags.html
+#: backend/apps/sales/hooks.py
+msgid "Price per pack"
+msgstr "Цена за упаковку"
+
+#: backend/apps/inventory/providers.py
+msgid "yes"
+msgstr "да"
+
+#: backend/apps/inventory/providers.py
+#: backend/apps/inventory/templates/inventory/controlled_register.html
+#: backend/apps/inventory/templates/inventory/rx_journal.html
+#: backend/apps/inventory/templates/inventory/writeoff_act.html
+#: backend/apps/sales/hooks.py backend/apps/sales/templates/sales/invoice.html
+msgid "Series"
+msgstr "Серия"
+
+#: backend/apps/inventory/providers.py
+#: backend/apps/inventory/templates/inventory/writeoff_act.html
+msgid "Expiry date"
+msgstr "Срок годности"
+
+#: backend/apps/inventory/providers.py backend/apps/sales/hooks.py
+msgid "Parts"
+msgstr "Частей"
+
+#: backend/apps/inventory/providers.py
+#: backend/apps/inventory/templates/inventory/writeoff_act.html
+msgid "Cost per pack"
+msgstr "Цена закупки за упаковку"
+
+#: backend/apps/inventory/providers.py
+#: backend/apps/inventory/templates/inventory/writeoff_act.html
+msgid "Value at cost"
+msgstr "Сумма по себестоимости"
+
+#: backend/apps/inventory/providers.py
+msgid "When"
+msgstr "Когда"
+
+#: backend/apps/inventory/providers.py
+msgid "Movement"
+msgstr "Движение"
+
+#: backend/apps/inventory/providers.py
+msgid "Cost per part"
+msgstr "Цена закупки за часть"
+
+#: backend/apps/inventory/providers.py
+#: backend/apps/inventory/templates/inventory/writeoff_act.html
+#: backend/apps/timeoff/providers.py
+msgid "Reason"
+msgstr "Причина"
+
+#: backend/apps/inventory/providers.py
+msgid "Days left"
+msgstr "Осталось дней"
+
+#: backend/apps/inventory/providers.py
+msgid "Value at retail"
+msgstr "Сумма в розничных ценах"
+
+#: backend/apps/inventory/providers.py
+msgid "Act"
+msgstr "Акт"
+
+#: backend/apps/inventory/providers.py
+#: backend/apps/inventory/templates/inventory/rx_journal.html
+msgid "Prescribed"
+msgstr "Дата выписки"
+
+#: backend/apps/inventory/providers.py
+#: backend/apps/inventory/templates/inventory/rx_journal.html
+msgid "Prescriber"
+msgstr "Врач"
+
+#: backend/apps/inventory/providers.py
+#: backend/apps/inventory/templates/inventory/rx_journal.html
+msgid "Facility"
+msgstr "Учреждение"
+
+#: backend/apps/inventory/providers.py
+#: backend/apps/inventory/templates/inventory/rx_journal.html
+msgid "What was wrong"
+msgstr "Что не так"
+
+#: backend/apps/inventory/providers.py
+#: backend/apps/inventory/templates/inventory/controlled_register.html
+msgid "Opening"
+msgstr "Остаток на начало"
+
+#: backend/apps/inventory/providers.py
+#: backend/apps/inventory/templates/inventory/controlled_register.html
+msgid "Issued from stock"
+msgstr "Расход"
+
+#: backend/apps/inventory/providers.py
+#: backend/apps/inventory/templates/inventory/controlled_register.html
+msgid "Closing"
+msgstr "Остаток на конец"
+
+#: backend/apps/inventory/providers.py
+#: backend/apps/inventory/templates/inventory/controlled_register.html
+#: backend/apps/sales/hooks.py
+msgid "Difference"
+msgstr "Расхождение"
+
+#: backend/apps/inventory/providers.py
+msgid "Reported"
+msgstr "Сообщено"
+
+#: backend/apps/inventory/register.py
+#, python-format
+msgid "%(branch)s isn't licensed for controlled substances."
+msgstr "У аптеки %(branch)s нет лицензии на подконтрольные вещества."
+
+#: backend/apps/inventory/register.py
+msgid "A month is closed once it is over."
+msgstr "Месяц можно закрыть только после его окончания."
+
+#: backend/apps/inventory/register.py
+msgid "That item isn't in this month's register."
+msgstr "Этого препарата нет в журнале за этот месяц."
+
+#: backend/apps/inventory/register.py
+msgid "This month's difference was already reported: it can't change."
+msgstr "О расхождении за этот месяц уже сообщено: его нельзя изменить."
+
+#: backend/apps/inventory/register.py backend/apps/inventory/services.py
+msgid "A count can't be below zero."
+msgstr "Подсчитанное количество не может быть меньше нуля."
+
+#: backend/apps/inventory/register.py
+msgid "This month has no difference to report."
+msgstr "В этом месяце нет расхождения, о котором нужно сообщать."
+
+#: backend/apps/inventory/scan.py
+#, python-format
+msgid "%(product)s, series %(series)s, expires %(day)s"
+msgstr "%(product)s, серия %(series)s, срок истекает %(day)s"
+
+#: backend/apps/inventory/scan.py
+#, python-format
+msgid "Expiry shelf check: %(branch)s"
+msgstr "Проверка сроков годности на полках: %(branch)s"
+
+#: backend/apps/inventory/scan.py
+msgid ""
+"Find each series on the shelf, check its expiry date, and move what expires "
+"soon to the front or to the quarantine zone. Expired goods are proposed for "
+"write-off in the app."
+msgstr ""
+"Найдите каждую серию на полке, проверьте срок годности и переставьте то, у "
+"чего срок скоро истекает, вперёд или в зону карантина. Просроченный товар "
+"предлагается к списанию в приложении."
 
 #: backend/apps/inventory/services.py
-msgid "The journals arrive with the stock module."
-msgstr "Журналы появятся вместе с модулем остатков."
+#, python-format
+msgid ""
+"%(branch)s isn't licensed for %(product)s: only a pharmacy licensed for "
+"narcotics and psychotropics may receive it."
+msgstr ""
+"У аптеки %(branch)s нет лицензии на %(product)s: получать его может только "
+"аптека с лицензией на наркотические и психотропные средства."
+
+#: backend/apps/inventory/services.py
+#, python-format
+msgid "Series %(series)s isn't on sale."
+msgstr "Серии %(series)s нет в продаже."
+
+#: backend/apps/inventory/services.py
+#, python-format
+msgid ""
+"Series %(earlier)s expires earlier (%(day)s) and is on sale: sell it first, "
+"or give a reason to take %(series)s."
+msgstr ""
+"Серия %(earlier)s истекает раньше (%(day)s) и есть в продаже: сначала "
+"продайте её или укажите причину, чтобы взять %(series)s."
+
+#: backend/apps/inventory/services.py
+#, python-format
+msgid "Only %(left)s parts of %(product)s are on sale here."
+msgstr "%(product)s: здесь в продаже только %(left)s шт."
+
+#: backend/apps/inventory/services.py
+msgid "That batch isn't in this company's stock."
+msgstr "Этой серии нет в остатках компании."
+
+#: backend/apps/inventory/services.py
+msgid ""
+"The refund doesn't say which sale it returns: its parts weren't put back."
+msgstr ""
+"В возврате не указано, какая продажа возвращается: части не возвращены на "
+"остаток."
+
+#: backend/apps/inventory/services.py
+#, python-format
+msgid "Nothing of %(product)s was sold here to take back."
+msgstr "%(product)s: здесь не продавалось ничего, что можно принять обратно."
+
+#: backend/apps/inventory/services.py
+msgid "Pick a kind of count."
+msgstr "Выберите вид инвентаризации."
+
+#: backend/apps/inventory/services.py
+#, python-format
+msgid "A count is already open at %(branch)s."
+msgstr "В аптеке %(branch)s уже идёт инвентаризация."
+
+#: backend/apps/inventory/services.py
+msgid "Pick a day between 1 and 28."
+msgstr "Выберите число от 1 до 28."
+
+#: backend/apps/inventory/services.py
+msgid "Give the item a name."
+msgstr "Укажите наименование."
+
+#: backend/apps/inventory/services.py
+msgid "A pack has at least one part."
+msgstr "В упаковке хотя бы одна часть."
+
+#: backend/apps/inventory/services.py
+msgid "Another item already has this barcode."
+msgstr "Этот штрихкод уже есть у другой позиции."
+
+#: backend/apps/inventory/services.py
+msgid "Another item already has this SKU."
+msgstr "Этот артикул уже есть у другой позиции."
+
+#: backend/apps/inventory/services.py
+msgid "Pick two different items of this company."
+msgstr "Выберите две разные позиции этой компании."
+
+#: backend/apps/inventory/services.py
+msgid "The two items have different parts per pack: fix that first."
+msgstr "У двух позиций разное число частей в упаковке: сначала исправьте это."
+
+#: backend/apps/inventory/services.py
+msgid "This item has closed months in the controlled register."
+msgstr "У этого препарата есть закрытые месяцы в журнале ПКУ."
+
+#: backend/apps/inventory/services.py
+msgid "A category can't be inside itself."
+msgstr "Категория не может быть вложена сама в себя."
+
+#: backend/apps/inventory/services.py
+msgid "Move or delete its subgroups first."
+msgstr "Сначала перенесите или удалите её подгруппы."
+
+#: backend/apps/inventory/services.py
+msgid "Give the manufacturer's name."
+msgstr "Укажите название производителя."
+
+#: backend/apps/inventory/services.py
+msgid "A manufacturer with this name already exists."
+msgstr "Производитель с таким названием уже есть."
+
+#: backend/apps/inventory/services.py
+msgid "The maximum can't be below the minimum."
+msgstr "Максимум не может быть меньше минимума."
+
+#: backend/apps/inventory/services.py
+msgid "Give the series printed on the pack."
+msgstr "Укажите серию с упаковки."
+
+#: backend/apps/inventory/services.py
+#, python-format
+msgid "Invoice %(number)s of this distributor is already in."
+msgstr "Накладная %(number)s этого дистрибьютора уже внесена."
+
+#: backend/apps/inventory/services.py
+msgid "Give the expiry date."
+msgstr "Укажите срок годности."
+
+#: backend/apps/inventory/services.py
+msgid "Give how many packs came."
+msgstr "Укажите, сколько упаковок пришло."
+
+#: backend/apps/inventory/services.py
+msgid "A cost can't be below zero."
+msgstr "Цена закупки не может быть меньше нуля."
+
+#: backend/apps/inventory/services.py
+#, python-format
+msgid ""
+"%(product)s has %(parts)s parts a pack: give packs that make whole parts."
+msgstr ""
+"%(product)s: в упаковке %(parts)s шт. Укажите количество упаковок так, чтобы "
+"получилось целое число частей."
+
+#: backend/apps/inventory/services.py
+msgid "Only a draft can be sent for posting."
+msgstr "На проведение можно отправить только черновик."
+
+#: backend/apps/inventory/services.py
+msgid "Add the lines of the invoice first."
+msgstr "Сначала добавьте строки накладной."
+
+#: backend/apps/inventory/services.py
+msgid "A void receipt can't be posted."
+msgstr "Аннулированный приход нельзя провести."
+
+#: backend/apps/inventory/services.py
+msgid "Give the distributor's invoice number."
+msgstr "Укажите номер накладной дистрибьютора."
+
+#: backend/apps/inventory/services.py
+#, python-format
+msgid "Goods receipt %(number)s, invoice %(invoice)s"
+msgstr "Приход %(number)s, накладная %(invoice)s"
+
+#: backend/apps/inventory/services.py
+msgid ""
+"Some of these goods were already sold, moved or counted: the receipt can't "
+"be voided. Return the goods to the distributor instead."
+msgstr ""
+"Часть этого товара уже продана, перемещена или посчитана: приход нельзя "
+"аннулировать. Вместо этого верните товар дистрибьютору."
+
+#: backend/apps/inventory/services.py
+msgid ""
+"The distributor was already paid for it: return the goods instead of voiding "
+"the receipt."
+msgstr ""
+"Дистрибьютору за него уже заплатили: верните товар вместо аннулирования "
+"прихода."
+
+#: backend/apps/inventory/services.py
+#, python-format
+msgid "Goods receipt %(number)s voided: %(reason)s"
+msgstr "Приход %(number)s аннулирован: %(reason)s"
+
+#: backend/apps/inventory/services.py
+msgid "This series is recalled."
+msgstr "Эта серия отозвана."
+
+#: backend/apps/inventory/services.py
+msgid "A recalled series stays off sale until it is written off."
+msgstr "Отозванная серия остаётся снятой с продажи, пока её не спишут."
+
+#: backend/apps/inventory/services.py
+msgid "Give a price above zero."
+msgstr "Укажите цену больше нуля."
+
+#: backend/apps/inventory/services.py
+#, python-format
+msgid ""
+"%(price)s is above the legal maximum of %(cap)s for this prescription "
+"medicine."
+msgstr ""
+"%(price)s — выше предельной цены %(cap)s для этого рецептурного препарата."
+
+#: backend/apps/inventory/services.py
+msgid "Pick two different pharmacies."
+msgstr "Выберите две разные аптеки."
+
+#: backend/apps/inventory/services.py
+msgid "Add what to send."
+msgstr "Добавьте, что отправить."
+
+#: backend/apps/inventory/services.py
+msgid "Only a draft can be sent."
+msgstr "Отправить можно только черновик."
+
+#: backend/apps/inventory/services.py
+#, python-format
+msgid "Series %(series)s has expired: it can't be sent."
+msgstr "У серии %(series)s истёк срок годности: её нельзя отправить."
+
+#: backend/apps/inventory/services.py
+#, python-format
+msgid "Only %(left)s parts of %(product)s are on sale at %(branch)s."
+msgstr "%(product)s: в аптеке %(branch)s в продаже только %(left)s шт."
+
+#: backend/apps/inventory/services.py
+msgid "This transfer wasn't sent."
+msgstr "Это перемещение не отправлено."
+
+#: backend/apps/inventory/services.py
+msgid "That line isn't on this transfer."
+msgstr "Этой строки нет в этом перемещении."
+
+#: backend/apps/inventory/services.py
+msgid "Received can't be more than sent, or below zero."
+msgstr "Получено не может быть больше отправленного или меньше нуля."
+
+#: backend/apps/inventory/services.py
+msgid "Only a disputed transfer needs resolving."
+msgstr "Решать нужно только перемещение с недостачей."
+
+#: backend/apps/inventory/services.py
+msgid "Pick what happened to the missing goods."
+msgstr "Выберите, что случилось с недостающим товаром."
+
+#: backend/apps/inventory/services.py
+#, python-format
+msgid "Lost on the way: transfer %(number)s"
+msgstr "Утеряно в пути: перемещение %(number)s"
+
+#: backend/apps/inventory/services.py
+msgid "A received transfer can't be voided."
+msgstr "Полученное перемещение нельзя аннулировать."
+
+#: backend/apps/inventory/services.py
+msgid "Pick the reason."
+msgstr "Выберите причину."
+
+#: backend/apps/inventory/services.py
+msgid "Add what to write off."
+msgstr "Добавьте, что списать."
+
+#: backend/apps/inventory/services.py
+msgid "Each series once, please."
+msgstr "Укажите каждую серию только один раз."
+
+#: backend/apps/inventory/services.py
+msgid "Pick what the file is."
+msgstr "Выберите, что это за файл."
+
+#: backend/apps/inventory/services.py
+msgid "This write-off is void."
+msgstr "Это списание аннулировано."
+
+#: backend/apps/inventory/services.py
+msgid "Approve the write-off first."
+msgstr "Сначала утвердите списание."
+
+#: backend/apps/inventory/services.py
+msgid "This write-off has no destruction step."
+msgstr "У этого списания нет этапа уничтожения."
+
+#: backend/apps/inventory/services.py
+msgid "Pick how the goods were destroyed."
+msgstr "Выберите, как был уничтожен товар."
+
+#: backend/apps/inventory/services.py
+#, python-format
+msgid "The commission needs at least %(count)s members."
+msgstr "В комиссии должно быть не менее %(count)s чел."
+
+#: backend/apps/inventory/services.py
+msgid "Give the place, the responsible person and the order number."
+msgstr "Укажите место, ответственное лицо и номер приказа."
+
+#: backend/apps/inventory/services.py
+msgid "Add at least one photo of the destruction."
+msgstr "Добавьте хотя бы одно фото уничтожения."
+
+#: backend/apps/inventory/services.py
+msgid "An approved write-off can't be voided."
+msgstr "Утверждённое списание нельзя аннулировать."
+
+#: backend/apps/inventory/services.py
+msgid "That line isn't on this count."
+msgstr "Этой строки нет в этой инвентаризации."
+
+#: backend/apps/inventory/services.py
+msgid "Give the series and the expiry date printed on the pack."
+msgstr "Укажите серию и срок годности с упаковки."
+
+#: backend/apps/inventory/services.py
+msgid "Count at least one line first."
+msgstr "Сначала посчитайте хотя бы одну строку."
+
+#: backend/apps/inventory/services.py
+msgid "Give the series."
+msgstr "Укажите серию."
+
+#: backend/apps/inventory/services.py
+msgid "Name the medicine: pick it, or give its INN or name."
+msgstr "Укажите препарат: выберите его или впишите МНН или название."
+
+#: backend/apps/inventory/services.py
+#, python-format
+msgid "Remove series %(series)s of %(product)s from sale"
+msgstr "Снимите с продажи: %(product)s, серия %(series)s"
+
+#: backend/apps/inventory/services.py
+#, python-format
+msgid ""
+"Recall: %(reason)s (%(source)s). Put every pack of this series in the "
+"quarantine zone and propose a write-off."
+msgstr ""
+"Отзыв серии: %(reason)s (%(source)s). Поместите все упаковки этой серии в "
+"зону карантина и предложите списание."
+
+#: backend/apps/inventory/services.py
+#, python-format
+msgid "%(product)s, series %(series)s: %(quantity)s parts"
+msgstr "%(product)s, серия %(series)s: %(quantity)s шт."
+
+#: backend/apps/inventory/services.py
+#, python-format
+msgid "%(left)s parts of this series are still on stock: write them off first."
+msgstr "Этой серии на остатке ещё %(left)s шт.: сначала спишите их."
+
+#: backend/apps/inventory/services.py
+msgid "Give the markup in percent."
+msgstr "Укажите наценку в процентах."
+
+#: backend/apps/inventory/services.py
+msgid "The band's upper cost is below its lower cost."
+msgstr "Верхняя граница диапазона цены закупки ниже нижней."
+
+#: backend/apps/inventory/services.py
+msgid "Pick the item or write its name."
+msgstr "Выберите препарат или впишите название."
+
+#: backend/apps/inventory/services.py
+msgid "Pick a status."
+msgstr "Выберите статус."
+
+#: backend/apps/inventory/templates/inventory/controlled_register.html
+msgid "No controlled medicines were on hand or moved this month."
+msgstr ""
+"В этом месяце подконтрольных препаратов не было в наличии и движения по ним "
+"не было."
+
+#: backend/apps/inventory/templates/inventory/controlled_register.html
+msgid "Unit"
+msgstr "Единица измерения"
+
+#: backend/apps/inventory/templates/inventory/controlled_register.html
+msgid "Operation"
+msgstr "Операция"
+
+#: backend/apps/inventory/templates/inventory/controlled_register.html
+msgid "In"
+msgstr "Приход"
+
+#: backend/apps/inventory/templates/inventory/controlled_register.html
+msgid "Out"
+msgstr "Расход"
+
+#: backend/apps/inventory/templates/inventory/controlled_register.html
+#: backend/apps/inventory/templates/inventory/price_tags.html
+#: backend/apps/inventory/templates/inventory/writeoff_act.html
+#: backend/apps/tasks/templates/tasks/readings_journal.html
+msgid "Signature"
+msgstr "Подпись"
+
+#: backend/apps/inventory/templates/inventory/controlled_register.html
+msgid "Nothing moved this month."
+msgstr "В этом месяце движения не было."
+
+#: backend/apps/inventory/templates/inventory/controlled_register.html
+msgid "Adjusted"
+msgstr "Корректировки"
+
+#: backend/apps/inventory/templates/inventory/controlled_register.html
+#, python-format
+msgid "%(count)s issue has no prescription in the log."
+msgid_plural "%(count)s issues have no prescription in the log."
+msgstr[0] "%(count)s отпуск без рецепта в журнале регистрации рецептов."
+msgstr[1] "%(count)s отпуска без рецепта в журнале регистрации рецептов."
+msgstr[2] "%(count)s отпусков без рецепта в журнале регистрации рецептов."
+
+#: backend/apps/inventory/templates/inventory/controlled_register.html
+msgid ""
+"Printed from the stock records to copy into or attach to the numbered, laced "
+"and sealed book, which stays the legal record."
+msgstr ""
+"Распечатано из складского учёта, чтобы перенести в пронумерованную, "
+"прошнурованную и опечатанную книгу или приложить к ней; юридическим "
+"документом остаётся книга."
+
+#: backend/apps/inventory/templates/inventory/controlled_register.html
+#: backend/apps/inventory/templates/inventory/rx_journal.html
+msgid "Responsible pharmacist"
+msgstr "Ответственный фармацевт"
+
+#: backend/apps/inventory/templates/inventory/controlled_register.html
+#: backend/apps/inventory/templates/inventory/rx_journal.html
+#: backend/apps/inventory/templates/inventory/writeoff_act.html
+#: backend/apps/tasks/templates/tasks/readings_journal.html
+msgid "Head of pharmacy"
+msgstr "Заведующий аптекой"
+
+#: backend/apps/inventory/templates/inventory/price_tags.html
+msgid "Prescription medicines: prices at the counter"
+msgstr "Рецептурные препараты: цены у прилавка"
+
+#: backend/apps/inventory/templates/inventory/price_tags.html
+msgid "Not for public display."
+msgstr "Не для открытой выкладки."
+
+#: backend/apps/inventory/templates/inventory/price_tags.html
+#: backend/apps/inventory/templates/inventory/writeoff_act.html
+msgid "Manufacturer"
+msgstr "Производитель"
+
+#: backend/apps/inventory/templates/inventory/price_tags.html
+msgid "Price per part"
+msgstr "Цена за часть"
+
+#: backend/apps/inventory/templates/inventory/price_tags.html
+msgid "Legal maximum"
+msgstr "Предельная цена"
+
+#: backend/apps/inventory/templates/inventory/price_tags.html
+#: backend/apps/inventory/templates/inventory/writeoff_act.html
+msgid "Responsible person"
+msgstr "Ответственное лицо"
+
+#: backend/apps/inventory/templates/inventory/price_tags.html
+msgid "Nothing to print."
+msgstr "Нечего печатать."
+
+#: backend/apps/inventory/templates/inventory/rx_journal.html
+#: backend/apps/inventory/templates/inventory/writeoff_act.html
+msgid "Quantity"
+msgstr "Количество"
+
+#: backend/apps/inventory/templates/inventory/rx_journal.html
+msgid "Facility told"
+msgstr "Учреждению сообщено"
+
+#: backend/apps/inventory/templates/inventory/rx_journal.html
+msgid "No prescriptions this month."
+msgstr "В этом месяце рецептов нет."
+
+#: backend/apps/inventory/templates/inventory/writeoff_act.html
+msgid "Place"
+msgstr "Место"
+
+#: backend/apps/inventory/templates/inventory/writeoff_act.html
+msgid "Order number"
+msgstr "Номер приказа"
+
+#: backend/apps/inventory/templates/inventory/writeoff_act.html
+msgid "Photos and videos"
+msgstr "Фото и видео"
+
+#: backend/apps/inventory/templates/inventory/writeoff_act.html
+msgid "Destroyed goods"
+msgstr "Уничтоженный товар"
+
+#: backend/apps/inventory/templates/inventory/writeoff_act.html
+msgid "Total at cost"
+msgstr "Итого по себестоимости"
+
+#: backend/apps/inventory/templates/inventory/writeoff_act.html
+msgid "Commission"
+msgstr "Комиссия"
+
+#: backend/apps/inventory/templates/inventory/writeoff_act.html
+msgid "Organisation"
+msgstr "Организация"
+
+#: backend/apps/inventory/templates/inventory/writeoff_act.html
+#: backend/apps/members/providers.py
+msgid "Role"
+msgstr "Роль"
+
+#: backend/apps/inventory/templates/inventory/writeoff_act.html
+msgid "Copies sent to"
+msgstr "Копии направлены"
+
+#: backend/apps/inventory/templates/inventory/writeoff_act.html
+msgid ""
+"The goods were destroyed in the presence of the commission; photos or videos "
+"of the destruction are kept with this act."
+msgstr ""
+"Товар уничтожен в присутствии комиссии; фото или видео уничтожения хранятся "
+"вместе с этим актом."
 
 #: backend/apps/knowledge/ai_tools.py
 msgid ""
@@ -9645,8 +11667,7 @@ msgstr "Новая статья в базе знаний: %(title)s"
 msgid "Please read and confirm: %(title)s"
 msgstr "Пожалуйста, прочитайте и подтвердите: %(title)s"
 
-#. Translators: a button that sends the page into the chat ("Read it"), not the
-#. status.
+#. Translators: a button that sends the page into the chat ("Read it"), not the status.
 #: backend/apps/knowledge/bot_messages.py
 msgctxt "knowledge read button"
 msgid "Read"
@@ -9745,8 +11766,8 @@ msgstr "Когда читателей попросили прочитать `ack
 #: backend/apps/knowledge/models.py
 msgid "The ack version the unread reminder was last sent for."
 msgstr ""
-"Версия для подтверждения, по которой в последний раз отправляли напоминание о"
-" непрочитанной странице."
+"Версия для подтверждения, по которой в последний раз отправляли напоминание "
+"о непрочитанной странице."
 
 #: backend/apps/knowledge/models.py
 msgid "What changed."
@@ -9926,9 +11947,9 @@ msgstr "Выберите страницу этой компании."
 
 #: backend/apps/lifecycle/ai_tools.py
 msgid ""
-"Discipline at a glance: warnings and reprimands given in a period by kind and"
-" category, those still counting, unacknowledged ones, and who is suspended "
-"until when"
+"Discipline at a glance: warnings and reprimands given in a period by kind "
+"and category, those still counting, unacknowledged ones, and who is "
+"suspended until when"
 msgstr ""
 "Дисциплина кратко: предупреждения и выговоры за период по видам и причинам, "
 "ещё действующие, неподтверждённые, и кто отстранён и до какого числа"
@@ -9961,8 +11982,7 @@ msgstr "Написана объяснительная"
 msgid "Proposed a fine with a record"
 msgstr "Предложен штраф к взысканию"
 
-#. Translators: %(category)s is what it is about, e.g. "Storage conditions
-#. breached".
+#. Translators: %(category)s is what it is about, e.g. "Storage conditions breached".
 #: backend/apps/lifecycle/bot_messages.py
 #, python-format
 msgid ""
@@ -10134,11 +12154,6 @@ msgstr "Права"
 #: backend/apps/members/admin.py
 msgid "All"
 msgstr "Все"
-
-#: backend/apps/members/admin.py backend/apps/members/providers.py
-#: backend/apps/sales/templates/sales/invoice.html
-msgid "Phone"
-msgstr "Телефон"
 
 #: backend/apps/members/admin.py
 msgid "Approve selected requests"
@@ -10344,8 +12359,8 @@ msgstr "Ссылка для команды: %(link)s"
 #: backend/apps/members/bot_messages.py
 msgid "Hi! To join your company, open the invite link your manager sent you."
 msgstr ""
-"Здравствуйте! Чтобы присоединиться к компании, откройте ссылку-приглашение от"
-" руководителя."
+"Здравствуйте! Чтобы присоединиться к компании, откройте ссылку-приглашение "
+"от руководителя."
 
 #: backend/apps/members/bot_messages.py
 #, python-format
@@ -10359,8 +12374,8 @@ msgstr "Как только создадите аккаунт, сразу поп
 #: backend/apps/members/bot_messages.py
 #, python-format
 msgid ""
-"Your request to join <b>%(company)s</b> is waiting for approval. I'll message"
-" you as soon as it's decided."
+"Your request to join <b>%(company)s</b> is waiting for approval. I'll "
+"message you as soon as it's decided."
 msgstr ""
 "Ваша заявка в компанию <b>%(company)s</b> ждёт одобрения. Я напишу, как "
 "только будет решение."
@@ -10435,8 +12450,8 @@ msgstr "Пожалуйста, поделитесь своим номером к�
 #, python-format
 msgid "Welcome to the team, %(name)s! You've joined <b>%(company)s</b>."
 msgstr ""
-"Добро пожаловать в команду, %(name)s! Теперь вы в компании "
-"<b>%(company)s</b>."
+"Добро пожаловать в команду, %(name)s! Теперь вы в компании <b>%(company)s</"
+"b>."
 
 #: backend/apps/members/bot_messages.py
 #, python-format
@@ -10549,8 +12564,7 @@ msgstr "должность"
 msgid "default"
 msgstr "по умолчанию"
 
-#. Translators: %(company)s is a company's name, as typed: no case endings on
-#. it.
+#. Translators: %(company)s is a company's name, as typed: no case endings on it.
 #: backend/apps/members/bot_messages.py employee_bot/bot/handlers/company.py
 #: employee_bot/bot/middlewares/access.py
 #, python-format
@@ -10948,8 +12962,8 @@ msgid ""
 "Run their own till: open and close shifts, record sales, payouts and "
 "handovers"
 msgstr ""
-"Работа со своей кассой: открытие и закрытие смен, учёт продаж, выдач из кассы"
-" и передач наличных"
+"Работа со своей кассой: открытие и закрытие смен, учёт продаж, выдач из "
+"кассы и передач наличных"
 
 #: backend/apps/members/permissions.py
 msgid ""
@@ -11026,8 +13040,8 @@ msgstr ""
 msgid ""
 "See passport, PINFL and card numbers and ID scans (every view is audited)"
 msgstr ""
-"Просмотр номеров паспорта, ПИНФЛ и банковских карт, а также сканов документов"
-" (каждый просмотр записывается в журнал)"
+"Просмотр номеров паспорта, ПИНФЛ и банковских карт, а также сканов "
+"документов (каждый просмотр записывается в журнал)"
 
 #: backend/apps/members/permissions.py
 msgid "Manage vacancies and applicants"
@@ -11199,10 +13213,6 @@ msgstr ""
 #: backend/apps/timeoff/providers.py
 msgid "Position"
 msgstr "Должность"
-
-#: backend/apps/members/providers.py
-msgid "Role"
-msgstr "Роль"
 
 #: backend/apps/members/providers.py
 msgid "Home branch"
@@ -11658,8 +13668,8 @@ msgstr "Зарплата (%(month)s): %(name)s"
 #: backend/apps/payroll/finance_bridge.py
 #, python-format
 msgid ""
-"An expense of %(name)s was paid back another way meanwhile: calculate the run"
-" again."
+"An expense of %(name)s was paid back another way meanwhile: calculate the "
+"run again."
 msgstr ""
 "Тем временем расход сотрудника возмещён иначе: %(name)s. Пересчитайте "
 "зарплату."
@@ -11682,8 +13692,8 @@ msgid ""
 "Part of this pay was already paid or written off in Finance. Void that "
 "payment first, then reopen the payroll."
 msgstr ""
-"Часть этой зарплаты уже выплачена или списана в Финансах. Сначала аннулируйте"
-" тот платёж, затем откройте зарплату заново."
+"Часть этой зарплаты уже выплачена или списана в Финансах. Сначала "
+"аннулируйте тот платёж, затем откройте зарплату заново."
 
 #: backend/apps/payroll/finance_bridge.py
 #, python-format
@@ -12011,8 +14021,8 @@ msgid ""
 "%(name)s has no pay history or monthly pay to work out a leave day: add the "
 "unused leave as a line by hand."
 msgstr ""
-"Для расчёта дня отпуска нет ни истории выплат, ни оклада (%(name)s): добавьте"
-" компенсацию отпуска строкой вручную."
+"Для расчёта дня отпуска нет ни истории выплат, ни оклада (%(name)s): "
+"добавьте компенсацию отпуска строкой вручную."
 
 #: backend/apps/payroll/labels.py
 #, python-format
@@ -12035,13 +14045,13 @@ msgstr ""
 #: backend/apps/payroll/labels.py
 #, python-format
 msgid ""
-"The %(month)s payroll paid %(name)s %(amount)s for days after their last day."
-" To take it back, add a line by hand for at most what this payslip pays, and "
-"record the rest in Finance as money they owe."
+"The %(month)s payroll paid %(name)s %(amount)s for days after their last "
+"day. To take it back, add a line by hand for at most what this payslip pays, "
+"and record the rest in Finance as money they owe."
 msgstr ""
-"Ведомость (%(month)s) оплатила и дни после последнего рабочего дня: %(name)s,"
-" %(amount)s. Чтобы вернуть сумму, добавьте вручную строку не больше того, что"
-" платит этот расчётный лист, а остаток запишите в Финансах как долг "
+"Ведомость (%(month)s) оплатила и дни после последнего рабочего дня: "
+"%(name)s, %(amount)s. Чтобы вернуть сумму, добавьте вручную строку не больше "
+"того, что платит этот расчётный лист, а остаток запишите в Финансах как долг "
 "сотрудника."
 
 #: backend/apps/payroll/models.py
@@ -12122,8 +14132,8 @@ msgid ""
 "Hours in a normal working day: turns monthly and daily pay into an hourly "
 "rate."
 msgstr ""
-"Часов в обычном рабочем дне: по ним месячная и дневная оплата пересчитывается"
-" в часовую."
+"Часов в обычном рабочем дне: по ним месячная и дневная оплата "
+"пересчитывается в часовую."
 
 #: backend/apps/payroll/models.py
 msgid "Prepare last month's draft run on the 1st of each month."
@@ -12833,9 +14843,9 @@ msgstr "В этом расчёте некому платить."
 #: backend/apps/payroll/runs.py
 #, python-format
 msgid ""
-"The deductions on the final payslip of %(names)s are more than the pay: lower"
-" a line added by hand to at most the pay, and record the rest in Finance as "
-"money they owe."
+"The deductions on the final payslip of %(names)s are more than the pay: "
+"lower a line added by hand to at most the pay, and record the rest in "
+"Finance as money they owe."
 msgstr ""
 "Удержания в окончательном расчёте больше заработка: %(names)s. Уменьшите "
 "строку, добавленную вручную, до суммы заработка, а остаток запишите в "
@@ -13281,16 +15291,16 @@ msgstr "Бухгалтер"
 
 #: backend/apps/projects/ai_tools.py
 msgid ""
-"Projects: every project the asker sees, with progress, health, due date, lead"
-" and budget burn."
+"Projects: every project the asker sees, with progress, health, due date, "
+"lead and budget burn."
 msgstr ""
 "Проекты: все проекты, которые видит пользователь, с прогрессом, состоянием, "
 "сроком, руководителем и расходом бюджета."
 
 #: backend/apps/projects/ai_tools.py
 msgid ""
-"One project in detail: milestones with progress, overdue cards, the people on"
-" it, the latest update, and its money when the asker may see it."
+"One project in detail: milestones with progress, overdue cards, the people "
+"on it, the latest update, and its money when the asker may see it."
 msgstr ""
 "Один проект подробно: этапы с прогрессом, просроченные карточки, участники, "
 "последний статус и финансы проекта, если пользователю можно их видеть."
@@ -13680,8 +15690,8 @@ msgstr ""
 msgid ""
 "Below this share of done cards a project close to its due date is at risk."
 msgstr ""
-"Если у проекта с близким сроком доля готовых карточек ниже этой, он считается"
-" под угрозой."
+"Если у проекта с близким сроком доля готовых карточек ниже этой, он "
+"считается под угрозой."
 
 #: backend/apps/projects/owner_api.py
 msgid "Attach a file."
@@ -13708,10 +15718,6 @@ msgstr "%(key)s: этап «%(name)s» завершён"
 #: backend/apps/projects/services.py
 msgid "You can't do this on this project."
 msgstr "В этом проекте у вас нет на это прав."
-
-#: backend/apps/projects/services.py
-msgid "That belongs to another company."
-msgstr "Это относится к другой компании."
 
 #: backend/apps/projects/services.py
 #, python-format
@@ -14049,8 +16055,8 @@ msgstr "Передать другому"
 #: backend/apps/reminders/bot_messages.py
 #, python-format
 msgid ""
-"<b>%(name)s</b> blocked the bot, so reminders can't reach them. "
-"<b>%(task)s</b> is still open."
+"<b>%(name)s</b> blocked the bot, so reminders can't reach them. <b>%(task)s</"
+"b> is still open."
 msgstr ""
 "<b>%(name)s</b>: бот заблокирован, напоминания не доходят. Задача "
 "<b>%(task)s</b> всё ещё открыта."
@@ -14198,8 +16204,8 @@ msgid ""
 "Who did their tasks on time over a period, by person, position, routine, "
 "branch or day."
 msgstr ""
-"Кто выполнял задачи вовремя за период: по сотрудникам, должностям, регулярным"
-" задачам, филиалам или дням."
+"Кто выполнял задачи вовремя за период: по сотрудникам, должностям, "
+"регулярным задачам, филиалам или дням."
 
 #: backend/apps/reports/ai_tools.py
 msgid ""
@@ -14322,9 +16328,9 @@ msgstr "Прошлый месяц"
 
 #: backend/apps/sales/ai_tools.py
 msgid ""
-"Sales for a range of days: net sales, receipts, average check and cash share,"
-" with a series over time or a breakdown by branch, cashier, payment method or"
-" hour."
+"Sales for a range of days: net sales, receipts, average check and cash "
+"share, with a series over time or a breakdown by branch, cashier, payment "
+"method or hour."
 msgstr ""
 "Продажи за период: выручка, чеки, средний чек и доля наличных — в динамике "
 "или с разбивкой по филиалам, кассирам, способам оплаты или часам."
@@ -14361,13 +16367,8 @@ msgid ""
 "Invoices issued in a range of days: number, customer, total, paid, left to "
 "pay, due day and whether it is overdue."
 msgstr ""
-"Счета, выставленные за период: номер, клиент, сумма, оплачено, осталось, срок"
-" оплаты и просрочен ли он."
-
-#: backend/apps/sales/alerts.py backend/apps/sales/queries.py
-#: backend/apps/sales/services.py
-msgid "Received"
-msgstr "Получено"
+"Счета, выставленные за период: номер, клиент, сумма, оплачено, осталось, "
+"срок оплаты и просрочен ли он."
 
 #: backend/apps/sales/alerts.py backend/apps/sales/queries.py
 #: backend/apps/sales/services.py
@@ -14677,8 +16678,8 @@ msgstr "Филиал %(branch)s ещё не открылся"
 #, python-format
 msgid "It opens at %(time)s; no till was open %(minutes)s minutes later."
 msgstr ""
-"Филиал открывается в %(time)s, но и через %(minutes)s мин ни одна касса так и"
-" не открылась."
+"Филиал открывается в %(time)s, но и через %(minutes)s мин ни одна касса так "
+"и не открылась."
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
@@ -15028,10 +17029,6 @@ msgid "Counted cash"
 msgstr "Пересчитанные наличные"
 
 #: backend/apps/sales/hooks.py
-msgid "Difference"
-msgstr "Расхождение"
-
-#: backend/apps/sales/hooks.py
 msgid "Z-report"
 msgstr "Z-отчёт"
 
@@ -15080,8 +17077,8 @@ msgid ""
 "Import them from your cash-register program for true stock, margins and the "
 "legal price check, or work without them."
 msgstr ""
-"Импортируйте их из кассовой программы для точных остатков, наценки и проверки"
-" предельных цен или работайте без них."
+"Импортируйте их из кассовой программы для точных остатков, наценки и "
+"проверки предельных цен или работайте без них."
 
 #: backend/apps/sales/hooks.py
 msgid "Prescription medicines sold above the legal price"
@@ -15103,21 +17100,9 @@ msgstr "Продажа или возврат"
 msgid "Item code"
 msgstr "Код товара"
 
-#: backend/apps/sales/hooks.py backend/apps/sales/templates/sales/invoice.html
-msgid "Series"
-msgstr "Серия"
-
-#: backend/apps/sales/hooks.py
-msgid "Parts"
-msgstr "Части"
-
 #: backend/apps/sales/hooks.py
 msgid "Parts per pack"
 msgstr "Частей в упаковке"
-
-#: backend/apps/sales/hooks.py
-msgid "Price per pack"
-msgstr "Цена упаковки"
 
 #: backend/apps/sales/hooks.py
 msgid "Line total"
@@ -15130,10 +17115,6 @@ msgstr "Предельная цена"
 #: backend/apps/sales/hooks.py
 msgid "Above the cap"
 msgstr "Выше предела"
-
-#: backend/apps/sales/hooks.py
-msgid "Prescription"
-msgstr "Рецепт"
 
 #: backend/apps/sales/hooks.py
 msgid "Kassa"
@@ -15211,10 +17192,6 @@ msgstr "Нет кода товара."
 #: backend/apps/sales/importer.py
 msgid "quantity"
 msgstr "количество"
-
-#: backend/apps/sales/importer.py
-msgid "No quantity."
-msgstr "Нет количества."
 
 #: backend/apps/sales/importer.py
 msgid "price"
@@ -15379,8 +17356,8 @@ msgstr "Последний торговый день, итоги которог�
 
 #: backend/apps/sales/models.py
 msgid ""
-"Where sale lines come from. Without them stock moves only through receipts of"
-" goods, transfers, write-offs and counts."
+"Where sale lines come from. Without them stock moves only through receipts "
+"of goods, transfers, write-offs and counts."
 msgstr ""
 "Откуда берутся строки продаж. Без них остатки меняются только приходами, "
 "перемещениями, списаниями и инвентаризациями."
@@ -15408,8 +17385,8 @@ msgstr "Печатается внизу счетов."
 
 #: backend/apps/sales/models.py
 msgid ""
-"A prescription medicine sold by invoice above its batch cost plus this markup"
-" (or above its reference price) warns at issue."
+"A prescription medicine sold by invoice above its batch cost plus this "
+"markup (or above its reference price) warns at issue."
 msgstr ""
 "Если рецептурный препарат продаётся по счёту дороже закупочной цены партии с "
 "этой наценкой (или дороже референтной цены), при выставлении будет "
@@ -15448,10 +17425,6 @@ msgstr "Задаётся для стандартных способов; ниг�
 msgid "Verified"
 msgstr "Проверена"
 
-#: backend/apps/sales/models.py backend/apps/sales/services.py
-msgid "Disputed"
-msgstr "Оспорена"
-
 #: backend/apps/sales/models.py
 msgid "Entered by the cashier"
 msgstr "Введена кассиром"
@@ -15478,14 +17451,6 @@ msgid "The manager's note or dispute reason."
 msgstr "Комментарий руководителя или причина, по которой смена оспорена."
 
 #: backend/apps/sales/models.py
-msgid "Sale"
-msgstr "Продажа"
-
-#: backend/apps/sales/models.py
-msgid "Refund"
-msgstr "Возврат"
-
-#: backend/apps/sales/models.py
 msgid "Import"
 msgstr "Импорт"
 
@@ -15496,10 +17461,6 @@ msgstr "CSV"
 #: backend/apps/sales/models.py
 msgid "Excel (xlsx)"
 msgstr "Excel (xlsx)"
-
-#: backend/apps/sales/models.py backend/apps/sales/templates/sales/invoice.html
-msgid "Packs"
-msgstr "Упаковки"
 
 #: backend/apps/sales/models.py
 msgid "Parts (blisters, ampoules)"
@@ -16356,8 +18317,8 @@ msgstr "Завершить выбранные сеансы"
 #, python-brace-format
 msgid "Signup code <b>{code}</b>. Copy it now: it is shown only once."
 msgstr ""
-"Код регистрации: <b>{code}</b>. Скопируйте его сейчас: он показывается только"
-" один раз."
+"Код регистрации: <b>{code}</b>. Скопируйте его сейчас: он показывается "
+"только один раз."
 
 #: backend/apps/signin/auth.py
 msgid "Sign in to the dashboard again."
@@ -16552,8 +18513,8 @@ msgstr ""
 
 #: backend/apps/tasks/ai_tools.py
 msgid ""
-"Storage readings (fridge and room temperature, humidity): values out of range"
-" and missed readings per routine and branch."
+"Storage readings (fridge and room temperature, humidity): values out of "
+"range and missed readings per routine and branch."
 msgstr ""
 "Показания условий хранения (температура холодильников и помещения, "
 "влажность): значения вне нормы и пропущенные замеры по регулярным задачам и "
@@ -16866,8 +18827,7 @@ msgstr "Ни к какой"
 msgid "Which task is this photo for?"
 msgstr "К какой задаче это фото?"
 
-#. Translators: %(title)s is the task's title: let a carrier word take any case
-#. ending.
+#. Translators: %(title)s is the task's title: let a carrier word take any case ending.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "Write your comment on <b>%(title)s</b>:"
@@ -16935,29 +18895,25 @@ msgstr "Следующие"
 msgid "Who is it for?"
 msgstr "Кому?"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
-#. on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>Today's routine task</b> · %(name)s"
 msgstr "<b>Регулярная задача на сегодня</b> · %(name)s"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
-#. on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>New task</b> · %(name)s"
 msgstr "<b>Новая задача</b> · %(name)s"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
-#. on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "%(name)s finished a task. Please check it."
 msgstr "%(name)s: задача выполнена. Пожалуйста, проверьте."
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
-#. on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>Task done</b> · %(name)s"
@@ -16968,8 +18924,7 @@ msgstr "<b>Задача выполнена</b> · %(name)s"
 msgid "late by %(duration)s"
 msgstr "просрочено на %(duration)s"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
-#. on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>Your task was accepted</b> · %(name)s"
@@ -16980,22 +18935,19 @@ msgstr "<b>Ваша задача принята</b> · %(name)s"
 msgid "Your task was sent back: %(reason)s"
 msgstr "Задачу вернули: %(reason)s"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
-#. on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "%(name)s is waiting for this task."
 msgstr "%(name)s ждёт выполнения этой задачи."
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
-#. on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>%(name)s mentioned you</b>"
 msgstr "<b>Вас упомянули</b> · %(name)s"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
-#. on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>New comment</b> · %(name)s"
@@ -17005,8 +18957,7 @@ msgstr "<b>Новый комментарий</b> · %(name)s"
 msgid "Reply"
 msgstr "Ответить"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
-#. on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>New deadline</b> · %(name)s"
@@ -17018,29 +18969,25 @@ msgstr "<b>Новый срок</b> · %(name)s"
 msgid "It was: %(when)s"
 msgstr "Было: %(when)s"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
-#. on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>Task cancelled</b> · %(name)s"
 msgstr "<b>Задача отменена</b> · %(name)s"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
-#. on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>Given to someone else</b> · %(name)s"
 msgstr "<b>Передана другому</b> · %(name)s"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
-#. on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "Now it's for: %(name)s"
 msgstr "Теперь исполнитель: %(name)s"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
-#. on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>%(name)s can't do this task</b>"
@@ -17050,15 +18997,13 @@ msgstr "<b>Не получается выполнить</b> · %(name)s"
 msgid "Cancel task"
 msgstr "Отменить задачу"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
-#. on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>More time given</b> · %(name)s"
 msgstr "<b>Время продлено</b> · %(name)s"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
-#. on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>The deadline stays</b> · %(name)s"
@@ -17072,15 +19017,13 @@ msgstr "<b>Задача отменена</b>"
 msgid "<b>Given to someone else</b>"
 msgstr "<b>Передана другому</b>"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
-#. on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>Accepted</b> · %(name)s"
 msgstr "<b>Принято</b> · %(name)s"
 
-#. Translators: %(time)s is a clock time (14:30); %(late)s a length (25 min, 1
-#. h 5 min).
+#. Translators: %(time)s is a clock time (14:30); %(late)s a length (25 min, 1 h 5 min).
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>Done</b> · %(time)s, %(late)s late"
@@ -17220,8 +19163,7 @@ msgctxt "task list"
 msgid "urgent"
 msgstr "срочно"
 
-#. Translators: %(priority)s is "Urgent" or "High", as the task's priority
-#. reads.
+#. Translators: %(priority)s is "Urgent" or "High", as the task's priority reads.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "Priority: %(priority)s"
@@ -17248,8 +19190,7 @@ msgstr ""
 "В ваших отделах пока никого нет. Добавьте людей в панели управления: "
 "Сотрудники, Отделы, затем ваш отдел."
 
-#. Translators: mid-line after a person's name ("Alisher Valiyev — open: 3"),
-#. lowercase.
+#. Translators: mid-line after a person's name ("Alisher Valiyev — open: 3"), lowercase.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "open: %(count)d"
@@ -17413,10 +19354,6 @@ msgid "Temperature and humidity log"
 msgstr "Журнал температуры и влажности"
 
 #: backend/apps/tasks/models.py
-msgid "Not needed"
-msgstr "Не нужно"
-
-#: backend/apps/tasks/models.py
 msgid "Text report"
 msgstr "Короткий отчёт"
 
@@ -17449,8 +19386,8 @@ msgid ""
 "With needs_confirmation: a run finished with a photo or text proof is "
 "accepted automatically; without one, someone checks it."
 msgstr ""
-"Если нужна проверка: выполнение с фото или отчётом принимается автоматически,"
-" без них его проверяют."
+"Если нужна проверка: выполнение с фото или отчётом принимается "
+"автоматически, без них его проверяют."
 
 #: backend/apps/tasks/models.py
 msgid "Made by an employee for themselves; it repeats a personal task."
@@ -17488,8 +19425,8 @@ msgstr "Задачи адаптации: срок — через столько 
 
 #: backend/apps/tasks/models.py
 msgid ""
-"With the readings proof: 1 to 3 numbers each run asks for, with their allowed"
-" range (`[{\"key\": \"t\", \"label\", \"unit\", \"min\", \"max\", "
+"With the readings proof: 1 to 3 numbers each run asks for, with their "
+"allowed range (`[{\"key\": \"t\", \"label\", \"unit\", \"min\", \"max\", "
 "\"critical\"}]`)."
 msgstr ""
 "С подтверждением показаниями: 1–3 числа, которые запрашиваются при каждом "
@@ -17500,8 +19437,8 @@ msgid ""
 "One of us does it: the first person to finish closes everyone else's copy of "
 "that day at the same branch."
 msgstr ""
-"Делает кто-то один: первый выполнивший закрывает копии остальных за этот день"
-" в том же филиале."
+"Делает кто-то один: первый выполнивший закрывает копии остальных за этот "
+"день в том же филиале."
 
 #: backend/apps/tasks/models.py
 msgid "Daily"
@@ -17561,8 +19498,8 @@ msgid ""
 "With needs_confirmation: finished with a photo or text proof, it is accepted "
 "automatically; without one, someone checks it."
 msgstr ""
-"Если нужна проверка: с фото или отчётом задача принимается автоматически, без"
-" них её проверяют."
+"Если нужна проверка: с фото или отчётом задача принимается автоматически, "
+"без них её проверяют."
 
 #: backend/apps/tasks/models.py
 msgid ""
@@ -17779,11 +19716,11 @@ msgstr "Камера отпуска: ведёт запись и хранит 30 
 
 #: backend/apps/tasks/presets.py
 msgid ""
-"Check that the camera over the counter is recording and that the last 30 days"
-" of video are kept."
+"Check that the camera over the counter is recording and that the last 30 "
+"days of video are kept."
 msgstr ""
-"Проверьте, что камера над прилавком ведёт запись и видео за последние 30 дней"
-" сохранено."
+"Проверьте, что камера над прилавком ведёт запись и видео за последние 30 "
+"дней сохранено."
 
 #: backend/apps/tasks/presets.py backend/apps/tasks/services.py
 msgid "You can't change routines."
@@ -18220,8 +20157,8 @@ msgstr "Выберите, к какому времени задачу нужно
 #: backend/apps/tasks/services.py
 msgid "Readings are taken on routines, not on onboarding or personal tasks."
 msgstr ""
-"Показания снимаются в регулярных задачах, а не в задачах адаптации или личных"
-" задачах."
+"Показания снимаются в регулярных задачах, а не в задачах адаптации или "
+"личных задачах."
 
 #: backend/apps/tasks/services.py
 msgid "Add at least one reading: what is measured and its allowed values."
@@ -18408,10 +20345,6 @@ msgid "Taken by"
 msgstr "Кто измерил"
 
 #: backend/apps/tasks/templates/tasks/readings_journal.html
-msgid "Signature"
-msgstr "Подпись"
-
-#: backend/apps/tasks/templates/tasks/readings_journal.html
 msgid "recheck"
 msgstr "повторный замер"
 
@@ -18426,10 +20359,6 @@ msgid ""
 msgstr ""
 "Значения вне нормы выделены жирным. Повторный замер: второе измерение после "
 "принятых мер."
-
-#: backend/apps/tasks/templates/tasks/readings_journal.html
-msgid "Head of pharmacy"
-msgstr "Заведующий аптекой"
 
 #: backend/apps/timeoff/admin.py
 msgid "Approve selected time off"
@@ -18643,10 +20572,6 @@ msgstr "Последний день"
 #: backend/apps/timeoff/providers.py
 msgid "Days"
 msgstr "Количество дней"
-
-#: backend/apps/timeoff/providers.py
-msgid "Reason"
-msgstr "Причина"
 
 #: backend/apps/timeoff/providers.py
 msgid "Decided by"
@@ -18873,8 +20798,7 @@ msgstr "Эту задачу удалили или передали другом�
 msgid "You can't do that."
 msgstr "Это действие вам недоступно."
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
-#. on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: employee_bot/bot/handlers/member/cards.py
 #, python-format
 msgid "Sent for checking · %(name)s"
@@ -19205,8 +21129,8 @@ msgstr "Ваша работа и команда — в боте для сотр�
 msgid ""
 "You don't have a company with dashboard access yet. Create one with /new."
 msgstr ""
-"У вас пока нет компании с доступом к панели управления. Создайте её командой "
-"/new."
+"У вас пока нет компании с доступом к панели управления. Создайте её "
+"командой /new."
 
 #: owner_bot/ownerbot/bot_messages.py
 msgid "Which company?"
