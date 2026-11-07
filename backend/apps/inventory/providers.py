@@ -4,7 +4,7 @@ setup from another company". Every provider applies the caller's branch scope.""
 
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import date, timedelta
 
 from django.db.models import Q
 from django.utils.translation import gettext as _
@@ -48,6 +48,18 @@ def _url(company_id: int, path: str) -> str:
 
 def _cost(member: Membership) -> bool:
     return member.has_perm(Perm.FINANCE_VIEW)
+
+
+def _day(value) -> date | None:
+    """A day from an export's params: a date, or YYYY-MM-DD text."""
+    if not value:
+        return None
+    if isinstance(value, date):
+        return value
+    try:
+        return date.fromisoformat(str(value)[:10])
+    except ValueError:
+        return None
 
 
 # The command palette ---------------------------------------------------------------------------
@@ -508,8 +520,8 @@ MOVEMENT_COLUMNS = (
 def movement_rows(member: Membership, params: dict):
     cost = _cost(member)
     today = engine.local_today(member.company)
-    start = params.get("from") or today - timedelta(days=30)
-    end = params.get("to") or today
+    start = _day(params.get("from")) or today - timedelta(days=30)
+    end = _day(params.get("to")) or today
     for row in queries.movements(member.company, start, end, branch_ids=_scope(member)):
         yield {
             "at": row.at,

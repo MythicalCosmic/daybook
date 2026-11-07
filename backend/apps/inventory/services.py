@@ -1209,7 +1209,8 @@ def line_warnings(receipt: GoodsReceipt, line: GoodsReceiptLine) -> list[str]:
         level = StockLevel.objects.filter(branch_id=receipt.branch_id, product=product).first()
         on_hand = (level.quantity if level else ZERO) + Decimal(line.quantity or 0)
         need = daily * 30 * settings.psychotropic_stock_months
-        if on_hand > need:
+        # Without sales lines there is no need to compare with (velocity 0): no warning.
+        if daily > 0 and on_hand > need:
             found.append(W.OVER_MONTH_NEED)
     wanted = line.retail_price
     if product.rx_required:
