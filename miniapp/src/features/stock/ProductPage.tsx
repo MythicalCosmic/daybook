@@ -4,7 +4,7 @@
  * same active ingredient, form and strength, the ones in stock first. That list is a catalogue
  * fact for the pharmacist, never advice. With none here: "Add to defektura".
  */
-import { Building2, FilePlus2, PackageX, Pill } from "lucide-react";
+import { Building2, FilePlus2, NotebookPen, PackageX, Pill } from "lucide-react";
 
 import { useNavigation } from "../../state/navigation";
 import { useMember } from "../../state/session";
@@ -12,7 +12,7 @@ import { Banner, Button, Card, ListCard, ListRow, LoadError, PageHeader, Screen,
 import type { PageProps } from "../registry";
 import { useFeatureOpen } from "../useFeatureOpen";
 import { operatesStock } from "./access";
-import { useProduct, type Analog, type AppBatch, type LookupRow } from "./api";
+import { useProduct, useStockSettings, type Analog, type AppBatch, type LookupRow } from "./api";
 import { num, qtyText, sortAnalogs } from "./lib";
 import { BatchState, ProductBadges, ProductSkeleton, expiryLine, formLine, partWord, useMoney } from "./parts";
 import { useStockT } from "./text";
@@ -74,8 +74,14 @@ function Here({ product, batches }: { product: LookupRow; batches: AppBatch[] })
   const t = useStockT();
   const member = useMember();
   const open = useFeatureOpen("stock");
+  const settings = useStockSettings(member.companyId);
   const operates = operatesStock(member);
   const held = product.quantity === null ? null : num(product.quantity);
+  const rx = operates && product.rx_required && settings.data?.rx_log === true && (
+    <Button variant="secondary" block icon={NotebookPen} onClick={() => open.page("rx", { product: product.id })}>
+      {t("product.rx")}
+    </Button>
+  );
   if (held !== null && held <= 0) {
     return (
       <>
@@ -85,6 +91,7 @@ function Here({ product, batches }: { product: LookupRow; batches: AppBatch[] })
             {t("hub.defektura")}
           </Button>
         )}
+        {rx}
       </>
     );
   }
@@ -113,6 +120,7 @@ function Here({ product, batches }: { product: LookupRow; batches: AppBatch[] })
           ))}
         </ListCard>
       )}
+      {rx}
     </>
   );
 }

@@ -293,3 +293,18 @@
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
   gap: 8px;
 }
+
+/* — the prescription entry — */
+.stk-check {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-height: 44px;
+  font-size: 16px;
+}
+.stk-check input {
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  accent-color: var(--color-accent);
+}

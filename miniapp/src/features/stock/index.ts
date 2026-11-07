@@ -31,6 +31,7 @@ export default defineFeature({
     counts: lazy(() => import("./CountsPage")),
     count: lazy(() => import("./CountPage")),
     receive: lazy(() => import("./ReceivePage")),
+    rx: lazy(() => import("./RxPage")),
   },
   sheets: {
     scan: lazy(() => import("./ScanSheet")),

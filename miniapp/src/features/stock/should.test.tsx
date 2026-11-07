@@ -14,6 +14,7 @@ import { blind, type Count, type IncomingTransfer, type Receipt } from "./api";
 import CountPage from "./CountPage";
 import CountsPage from "./CountsPage";
 import ReceivePage from "./ReceivePage";
+import RxPage from "./RxPage";
 import { IncomingCard } from "./slots";
 import TransferPage from "./TransferPage";
 import TransfersPage from "./TransfersPage";
@@ -396,5 +397,85 @@ describe("receiving", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Remove" }));
     await waitFor(() => expect(screen.queryByTestId("receipt-line")).toBeNull());
     expect(calls("/stock/receipts/31/lines/311/", "DELETE")).toHaveLength(1);
+  });
+});
+
+const RX_PRODUCT = {
+  id: 41,
+  name: "Amoksitsillin 500 mg kapsula №16",
+  trade_name: "",
+  inn: "amoxicillin",
+  barcode: "",
+  rx_required: true,
+  control_class: "none",
+  storage: "room",
+  units_per_pack: 2,
+  part_label: "blister",
+  sale_price: "24000.00",
+  part_price: "12000.00",
+  quantity: "7.000",
+  elsewhere: [],
+};
+
+describe("prescription entry", () => {
+  it("is off while the company keeps no prescription log", async () => {
+    serve((path) => (path.endsWith("/stock/settings/") ? { camera_scanning: false, show_other_branches: true, rx_log: false, fefo_strict: true } : undefined));
+    renderApp(<RxPage params={{}} />, { me });
+    expect(await screen.findByText("The prescription log is off")).toBeTruthy();
+  });
+
+  it("records a prescription for the item it was opened from, never the patient", async () => {
+    Object.defineProperty(URL, "createObjectURL", { configurable: true, value: () => "blob:x" });
+    Object.defineProperty(URL, "revokeObjectURL", { configurable: true, value: () => undefined });
+    serve((path, method) => {
+      if (path.endsWith("/stock/products/41/")) return { product: RX_PRODUCT, batches: [], analogs: [] };
+      if (path.endsWith("/stock/rx/") && method === "POST") return { id: 3, flags: ["no_e_prescription"] };
+      return undefined;
+    });
+    renderApp(<RxPage params={{ product: 41 }} />, { me, init: { stack: [{ feature: "stock", page: "product", params: { id: 41 } }, { feature: "stock", page: "rx", params: { product: 41 } }] } });
+    expect(await screen.findByText("Amoksitsillin 500 mg kapsula №16")).toBeTruthy();
+    fireEvent.change(screen.getByRole("textbox", { name: /Prescription number/ }), { target: { value: "RX-5512" } });
+    fireEvent.change(screen.getByRole("textbox", { name: /Doctor/ }), { target: { value: "Dr. Saidova" } });
+    fireEvent.change(screen.getByRole("textbox", { name: /Clinic/ }), { target: { value: "12-oilaviy poliklinika" } });
+    fireEvent.change(screen.getByRole("combobox", { name: "Kind of prescription" }), { target: { value: "psychotropic" } });
+    const photo = new File(["jpeg"], "rx.jpg", { type: "image/jpeg" });
+    fireEvent.change(document.querySelector('input[type="file"][capture]') as HTMLInputElement, { target: { files: [photo] } });
+    fireEvent.click(screen.getByRole("button", { name: "Record" }));
+    await waitFor(() => expect(calls("/stock/rx/")).toHaveLength(1));
+    const body = calls("/stock/rx/")[0].body as Record<string, unknown>;
+    expect(body).toMatchObject({
+      product: 41,
+      quantity: "1",
+      prescription_number: "RX-5512",
+      prescriber: "Dr. Saidova",
+      facility: "12-oilaviy poliklinika",
+      rx_kind: "psychotropic",
+      status: "dispensed",
+      photo,
+    });
+    expect(Object.keys(body).join(" ")).not.toMatch(/patient|pinfl|passport/i);
+    expect(await screen.findByText("Recorded in the prescription log. No e-prescription number: flagged for the head")).toBeTruthy();
+    expect(navigationState().stack).toEqual([{ feature: "stock", page: "product", params: { id: 41 } }]);
+  });
+
+  it("offers only prescription medicines and asks why a prescription is invalid", async () => {
+    serve((path, method) => {
+      if (path.includes("/stock/lookup/")) return [{ ...RX_PRODUCT, id: 60, name: "Vitamin C 500 mg", rx_required: false }, RX_PRODUCT];
+      if (path.endsWith("/stock/rx/") && method === "POST") return { id: 4, flags: [] };
+      return undefined;
+    });
+    renderApp(<RxPage params={{}} />, { me });
+    fireEvent.change(await screen.findByRole("searchbox", { name: "Prescription medicine" }), { target: { value: "500" } });
+    expect(await screen.findByRole("button", { name: /Amoksitsillin/ })).toBeTruthy();
+    expect(screen.queryByText("Vitamin C 500 mg")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /Amoksitsillin/ }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "The prescription is invalid" }));
+    const record = screen.getByRole("button", { name: "Record" }) as HTMLButtonElement;
+    expect(record.disabled).toBe(true);
+    fireEvent.change(screen.getByRole("textbox", { name: "What is wrong with it" }), { target: { value: "No stamp of the clinic" } });
+    expect(record.disabled).toBe(false);
+    fireEvent.click(record);
+    await waitFor(() => expect(calls("/stock/rx/")).toHaveLength(1));
+    expect(calls("/stock/rx/")[0].body).toMatchObject({ product: 41, status: "invalid", invalid_reason: "No stamp of the clinic" });
   });
 });

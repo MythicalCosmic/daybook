@@ -302,6 +302,8 @@ describe("the product", () => {
     expect(names[0]).toContain("Tolzor");
     expect(names[0]).toContain("In stock here");
     expect(names[1]).toContain("None here");
+    fireEvent.click(await screen.findByRole("button", { name: "Record a prescription" }));
+    expect(navigationState().stack.at(-1)).toEqual({ feature: "stock", page: "rx", params: { product: 41 } });
   });
 
   it("offers defektura when there is none here", async () => {

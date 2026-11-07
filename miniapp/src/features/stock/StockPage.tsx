@@ -5,7 +5,7 @@
  * parts, the nearest expiry and what the other pharmacies hold. Under the search: the way into
  * the expiry check and the other stock screens.
  */
-import { CalendarClock, ChevronRight, ClipboardList, FilePlus2, PackagePlus, ScanBarcode, Search, SearchX, Truck, X } from "lucide-react";
+import { CalendarClock, ChevronRight, ClipboardList, FilePlus2, NotebookPen, PackagePlus, ScanBarcode, Search, SearchX, Truck, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { useNavigation } from "../../state/navigation";
@@ -179,6 +179,7 @@ function Hub() {
         {operates && <ListRow icon={Truck} title={t("hub.transfers")} badge={incoming.data?.length || null} onClick={() => open.page("transfers")} />}
         {operates && <ListRow icon={ClipboardList} title={t("hub.count")} badge={openCounts || null} onClick={() => open.page("counts")} />}
         {operates && <ListRow icon={PackagePlus} title={t("hub.receive")} onClick={() => open.page("receive")} />}
+        {operates && settings.data?.rx_log && <ListRow icon={NotebookPen} title={t("hub.rx")} onClick={() => open.page("rx")} />}
         {operates && <ListRow icon={FilePlus2} title={t("hub.defektura")} onClick={() => open.sheet("defektura")} />}
       </ListCard>
     </>
