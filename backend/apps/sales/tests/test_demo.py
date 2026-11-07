@@ -113,7 +113,12 @@ def test_demo_sale_lines_match_the_tills_and_move_no_money(pharmacy):
     from apps.sales.models import PosCashier, Sale, SaleLine, SalesImport, SalesSettings
 
     company, people, now = pharmacy
-    ledger = Transaction.objects.filter(company=company).count()
+
+    # Nasiya books receivables (money, by design); the sale lines book nothing.
+    def ledger_rows():
+        return Transaction.objects.filter(company=company).exclude(source_type="sales.creditentry")
+
+    ledger = ledger_rows().count()
     tills = list(DailySales.objects.filter(company=company).values_list("day", "branch_id", "net"))
     demo.finish(company, people, now)
 
@@ -134,7 +139,7 @@ def test_demo_sale_lines_match_the_tills_and_move_no_money(pharmacy):
     assert not [row for row in checks if row["flagged"]], [r for r in checks if r["flagged"]][:3]
     assert {row["coverage"] for row in checks} == {"100.0"}
     # Money is untouched.
-    assert Transaction.objects.filter(company=company).count() == ledger
+    assert ledger_rows().count() == ledger
     assert (
         list(DailySales.objects.filter(company=company).values_list("day", "branch_id", "net"))
         == tills
@@ -150,3 +155,44 @@ def test_demo_sale_lines_match_the_tills_and_move_no_money(pharmacy):
     codes = PosCashier.objects.filter(company=company)
     assert codes.filter(membership__isnull=False).count() >= 3
     assert codes.filter(membership__isnull=True).count() == 1
+
+    # Nasiya for three regulars and a clinic, one of them on a till open now.
+    from apps.sales.models import CreditEntry
+
+    entries = CreditEntry.objects.filter(company=company)
+    assert entries.values("customer").distinct().count() == 4
+    assert entries.filter(shift__status="open").exists()
+    aging = queries.aging(company, now.date(), branch_ids=None)
+    assert Decimal(aging["total"]) > 0 and len(aging["customers"]) == 4
+
+
+def test_demo_distributor_invoices(db, demo_people):
+    """Demo Distribyutor's invoices when its sales module is on: a draft, one partly paid, one
+    overdue, one paid and one voided, numbered in order."""
+    from apps.companies.tests.factories import CompanyFactory
+    from apps.sales.models import Invoice
+
+    zone = ZoneInfo("Asia/Tashkent")
+    day = timezone.localdate(timezone=zone)
+    now = datetime(day.year, day.month, day.day, 14, 0, tzinfo=zone)
+    company = CompanyFactory(business_kind="distributor", features=[Feature.FINANCE, Feature.SALES])
+    ensure_company_defaults(company)
+    people = demo_people(company)
+    from apps.finance import services as finance
+
+    finance.create_account(
+        company, by=people["owner"], kind="bank", name="Bank", currency=company.base_currency
+    )
+    demo.seed_small(company, people, now)
+    invoices = Invoice.objects.filter(company=company)
+    assert set(invoices.values_list("status", flat=True)) == {
+        "draft",
+        "issued",
+        "partly_paid",
+        "paid",
+        "void",
+    }
+    numbers = sorted(invoices.exclude(number="").values_list("number", flat=True))
+    assert len(numbers) == 4 and len(set(numbers)) == 4
+    overdue = queries.invoices(company, {"overdue": True, "today": day}, branch_ids=None)
+    assert overdue.count() == 1
