@@ -5,7 +5,7 @@
  * parts, the nearest expiry and what the other pharmacies hold. Under the search: the way into
  * the expiry check and the other stock screens.
  */
-import { CalendarClock, ChevronRight, FilePlus2, ScanBarcode, Search, SearchX, X } from "lucide-react";
+import { CalendarClock, ChevronRight, FilePlus2, ScanBarcode, Search, SearchX, Truck, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { useNavigation } from "../../state/navigation";
@@ -13,7 +13,7 @@ import { useMember } from "../../state/session";
 import { EmptyState, IconButton, Input, ListCard, ListRow, LoadError, PageHeader, Screen, cx } from "../../ui";
 import { useFeatureOpen } from "../useFeatureOpen";
 import { operatesStock } from "./access";
-import { useExpiry, useLookup, useMarks, useStockSettings, type LookupRow } from "./api";
+import { useExpiry, useIncoming, useLookup, useMarks, useStockSettings, type LookupRow } from "./api";
 import { expirySteps, looksLikeBarcode, num, packDate, qtyText } from "./lib";
 import { ProductBadges, RowsSkeleton, formLine, partWord, useMoney, useSettled } from "./parts";
 import { useCanScan, useScanResult } from "./scan";
@@ -167,12 +167,14 @@ function Hub() {
   const steps = expirySteps(settings.data);
   const expiry = useExpiry(member.companyId, steps[steps.length - 1]);
   const marks = useMarks(member.companyId);
+  const incoming = useIncoming(member.companyId, operates);
   const urgent = (expiry.data ?? []).filter((row) => row.days_left <= steps[0] && !marks.data?.[row.id]).length;
   return (
     <>
       <p className="ft-quiet stk-hint">{t("search.hint")}</p>
       <ListCard>
         <ListRow icon={CalendarClock} title={t("hub.expiry")} badge={urgent || null} onClick={() => open.page("expiry")} />
+        {operates && <ListRow icon={Truck} title={t("hub.transfers")} badge={incoming.data?.length || null} onClick={() => open.page("transfers")} />}
         {operates && <ListRow icon={FilePlus2} title={t("hub.defektura")} onClick={() => open.sheet("defektura")} />}
       </ListCard>
     </>

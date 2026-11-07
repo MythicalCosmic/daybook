@@ -16,7 +16,7 @@ import { lazy } from "react";
 import { defineFeature } from "../registry";
 import { operatesStock, stockVisible } from "./access";
 import { messages } from "./messages";
-import { ExpiryCard, ShelfCheckBlock } from "./slots";
+import { ExpiryCard, IncomingCard, ShelfCheckBlock, useMeStatus } from "./slots";
 
 export default defineFeature({
   id: "stock",
@@ -26,19 +26,26 @@ export default defineFeature({
     home: lazy(() => import("./StockPage")),
     product: lazy(() => import("./ProductPage")),
     expiry: lazy(() => import("./ExpiryPage")),
+    transfers: lazy(() => import("./TransfersPage")),
+    transfer: lazy(() => import("./TransferPage")),
   },
   sheets: {
     scan: lazy(() => import("./ScanSheet")),
     defektura: lazy(() => import("./DefekturaSheet")),
     writeoff: lazy(() => import("./WriteOffSheet")),
   },
-  homeCards: [{ id: "expiry", component: ExpiryCard, order: 25, visible: operatesStock }],
-  meItems: [{ id: "stock", group: "work", label: "me.stock", icon: Pill, open: { page: "home" }, order: 20 }],
+  homeCards: [
+    // Things to act on today: goods on their way here, then what expires.
+    { id: "incoming", component: IncomingCard, order: 15, visible: operatesStock },
+    { id: "expiry", component: ExpiryCard, order: 25, visible: operatesStock },
+  ],
+  meItems: [{ id: "stock", group: "work", label: "me.stock", icon: Pill, open: { page: "home" }, order: 20, useStatus: useMeStatus }],
   plusActions: [{ id: "defektura", label: "plus.defektura", icon: FilePlus2, open: { sheet: "defektura" }, order: 50, visible: operatesStock }],
   // The expiry shelf check's own block, before "How to do this" (knowledge, 10).
   taskActions: [{ id: "shelfCheck", component: ShelfCheckBlock, order: 6 }],
   routes: {
     stock: "home",
     "stock.expiry": { page: "expiry" },
+    "stock.transfer": { page: "transfer" },
   },
 });
