@@ -10,7 +10,9 @@ import { ApiError } from "../../api/client";
 import { resolveScreen } from "../../state/deeplink";
 import { membership, navigationState, person, renderApp } from "../../test/harness";
 import { features } from "../registry";
-import type { IncomingTransfer } from "./api";
+import { blind, type Count, type IncomingTransfer } from "./api";
+import CountPage from "./CountPage";
+import CountsPage from "./CountsPage";
 import { IncomingCard } from "./slots";
 import TransferPage from "./TransferPage";
 import TransfersPage from "./TransfersPage";
@@ -166,5 +168,112 @@ describe("transfers in", () => {
     serve((path) => (path.endsWith("/stock/transfers/incoming/") ? [] : undefined));
     renderApp(<TransferPage params={{ id: 7 }} />, { me });
     expect(await screen.findByText("Already received")).toBeTruthy();
+  });
+});
+
+function count(over: Partial<Count> = {}): Count {
+  return {
+    id: 5,
+    kind: "partial",
+    status: "open",
+    branch: { id: 1, name: "Chilonzor", code: "CHL" },
+    lines: [
+      { id: 501, product: { id: 41, name: "Amoksitsillin 500 mg kapsula №16" }, units_per_pack: 2, part_label: "blister", batch_id: 77, series: "230415", expires_on: "2027-03-31", counted: null },
+      { id: 502, product: { id: 42, name: "Paratsetamol 500 mg tabletka №20" }, units_per_pack: 1, part_label: "", batch_id: 78, series: "PX-11", expires_on: "2027-01-31", counted: "3.000" },
+    ],
+    ...over,
+  };
+}
+
+/** What a careless server might add: the counter's screen must never hold it. */
+const withExpected = (value: Count) => ({ ...value, lines: value.lines.map((line) => ({ ...line, expected: "9.000", difference: "-1.000" })) });
+
+describe("the blind count", () => {
+  it("never keeps the expected quantity", () => {
+    const cleaned = blind(withExpected(count()) as Count);
+    expect(JSON.stringify(cleaned)).not.toMatch(/expected|difference/);
+  });
+
+  it("shows product, series and expiry, and what is left to count", async () => {
+    serve((path) => (path.endsWith("/stock/counts/5/lines/") ? withExpected(count()) : undefined));
+    const { client } = renderApp(<CountPage params={{ id: 5 }} />, { me });
+    const lines = await screen.findAllByTestId("count-line");
+    expect(lines).toHaveLength(1);
+    expect(lines[0].textContent).toContain("Amoksitsillin 500 mg kapsula №16");
+    expect(lines[0].textContent).toContain("Series 230415 · expires 31.03.2027");
+    expect(screen.getByText("1 of 2 counted")).toBeTruthy();
+    expect(document.body.textContent).not.toContain("9.000");
+    expect(JSON.stringify(client.getQueryData(["stock", 1, "count", 5]))).not.toMatch(/expected/);
+    fireEvent.click(screen.getByRole("radio", { name: /All/ }));
+    expect(screen.getAllByTestId("count-line")[1].textContent).toContain("Counted: 3 packs");
+  });
+
+  it("saves a count at once and goes on to the next line", async () => {
+    let answer: (value: unknown) => void = () => undefined;
+    serve((path, method) => {
+      if (path.endsWith("/stock/counts/5/lines/") && method === "GET") return count();
+      if (path.endsWith("/stock/counts/5/lines/") && method === "PATCH") return new Promise((resolve) => (answer = resolve));
+      return undefined;
+    });
+    renderApp(<CountPage params={{ id: 5 }} />, { me });
+    fireEvent.click(within((await screen.findAllByTestId("count-line"))[0]).getByRole("button", { name: "Count" }));
+    const line = screen.getAllByTestId("count-line")[0];
+    fireEvent.click(within(line).getAllByRole("button", { name: "More" })[0]);
+    fireEvent.click(within(line).getAllByRole("button", { name: "More" })[1]);
+    fireEvent.click(within(line).getByRole("button", { name: "Save" }));
+    await waitFor(() => expect(calls("/stock/counts/5/lines/", "PATCH")).toHaveLength(1));
+    expect(calls("/stock/counts/5/lines/", "PATCH")[0].body).toEqual({ lines: [{ line: 501, counted: "3" }] });
+    // Shown before the server answers: everything is counted now.
+    expect(await screen.findByText("2 of 2 counted")).toBeTruthy();
+    answer(count({ lines: count().lines.map((row) => ({ ...row, counted: row.counted ?? "3.000" })) }));
+    expect(await screen.findByText("Everything is counted. Tell the head.", { selector: ".banner *" })).toBeTruthy();
+  });
+
+  it("takes a refused save back", async () => {
+    serve((path, method) => {
+      if (path.endsWith("/stock/counts/5/lines/") && method === "GET") return count();
+      if (method === "PATCH") return new ApiError(400, { detail: "This count is closed." });
+      return undefined;
+    });
+    renderApp(<CountPage params={{ id: 5 }} />, { me });
+    fireEvent.click(within((await screen.findAllByTestId("count-line"))[0]).getByRole("button", { name: "Count" }));
+    fireEvent.click(within(screen.getAllByTestId("count-line")[0]).getByRole("button", { name: "Save" }));
+    expect(await screen.findByText("This count is closed.")).toBeTruthy();
+    expect(screen.getByText("1 of 2 counted")).toBeTruthy();
+  });
+
+  it("finds a line by a scanned or typed barcode", async () => {
+    serve((path) => {
+      if (path.endsWith("/stock/counts/5/lines/")) return count({ lines: count().lines.map((row) => ({ ...row, counted: null })) });
+      if (path.includes("/stock/lookup/")) return [{ id: 42, name: "Paratsetamol 500 mg tabletka №20" }];
+      return undefined;
+    });
+    renderApp(<CountPage params={{ id: 5 }} />, { me });
+    await screen.findAllByTestId("count-line");
+    fireEvent.change(screen.getByRole("searchbox", { name: "Find a line" }), { target: { value: "4780000000021" } });
+    await waitFor(() => expect(screen.getAllByTestId("count-line")).toHaveLength(1));
+    expect(screen.getByTestId("count-line").textContent).toContain("Paratsetamol");
+  });
+
+  it("says when the count is closed", async () => {
+    serve((path) => (path.endsWith("/stock/counts/5/lines/") ? count({ status: "submitted" }) : undefined));
+    renderApp(<CountPage params={{ id: 5 }} />, { me });
+    expect(await screen.findByText("This count is closed")).toBeTruthy();
+  });
+
+  it("lists the open counts, and copes with a server that can't list them yet", async () => {
+    serve((path) => (path.endsWith("/stock/counts/") ? new ApiError(404, null) : undefined));
+    renderApp(<CountsPage />, { me });
+    expect(await screen.findByText("No count is open")).toBeTruthy();
+    cleanup();
+    serve((path) =>
+      path.endsWith("/stock/counts/")
+        ? [{ id: 5, kind: "full", status: "open", branch: { id: 1, name: "Chilonzor", code: "CHL" }, lines_count: 120, counted_count: 30, created_at: "2026-11-07T08:00:00+05:00" }]
+        : undefined,
+    );
+    renderApp(<CountsPage />, { me });
+    fireEvent.click(await screen.findByRole("button", { name: /Full count/ }));
+    expect(navigationState().stack.at(-1)).toEqual({ feature: "stock", page: "count", params: { id: 5 } });
+    expect(resolveScreen({ name: "stock.count", arg: "5" }, features)).toEqual({ tab: "home", stack: [{ feature: "stock", page: "count", params: { id: 5 } }] });
   });
 });

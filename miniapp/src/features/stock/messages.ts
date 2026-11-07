@@ -189,6 +189,7 @@ export const messages = defineMessages({
     "count.nothingFound": "No line matches.",
     "count.allDone": "Everything is counted. Tell the head.",
     "count.open": "Open the count",
+    "count.countLine": "Count",
 
     "receive.title": "Receive goods",
     "receive.subtitle": "Kirim (nakladnoy): a distributor’s delivery, for checking",
@@ -451,6 +452,7 @@ export const messages = defineMessages({
     "count.nothingFound": "Нет подходящих строк.",
     "count.allDone": "Всё посчитано. Сообщите заведующему.",
     "count.open": "Открыть инвентаризацию",
+    "count.countLine": "Посчитать",
 
     "receive.title": "Приход товара",
     "receive.subtitle": "Приход (накладная): поставка дистрибьютора для проверки",
@@ -707,6 +709,7 @@ export const messages = defineMessages({
     "count.nothingFound": "Mos qator yo‘q.",
     "count.allDone": "Hammasi sanaldi. Mudirga ayting.",
     "count.open": "Inventarizatsiyani ochish",
+    "count.countLine": "Sanash",
 
     "receive.title": "Kirim (nakladnoy)",
     "receive.subtitle": "Distribyutor yetkazib bergan tovar, tekshirish uchun",

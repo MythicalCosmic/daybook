@@ -329,14 +329,24 @@ export const stockKeys = {
 
 const base = (company: number) => `/companies/${company}/stock`;
 
-/** An endpoint the screens need that the server doesn't have yet answers 404 (or 405): null. */
-async function unlessMissing<T>(load: () => Promise<T>): Promise<T | null> {
+/**
+ * A list the screens need that the server doesn't serve yet: it answers 404 (or 405), or
+ * something that isn't a list. Null then.
+ */
+async function listUnlessMissing<T>(load: () => Promise<T[]>): Promise<T[] | null> {
   try {
-    return await load();
+    const rows = await load();
+    return Array.isArray(rows) ? rows : null;
   } catch (error) {
     if (error instanceof ApiError && (error.status === 404 || error.status === 405)) return null;
     throw error;
   }
+}
+
+/** A list endpoint's rows; anything else (a proxy's error page) reads as none, never a crash. */
+async function listOf<T>(path: string): Promise<T[]> {
+  const rows = await api<T[]>(path);
+  return Array.isArray(rows) ? rows : [];
 }
 
 /** Anything on screen that came from these endpoints is fetched again. */
@@ -358,7 +368,7 @@ export function useLookup(company: number, q: string) {
   const term = q.trim();
   return useQuery({
     queryKey: stockKeys.lookup(company, term),
-    queryFn: () => api<LookupRow[]>(`${base(company)}/lookup/?${new URLSearchParams({ q: term })}`),
+    queryFn: () => listOf<LookupRow>(`${base(company)}/lookup/?${new URLSearchParams({ q: term })}`),
     enabled: term.length >= 2,
     staleTime: 30_000,
     placeholderData: keepPreviousData,
@@ -378,7 +388,7 @@ export function useProduct(company: number, id: number) {
 export function useExpiry(company: number, within: number, enabled = true) {
   return useQuery({
     queryKey: stockKeys.expiry(company, within),
-    queryFn: () => api<AppBatch[]>(`${base(company)}/expiry/?within=${within}`),
+    queryFn: () => listOf<AppBatch>(`${base(company)}/expiry/?within=${within}`),
     staleTime: 60_000,
     enabled,
   });
@@ -393,7 +403,7 @@ export function useMarks(company: number) {
 export function useIncoming(company: number, enabled = true) {
   return useQuery({
     queryKey: stockKeys.incoming(company),
-    queryFn: () => api<IncomingTransfer[]>(`${base(company)}/transfers/incoming/`),
+    queryFn: () => listOf<IncomingTransfer>(`${base(company)}/transfers/incoming/`),
     staleTime: 60_000,
     enabled,
   });
@@ -403,7 +413,7 @@ export function useIncoming(company: number, enabled = true) {
 export function useOpenCounts(company: number, enabled = true) {
   return useQuery({
     queryKey: stockKeys.counts(company),
-    queryFn: () => unlessMissing(() => api<CountBrief[]>(`${base(company)}/counts/`)),
+    queryFn: () => listUnlessMissing(() => api<CountBrief[]>(`${base(company)}/counts/`)),
     staleTime: 60_000,
     enabled,
   });
@@ -412,7 +422,7 @@ export function useOpenCounts(company: number, enabled = true) {
 export function useCount(company: number, id: number) {
   return useQuery({
     queryKey: stockKeys.count(company, id),
-    queryFn: () => api<Count>(`${base(company)}/counts/${id}/lines/`),
+    queryFn: async () => blind(await api<Count>(`${base(company)}/counts/${id}/lines/`)),
     enabled: id > 0,
   });
 }
@@ -421,7 +431,7 @@ export function useCount(company: number, id: number) {
 export function useReceipts(company: number, enabled = true) {
   return useQuery({
     queryKey: stockKeys.receipts(company),
-    queryFn: () => api<Receipt[]>(`${base(company)}/receipts/`),
+    queryFn: () => listOf<Receipt>(`${base(company)}/receipts/`),
     staleTime: 30_000,
     enabled,
   });
@@ -434,7 +444,7 @@ export function useReceipts(company: number, enabled = true) {
 export function useSuppliers(company: number, enabled = true) {
   return useQuery({
     queryKey: stockKeys.suppliers(company),
-    queryFn: () => unlessMissing(() => api<Ref[]>(`${base(company)}/suppliers/`)),
+    queryFn: () => listUnlessMissing(() => api<Ref[]>(`${base(company)}/suppliers/`)),
     staleTime: 5 * 60_000,
     enabled,
   });

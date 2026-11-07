@@ -274,3 +274,12 @@
   font-size: 13px;
   color: var(--muted);
 }
+
+/* — the blind count — */
+.stk-count-edit {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+  align-items: flex-end;
+  justify-content: space-between;
+}

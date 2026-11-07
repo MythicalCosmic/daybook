@@ -28,6 +28,8 @@ export default defineFeature({
     expiry: lazy(() => import("./ExpiryPage")),
     transfers: lazy(() => import("./TransfersPage")),
     transfer: lazy(() => import("./TransferPage")),
+    counts: lazy(() => import("./CountsPage")),
+    count: lazy(() => import("./CountPage")),
   },
   sheets: {
     scan: lazy(() => import("./ScanSheet")),
@@ -47,5 +49,6 @@ export default defineFeature({
     stock: "home",
     "stock.expiry": { page: "expiry" },
     "stock.transfer": { page: "transfer" },
+    "stock.count": { page: "count" },
   },
 });
