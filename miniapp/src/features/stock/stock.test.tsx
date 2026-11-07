@@ -392,6 +392,9 @@ describe("Home and the task screen", () => {
     const shelf = makeTask({ title: "Expiry shelf check: Chilonzor", created_by: null });
     expect(isShelfCheckTask(shelf)).toBe(true);
     expect(isShelfCheckTask({ title: "Проверка сроков годности: Юнусабад", created_by: null })).toBe(true);
+    // The stock module's own titles (uz and ru), whatever comes before the phrase.
+    expect(isShelfCheckTask({ title: "Javonda yaroqlilik muddatini tekshirish: Chilonzor", created_by: null })).toBe(true);
+    expect(isShelfCheckTask({ title: "Проверка сроков годности на полках: Чиланзар", created_by: null })).toBe(true);
     expect(isShelfCheckTask({ title: "Yaroqlilik muddatini tekshirish: Chilonzor", created_by: null })).toBe(true);
     expect(isShelfCheckTask(makeTask({ title: "Expiry shelf check: Chilonzor" }))).toBe(false);
     expect(isShelfCheckTask(makeTask({ title: "Count the till", created_by: null }))).toBe(false);

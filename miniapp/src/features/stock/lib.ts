@@ -111,8 +111,9 @@ export const SHELF_CHECK_TITLES = ["Expiry shelf check", "Yaroqlilik muddatini t
 
 export function isShelfCheckTask(task: Pick<Task, "title" | "created_by">): boolean {
   if (task.created_by) return false;
+  // Anywhere in the title: the Uzbek one reads "Javonda yaroqlilik muddatini tekshirish: …".
   const title = task.title.trim().toLocaleLowerCase();
-  return SHELF_CHECK_TITLES.some((prefix) => title.startsWith(prefix.toLocaleLowerCase()));
+  return SHELF_CHECK_TITLES.some((phrase) => title.includes(phrase.toLocaleLowerCase()));
 }
 
 /** A typed customer phone kept for the call-back: digits and a leading +, at most 16 characters. */
