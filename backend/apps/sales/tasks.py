@@ -8,7 +8,22 @@ from datetime import date
 
 from celery import shared_task
 
-from apps.sales import rollup, scan
+from apps.sales import lines, reminders, rollup, scan
+
+
+@shared_task
+def remind_customer_debts() -> int:
+    """Every 15 minutes, acting in each company's morning: overdue nasiya and invoices to the
+    person responsible, once a day per debt (`Debt.last_reminded_on`)."""
+    return reminders.remind()
+
+
+@shared_task
+def process_import(import_id: int) -> str | None:
+    """Read an uploaded file of sale lines (PLAN-OWNER §14.7): receipts, lines, stock, the day
+    check and the legal price check. Idempotent: only a queued import is read."""
+    imp = lines.process(import_id)
+    return imp.status if imp is not None else None
 
 
 @shared_task

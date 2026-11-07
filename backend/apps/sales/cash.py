@@ -103,12 +103,33 @@ def receipts_cash_net(shift: CashShift) -> Decimal:
 
 def expected_cash(shift: CashShift) -> Decimal:
     """What should be in the till: at close from the typed payments, while open from what is
-    known so far (recorded receipts in receipts mode; shift totals arrive only at close)."""
+    known so far (recorded receipts in receipts mode; shift totals arrive only at close). Nasiya
+    that customers paid back in cash during the shift is in the till too."""
     if shift.status == CashShift.Status.OPEN:
         cash = receipts_cash_net(shift)
     else:
         cash = cash_net_of_lines(payments_of(shift))
-    return shift.opening_float + cash + movement_total(shift)
+    return shift.opening_float + cash + movement_total(shift) + credit_cash([shift.pk])[shift.pk]
+
+
+def credit_cash(shift_ids) -> dict[int, Decimal]:
+    """Nasiya paid back in cash per shift (not a sale: the goods were sold on credit before)."""
+    from apps.sales.models import CreditEntry
+
+    found: dict[int, Decimal] = defaultdict(lambda: ZERO)
+    for shift_id, total in (
+        CreditEntry.objects.filter(
+            shift_id__in=list(shift_ids),
+            kind=CreditEntry.Kind.PAYMENT,
+            method__kind=PaymentMethod.Kind.CASH,
+            voided_at__isnull=True,
+        )
+        .values("shift_id")
+        .annotate(total=Sum("amount"))
+        .values_list("shift_id", "total")
+    ):
+        found[shift_id] += total
+    return found
 
 
 def unbooked_handovers(register: Register) -> Decimal:
@@ -191,11 +212,17 @@ def tills_now(registers, open_shifts: dict[int, CashShift]) -> dict[int, Decimal
         ):
             received[shift_id] += -total if kind == Sale.Kind.REFUND else total
 
+    repaid = credit_cash(shift_ids) if shift_ids else {}
     found: dict[int, Decimal] = {}
     for register in registers:
         shift = open_shifts.get(register.pk)
         if shift is not None:
-            expected = shift.opening_float + received[shift.pk] + moved[shift.pk]
+            expected = (
+                shift.opening_float
+                + received[shift.pk]
+                + moved[shift.pk]
+                + repaid.get(shift.pk, ZERO)
+            )
             found[register.pk] = max(expected, ZERO)
         else:
             balance = balances.get(register.cash_account_id) or ZERO

@@ -26,3 +26,22 @@ class SalesAction(models.TextChoices):
     HANDOVER_DECLINED = "sales.handover_declined", _("Said a cash handover never arrived")
     SALE_RECORDED = "sales.sale_recorded", _("Recorded a receipt")
     SALE_VOIDED = "sales.sale_voided", _("Voided a receipt")
+    IMPORT_PROFILE_CREATED = "sales.import_profile_created", _("Added a sale lines import profile")
+    IMPORT_PROFILE_CHANGED = (
+        "sales.import_profile_changed",
+        _("Changed a sale lines import profile"),
+    )
+    IMPORT_STARTED = "sales.import_started", _("Uploaded a sale lines file")
+    IMPORT_DONE = "sales.import_done", _("Read a sale lines file")
+    IMPORT_FAILED = "sales.import_failed", _("Couldn't read a sale lines file")
+    CODE_MATCHED = "sales.code_matched", _("Matched an item code to a medicine")
+    CODE_SKIPPED = "sales.code_skipped", _("Marked an item code as not a product")
+    CASHIER_MAPPED = "sales.cashier_mapped", _("Linked a cash-register cashier to a person")
+    CREDIT_RECORDED = "sales.credit_recorded", _("Recorded nasiya")
+    CREDIT_VOIDED = "sales.credit_voided", _("Cancelled a nasiya entry")
+    INVOICE_CREATED = "sales.invoice_created", _("Created an invoice")
+    INVOICE_CHANGED = "sales.invoice_changed", _("Changed an invoice")
+    INVOICE_ISSUED = "sales.invoice_issued", _("Issued an invoice")
+    INVOICE_PAID = "sales.invoice_paid", _("Recorded a payment on an invoice")
+    INVOICE_VOIDED = "sales.invoice_voided", _("Voided an invoice")
+    INVOICE_SENT = "sales.invoice_sent", _("Sent an invoice")

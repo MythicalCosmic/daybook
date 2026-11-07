@@ -3,7 +3,8 @@
 Idempotent: `rebuild_day` recomputes the row from scratch (and removes it when nothing is left),
 so running it twice, or after a correction or a void, always leaves the right totals. Closed,
 verified and disputed shifts count; open ones don't yet. Receipts outside any shift count on
-their own; receipts inside a shift are already in its totals.
+their own; receipts inside a shift are already in its totals. Receipts imported from the
+cash-register software never count: they are line facts, and their money is in the shifts.
 """
 
 from collections import defaultdict
@@ -53,7 +54,8 @@ def rebuild_day(branch_id: int, day: date) -> DailySales | None:
         difference=Sum("difference"),
     )
 
-    loose = Sale.objects.filter(
+    # Imported receipts are line facts, never money: the tills' totals already hold it.
+    loose = Sale.objects.money().filter(
         branch_id=branch_id, business_day=day, shift__isnull=True, voided_at__isnull=True
     )
     for row in (
@@ -114,9 +116,9 @@ def rebuild_range(company, start: date, end: date) -> int:
         .values_list("branch_id", "business_day")
     )
     pairs |= set(
-        Sale.objects.filter(
-            Q(company=company) & Q(business_day__range=(start, end)) & Q(shift__isnull=True)
-        ).values_list("branch_id", "business_day")
+        Sale.objects.money()
+        .filter(Q(company=company) & Q(business_day__range=(start, end)) & Q(shift__isnull=True))
+        .values_list("branch_id", "business_day")
     )
     pairs |= set(
         DailySales.objects.filter(company=company, day__range=(start, end)).values_list(

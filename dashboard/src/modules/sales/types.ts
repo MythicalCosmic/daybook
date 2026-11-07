@@ -10,6 +10,8 @@ export type MethodKind = "cash" | "card" | "qr" | "transfer" | "credit" | "insta
 export type MovementKind = "payout" | "deposit" | "handover" | "to_safe" | "from_safe" | "to_bank";
 export type MovementStatus = "pending" | "declined" | "done" | "void";
 export type SalesMode = "shift_totals" | "receipts" | "invoices";
+/** Where sale lines come from (§14.7): none, imported from the cash-register program, or typed. */
+export type LinesSource = "none" | "import" | "receipts";
 export type GroupBy = "day" | "week" | "month" | "branch" | "cashier" | "method" | "hour" | "weekday_hour";
 
 export interface Ref {
@@ -29,6 +31,13 @@ export interface SalesSettings {
   big_payout_alert: Money | null;
   late_open_minutes: number;
   close_alert_minutes: number;
+  sales_lines: LinesSource;
+  /** Nasiya and invoices (§11.4). */
+  credit_days: number;
+  invoice_prefix: string;
+  invoice_terms_days: number;
+  invoice_footer: string;
+  rx_wholesale_max_markup_percent: string;
 }
 
 /** `sales/payment-methods/` */
@@ -382,7 +391,7 @@ export interface EntryInput {
 /** `GET sales/options/`: what filters and forms pick from. */
 export interface SalesOptions {
   currency: Currency;
-  settings: { mode: SalesMode; blind_cash_count: boolean; cash_tolerance: Money; business_day_ends_at: string };
+  settings: { mode: SalesMode; blind_cash_count: boolean; cash_tolerance: Money; business_day_ends_at: string; sales_lines?: LinesSource };
   today: string;
   branches: BranchRef[];
   registers: Array<{ id: number; name: string; branch_id: number; branch: string; is_active: boolean }>;
@@ -393,3 +402,274 @@ export interface SalesOptions {
   accounts: Array<{ id: number; name: string; kind: string; branch_id: number | null }>;
 }
 
+
+// ─── Sale lines from the cash-register software (§14.7) ─────────────────────
+
+export type ImportStatus = "queued" | "processing" | "ready" | "failed";
+export type LineStatus = "matched" | "waiting" | "skipped";
+export type FileKind = "csv" | "xlsx";
+export type LineUnit = "pack" | "part";
+
+/** What a column map may name (`apps.sales.importer.FIELDS`). */
+export const LINE_FIELDS = [
+  "receipt",
+  "sold_at",
+  "date",
+  "time",
+  "register",
+  "cashier",
+  "code",
+  "name",
+  "quantity",
+  "unit",
+  "price",
+  "discount",
+  "total",
+  "payment",
+  "refund",
+  "refund_of",
+  "series",
+  "rx_number",
+  "branch",
+] as const;
+export type LineField = (typeof LINE_FIELDS)[number];
+
+/** `sales/import-profiles/` */
+export interface ImportProfile {
+  id: number;
+  name: string;
+  file_kind: FileKind;
+  encoding: string;
+  delimiter: string;
+  header_row: number;
+  columns: Partial<Record<LineField, string>>;
+  date_format: string;
+  default_unit: LineUnit;
+  branch: BranchRef | null;
+  branch_map: Record<string, number>;
+  is_active: boolean;
+  created_at: string;
+  last_import: { id: number; status: ImportStatus; created_at: string } | null;
+}
+
+export interface ImportProfileInput {
+  name?: string;
+  file_kind?: FileKind;
+  encoding?: string;
+  delimiter?: string;
+  header_row?: number;
+  columns?: Partial<Record<LineField, string>>;
+  date_format?: string;
+  default_unit?: LineUnit;
+  branch_id?: number | null;
+  is_active?: boolean;
+}
+
+/** `POST sales/import-profiles/preview/`: the column mapper's view of a sample file. */
+export interface ImportPreview {
+  headers: string[];
+  rows: string[][];
+  total_rows: number;
+  guess: Partial<Record<LineField, string>>;
+  file_kind: FileKind;
+}
+
+/** One branch and business day of the day check. */
+export interface DayCheckRow {
+  branch: { id: number; name: string };
+  day: string;
+  imported: Money;
+  tills: Money | null;
+  gap: Money | null;
+  coverage: string | null;
+  flagged: boolean;
+}
+
+/** `sales/imports/` */
+export interface SalesImport {
+  id: number;
+  profile: Ref;
+  status: ImportStatus;
+  error: string;
+  rows: number;
+  receipts: number;
+  lines: number;
+  matched: number;
+  unmatched: number;
+  duplicates: number;
+  unreadable: number;
+  breaches: number;
+  problems: Array<{ row: number | null; message: string }>;
+  day_check: DayCheckRow[];
+  first_day: string | null;
+  last_day: string | null;
+  created_at: string;
+  started_at: string | null;
+  finished_at: string | null;
+  created_by: PersonRef | null;
+}
+
+/** `sales/lines/`: a sale line with its receipt. `cost` only with finance.view. */
+export interface SaleLine {
+  id: number;
+  status: LineStatus;
+  receipt: { id: number; number: string; kind: "sale" | "refund"; source: string; sold_at: string; business_day: string; payment: string };
+  branch: BranchRef;
+  cashier: { id: number | null; name: string; code: string } | null;
+  line_number: number;
+  code: string;
+  name: string;
+  product: { id: number; name: string; rx_required: boolean } | null;
+  batch: { id: number; series: string; expires_on: string } | null;
+  series: string;
+  unit: LineUnit;
+  quantity: string;
+  parts_per_pack: number;
+  price: Money;
+  discount: Money;
+  total: Money;
+  pack_price: Money;
+  cost?: Money | null;
+  cap: Money | null;
+  over_cap: boolean;
+  rx_number: string;
+}
+
+/** `GET sales/lines/codes/`: one row of the match list. */
+export interface LineCode {
+  code: string;
+  name: string;
+  lines: number;
+  total: Money;
+  first_day: string | null;
+  last_day: string | null;
+  branches: string[];
+}
+
+/** `sales/pos-cashiers/` */
+export interface PosCashier {
+  id: number;
+  code: string;
+  member: PersonRef | null;
+  receipts: number;
+  last_sold_at: string | null;
+}
+
+/** `GET sales/products/?q=` */
+export interface ProductHit {
+  id: number;
+  name: string;
+  trade_name: string;
+  inn: string;
+  barcode: string;
+  rx_required: boolean;
+  sale_price: Money;
+}
+
+// ─── Customers, nasiya and invoices (§11.4) ──────────────────────────────────
+
+export type CustomerKind = "person" | "clinic" | "pharmacy" | "company";
+export type AgingKey = "not_due" | "d0_30" | "d31_60" | "d60_plus";
+export type InvoiceStatus = "draft" | "issued" | "partly_paid" | "paid" | "void";
+
+/** `sales/customers/` */
+export interface Customer {
+  id: number;
+  name: string;
+  kind: CustomerKind;
+  phone: string;
+  tin: string;
+  telegram_username: string;
+  contact_person: string;
+  address: string;
+  notes: string;
+  credit_limit: Money | null;
+  credit_blocked: boolean;
+  is_active: boolean;
+  owed: Money;
+  currency: Currency;
+}
+
+export interface CustomerInput {
+  name?: string;
+  phone?: string;
+  kind?: CustomerKind;
+  credit_limit?: string | null;
+  credit_blocked?: boolean;
+  tin?: string;
+  telegram_username?: string;
+  address?: string;
+  notes?: string;
+}
+
+/** `sales/customers/{id}/` */
+export interface CustomerDetail extends Customer {
+  aging: Record<AgingKey, Money>;
+  debts: Array<{ id: number; status: string; source: string; description: string; amount: Money; paid: Money; left: Money; currency: Currency; issued_on: string; due_on: string | null; overdue: boolean }>;
+  credit: Array<{ id: number; kind: "sale" | "payment"; amount: Money; business_day: string; created_at: string; branch: Ref; method: Ref | null; note: string; by: PersonRef | null; voided_at: string | null }>;
+  purchases: Array<{ id: number; number: string; kind: string; total: Money; sold_at: string }>;
+}
+
+/** `sales/receivables/aging/` */
+export interface Aging {
+  currency: Currency;
+  today: string;
+  totals: Record<AgingKey, Money>;
+  total: Money;
+  customers: Array<{ id: number; name: string; kind: CustomerKind; total: Money } & Record<AgingKey, Money>>;
+}
+
+/** `sales/invoices/` */
+export interface InvoiceRow {
+  id: number;
+  number: string;
+  status: InvoiceStatus;
+  customer: Ref;
+  branch: Ref | null;
+  currency: Currency;
+  subtotal: Money;
+  discount: Money;
+  total: Money;
+  paid: Money;
+  left: Money;
+  issued_on: string | null;
+  due_on: string | null;
+  overdue: boolean;
+  sent_at: string | null;
+  e_invoice_ref: string;
+  created_at: string;
+}
+
+/** `sales/invoices/{id}/` */
+export interface InvoiceDetail extends InvoiceRow {
+  notes: string;
+  warnings: Array<{ line: number; product: string; price: Money; cap: Money }>;
+  lines: Array<{
+    id: number;
+    line_number: number;
+    product: { id: number; name: string; rx_required: boolean } | null;
+    name: string;
+    quantity: string;
+    unit: string;
+    price: Money;
+    discount: Money;
+    total: Money;
+    vat_percent: string | null;
+    mxik_code: string;
+    series: string;
+    expires_on: string | null;
+    cost?: Money | null;
+  }>;
+  payments: Array<{ id: number; paid_on: string; amount: Money; currency: Currency; account: Ref | null }>;
+  has_pdf: boolean;
+  void_reason: string;
+}
+
+export interface InvoiceInput {
+  customer_id?: number;
+  branch_id?: number | null;
+  currency?: Currency;
+  notes?: string;
+  e_invoice_ref?: string;
+  lines?: Array<{ product_id?: number | null; name: string; quantity: string; price: string; discount?: string }>;
+}

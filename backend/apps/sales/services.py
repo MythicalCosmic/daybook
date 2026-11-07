@@ -13,6 +13,7 @@ settings row, then the register, the shift, the movement, then whatever finance 
 from __future__ import annotations
 
 import logging
+from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date, datetime, time
 from decimal import Decimal, InvalidOperation
@@ -23,25 +24,31 @@ from django.utils import timezone
 from django.utils.translation import gettext as _
 
 from apps.audit import services as audit
+from apps.companies.models import Branch
 from apps.console import pulse
 from apps.core.exceptions import DomainError
 from apps.core.money import quantize
 from apps.core.signals import send_on_commit
-from apps.core.uploads import sanitize_image
+from apps.core.uploads import accept_document, sanitize_image
 from apps.finance.models import Category, MoneyAccount
 from apps.inbox import services as inbox
 from apps.members.models import Membership
-from apps.sales import alerts, cash, finance_bridge, signals, tasks
+from apps.sales import alerts, cash, finance_bridge, importer, lines, signals, tasks
 from apps.sales.audit_actions import SalesAction
+from apps.sales.bot_messages import money as msg_money
 from apps.sales.conf import get_settings
 from apps.sales.days import business_day
 from apps.sales.models import (
     CashMovement,
     CashShift,
+    CustomerKind,
     PaymentMethod,
+    PosCashier,
     Register,
     Sale,
     SalePayment,
+    SalesImport,
+    SalesImportProfile,
     SalesSettings,
     SalesTarget,
     ShiftPayment,
@@ -65,6 +72,9 @@ PULSE_CASH = "sales.cash"
 PULSE_SETUP = "sales.setup"
 PULSE_ENTRIES = "sales.entries"
 PULSE_TARGETS = "sales.targets"
+PULSE_LINES = lines.PULSE_LINES  # the Import and Lines pages
+PULSE_UNMATCHED = lines.PULSE_UNMATCHED  # the match list's badge
+PULSE_CUSTOMERS = "sales.customers"
 
 
 @dataclass(frozen=True)
@@ -208,6 +218,12 @@ SETTINGS_FIELDS = (
     "big_payout_alert",
     "late_open_minutes",
     "close_alert_minutes",
+    "sales_lines",
+    "credit_days",
+    "invoice_prefix",
+    "invoice_terms_days",
+    "invoice_footer",
+    "rx_wholesale_max_markup_percent",
 )
 
 
@@ -220,8 +236,33 @@ def update_settings(company, *, by: Membership, **fields) -> SalesSettings:
     settings = SalesSettings.objects.select_for_update().get(pk=get_settings(company).pk)
     if "mode" in fields and fields["mode"] not in SalesSettings.Mode.values:
         raise DomainError(_("Pick a way of recording sales."))
-    if fields.get("mode") == SalesSettings.Mode.INVOICES:
-        raise DomainError(_("Invoices mode arrives with the invoices module."))
+    if "sales_lines" in fields:
+        if fields["sales_lines"] not in SalesSettings.Lines.values:
+            raise DomainError(_("Pick where your sale lines come from."))
+        if fields["sales_lines"] == SalesSettings.Lines.RECEIPTS:
+            raise DomainError(_("Sale lines typed with each receipt arrive in a later version."))
+        if settings.sales_lines_confirmed_at is None:
+            # Answering the "Get started" question counts even when the answer is the default.
+            settings.sales_lines_confirmed_at = timezone.now()
+            settings.save(update_fields=["sales_lines_confirmed_at", "updated_at"])
+            _bump(company.pk, PULSE_SETUP)
+    if "invoice_prefix" in fields:
+        prefix = "".join(ch for ch in str(fields["invoice_prefix"] or "").upper() if ch.isalnum())
+        if not prefix:
+            raise DomainError(_("An invoice prefix has letters or digits, like INV."))
+        fields["invoice_prefix"] = prefix[:8]
+    if "invoice_footer" in fields:
+        fields["invoice_footer"] = (fields["invoice_footer"] or "").strip()[:2000]
+    if "rx_wholesale_max_markup_percent" in fields:
+        try:
+            markup = Decimal(str(fields["rx_wholesale_max_markup_percent"])).quantize(
+                Decimal("0.01")
+            )
+        except InvalidOperation, ValueError:
+            raise DomainError(_("The markup is a percentage from 0 to 100.")) from None
+        if not 0 <= markup <= 100:
+            raise DomainError(_("The markup is a percentage from 0 to 100."))
+        fields["rx_wholesale_max_markup_percent"] = markup
     for key in ("cash_tolerance", "big_payout_alert"):
         if fields.get(key) not in (None, ""):
             fields[key] = money(fields[key], allow_zero=True)
@@ -586,13 +627,33 @@ def open_shift(
 
 
 def receipt_lines(shift: CashShift) -> list[PaymentLine]:
-    """Receipts mode: the shift's totals per method from its recorded receipts."""
+    """Receipts mode: the shift's totals per method from its recorded receipts, the credit
+    sales recorded with their customers on the credit (Nasiya) method."""
     found = cash.receipts_by_method(shift)
     methods = PaymentMethod.objects.filter(pk__in=found)
-    return [
+    lines = [
         PaymentLine(m, found[m.pk]["sales"], found[m.pk]["refunds"], found[m.pk]["receipts"])
         for m in methods
     ]
+    credit = credit_total(shift)
+    if credit:
+        nasiya = (
+            PaymentMethod.objects.filter(
+                company_id=shift.company_id, kind=PaymentMethod.Kind.CREDIT
+            )
+            .order_by("-is_active", "order", "pk")
+            .first()
+        )
+        if nasiya is not None:
+            for index, line in enumerate(lines):
+                if line.method.pk == nasiya.pk:
+                    lines[index] = PaymentLine(
+                        line.method, line.sales + credit, line.refunds, line.receipts
+                    )
+                    break
+            else:
+                lines.append(PaymentLine(nasiya, credit, ZERO, 0))
+    return lines
 
 
 def _check_lines(company, lines: list[PaymentLine]) -> list[PaymentLine]:
@@ -671,9 +732,12 @@ def close_shift(
     if shift.status != Status.OPEN:
         raise DomainError(_("This shift is already closed."))
     settings = get_settings(company)
+    typed = payments is not None
     if payments is None:
         payments = receipt_lines(shift) if settings.mode == SalesSettings.Mode.RECEIPTS else []
     lines = _check_lines(company, payments)
+    if typed:
+        check_credit_total(shift, lines)
     count, counted = _counted(closing_count, counted_cash)
     if counted is None:
         raise DomainError(_("Count the cash in the till."))
@@ -1235,6 +1299,10 @@ def void_sale(sale: Sale, *, by: Membership, reason: str) -> Sale:
     _need_person(by)
     reason = _reason(reason)
     sale = Sale.objects.select_for_update(of=("self",)).select_related("shift").get(pk=sale.pk)
+    if sale.is_imported:
+        raise DomainError(
+            _("Imported receipts come from the cash-register program: correct them there.")
+        )
     if sale.voided_at is not None:
         raise DomainError(_("This receipt is already void."))
     if sale.shift_id is not None and sale.shift.status != Status.OPEN:
@@ -1252,3 +1320,1002 @@ def void_sale(sale: Sale, *, by: Membership, reason: str) -> Sale:
     _record(SalesAction.SALE_VOIDED, sale.company, by, sale, reason=reason)
     _bump(sale.company_id, PULSE_ENTRIES, PULSE_CASH)
     return sale
+
+
+# Sale lines from the cash-register software (§14.7) -----------------------------------
+
+PROFILE_FIELDS = (
+    "name",
+    "file_kind",
+    "encoding",
+    "delimiter",
+    "header_row",
+    "columns",
+    "date_format",
+    "default_unit",
+    "branch",
+    "branch_map",
+    "is_active",
+)
+ENCODINGS = ("", "utf-8", "utf-8-sig", "cp1251", "cp866", "koi8-r", "utf-16")
+
+
+def _profile_values(company, fields: dict, *, current: SalesImportProfile | None) -> dict:
+    """Checked profile fields; the column map is checked against what an import needs."""
+    if unknown := set(fields) - set(PROFILE_FIELDS):
+        raise ValueError(f"Unknown import profile fields: {sorted(unknown)}")
+    values = dict(fields)
+    if "name" in values:
+        name = (values["name"] or "").strip()[:80]
+        if not name:
+            raise DomainError(_("Give the profile a name, e.g. the cash-register program's."))
+        clash = SalesImportProfile.objects.filter(company=company, name__iexact=name)
+        if current is not None:
+            clash = clash.exclude(pk=current.pk)
+        if clash.exists():
+            raise DomainError(_("There is already a profile called %(name)s.") % {"name": name})
+        values["name"] = name
+    if "file_kind" in values and values["file_kind"] not in SalesImportProfile.FileKind.values:
+        raise DomainError(_("Pick CSV or Excel."))
+    if "encoding" in values:
+        values["encoding"] = (values["encoding"] or "").strip().lower()
+        if values["encoding"] not in ENCODINGS:
+            raise DomainError(_("Pick the file's encoding."))
+    if "delimiter" in values:
+        delimiter = values["delimiter"] or ""
+        if delimiter in ("\\t", "tab"):
+            delimiter = "\t"
+        if len(delimiter) > 1:
+            raise DomainError(_("The delimiter is one character, like ; or ,"))
+        values["delimiter"] = delimiter
+    if "header_row" in values:
+        try:
+            values["header_row"] = int(values["header_row"] or 1)
+        except TypeError, ValueError:
+            raise DomainError(_("The header row is a number.")) from None
+        if not 1 <= values["header_row"] <= 50:
+            raise DomainError(_("The header row is between 1 and 50."))
+    if "date_format" in values:
+        values["date_format"] = (values["date_format"] or "").strip()[:32]
+        if values["date_format"] and "%" not in values["date_format"]:
+            raise DomainError(_('A date format looks like "%d.%m.%Y %H:%M".'))
+    if "default_unit" in values and values["default_unit"] not in SalesImportProfile.Unit.values:
+        raise DomainError(_("Pick packs or parts."))
+    if "branch" in values and values["branch"] is not None:
+        _same_company(company, values["branch"])
+    if "branch_map" in values:
+        mapped = values["branch_map"] or {}
+        if not isinstance(mapped, dict):
+            raise DomainError(_("The branch map isn't readable."))
+        known = set(Branch.objects.for_company(company).values_list("pk", flat=True))
+        cleaned = {}
+        for word, branch_id in mapped.items():
+            word = str(word).strip()[:100]
+            if not word:
+                continue
+            try:
+                branch_id = int(branch_id)
+            except TypeError, ValueError:
+                raise DomainError(_("The branch map isn't readable.")) from None
+            if branch_id not in known:
+                raise DomainError(_("The branch map names a branch of another company."))
+            cleaned[word] = branch_id
+        values["branch_map"] = cleaned
+    if "columns" in values:
+        columns = values["columns"] or {}
+        if not isinstance(columns, dict):
+            raise DomainError(_("The column map isn't readable."))
+        values["columns"] = {
+            str(key): value if isinstance(value, int) else str(value).strip()[:100]
+            for key, value in columns.items()
+            if value not in (None, "")
+        }
+    branch = values.get("branch", current.branch if current else None)
+    columns = values.get("columns", current.columns if current else {})
+    importer.check_columns(columns, needs_branch=branch is None)
+    return values
+
+
+@transaction.atomic
+def create_import_profile(company, *, by: Membership, name: str, **fields) -> SalesImportProfile:
+    """How to read one cash-register program's export, saved once and reused every day."""
+    _need_person(by)
+    values = _profile_values(company, {"name": name, **fields}, current=None)
+    profile = SalesImportProfile.objects.create(company=company, created_by=by, **values)
+    _record(
+        SalesAction.IMPORT_PROFILE_CREATED,
+        company,
+        by,
+        profile,
+        name=profile.name,
+        file_kind=profile.file_kind,
+        columns=profile.columns,
+    )
+    _bump(company.pk, PULSE_LINES)
+    return profile
+
+
+@transaction.atomic
+def update_import_profile(
+    profile: SalesImportProfile, *, by: Membership, **fields
+) -> SalesImportProfile:
+    _need_person(by)
+    profile = SalesImportProfile.objects.select_for_update().get(pk=profile.pk)
+    company = profile.company
+    values = _profile_values(company, fields, current=profile)
+    changes = {}
+    for key, value in values.items():
+        before = getattr(profile, key)
+        if before != value:
+            changes[key] = [
+                before.pk if hasattr(before, "pk") else before,
+                value.pk if hasattr(value, "pk") else value,
+            ]
+            setattr(profile, key, value)
+    if changes:
+        profile.save()
+        _record(SalesAction.IMPORT_PROFILE_CHANGED, company, by, profile, changes=changes)
+        _bump(company.pk, PULSE_LINES)
+    return profile
+
+
+@transaction.atomic
+def start_import(profile: SalesImportProfile, *, by: Membership, file) -> SalesImport:
+    """Take a file of sale lines and read it in the background. Nothing is read while the
+    company's sale lines don't come from imports."""
+    _need_person(by)
+    company = profile.company
+    _same_company(company, by)
+    if not lines.lines_on(company):
+        raise DomainError(_("Turn on imported sale lines in the sales settings first."))
+    if not profile.is_active:
+        raise DomainError(_("This profile is archived."))
+    clean = accept_document(file, allowed=("csv", "xlsx"))
+    kind = clean.name.rsplit(".", 1)[-1]
+    if kind != profile.file_kind:
+        raise DomainError(
+            _("%(profile)s reads %(kind)s files.")
+            % {"profile": profile.name, "kind": profile.get_file_kind_display()}
+        )
+    imp = SalesImport(company=company, profile=profile, created_by=by)
+    imp.file.save(clean.name, clean, save=False)
+    imp.save()
+    _record(SalesAction.IMPORT_STARTED, company, by, imp, profile=profile.pk)
+    pk = imp.pk
+    transaction.on_commit(lambda: tasks.process_import.delay(pk))
+    _bump(company.pk, PULSE_LINES)
+    return imp
+
+
+def match_code(company, *, by: Membership, code: str, product) -> int:
+    """A code of the match list means `product`: remembered, and every waiting line settled.
+    Each line commits on its own (a long list never holds the stock's locks for long)."""
+    _need_person(by)
+    return lines.match(company, code, product, by=by)
+
+
+@transaction.atomic
+def skip_code(company, *, by: Membership, code: str) -> int:
+    """The waiting lines with `code` aren't goods the stock keeps (a bag, a service)."""
+    _need_person(by)
+    if not (code or "").strip():
+        raise DomainError(_("Pick a code."))
+    return lines.skip(company, code, by=by)
+
+
+@transaction.atomic
+def map_cashier(pos: PosCashier, *, by: Membership, membership: Membership | None) -> PosCashier:
+    """The program's cashier code means this person (or nobody): their imported receipts
+    follow, earlier ones included."""
+    _need_person(by)
+    pos = PosCashier.objects.select_for_update().get(pk=pos.pk)
+    company = pos.company
+    _same_company(company, membership)
+    if membership is not None and membership.status != Membership.Status.APPROVED:
+        raise DomainError(_("%(person)s isn't on the team now.") % {"person": membership})
+    before = pos.membership_id
+    if before == (membership.pk if membership else None):
+        return pos
+    pos.membership = membership
+    pos.save(update_fields=["membership", "updated_at"])
+    Sale.objects.imported().filter(company=company, pos_cashier=pos).update(
+        cashier=membership, updated_at=timezone.now()
+    )
+    _record(
+        SalesAction.CASHIER_MAPPED,
+        company,
+        by,
+        pos,
+        code=pos.code,
+        before=before,
+        membership=membership.pk if membership else None,
+    )
+    _bump(company.pk, PULSE_LINES)
+    return pos
+
+
+# Customers and nasiya (§11.4, §3.8) ------------------------------------------------------
+
+# A customer's kind in pharmacy words, kept as a tag of its counterparty (§14.7).
+CUSTOMER_KINDS = tuple(CustomerKind.values)
+CUSTOMER_FIELDS = (
+    "name",
+    "phone",
+    "kind",
+    "credit_limit",
+    "credit_blocked",
+    "tin",
+    "telegram_username",
+    "contact_person",
+    "address",
+    "notes",
+    "bank_details",
+    "is_active",
+)
+CREDIT = "sales.creditentry"
+
+
+def customer_kind(party) -> str:
+    """The pharmacy word for a customer (its first kind tag), "person" by default."""
+    tags = {str(tag).lower() for tag in (party.tags or [])}
+    return next((kind for kind in CUSTOMER_KINDS if kind in tags), "person")
+
+
+def _customer_values(party, fields: dict) -> dict:
+    if unknown := set(fields) - set(CUSTOMER_FIELDS):
+        raise ValueError(f"Unknown customer fields: {sorted(unknown)}")
+    values = dict(fields)
+    if "kind" in values:
+        kind = values.pop("kind") or "person"
+        if kind not in CUSTOMER_KINDS:
+            raise DomainError(_("Pick what kind of customer this is."))
+        others = [t for t in (party.tags if party else []) if str(t).lower() not in CUSTOMER_KINDS]
+        values["tags"] = [kind, *others]
+    return values
+
+
+@transaction.atomic
+def create_customer(company, *, by: Membership, name: str, **fields):
+    """A customer in the one party directory (`finance.Counterparty`, kind customer): a regular
+    who takes nasiya, a clinic, another pharmacy or a company. The phone is normalized
+    (+998…) and unique in the company (finance's rules)."""
+    from apps.finance import services as finance
+
+    _need_person(by)
+    values = _customer_values(None, {"kind": "person", **fields})
+    return finance.create_counterparty(company, by=by, name=name, kind="customer", **values)
+
+
+@transaction.atomic
+def update_customer(party, *, by: Membership, **fields):
+    from apps.finance import services as finance
+
+    _need_person(by)
+    values = _customer_values(party, fields)
+    return finance.update_counterparty(party, by=by, **values)
+
+
+def _customer_for_credit(company, customer):
+    """The customer's row, fresh and locked: two credit sales to one customer at once wait for
+    each other, so both can't pass the credit limit."""
+    from apps.finance.models import Counterparty
+
+    _same_company(company, customer)
+    customer = Counterparty.objects.select_for_update().get(pk=customer.pk)
+    if customer.kind not in (Counterparty.Kind.CUSTOMER, Counterparty.Kind.BOTH):
+        raise DomainError(_("%(name)s isn't a customer.") % {"name": customer})
+    if not customer.is_active:
+        raise DomainError(_("%(name)s is archived.") % {"name": customer})
+    return customer
+
+
+def open_receivables(customer, *, currency: str):
+    """The customer's open receivables in `currency`, oldest first (the order payments settle
+    them in)."""
+    from apps.finance.models import Debt
+
+    return Debt.objects.filter(
+        company_id=customer.company_id,
+        counterparty=customer,
+        direction=Debt.Direction.RECEIVABLE,
+        status=Debt.Status.OPEN,
+        currency=currency,
+    ).order_by("issued_on", "pk")
+
+
+def owed(customer, *, currency: str) -> Decimal:
+    """What the customer still owes in `currency`."""
+    total = ZERO
+    for amount, paid in open_receivables(customer, currency=currency).values_list("amount", "paid"):
+        total += amount - paid
+    return total
+
+
+@transaction.atomic
+def record_credit(
+    *,
+    by: Membership,
+    kind: str,
+    customer,
+    amount,
+    method: PaymentMethod | None = None,
+    note: str = "",
+):
+    """Nasiya on `by`'s open shift: a credit sale opens one receivable (its income booked now,
+    due after `SalesSettings.credit_days`); a payment settles the customer's oldest receivables
+    first, cash into the till (it counts in the till's expected cash)."""
+    from datetime import timedelta
+
+    from apps.finance import services as finance
+    from apps.finance.sources import Source
+    from apps.sales.models import CreditEntry
+
+    _need_person(by)
+    company = by.company
+    if kind not in CreditEntry.Kind.values:
+        raise DomainError(_("Pick a credit sale or a payment."))
+    amount = money(amount)
+    # The shift first, then the customer (a finance row): the one lock order of this module.
+    shift = (
+        CashShift.objects.select_for_update(of=("self",))
+        .select_related("branch__manager", "register__cash_account")
+        .filter(cashier=by, status=Status.OPEN)
+        .first()
+    )
+    if shift is None:
+        raise DomainError(_("Open a shift first."))
+    customer = _customer_for_credit(company, customer)
+    currency = company.base_currency
+    left = owed(customer, currency=currency)
+    if kind == CreditEntry.Kind.SALE:
+        if customer.credit_blocked:
+            raise DomainError(_("%(name)s may not take nasiya now.") % {"name": customer})
+        if customer.credit_limit is not None and left + amount > customer.credit_limit:
+            raise DomainError(
+                _("That goes over %(name)s's limit: %(left)s owed of %(limit)s.")
+                % {
+                    "name": customer,
+                    "left": msg_money(left, currency),
+                    "limit": msg_money(customer.credit_limit, currency),
+                }
+            )
+        method = None
+    else:
+        if left <= 0:
+            raise DomainError(_("%(name)s owes nothing.") % {"name": customer})
+        if amount > left:
+            raise DomainError(
+                _("That's more than the %(left)s %(name)s owes.")
+                % {"left": msg_money(left, currency), "name": customer}
+            )
+        if method is None:
+            method = (
+                PaymentMethod.objects.filter(
+                    company=company, kind=PaymentMethod.Kind.CASH, is_active=True
+                )
+                .order_by("order", "pk")
+                .first()
+            )
+        if method is None or method.company_id != company.pk or not method.is_active:
+            raise DomainError(_("Pick how the customer paid."))
+        if method.is_credit:
+            raise DomainError(_("Nasiya can't be paid back with nasiya."))
+    entry = CreditEntry.objects.create(
+        company=company,
+        kind=kind,
+        customer=customer,
+        branch=shift.branch,
+        shift=shift,
+        register=shift.register,
+        method=method,
+        amount=amount,
+        business_day=shift.business_day,
+        note=(note or "").strip()[:300],
+        created_by=by,
+    )
+    label = _("Nasiya, %(shift)s") % {"shift": shift.code}
+    if kind == CreditEntry.Kind.SALE:
+        terms = get_settings(company).credit_days
+        entry.debt = finance.open_debt(
+            company,
+            by=by,
+            direction="receivable",
+            kind="trade",
+            amount=amount,
+            currency=currency,
+            issued_on=shift.business_day,
+            counterparty=customer,
+            due_on=shift.business_day + timedelta(days=terms),
+            category="sales",
+            branch=shift.branch,
+            description=(entry.note or label)[:300],
+            responsible=shift.branch.manager or by,
+            source=Source(CREDIT, entry.pk),
+        )
+        entry.save(update_fields=["debt", "updated_at"])
+    else:
+        account = finance_bridge.payment_account(shift.register, method)
+        rest = amount
+        for debt in open_receivables(customer, currency=currency):
+            if rest <= 0:
+                break
+            part = min(rest, debt.amount - debt.paid)
+            if part <= 0:
+                continue
+            finance.pay_debt(
+                debt,
+                by=by,
+                amount=part,
+                paid_on=shift.business_day,
+                account=account,
+                source=Source(CREDIT, entry.pk, f"d{debt.pk}"),
+            )
+            rest -= part
+    _record(
+        SalesAction.CREDIT_RECORDED,
+        company,
+        by,
+        entry,
+        kind=kind,
+        customer=customer.pk,
+        amount=amount,
+        shift=shift.pk,
+    )
+    _bump(company.pk, PULSE_CUSTOMERS, PULSE_SHIFTS, PULSE_CASH)
+    return entry
+
+
+@transaction.atomic
+def void_credit(entry, *, by: Membership, reason: str):
+    """Cancel a nasiya entry typed by mistake, while its shift is open: a credit sale's
+    receivable is cancelled (refused once anything was paid on it), a payment's rows are voided
+    and the receivables it settled are owed again."""
+    from apps.finance import services as finance
+    from apps.finance.models import LIVE_STATUSES, Transaction
+    from apps.sales.models import CreditEntry
+
+    _need_person(by)
+    reason = _reason(reason)
+    entry = (
+        CreditEntry.objects.select_for_update(of=("self",))
+        .select_related("shift", "debt", "company")
+        .get(pk=entry.pk)
+    )
+    if entry.voided_at is not None:
+        raise DomainError(_("This entry is already void."))
+    if entry.shift_id and entry.shift.status != Status.OPEN:
+        raise DomainError(
+            _("This entry is part of the closed shift %(shift)s.") % {"shift": entry.shift.code}
+        )
+    if entry.kind == CreditEntry.Kind.SALE and entry.debt_id:
+        if entry.debt.paid:
+            raise DomainError(_("Part of this nasiya was already paid back."))
+        finance.cancel_debt(entry.debt, by=by, reason=reason)
+    else:
+        for row in Transaction.objects.filter(
+            company_id=entry.company_id,
+            source_type=CREDIT,
+            source_id=entry.pk,
+            status__in=LIVE_STATUSES,
+        ).order_by("-pk"):
+            finance.void_transaction(row, by=by, reason=reason)
+    entry.voided_at = timezone.now()
+    entry.voided_by = by.user
+    entry.void_reason = reason
+    entry.save(update_fields=["voided_at", "voided_by", "void_reason", "updated_at"])
+    _record(SalesAction.CREDIT_VOIDED, entry.company, by, entry, reason=reason)
+    _bump(entry.company_id, PULSE_CUSTOMERS, PULSE_SHIFTS, PULSE_CASH)
+    return entry
+
+
+def credit_total(shift: CashShift) -> Decimal:
+    """The credit sales recorded in a shift (what its Nasiya total must equal)."""
+    from django.db.models import Sum
+
+    from apps.sales.models import CreditEntry
+
+    return (
+        CreditEntry.objects.filter(
+            shift=shift, kind=CreditEntry.Kind.SALE, voided_at__isnull=True
+        ).aggregate(total=Sum("amount"))["total"]
+        or ZERO
+    )
+
+
+def check_credit_total(shift: CashShift, lines: list[PaymentLine]) -> None:
+    """At close: the Nasiya the Z-report shows must be the credit sales recorded in the shift,
+    once the company records nasiya at all (until then nothing changes)."""
+    from apps.sales.models import CreditEntry
+
+    if not CreditEntry.objects.filter(company_id=shift.company_id).exists():
+        return
+    typed = sum((line.sales for line in lines if line.method.is_credit), ZERO)
+    recorded = credit_total(shift)
+    if typed != recorded:
+        currency = shift.company.base_currency
+        raise DomainError(
+            _(
+                "Nasiya on the Z-report is %(typed)s, but %(recorded)s was recorded as credit "
+                "sales in this shift (a gap of %(gap)s). Record the missing credit sales with "
+                "their customers, or correct the total."
+            )
+            % {
+                "typed": msg_money(typed, currency),
+                "recorded": msg_money(recorded, currency),
+                "gap": msg_money(abs(typed - recorded), currency),
+            }
+        )
+
+
+# Invoices (§3.8, §14.7) -------------------------------------------------------------------
+
+INVOICE = "sales.invoice"
+INVOICE_PULSE = "sales.invoices"
+QUANTITY_STEP = Decimal("0.001")
+
+
+def _invoice_customer(company, counterparty):
+    from apps.finance.models import Counterparty
+
+    _same_company(company, counterparty)
+    if counterparty is None:
+        raise DomainError(_("Pick the customer."))
+    if counterparty.kind not in (Counterparty.Kind.CUSTOMER, Counterparty.Kind.BOTH):
+        raise DomainError(_("%(name)s isn't a customer.") % {"name": counterparty})
+    return counterparty
+
+
+def _invoice_lines(company, lines) -> list[dict]:
+    """Draft lines: [{"product_id"?, "name", "quantity", "price", "discount"?}], quantities in
+    packs, checked and with their totals."""
+    from apps.inventory.models import Product
+
+    if not lines:
+        raise DomainError(_("Add at least one line."))
+    if len(lines) > 300:
+        raise DomainError(_("An invoice holds at most 300 lines."))
+    product_ids = {int(row["product_id"]) for row in lines if row.get("product_id")}
+    products = Product.objects.for_company(company).in_bulk(product_ids)
+    if len(products) != len(product_ids):
+        raise DomainError(_("Pick medicines of this company's catalogue."))
+    cleaned = []
+    for number, row in enumerate(lines, start=1):
+        product = products.get(int(row["product_id"])) if row.get("product_id") else None
+        name = (row.get("name") or (product.name if product else "")).strip()[:200]
+        if not name:
+            raise DomainError(_("Line %(n)s needs a name.") % {"n": number})
+        try:
+            quantity = Decimal(str(row.get("quantity"))).quantize(QUANTITY_STEP)
+        except InvalidOperation, ValueError, TypeError:
+            raise DomainError(_("Line %(n)s needs a quantity.") % {"n": number}) from None
+        if quantity <= 0 or quantity > 1_000_000:
+            raise DomainError(_("Line %(n)s needs a quantity.") % {"n": number})
+        price = money(
+            row.get("price") if row.get("price") not in (None, "") else 0, allow_zero=True
+        )
+        discount = money(row.get("discount") or 0, allow_zero=True)
+        gross = quantize(quantity * price)
+        if discount > gross:
+            raise DomainError(_("Line %(n)s has a discount above its amount.") % {"n": number})
+        cleaned.append(
+            {
+                "line_number": number,
+                "product": product,
+                "name": name,
+                "quantity": quantity,
+                "price": price,
+                "discount": discount,
+                "total": gross - discount,
+            }
+        )
+    return cleaned
+
+
+def _write_invoice_lines(invoice, cleaned: list[dict]) -> None:
+    from apps.sales.models import InvoiceLine
+
+    invoice.lines.all().delete()
+    InvoiceLine.objects.bulk_create(InvoiceLine(invoice=invoice, **row) for row in cleaned)
+    invoice.subtotal = sum((quantize(row["quantity"] * row["price"]) for row in cleaned), ZERO)
+    invoice.discount = sum((row["discount"] for row in cleaned), ZERO)
+    invoice.total = invoice.subtotal - invoice.discount
+
+
+def _invoice_currency(company, currency: str) -> str:
+    from apps.core.money import Currency
+
+    currency = (currency or company.base_currency).upper()
+    if currency not in Currency.values:
+        raise DomainError(_("Pick the invoice's currency."))
+    return currency
+
+
+@transaction.atomic
+def create_invoice(
+    company,
+    *,
+    by: Membership,
+    counterparty,
+    lines,
+    branch=None,
+    currency="UZS",
+    notes="",
+):
+    """A draft invoice to `counterparty` (a customer: a clinic, a pharmacy, a company). `lines`
+    are `[{"product_id"?, "name", "quantity", "price", "discount"?}]`, quantities in packs. The
+    fixed signature the CRM package calls (§14.13); nothing moves until it is issued."""
+    from apps.sales.models import Invoice
+
+    _need_person(by)
+    _same_company(company, branch)
+    counterparty = _invoice_customer(company, counterparty)
+    cleaned = _invoice_lines(company, lines)
+    invoice = Invoice.objects.create(
+        company=company,
+        counterparty=counterparty,
+        branch=branch,
+        currency=_invoice_currency(company, currency),
+        notes=(notes or "").strip()[:4000],
+        created_by=by,
+    )
+    _write_invoice_lines(invoice, cleaned)
+    invoice.save(update_fields=["subtotal", "discount", "total", "updated_at"])
+    _record(
+        SalesAction.INVOICE_CREATED,
+        company,
+        by,
+        invoice,
+        counterparty=counterparty.pk,
+        total=invoice.total,
+        currency=invoice.currency,
+        lines=len(cleaned),
+    )
+    _bump(company.pk, INVOICE_PULSE, PULSE_CUSTOMERS)
+    return invoice
+
+
+def _lock_invoice(invoice):
+    from apps.sales.models import Invoice
+
+    return (
+        Invoice.objects.select_for_update(of=("self",))
+        .select_related("company", "branch", "counterparty", "debt")
+        .get(pk=invoice.pk)
+    )
+
+
+@transaction.atomic
+def update_invoice(invoice, *, by: Membership, **fields):
+    """Change a draft: customer, branch, currency, notes, lines. The e-invoice id may be typed at
+    any time."""
+    _need_person(by)
+    invoice = _lock_invoice(invoice)
+    company = invoice.company
+    allowed = {"counterparty", "lines", "branch", "currency", "notes", "e_invoice_ref"}
+    if unknown := set(fields) - allowed:
+        raise ValueError(f"Unknown invoice fields: {sorted(unknown)}")
+    if set(fields) - {"e_invoice_ref"} and not invoice.is_draft:
+        raise DomainError(_("Only a draft can be changed."))
+    changes = {}
+    if "counterparty" in fields:
+        invoice.counterparty = _invoice_customer(company, fields["counterparty"])
+        changes["counterparty"] = invoice.counterparty.pk
+    if "branch" in fields:
+        _same_company(company, fields["branch"])
+        invoice.branch = fields["branch"]
+        changes["branch"] = invoice.branch.pk if invoice.branch else None
+    if "currency" in fields:
+        invoice.currency = _invoice_currency(company, fields["currency"])
+        changes["currency"] = invoice.currency
+    if "notes" in fields:
+        invoice.notes = (fields["notes"] or "").strip()[:4000]
+        changes["notes"] = invoice.notes
+    if "e_invoice_ref" in fields:
+        invoice.e_invoice_ref = (fields["e_invoice_ref"] or "").strip()[:64]
+        changes["e_invoice_ref"] = invoice.e_invoice_ref
+    if "lines" in fields:
+        _write_invoice_lines(invoice, _invoice_lines(company, fields["lines"]))
+        changes["lines"] = invoice.lines.count()
+        changes["total"] = invoice.total
+    invoice.save()
+    if changes:
+        _record(SalesAction.INVOICE_CHANGED, company, by, invoice, changes=changes)
+        _bump(company.pk, INVOICE_PULSE)
+    return invoice
+
+
+def _wholesale_cap(product, batch, markup: Decimal):
+    """The most a prescription medicine may cost a pack by invoice: its batch cost plus the
+    wholesale markup cap, never above its reference price (None when neither is known)."""
+    if not product.rx_required:
+        return None
+    caps = []
+    if batch is not None:
+        caps.append(quantize(batch.unit_cost * (1 + markup / 100)))
+    if product.reference_price is not None:
+        caps.append(product.reference_price)
+    return min(caps) if caps else None
+
+
+@transaction.atomic
+def issue_invoice(invoice, *, by: Membership, issued_on: date | None = None):
+    """Issue a draft: its number (under the settings row's lock, so numbers never repeat), the
+    stock of its medicines (FEFO; one row per batch with series and expiry), one receivable with
+    its income booked now, due after the invoice terms. A prescription medicine priced above the
+    wholesale cap warns; nothing else is refused but a missing pharmacy for stock lines."""
+    from datetime import timedelta
+
+    from apps.finance import services as finance
+    from apps.finance.sources import Source
+    from apps.inventory import services as stock
+    from apps.inventory.models import StockBatch
+    from apps.sales import integrations
+    from apps.sales.models import Invoice, InvoiceLine
+
+    _need_person(by)
+    company = Invoice.objects.select_related("company").get(pk=invoice.pk).company
+    # The settings row first (the one lock order), then the invoice.
+    settings = SalesSettings.objects.select_for_update().get(pk=get_settings(company).pk)
+    invoice = _lock_invoice(invoice)
+    if not invoice.is_draft:
+        raise DomainError(_("This invoice is already issued."))
+    lines = list(invoice.lines.select_related("product").order_by("line_number", "pk"))
+    if not lines or invoice.total <= 0:
+        raise DomainError(_("Add lines with a price before issuing."))
+    stocked = [line for line in lines if line.product_id and line.product.track_stock]
+    if stocked and invoice.branch_id is None:
+        raise DomainError(_("Pick the warehouse or pharmacy the goods leave from."))
+    issued_on = issued_on or business_day(company, ends_at=settings.business_day_ends_at)
+    number = settings.next_invoice_number
+    SalesSettings.objects.filter(pk=settings.pk).update(
+        next_invoice_number=F("next_invoice_number") + 1
+    )
+    code = (invoice.branch.code if invoice.branch_id else "") or "S"
+    invoice.number = f"{settings.invoice_prefix or 'INV'}-{code.upper()}-{number:04d}"[:24]
+    vat = integrations.vat_percent(company)
+    markup = settings.rx_wholesale_max_markup_percent
+    warnings = []
+    for line in lines:
+        product = line.product
+        line.vat_percent = (
+            product.vat_percent if product is not None and product.vat_percent is not None else vat
+        )
+        line.mxik_code = product.mxik_code if product is not None else ""
+        if not (product is not None and product.track_stock):
+            line.save()
+            continue
+        per_pack = max(int(product.units_per_pack or 1), 1)
+        parts = (line.quantity * per_pack).quantize(QUANTITY_STEP)
+        found = stock.deduct(
+            invoice.branch,
+            product,
+            parts,
+            by=by,
+            document=(INVOICE, invoice.pk),
+            kind="sale",
+        )
+        allocations = [a for a in found if a.quantity and a.quantity > 0] or []
+        covered = sum((a.quantity for a in allocations), ZERO)
+        if covered < parts:
+            from apps.inventory.services import Allocation
+
+            allocations.append(Allocation(None, parts - covered, None))
+        batches = StockBatch.objects.in_bulk([a.batch_id for a in allocations if a.batch_id])
+        left_total, left_discount = line.total, line.discount
+        for index, allocation in enumerate(allocations):
+            last = index == len(allocations) - 1
+            share = allocation.quantity / parts
+            row = line if index == 0 else InvoiceLine(invoice=invoice, line_number=line.line_number)
+            batch = batches.get(allocation.batch_id)
+            row.product, row.name, row.unit, row.price = product, line.name, line.unit, line.price
+            row.vat_percent, row.mxik_code = line.vat_percent, line.mxik_code
+            row.quantity = (allocation.quantity / per_pack).quantize(QUANTITY_STEP)
+            row.total = left_total if last else quantize(line.total * share)
+            row.discount = left_discount if last else quantize(line.discount * share)
+            left_total -= row.total
+            left_discount -= row.discount
+            row.batch = batch
+            row.series = batch.series if batch else ""
+            row.expires_on = batch.expires_on if batch else None
+            row.cost = (
+                quantize(allocation.unit_cost * allocation.quantity)
+                if allocation.unit_cost is not None
+                else None
+            )
+            row.save()
+            cap = _wholesale_cap(product, batch, markup)
+            pack = quantize(row.total / row.quantity) if row.quantity else ZERO
+            if cap is not None and pack > cap:
+                warnings.append(
+                    {
+                        "line": line.line_number,
+                        "product": product.name,
+                        "price": str(pack),
+                        "cap": str(cap),
+                    }
+                )
+    invoice.issued_on = issued_on
+    invoice.due_on = issued_on + timedelta(days=settings.invoice_terms_days)
+    invoice.warnings = warnings
+    invoice.status = Invoice.Status.ISSUED
+    invoice.save()
+    invoice.debt = finance.open_debt(
+        company,
+        by=by,
+        direction="receivable",
+        kind="trade",
+        amount=invoice.total,
+        currency=invoice.currency,
+        issued_on=issued_on,
+        counterparty=invoice.counterparty,
+        due_on=invoice.due_on,
+        category="sales",
+        branch=invoice.branch,
+        description=(_("Invoice %(number)s") % {"number": invoice.number})[:300],
+        responsible=by,
+        source=Source(INVOICE, invoice.pk, "issue"),
+    )
+    invoice.save(update_fields=["debt", "updated_at"])
+    _record(
+        SalesAction.INVOICE_ISSUED,
+        company,
+        by,
+        invoice,
+        number=invoice.number,
+        total=invoice.total,
+        currency=invoice.currency,
+        warnings=warnings,
+    )
+    _bump(company.pk, INVOICE_PULSE, PULSE_CUSTOMERS)
+    return invoice
+
+
+@transaction.atomic
+def record_invoice_payment(
+    invoice, *, by: Membership, account, amount, paid_on: date, debt_amount=None
+):
+    """A payment on an issued invoice (part of it, or in another currency: `amount` is in the
+    account's currency, `debt_amount` what it settles when that differs)."""
+    from apps.finance import services as finance
+    from apps.sales.models import Invoice
+
+    _need_person(by)
+    invoice = _lock_invoice(invoice)
+    if invoice.status not in (Invoice.Status.ISSUED, Invoice.Status.PARTLY_PAID):
+        raise DomainError(_("Only an issued invoice takes payments."))
+    _same_company(invoice.company, account)
+    finance.pay_debt(
+        invoice.debt,
+        by=by,
+        amount=amount,
+        paid_on=paid_on,
+        account=account,
+        debt_amount=debt_amount,
+    )
+    invoice.debt.refresh_from_db()
+    invoice.status = (
+        Invoice.Status.PAID if invoice.debt.status == "paid" else Invoice.Status.PARTLY_PAID
+    )
+    invoice.save(update_fields=["status", "updated_at"])
+    _record(
+        SalesAction.INVOICE_PAID,
+        invoice.company,
+        by,
+        invoice,
+        amount=str(amount),
+        account=account.pk,
+        paid_on=paid_on,
+    )
+    _bump(invoice.company_id, INVOICE_PULSE, PULSE_CUSTOMERS)
+    return invoice
+
+
+@transaction.atomic
+def void_invoice(invoice, *, by: Membership, reason: str):
+    """Void a draft, or an issued invoice nobody paid anything on yet: its receivable is
+    cancelled and its goods go back on sale (they never left)."""
+    from apps.finance import services as finance
+    from apps.inventory import services as stock
+    from apps.inventory.services import Allocation
+    from apps.sales.models import Invoice
+
+    _need_person(by)
+    reason = _reason(reason)
+    invoice = _lock_invoice(invoice)
+    if invoice.status == Invoice.Status.VOID:
+        raise DomainError(_("This invoice is already void."))
+    if invoice.status in (Invoice.Status.PARTLY_PAID, Invoice.Status.PAID) or (
+        invoice.debt_id and invoice.debt.paid
+    ):
+        raise DomainError(_("A payment was made on this invoice: it can't be voided."))
+    if invoice.status == Invoice.Status.ISSUED:
+        if invoice.debt_id:
+            finance.cancel_debt(invoice.debt, by=by, reason=reason)
+        by_line: dict[int, list] = defaultdict(list)
+        for row in invoice.lines.select_related("product").order_by("line_number", "pk"):
+            if row.product_id and row.product.track_stock:
+                per_pack = max(int(row.product.units_per_pack or 1), 1)
+                parts = (row.quantity * per_pack).quantize(QUANTITY_STEP)
+                unit_cost = (row.cost / parts).quantize(Decimal("0.01")) if row.cost else None
+                by_line[row.line_number].append(Allocation(row.batch_id, parts, unit_cost))
+        for allocations in by_line.values():
+            stock.restock(
+                invoice.branch,
+                allocations,
+                by=by,
+                document=(INVOICE, invoice.pk),
+                kind="refund",
+                status="sellable",
+            )
+    invoice.status = Invoice.Status.VOID
+    invoice.voided_at = timezone.now()
+    invoice.voided_by = by.user
+    invoice.void_reason = reason
+    invoice.save(update_fields=["status", "voided_at", "voided_by", "void_reason", "updated_at"])
+    _record(SalesAction.INVOICE_VOIDED, invoice.company, by, invoice, reason=reason)
+    _bump(invoice.company_id, INVOICE_PULSE, PULSE_CUSTOMERS)
+    return invoice
+
+
+def invoice_pdf(invoice, *, language: str) -> bytes:
+    """The invoice as a PDF: the company and the customer, each line with its MXIK code, VAT,
+    series and expiry, and the footer saying it isn't the electronic invoice (EHF)."""
+    from apps.core.pdf import render_pdf
+    from apps.sales.invoice_print import context
+
+    return render_pdf("sales/invoice.html", context(invoice), language=language)
+
+
+@transaction.atomic
+def send_invoice(invoice, *, by: Membership) -> dict:
+    """Send an issued invoice: its PDF to the customer's Telegram when they started the bot
+    (their username is on the customer card), else a link for the owner to pass on (valid 7
+    days). Returns {"delivered": "telegram"} or {"delivered": "link", "url": …}."""
+    from django.core.files.base import ContentFile
+
+    from apps.accounts.models import User
+    from apps.core.files import MAX_TTL, signed_url
+    from apps.sales.models import Invoice
+
+    _need_person(by)
+    invoice = _lock_invoice(invoice)
+    if invoice.status in (Invoice.Status.DRAFT, Invoice.Status.VOID):
+        raise DomainError(_("Issue the invoice before sending it."))
+    company = invoice.company
+    data = invoice_pdf(invoice, language=company.default_language)
+    invoice.pdf.save(f"{invoice.number or invoice.pk}.pdf", ContentFile(data), save=False)
+    invoice.sent_at = timezone.now()
+    invoice.save(update_fields=["pdf", "sent_at", "updated_at"])
+    username = (invoice.counterparty.telegram_username or "").strip().lstrip("@")
+    person = (
+        User.objects.filter(telegram_username__iexact=username, telegram_id__isnull=False).first()
+        if username
+        else None
+    )
+    if person is not None:
+        path, chat, name = invoice.pdf.name, person.telegram_id, f"{invoice.number}.pdf"
+        caption = _("Invoice %(number)s from %(company)s") % {
+            "number": invoice.number,
+            "company": company.name,
+        }
+
+        def deliver():
+            from apps.notifications.telegram import send_document
+
+            send_document("employee", chat, path, storage="private", caption=caption, filename=name)
+
+        transaction.on_commit(deliver)
+        result = {"delivered": "telegram"}
+    else:
+        url = signed_url(
+            invoice.pdf,
+            user=by.user,
+            company_id=company.pk,
+            check=f"sales.invoice_pdf:{invoice.pk}",
+            ttl=MAX_TTL,
+            filename=f"{invoice.number}.pdf",
+        )
+        result = {"delivered": "link", "url": url}
+    _record(SalesAction.INVOICE_SENT, company, by, invoice, delivered=result["delivered"])
+    _bump(company.pk, INVOICE_PULSE)
+    return result

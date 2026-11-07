@@ -265,10 +265,11 @@ def test_settings_patch_is_audited(shop, owner_api):
     assert response.json()["business_day_ends_at"] == "05:00"
     assert SalesSettings.objects.get(company=shop.company).blind_cash_count is False
     assert AuditLog.objects.filter(action="sales.settings_changed").exists()
+    # Invoices mode came with the invoices (J2): a company that sells by invoice may pick it.
+    invoices = client.patch(url(shop.company, "settings/"), {"mode": "invoices"}, format="json")
+    assert invoices.status_code == 200 and invoices.json()["mode"] == "invoices"
     assert (
-        client.patch(
-            url(shop.company, "settings/"), {"mode": "invoices"}, format="json"
-        ).status_code
+        client.patch(url(shop.company, "settings/"), {"mode": "barter"}, format="json").status_code
         == 400
     )
 

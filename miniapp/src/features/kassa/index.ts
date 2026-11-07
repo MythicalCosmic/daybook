@@ -25,7 +25,7 @@ function useShiftStatus(_: SlotProps) {
   return { value: kassa.data?.shift?.code };
 }
 
-const sheet = <T extends "PayoutSheet" | "HandoverSheet" | "SafeSheet" | "SaleSheet">(name: T) =>
+const sheet = <T extends "PayoutSheet" | "HandoverSheet" | "SafeSheet" | "SaleSheet" | "NasiyaSheet">(name: T) =>
   tillSheet(lazy(() => import("./sheets").then((module) => ({ default: module[name] as ComponentType<SheetProps> }))));
 
 export default defineFeature({
@@ -46,6 +46,7 @@ export default defineFeature({
     handover: sheet("HandoverSheet"),
     safe: sheet("SafeSheet"),
     sale: sheet("SaleSheet"),
+    nasiya: sheet("NasiyaSheet"),
   },
   homeHero: [{ id: "till", component: KassaHero, order: 20, visible: runsTill }],
   homeCards: [{ id: "received", component: ReceivedCards, order: 10 }],

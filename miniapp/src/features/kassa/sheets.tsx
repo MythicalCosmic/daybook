@@ -1,5 +1,5 @@
-/** The quick sheets over Kassa: payout, handover, the safe, and a single receipt. */
-import { ArchiveRestore, ArrowRightLeft, Check, HandCoins, ReceiptText, Undo2, Vault } from "lucide-react";
+/** The quick sheets over Kassa: payout, handover, the safe, a single receipt and nasiya. */
+import { ArchiveRestore, ArrowRightLeft, Check, HandCoins, NotebookPen, ReceiptText, Undo2, UserPlus, Vault } from "lucide-react";
 import { useState } from "react";
 
 import { useI18n } from "../../i18n";
@@ -9,9 +9,9 @@ import { amountFromTyping, isZero } from "../../lib/money";
 import { useMember } from "../../state/session";
 import { useToast } from "../../state/toast";
 import { haptic } from "../../telegram";
-import { Avatar, Button, ChipGroup, cx, Field, Input, MoneyInput, NumberPad, PhotoInput, ScreenSkeleton, Segmented, SheetTitle, SlideToConfirm, type SlideState } from "../../ui";
+import { Avatar, Button, ChipGroup, cx, Field, Input, ListCard, ListRow, MoneyInput, NumberPad, PhotoInput, ScreenSkeleton, Segmented, SheetTitle, SlideToConfirm, type SlideState } from "../../ui";
 import type { SheetProps } from "../registry";
-import { tillMethods, useKassa, useMovement, useSale, useVoidSale, type Kassa, type ShiftDetail } from "./api";
+import { tillMethods, useCredit, useCustomerLookup, useKassa, useMovement, useSale, useVoidSale, type CustomerHit, type Kassa, type ShiftDetail } from "./api";
 import { useKassaT, useMoney } from "./lib";
 import { beforeData, NoShift } from "./parts";
 
@@ -350,3 +350,149 @@ export const PayoutSheet = withShift(PayoutBody);
 export const HandoverSheet = withShift(HandoverBody);
 export const SafeSheet = withShift(SafeBody);
 export const SaleSheet = withShift(SaleBody);
+
+/**
+ * Nasiya at the till (PLAN-OWNER §9.3, J): goods given on credit to a regular, or the customer
+ * paying it back. The customer is found by phone (the whole number or its last digits) or name;
+ * a credit sale may add a new customer from the till. What they owe, and may still take, shows
+ * before the amount.
+ */
+const NasiyaBody: Body = ({ kassa, shift, close, params }) => {
+  const t = useKassaT();
+  const member = useMember();
+  const money = useMoney(kassa.settings.currency);
+  const done = useDone();
+  const credit = useCredit(member.companyId);
+  const [kind, setKind] = useState<"sale" | "payment">(params?.kind === "payment" ? "payment" : "sale");
+  const [text, setText] = useState("");
+  const [picked, setPicked] = useState<CustomerHit | null>(null);
+  const [fresh, setFresh] = useState<{ name: string; phone: string } | null>(null);
+  const [amount, setAmount] = useState("");
+  const methods = tillMethods(kassa.methods);
+  const [method, setMethod] = useState<string | null>(methods.find((row) => row.kind === "cash")?.id.toString() ?? methods[0]?.id.toString() ?? null);
+  const [note, setNote] = useState("");
+  const lookup = useCustomerLookup(member.companyId, picked || fresh ? "" : text);
+  useDraftGuard(Boolean(amount || picked || fresh || note.trim()));
+  const value = amountFromTyping(amount);
+  const chosen = Boolean(picked || (fresh && fresh.name.trim() && fresh.phone.replace(/\D/g, "").length >= 9));
+  const valid = Boolean(chosen && value && !isZero(value) && (kind === "sale" || method));
+
+  const submit = () => {
+    if (!value || credit.isPending) return;
+    credit.mutate(
+      {
+        kind,
+        customer_id: picked?.id ?? null,
+        new_customer: picked ? null : fresh ? { name: fresh.name.trim(), phone: fresh.phone.trim() } : null,
+        amount: value,
+        method_id: kind === "payment" && method ? Number(method) : null,
+        note: note.trim(),
+      },
+      {
+        onSuccess: (saved) =>
+          done.ok(t(kind === "sale" ? "nasiya.saleDone" : "nasiya.paymentDone", { name: saved.customer.name, owed: money(saved.owed) }), close),
+        onError: done.fail,
+      },
+    );
+  };
+
+  const digits = text.replace(/\D/g, "");
+  const results = lookup.data ?? [];
+  return (
+    <>
+      <SheetTitle kicker={`${shift.register.name} · ${shift.code}`}>{t("nasiya.title")}</SheetTitle>
+      <Segmented
+        size="small"
+        fit
+        value={kind}
+        onChange={(next) => {
+          setKind(next);
+          if (next === "payment") setFresh(null);
+        }}
+        label={t("nasiya.title")}
+        options={[
+          { value: "sale", label: t("nasiya.sale") },
+          { value: "payment", label: t("nasiya.payment") },
+        ]}
+      />
+      {!picked && !fresh && (
+        <>
+          <Field label={t("nasiya.find")} hint={t("nasiya.findHint")}>
+            <Input value={text} onChange={(event) => setText(event.target.value)} inputMode="search" placeholder={t("nasiya.findPlaceholder")} autoFocus maxLength={64} />
+          </Field>
+          {lookup.isFetching && !results.length && <p className="kassa-help">{t("nasiya.searching")}</p>}
+          {results.length > 0 && (
+            <ListCard>
+              {results.map((row) => (
+                <ListRow
+                  key={row.id}
+                  icon={<Avatar name={row.name} size="sm" />}
+                  title={row.name}
+                  subtitle={<span className="num">{row.phone || "—"}</span>}
+                  value={<span className={cx("num", Number(row.owed) > 0 && "kassa-owed")}>{Number(row.owed) > 0 ? t("nasiya.owes", { amount: money(row.owed) }) : t("nasiya.owesNothing")}</span>}
+                  onClick={() => {
+                    haptic.select();
+                    setPicked(row);
+                  }}
+                />
+              ))}
+            </ListCard>
+          )}
+          {lookup.isSuccess && !results.length && <p className="kassa-help">{t("nasiya.notFound")}</p>}
+          {kind === "sale" && (
+            <Button variant="ghost" icon={UserPlus} onClick={() => setFresh({ name: digits.length >= 4 ? "" : text.trim(), phone: digits.length >= 9 ? text.trim() : "" })}>
+              {t("nasiya.newCustomer")}
+            </Button>
+          )}
+        </>
+      )}
+      {picked && (
+        <div className="kassa-customer">
+          <Avatar name={picked.name} size="md" />
+          <span className="kassa-customer-text">
+            <span className="kassa-customer-name">{picked.name}</span>
+            <span className="kassa-customer-owed num">
+              {Number(picked.owed) > 0 ? t("nasiya.owes", { amount: money(picked.owed) }) : t("nasiya.owesNothing")}
+              {kind === "sale" && picked.can_take !== null ? ` · ${t("nasiya.canTake", { amount: money(picked.can_take) })}` : ""}
+            </span>
+            {picked.credit_blocked && kind === "sale" && <span className="kassa-customer-warn">{t("nasiya.blocked")}</span>}
+          </span>
+          <button type="button" className="btn btn-ghost" onClick={() => setPicked(null)}>
+            {t("nasiya.change")}
+          </button>
+        </div>
+      )}
+      {fresh && (
+        <>
+          <Field label={t("nasiya.name")}>
+            <Input value={fresh.name} onChange={(event) => setFresh({ ...fresh, name: event.target.value })} maxLength={200} autoFocus />
+          </Field>
+          <Field label={t("nasiya.phone")} hint={t("nasiya.phoneHint")}>
+            <Input value={fresh.phone} onChange={(event) => setFresh({ ...fresh, phone: event.target.value })} inputMode="tel" maxLength={20} num />
+          </Field>
+          <Button variant="ghost" onClick={() => setFresh(null)}>
+            {t("nasiya.back")}
+          </Button>
+        </>
+      )}
+      {chosen && (
+        <>
+          {kind === "payment" && methods.length > 1 && (
+            <div className="kassa-keep">
+              <ChipGroup scroll value={method} onChange={setMethod} options={methods.map((row) => ({ value: String(row.id), label: row.name }))} label={t("nasiya.method")} />
+            </div>
+          )}
+          <NumberPad value={amount} onChange={setAmount} currency={kassa.settings.currency} label={t(kind === "sale" ? "nasiya.saleAmount" : "nasiya.paymentAmount")} />
+          <Field label={t("nasiya.note")} optional>
+            <Input value={note} onChange={(event) => setNote(event.target.value)} placeholder={t("nasiya.notePlaceholder")} maxLength={300} />
+          </Field>
+          <Button variant="primary" size="lg" block icon={kind === "sale" ? NotebookPen : HandCoins} disabled={!valid} loading={credit.isPending} onClick={submit}>
+            {valid && value ? t(kind === "sale" ? "nasiya.saleSubmit" : "nasiya.paymentSubmit", { amount: money(value) }) : t("nasiya.title")}
+          </Button>
+        </>
+      )}
+    </>
+  );
+};
+
+export const NasiyaSheet = withShift(NasiyaBody);

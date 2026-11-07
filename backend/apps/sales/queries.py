@@ -21,7 +21,7 @@ from django.db.models import F, OuterRef, Q, QuerySet, Subquery, Sum, Value
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 from django.utils.translation import gettext as _
-from django.utils.translation import pgettext
+from django.utils.translation import ngettext, pgettext
 
 from apps.companies.models import Branch
 from apps.console import contracts
@@ -42,6 +42,7 @@ from apps.sales.models import (
     PaymentMethod,
     Register,
     Sale,
+    SaleLine,
     SalesTarget,
     ShiftPayment,
 )
@@ -549,9 +550,9 @@ def _hours(company, start, end, *, branch_ids, by_weekday: bool) -> tuple[list[d
     cells: dict[tuple[int, int], dict] = defaultdict(lambda: {"net": ZERO, "receipts": Decimal(0)})
     estimated = False
     sales = restrict(
-        Sale.objects.for_company(company).filter(
-            business_day__range=(start, end), voided_at__isnull=True
-        ),
+        Sale.objects.money()
+        .for_company(company)
+        .filter(business_day__range=(start, end), voided_at__isnull=True),
         branch_ids,
     )
     with_receipts = set(sales.exclude(shift__isnull=True).values_list("shift_id", flat=True))
@@ -694,7 +695,7 @@ def cashier_scorecard(
 
 def _opened_late(shift: CashShift, company, grace_minutes: int) -> bool:
     opens = shift.branch.opens_at
-    if opens is None:
+    if opens is None or shift.branch.open_24h:
         return False
     at = local(company, shift.opened_at)
     if at.date() != shift.business_day:
@@ -716,7 +717,7 @@ def _today_net(company, branch_ids: list[int] | None, day: date) -> dict[int, di
         found[shift.branch_id]["net"] += shift.net
         found[shift.branch_id]["receipts"] += shift.receipts
     sales = restrict(
-        Sale.objects.for_company(company).filter(business_day=day, voided_at__isnull=True),
+        Sale.objects.money().for_company(company).filter(business_day=day, voided_at__isnull=True),
         branch_ids,
     ).exclude(shift__status__in=CLOSED_STATUSES)
     for sale in sales.only("branch_id", "total", "kind"):
@@ -808,7 +809,7 @@ def today(company, now: datetime, *, branch_ids: list[int] | None) -> list[dict]
         status = branch_status(branch, at, holiday=holiday, card=card)
         tills = cash_rows[branch.pk]["tills"]
         alerts = []
-        if status == "not_opened":
+        if status == "not_opened" and not branch.open_24h:
             alerts.append({"kind": "not_opened", "severity": "critical"})
         for shift in differences[branch.pk]:
             alerts.append(
@@ -843,6 +844,7 @@ def today(company, now: datetime, *, branch_ids: list[int] | None) -> list[dict]
                 "name": branch.name,
                 "code": branch.code,
                 "status": status,
+                "open_24h": branch.open_24h,
                 "opens_at": branch.opens_at.strftime("%H:%M") if branch.opens_at else None,
                 "closes_at": branch.closes_at.strftime("%H:%M") if branch.closes_at else None,
                 "opened_at": opened_at,
@@ -1559,14 +1561,692 @@ def _param_day(value) -> date | None:
         return None
 
 
+# Sale lines (§14.7) ---------------------------------------------------------------------
+
+
+def line_facts(company, start: date, end: date, *, branch_ids: list[int] | None) -> QuerySet:
+    """Every matched sale line of `[start, end]` (business days), for J3's analytics and N:
+    each with its batch, cost, cashier, receipt, branch and business day (`sale__…`). Refund
+    lines are on refund receipts (`sale__kind`); void receipts are left out. A line that took
+    stock from two batches is two rows with the same `sale_id` and `line_number`."""
+    rows = SaleLine.objects.filter(
+        sale__company=company,
+        sale__business_day__range=(start, end),
+        sale__voided_at__isnull=True,
+        status=SaleLine.Status.MATCHED,
+    ).select_related("sale__branch", "sale__cashier", "sale__pos_cashier", "product", "batch")
+    if branch_ids is not None:
+        rows = rows.filter(sale__branch_id__in=branch_ids)
+    return rows.order_by("sale__sold_at", "sale_id", "line_number", "pk")
+
+
+def cap_breaches(company, start: date, end: date, *, branch_ids: list[int] | None) -> list[dict]:
+    """Prescription lines sold above their legal price in `[start, end]`: the cap (per pack)
+    is the batch's cost plus the legal markup, never above the reference price
+    (`inventory.queries.price_cap`), as it stood when the line was read."""
+    from apps.sales.lines import pack_price
+
+    rows = (
+        line_facts(company, start, end, branch_ids=branch_ids)
+        .filter(over_cap=True, sale__kind=Sale.Kind.SALE)
+        .order_by("-sale__business_day", "sale__branch_id", "sale__sold_at", "pk")
+    )
+    found = []
+    for line in rows:
+        price = pack_price(line)
+        sale = line.sale
+        found.append(
+            {
+                "id": line.pk,
+                "sale_id": sale.pk,
+                "receipt": sale.number,
+                "day": sale.business_day.isoformat(),
+                "sold_at": local(company, sale.sold_at).isoformat(),
+                "branch": {"id": sale.branch_id, "name": sale.branch.name},
+                "product": {"id": line.product_id, "name": line.product.name},
+                "series": line.batch.series if line.batch_id else line.series,
+                "quantity": str(line.quantity),
+                "parts_per_pack": line.parts_per_pack,
+                "pack_price": m(price),
+                "cap": m(line.cap),
+                "over_by": m(price - line.cap),
+                "total": m(line.total),
+                "cashier": person(sale.cashier),
+            }
+        )
+    return found
+
+
+LINE_FILTERS = ("from", "to", "branch", "status", "rx", "cap", "q", "product", "cashier", "import")
+
+
+def lines_list(company, filters: dict, *, branch_ids: list[int] | None) -> QuerySet:
+    """The Lines page: every line (matched, waiting or skipped) with its receipt, newest
+    first. Filters: from/to (business days), branch (ids), status, rx (prescription items),
+    cap (sold above the legal price), q (name, code or receipt), product, cashier, import."""
+    rows = SaleLine.objects.filter(
+        sale__company=company, sale__voided_at__isnull=True
+    ).select_related("sale__branch", "sale__cashier", "sale__pos_cashier", "product", "batch")
+    if branch_ids is not None:
+        rows = rows.filter(sale__branch_id__in=branch_ids)
+    if start := filters.get("from"):
+        rows = rows.filter(sale__business_day__gte=start)
+    if end := filters.get("to"):
+        rows = rows.filter(sale__business_day__lte=end)
+    if branches := filters.get("branch"):
+        rows = rows.filter(sale__branch_id__in=branches)
+    if (status := filters.get("status")) in SaleLine.Status.values:
+        rows = rows.filter(status=status)
+    if filters.get("rx"):
+        rows = rows.filter(product__rx_required=True)
+    if filters.get("cap"):
+        rows = rows.filter(over_cap=True, sale__kind=Sale.Kind.SALE)
+    if product := filters.get("product"):
+        rows = rows.filter(product_id=product)
+    if cashier := filters.get("cashier"):
+        rows = rows.filter(sale__cashier_id=cashier)
+    if import_id := filters.get("import"):
+        rows = rows.filter(sale__sales_import_id=import_id)
+    if q := (filters.get("q") or "").strip():
+        rows = rows.filter(
+            Q(name__icontains=q)
+            | Q(code=q)
+            | Q(sale__number=q)
+            | Q(product__name__icontains=q)
+            | Q(product__inn__icontains=q)
+        )
+    return rows.order_by("-sale__sold_at", "-sale_id", "line_number", "pk")
+
+
+def unmatched_count(member: Membership) -> int:
+    """Lines waiting for their code to be matched, in the member's branches."""
+    from apps.sales.lines import waiting_count
+
+    if get_settings(member.company).sales_lines != "import":
+        return 0
+    return waiting_count(member.company, branch_ids=scope.branch_ids(member))
+
+
+def unmatched_items(member: Membership, limit: int) -> list[QueueItem]:
+    """Needs you: one item per waiting code (a code sold forty times is one thing to do)."""
+    from apps.sales.lines import codes
+
+    if get_settings(member.company).sales_lines != "import":
+        return []
+    company = member.company
+    found = []
+    for row in codes(company, branch_ids=scope.branch_ids(member), limit=limit):
+        found.append(
+            QueueItem(
+                kind="sales.import_unmatched",
+                id=row["code"],
+                title=_("Match %(code)s · %(name)s") % {"code": row["code"], "name": row["name"]},
+                subtitle=ngettext(
+                    "%(count)s line waits for it", "%(count)s lines wait for it", row["lines"]
+                )
+                % {"count": row["lines"]},
+                created_at=row["last_sold_at"],
+                url=f"/c/{company.pk}/sales/import?tab=match&code={row['code']}",
+                actions=[],
+            )
+        )
+    return found
+
+
+def lines_told(company) -> bool:
+    """The "Get started" step: someone answered where sale lines come from."""
+    settings = get_settings(company)
+    return settings.sales_lines_confirmed_at is not None
+
+
+def lines_brief_section(
+    company, day: date, now: datetime, branch_ids: list[int] | None
+) -> dict | None:
+    """Briefings and `/today`: yesterday's prescription lines above the legal price and the
+    branch-days whose import doesn't match the tills (a gap above 1 %)."""
+    from apps.sales.lines import day_check
+
+    if get_settings(company).sales_lines != "import":
+        return None
+    yesterday = day - timedelta(days=1)
+    breaches = cap_breaches(company, yesterday, yesterday, branch_ids=branch_ids)
+    branches = restrict(
+        Branch.objects.for_company(company).filter(is_active=True), branch_ids, field="id"
+    )
+    checks = [
+        row
+        for row in day_check(company, [(branch.pk, yesterday) for branch in branches])
+        if row["flagged"] and (row["imported"] != "0.00" or row["tills"] not in (None, "0.00"))
+    ]
+    if not breaches and not checks:
+        return None
+    lines = []
+    if breaches:
+        per_branch: dict[str, int] = defaultdict(int)
+        for row in breaches:
+            per_branch[row["branch"]["name"]] += 1
+        lines.append(
+            _("Sold above the legal price yesterday: %(count)s (%(branches)s)")
+            % {
+                "count": len(breaches),
+                "branches": ", ".join(f"{name} {n}" for name, n in sorted(per_branch.items())),
+            }
+        )
+    for row in checks:
+        if row["coverage"] is not None:
+            lines.append(
+                _("The import covers %(percent)s %% of yesterday's tills at %(branch)s")
+                % {"percent": row["coverage"].removesuffix(".0"), "branch": row["branch"]["name"]}
+            )
+        else:
+            lines.append(
+                _("%(branch)s: sale lines imported for yesterday, but the tills have no totals")
+                % {"branch": row["branch"]["name"]}
+            )
+    return {
+        "day": yesterday.isoformat(),
+        "cap_breaches": len(breaches),
+        "day_check": checks,
+        "lines": lines,
+    }
+
+
+def export_lines(member: Membership, params: dict):
+    """The `sales.lines` exporter: matched lines of the range; costs only for finance.view."""
+    from apps.members.permissions import Perm
+    from apps.sales.lines import pack_price
+
+    company = member.company
+    end = _param_day(params.get("to")) or business_day(company)
+    start = _param_day(params.get("from")) or end.replace(day=1)
+    costs = member.has_perm(Perm.FINANCE_VIEW)
+    for line in line_facts(company, start, end, branch_ids=_export_scope(member, params)).iterator(
+        chunk_size=500
+    ):
+        sale = line.sale
+        yield {
+            "day": sale.business_day,
+            "sold_at": sale.sold_at,
+            "branch": sale.branch.name,
+            "receipt": sale.number,
+            "kind": sale.get_kind_display(),
+            "cashier": str(sale.cashier)
+            if sale.cashier_id
+            else (sale.pos_cashier.code if sale.pos_cashier_id else ""),
+            "code": line.code,
+            "product": line.product.name if line.product_id else line.name,
+            "series": line.batch.series if line.batch_id else line.series,
+            "quantity": line.quantity,
+            "parts_per_pack": line.parts_per_pack,
+            "pack_price": pack_price(line),
+            "total": line.total,
+            "cost": line.cost if costs else None,
+            "cap": line.cap,
+            "over_cap": _("Yes") if line.over_cap else "",
+            "rx_number": line.rx_number,
+        }
+
+
 __all__ = [
     "branch_facts",
     "brief_section",
+    "cap_breaches",
     "cash_positions",
     "cashier_scorecard",
     "company_facts",
+    "line_facts",
     "shifts",
     "summary",
     "targets",
     "today",
 ]
+
+
+# Customers, nasiya and receivables (§11.4) ----------------------------------------------
+
+AGING = ("not_due", "d0_30", "d31_60", "d60_plus")
+
+
+def _customers(company):
+    from apps.finance.models import Counterparty
+
+    return Counterparty.objects.filter(
+        company=company, kind__in=(Counterparty.Kind.CUSTOMER, Counterparty.Kind.BOTH)
+    )
+
+
+def _receivables(company, *, branch_ids: list[int] | None):
+    """Open receivables of customers in the caller's branches (a debt without a branch only
+    for people who see every branch)."""
+    from apps.finance.models import Counterparty, Debt
+
+    rows = Debt.objects.filter(
+        company=company,
+        direction=Debt.Direction.RECEIVABLE,
+        status=Debt.Status.OPEN,
+        counterparty__kind__in=(Counterparty.Kind.CUSTOMER, Counterparty.Kind.BOTH),
+    )
+    return restrict(rows, branch_ids)
+
+
+def owed_by(company, customer_ids, *, branch_ids: list[int] | None) -> dict[int, Decimal]:
+    """What each customer still owes in the base currency."""
+    found: dict[int, Decimal] = defaultdict(lambda: ZERO)
+    for party_id, amount, paid in (
+        _receivables(company, branch_ids=branch_ids)
+        .filter(counterparty_id__in=list(customer_ids), currency=company.base_currency)
+        .values_list("counterparty_id", "amount", "paid")
+    ):
+        found[party_id] += amount - paid
+    return found
+
+
+def customers(company, filters: dict, *, branch_ids: list[int] | None):
+    """Customers (the party directory's customers), with q (name, phone, taxpayer number),
+    kind (person, clinic, pharmacy, company) and owing (only those who owe)."""
+    from apps.sales.services import CUSTOMER_KINDS
+
+    rows = _customers(company)
+    if q := (filters.get("q") or "").strip():
+        digits = "".join(ch for ch in q if ch.isdigit())
+        match = Q(name__icontains=q)
+        if len(digits) >= 4:
+            match |= Q(phone__contains=digits) | Q(tin__contains=digits)
+        rows = rows.filter(match)
+    if (kind := filters.get("kind")) in CUSTOMER_KINDS:
+        rows = (
+            rows.filter(tags__contains=[kind])
+            if kind != "person"
+            else rows.exclude(tags__overlap=[k for k in CUSTOMER_KINDS if k != "person"])
+        )
+    if filters.get("active") is not False:
+        rows = rows.filter(is_active=True)
+    if filters.get("owing"):
+        owing = _receivables(company, branch_ids=branch_ids).values("counterparty_id")
+        rows = rows.filter(pk__in=owing)
+    return rows.order_by("name", "pk")
+
+
+def customer_row(party, owed: Decimal, currency: str) -> dict:
+    from apps.sales.services import customer_kind
+
+    return {
+        "id": party.pk,
+        "name": party.name,
+        "kind": customer_kind(party),
+        "phone": party.phone,
+        "tin": party.tin,
+        "telegram_username": party.telegram_username,
+        "contact_person": party.contact_person,
+        "address": party.address,
+        "notes": party.notes,
+        "credit_limit": m(party.credit_limit) if party.credit_limit is not None else None,
+        "credit_blocked": party.credit_blocked,
+        "is_active": party.is_active,
+        "owed": m(owed),
+        "currency": currency,
+    }
+
+
+def _age(debt, today: date) -> str:
+    if debt.due_on is not None and debt.due_on >= today:
+        return "not_due"
+    days = (today - (debt.due_on or debt.issued_on)).days
+    if days <= 30:
+        return "d0_30"
+    if days <= 60:
+        return "d31_60"
+    return "d60_plus"
+
+
+def aging(company, today: date, *, branch_ids: list[int] | None) -> dict:
+    """Receivables aging: what customers owe by how long it is past due (or, without a due
+    date, since the sale): not due yet, 0 to 30, 31 to 60 and more than 60 days."""
+    currency = company.base_currency
+    totals = dict.fromkeys(AGING, ZERO)
+    per: dict[int, dict] = {}
+    names = {}
+    for debt in (
+        _receivables(company, branch_ids=branch_ids)
+        .filter(currency=currency)
+        .select_related("counterparty")
+    ):
+        bucket = _age(debt, today)
+        left = debt.amount - debt.paid
+        totals[bucket] += left
+        row = per.setdefault(debt.counterparty_id, dict.fromkeys(AGING, ZERO))
+        row[bucket] += left
+        names[debt.counterparty_id] = debt.counterparty
+    from apps.sales.services import customer_kind
+
+    rows = [
+        {
+            "id": party_id,
+            "name": names[party_id].name,
+            "kind": customer_kind(names[party_id]),
+            "total": m(sum(row.values(), ZERO)),
+            **{key: m(value) for key, value in row.items()},
+        }
+        for party_id, row in per.items()
+    ]
+    rows.sort(key=lambda row: (-Decimal(row["d60_plus"]), -Decimal(row["total"])))
+    return {
+        "currency": currency,
+        "today": today.isoformat(),
+        "totals": {key: m(value) for key, value in totals.items()},
+        "total": m(sum(totals.values(), ZERO)),
+        "customers": rows,
+    }
+
+
+def credit_row(entry) -> dict:
+    return {
+        "id": entry.pk,
+        "kind": entry.kind,
+        "customer": {"id": entry.customer_id, "name": entry.customer.name},
+        "amount": m(entry.amount),
+        "business_day": entry.business_day.isoformat(),
+        "created_at": entry.created_at.isoformat(),
+        "branch": {"id": entry.branch_id, "name": entry.branch.name},
+        "method": {"id": entry.method_id, "name": entry.method.name} if entry.method_id else None,
+        "note": entry.note,
+        "by": person(entry.created_by),
+        "voided_at": entry.voided_at.isoformat() if entry.voided_at else None,
+    }
+
+
+def customer_detail(party, today: date, *, branch_ids: list[int] | None) -> dict:
+    """A customer's page: what they owe and since when, their receivables (nasiya and
+    invoices), their nasiya at the tills and their receipts."""
+    from apps.finance.models import Debt
+    from apps.sales.models import CreditEntry
+
+    company = party.company
+    currency = company.base_currency
+    debts = restrict(
+        Debt.objects.filter(
+            company=company, counterparty=party, direction=Debt.Direction.RECEIVABLE
+        ).exclude(status=Debt.Status.CANCELLED),
+        branch_ids,
+    ).order_by("-issued_on", "-pk")[:100]
+    owed = owed_by(company, [party.pk], branch_ids=branch_ids)[party.pk]
+    buckets = dict.fromkeys(AGING, ZERO)
+    debt_rows = []
+    for debt in debts:
+        left = debt.amount - debt.paid
+        if debt.status == Debt.Status.OPEN and debt.currency == currency:
+            buckets[_age(debt, today)] += left
+        debt_rows.append(
+            {
+                "id": debt.pk,
+                "status": debt.status,
+                "source": debt.source_type,
+                "description": debt.description,
+                "amount": m(debt.amount),
+                "paid": m(debt.paid),
+                "left": m(left),
+                "currency": debt.currency,
+                "issued_on": debt.issued_on.isoformat(),
+                "due_on": debt.due_on.isoformat() if debt.due_on else None,
+                "overdue": bool(
+                    debt.status == Debt.Status.OPEN and debt.due_on and debt.due_on < today
+                ),
+            }
+        )
+    entries = restrict(
+        CreditEntry.objects.filter(company=company, customer=party).select_related(
+            "customer", "branch", "method", "created_by__user"
+        ),
+        branch_ids,
+    ).order_by("-created_at", "-pk")[:100]
+    sales = restrict(
+        Sale.objects.money().filter(company=company, counterparty=party, voided_at__isnull=True),
+        branch_ids,
+    ).order_by("-sold_at")[:50]
+    return {
+        **customer_row(party, owed, currency),
+        "aging": {key: m(value) for key, value in buckets.items()},
+        "debts": debt_rows,
+        "credit": [credit_row(entry) for entry in entries],
+        "purchases": [
+            {
+                "id": sale.pk,
+                "number": sale.number,
+                "kind": sale.kind,
+                "total": m(sale.total),
+                "sold_at": sale.sold_at.isoformat(),
+            }
+            for sale in sales
+        ],
+    }
+
+
+def lookup_customers(company, text: str, limit: int = 8) -> list[dict]:
+    """Kassa's nasiya lookup: by phone (the whole number or its last digits, at least four) or
+    by name, with what each customer owes and may still take."""
+    from apps.finance.services import normalize_phone
+
+    text = (text or "").strip()
+    digits = "".join(ch for ch in text if ch.isdigit())
+    rows = _customers(company).filter(is_active=True)
+    exact = None
+    if len(digits) >= 9:
+        try:
+            exact = normalize_phone(digits)
+        except Exception:  # a number that isn't Uzbek: fall back to the digits
+            exact = None
+    if exact:
+        found = list(rows.filter(phone=exact)[:limit]) or list(
+            rows.filter(phone__endswith=digits[-9:])[:limit]
+        )
+    elif len(digits) >= 4:
+        found = list(rows.filter(phone__endswith=digits).order_by("name")[:limit])
+    elif len(text) >= 2:
+        found = list(rows.filter(name__icontains=text).order_by("name")[:limit])
+    else:
+        found = []
+    balances = owed_by(company, [party.pk for party in found], branch_ids=None)
+    currency = company.base_currency
+    out = []
+    for party in found:
+        owed = balances[party.pk]
+        room = None
+        if party.credit_limit is not None:
+            room = max(party.credit_limit - owed, ZERO)
+        out.append(
+            {
+                "id": party.pk,
+                "name": party.name,
+                "phone": party.phone,
+                "owed": m(owed),
+                "credit_limit": m(party.credit_limit) if party.credit_limit is not None else None,
+                "can_take": m(room) if room is not None else None,
+                "credit_blocked": party.credit_blocked,
+                "currency": currency,
+            }
+        )
+    return out
+
+
+def search_customers(member: Membership, q: str, limit: int) -> list[SearchHit]:
+    """The command palette: customers by name or phone."""
+    rows = customers(member.company, {"q": q}, branch_ids=scope.branch_ids(member))[:limit]
+    return [
+        SearchHit(
+            type="sales.customer",
+            id=party.pk,
+            title=party.name,
+            subtitle=party.phone or "",
+            url=f"/c/{member.company_id}/sales/customers?customer={party.pk}",
+        )
+        for party in rows
+    ]
+
+
+# Invoices (§3.8) -----------------------------------------------------------------------------
+
+
+def invoices(company, filters: dict, *, branch_ids: list[int] | None) -> QuerySet:
+    """Invoices in the caller's branches (one without a branch only for people who see every
+    branch). Filters: status (list), customer, from/to (issue days), overdue, q (number or
+    customer)."""
+    from apps.sales.models import Invoice
+
+    rows = restrict(
+        Invoice.objects.for_company(company).select_related("counterparty", "branch", "debt"),
+        branch_ids,
+    )
+    if statuses := filters.get("status"):
+        rows = rows.filter(status__in=statuses)
+    if customer := filters.get("customer"):
+        rows = rows.filter(counterparty_id=customer)
+    if start := filters.get("from"):
+        rows = rows.filter(issued_on__gte=start)
+    if end := filters.get("to"):
+        rows = rows.filter(issued_on__lte=end)
+    if filters.get("overdue"):
+        today = filters.get("today") or business_day(company)
+        rows = rows.filter(
+            status__in=(Invoice.Status.ISSUED, Invoice.Status.PARTLY_PAID), due_on__lt=today
+        )
+    if q := (filters.get("q") or "").strip():
+        rows = rows.filter(Q(number__icontains=q) | Q(counterparty__name__icontains=q))
+    return rows.order_by("-created_at", "-pk")
+
+
+def invoice_row(invoice, today: date) -> dict:
+    from apps.sales.models import Invoice
+
+    debt = invoice.debt
+    paid = debt.paid if debt is not None else ZERO
+    open_ = invoice.status in (Invoice.Status.ISSUED, Invoice.Status.PARTLY_PAID)
+    return {
+        "id": invoice.pk,
+        "number": invoice.number,
+        "status": invoice.status,
+        "customer": {"id": invoice.counterparty_id, "name": invoice.counterparty.name},
+        "branch": {"id": invoice.branch_id, "name": invoice.branch.name}
+        if invoice.branch_id
+        else None,
+        "currency": invoice.currency,
+        "subtotal": m(invoice.subtotal),
+        "discount": m(invoice.discount),
+        "total": m(invoice.total),
+        "paid": m(paid),
+        "left": m(invoice.total - paid if open_ else ZERO),
+        "issued_on": invoice.issued_on.isoformat() if invoice.issued_on else None,
+        "due_on": invoice.due_on.isoformat() if invoice.due_on else None,
+        "overdue": bool(open_ and invoice.due_on and invoice.due_on < today),
+        "sent_at": invoice.sent_at.isoformat() if invoice.sent_at else None,
+        "e_invoice_ref": invoice.e_invoice_ref,
+        "created_at": invoice.created_at.isoformat(),
+    }
+
+
+def invoice_detail(invoice, today: date, *, costs: bool) -> dict:
+    """An invoice with its lines (one row per batch once issued), its warnings and payments.
+    Batch costs only for finance.view."""
+    from apps.finance.models import LIVE_STATUSES, Transaction
+
+    rows = []
+    for line in invoice.lines.select_related("product", "batch").order_by("line_number", "pk"):
+        row = {
+            "id": line.pk,
+            "line_number": line.line_number,
+            "product": {
+                "id": line.product_id,
+                "name": line.product.name,
+                "rx_required": line.product.rx_required,
+            }
+            if line.product_id
+            else None,
+            "name": line.name,
+            "quantity": str(line.quantity),
+            "unit": line.unit,
+            "price": m(line.price),
+            "discount": m(line.discount),
+            "total": m(line.total),
+            "vat_percent": str(line.vat_percent) if line.vat_percent is not None else None,
+            "mxik_code": line.mxik_code,
+            "series": line.series,
+            "expires_on": line.expires_on.isoformat() if line.expires_on else None,
+        }
+        if costs:
+            row["cost"] = m(line.cost) if line.cost is not None else None
+        rows.append(row)
+    payments = []
+    if invoice.debt_id:
+        for payment in (
+            Transaction.objects.filter(
+                debt_id=invoice.debt_id, kind="debt_payment", status__in=LIVE_STATUSES
+            )
+            .select_related("account")
+            .order_by("occurred_on", "pk")
+        ):
+            payments.append(
+                {
+                    "id": payment.pk,
+                    "paid_on": payment.occurred_on.isoformat(),
+                    "amount": m(abs(payment.amount)),
+                    "currency": payment.currency,
+                    "account": {"id": payment.account_id, "name": payment.account.name}
+                    if payment.account_id
+                    else None,
+                }
+            )
+    return {
+        **invoice_row(invoice, today),
+        "notes": invoice.notes,
+        "warnings": invoice.warnings,
+        "lines": rows,
+        "payments": payments,
+        "has_pdf": bool(invoice.pdf),
+        "void_reason": invoice.void_reason,
+    }
+
+
+def overdue_invoices(member: Membership) -> int:
+    """The sidebar badge: issued invoices past their due day, in the member's branches."""
+    company = member.company
+    return invoices(company, {"overdue": True}, branch_ids=scope.branch_ids(member)).count()
+
+
+def search_invoices(member: Membership, q: str, limit: int) -> list[SearchHit]:
+    rows = invoices(member.company, {"q": q}, branch_ids=scope.branch_ids(member))[:limit]
+    return [
+        SearchHit(
+            type="sales.invoice",
+            id=invoice.pk,
+            title=invoice.number or _("Draft invoice"),
+            subtitle=invoice.counterparty.name,
+            url=f"/c/{member.company_id}/sales/invoices?invoice={invoice.pk}",
+        )
+        for invoice in rows
+    ]
+
+
+def export_invoices(member: Membership, params: dict):
+    company = member.company
+    today = business_day(company)
+    filters = {
+        "from": _param_day(params.get("from")),
+        "to": _param_day(params.get("to")),
+        "overdue": params.get("overdue") in (True, "true", "1"),
+    }
+    for invoice in invoices(company, filters, branch_ids=_export_scope(member, params)).iterator(
+        chunk_size=500
+    ):
+        row = invoice_row(invoice, today)
+        yield {
+            "number": invoice.number,
+            "status": invoice.get_status_display(),
+            "customer": invoice.counterparty.name,
+            "branch": invoice.branch.name if invoice.branch_id else "",
+            "issued_on": invoice.issued_on,
+            "due_on": invoice.due_on,
+            "currency": invoice.currency,
+            "total": invoice.total,
+            "paid": Decimal(row["paid"]),
+            "left": Decimal(row["left"]),
+            "overdue": _("Yes") if row["overdue"] else "",
+        }

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
  * Settings → Sales (plan §6.2, the `sales` panel): how sales are recorded (shift totals or single
- * receipts; invoices arrive with package J), when the business day ends, the cash tolerance, the
+ * receipts; invoices arrive with package J), where sale lines come from (§14.7: none, or imported
+ * from the cash-register program), when the business day ends, the cash tolerance, the
  * blind count and photo rules, and when owners hear about late openings, open tills, unconfirmed
  * handovers and big payouts. Saved together; the page warns before leaving unsaved changes.
  */
@@ -16,6 +17,8 @@ import PageSection from "@/components/PageSection.vue";
 import RadioCards from "@/components/RadioCards.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import StickyActionBar from "@/components/StickyActionBar.vue";
+import TextArea from "@/components/TextArea.vue";
+import TextInput from "@/components/TextInput.vue";
 import TimePicker from "@/components/TimePicker.vue";
 import ToggleSwitch from "@/components/ToggleSwitch.vue";
 import UiButton from "@/components/UiButton.vue";
@@ -44,6 +47,12 @@ const form = reactive<SalesSettings>({
   big_payout_alert: null,
   late_open_minutes: 10,
   close_alert_minutes: 60,
+  sales_lines: "none",
+  credit_days: 30,
+  invoice_prefix: "INV",
+  invoice_terms_days: 7,
+  invoice_footer: "",
+  rx_wholesale_max_markup_percent: "15.00",
 });
 const loaded = ref("");
 watch(
@@ -60,6 +69,13 @@ const modes = computed(() => [
   { value: "shift_totals" as const, label: t("sales.settings.mode.shift_totals"), description: t("sales.settings.mode.shift_totalsHint") },
   { value: "receipts" as const, label: t("sales.settings.mode.receipts"), description: t("sales.settings.mode.receiptsHint") },
   { value: "invoices" as const, label: t("sales.settings.mode.invoices"), description: t("sales.settings.mode.invoicesHint"), disabled: true },
+]);
+
+// Where sale lines come from (§14.7): typed with each receipt arrives in a later version.
+const lineSources = computed(() => [
+  { value: "none" as const, label: t("sales.settings.lines.none"), description: t("sales.settings.lines.noneHint") },
+  { value: "import" as const, label: t("sales.settings.lines.import"), description: t("sales.settings.lines.importHint") },
+  { value: "receipts" as const, label: t("sales.settings.lines.receipts"), description: t("sales.settings.lines.receiptsHint"), disabled: true },
 ]);
 
 const save = useSalesMutation((cid, input: Partial<SalesSettings>) => salesApi.saveSettings(cid, input));
@@ -92,6 +108,28 @@ async function submit(): Promise<void> {
               <MoneyInput v-model="form.cash_tolerance" :disabled="!canEdit" />
             </FormField>
           </div>
+        </div>
+      </PageSection>
+      <PageSection variant="card" :title="t('sales.settings.lines.title')" :description="t('sales.settings.lines.hint')">
+        <RadioCards v-model="form.sales_lines" :options="lineSources" :columns="3" :disabled="!canEdit" />
+      </PageSection>
+      <PageSection variant="card" :title="t('sales.settings.invoices.title')" :description="t('sales.settings.invoices.hint')">
+        <div class="grid gap-4 sm:grid-cols-2">
+          <FormField :label="t('sales.settings.invoices.prefix')" :hint="t('sales.settings.invoices.prefixHint')">
+            <TextInput v-model="form.invoice_prefix" :maxlength="8" :disabled="!canEdit" />
+          </FormField>
+          <FormField :label="t('sales.settings.invoices.terms')" :hint="t('sales.settings.invoices.termsHint')">
+            <NumberInput v-model="form.invoice_terms_days" :min="0" :max="365" :suffix="t('sales.settings.days')" :disabled="!canEdit" />
+          </FormField>
+          <FormField :label="t('sales.settings.invoices.creditDays')" :hint="t('sales.settings.invoices.creditDaysHint')">
+            <NumberInput v-model="form.credit_days" :min="1" :max="365" :suffix="t('sales.settings.days')" :disabled="!canEdit" />
+          </FormField>
+          <FormField :label="t('sales.settings.invoices.rxMarkup')" :hint="t('sales.settings.invoices.rxMarkupHint')">
+            <TextInput v-model="form.rx_wholesale_max_markup_percent" inputmode="decimal" :disabled="!canEdit" />
+          </FormField>
+          <FormField class="sm:col-span-2" :label="t('sales.settings.invoices.footer')" :hint="t('sales.settings.invoices.footerHint')" optional>
+            <TextArea v-model="form.invoice_footer" :rows="2" :maxlength="2000" :disabled="!canEdit" />
+          </FormField>
         </div>
       </PageSection>
       <PageSection variant="card" :title="t('sales.settings.control')" :description="t('sales.settings.controlHint')">
