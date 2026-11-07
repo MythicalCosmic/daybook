@@ -191,7 +191,21 @@ class CoverageBranchSerializer(serializers.Serializer):
         ref_name = "HrCoverageBranch"
 
 
+class PermitWarningSerializer(serializers.Serializer):
+    branch = BranchRefSerializer()
+    kind = serializers.CharField(help_text="controlled_licence")
+    problem = serializers.ChoiceField(["missing", "expired"])
+    valid_until = serializers.DateField(allow_null=True, help_text="When the last one ended.")
+
+    class Meta:
+        ref_name = "HrPermitWarning"
+
+
 class CoverageSerializer(serializers.Serializer):
+    permits = PermitWarningSerializer(
+        many=True,
+        help_text="Branches licensed for controlled substances without that licence in force.",
+    )
     state = serializers.ChoiceField(
         coverage.STATES,
         help_text="ok, or why nothing was checked: off (HR or the rule), setup (no pharmacist "
@@ -237,6 +251,18 @@ def gap_payload(gap) -> dict:
         "have": gap.have,
         "need": gap.need,
     }
+
+
+def permit_warning_payload(rows: list[dict]) -> list[dict]:
+    return [
+        {
+            "branch": branch_ref(row["branch"]),
+            "kind": row["kind"],
+            "problem": row["problem"],
+            "valid_until": row["valid_until"],
+        }
+        for row in rows
+    ]
 
 
 def coverage_payload(found, *, drafts: bool, reasons: bool) -> dict:

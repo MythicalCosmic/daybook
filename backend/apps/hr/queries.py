@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from django.db.models import F, QuerySet
+from django.db.models import F, Q, QuerySet
 from django.utils import timezone
 
 from apps.audit.models import AuditLog
@@ -509,6 +509,70 @@ def qualified_staff(company, *, branch_ids: list[int] | None, day: date) -> list
             }
         )
     return rows
+
+
+# Licences and permits (kept in apps.assets.Permit, read only here) -----------------------
+
+CONTROLLED_LICENCE = "controlled_licence"
+PERMIT_MISSING, PERMIT_EXPIRED = "missing", "expired"
+
+
+def permits(
+    company,
+    *,
+    branch_ids: list[int] | None,
+    kinds: Iterable[str] | None = None,
+    active: bool = True,
+    day: date | None = None,
+):
+    """The company's licences and permits (`apps.assets.models.Permit`, Money > Assets >
+    Licences) in scope, soonest to end first: the inspection pack's list (§14.16). `active`
+    keeps those in force on `day` (today): no end date, or not past it. A permit of the whole
+    company (no branch) is in the list only for the whole scope (§2.6)."""
+    from apps.assets.models import Permit
+
+    rows = Permit.objects.filter(company=company)
+    if branch_ids is not None:
+        rows = rows.filter(branch_id__in=list(branch_ids))
+    if kinds is not None:
+        rows = rows.filter(kind__in=list(kinds))
+    if active:
+        day = day or today(company)
+        rows = rows.filter(Q(valid_until__isnull=True) | Q(valid_until__gte=day))
+    return rows.select_related("branch").order_by(
+        F("valid_until").asc(nulls_last=True), "name", "pk"
+    )
+
+
+def permit_warnings(company, *, branch_ids: list[int] | None, day: date) -> list[dict]:
+    """Branches marked licensed for controlled substances (`Branch.controlled_licence`) without
+    a controlled-substances licence in force on file, at the branch or for the whole company:
+    `problem` is missing (none on file) or expired (with the day the last one ended). Nothing
+    while the assets module, where licences are kept, is off."""
+    from apps.assets.models import Permit
+    from apps.companies.models import Branch
+
+    if not company.has_feature("assets"):
+        return []
+    branches = Branch.objects.filter(company=company, is_active=True, controlled_licence=True)
+    if branch_ids is not None:
+        branches = branches.filter(pk__in=list(branch_ids))
+    licences = list(Permit.objects.filter(company=company, kind=CONTROLLED_LICENCE))
+    found = []
+    for branch in branches.order_by("order", "name", "pk"):
+        own = [p for p in licences if p.branch_id in (branch.pk, None)]
+        if any(p.valid_until is None or p.valid_until >= day for p in own):
+            continue
+        ended = max((p.valid_until for p in own), default=None)
+        found.append(
+            {
+                "branch": branch,
+                "kind": CONTROLLED_LICENCE,
+                "problem": PERMIT_EXPIRED if ended else PERMIT_MISSING,
+                "valid_until": ended,
+            }
+        )
+    return found
 
 
 def _best(required: RequiredDocument, held: list[EmployeeDocument], day: date):

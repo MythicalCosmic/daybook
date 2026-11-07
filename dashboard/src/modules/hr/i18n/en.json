@@ -557,5 +557,9 @@
   "hr.document.levelHint": "A higher diploma counts wherever a college one is asked.",
   "hr.document.specialtyPlaceholder": "Pharmacy",
   "hr.required.anyLevel": "Any level",
-  "hr.required.levelHint": "A higher level counts too."
+  "hr.required.levelHint": "A higher level counts too.",
+  "hr.coverage.permit.title": "{branch} is licensed for controlled substances",
+  "hr.coverage.permit.missing": "No controlled substances licence in force is on file. Add it under Assets › Licences.",
+  "hr.coverage.permit.expired": "The controlled substances licence on file ended on {date}.",
+  "hr.coverage.permit.open": "Open licences"
 }

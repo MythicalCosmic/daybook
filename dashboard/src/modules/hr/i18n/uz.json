@@ -557,5 +557,9 @@
   "hr.document.levelHint": "Kollej so‘ralgan joyda oliy diplom ham hisobga olinadi.",
   "hr.document.specialtyPlaceholder": "Farmatsiya",
   "hr.required.anyLevel": "Istalgan daraja",
-  "hr.required.levelHint": "Yuqoriroq daraja ham hisobga olinadi."
+  "hr.required.levelHint": "Yuqoriroq daraja ham hisobga olinadi.",
+  "hr.coverage.permit.title": "{branch}: nazoratdagi moddalar litsenziyasi",
+  "hr.coverage.permit.missing": "Amaldagi nazoratdagi moddalar litsenziyasi kiritilmagan. Uni Asosiy vositalar › Litsenziyalar bo‘limiga qo‘shing.",
+  "hr.coverage.permit.expired": "Kiritilgan nazoratdagi moddalar litsenziyasi muddati tugagan: {date}.",
+  "hr.coverage.permit.open": "Litsenziyalarni ochish"
 }

@@ -103,6 +103,21 @@ const SEGMENT_CLASS = { covered: "bg-success", gap: "bg-danger", short: "bg-warn
       />
     </div>
 
+    <div v-if="data?.permits?.length" class="mb-4 flex flex-col gap-2" data-permit-warnings>
+      <InlineAlert
+        v-for="warning in data.permits"
+        :key="warning.branch.id"
+        tone="warning"
+        size="sm"
+        :title="t('hr.coverage.permit.title', { branch: warning.branch.name })"
+        :description="warning.problem === 'expired' && warning.valid_until ? t('hr.coverage.permit.expired', { date: fmt.day(warning.valid_until, 'medium') }) : t('hr.coverage.permit.missing')"
+      >
+        <template v-if="company.enabled('assets') && company.can(['assets.manage', 'finance.view'])" #actions>
+          <UiButton size="sm" :to="`/c/${company.currentId}/assets/permits`">{{ t("hr.coverage.permit.open") }}</UiButton>
+        </template>
+      </InlineAlert>
+    </div>
+
     <ErrorState v-if="query.isError.value" class="ui-card" :error="query.error.value" :retry="() => query.refetch()" />
     <div v-else-if="skeleton" class="flex flex-col gap-4">
       <SkeletonBlock v-for="n in 2" :key="n" height="220px" radius="12px" />

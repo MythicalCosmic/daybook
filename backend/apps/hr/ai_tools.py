@@ -176,6 +176,15 @@ def hr_coverage(ctx: ToolContext, args: HRCoverageInput) -> ToolResult:
                     "why": str(bot_messages.reason_text(row["reason"])),
                 }
             )
+        for row in queries.permit_warnings(company, branch_ids=branch_ids, day=day):
+            rows.append(
+                {
+                    "id": f"licence:{row['branch'].pk}",
+                    "type": f"controlled_licence_{row['problem']}",
+                    "branch": row["branch"].name,
+                    "ended_on": row["valid_until"].isoformat() if row["valid_until"] else None,
+                }
+            )
         if state != coverage.SETUP:
             for person in queries.qualified_staff(company, branch_ids=branch_ids, day=day):
                 if person["qualified"]:

@@ -149,16 +149,18 @@ RENEWED_KINDS = (
 
 
 def coverage_brief(company, day: date, now, branch_ids: list[int] | None) -> dict | None:
-    """Pharmacist coverage for the morning brief and /today: hours without a qualified
-    pharmacist in the next 7 days of the roster, a pharmacy without one right now, tills opened
-    by someone not qualified, and pharmacist certificates that end within 30 days."""
+    """Pharmacist coverage for the morning brief and /today: a branch licensed for controlled
+    substances without that licence in force on file, and (once the rule is set up) hours
+    without a qualified pharmacist in the next 7 days of the roster, a pharmacy without one
+    right now, tills opened by someone not qualified, and pharmacist certificates that end
+    within 30 days."""
+    lines = permit_lines(company, day, branch_ids)
     settings = conf.coverage_settings(company)
     if settings is None:
-        return None
+        return {"title": _("Pharmacist coverage"), "lines": lines} if lines else None
     names = {
         branch.pk: branch.name for branch in coverage.pharmacies(company, branch_ids=branch_ids)
     }
-    lines = []
     live = [gap for gap in coverage.live(company, now) if gap.branch_id in names]
     for gap in live:
         lines.append(
@@ -192,6 +194,25 @@ def coverage_brief(company, day: date, now, branch_ids: list[int] | None) -> dic
     if not lines:
         return None
     return {"title": _("Pharmacist coverage"), "lines": lines}
+
+
+def permit_lines(company, day: date, branch_ids: list[int] | None) -> list[str]:
+    lines = []
+    for row in queries.permit_warnings(company, branch_ids=branch_ids, day=day):
+        lines.append(permit_warning_text(row))
+    return lines
+
+
+def permit_warning_text(row: dict) -> str:
+    if row["problem"] == queries.PERMIT_EXPIRED:
+        # Translators: %(date)s is dd.mm.yyyy, %(branch)s a pharmacy's name.
+        return _("Controlled substances licence ended on %(date)s: %(branch)s") % {
+            "date": bot_messages.day(row["valid_until"]),
+            "branch": row["branch"].name,
+        }
+    return _("Controlled substances licence not on file: %(branch)s") % {
+        "branch": row["branch"].name
+    }
 
 
 def pharmacists_done(company) -> bool:

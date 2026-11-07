@@ -213,12 +213,15 @@ class CoverageView(ModuleOn, HRContext, OwnerAPIView):
         drafts = request.query_params.get("drafts") in ("true", "1") and self.membership.has_perm(
             Perm.ATTENDANCE_MANAGE
         )
-        found = coverage.plan(
-            self.company, start, end, branch_ids=self.requested_branches(), drafts=drafts
+        branches = self.requested_branches()
+        found = coverage.plan(self.company, start, end, branch_ids=branches, drafts=drafts)
+        payload = s.coverage_payload(
+            found, drafts=drafts, reasons=self.membership.has_perm(Perm.HR_VIEW)
         )
-        return Response(
-            s.coverage_payload(found, drafts=drafts, reasons=self.membership.has_perm(Perm.HR_VIEW))
+        payload["permits"] = s.permit_warning_payload(
+            queries.permit_warnings(self.company, branch_ids=branches, day=today)
         )
+        return Response(payload)
 
 
 class LiveCoverageView(ModuleOn, OwnerAPIView):

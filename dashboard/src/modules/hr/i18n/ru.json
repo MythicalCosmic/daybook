@@ -557,5 +557,9 @@
   "hr.document.levelHint": "Высшее подходит везде, где нужен колледж.",
   "hr.document.specialtyPlaceholder": "Фармация",
   "hr.required.anyLevel": "Любой уровень",
-  "hr.required.levelHint": "Более высокий уровень тоже подходит."
+  "hr.required.levelHint": "Более высокий уровень тоже подходит.",
+  "hr.coverage.permit.title": "{branch}: лицензия на подконтрольные вещества",
+  "hr.coverage.permit.missing": "Действующая лицензия на подконтрольные вещества не внесена. Добавьте её в Основные средства › Лицензии.",
+  "hr.coverage.permit.expired": "Внесённая лицензия на подконтрольные вещества закончилась {date}.",
+  "hr.coverage.permit.open": "Открыть лицензии"
 }

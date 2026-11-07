@@ -480,8 +480,19 @@ export interface CoverageBranch {
   gap_minutes: number;
 }
 
+/** A branch licensed for controlled substances without that licence in force on file (Assets › Licences). */
+export interface PermitWarning {
+  branch: BranchRef;
+  kind: "controlled_licence";
+  problem: "missing" | "expired";
+  /** When the last one ended (expired). */
+  valid_until: string | null;
+}
+
 /** `GET coverage/?from&to&branch&drafts`. */
 export interface Coverage {
+  /** Present from G's licence cross-check on. */
+  permits?: PermitWarning[];
   state: CoverageState;
   start: string;
   end: string;
