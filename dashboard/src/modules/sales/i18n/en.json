@@ -7,18 +7,15 @@
   "sales.nav.targets": "Targets",
   "sales.nav.entries": "Receipts",
   "sales.nav.setup": "Tills & methods",
-
   "sales.cmd.verify": "Verify closed shifts",
   "sales.cmd.movement": "Record a cash movement",
   "sales.cmd.target": "Set a sales target",
   "sales.keys.verify": "Verify this shift",
   "sales.keys.dispute": "Dispute this shift",
-
   "sales.overview.description": "Every till, every branch and every way customers pay.",
   "sales.overview.emptyTitle": "No sales in this period yet",
   "sales.overview.emptyBody": "Sales appear here as soon as cashiers close their first shifts in Kassa. Check the tills and payment methods first.",
   "sales.overview.emptyAction": "Set up tills",
-
   "sales.filter.branch": "Branch",
   "sales.filter.allBranches": "All branches",
   "sales.filter.cashier": "Cashier",
@@ -29,18 +26,15 @@
   "sales.filter.noDifference": "No difference",
   "sales.filter.mismatch": "AI found a mismatch",
   "sales.filter.kind": "Kind",
-
   "sales.status.open": "Open",
   "sales.status.closed": "To verify",
   "sales.status.verified": "Verified",
   "sales.status.disputed": "Disputed",
-
   "sales.level.none": "Exact",
   "sales.level.ok": "Within {amount}",
   "sales.level.short": "Short",
   "sales.level.over": "Over",
   "sales.level.unknown": "Not counted",
-
   "sales.today.title": "Right now",
   "sales.today.whereCash": "Where is the cash",
   "sales.today.openedBy": "Opened {time} by {name}",
@@ -62,7 +56,6 @@
   "sales.today.empty": "No branches to show",
   "sales.today.emptyBody": "Branches you can see appear here with their tills.",
   "sales.today.open": "Open {name}'s shifts",
-
   "sales.kpi.net": "Net sales",
   "sales.kpi.receipts": "Receipts",
   "sales.kpi.avgCheck": "Average check",
@@ -71,7 +64,6 @@
   "sales.kpi.difference": "Cash differences",
   "sales.kpi.differenceHint": "Counted minus expected, {n} shifts | Counted minus expected, {n} shift | Counted minus expected, {n} shifts",
   "sales.kpi.vsPrevious": "vs previous",
-
   "sales.chart.netByDay": "Net sales by day",
   "sales.chart.net": "Net sales",
   "sales.chart.previous": "Previous period",
@@ -87,7 +79,6 @@
   "sales.chart.hours": "When customers buy",
   "sales.chart.hoursSub": "Net sales by weekday and hour",
   "sales.chart.hoursEstimated": "Estimated from shift hours: single receipts give exact times",
-
   "sales.cashiers.title": "Cashiers",
   "sales.cashiers.description": "Who sells most, whose cash always matches, and who needs a closer look.",
   "sales.cashiers.top": "Top cashiers",
@@ -106,7 +97,6 @@
   "sales.cashiers.accuracyHint": "Shifts whose cash count was within the tolerance",
   "sales.cashiers.emptyTitle": "No cashier shifts yet",
   "sales.cashiers.emptyBody": "When cashiers close shifts in Kassa, their scorecard appears here.",
-
   "sales.col.shift": "Shift",
   "sales.col.day": "Business day",
   "sales.col.cashier": "Cashier",
@@ -131,7 +121,6 @@
   "sales.col.lateOpens": "Late opens",
   "sales.col.checks": "Checks",
   "sales.col.hours": "Avg. length",
-
   "sales.shifts.title": "Shifts",
   "sales.shifts.description": "Every cashier shift: totals from the Z-report, the blind cash count and the photos.",
   "sales.shifts.search": "Search CHL-1042 or a name",
@@ -142,7 +131,6 @@
   "sales.view.open": "Open now",
   "sales.view.disputed": "Disputed",
   "sales.view.all": "All",
-
   "sales.shift.net": "Net sales",
   "sales.shift.receipts": "{n} receipts | {n} receipt | {n} receipts",
   "sales.shift.expected": "Expected cash",
@@ -156,7 +144,6 @@
   "sales.shift.notClosed": "the shift is open",
   "sales.shift.notCounted": "not counted",
   "sales.shift.forcedShort": "Force-closed",
-
   "sales.drawer.loading": "Shift",
   "sales.drawer.tabs": "Shift details",
   "sales.drawer.tab.summary": "Summary",
@@ -179,7 +166,6 @@
   "sales.drawer.noMovements": "No cash left or entered the till during this shift.",
   "sales.drawer.timeline": "Timeline",
   "sales.drawer.verifiedBy": "Verified by {name}, {time}",
-
   "sales.photos.z": "Z-report",
   "sales.photos.zNumber": "No. {n}",
   "sales.photos.terminal": "Terminal slip",
@@ -194,25 +180,21 @@
   "sales.photos.cashTotal": "Cash",
   "sales.photos.cardTotal": "Cards and wallets",
   "sales.photos.noReading": "AI hasn't read these photos. It does when AI is switched on.",
-
   "sales.payments.sales": "Sales",
   "sales.payments.refunds": "Refunds",
   "sales.payments.net": "Net",
   "sales.payments.credit": "Nasiya",
   "sales.payments.fee": "fee {amount}",
-
   "sales.flow.float": "Opening float",
   "sales.flow.cashSales": "Cash sales",
   "sales.flow.cashRefunds": "Cash refunds",
   "sales.flow.expected": "Expected in the till",
-
   "sales.count.none": "No banknotes were counted one by one.",
   "sales.count.note": "Banknote",
   "sales.count.pieces": "Count",
   "sales.count.opening": "At opening",
   "sales.count.closing": "At closing",
   "sales.count.total": "Total",
-
   "sales.timeline.opened": "Shift opened",
   "sales.timeline.closed": "Shift closed",
   "sales.timeline.force_closed": "Force-closed",
@@ -222,12 +204,10 @@
   "sales.timeline.ai_reading": "Photos read by AI",
   "sales.timeline.handover_confirmed": "Handover received",
   "sales.timeline.handover_declined": "Handover not received",
-
   "sales.ledger.income": "Income",
   "sales.ledger.expense": "Expense",
   "sales.ledger.opening": "Opening balance",
   "sales.ledger.transfer": "Transfer",
-
   "sales.verify.action": "Verify",
   "sales.verify.title": "Verify {code}",
   "sales.verify.body": "Recount the till if you can. A recount decides the difference.",
@@ -237,7 +217,6 @@
   "sales.verify.note": "Note",
   "sales.verify.submit": "Verify shift",
   "sales.verify.done": "{code} verified",
-
   "sales.dispute.action": "Dispute",
   "sales.dispute.title": "Dispute {code}?",
   "sales.dispute.body": "{name} is told why and the shift waits until it is checked again.",
@@ -245,7 +224,6 @@
   "sales.dispute.placeholder": "The Z-report photo is blurry…",
   "sales.dispute.submit": "Dispute",
   "sales.dispute.done": "{code} disputed",
-
   "sales.correct.action": "Correct",
   "sales.correct.title": "Correct {code}",
   "sales.correct.body": "Fix the totals per payment method. The ledger follows: what changed is voided and booked again.",
@@ -258,7 +236,6 @@
   "sales.correct.reasonRequired": "Say why: it goes into the audit log.",
   "sales.correct.submit": "Save correction",
   "sales.correct.done": "{code} corrected",
-
   "sales.force.action": "Force close",
   "sales.force.title": "Force-close {code}?",
   "sales.force.body": "{name} left this till open. Close it for them.",
@@ -268,7 +245,6 @@
   "sales.force.countedHint": "Count it now, or leave empty: no difference is booked until someone counts.",
   "sales.force.submit": "Close the shift",
   "sales.force.done": "{code} closed",
-
   "sales.movement.title": "Record a cash movement",
   "sales.movement.body": "Cash leaving or entering a till. A handover moves only when its receiver confirms.",
   "sales.movement.kindLabel": "What happened",
@@ -306,7 +282,6 @@
   "sales.movement.submit": "Record",
   "sales.movement.recorded": "{amount} recorded",
   "sales.movement.sentHandover": "Handover of {amount} sent for confirmation",
-
   "sales.cash.title": "Cash",
   "sales.cash.description": "Where every so‘m is right now: tills, safes, in transit, with people and in the bank.",
   "sales.cash.record": "Record movement",
@@ -349,7 +324,6 @@
   "sales.cash.voidTitle": "Void this movement?",
   "sales.cash.voidBody": "{kind} of {amount}. Its ledger rows are voided and the shift's expected cash follows.",
   "sales.cash.voided": "Movement voided",
-
   "sales.targets.title": "Targets",
   "sales.targets.description": "Monthly goals for the company, each branch and each cashier, with daily pacing.",
   "sales.targets.prev": "Previous month",
@@ -384,7 +358,6 @@
   "sales.targets.removeTitle": "Remove this target?",
   "sales.targets.removeBody": "The month's sales stay; only the goal goes.",
   "sales.targets.removed": "Target removed",
-
   "sales.entries.title": "Receipts",
   "sales.entries.description": "Single receipts: recorded in Kassa during shifts, or entered here for orders made away from the till.",
   "sales.entries.new": "New receipt",
@@ -417,13 +390,11 @@
   "sales.entries.voidTitle": "Void this receipt?",
   "sales.entries.voidBody": "{amount}. Its ledger rows are voided.",
   "sales.entries.voided": "Receipt voided",
-
   "sales.setup.title": "Tills & payment methods",
   "sales.setup.description": "The tills each branch runs, how customers pay, and the rules Kassa follows.",
   "sales.setup.tills": "Tills",
   "sales.setup.methods": "Payment methods",
   "sales.setup.rules": "Rules",
-
   "sales.registers.panel": "Tills",
   "sales.registers.add": "Add till",
   "sales.registers.newTitle": "New till",
@@ -447,7 +418,6 @@
   "sales.registers.emptyTitle": "No tills yet",
   "sales.registers.emptyBody": "Add a till for each cash desk your branches run.",
   "sales.registers.footnote": "Differences up to {tolerance} count as exact. Change it in Rules.",
-
   "sales.methods.panel": "Payment methods",
   "sales.methods.hint": "In the order cashiers see them in Kassa.",
   "sales.methods.add": "Add method",
@@ -474,7 +444,6 @@
   "sales.methods.down": "Move down",
   "sales.methods.active": "Switched on",
   "sales.methods.saved": "Payment method saved",
-
   "sales.settings.panel": "Sales",
   "sales.settings.recording": "How sales are recorded",
   "sales.settings.recordingHint": "Kassa follows this in the employee app.",
@@ -509,7 +478,6 @@
   "sales.settings.minutes": "min",
   "sales.settings.hours": "h",
   "sales.settings.saved": "Sales rules saved",
-
   "sales.widget.today": "Sales today",
   "sales.widget.soFar": "From the shifts closed so far",
   "sales.widget.yesterday": "Sales yesterday",
@@ -518,10 +486,8 @@
   "sales.shift.movedOutHint": "sales added at close",
   "sales.shift.movedOutSub": "payouts, handovers, safe",
   "sales.flow.soFar": "Float minus cash out, before sales",
-
   "sales.nav.import": "Import",
   "sales.nav.lines": "Sale lines",
-
   "sales.import.title": "Import sale lines",
   "sales.import.description": "Sale lines from your cash-register program, for true stock, margins and the legal price check. The tills' totals stay your sales figures.",
   "sales.import.tab.files": "Files",
@@ -563,32 +529,31 @@
   "sales.import.cardLine": "{receipts} receipts · {matched} matched · {unmatched} to match",
   "sales.import.profilesHint": "One profile per cash-register program. Its column map is saved once and used for every file.",
   "sales.import.archived": "Archived",
-  "sales.import.mapped": "{n} column | {n} columns",
+  "sales.import.mapped": "{n} columns | {n} column | {n} columns",
   "sales.import.lastFile": "Last file {when}",
   "sales.import.failedTitle": "The file wasn't read",
   "sales.import.reading": "The file is being read. This page updates by itself.",
-  "sales.import.unmatchedTitle": "{n} line waits for a match | {n} lines wait for a match",
+  "sales.import.unmatchedTitle": "{n} lines wait for a match | {n} line waits for a match | {n} lines wait for a match",
   "sales.import.unmatchedBody": "The catalogue doesn't know these item codes yet. Match each code once: its lines take their stock then, and the code is remembered.",
   "sales.import.openMatch": "Open the match list",
-  "sales.import.breachesTitle": "{n} prescription line above the legal price | {n} prescription lines above the legal price",
+  "sales.import.breachesTitle": "{n} prescription lines above the legal price | {n} prescription line above the legal price | {n} prescription lines above the legal price",
   "sales.import.breachesBody": "A prescription medicine may not cost more than its batch cost plus the legal markup, nor more than its reference price. The tax app compares receipt prices with them.",
   "sales.import.openBreaches": "See the lines",
   "sales.import.dayCheck": "Day check",
   "sales.import.dayCheckHint": "What the files brought per pharmacy and day against the tills' totals. A gap above 1 % is marked.",
   "sales.import.noDays": "No receipts came in with this file.",
   "sales.import.noTills": "no shift totals",
-  "sales.import.flaggedHint": "{n} day doesn't match the tills: check that the file is complete and every shift is closed. | {n} days don't match the tills: check that the files are complete and every shift is closed.",
-  "sales.import.problems": "{n} thing to check | {n} things to check",
+  "sales.import.flaggedHint": "{n} days don't match the tills: check that the files are complete and every shift is closed. | {n} day doesn't match the tills: check that the file is complete and every shift is closed. | {n} days don't match the tills: check that the files are complete and every shift is closed.",
+  "sales.import.problems": "{n} things to check | {n} thing to check | {n} things to check",
   "sales.import.row": "Row {n}",
   "sales.import.openLines": "All lines of this file",
-
   "sales.match.waiting": "Waiting",
   "sales.match.skipped": "Not products",
   "sales.match.hint": "Match a code once: it is remembered for every next file.",
   "sales.match.emptyTitle": "Every code is matched",
   "sales.match.emptyBody": "Each line of the imported files found its medicine in the catalogue.",
   "sales.match.emptySkipped": "No codes set aside",
-  "sales.match.lines": "{n} line | {n} lines",
+  "sales.match.lines": "{n} lines | {n} line | {n} lines",
   "sales.match.last": "last {day}",
   "sales.match.skip": "Not a product",
   "sales.match.match": "Match",
@@ -596,12 +561,11 @@
   "sales.match.skipBody": "“{name}” stops waiting: it isn't goods the stock keeps (a bag, a service). You can still match it later.",
   "sales.match.skippedToast": "Set aside",
   "sales.match.dialogTitle": "Match {code}",
-  "sales.match.dialogBody": "“{name}” is on {n} line. Pick the medicine it is: the line takes its stock, and the code is remembered. | “{name}” is on {n} lines. Pick the medicine it is: the lines take their stock, and the code is remembered.",
+  "sales.match.dialogBody": "“{name}” is on {n} lines. Pick the medicine it is: the lines take their stock, and the code is remembered. | “{name}” is on {n} line. Pick the medicine it is: the line takes its stock, and the code is remembered. | “{name}” is on {n} lines. Pick the medicine it is: the lines take their stock, and the code is remembered.",
   "sales.match.product": "Medicine",
   "sales.match.search": "Name, INN or barcode",
   "sales.match.confirm": "Match the code",
-  "sales.match.done": "{n} line matched | {n} lines matched",
-
+  "sales.match.done": "{n} lines matched | {n} line matched | {n} lines matched",
   "sales.lines.title": "Sale lines",
   "sales.lines.description": "What was sold, item by item, from your cash-register program, with each prescription medicine checked against its legal price.",
   "sales.lines.offHint": "Sale lines come from imports. Turn them on in Settings → Sales.",
@@ -625,21 +589,19 @@
   "sales.lines.emptyBody": "Lines appear here once a file of your cash-register program is imported.",
   "sales.lines.rx": "Rx",
   "sales.lines.prescription": "prescription {n}",
-  "sales.lines.packs": "{n} pack | {n} packs",
-  "sales.lines.parts": "{n} part | {n} parts",
+  "sales.lines.packs": "{n} packs | {n} pack | {n} packs",
+  "sales.lines.parts": "{n} parts | {n} part | {n} parts",
   "sales.lines.noCost": "The cost arrives with the stock module's batches.",
   "sales.lines.overCap": "Above the cap of {cap}",
-
   "sales.pos.panel": "Cash-register cashiers",
   "sales.pos.description": "The names or codes your cash-register program puts on receipts. Link each to a person once: their imported receipts follow, earlier ones too.",
   "sales.pos.emptyTitle": "No cashier codes yet",
   "sales.pos.emptyBody": "They appear with the first imported file that names its cashiers.",
-  "sales.pos.receipts": "{n} receipt | {n} receipts",
+  "sales.pos.receipts": "{n} receipts | {n} receipt | {n} receipts",
   "sales.pos.last": "last {when}",
   "sales.pos.nobody": "Not linked",
   "sales.pos.saved": "{code} linked",
   "sales.pos.who": "Who {code} is",
-
   "sales.profile.newTitle": "New import profile",
   "sales.profile.description": "How to read one cash-register program's export. Saved once, used for every file.",
   "sales.profile.file": "The file",
@@ -689,7 +651,6 @@
   "sales.profile.field.series": "Series",
   "sales.profile.field.rx_number": "Prescription number",
   "sales.profile.field.branch": "Pharmacy",
-
   "sales.settings.lines.title": "Sale lines",
   "sales.settings.lines.hint": "Where the sale lines (what was sold, item by item) come from. With them stock, margins and the legal price check are exact; the tills' totals stay the sales figures.",
   "sales.settings.lines.none": "No sale lines",
@@ -698,7 +659,6 @@
   "sales.settings.lines.importHint": "Upload its export every day; the Import page and the match list appear.",
   "sales.settings.lines.receipts": "Typed with each receipt",
   "sales.settings.lines.receiptsHint": "For a pharmacy without software of its own. Arrives in a later version.",
-
   "sales.nav.customers": "Customers",
   "sales.nav.invoices": "Invoices",
   "sales.customers.title": "Customers",
@@ -787,7 +747,6 @@
   "sales.invoices.paidToast": "Payment recorded",
   "sales.invoices.emptyTitle": "No invoices yet",
   "sales.invoices.emptyBody": "Invoice clinics, other pharmacies and companies: a draft first, then issue it.",
-
   "sales.settings.days": "days",
   "sales.settings.invoices.title": "Invoices and nasiya",
   "sales.settings.invoices.hint": "How invoices are numbered and when they and nasiya are due.",

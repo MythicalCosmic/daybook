@@ -84,7 +84,9 @@ async function settle(): Promise<void> {
 const t = (key: string, named: Record<string, unknown> = {}, plural?: number): string => {
   const text = (en as Record<string, string>)[key] ?? key;
   const forms = text.split(" | ");
-  const chosen = forms.length > 1 && plural !== undefined ? forms[plural === 1 ? 0 : 1]! : forms[0]!;
+  // The app's rule for en (src/i18n): three forms are zero | one | other, two are one | other.
+  const index = plural === undefined ? 0 : forms.length === 3 ? (plural === 0 ? 0 : plural === 1 ? 1 : 2) : Math.abs(plural) === 1 ? 0 : 1;
+  const chosen = forms.length > 1 ? forms[index]! : forms[0]!;
   return chosen.replace(/\{(\w+)\}/g, (_, name: string) => String(named[name] ?? ""));
 };
 

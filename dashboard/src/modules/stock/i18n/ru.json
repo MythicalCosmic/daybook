@@ -16,10 +16,8 @@
   "stock.cmd.count": "Начать инвентаризацию",
   "stock.cmd.recall": "Зарегистрировать отозванную серию",
   "stock.settings.title": "Склад",
-
   "stock.qty.packs": "{n} упаковка | {n} упаковки | {n} упаковок",
   "stock.qty.parts": "{n} часть | {n} части | {n} частей",
-
   "stock.badge.rx": "Rx",
   "stock.badge.rxTitle": "По рецепту",
   "stock.badge.controlledTitle": "Подконтрольное вещество: ведётся журнал ПКУ",
@@ -32,7 +30,6 @@
   "stock.badge.eRx": "e-Rx",
   "stock.badge.eRxTitle": "В зонах электронного рецепта отпускается по электронному рецепту",
   "stock.badge.inactive": "Больше не продаётся",
-
   "stock.kind.medicine": "Лекарственный препарат",
   "stock.kind.device": "Медицинское изделие",
   "stock.kind.supplement": "БАД",
@@ -150,7 +147,6 @@
   "stock.rxStatus.invalid": "Неправильно выписанный рецепт",
   "stock.rxFlag.no_e_prescription": "Нет электронного рецепта",
   "stock.rxFlag.past_validity": "Срок действия истёк",
-
   "stock.col.name": "Наименование",
   "stock.col.inn": "МНН",
   "stock.col.pack": "Форма и дозировка",
@@ -175,7 +171,6 @@
   "stock.col.due": "Оплатить до",
   "stock.col.status": "Статус",
   "stock.col.route": "Откуда → куда",
-
   "stock.field.name": "Наименование",
   "stock.field.tradeName": "Торговое название",
   "stock.field.inn": "МНН",
@@ -223,7 +218,6 @@
   "stock.field.invoiceDate": "Дата накладной",
   "stock.field.dueOn": "Оплатить до",
   "stock.field.note": "Примечание",
-
   "stock.filter.search": "Название, МНН или штрихкод",
   "stock.filter.anyCategory": "Все категории",
   "stock.filter.anyKind": "Все виды",
@@ -237,17 +231,14 @@
   "stock.filter.inactive": "Показать не продающиеся",
   "stock.filter.low": "Ниже минимума",
   "stock.filter.negative": "Ниже нуля",
-
   "stock.picker.product": "Выберите препарат",
   "stock.picker.search": "Название, МНН или штрихкод",
   "stock.picker.none": "Ничего не найдено",
-
   "stock.products.description": "Ваш каталог с признаками рецептурности, контроля и хранения. Остатки и цены препаратов берутся из приходов.",
   "stock.products.import": "Импорт",
   "stock.products.new": "Новый препарат",
   "stock.products.emptyTitle": "Препаратов пока нет",
   "stock.products.emptyBody": "Импортируйте каталог из таблицы: названия, МНН, штрихкоды, признаки рецептурности и цены.",
-
   "stock.form.newTitle": "Новая позиция каталога",
   "stock.form.editTitle": "Изменить позицию",
   "stock.form.description": "Препарат называют по МНН, дозировке, форме и упаковке, например: Парацетамол 500 мг таблетки №20.",
@@ -276,7 +267,6 @@
   "stock.form.errParts": "В упаковке хотя бы одна часть.",
   "stock.form.saved": "Сохранено.",
   "stock.form.created": "Добавлено в каталог.",
-
   "stock.import.title": "Импорт препаратов",
   "stock.import.description": "XLSX или CSV со строкой заголовков. Строки сопоставляются с каталогом по штрихкоду, затем по артикулу; остальные добавляются.",
   "stock.import.stepUpload": "Файл",
@@ -327,7 +317,6 @@
   "stock.importField.registration_until": "регистрация до",
   "stock.importField.mxik_code": "ИКПУ",
   "stock.importField.vat_percent": "НДС",
-
   "stock.drawer.title": "Препарат",
   "stock.drawer.overview": "Обзор",
   "stock.drawer.batches": "Серии",
@@ -351,13 +340,11 @@
   "stock.drawer.packOf": "В упаковке: {n} ({label})",
   "stock.drawer.parts": "части",
   "stock.drawer.wholePacks": "Только целыми упаковками",
-
   "stock.batch.series": "Серия {series}",
   "stock.batch.until": "годен до {day}",
   "stock.batch.price": "Цена",
   "stock.batch.cap": "Предел",
   "stock.batch.cost": "Закупка",
-
   "stock.kpi.products": "Позиций в каталоге",
   "stock.kpi.low": "Ниже минимума",
   "stock.kpi.lowHint": "Позиции ниже минимума, заданного для аптеки",
@@ -365,7 +352,6 @@
   "stock.kpi.negativeHint": "Проданы до того, как внесён приход",
   "stock.kpi.valueCost": "Остаток по себестоимости",
   "stock.kpi.valueRetail": "Остаток в розничных ценах",
-
   "stock.levels.description": "Что есть в каждой аптеке, сколько из этого в продаже и ближайший срок годности. Строка открывает серии препарата.",
   "stock.levels.opening": "Начальные остатки",
   "stock.levels.estimate": "Пока строки продаж не приходят из кассовой программы, остаток меняется только приходами, перемещениями, списаниями и инвентаризациями: считайте его оценкой.",
@@ -380,7 +366,6 @@
   "stock.levels.max": "Максимум",
   "stock.levels.inParts": "В частях",
   "stock.levels.limitsSaved": "Сохранено.",
-
   "stock.opening.title": "Начальные остатки",
   "stock.opening.description": "Что стоит на полке сегодня, по сериям. Каждая запись добавляет серию; окно остаётся открытым для следующей.",
   "stock.opening.costHint": "Цена закупки упаковки с НДС.",
@@ -394,7 +379,6 @@
   "stock.opening.errExpiry": "Укажите срок годности.",
   "stock.opening.errQuantity": "Укажите, сколько стоит на полке.",
   "stock.opening.errCost": "Укажите цену закупки за упаковку.",
-
   "stock.expiry.description": "Что просрочено и у чего скоро истекает срок, с суммой. Выберите серии, чтобы переместить туда, где их быстрее продадут, уценить или списать.",
   "stock.expiry.within": "{n} дней",
   "stock.expiry.bucket.expired": "Просрочено",
@@ -417,7 +401,6 @@
   "stock.expiry.markdownBody": "Новая цена за упаковку. Рецептурный препарат остаётся не выше предельной цены.",
   "stock.expiry.newPrice": "Новая цена за упаковку",
   "stock.expiry.markedDown": "Уценена {n} серия. | Уценены {n} серии. | Уценено {n} серий.",
-
   "stock.receipts.description": "Приходы по накладным дистрибьюторов. Фармацевт заполняет черновик и отправляет на проведение; проведённый приход ставит товар на остаток и открывает долг поставщику.",
   "stock.receipts.new": "Новый приход",
   "stock.receipts.open": "Открытые",
@@ -427,7 +410,6 @@
   "stock.receipts.warningsN": "{n} предупреждение | {n} предупреждения | {n} предупреждений",
   "stock.receipts.emptyTitle": "Приходов пока нет",
   "stock.receipts.emptyBody": "Внесите поставку дистрибьютора с сериями, сроками и ценами: после проведения товар встанет на остаток.",
-
   "stock.receipt.title": "Приход",
   "stock.receipt.titleNumber": "Приход {number}",
   "stock.receipt.titleDraft": "Черновик прихода №{id}",
@@ -468,7 +450,6 @@
   "stock.receipt.addFile": "Добавить фото или файл",
   "stock.receipt.replaceFile": "Заменить файл",
   "stock.receipt.fileSaved": "Файл сохранён.",
-
   "stock.line.newTitle": "Новая строка",
   "stock.line.editTitle": "Изменить строку",
   "stock.line.costHint": "Как в накладной, с НДС.",
@@ -486,13 +467,11 @@
   "stock.line.errPacks": "Укажите, сколько упаковок пришло.",
   "stock.line.errCost": "Укажите цену закупки за упаковку.",
   "stock.line.saved": "Строка сохранена.",
-
   "stock.transfers.description": "Товар между вашими аптеками: уходят и приходят те же самые серии.",
   "stock.transfers.new": "Новое перемещение",
   "stock.transfers.active": "Открытые",
   "stock.transfers.emptyTitle": "Перемещений в пути нет",
   "stock.transfers.emptyBody": "Отправьте товар туда, где он продаётся лучше, а серии с близким сроком — туда, где их продадут быстрее.",
-
   "stock.transfer.title": "Перемещение",
   "stock.transfer.draft": "Черновик",
   "stock.transfer.newTitle": "Новое перемещение",
@@ -533,13 +512,11 @@
   "stock.transfer.voidDraft": "Черновик останется как аннулированный.",
   "stock.transfer.voidedToast": "Перемещение аннулировано.",
   "stock.transfer.voidNote": "Аннулировано: {reason}",
-
   "stock.writeoffs.description": "Списанный товар и акты. Непригодный товар уничтожается комиссией в установленный законом срок.",
   "stock.writeoffs.new": "Предложить списание",
   "stock.writeoffs.open": "Открытые",
   "stock.writeoffs.emptyTitle": "Ничего не ждёт",
   "stock.writeoffs.emptyBody": "Просроченный, повреждённый или отозванный товар предлагают к списанию здесь или со страницы сроков годности.",
-
   "stock.writeoff.title": "Списание",
   "stock.writeoff.titleNumber": "Акт {number}",
   "stock.writeoff.proposal": "Предложение №{id}",
@@ -577,7 +554,6 @@
   "stock.writeoff.addPhoto": "Добавить фото",
   "stock.writeoff.addSignedAct": "Добавить подписанный акт",
   "stock.writeoff.fileSaved": "Файл добавлен.",
-
   "stock.destroy.title": "Оформить уничтожение",
   "stock.destroy.description": "В акт войдут все сведения, которые требует закон. Фото или видео уничтожения хранятся вместе с ним.",
   "stock.destroy.needPhoto": "Сначала добавьте на странице хотя бы одно фото уничтожения.",
@@ -609,7 +585,6 @@
   "stock.destroy.errResponsible": "Укажите ответственное лицо.",
   "stock.destroy.errOrder": "Укажите номер приказа.",
   "stock.destroy.errCommission": "В комиссии должно быть не менее {n} человек с именами.",
-
   "stock.counts.description": "Слепой подсчёт полок: считающий видит серию и срок, но не количество по учёту.",
   "stock.counts.new": "Начать инвентаризацию",
   "stock.counts.newTitle": "Начать инвентаризацию",
@@ -619,7 +594,6 @@
   "stock.counts.start": "Начать",
   "stock.counts.emptyTitle": "Инвентаризаций пока нет",
   "stock.counts.emptyBody": "Посчитайте полку, категорию или всю аптеку.",
-
   "stock.count.title": "Инвентаризация",
   "stock.count.started": "Начата",
   "stock.count.startedOn": "Начата {day}",
@@ -645,14 +619,12 @@
   "stock.count.foundDescription": "Товар, которого нет в учёте: для него заводится своя серия.",
   "stock.count.addFound": "Добавить",
   "stock.count.foundToast": "Добавлено в инвентаризацию.",
-
   "stock.recalls.description": "Серии, забракованные регулятором или отозванные дистрибьютором: все такие партии снимаются с продажи во всех аптеках до списания.",
   "stock.recalls.new": "Зарегистрировать отзыв",
   "stock.recalls.newTitle": "Зарегистрировать отозванную серию",
   "stock.recalls.newDescription": "Все партии этой серии во всех аптеках сразу снимаются с продажи, а каждая аптека, где она есть, получает задачу.",
   "stock.recalls.emptyTitle": "Открытых отзывов нет",
   "stock.recalls.emptyBody": "Когда регулятор публикует забракованные серии, зарегистрируйте те, что могут быть у вас.",
-
   "stock.recall.title": "Отзыв серии",
   "stock.recall.receivedOn": "Получено",
   "stock.recall.found": "Найдено",
@@ -679,7 +651,6 @@
   "stock.recall.errSource": "Укажите источник.",
   "stock.recall.foundToast": "Найдено в {n} месте: снято с продажи. | Найдено в {n} местах: снято с продажи. | Найдено в {n} местах: снято с продажи.",
   "stock.recall.notFoundToast": "Зарегистрировано: в наличии не найдено.",
-
   "stock.suppliers.description": "Дистрибьюторы и их условия. Отсрочка платежа задаёт срок оплаты каждого прихода.",
   "stock.suppliers.new": "Добавить дистрибьютора",
   "stock.suppliers.newTitle": "Новый дистрибьютор",
@@ -703,7 +674,6 @@
   "stock.supplier.days": "дн.",
   "stock.supplier.saved": "Дистрибьютор сохранён.",
   "stock.supplier.errName": "Укажите название дистрибьютора.",
-
   "stock.journals.description": "Журналы, которые спрашивает проверка, составленные из учёта. Пронумерованные, прошнурованные и опечатанные книги остаются юридическим документом: распечатайте эти страницы, чтобы перенести в них или приложить.",
   "stock.journals.controlled": "Журнал ПКУ",
   "stock.journals.rx": "Журнал регистрации рецептов",
@@ -743,7 +713,6 @@
   "stock.rx.prescriber": "Врач",
   "stock.rx.kind": "Вид",
   "stock.rx.empty": "В этом месяце рецептов не записано.",
-
   "stock.settings.legalNote": "Значения по закону взяты на 21.10.2026. Проверьте их с фармацевтом или юристом; менять их — ваше решение.",
   "stock.settings.pricesTitle": "Цены и предельные наценки",
   "stock.settings.pricesBody": "Цена новой серии — себестоимость плюс наценка с округлением вверх; цена рецептурного препарата ограничена, округляется вниз и не выше референтной.",
@@ -804,7 +773,6 @@
   "stock.settings.months": "мес.",
   "stock.settings.errSteps": "Укажите до шести чисел дней, например 90, 60, 30.",
   "stock.settings.saved": "Настройки склада сохранены.",
-
   "stock.nav.defektura": "Дефектура",
   "stock.defektura.description": "Что спрашивали покупатели и чего не оказалось в аптеке, и обязательные препараты, которых не нашла ежедневная проверка: что закупить дальше.",
   "stock.defektura.new": "Добавить запрос",
@@ -824,7 +792,6 @@
   "stock.requestStatus.ordered": "Заказан",
   "stock.requestStatus.fulfilled": "Поступил",
   "stock.requestStatus.cancelled": "Отменён",
-
   "stock.rules.title": "Правила ценообразования",
   "stock.rules.body": "Наценки по категориям и диапазонам цен закупки; наценку новой серии задаёт первое подходящее правило, иначе наценка на безрецептурные выше. Рецептурные остаются не выше предельной цены.",
   "stock.rules.add": "Добавить правило",
@@ -839,19 +806,17 @@
   "stock.rules.markupHint": "На цену закупки.",
   "stock.rules.active": "Действует",
   "stock.rules.saved": "Правило сохранено.",
-
   "stock.widget.expiring": "Истекает в течение 30 дней",
   "stock.widget.batches": "{n} серия | {n} серии | {n} серий",
   "stock.widget.expired": "{n} просроченная серия ещё на остатке | {n} просроченные серии ещё на остатке | {n} просроченных серий ещё на остатке",
   "stock.widget.attention": "Склад ждёт вас",
-  "stock.widget.toPost": "Провести приходов: {n}",
-  "stock.widget.toApprove": "Утвердить списаний: {n}",
-  "stock.widget.disputed": "Перемещений с недостачей: {n}",
-  "stock.widget.recalls": "Открытых отзывов: {n}",
-  "stock.widget.mandatory": "Нет обязательных препаратов: {n}",
-  "stock.widget.low": "Ниже минимума: {n}",
+  "stock.widget.toPost": "Провести приходов: {n} | Провести приходов: {n} | Провести приходов: {n}",
+  "stock.widget.toApprove": "Утвердить списаний: {n} | Утвердить списаний: {n} | Утвердить списаний: {n}",
+  "stock.widget.disputed": "Перемещений с недостачей: {n} | Перемещений с недостачей: {n} | Перемещений с недостачей: {n}",
+  "stock.widget.recalls": "Открытых отзывов: {n} | Открытых отзывов: {n} | Открытых отзывов: {n}",
+  "stock.widget.mandatory": "Нет обязательных препаратов: {n} | Нет обязательных препаратов: {n} | Нет обязательных препаратов: {n}",
+  "stock.widget.low": "Ниже минимума: {n} | Ниже минимума: {n} | Ниже минимума: {n}",
   "stock.widget.allClear": "Ничего не ждёт.",
-
   "stock.lineImport.button": "Строки из файла накладной",
   "stock.lineImport.title": "Строки из накладной дистрибьютора",
   "stock.lineImport.description": "XLSX или CSV накладной. Товары ищутся по коду дистрибьютора, штрихкоду или точному названию; строку без совпадения можно добавить вручную.",
@@ -868,7 +833,6 @@
   "stock.priceTags.days": "Цена изменилась за последние дни",
   "stock.priceTags.print": "Сформировать PDF",
   "stock.priceTags.failed": "Не удалось сформировать ценники.",
-
   "stock.recallImport.button": "Импорт списка",
   "stock.recallImport.title": "Официальный список забракованных серий",
   "stock.recallImport.description": "XLSX или CSV списка. Каждая серия препарата из вашего каталога становится отзывом: найденная на остатках, она снимается с продажи во всех аптеках, и каждая получает задачу. Сначала проверка покажет, что найдёт каждая строка.",

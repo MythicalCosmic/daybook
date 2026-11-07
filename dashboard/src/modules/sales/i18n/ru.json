@@ -7,18 +7,15 @@
   "sales.nav.targets": "Планы",
   "sales.nav.entries": "Чеки",
   "sales.nav.setup": "Кассы и оплата",
-
   "sales.cmd.verify": "Проверить закрытые смены",
   "sales.cmd.movement": "Записать движение денег",
   "sales.cmd.target": "Поставить план продаж",
   "sales.keys.verify": "Проверить смену",
   "sales.keys.dispute": "Оспорить смену",
-
   "sales.overview.description": "Каждая касса, каждый филиал и каждый способ оплаты.",
   "sales.overview.emptyTitle": "За этот период продаж пока нет",
   "sales.overview.emptyBody": "Продажи появятся, как только кассиры закроют первые смены в Кассе. Сначала проверьте кассы и способы оплаты.",
   "sales.overview.emptyAction": "Настроить кассы",
-
   "sales.filter.branch": "Филиал",
   "sales.filter.allBranches": "Все филиалы",
   "sales.filter.cashier": "Кассир",
@@ -29,18 +26,15 @@
   "sales.filter.noDifference": "Без расхождения",
   "sales.filter.mismatch": "ИИ нашёл несовпадение",
   "sales.filter.kind": "Тип",
-
   "sales.status.open": "Открыта",
   "sales.status.closed": "На проверке",
   "sales.status.verified": "Проверена",
   "sales.status.disputed": "Оспорена",
-
   "sales.level.none": "Точно",
   "sales.level.ok": "В пределах {amount}",
   "sales.level.short": "Недостача",
   "sales.level.over": "Излишек",
   "sales.level.unknown": "Не пересчитано",
-
   "sales.today.title": "Сейчас",
   "sales.today.whereCash": "Где наличные",
   "sales.today.openedBy": "Открыл(а) {name} в {time}",
@@ -62,7 +56,6 @@
   "sales.today.empty": "Нет филиалов для показа",
   "sales.today.emptyBody": "Здесь появятся доступные вам филиалы с их кассами.",
   "sales.today.open": "Открыть смены филиала {name}",
-
   "sales.kpi.net": "Выручка",
   "sales.kpi.receipts": "Чеки",
   "sales.kpi.avgCheck": "Средний чек",
@@ -71,7 +64,6 @@
   "sales.kpi.difference": "Расхождения в кассе",
   "sales.kpi.differenceHint": "Факт минус ожидание, {n} смена | Факт минус ожидание, {n} смены | Факт минус ожидание, {n} смен",
   "sales.kpi.vsPrevious": "к прошлому",
-
   "sales.chart.netByDay": "Выручка по дням",
   "sales.chart.net": "Выручка",
   "sales.chart.previous": "Прошлый период",
@@ -87,7 +79,6 @@
   "sales.chart.hours": "Когда покупают",
   "sales.chart.hoursSub": "Выручка по дням недели и часам",
   "sales.chart.hoursEstimated": "Оценка по часам смен: точное время дают отдельные чеки",
-
   "sales.cashiers.title": "Кассиры",
   "sales.cashiers.description": "Кто продаёт больше всех, у кого касса всегда сходится и кому нужно внимание.",
   "sales.cashiers.top": "Лучшие кассиры",
@@ -106,7 +97,6 @@
   "sales.cashiers.accuracyHint": "Смены, где пересчёт кассы был в пределах допуска",
   "sales.cashiers.emptyTitle": "Смен кассиров пока нет",
   "sales.cashiers.emptyBody": "Когда кассиры закроют смены в Кассе, их показатели появятся здесь.",
-
   "sales.col.shift": "Смена",
   "sales.col.day": "Торговый день",
   "sales.col.cashier": "Кассир",
@@ -131,7 +121,6 @@
   "sales.col.lateOpens": "Опоздания",
   "sales.col.checks": "Проверки",
   "sales.col.hours": "Ср. длительность",
-
   "sales.shifts.title": "Смены",
   "sales.shifts.description": "Каждая смена кассира: итоги Z-отчёта, слепой пересчёт наличных и фото.",
   "sales.shifts.search": "Поиск: CHL-1042 или имя",
@@ -142,7 +131,6 @@
   "sales.view.open": "Открыты сейчас",
   "sales.view.disputed": "Оспоренные",
   "sales.view.all": "Все",
-
   "sales.shift.net": "Выручка",
   "sales.shift.receipts": "{n} чек | {n} чека | {n} чеков",
   "sales.shift.expected": "Ожидалось в кассе",
@@ -156,7 +144,6 @@
   "sales.shift.notClosed": "смена открыта",
   "sales.shift.notCounted": "не пересчитано",
   "sales.shift.forcedShort": "Закрыта принудительно",
-
   "sales.drawer.loading": "Смена",
   "sales.drawer.tabs": "Детали смены",
   "sales.drawer.tab.summary": "Итоги",
@@ -179,7 +166,6 @@
   "sales.drawer.noMovements": "За эту смену наличные не выдавались и не вносились.",
   "sales.drawer.timeline": "Хронология",
   "sales.drawer.verifiedBy": "Проверил(а) {name}, {time}",
-
   "sales.photos.z": "Z-отчёт",
   "sales.photos.zNumber": "№ {n}",
   "sales.photos.terminal": "Чек терминала",
@@ -194,25 +180,21 @@
   "sales.photos.cashTotal": "Наличные",
   "sales.photos.cardTotal": "Карты и кошельки",
   "sales.photos.noReading": "ИИ не читал эти фото. Он делает это, когда ИИ включён.",
-
   "sales.payments.sales": "Продажи",
   "sales.payments.refunds": "Возвраты",
   "sales.payments.net": "Итого",
   "sales.payments.credit": "Насия",
   "sales.payments.fee": "комиссия {amount}",
-
   "sales.flow.float": "Размен на начало",
   "sales.flow.cashSales": "Продажи наличными",
   "sales.flow.cashRefunds": "Возвраты наличными",
   "sales.flow.expected": "Должно быть в кассе",
-
   "sales.count.none": "Купюры не пересчитывались поштучно.",
   "sales.count.note": "Купюра",
   "sales.count.pieces": "Кол-во",
   "sales.count.opening": "При открытии",
   "sales.count.closing": "При закрытии",
   "sales.count.total": "Итого",
-
   "sales.timeline.opened": "Смена открыта",
   "sales.timeline.closed": "Смена закрыта",
   "sales.timeline.force_closed": "Закрыта принудительно",
@@ -222,12 +204,10 @@
   "sales.timeline.ai_reading": "Фото прочитал ИИ",
   "sales.timeline.handover_confirmed": "Передача получена",
   "sales.timeline.handover_declined": "Передача не получена",
-
   "sales.ledger.income": "Доход",
   "sales.ledger.expense": "Расход",
   "sales.ledger.opening": "Начальный остаток",
   "sales.ledger.transfer": "Перевод",
-
   "sales.verify.action": "Проверить",
   "sales.verify.title": "Проверка {code}",
   "sales.verify.body": "Если можете, пересчитайте кассу. Ваш пересчёт определит расхождение.",
@@ -237,7 +217,6 @@
   "sales.verify.note": "Заметка",
   "sales.verify.submit": "Подтвердить смену",
   "sales.verify.done": "{code} проверена",
-
   "sales.dispute.action": "Оспорить",
   "sales.dispute.title": "Оспорить {code}?",
   "sales.dispute.body": "{name} узнает причину, а смена будет ждать повторной проверки.",
@@ -245,7 +224,6 @@
   "sales.dispute.placeholder": "Фото Z-отчёта размыто…",
   "sales.dispute.submit": "Оспорить",
   "sales.dispute.done": "{code} оспорена",
-
   "sales.correct.action": "Исправить",
   "sales.correct.title": "Исправление {code}",
   "sales.correct.body": "Исправьте итоги по способам оплаты. Учёт следует за ними: изменённые проводки отменяются и проводятся заново.",
@@ -258,7 +236,6 @@
   "sales.correct.reasonRequired": "Укажите причину: она попадёт в журнал аудита.",
   "sales.correct.submit": "Сохранить исправление",
   "sales.correct.done": "{code} исправлена",
-
   "sales.force.action": "Закрыть принудительно",
   "sales.force.title": "Закрыть {code} принудительно?",
   "sales.force.body": "{name} оставил(а) кассу открытой. Закройте её вместо кассира.",
@@ -268,7 +245,6 @@
   "sales.force.countedHint": "Пересчитайте сейчас или оставьте пустым: расхождение не проводится, пока никто не пересчитает.",
   "sales.force.submit": "Закрыть смену",
   "sales.force.done": "{code} закрыта",
-
   "sales.movement.title": "Движение наличных",
   "sales.movement.body": "Наличные, которые ушли из кассы или пришли в неё. Передача проводится, только когда получатель подтвердит.",
   "sales.movement.kindLabel": "Что произошло",
@@ -306,7 +282,6 @@
   "sales.movement.submit": "Записать",
   "sales.movement.recorded": "Записано: {amount}",
   "sales.movement.sentHandover": "Передача {amount} отправлена на подтверждение",
-
   "sales.cash.title": "Наличные",
   "sales.cash.description": "Где сейчас каждый сум: кассы, сейфы, в пути, у сотрудников и в банке.",
   "sales.cash.record": "Записать движение",
@@ -349,7 +324,6 @@
   "sales.cash.voidTitle": "Отменить это движение?",
   "sales.cash.voidBody": "{kind}, {amount}. Его проводки отменятся, а ожидаемая сумма в кассе пересчитается.",
   "sales.cash.voided": "Движение отменено",
-
   "sales.targets.title": "Планы",
   "sales.targets.description": "Месячные цели для компании, каждого филиала и кассира, с темпом по дням.",
   "sales.targets.prev": "Прошлый месяц",
@@ -384,7 +358,6 @@
   "sales.targets.removeTitle": "Удалить этот план?",
   "sales.targets.removeBody": "Продажи месяца останутся, удалится только цель.",
   "sales.targets.removed": "План удалён",
-
   "sales.entries.title": "Чеки",
   "sales.entries.description": "Отдельные чеки: записанные в Кассе во время смены или внесённые здесь для продаж вне кассы.",
   "sales.entries.new": "Новый чек",
@@ -417,13 +390,11 @@
   "sales.entries.voidTitle": "Отменить этот чек?",
   "sales.entries.voidBody": "{amount}. Его проводки будут отменены.",
   "sales.entries.voided": "Чек отменён",
-
   "sales.setup.title": "Кассы и способы оплаты",
   "sales.setup.description": "Кассы каждого филиала, способы оплаты и правила, по которым работает Касса.",
   "sales.setup.tills": "Кассы",
   "sales.setup.methods": "Способы оплаты",
   "sales.setup.rules": "Правила",
-
   "sales.registers.panel": "Кассы",
   "sales.registers.add": "Добавить кассу",
   "sales.registers.newTitle": "Новая касса",
@@ -447,7 +418,6 @@
   "sales.registers.emptyTitle": "Касс пока нет",
   "sales.registers.emptyBody": "Добавьте кассу для каждого кассового места в филиалах.",
   "sales.registers.footnote": "Расхождение до {tolerance} считается точным. Изменить можно в Правилах.",
-
   "sales.methods.panel": "Способы оплаты",
   "sales.methods.hint": "В том порядке, в каком их видит кассир в Кассе.",
   "sales.methods.add": "Добавить способ",
@@ -474,7 +444,6 @@
   "sales.methods.down": "Ниже",
   "sales.methods.active": "Включён",
   "sales.methods.saved": "Способ оплаты сохранён",
-
   "sales.settings.panel": "Продажи",
   "sales.settings.recording": "Как записываются продажи",
   "sales.settings.recordingHint": "Касса в приложении сотрудника работает по этому правилу.",
@@ -509,7 +478,6 @@
   "sales.settings.minutes": "мин",
   "sales.settings.hours": "ч",
   "sales.settings.saved": "Правила продаж сохранены",
-
   "sales.widget.today": "Продажи сегодня",
   "sales.widget.soFar": "По сменам, закрытым на сейчас",
   "sales.widget.yesterday": "Продажи вчера",
@@ -518,10 +486,8 @@
   "sales.shift.movedOutHint": "выручка — при закрытии",
   "sales.shift.movedOutSub": "выплаты, передачи, сейф",
   "sales.flow.soFar": "Размен минус выдачи, без выручки",
-
   "sales.nav.import": "Импорт",
   "sales.nav.lines": "Строки продаж",
-
   "sales.import.title": "Импорт строк продаж",
   "sales.import.description": "Строки продаж из вашей кассовой программы — для точных остатков, наценки и проверки предельных цен. Суммы продаж по-прежнему берутся из смен.",
   "sales.import.tab.files": "Файлы",
@@ -581,7 +547,6 @@
   "sales.import.problems": "{n} замечание | {n} замечания | {n} замечаний",
   "sales.import.row": "Строка {n}",
   "sales.import.openLines": "Все строки этого файла",
-
   "sales.match.waiting": "Ждут",
   "sales.match.skipped": "Не товары",
   "sales.match.hint": "Сопоставьте код один раз — он запомнится для следующих файлов.",
@@ -601,7 +566,6 @@
   "sales.match.search": "Название, МНН или штрихкод",
   "sales.match.confirm": "Сопоставить код",
   "sales.match.done": "Сопоставлена {n} строка | Сопоставлены {n} строки | Сопоставлено {n} строк",
-
   "sales.lines.title": "Строки продаж",
   "sales.lines.description": "Что продано, построчно, из вашей кассовой программы; каждый рецептурный препарат проверен на предельную цену.",
   "sales.lines.offHint": "Строки продаж поступают из импорта. Включите его в разделе Настройки → Продажи.",
@@ -629,7 +593,6 @@
   "sales.lines.parts": "{n} часть | {n} части | {n} частей",
   "sales.lines.noCost": "Себестоимость появится с партиями складского модуля.",
   "sales.lines.overCap": "Выше предела {cap}",
-
   "sales.pos.panel": "Кассиры кассовой программы",
   "sales.pos.description": "Имена или коды, которые кассовая программа ставит в чеках. Свяжите каждый с сотрудником один раз — его чеки, в том числе прошлые, будут отнесены к нему.",
   "sales.pos.emptyTitle": "Кодов кассиров пока нет",
@@ -639,7 +602,6 @@
   "sales.pos.nobody": "Не связан",
   "sales.pos.saved": "Код {code} связан",
   "sales.pos.who": "Кто это: {code}",
-
   "sales.profile.newTitle": "Новый профиль импорта",
   "sales.profile.description": "Как читать выгрузку одной кассовой программы. Сохраняется один раз, используется для каждого файла.",
   "sales.profile.file": "Файл",
@@ -689,7 +651,6 @@
   "sales.profile.field.series": "Серия",
   "sales.profile.field.rx_number": "Номер рецепта",
   "sales.profile.field.branch": "Аптека",
-
   "sales.settings.lines.title": "Строки продаж",
   "sales.settings.lines.hint": "Откуда берутся строки продаж (что продано, построчно). С ними точны остатки, наценка и проверка предельных цен; суммы продаж по-прежнему из смен.",
   "sales.settings.lines.none": "Без строк продаж",
@@ -698,7 +659,6 @@
   "sales.settings.lines.importHint": "Загружайте её выгрузку каждый день; появятся страница импорта и сопоставление.",
   "sales.settings.lines.receipts": "Вводятся с каждым чеком",
   "sales.settings.lines.receiptsHint": "Для аптеки без своей программы. Появится в следующей версии.",
-
   "sales.nav.customers": "Клиенты",
   "sales.nav.invoices": "Счета",
   "sales.customers.title": "Клиенты",
@@ -787,7 +747,6 @@
   "sales.invoices.paidToast": "Оплата записана",
   "sales.invoices.emptyTitle": "Счетов пока нет",
   "sales.invoices.emptyBody": "Выставляйте счета клиникам, аптекам и компаниям: сначала черновик, затем выставление.",
-
   "sales.settings.days": "дн.",
   "sales.settings.invoices.title": "Счета и насия",
   "sales.settings.invoices.hint": "Как нумеруются счета и когда их и насию нужно оплатить.",
