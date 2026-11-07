@@ -127,7 +127,7 @@ const SEGMENT_CLASS = { covered: "bg-success", gap: "bg-danger", short: "bg-warn
         <div class="w-full sm:w-64">
           <BranchPicker v-model="branch" :placeholder="t('hr.coverage.allPharmacies')" />
         </div>
-        <p class="flex-1 text-sm text-muted" data-coverage-summary>
+        <p class="min-w-0 flex-1 basis-full text-sm text-muted sm:basis-auto" data-coverage-summary>
           <template v-if="!totals.branches">{{ t("hr.coverage.summaryNone") }}</template>
           <template v-else-if="totals.gaps">{{ t("hr.coverage.summaryGaps", { n: totals.gaps, h: hoursOf(totals.minutes) }, totals.gaps) }}</template>
           <template v-else>{{ t("hr.coverage.summaryCovered") }}</template>
@@ -146,7 +146,7 @@ const SEGMENT_CLASS = { covered: "bg-success", gap: "bg-danger", short: "bg-warn
       <div class="flex flex-col gap-4">
         <section v-for="row in data.branches" :key="row.branch.id" class="ui-card overflow-hidden" :data-coverage-branch="row.branch.id">
           <header class="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line px-4 py-3 md:px-5">
-            <div class="min-w-0 flex-1">
+            <div class="min-w-0 flex-1 basis-full sm:basis-auto">
               <h2 class="truncate text-md font-semibold text-fg">{{ row.branch.name }}</h2>
               <p class="text-xs text-muted">{{ hoursLabel(row) }}</p>
             </div>
@@ -166,9 +166,10 @@ const SEGMENT_CLASS = { covered: "bg-success", gap: "bg-danger", short: "bg-warn
           </p>
           <div class="grid grid-cols-1 divide-y divide-line md:grid-cols-7 md:divide-x md:divide-y-0">
             <div v-for="day in row.days" :key="day.date" :class="['flex min-w-0 flex-col gap-2 px-3 py-3', day.date === today && 'bg-highlight/40']" :data-day="day.date">
-              <div class="flex items-baseline justify-between gap-2">
-                <p :class="['text-sm font-semibold', day.date === today ? 'text-primary' : 'text-fg']">{{ fmt.day(day.date, "weekdayShort") }}</p>
-                <p class="text-xs tabular-nums text-muted">{{ dayHours(day, row) }}</p>
+              <div class="flex flex-wrap items-baseline justify-between gap-x-2">
+                <p :class="['whitespace-nowrap text-sm font-semibold', day.date === today ? 'text-primary' : 'text-fg']">{{ fmt.day(day.date, "weekdayShort") }}</p>
+                <!-- Every open day has the branch's hours (in the header); only a closed one says why. -->
+                <p v-if="day.closed" class="text-xs text-muted">{{ dayHours(day, row) }}</p>
               </div>
               <div v-if="day.opens" class="relative h-2.5 overflow-hidden rounded-full bg-surface-2" role="img" :aria-label="day.gaps.length ? t('hr.coverage.dayGaps', { n: day.gaps.length }, day.gaps.length) : t('hr.coverage.dayCovered')">
                 <span
