@@ -950,5 +950,7 @@
   "finance.widget.budgetsSub": "Eng ko‘p ishlatilgan uchtasi",
   "finance.widget.noBudgets": "Bu oy byudjet yo‘q",
   "finance.widget.noBudgetsBody": "Oylik limitlarni Byudjetlar sahifasida belgilang.",
-  "finance.widget.budgetOf": "{spent} / {budget}"
+  "finance.widget.budgetOf": "{spent} / {budget}",
+  "finance.recurring.createTask": "Unga vazifa ham berilsin",
+  "finance.recurring.createTaskHint": "Har bir to‘lov uchun to‘lov kuniga bitta vazifa. Moliyada to‘lansa yoki o‘tkazib yuborilsa, vazifa o‘zi yopiladi."
 }

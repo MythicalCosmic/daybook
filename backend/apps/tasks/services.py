@@ -203,6 +203,25 @@ def create_system_task(
 
 
 @transaction.atomic
+def finish_system_task(task: Task, *, note: str = "") -> Task:
+    """Close a task the system gave someone once its work was done elsewhere (a recurring bill
+    paid in Finance): done, with `note` as its proof text, no reminders, its chat copies drawn
+    again. Nobody is told: there is no giver. A task already closed stays as it is."""
+    task = _lock(task)
+    if not task.is_open or task.created_by_id is not None:
+        return task
+    task.proof_text = note.strip()[:500]
+    task.completed_at = timezone.now()
+    task.status = Task.Status.DONE
+    task.next_reminder_at = None
+    _clear_blocker(task, None, outcome=_("Done"))
+    _clear_extension(task, None, outcome=_("Done"))
+    task.save()
+    _refresh_copies(task)
+    return task
+
+
+@transaction.atomic
 def update_task(task: Task, *, by: Membership, **changes) -> Task:
     if unknown := changes.keys() - EDITABLE_FIELDS:
         raise ValueError(f"Not editable: {sorted(unknown)}")

@@ -299,7 +299,8 @@ class Asset(TenantModel):
     def depreciates(self) -> bool:
         return (
             self.method != Method.NONE
-            and bool(self.life_months)
+            # Units of output run on the units recorded: their useful life is optional.
+            and (bool(self.life_months) or self.method == Method.UNITS)
             and self.category.kind != AssetCategory.Kind.LOW_VALUE
         )
 

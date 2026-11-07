@@ -1,7 +1,12 @@
 """Owner dashboard endpoints of HR records (`hr/…`, docs/PLAN-OWNER.md §4.10).
 
-    GET/PATCH  hr/settings/                              warning days, celebrations (hr.manage)
+    GET/PATCH  hr/settings/                              warning days, celebrations, coverage
+                                                         (hr.manage)
     GET        hr/overview/                              headcount, expiring, probation, birthdays
+    GET        hr/coverage/?from&to&branch&drafts        pharmacist coverage (hr.view or
+                                                         attendance.view)
+    GET        hr/coverage/live/                         pharmacies without one checked in now
+    GET/POST   hr/coverage/pharmacists/                  who counts as a pharmacist (hr.manage)
     GET/PATCH  hr/people/{mid}/profile/                  IDs masked (hr.view / hr.manage)
     GET        hr/people/{mid}/sensitive/                unmasked, audited (hr.sensitive)
     CRUD       hr/people/{mid}/emergency-contacts/       (hr.view / hr.manage)
@@ -22,6 +27,7 @@ from datetime import date, timedelta
 
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django.utils.translation import gettext as _
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import mixins, status
@@ -30,8 +36,8 @@ from rest_framework.exceptions import NotFound, PermissionDenied, ValidationErro
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 
-from apps.console.base import OwnerAPIView, OwnerViewSet
-from apps.hr import conf, overview, printing, queries, services
+from apps.console.base import AnyOf, OwnerAPIView, OwnerViewSet
+from apps.hr import conf, coverage, overview, printing, queries, services
 from apps.hr import serializers as s
 from apps.hr.models import (
     Contract,
@@ -44,8 +50,11 @@ from apps.hr.models import (
 )
 from apps.members.models import Membership, Position
 from apps.members.permissions import Perm
+from apps.members.queries import branch_ref, person_ref
 
 VIEW, MANAGE, SENSITIVE = Perm.HR_VIEW, Perm.HR_MANAGE, Perm.HR_SENSITIVE
+# The coverage pages are HR's and the roster's (whoever runs attendance reads them too).
+COVERAGE_VIEW = AnyOf(Perm.HR_VIEW, Perm.ATTENDANCE_VIEW)
 BRANCH_PARAM = OpenApiParameter("branch", int, many=True, description="Branch ids (in scope).")
 
 
@@ -174,6 +183,148 @@ def _day(value, name: str, default):
         return date.fromisoformat(value)
     except ValueError as exc:
         raise ValidationError({name: [_("Give a day as YYYY-MM-DD.")]}) from exc
+
+
+# Pharmacist coverage (docs/PLAN-OWNER.md §14.9) ------------------------------------------
+
+
+class CoverageView(ModuleOn, HRContext, OwnerAPIView):
+    """A period of every pharmacy in scope: its open hours, the pharmacists planned and the
+    gaps with fewer qualified pharmacists than it needs. A week from today by default, 62 days
+    at most. Drafts count only for whoever may see them (attendance.manage)."""
+
+    perm = COVERAGE_VIEW
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter("from", str, description="YYYY-MM-DD; today."),
+            OpenApiParameter("to", str, description="YYYY-MM-DD; six days after `from`."),
+            OpenApiParameter("drafts", bool, description="Count unpublished shifts (the roster)."),
+            BRANCH_PARAM,
+        ],
+        responses=s.CoverageSerializer,
+    )
+    def get(self, request, company_id):
+        today = queries.today(self.company)
+        start = _day(request.query_params.get("from"), "from", today)
+        end = _day(request.query_params.get("to"), "to", start + timedelta(days=6))
+        if end < start or (end - start).days >= coverage.MAX_DAYS:
+            raise ValidationError({"to": [_("Pick at most 62 days, ending after it starts.")]})
+        drafts = request.query_params.get("drafts") in ("true", "1") and self.membership.has_perm(
+            Perm.ATTENDANCE_MANAGE
+        )
+        branches = self.requested_branches()
+        found = coverage.plan(self.company, start, end, branch_ids=branches, drafts=drafts)
+        payload = s.coverage_payload(
+            found, drafts=drafts, reasons=self.membership.has_perm(Perm.HR_VIEW)
+        )
+        payload["permits"] = s.permit_warning_payload(
+            queries.permit_warnings(self.company, branch_ids=branches, day=today)
+        )
+        return Response(payload)
+
+
+class LiveCoverageView(ModuleOn, OwnerAPIView):
+    """Pharmacies in scope open now with fewer qualified pharmacists checked in than they need."""
+
+    perm = COVERAGE_VIEW
+
+    @extend_schema(responses=s.LiveCoverageSerializer)
+    def get(self, request, company_id):
+        now = timezone.now()
+        scope_ids = self.branch_scope
+        branches = {
+            branch.pk: branch for branch in coverage.pharmacies(self.company, branch_ids=scope_ids)
+        }
+        gaps = [gap for gap in coverage.live(self.company, now) if gap.branch_id in branches]
+        people = {
+            member.pk: member
+            for member in Membership.objects.filter(
+                pk__in={pk for gap in gaps for pk in gap.others}
+            ).select_related("user")
+        }
+        return Response(
+            {
+                "state": coverage.state(self.company),
+                "at": now,
+                "gaps": [
+                    {
+                        "branch": branch_ref(branches[gap.branch_id]),
+                        "since": gap.since,
+                        "minutes": int((now - gap.since).total_seconds() // 60),
+                        "have": gap.have,
+                        "need": gap.need,
+                        "checked_in": [person_ref(people[pk]) for pk in gap.others if pk in people],
+                    }
+                    for gap in gaps
+                ],
+            }
+        )
+
+
+class PharmacistsView(ModuleOn, OwnerAPIView):
+    """Who counts as a pharmacist on duty: each position, whether it does (and as what), and
+    the documents it asks for. Saving chooses them (the setup step hr.pharmacists)."""
+
+    perm = VIEW
+    perms_by_action = {"post": MANAGE}
+
+    @extend_schema(responses=s.PharmacistsSerializer)
+    def get(self, request, company_id):
+        return Response(self.payload())
+
+    @extend_schema(request=s.PharmacistsWriteSerializer, responses=s.PharmacistsSerializer)
+    def post(self, request, company_id):
+        serializer = s.PharmacistsWriteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        chosen = serializer.validated_data["positions"]
+        found = {
+            position.pk: position
+            for position in Position.objects.filter(
+                company=self.company, pk__in=[row["id"] for row in chosen]
+            )
+        }
+        if len(found) != len({row["id"] for row in chosen}):
+            raise ValidationError({"positions": [_("Pick a position of this company.")]})
+        services.set_pharmacists(
+            self.company,
+            by=self.membership,
+            roles={found[row["id"]]: row["role"] for row in chosen},
+        )
+        return Response(self.payload())
+
+    def payload(self) -> dict:
+        settings = conf.get_settings(self.company)
+        chosen = conf.pharmacist_position_ids(settings)
+        required = queries.required_for(self.company)
+        rows = []
+        positions = (
+            Position.objects.filter(company=self.company)
+            .filter(Q(is_active=True) | Q(pk__in=chosen))
+            .annotate(
+                people=Count(
+                    "members", filter=Q(members__status__in=queries.CURRENT), distinct=True
+                )
+            )
+            .order_by("order", "name", "pk")
+        )
+        for position in positions:
+            documents = required.get(position.pk, [])
+            role = None
+            if position.pk in chosen:
+                role = services.standard_role(documents) or services.CUSTOM
+            rows.append(
+                {
+                    "position": {"id": position.pk, "name": position.name},
+                    "role": role,
+                    "people": position.people,
+                    "required": [
+                        {"kind": row.kind, "level": row.level, "alternatives": row.alternatives}
+                        for row in documents
+                    ],
+                }
+            )
+        return {"positions": rows}
 
 
 # Profiles ---------------------------------------------------------------------------------

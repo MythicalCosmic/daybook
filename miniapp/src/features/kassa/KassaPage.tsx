@@ -1,4 +1,4 @@
-import { ArchiveRestore, ArrowRightLeft, Check, EyeOff, HandCoins, History, KeyRound, LockKeyhole, ReceiptText, Store, Undo2, Vault } from "lucide-react";
+import { ArchiveRestore, ArrowRightLeft, Check, EyeOff, HandCoins, History, KeyRound, LockKeyhole, NotebookPen, ReceiptText, Store, Undo2, Vault, WalletCards } from "lucide-react";
 import { useState } from "react";
 
 import { useI18n } from "../../i18n";
@@ -12,7 +12,7 @@ import { useToast } from "../../state/toast";
 import { confirm, haptic } from "../../telegram";
 import { BottomBar, Button, Card, countedTotal, cx, EmptyState, MoneyText, PageHeader, Screen, ScreenSkeleton, SectionHead, type NoteCounts } from "../../ui";
 import type { PageProps } from "../registry";
-import { useKassa, useOpenShift, useVoidSale, type Kassa, type ShiftDetail } from "./api";
+import { useKassa, useOpenShift, useVoidCredit, useVoidSale, type Kassa, type ShiftDetail } from "./api";
 import { duration, useKassaT, useMoney } from "./lib";
 import { beforeData, CashCount, MovementRow, ShiftRow } from "./parts";
 import { ReceivedList } from "./Received";
@@ -178,6 +178,13 @@ function ShiftNow({ kassa, shift }: { kassa: Kassa; shift: ShiftDetail }) {
     { id: "handover", icon: ArrowRightLeft, label: t("action.handover"), hint: t("action.handoverHint"), open: () => sheet("handover") },
     { id: "to_safe", icon: Vault, label: t("action.toSafe"), hint: t("action.toSafeHint"), open: () => sheet("safe", { direction: "to_safe" }) },
     { id: "from_safe", icon: ArchiveRestore, label: t("action.fromSafe"), hint: t("action.fromSafeHint"), open: () => sheet("safe", { direction: "from_safe" }) },
+    // Nasiya (J): goods on credit to a regular, and the customer paying it back.
+    ...(kassa.settings.credit
+      ? [
+          { id: "nasiya_sale", icon: NotebookPen, label: t("action.nasiya"), hint: t("action.nasiyaHint"), open: () => sheet("nasiya", { kind: "sale" }) },
+          { id: "nasiya_payment", icon: WalletCards, label: t("action.nasiyaPaid"), hint: t("action.nasiyaPaidHint"), open: () => sheet("nasiya", { kind: "payment" }) },
+        ]
+      : []),
   ];
 
   return (
@@ -233,6 +240,7 @@ function ShiftNow({ kassa, shift }: { kassa: Kassa; shift: ShiftDetail }) {
           <p className="kassa-help">{t("now.noMovements")}</p>
         )}
         {receiptsMode && <Entries shift={shift} currency={currency} />}
+        {shift.credit && shift.credit.entries.length > 0 && <CreditEntries shift={shift} currency={currency} />}
         <Button className="kassa-history-link" icon={History} onClick={() => navigation.push({ feature: "kassa", page: "history" })}>
           {t("now.history")}
         </Button>
@@ -273,6 +281,63 @@ function SalesSoFar({ kassa, shift }: { kassa: Kassa; shift: ShiftDetail }) {
         </div>
       )}
     </Card>
+  );
+}
+
+/** The shift's nasiya: credit sales (what the Nasiya total at close must be) and payments taken,
+ * each one cancellable while the shift is open. */
+function CreditEntries({ shift, currency }: { shift: ShiftDetail; currency: string }) {
+  const t = useKassaT();
+  const { t: appT, locale } = useI18n();
+  const member = useMember();
+  const toast = useToast();
+  const money = useMoney(currency);
+  const voidCredit = useVoidCredit(member.companyId);
+  const [busy, setBusy] = useState<ReadonlySet<number>>(() => new Set());
+  const mark = (id: number, on: boolean) =>
+    setBusy((old) => {
+      const next = new Set(old);
+      if (on) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  const credit = shift.credit!;
+  const ask = async (id: number, amount: string) => {
+    if (!(await confirm(t("nasiya.voidAsk", { amount: money(amount) })))) return;
+    mark(id, true);
+    voidCredit.mutateAsync({ id, reason: t("now.voidReason") }).then(
+      () => toast(t("now.voided")),
+      (error: unknown) => toast(errorText(error, appT), { tone: "error" }),
+    ).finally(() => mark(id, false));
+  };
+  return (
+    <>
+      <SectionHead>{t("nasiya.section")}</SectionHead>
+      <p className="kassa-help num">{t("nasiya.totals", { sales: money(credit.sales), payments: money(credit.payments) })}</p>
+      <div className="card list-card">
+        {credit.entries.map((entry) => (
+          <div key={entry.id} className={cx("list-item list-item--two-line kassa-entry", entry.voided_at && "kassa-entry--void")}>
+            <span className="list-item-text">
+              <span className="num">
+                {entry.kind === "payment" ? "+" : ""}
+                {money(entry.amount)}
+              </span>
+              <span className="list-item-sub num">
+                {clock(entry.created_at, member.timeZone, locale)} · {entry.customer.name} · {t(entry.kind === "sale" ? "nasiya.sale" : "nasiya.payment")}
+              </span>
+            </span>
+            {entry.voided_at ? (
+              <span className="kassa-entry-void">{t("move.voided")}</span>
+            ) : (
+              <button type="button" className="btn btn-ghost kassa-entry-undo" disabled={busy.has(entry.id)} onClick={() => void ask(entry.id, entry.amount)}>
+                <Undo2 size={16} strokeWidth={2.6} aria-hidden />
+                <span>{t("now.void")}</span>
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+    </>
   );
 }
 

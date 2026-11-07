@@ -27,6 +27,18 @@ export function tillMethods(methods: readonly Method[]): Method[] {
   return methods.filter((method) => method.kind !== "credit" && method.kind !== "installment");
 }
 
+/** Whether the company records nasiya with its customers (then the close checks the Z-report's
+ * Nasiya total against the credit sales recorded in the shift). */
+export function tracksCredit(kassa: Kassa, shift: ShiftDetail | null): boolean {
+  return Boolean(kassa.settings.credit_tracked || (shift?.credit && Number(shift.credit.sales) !== 0));
+}
+
+/** The methods the close asks for: the till's, plus Nasiya once the company records nasiya. */
+export function closeMethods(kassa: Kassa, shift: ShiftDetail): Method[] {
+  const credit = tracksCredit(kassa, shift) ? kassa.methods.filter((method) => method.kind === "credit").slice(0, 1) : [];
+  return [...tillMethods(kassa.methods), ...credit];
+}
+
 /** A row of my shifts (`shifts/`, `recent`). */
 export type Shift = {
   id: number;
@@ -99,6 +111,37 @@ export type ShiftDetail = Shift & {
   receipts_recorded: Record<string, Totals>;
   entries: Entry[];
   photos: { z_photo: string | null; terminal_photo: string | null };
+  /** Nasiya in this shift: credit sales recorded (what the Nasiya total must be), payments taken. */
+  credit?: ShiftCredit;
+};
+
+/** A nasiya entry at the till: goods on credit to a customer, or the customer paying back. */
+export type CreditEntry = {
+  id: number;
+  kind: "sale" | "payment";
+  customer: Ref;
+  amount: string;
+  business_day: string;
+  created_at: string;
+  branch: Ref;
+  method: Ref | null;
+  note: string;
+  by: Ref | null;
+  voided_at: string | null;
+};
+
+export type ShiftCredit = { sales: string; payments: string; entries: CreditEntry[] };
+
+/** `customers/lookup/`: a customer found by phone or name, with what they owe. */
+export type CustomerHit = {
+  id: number;
+  name: string;
+  phone: string;
+  owed: string;
+  credit_limit: string | null;
+  can_take: string | null;
+  credit_blocked: boolean;
+  currency: string;
 };
 
 export type Handover = {
@@ -117,7 +160,17 @@ export type Till = { id: number; name: string; branch: BranchRef; busy: { code: 
 /** `shifts/current/`: everything the Kassa screen needs in one call. */
 export type Kassa = {
   shift: ShiftDetail | null;
-  settings: { mode: SalesMode; blind_cash_count: boolean; require_z_photo: boolean; require_terminal_photo: boolean; currency: string };
+  settings: {
+    mode: SalesMode;
+    blind_cash_count: boolean;
+    require_z_photo: boolean;
+    require_terminal_photo: boolean;
+    currency: string;
+    /** There is a Nasiya payment method: the till records credit sales with their customers. */
+    credit?: boolean;
+    /** The company records nasiya (at least once): the close checks the Nasiya total. */
+    credit_tracked?: boolean;
+  };
   registers: Till[];
   methods: Method[];
   receivers: { id: number; name: string; role: string }[];
@@ -238,6 +291,41 @@ export function useSale(company: number) {
 export function useVoidSale(company: number) {
   return useKassaMutation(company, ({ id, reason }: { id: number; reason: string }) =>
     api<{ id: number }>(`${base(company)}/entries/${id}/void/`, { method: "POST", json: { reason } }),
+  );
+}
+
+/** Customers for nasiya by phone (four digits or more) or name (two letters or more). */
+export function useCustomerLookup(company: number, text: string) {
+  const query = text.trim();
+  const digits = query.replace(/\D/g, "");
+  const enough = digits.length >= 4 || (digits.length === 0 && query.length >= 2);
+  return useQuery({
+    queryKey: [...kassaKeys.all(company), "customers", query] as const,
+    queryFn: () => api<{ results: CustomerHit[] }>(`${base(company)}/customers/lookup/?phone=${encodeURIComponent(query)}`).then((page) => page.results),
+    enabled: enough,
+    staleTime: 30_000,
+    retry,
+  });
+}
+
+export type CreditInput = {
+  kind: "sale" | "payment";
+  customer_id?: number | null;
+  new_customer?: { name: string; phone: string } | null;
+  amount: string;
+  method_id?: number | null;
+  note?: string;
+};
+
+export function useCredit(company: number) {
+  return useKassaMutation(company, (input: CreditInput) =>
+    api<CreditEntry & { owed: string }>(`${base(company)}/credit/`, { method: "POST", json: input }),
+  );
+}
+
+export function useVoidCredit(company: number) {
+  return useKassaMutation(company, ({ id, reason }: { id: number; reason: string }) =>
+    api<{ id: number }>(`${base(company)}/credit/${id}/void/`, { method: "POST", json: { reason } }),
   );
 }
 

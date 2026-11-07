@@ -65,6 +65,8 @@ const items = computed<DescriptionItem[]>(() => {
     { key: "number", label: t("hr.field.number"), value: d.number || null, mono: true },
     { key: "issued", label: t("hr.field.issuedOn"), value: d.issued_on ? fmt.day(d.issued_on, "long") : null },
     { key: "expires", label: t("hr.field.expiresOn"), value: d.expires_on ? fmt.day(d.expires_on, "long") : t("hr.document.noExpiry") },
+    ...(d.level ? [{ key: "level", label: d.kind === "qualification_category" ? t("hr.field.category") : t("hr.field.level"), value: t(`hr.level.${d.level}`) }] : []),
+    ...(d.specialty ? [{ key: "specialty", label: t("hr.field.specialty"), value: d.specialty }] : []),
     ...(d.issuer ? [{ key: "issuer", label: t("hr.field.issuer"), value: d.issuer, wide: true }] : []),
     { key: "uploaded", label: t("hr.document.uploadedBy"), value: d.uploaded_by ? `${d.uploaded_by} · ${fmt.day(d.created_at.slice(0, 10), "medium")}` : fmt.day(d.created_at.slice(0, 10), "medium") },
     { key: "visible", label: t("hr.document.visibleShort"), value: d.visible_to_employee ? t("common.yes") : t("common.no") },

@@ -19,8 +19,12 @@ from apps.sales.models import (
     CashMovement,
     CashShift,
     PaymentMethod,
+    PosCashier,
     Register,
     Sale,
+    SaleLine,
+    SalesImport,
+    SalesImportProfile,
     SalesSettings,
 )
 from apps.sales.queries import m, person
@@ -88,11 +92,19 @@ class SettingsSerializer(serializers.ModelSerializer):
             "big_payout_alert",
             "late_open_minutes",
             "close_alert_minutes",
+            "sales_lines",
+            "credit_days",
+            "invoice_prefix",
+            "invoice_terms_days",
+            "invoice_footer",
+            "rx_wholesale_max_markup_percent",
         )
         extra_kwargs = {
             "handover_confirm_hours": {"min_value": 0, "max_value": 72},
             "late_open_minutes": {"min_value": 1, "max_value": 240},
             "close_alert_minutes": {"min_value": 1, "max_value": 720},
+            "credit_days": {"min_value": 1, "max_value": 365},
+            "invoice_terms_days": {"min_value": 0, "max_value": 365},
         }
 
 
@@ -757,3 +769,227 @@ class TargetWriteSerializer(serializers.Serializer):
 
 class TargetAmountSerializer(serializers.Serializer):
     amount = MoneySerializerField()
+
+
+# Sale lines (§14.7) ----------------------------------------------------------------------
+
+
+class ImportProfileSerializer(serializers.ModelSerializer):
+    branch = serializers.SerializerMethodField()
+    branch_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
+    columns = serializers.DictField(child=serializers.JSONField(), required=False)
+    branch_map = serializers.DictField(child=serializers.IntegerField(), required=False)
+    last_import = serializers.SerializerMethodField()
+
+    class Meta:
+        ref_name = "SalesImportProfile"
+        model = SalesImportProfile
+        fields = (
+            "id",
+            "name",
+            "file_kind",
+            "encoding",
+            "delimiter",
+            "header_row",
+            "columns",
+            "date_format",
+            "default_unit",
+            "branch",
+            "branch_id",
+            "branch_map",
+            "is_active",
+            "created_at",
+            "last_import",
+        )
+        read_only_fields = ("id", "created_at", "last_import")
+        extra_kwargs = {"header_row": {"min_value": 1, "max_value": 50}}
+
+    @extend_schema_field(BranchRefSerializer(allow_null=True))
+    def get_branch(self, profile) -> dict | None:
+        return branch_ref(profile.branch) if profile.branch_id else None
+
+    @extend_schema_field(serializers.DictField(allow_null=True))
+    def get_last_import(self, profile) -> dict | None:
+        latest = profile.imports.order_by("-created_at", "-pk").first()
+        if latest is None:
+            return None
+        return {"id": latest.pk, "status": latest.status, "created_at": latest.created_at}
+
+
+class PreviewSerializer(serializers.Serializer):
+    file = serializers.FileField()
+    file_kind = serializers.ChoiceField(choices=SalesImportProfile.FileKind.choices)
+    encoding = serializers.CharField(required=False, allow_blank=True, default="")
+    delimiter = serializers.CharField(required=False, allow_blank=True, default="", max_length=3)
+    header_row = serializers.IntegerField(required=False, min_value=1, max_value=50, default=1)
+
+
+class ImportUploadSerializer(serializers.Serializer):
+    profile_id = serializers.IntegerField()
+    file = serializers.FileField()
+
+
+class ImportSerializer(serializers.ModelSerializer):
+    profile = serializers.SerializerMethodField()
+    created_by = serializers.SerializerMethodField()
+
+    class Meta:
+        ref_name = "SalesImport"
+        model = SalesImport
+        fields = (
+            "id",
+            "profile",
+            "status",
+            "error",
+            "rows",
+            "receipts",
+            "lines",
+            "matched",
+            "unmatched",
+            "duplicates",
+            "unreadable",
+            "breaches",
+            "problems",
+            "day_check",
+            "first_day",
+            "last_day",
+            "created_at",
+            "started_at",
+            "finished_at",
+            "created_by",
+        )
+        read_only_fields = fields
+
+    @extend_schema_field(RefSerializer)
+    def get_profile(self, imp) -> dict:
+        return {"id": imp.profile_id, "name": imp.profile.name}
+
+    @extend_schema_field(PersonSerializer(allow_null=True))
+    def get_created_by(self, imp) -> dict | None:
+        return person(imp.created_by)
+
+
+class SaleLineSerializer(serializers.ModelSerializer):
+    """A sale line with its receipt. `cost` is there only for finance.view."""
+
+    receipt = serializers.SerializerMethodField()
+    branch = serializers.SerializerMethodField()
+    cashier = serializers.SerializerMethodField()
+    product = serializers.SerializerMethodField()
+    batch = serializers.SerializerMethodField()
+    quantity = serializers.DecimalField(max_digits=12, decimal_places=3)
+    price = MoneySerializerField()
+    discount = MoneySerializerField()
+    total = MoneySerializerField()
+    cost = MoneySerializerField(allow_null=True)
+    cap = MoneySerializerField(allow_null=True)
+    pack_price = serializers.SerializerMethodField()
+
+    class Meta:
+        ref_name = "SalesSaleLine"
+        model = SaleLine
+        fields = (
+            "id",
+            "status",
+            "receipt",
+            "branch",
+            "cashier",
+            "line_number",
+            "code",
+            "name",
+            "product",
+            "batch",
+            "series",
+            "unit",
+            "quantity",
+            "parts_per_pack",
+            "price",
+            "discount",
+            "total",
+            "pack_price",
+            "cost",
+            "cap",
+            "over_cap",
+            "rx_number",
+        )
+        read_only_fields = fields
+
+    def to_representation(self, line):
+        data = super().to_representation(line)
+        member = self.context.get("membership")
+        from apps.members.permissions import Perm
+
+        if member is None or not member.has_perm(Perm.FINANCE_VIEW):
+            data.pop("cost", None)
+        return data
+
+    @extend_schema_field(serializers.DictField())
+    def get_receipt(self, line) -> dict:
+        sale = line.sale
+        return {
+            "id": sale.pk,
+            "number": sale.number,
+            "kind": sale.kind,
+            "source": sale.source,
+            "sold_at": sale.sold_at.isoformat(),
+            "business_day": sale.business_day.isoformat(),
+            "payment": sale.payment_label,
+        }
+
+    @extend_schema_field(BranchRefSerializer)
+    def get_branch(self, line) -> dict:
+        return branch_ref(line.sale.branch)
+
+    @extend_schema_field(serializers.DictField(allow_null=True))
+    def get_cashier(self, line) -> dict | None:
+        sale = line.sale
+        if sale.cashier_id:
+            return {"id": sale.cashier_id, "name": str(sale.cashier), "code": ""}
+        if sale.pos_cashier_id:
+            return {"id": None, "name": "", "code": sale.pos_cashier.code}
+        return None
+
+    @extend_schema_field(serializers.DictField(allow_null=True))
+    def get_product(self, line) -> dict | None:
+        product = line.product
+        if product is None:
+            return None
+        return {"id": product.pk, "name": product.name, "rx_required": product.rx_required}
+
+    @extend_schema_field(serializers.DictField(allow_null=True))
+    def get_batch(self, line) -> dict | None:
+        batch = line.batch
+        if batch is None:
+            return None
+        return {"id": batch.pk, "series": batch.series, "expires_on": batch.expires_on}
+
+    @extend_schema_field(serializers.CharField())
+    def get_pack_price(self, line) -> str:
+        from apps.sales.lines import pack_price
+
+        return m(pack_price(line))
+
+
+class CodeSerializer(serializers.Serializer):
+    code = serializers.CharField(max_length=64)
+
+
+class MatchSerializer(CodeSerializer):
+    product_id = serializers.IntegerField()
+
+
+class PosCashierSerializer(serializers.ModelSerializer):
+    member = serializers.SerializerMethodField()
+    member_id = serializers.IntegerField(write_only=True, allow_null=True)
+    receipts = serializers.IntegerField(read_only=True)
+    last_sold_at = serializers.DateTimeField(read_only=True, allow_null=True)
+
+    class Meta:
+        ref_name = "SalesPosCashier"
+        model = PosCashier
+        fields = ("id", "code", "member", "member_id", "receipts", "last_sold_at")
+        read_only_fields = ("id", "code", "receipts", "last_sold_at")
+
+    @extend_schema_field(PersonSerializer(allow_null=True))
+    def get_member(self, pos) -> dict | None:
+        return person(pos.membership)

@@ -423,7 +423,8 @@ def finalize_run(run: PayrollRun, *, by: Membership | None) -> PayrollRun:
             raise DomainError(
                 _(
                     "The deductions on the final payslip of %(names)s are more than the pay: "
-                    "lower a line added by hand."
+                    "lower a line added by hand to at most the pay, and record the rest in "
+                    "Finance as money they owe."
                 )
                 % {"names": ", ".join(str(p.membership) for p in below)}
             )

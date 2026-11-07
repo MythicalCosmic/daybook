@@ -107,3 +107,128 @@ def sales_cashier_scorecard(ctx: ToolContext, args: RangeInput) -> ToolResult:
         member = row.pop("member")
         rows.append({"id": member["id"], "name": member["name"], **row})
     return ToolResult(rows=rows, currency=ctx.company.base_currency, as_of=ctx.now)
+
+
+# Sale lines, customers and invoices (J2, §14.12) ----------------------------------------------
+
+TOP_LIMIT = 30
+
+
+class TopInput(RangeInput):
+    limit: int = Field(default=15, ge=1, le=TOP_LIMIT, description="How many items (1–30).")
+
+
+@ai_tool(
+    "sales_lines_top",
+    domain="sales",
+    perm=Perm.SALES_VIEW,
+    label=_(
+        "The medicines sold most in a range of days, from the cash-register program's sale "
+        "lines: packs and amount per item, and how many prescription lines were sold above "
+        "the legal price."
+    ),
+    input=TopInput,
+    feature="sales",
+    switch="share_finance",
+)
+def sales_lines_top(ctx: ToolContext, args: TopInput) -> ToolResult:
+    from collections import defaultdict
+    from decimal import Decimal
+
+    branch_ids = _branches(ctx, args.branch_id)
+    found: dict[int, dict] = defaultdict(
+        lambda: {"parts": Decimal(0), "total": Decimal(0), "lines": 0}
+    )
+    names = {}
+    for line in queries.line_facts(ctx.company, args.start, args.end, branch_ids=branch_ids):
+        if line.sale.kind != "sale" or line.product_id is None:
+            continue
+        row = found[line.product_id]
+        per_pack = line.parts_per_pack or 1
+        row["parts"] += line.quantity
+        row["packs"] = row["parts"] / per_pack
+        row["total"] += line.total
+        row["lines"] += 1
+        names[line.product_id] = line.product.name
+    rows = [
+        {
+            "id": product_id,
+            "name": names[product_id],
+            "packs": str(row["packs"].quantize(Decimal("0.01"))),
+            "total": queries.m(row["total"]),
+            "lines": row["lines"],
+        }
+        for product_id, row in sorted(found.items(), key=lambda item: -item[1]["total"])
+    ]
+    breaches = queries.cap_breaches(ctx.company, args.start, args.end, branch_ids=branch_ids)
+    return ToolResult(
+        rows=rows[: args.limit],
+        total=len(rows),
+        data={"cap_breaches": len(breaches)},
+        currency=ctx.company.base_currency,
+        as_of=ctx.now,
+    )
+
+
+class EmptyInput(BaseModel):
+    pass
+
+
+@ai_tool(
+    "sales_customer_debts",
+    domain="sales",
+    perm=Perm.SALES_VIEW,
+    label=_(
+        "What customers owe (nasiya and invoices) by how long it is past due: not due yet, "
+        "0–30, 31–60 and more than 60 days, in total and per customer."
+    ),
+    input=EmptyInput,
+    feature="sales",
+    switch="share_finance",
+)
+def sales_customer_debts(ctx: ToolContext, args: EmptyInput) -> ToolResult:
+    from apps.sales.days import business_day
+
+    found = queries.aging(
+        ctx.company, business_day(ctx.company, ctx.now), branch_ids=ctx.branch_ids
+    )
+    rows = [dict(row) for row in found["customers"]]
+    return ToolResult(
+        rows=rows,
+        data={"totals": found["totals"], "total": found["total"]},
+        currency=found["currency"],
+        as_of=ctx.now,
+    )
+
+
+class InvoicesInput(RangeInput):
+    overdue_only: bool = Field(default=False, description="Only invoices past their due day.")
+
+
+@ai_tool(
+    "sales_invoices",
+    domain="sales",
+    perm=Perm.SALES_VIEW,
+    label=_(
+        "Invoices issued in a range of days: number, customer, total, paid, left to pay, due "
+        "day and whether it is overdue."
+    ),
+    input=InvoicesInput,
+    feature="sales",
+    switch="share_finance",
+)
+def sales_invoices(ctx: ToolContext, args: InvoicesInput) -> ToolResult:
+    from apps.sales.days import business_day
+
+    branch_ids = _branches(ctx, args.branch_id)
+    today = business_day(ctx.company, ctx.now)
+    filters = {"from": args.start, "to": args.end, "overdue": args.overdue_only, "today": today}
+    rows = [
+        queries.invoice_row(invoice, today)
+        for invoice in queries.invoices(ctx.company, filters, branch_ids=branch_ids).exclude(
+            status__in=("draft", "void")
+        )[:200]
+    ]
+    for row in rows:
+        row.pop("created_at", None)
+    return ToolResult(rows=rows, currency=ctx.company.base_currency, as_of=ctx.now)

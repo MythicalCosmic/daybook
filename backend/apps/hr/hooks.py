@@ -8,6 +8,7 @@ from django.utils.translation import gettext_lazy as _
 from apps.audit import registry as audit_registry
 from apps.audit.redaction import SECRET
 from apps.console import registry
+from apps.console.perms import AnyOf
 from apps.core.files import register_file_check
 from apps.hr import notify, providers, queries, services
 from apps.hr.audit_actions import HRAction
@@ -18,6 +19,8 @@ from apps.members.signals import member_approved, member_left
 
 FEATURE = "hr"
 VIEW, MANAGE = Perm.HR_VIEW, Perm.HR_MANAGE
+# Pharmacist coverage is read by HR and by whoever runs the roster.
+COVERAGE_VIEW = AnyOf(Perm.HR_VIEW, Perm.ATTENDANCE_VIEW)
 
 audit_registry.register(HRAction)
 audit_registry.register_sensitive(
@@ -39,6 +42,47 @@ registry.register_pulse("hr.required", perm=VIEW, count=None, feature=FEATURE)
 registry.register_pulse("hr.settings", perm=VIEW, count=None, feature=FEATURE)
 registry.register_pulse("hr.contracts", perm=VIEW, count=None, feature=FEATURE)
 registry.register_pulse("hr.templates", perm=MANAGE, count=None, feature=FEATURE)
+registry.register_pulse("hr.coverage", perm=COVERAGE_VIEW, count=None, feature=FEATURE)
+
+# Pharmacist coverage (docs/PLAN-OWNER.md §14.9): to the branch's manager and the owners when a
+# pharmacy has nobody qualified now, and to whoever runs the roster about its gaps.
+register_kind(
+    notify.COVERAGE_GAP_LIVE,
+    label=_("A pharmacy open without a qualified pharmacist"),
+    audience="owner",
+    default_telegram=True,
+    severity="critical",
+)
+register_kind(
+    notify.UNQUALIFIED_SELLER,
+    label=_("A till opened by someone who isn't a qualified pharmacist"),
+    audience="owner",
+    default_telegram=True,
+    severity="critical",
+)
+register_kind(
+    notify.COVERAGE_GAP_PLANNED,
+    label=_("Roster gaps without a qualified pharmacist"),
+    audience="owner",
+    default_telegram=True,
+    severity="warning",
+)
+registry.register_setup_step(
+    "hr.pharmacists",
+    perm=MANAGE,
+    order=35,
+    label=_("Choose who counts as a pharmacist"),
+    description=_(
+        "Choose who counts as a pharmacist and upload their diplomas and certificates, so every "
+        "hour a pharmacy is open has a qualified pharmacist on the roster."
+    ),
+    url="settings/hr",
+    done=providers.pharmacists_done,
+    feature=FEATURE,
+)
+registry.register_brief_section(
+    "hr.coverage", perm=VIEW, order=61, build=providers.coverage_brief, feature=FEATURE
+)
 
 # What HR hears (the owner bot for owners and top managers): what runs out, once per step.
 register_kind(

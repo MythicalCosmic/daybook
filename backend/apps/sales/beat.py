@@ -22,4 +22,10 @@ SCHEDULE = {
         "task": "apps.sales.tasks.post_evening_sales",
         "schedule": crontab(minute="*/15"),
     },
+    # Overdue nasiya and invoices to the person responsible, in each company's morning, once a
+    # day per debt.
+    "sales-remind-customer-debts": {
+        "task": "apps.sales.tasks.remind_customer_debts",
+        "schedule": crontab(minute="*/15"),
+    },
 }

@@ -4,7 +4,7 @@
  * "Everyone" first; add one (a position, or everyone, and a kind) or take one away.
  */
 import { ListChecks, Plus, Trash2 } from "@lucide/vue";
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import EmptyState from "@/components/EmptyState.vue";
@@ -20,8 +20,9 @@ import UiDrawer from "@/components/UiDrawer.vue";
 import { toast } from "@/components/useToast";
 
 import { hrApi, useHrMutation, useRequired } from "../api";
+import { levelsFor } from "../coverage";
 import { kindGroup } from "../lib";
-import { DOCUMENT_KINDS, type DocumentKind, type RequiredDocument } from "../types";
+import { DOCUMENT_KINDS, type DocumentKind, type DocumentLevel, type RequiredDocument } from "../types";
 
 const open = defineModel<boolean>("open", { default: false });
 
@@ -42,17 +43,31 @@ const groups = computed(() => {
 
 const position = ref<number | null>(null);
 const kind = ref<DocumentKind | null>(null);
+const level = ref<DocumentLevel | "">("");
 const kindOptions = computed<SelectOption<DocumentKind>[]>(() =>
   DOCUMENT_KINDS.map((value) => ({ value, label: t(`hr.kind.${value}`), group: t(`hr.kindGroup.${kindGroup(value)}`) })),
 );
+const levels = computed(() => levelsFor(kind.value));
+const levelOptions = computed<SelectOption<DocumentLevel | "">[]>(() => [
+  { value: "", label: t("hr.required.anyLevel") },
+  ...levels.value.map((value) => ({ value, label: t(`hr.level.${value}`) })),
+]);
+watch(kind, () => (level.value = ""));
 
-const add = useHrMutation((cid, input: { kind: string; position_id: number | null }) => hrApi.addRequired(cid, input));
+const add = useHrMutation((cid, input: { kind: string; position_id: number | null; level?: string }) => hrApi.addRequired(cid, input));
 const remove = useHrMutation((cid, id: number) => hrApi.removeRequired(cid, id));
+
+/** "Pharmacy diploma (higher) or Medical diploma" */
+function describe(row: RequiredDocument): string {
+  const name = row.level ? `${t(`hr.kind.${row.kind}`)} (${t(`hr.level.${row.level}`)})` : t(`hr.kind.${row.kind}`);
+  const others = (row.alternatives ?? []).map((value) => t(`hr.kind.${value}`));
+  return others.length ? t("hr.pharmacists.orOthers", { name, others: others.join(", ") }) : name;
+}
 
 async function submit(): Promise<void> {
   if (!kind.value) return;
   try {
-    await add.mutateAsync({ kind: kind.value, position_id: position.value });
+    await add.mutateAsync({ kind: kind.value, position_id: position.value, ...(level.value ? { level: level.value } : {}) });
     toast.success(t("hr.required.added"));
     kind.value = null;
   } catch {
@@ -80,6 +95,9 @@ async function drop(row: RequiredDocument): Promise<void> {
         <FormField :label="t('hr.field.kind')">
           <SelectBox v-model="kind" :options="kindOptions" :placeholder="t('hr.document.kindPlaceholder')" />
         </FormField>
+        <FormField v-if="levels.length" :label="kind === 'qualification_category' ? t('hr.field.category') : t('hr.field.level')" :hint="t('hr.required.levelHint')">
+          <SelectBox v-model="level" :options="levelOptions" />
+        </FormField>
         <UiButton variant="primary" class="w-fit" :icon="Plus" :disabled="!kind" :loading="add.isPending.value" @click="submit">{{ t("hr.required.addButton") }}</UiButton>
       </section>
 
@@ -90,7 +108,7 @@ async function drop(row: RequiredDocument): Promise<void> {
         <h3 class="text-xs font-semibold uppercase tracking-[0.04em] text-subtle">{{ group.name ?? t("hr.required.everyone") }}</h3>
         <ul class="flex flex-col divide-y divide-line rounded-[10px] border border-line">
           <li v-for="row in group.rows" :key="row.id" class="flex min-h-11 items-center gap-2 py-1 pl-3 pr-1">
-            <span class="min-w-0 flex-1 truncate text-sm text-fg">{{ t(`hr.kind.${row.kind}`) }}</span>
+            <span class="min-w-0 flex-1 truncate text-sm text-fg" :title="describe(row)">{{ describe(row) }}</span>
             <IconButton :icon="Trash2" size="md" :label="t('hr.required.remove', { kind: t(`hr.kind.${row.kind}`) })" @click="drop(row)" />
           </li>
         </ul>

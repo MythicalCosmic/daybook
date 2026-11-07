@@ -87,6 +87,7 @@ class RecurringRuleSerializer(serializers.ModelSerializer):
             "overdue",
             "remind_days_before",
             "payer",
+            "create_task",
             "template_key",
             "is_tax",
             "is_active",
@@ -167,10 +168,21 @@ class RecurringRuleWriteSerializer(serializers.Serializer):
     ends_on = serializers.DateField(required=False, allow_null=True)
     remind_days_before = serializers.IntegerField(min_value=0, max_value=30, default=3)
     payer = serializers.IntegerField(required=False, allow_null=True)
+    create_task = serializers.BooleanField(
+        default=False,
+        help_text="The payer also gets a task for each bill (bill mode, with a payer).",
+    )
     is_active = serializers.BooleanField(required=False)
 
 
-class RecurringPaySerializer(serializers.Serializer):
+class RecurringOccurrenceSerializer(serializers.Serializer):
+    """The due day the person saw (`next_due_on`): a second request for it is refused instead of
+    settling the next occurrence too. Optional, for older clients."""
+
+    occurrence = serializers.DateField(required=False, allow_null=True)
+
+
+class RecurringPaySerializer(RecurringOccurrenceSerializer):
     account = serializers.IntegerField()
     amount = MoneySerializerField(required=False, allow_null=True)
     paid_on = serializers.DateField(required=False, allow_null=True)

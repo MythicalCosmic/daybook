@@ -1,5 +1,60 @@
 # Changelog
 
+## 0.4.4 — 2026-11-07
+
+### Fixed
+- **Someone who left now gets their final payslip**: publishing it sends the PDF to them in the employee
+  bot, with the company, the month and the amount (the app and its notifications are for working
+  members only, so it used to reach nobody).
+- **An expense claim still waiting when its day's books were closed** can be approved: it is booked on
+  the first open day, like depreciation, and keeps the day the money was spent (it could only be
+  rejected).
+- **The cash forecast** no longer drops the usual distributor payments because of a bank loan or a
+  bill due later: only goods and services on credit hold them back.
+- **/expense in the bot** shows every category, ten at a time with "More ›" and "‹ Back" (it showed the
+  first 12, so categories an owner added never appeared).
+
+## 0.4.3 — 2026-11-07
+
+### New
+- **Tell us about your business** (Settings › Company, and a Get started step): a pharmacy, a distributor
+  or both, and who you sell to (walk-in customers, clinics, other pharmacies, companies). Modules take
+  their defaults from it; it switches nothing on.
+- **What each branch is** (Settings › Branches): a pharmacy, a warehouse or an office, and its pharmacy
+  facts: open 24 hours, licensed for narcotics and psychotropics, a social pharmacy, in the
+  e-prescription area. A 24-hour pharmacy is never "closed" or "day off" on the Overview; it shows
+  "Open 24 hours" and is open once a till or a check-in opens it.
+- Two new permissions for pharmacy stock: **Look up stock, count, receive goods…** (given to the
+  Pharmacist and Cashier roles) and **Keep the controlled-substance register and the prescription log**.
+  The stock module itself comes in the next release.
+
+### Fixed (three independent money reviews)
+- **Final payslip**: a bonus could be paid twice after a reopened month; a later month that paid a
+  leaver in full went unflagged; a dollar salary took the month-end rate instead of the last day's; the
+  payroll spreadsheet had no column for unused leave paid out; day counts of 10, 20, 30 printed as
+  "1E+1"; the month's payroll figures (Overview, /today, Ask AI) left out people paid by a final
+  payslip; the warning about pay for days after the last day now says how to take it back.
+- **Fixed assets** (16 fixes): an expense could be capitalized twice; a moved asset's late month never
+  reached the P&L; an asset already written down could be deleted; turning depreciation booking off
+  still took the purchase out of the P&L; low-value items booked their cost twice; an asset's cost
+  could drift from its purchase; a sale's money was dropped when nothing was booked yet; a sale could
+  go to any account without Finance rights; an improvement could use another branch's expense; "Turn
+  into an asset" showed salaries to people without payroll rights; units-of-output assets without a
+  life never depreciated; the tax book kept depreciating sold assets; a capitalized pending expense
+  could be rejected; a void could race the asset made from it; writing off lost equipment at offboarding
+  could fail silently; declining balance nearly doubled after a pause or an improvement.
+- **Money planning** (9 fixes): pressing Pay twice on a recurring bill (two people, a stale dialog or the
+  bot's button) paid the next month too; paying the VAT or turnover tax bill paid payroll's withheld
+  income tax first; merging a category used by a bill, budget or claim failed; a budget at 99.5 % read
+  "over"; a claim paid from company cash someone holds was always booked in so‘m; the depreciation
+  categories were offered for expense claims; voiding a claim's waiting entry left the claim stuck; a
+  so‘m bill paid from the dollar safe was booked in dollars (now refused); a branch head could read
+  another branch's recurring payment in History.
+- The payslip table's money columns fit their amounts (a prorated amount ran into the next column).
+- Licences ending within their warning days show an amber pill under "ending soon".
+- In the demo, the person who left is hired on the day they joined, not the day they left, so the
+  final payslip pays their October days.
+
 ## 0.4.2 — 2026-11-07
 
 ### New: the final payslip for someone who leaves (Payroll)

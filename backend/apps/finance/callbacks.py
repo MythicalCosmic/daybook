@@ -13,6 +13,7 @@ class ClaimAction(StrEnum):
     AMOUNT = "amt"  # change the amount
     CHANGE_CATEGORY = "chc"
     CANCEL = "no"
+    PAGE = "pg"  # another page of categories (value: the page, from 0)
 
 
 class ClaimButton(CallbackData, prefix="fcl"):

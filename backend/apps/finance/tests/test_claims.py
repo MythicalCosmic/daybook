@@ -203,6 +203,34 @@ def test_held_cash_is_a_pending_expense_posted_on_approval(
     assert account.balance == Decimal("700000.00")
 
 
+def test_held_cash_waiting_across_the_period_close_posts_on_the_first_open_day(
+    fin, boss, jasur, transport, kassa, today
+):
+    """A held-cash claim still waiting when its day's period is closed is posted on the first
+    open day; the claim keeps the day it was spent."""
+    from datetime import timedelta
+
+    account = held_cash(fin, boss, jasur, "1000000", today - timedelta(days=5))
+    made = claim(
+        fin,
+        jasur,
+        transport,
+        paid_from="held_cash",
+        amount="300000",
+        spent_on=today - timedelta(days=3),
+    )
+    services.lock_period(fin, by=boss, until=today - timedelta(days=1))
+
+    claims.decide_claim(made, by=boss, approve=True)
+
+    made.refresh_from_db()
+    row = made.transaction
+    account.refresh_from_db()
+    assert made.status == "approved" and made.spent_on == today - timedelta(days=3)
+    assert (row.status, row.occurred_on) == ("posted", today)
+    assert account.balance == Decimal("700000.00")
+
+
 def test_rejecting_held_cash_rejects_its_entry(fin, boss, jasur, transport, kassa, today):
     held_cash(fin, boss, jasur, "1000000", today)
     made = claim(fin, jasur, transport, paid_from="held_cash", amount="300000")

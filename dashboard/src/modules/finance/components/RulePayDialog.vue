@@ -78,7 +78,13 @@ async function save(): Promise<void> {
   if (Object.keys(errors).length) return;
   saving.value = true;
   try {
-    const answer = await financeApi.payRecurring(cid.value, props.rule.id, { account: form.account!, amount: form.amount!, ...(form.paid_on ? { paid_on: form.paid_on } : {}) });
+    const answer = await financeApi.payRecurring(cid.value, props.rule.id, {
+      account: form.account!,
+      amount: form.amount!,
+      ...(form.paid_on ? { paid_on: form.paid_on } : {}),
+      // The occurrence this dialog shows: if someone paid it meanwhile, the server says so.
+      ...(props.rule.next_due_on ? { occurrence: props.rule.next_due_on } : {}),
+    });
     toast.success(income.value ? t("finance.recurring.receivedToast", { name: props.rule.name }) : t("finance.recurring.paidToast", { name: props.rule.name }));
     refresh();
     emit("paid", answer.rule);

@@ -662,6 +662,8 @@ export interface RecurringRule {
   overdue: boolean;
   remind_days_before: number;
   payer: PersonRef | null;
+  /** The payer also gets a task for each bill, closed when it is paid or skipped. */
+  create_task?: boolean;
   template_key: string;
   is_tax: boolean;
   is_active: boolean;
@@ -691,6 +693,7 @@ export interface RecurringInput {
   remind_days_before?: number;
   /** A membership id. */
   payer?: number | null;
+  create_task?: boolean;
   is_active?: boolean;
 }
 
@@ -698,6 +701,8 @@ export interface RecurringPayInput {
   account: number;
   amount: Money;
   paid_on?: string;
+  /** The due day the dialog showed (`next_due_on`): once it is paid, a second request is refused. */
+  occurrence?: string;
 }
 
 /** What paying a bill or running an auto rule now answers. */

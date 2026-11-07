@@ -46,7 +46,9 @@ router.include_router(flow)
 TAGS = ("#xarajat", "#расход", "#expense")
 CANCEL_WORDS = frozenset({"/cancel", "cancel", "bekor", "bekor qilish", "отмена", "отменить"})
 MAX_PHOTOS = 5
-MAX_CATEGORIES = 12
+# Categories per page of the picker: every category is reachable (an owner's own ones too,
+# which sort after the defaults), with "More" and "Back" buttons between pages.
+CATEGORIES_PER_PAGE = 10
 THOUSANDS = re.compile(r"^\d{1,3}([.,]\d{3})+$")
 PLAIN = re.compile(r"^\d+([.,]\d{1,2})?$")
 NUMBER = re.compile(r"\d[\d .,]*\d|\d")
@@ -184,6 +186,14 @@ async def picked_category(
     await query.message.edit_text(bot_messages.claim_ask_source(), reply_markup=markup)
 
 
+@flow.callback_query(ClaimFlow.category, ClaimButton.filter(F.action == ClaimAction.PAGE))
+async def category_page(
+    query: CallbackQuery, callback_data: ClaimButton, membership: Membership, state: FSMContext
+) -> None:
+    await query.answer()
+    await _ask_category(query.message, membership, state, edit=True, page=callback_data.value)
+
+
 @flow.callback_query(ClaimFlow.source, ClaimButton.filter(F.action == ClaimAction.SOURCE))
 async def picked_source(
     query: CallbackQuery, callback_data: ClaimButton, membership: Membership, state: FSMContext
@@ -247,15 +257,27 @@ def _button(text: str, action: ClaimAction, value: int = 0) -> InlineKeyboardBut
     )
 
 
-async def _ask_category(message: Message, membership: Membership, state: FSMContext, *, edit=False):
+async def _ask_category(
+    message: Message, membership: Membership, state: FSMContext, *, edit=False, page: int = 0
+):
     rows = await _categories(membership)
     if not rows:
         await state.clear()
         await message.answer(bot_messages.claim_no_categories())
         return
     await state.set_state(ClaimFlow.category)
-    buttons = [_button(name, ClaimAction.CATEGORY, pk) for pk, name in rows]
+    pages = (len(rows) + CATEGORIES_PER_PAGE - 1) // CATEGORIES_PER_PAGE
+    page = min(max(page, 0), pages - 1)
+    shown = rows[page * CATEGORIES_PER_PAGE : (page + 1) * CATEGORIES_PER_PAGE]
+    buttons = [_button(name, ClaimAction.CATEGORY, pk) for pk, name in shown]
     keyboard = [buttons[index : index + 2] for index in range(0, len(buttons), 2)]
+    turn = []
+    if page > 0:
+        turn.append(_button(bot_messages.claim_button_back(), ClaimAction.PAGE, page - 1))
+    if page < pages - 1:
+        turn.append(_button(bot_messages.claim_button_more(), ClaimAction.PAGE, page + 1))
+    if turn:
+        keyboard.append(turn)
     keyboard.append([_button(bot_messages.claim_button_cancel(), ClaimAction.CANCEL)])
     markup = InlineKeyboardMarkup(inline_keyboard=keyboard)
     if edit:
@@ -295,7 +317,7 @@ def _can_claim(membership: Membership) -> bool:
 def _categories(membership: Membership) -> list[tuple[int, str]]:
     from apps.finance import claims
 
-    rows = claims.expense_categories(membership.company)[:MAX_CATEGORIES]
+    rows = claims.expense_categories(membership.company)
     return [
         (row.pk, row.name if row.parent_id is None else f"{row.parent.name} · {row.name}")
         for row in rows

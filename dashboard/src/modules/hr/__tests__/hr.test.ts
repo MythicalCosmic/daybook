@@ -97,12 +97,12 @@ describe("api", () => {
   });
 
   it("registers behind the hr switch, with the overview first, a Person 360 tab and a settings panel", () => {
-    expect(module).toMatchObject({ id: "hr", group: "people", order: 40, feature: "hr", perm: ["hr.view", "hr.hiring"] });
-    expect(module.nav?.map((item) => item.to)).toEqual(["hr", "hr/documents", "hr/contracts", "hr/contract-templates", "hr/celebrations", "hr/policies", "hr/hiring"]);
+    expect(module).toMatchObject({ id: "hr", group: "people", order: 40, feature: "hr", perm: ["hr.view", "hr.hiring", "attendance.view"] });
+    expect(module.nav?.map((item) => item.to)).toEqual(["hr", "hr/documents", "hr/coverage", "hr/contracts", "hr/contract-templates", "hr/celebrations", "hr/policies", "hr/hiring"]);
     expect(module.routes.every((route) => typeof route.component === "function")).toBe(true);
     expect(module.personTabs?.map((tab) => [tab.id, tab.perm])).toEqual([["hr", "hr.view"]]);
     expect(module.settings?.map((panel) => [panel.id, panel.perm])).toEqual([["hr", "hr.manage"]]);
-    expect(module.invalidates).toEqual(["hr"]);
+    expect(module.invalidates).toEqual(["hr", "attendance.roster"]);
     expect(module.deepLinks?.contract?.("12")).toBe("hr/contracts?contract=12");
     expect(hrKeys.documents(1, { kind: ["passport"] })).toEqual([1, "hr", "documents", { kind: ["passport"] }]);
   });

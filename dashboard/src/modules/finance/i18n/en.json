@@ -950,5 +950,7 @@
   "finance.widget.budgetsSub": "The three most used",
   "finance.widget.noBudgets": "No budgets this month",
   "finance.widget.noBudgetsBody": "Set monthly limits per category on the Budgets page.",
-  "finance.widget.budgetOf": "{spent} of {budget}"
+  "finance.widget.budgetOf": "{spent} of {budget}",
+  "finance.recurring.createTask": "Also give them a task",
+  "finance.recurring.createTaskHint": "One task for each bill, due on its day. Paying or skipping the bill in Finance closes it."
 }

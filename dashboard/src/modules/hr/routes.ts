@@ -24,6 +24,8 @@ export const routes: RouteRecordRaw[] = [
     meta: { title: "hr.nav.templates", perm: "hr.manage" },
   },
   { path: "hr/celebrations", name: "hr.celebrations", component: () => import("./pages/CelebrationsPage.vue"), meta: { title: "hr.nav.celebrations", perm: "hr.view" } },
+  // Pharmacist coverage (plan §14.9): HR's, and the roster's (whoever runs attendance reads it too).
+  { path: "hr/coverage", name: "hr.coverage", component: () => import("./pages/CoveragePage.vue"), meta: { title: "hr.nav.coverage", perm: ["hr.view", "attendance.view"] } },
   { path: "hr/policies", name: "hr.policies", component: soon, props: { page: "policies" }, meta: { title: "hr.nav.policies", perm: "hr.view" } },
   { path: "hr/hiring", name: "hr.hiring", component: soon, props: { page: "hiring" }, meta: { title: "hr.nav.hiring", perm: "hr.hiring" } },
 ];

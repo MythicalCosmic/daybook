@@ -11,6 +11,7 @@ from django.utils.translation import gettext_lazy as _
 
 class HRAction(models.TextChoices):
     SETTINGS_CHANGED = "hr.settings_changed", _("Changed HR settings")
+    PHARMACISTS_CHANGED = "hr.pharmacists_changed", _("Chose who counts as a pharmacist")
     PROFILE_CHANGED = "hr.profile_changed", _("Changed an employee profile")
     SENSITIVE_VIEWED = "hr.sensitive_viewed", _("Viewed ID and card numbers")
     CONTACT_ADDED = "hr.contact_added", _("Added an emergency contact")

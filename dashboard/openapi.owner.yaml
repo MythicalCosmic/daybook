@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: 911 Trello API
-  version: 0.4.2
+  version: 0.4.4
   description: API for the employee mini app and the owner dashboard.
 paths:
   /api/v1/owner/auth/dev-login/:
@@ -7132,6 +7132,17 @@ paths:
         required: true
       tags:
       - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecurringOccurrenceRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RecurringOccurrenceRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RecurringOccurrenceRequest'
       security:
       - ownerJwtAuth: []
       responses:
@@ -7160,6 +7171,17 @@ paths:
         required: true
       tags:
       - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecurringOccurrenceRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RecurringOccurrenceRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RecurringOccurrenceRequest'
       security:
       - ownerJwtAuth: []
       responses:
@@ -9203,6 +9225,131 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HrContract'
+          description: ''
+  /api/v1/owner/companies/{company_id}/hr/coverage/:
+    get:
+      operationId: companies_hr_coverage_retrieve
+      description: |-
+        A period of every pharmacy in scope: its open hours, the pharmacists planned and the
+        gaps with fewer qualified pharmacists than it needs. A week from today by default, 62 days
+        at most. Drafts count only for whoever may see them (attendance.manage).
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: array
+          items:
+            type: integer
+        description: Branch ids (in scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: drafts
+        schema:
+          type: boolean
+        description: Count unpublished shifts (the roster).
+      - in: query
+        name: from
+        schema:
+          type: string
+        description: YYYY-MM-DD; today.
+      - in: query
+        name: to
+        schema:
+          type: string
+        description: YYYY-MM-DD; six days after `from`.
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrCoverage'
+          description: ''
+  /api/v1/owner/companies/{company_id}/hr/coverage/live/:
+    get:
+      operationId: companies_hr_coverage_live_retrieve
+      description: Pharmacies in scope open now with fewer qualified pharmacists checked
+        in than they need.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrLiveCoverage'
+          description: ''
+  /api/v1/owner/companies/{company_id}/hr/coverage/pharmacists/:
+    get:
+      operationId: companies_hr_coverage_pharmacists_retrieve
+      description: |-
+        Who counts as a pharmacist on duty: each position, whether it does (and as what), and
+        the documents it asks for. Saving chooses them (the setup step hr.pharmacists).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrPharmacists'
+          description: ''
+    post:
+      operationId: companies_hr_coverage_pharmacists_create
+      description: |-
+        Who counts as a pharmacist on duty: each position, whether it does (and as what), and
+        the documents it asks for. Saving chooses them (the setup step hr.pharmacists).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HrPharmacistsWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HrPharmacistsWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HrPharmacistsWriteRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrPharmacists'
           description: ''
   /api/v1/owner/companies/{company_id}/hr/documents/:
     get:
@@ -17843,6 +17990,159 @@ paths:
               schema:
                 $ref: '#/components/schemas/SalesCashiers'
           description: ''
+  /api/v1/owner/companies/{company_id}/sales/customers/:
+    get:
+      operationId: companies_sales_customers_list
+      description: |-
+        Customers: regulars who take nasiya, clinics, other pharmacies and companies, with what
+        each owes, their receivables by age, their nasiya at the tills and their receipts.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: kind
+        schema:
+          type: string
+          enum:
+          - clinic
+          - company
+          - person
+          - pharmacy
+      - in: query
+        name: owing
+        schema:
+          type: boolean
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: q
+        schema:
+          type: string
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSalesCustomerList'
+          description: ''
+    post:
+      operationId: companies_sales_customers_create
+      description: |-
+        Customers: regulars who take nasiya, clinics, other pharmacies and companies, with what
+        each owes, their receivables by age, their nasiya at the tills and their receipts.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SalesCustomerWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SalesCustomerWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SalesCustomerWriteRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalesCustomer'
+          description: ''
+  /api/v1/owner/companies/{company_id}/sales/customers/{id}/:
+    get:
+      operationId: companies_sales_customers_retrieve
+      description: |-
+        Customers: regulars who take nasiya, clinics, other pharmacies and companies, with what
+        each owes, their receivables by age, their nasiya at the tills and their receipts.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalesCustomerDetail'
+          description: ''
+    patch:
+      operationId: companies_sales_customers_partial_update
+      description: |-
+        Customers: regulars who take nasiya, clinics, other pharmacies and companies, with what
+        each owes, their receivables by age, their nasiya at the tills and their receipts.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSalesCustomerWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSalesCustomerWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSalesCustomerWriteRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalesCustomer'
+          description: ''
   /api/v1/owner/companies/{company_id}/sales/daily/:
     get:
       operationId: companies_sales_daily_list
@@ -18104,6 +18404,762 @@ paths:
               schema:
                 $ref: '#/components/schemas/Movement'
           description: ''
+  /api/v1/owner/companies/{company_id}/sales/import-profiles/:
+    get:
+      operationId: companies_sales_import_profiles_list
+      description: 'How each cash-register program''s export is read: the column map
+        saved once.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SalesImportProfile'
+          description: ''
+    post:
+      operationId: companies_sales_import_profiles_create
+      description: 'How each cash-register program''s export is read: the column map
+        saved once.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SalesImportProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SalesImportProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SalesImportProfileRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalesImportProfile'
+          description: ''
+  /api/v1/owner/companies/{company_id}/sales/import-profiles/{id}/:
+    get:
+      operationId: companies_sales_import_profiles_retrieve
+      description: 'How each cash-register program''s export is read: the column map
+        saved once.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalesImportProfile'
+          description: ''
+    patch:
+      operationId: companies_sales_import_profiles_partial_update
+      description: 'How each cash-register program''s export is read: the column map
+        saved once.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSalesImportProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSalesImportProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSalesImportProfileRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalesImportProfile'
+          description: ''
+  /api/v1/owner/companies/{company_id}/sales/import-profiles/preview/:
+    post:
+      operationId: companies_sales_import_profiles_preview_create
+      description: |-
+        The file's column names, its first 20 rows and a proposed column map. Nothing is
+        saved: the mapper shows what a profile would read.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PreviewRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalesImportPreview'
+          description: ''
+  /api/v1/owner/companies/{company_id}/sales/imports/:
+    get:
+      operationId: companies_sales_imports_list
+      description: |-
+        Files of sale lines: upload one (it is read in the background), then the results with
+        matched, unmatched and duplicate lines, what couldn't be read and the day check.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: profile
+        schema:
+          type: integer
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSalesImportList'
+          description: ''
+    post:
+      operationId: companies_sales_imports_create
+      description: |-
+        Files of sale lines: upload one (it is read in the background), then the results with
+        matched, unmatched and duplicate lines, what couldn't be read and the day check.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ImportUploadRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalesImport'
+          description: ''
+  /api/v1/owner/companies/{company_id}/sales/imports/{id}/:
+    get:
+      operationId: companies_sales_imports_retrieve
+      description: |-
+        Files of sale lines: upload one (it is read in the background), then the results with
+        matched, unmatched and duplicate lines, what couldn't be read and the day check.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalesImport'
+          description: ''
+  /api/v1/owner/companies/{company_id}/sales/invoices/:
+    get:
+      operationId: companies_sales_invoices_list
+      description: |-
+        Invoices to clinics, pharmacies and companies: drafts, issue (number, stock, receivable),
+        payments, void before payment, the PDF and sending it.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: customer
+        schema:
+          type: integer
+      - in: query
+        name: from
+        schema:
+          type: string
+      - in: query
+        name: overdue
+        schema:
+          type: boolean
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: q
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: array
+          items:
+            type: string
+      - in: query
+        name: to
+        schema:
+          type: string
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSalesInvoicePageList'
+          description: ''
+    post:
+      operationId: companies_sales_invoices_create
+      description: |-
+        Invoices to clinics, pharmacies and companies: drafts, issue (number, stock, receivable),
+        payments, void before payment, the PDF and sending it.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SalesInvoiceWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SalesInvoiceWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SalesInvoiceWriteRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalesInvoiceDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/sales/invoices/{id}/:
+    get:
+      operationId: companies_sales_invoices_retrieve
+      description: |-
+        Invoices to clinics, pharmacies and companies: drafts, issue (number, stock, receivable),
+        payments, void before payment, the PDF and sending it.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalesInvoiceDetail'
+          description: ''
+    patch:
+      operationId: companies_sales_invoices_partial_update
+      description: |-
+        Invoices to clinics, pharmacies and companies: drafts, issue (number, stock, receivable),
+        payments, void before payment, the PDF and sending it.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSalesInvoiceWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSalesInvoiceWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSalesInvoiceWriteRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalesInvoiceDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/sales/invoices/{id}/issue/:
+    post:
+      operationId: companies_sales_invoices_issue_create
+      description: |-
+        Invoices to clinics, pharmacies and companies: drafts, issue (number, stock, receivable),
+        payments, void before payment, the PDF and sending it.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalesInvoiceDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/sales/invoices/{id}/payments/:
+    post:
+      operationId: companies_sales_invoices_payments_create
+      description: |-
+        Invoices to clinics, pharmacies and companies: drafts, issue (number, stock, receivable),
+        payments, void before payment, the PDF and sending it.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SalesInvoicePaymentRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SalesInvoicePaymentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SalesInvoicePaymentRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalesInvoiceDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/sales/invoices/{id}/pdf/:
+    get:
+      operationId: companies_sales_invoices_pdf_retrieve
+      description: The invoice as a PDF, rendered now (a draft's preview too), as
+        a short-lived link.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalesInvoicePdf'
+          description: ''
+  /api/v1/owner/companies/{company_id}/sales/invoices/{id}/send/:
+    post:
+      operationId: companies_sales_invoices_send_create
+      description: |-
+        Invoices to clinics, pharmacies and companies: drafts, issue (number, stock, receivable),
+        payments, void before payment, the PDF and sending it.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalesInvoiceSent'
+          description: ''
+  /api/v1/owner/companies/{company_id}/sales/invoices/{id}/void/:
+    post:
+      operationId: companies_sales_invoices_void_create
+      description: |-
+        Invoices to clinics, pharmacies and companies: drafts, issue (number, stock, receivable),
+        payments, void before payment, the PDF and sending it.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SalesReasonRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SalesReasonRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SalesReasonRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalesInvoiceDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/sales/lines/:
+    get:
+      operationId: companies_sales_lines_list
+      description: |-
+        Every sale line with its receipt: filter by day, branch, status, prescription items and
+        lines sold above the legal price. Costs only for finance.view.
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: array
+          items:
+            type: integer
+      - in: query
+        name: cap
+        schema:
+          type: boolean
+      - in: query
+        name: cashier
+        schema:
+          type: integer
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: from
+        schema:
+          type: string
+      - in: query
+        name: import
+        schema:
+          type: integer
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: product
+        schema:
+          type: integer
+      - in: query
+        name: q
+        schema:
+          type: string
+      - in: query
+        name: rx
+        schema:
+          type: boolean
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - matched
+          - skipped
+          - waiting
+      - in: query
+        name: to
+        schema:
+          type: string
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSalesSaleLineList'
+          description: ''
+  /api/v1/owner/companies/{company_id}/sales/lines/codes/:
+    get:
+      operationId: companies_sales_lines_codes_retrieve
+      description: 'The match list: one row per item code the catalogue doesn''t know,
+        with its lines.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - skipped
+          - waiting
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalesLineCodes'
+          description: ''
+  /api/v1/owner/companies/{company_id}/sales/lines/match/:
+    post:
+      operationId: companies_sales_lines_match_create
+      description: The code means this medicine from now on; every line waiting for
+        it is settled.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MatchRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MatchRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MatchRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalesLineMatched'
+          description: ''
+  /api/v1/owner/companies/{company_id}/sales/lines/skip/:
+    post:
+      operationId: companies_sales_lines_skip_create
+      description: 'The code isn''t goods the stock keeps (a bag, a service): its
+        lines stop waiting.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CodeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CodeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CodeRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalesLineSkipped'
+          description: ''
   /api/v1/owner/companies/{company_id}/sales/options/:
     get:
       operationId: companies_sales_options_retrieve
@@ -18324,6 +19380,119 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/PaymentMethod'
+          description: ''
+  /api/v1/owner/companies/{company_id}/sales/pos-cashiers/:
+    get:
+      operationId: companies_sales_pos_cashiers_list
+      description: The cash-register program's cashier codes and who each one is (set
+        once).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SalesPosCashier'
+          description: ''
+  /api/v1/owner/companies/{company_id}/sales/pos-cashiers/{id}/:
+    patch:
+      operationId: companies_sales_pos_cashiers_partial_update
+      description: The cash-register program's cashier codes and who each one is (set
+        once).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSalesPosCashierRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSalesPosCashierRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSalesPosCashierRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalesPosCashier'
+          description: ''
+  /api/v1/owner/companies/{company_id}/sales/products/:
+    get:
+      operationId: companies_sales_products_retrieve
+      description: |-
+        The medicines catalogue by name, trade name, INN or barcode (`inventory.queries.lookup`),
+        for the match list and invoice lines.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: q
+        schema:
+          type: string
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalesProductLookup'
+          description: ''
+  /api/v1/owner/companies/{company_id}/sales/receivables/aging/:
+    get:
+      operationId: companies_sales_receivables_aging_retrieve
+      description: |-
+        What customers owe by how long it is past due: not due yet, 0 to 30, 31 to 60 and more
+        than 60 days, in total and per customer.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalesReceivablesAging'
           description: ''
   /api/v1/owner/companies/{company_id}/sales/registers/:
     get:
@@ -26330,6 +27499,15 @@ components:
         * `auto` - auto
         * `planned` - planned
         * `unscheduled` - unscheduled
+    CodeRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 64
+      required:
+      - code
     Column:
       type: object
       properties:
@@ -26509,6 +27687,11 @@ components:
             $ref: '#/components/schemas/SellsToEnum'
           description: Who the business sells to.
           minItems: 1
+        business_confirmed:
+          type: boolean
+          readOnly: true
+          description: The owner saved what the business is (the Get started step
+            is done).
         features:
           type: array
           items:
@@ -26520,6 +27703,7 @@ components:
       required:
       - base_currency
       - base_currency_locked
+      - business_confirmed
       - business_kind
       - default_language
       - evening_report_at
@@ -29186,6 +30370,234 @@ components:
           type: string
           format: binary
           nullable: true
+    HrCoverage:
+      type: object
+      properties:
+        permits:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrPermitWarning'
+          description: Branches licensed for controlled substances without that licence
+            in force.
+        state:
+          allOf:
+          - $ref: '#/components/schemas/HrCoverageStateEnum'
+          description: |-
+            ok, or why nothing was checked: off (HR or the rule), setup (no pharmacist positions chosen), no_roster (attendance off).
+
+            * `ok` - ok
+            * `off` - off
+            * `setup` - setup
+            * `no_roster` - no_roster
+        start:
+          type: string
+          format: date
+        end:
+          type: string
+          format: date
+        need:
+          type: integer
+        drafts:
+          type: boolean
+        branches:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrCoverageBranch'
+      required:
+      - branches
+      - drafts
+      - end
+      - need
+      - permits
+      - start
+      - state
+    HrCoverageBranch:
+      type: object
+      properties:
+        branch:
+          $ref: '#/components/schemas/HrBranchRef'
+        open_24h:
+          type: boolean
+        opens_at:
+          type: string
+          nullable: true
+        closes_at:
+          type: string
+          nullable: true
+        days:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrCoverageDay'
+        gaps:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrCoverageGap'
+          description: Joined across midnight.
+        shifts:
+          type: integer
+          description: Shifts of anyone planned there in the period.
+        gap_minutes:
+          type: integer
+      required:
+      - branch
+      - closes_at
+      - days
+      - gap_minutes
+      - gaps
+      - open_24h
+      - opens_at
+      - shifts
+    HrCoverageClosedEnum:
+      enum:
+      - weekday
+      - holiday
+      - no_hours
+      type: string
+      description: |-
+        * `weekday` - weekday
+        * `holiday` - holiday
+        * `no_hours` - no_hours
+    HrCoverageDay:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        opens:
+          type: string
+          format: date-time
+          nullable: true
+        closes:
+          type: string
+          format: date-time
+          nullable: true
+        closed:
+          nullable: true
+          description: |-
+            Why it is closed.
+
+            * `weekday` - weekday
+            * `holiday` - holiday
+            * `no_hours` - no_hours
+          oneOf:
+          - $ref: '#/components/schemas/HrCoverageClosedEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        shifts:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrCoverageShift'
+          description: Pharmacists planned that day.
+        gaps:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrCoverageGap'
+      required:
+      - closed
+      - closes
+      - date
+      - gaps
+      - opens
+      - shifts
+    HrCoverageGap:
+      type: object
+      properties:
+        branch_id:
+          type: integer
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        minutes:
+          type: integer
+        have:
+          type: integer
+          description: Qualified pharmacists planned then.
+        need:
+          type: integer
+      required:
+      - branch_id
+      - end
+      - have
+      - minutes
+      - need
+      - start
+    HrCoverageReasonEnum:
+      enum:
+      - not_approved
+      - not_pharmacist
+      - missing
+      - expired
+      - unverified
+      type: string
+      description: |-
+        * `not_approved` - not_approved
+        * `not_pharmacist` - not_pharmacist
+        * `missing` - missing
+        * `expired` - expired
+        * `unverified` - unverified
+    HrCoverageShift:
+      type: object
+      properties:
+        shift_id:
+          type: integer
+        member:
+          $ref: '#/components/schemas/HrPersonRef'
+        position:
+          type: string
+          nullable: true
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        published:
+          type: boolean
+        counts:
+          type: boolean
+          description: Counts as a qualified pharmacist that day.
+        reason:
+          nullable: true
+          description: |-
+            Why not; null without hr.view.
+
+            * `not_approved` - not_approved
+            * `not_pharmacist` - not_pharmacist
+            * `missing` - missing
+            * `expired` - expired
+            * `unverified` - unverified
+          oneOf:
+          - $ref: '#/components/schemas/HrCoverageReasonEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        kinds:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrDocumentKindEnum'
+          description: The required documents that fail; empty without hr.view.
+      required:
+      - counts
+      - end
+      - kinds
+      - member
+      - position
+      - published
+      - reason
+      - shift_id
+      - start
+    HrCoverageStateEnum:
+      enum:
+      - ok
+      - 'off'
+      - setup
+      - no_roster
+      type: string
+      description: |-
+        * `ok` - ok
+        * `off` - off
+        * `setup` - setup
+        * `no_roster` - no_roster
     HrDocument:
       type: object
       description: |-
@@ -29548,6 +30960,48 @@ components:
       - joined_30d
       - left_30d
       - suspended
+    HrLiveCoverage:
+      type: object
+      properties:
+        state:
+          $ref: '#/components/schemas/HrCoverageStateEnum'
+        at:
+          type: string
+          format: date-time
+        gaps:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrLiveGap'
+      required:
+      - at
+      - gaps
+      - state
+    HrLiveGap:
+      type: object
+      properties:
+        branch:
+          $ref: '#/components/schemas/HrBranchRef'
+        since:
+          type: string
+          format: date-time
+        minutes:
+          type: integer
+        have:
+          type: integer
+        need:
+          type: integer
+        checked_in:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrPersonRef'
+          description: Checked in, but not counting.
+      required:
+      - branch
+      - checked_in
+      - have
+      - minutes
+      - need
+      - since
     HrNamed:
       type: object
       properties:
@@ -29615,6 +31069,26 @@ components:
         * `cash` - Cash
         * `card` - Card
         * `bank` - Bank transfer
+    HrPermitWarning:
+      type: object
+      properties:
+        branch:
+          $ref: '#/components/schemas/HrBranchRef'
+        kind:
+          type: string
+          description: controlled_licence
+        problem:
+          $ref: '#/components/schemas/ProblemEnum'
+        valid_until:
+          type: string
+          format: date
+          nullable: true
+          description: When the last one ended.
+      required:
+      - branch
+      - kind
+      - problem
+      - valid_until
     HrPersonRef:
       type: object
       properties:
@@ -29629,6 +31103,79 @@ components:
       - id
       - name
       - photo_url
+    HrPharmacistChoiceRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: A position id.
+        role:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/HrPharmacistRoleEnum'
+          - $ref: '#/components/schemas/NullEnum'
+      required:
+      - id
+      - role
+    HrPharmacistPosition:
+      type: object
+      properties:
+        position:
+          $ref: '#/components/schemas/HrNamed'
+        role:
+          nullable: true
+          description: |-
+            head, senior or pharmacist (the standard documents of one), custom (its own documents), or null: not a pharmacist.
+
+            * `head` - head
+            * `senior` - senior
+            * `pharmacist` - pharmacist
+            * `custom` - custom
+          oneOf:
+          - $ref: '#/components/schemas/HrPharmacistRoleEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        people:
+          type: integer
+          description: People in the position now.
+        required:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrRequiredShape'
+      required:
+      - people
+      - position
+      - required
+      - role
+    HrPharmacistRoleEnum:
+      enum:
+      - head
+      - senior
+      - pharmacist
+      - custom
+      type: string
+      description: |-
+        * `head` - head
+        * `senior` - senior
+        * `pharmacist` - pharmacist
+        * `custom` - custom
+    HrPharmacists:
+      type: object
+      properties:
+        positions:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrPharmacistPosition'
+      required:
+      - positions
+    HrPharmacistsWriteRequest:
+      type: object
+      properties:
+        positions:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrPharmacistChoiceRequest'
+      required:
+      - positions
     HrPlaceholders:
       type: object
       properties:
@@ -29879,6 +31426,22 @@ components:
           maxItems: 8
       required:
       - kind
+    HrRequiredShape:
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/HrDocumentKindEnum'
+        level:
+          type: string
+          description: The level asked for; empty for any.
+        alternatives:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrDocumentKindEnum'
+      required:
+      - alternatives
+      - kind
+      - level
     HrSensitive:
       type: object
       properties:
@@ -29923,6 +31486,32 @@ components:
         employer_tin:
           type: string
           maxLength: 9
+        coverage_enabled:
+          type: boolean
+        coverage_min:
+          type: integer
+          maximum: 10
+          minimum: 1
+        coverage_needs_documents:
+          type: boolean
+        coverage_alert_minutes:
+          type: integer
+          maximum: 240
+          minimum: 5
+        coverage_days:
+          type: integer
+          maximum: 31
+          minimum: 1
+        unqualified_seller_alert:
+          type: boolean
+        pharmacist_positions:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrNamed'
+          readOnly: true
+          description: Who counts as a pharmacist on duty (set through coverage/pharmacists/).
+      required:
+      - pharmacist_positions
     HrTerminationReasonEnum:
       enum:
       - resigned
@@ -29954,6 +31543,17 @@ components:
       - hired
       - left
       - month
+    ImportUploadRequest:
+      type: object
+      properties:
+        profile_id:
+          type: integer
+        file:
+          type: string
+          format: binary
+      required:
+      - file
+      - profile_id
     InboxActionResult:
       type: object
       properties:
@@ -31615,6 +33215,18 @@ components:
         all:
           type: boolean
           default: false
+    MatchRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 64
+        product_id:
+          type: integer
+      required:
+      - code
+      - product_id
     MembersBranchRef:
       type: object
       properties:
@@ -32350,6 +33962,24 @@ components:
     NullEnum:
       enum:
       - null
+    OffboardReasonEnum:
+      enum:
+      - resignation
+      - mutual_agreement
+      - contract_end
+      - dismissal
+      - probation_failed
+      - redundancy
+      - other
+      type: string
+      description: |-
+        * `resignation` - resignation
+        * `mutual_agreement` - mutual_agreement
+        * `contract_end` - contract_end
+        * `dismissal` - dismissal
+        * `probation_failed` - probation_failed
+        * `redundancy` - redundancy
+        * `other` - other
     OffboardRequest:
       type: object
       properties:
@@ -32358,7 +33988,7 @@ components:
           format: date
           nullable: true
         reason:
-          $ref: '#/components/schemas/ReasonEnum'
+          $ref: '#/components/schemas/OffboardReasonEnum'
         note:
           type: string
           maxLength: 1000
@@ -33552,6 +35182,98 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Sale'
+    PaginatedSalesCustomerList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SalesCustomer'
+    PaginatedSalesImportList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SalesImport'
+    PaginatedSalesInvoicePageList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SalesInvoicePage'
+    PaginatedSalesSaleLineList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SalesSaleLine'
     PaginatedSalesTargetListList:
       type: object
       required:
@@ -34729,6 +36451,24 @@ components:
         employer_tin:
           type: string
           maxLength: 9
+        coverage_enabled:
+          type: boolean
+        coverage_min:
+          type: integer
+          maximum: 10
+          minimum: 1
+        coverage_needs_documents:
+          type: boolean
+        coverage_alert_minutes:
+          type: integer
+          maximum: 240
+          minimum: 5
+        coverage_days:
+          type: integer
+          maximum: 31
+          minimum: 1
+        unqualified_seller_alert:
+          type: boolean
     PatchedJoinLinkPatchRequest:
       type: object
       properties:
@@ -35425,6 +37165,11 @@ components:
         payer:
           type: integer
           nullable: true
+        create_task:
+          type: boolean
+          default: false
+          description: The payer also gets a task for each bill (bill mode, with a
+            payer).
         is_active:
           type: boolean
     PatchedRegisterRequest:
@@ -35564,6 +37309,118 @@ components:
           description: When the storage readings are taken (HH:MM, company time).
           maxItems: 4
           minItems: 1
+    PatchedSalesCustomerWriteRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        phone:
+          type: string
+          maxLength: 32
+        kind:
+          $ref: '#/components/schemas/SalesCustomerKindEnum'
+        credit_limit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        credit_blocked:
+          type: boolean
+        tin:
+          type: string
+          maxLength: 20
+        telegram_username:
+          type: string
+          maxLength: 64
+        contact_person:
+          type: string
+          maxLength: 100
+        address:
+          type: string
+          maxLength: 255
+        notes:
+          type: string
+          maxLength: 4000
+        is_active:
+          type: boolean
+    PatchedSalesImportProfileRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        file_kind:
+          $ref: '#/components/schemas/SalesImportFileKindEnum'
+        encoding:
+          type: string
+          description: 'Empty: UTF-8, else Windows-1251.'
+          maxLength: 16
+        delimiter:
+          type: string
+          description: 'Empty: found from the file.'
+          maxLength: 1
+        header_row:
+          type: integer
+          maximum: 50
+          minimum: 1
+          description: The row that holds the column names.
+        columns:
+          type: object
+          additionalProperties: {}
+        date_format:
+          type: string
+          description: 'Empty: the usual formats ("07.11.2026 14:05").'
+          maxLength: 32
+        default_unit:
+          allOf:
+          - $ref: '#/components/schemas/SalesImportUnitEnum'
+          description: |-
+            What a quantity counts when the file has no unit column.
+
+            * `pack` - Packs
+            * `part` - Parts (blisters, ampoules)
+        branch_id:
+          type: integer
+          writeOnly: true
+          nullable: true
+        branch_map:
+          type: object
+          additionalProperties:
+            type: integer
+        is_active:
+          type: boolean
+    PatchedSalesInvoiceWriteRequest:
+      type: object
+      properties:
+        customer_id:
+          type: integer
+        branch_id:
+          type: integer
+          nullable: true
+        currency:
+          type: string
+          minLength: 1
+          maxLength: 3
+        notes:
+          type: string
+          maxLength: 4000
+        e_invoice_ref:
+          type: string
+          maxLength: 64
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/SalesInvoiceLineInputRequest'
+    PatchedSalesPosCashierRequest:
+      type: object
+      properties:
+        member_id:
+          type: integer
+          writeOnly: true
+          nullable: true
     PatchedSalesSettingsRequest:
       type: object
       properties:
@@ -35608,6 +37465,38 @@ components:
           maximum: 720
           minimum: 1
           description: A till still open this long after closing time raises an alert.
+        sales_lines:
+          allOf:
+          - $ref: '#/components/schemas/SalesLinesSourceEnum'
+          description: |-
+            Where sale lines come from. Without them stock moves only through receipts of goods, transfers, write-offs and counts.
+
+            * `none` - No sale lines
+            * `import` - Imported from the cash-register software
+            * `receipts` - Entered with each receipt
+        credit_days:
+          type: integer
+          maximum: 365
+          minimum: 1
+          description: A nasiya (credit sale) is due this many days after the sale.
+        invoice_prefix:
+          type: string
+          minLength: 1
+          maxLength: 8
+        invoice_terms_days:
+          type: integer
+          maximum: 365
+          minimum: 0
+          description: An invoice is due this many days after it is issued.
+        invoice_footer:
+          type: string
+          description: Printed at the foot of invoices.
+        rx_wholesale_max_markup_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          description: A prescription medicine sold by invoice above its batch cost
+            plus this markup (or above its reference price) warns at issue.
     PatchedSavedViewRequest:
       type: object
       properties:
@@ -38013,6 +39902,29 @@ components:
       - in_app
       - kind
       - telegram
+    PreviewRequest:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+        file_kind:
+          $ref: '#/components/schemas/SalesImportFileKindEnum'
+        encoding:
+          type: string
+          default: ''
+        delimiter:
+          type: string
+          default: ''
+          maxLength: 3
+        header_row:
+          type: integer
+          maximum: 50
+          minimum: 1
+          default: 1
+      required:
+      - file
+      - file_kind
     PriorityEnum:
       enum:
       - low
@@ -38025,6 +39937,14 @@ components:
         * `normal` - Normal
         * `high` - High
         * `urgent` - Urgent
+    ProblemEnum:
+      enum:
+      - missing
+      - expired
+      type: string
+      description: |-
+        * `missing` - missing
+        * `expired` - expired
     Progress:
       type: object
       properties:
@@ -39811,24 +41731,6 @@ components:
         * `broken` - Equipment broken
         * `not_mine` - Not my task
         * `other` - Another reason
-    ReasonEnum:
-      enum:
-      - resignation
-      - mutual_agreement
-      - contract_end
-      - dismissal
-      - probation_failed
-      - redundancy
-      - other
-      type: string
-      description: |-
-        * `resignation` - resignation
-        * `mutual_agreement` - mutual_agreement
-        * `contract_end` - contract_end
-        * `dismissal` - dismissal
-        * `probation_failed` - probation_failed
-        * `redundancy` - redundancy
-        * `other` - other
     ReassignRequest:
       type: object
       properties:
@@ -40233,9 +42135,26 @@ components:
       - shift_id
       - status
       - worked_minutes
+    RecurringOccurrenceRequest:
+      type: object
+      description: |-
+        The due day the person saw (`next_due_on`): a second request for it is refused instead of
+        settling the next occurrence too. Optional, for older clients.
+      properties:
+        occurrence:
+          type: string
+          format: date
+          nullable: true
     RecurringPayRequest:
       type: object
+      description: |-
+        The due day the person saw (`next_due_on`): a second request for it is refused instead of
+        settling the next occurrence too. Optional, for older clients.
       properties:
+        occurrence:
+          type: string
+          format: date
+          nullable: true
         account:
           type: integer
         amount:
@@ -40343,6 +42262,10 @@ components:
           - $ref: '#/components/schemas/PlanningPersonRef'
           nullable: true
           readOnly: true
+        create_task:
+          type: boolean
+          description: The payer also gets a task for each bill, closed when it is
+            paid or skipped.
         template_key:
           type: string
           description: Set on rules made from a tax calendar template.
@@ -40445,6 +42368,11 @@ components:
         payer:
           type: integer
           nullable: true
+        create_task:
+          type: boolean
+          default: false
+          description: The payer also gets a task for each bill (bill mode, with a
+            payer).
         is_active:
           type: boolean
       required:
@@ -41868,6 +43796,530 @@ components:
       required:
       - range
       - results
+    SalesCustomer:
+      type: object
+      description: 'A customer row (`queries.customer_row`): money as strings.'
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        kind:
+          $ref: '#/components/schemas/SalesCustomerKindEnum'
+        phone:
+          type: string
+        tin:
+          type: string
+        telegram_username:
+          type: string
+        contact_person:
+          type: string
+        address:
+          type: string
+        notes:
+          type: string
+        credit_limit:
+          type: string
+          nullable: true
+        credit_blocked:
+          type: boolean
+        is_active:
+          type: boolean
+        owed:
+          type: string
+        currency:
+          type: string
+      required:
+      - address
+      - contact_person
+      - credit_blocked
+      - credit_limit
+      - currency
+      - id
+      - is_active
+      - kind
+      - name
+      - notes
+      - owed
+      - phone
+      - telegram_username
+      - tin
+    SalesCustomerDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+      required:
+      - id
+    SalesCustomerKindEnum:
+      enum:
+      - person
+      - clinic
+      - pharmacy
+      - company
+      type: string
+      description: |-
+        * `person` - Person
+        * `clinic` - Clinic
+        * `pharmacy` - Pharmacy
+        * `company` - Company
+    SalesCustomerWriteRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        phone:
+          type: string
+          maxLength: 32
+        kind:
+          $ref: '#/components/schemas/SalesCustomerKindEnum'
+        credit_limit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        credit_blocked:
+          type: boolean
+        tin:
+          type: string
+          maxLength: 20
+        telegram_username:
+          type: string
+          maxLength: 64
+        contact_person:
+          type: string
+          maxLength: 100
+        address:
+          type: string
+          maxLength: 255
+        notes:
+          type: string
+          maxLength: 4000
+        is_active:
+          type: boolean
+    SalesImport:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        profile:
+          allOf:
+          - $ref: '#/components/schemas/SalesRef'
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/SalesImportStatusEnum'
+          readOnly: true
+        error:
+          type: string
+          readOnly: true
+        rows:
+          type: integer
+          readOnly: true
+          description: Rows read from the file.
+        receipts:
+          type: integer
+          readOnly: true
+          description: Receipts added.
+        lines:
+          type: integer
+          readOnly: true
+          description: Lines found in the file.
+        matched:
+          type: integer
+          readOnly: true
+        unmatched:
+          type: integer
+          readOnly: true
+        duplicates:
+          type: integer
+          readOnly: true
+          description: Lines of receipts imported before, left out.
+        unreadable:
+          type: integer
+          readOnly: true
+          description: Rows that couldn't be read.
+        breaches:
+          type: integer
+          readOnly: true
+          description: Prescription lines sold above the legal price.
+        problems:
+          readOnly: true
+        day_check:
+          readOnly: true
+        first_day:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        last_day:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        started_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        finished_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        created_by:
+          allOf:
+          - $ref: '#/components/schemas/SalesPerson'
+          nullable: true
+          readOnly: true
+      required:
+      - breaches
+      - created_at
+      - created_by
+      - day_check
+      - duplicates
+      - error
+      - finished_at
+      - first_day
+      - id
+      - last_day
+      - lines
+      - matched
+      - problems
+      - profile
+      - receipts
+      - rows
+      - started_at
+      - status
+      - unmatched
+      - unreadable
+    SalesImportFileKindEnum:
+      enum:
+      - csv
+      - xlsx
+      type: string
+      description: |-
+        * `csv` - CSV
+        * `xlsx` - Excel (xlsx)
+    SalesImportPreview:
+      type: object
+      properties:
+        headers:
+          type: array
+          items:
+            type: string
+        rows:
+          type: array
+          items:
+            type: array
+            items:
+              type: string
+        total_rows:
+          type: integer
+        guess:
+          type: object
+          additionalProperties:
+            type: string
+        file_kind:
+          type: string
+      required:
+      - file_kind
+      - guess
+      - headers
+      - rows
+      - total_rows
+    SalesImportProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 80
+        file_kind:
+          $ref: '#/components/schemas/SalesImportFileKindEnum'
+        encoding:
+          type: string
+          description: 'Empty: UTF-8, else Windows-1251.'
+          maxLength: 16
+        delimiter:
+          type: string
+          description: 'Empty: found from the file.'
+          maxLength: 1
+        header_row:
+          type: integer
+          maximum: 50
+          minimum: 1
+          description: The row that holds the column names.
+        columns:
+          type: object
+          additionalProperties: {}
+        date_format:
+          type: string
+          description: 'Empty: the usual formats ("07.11.2026 14:05").'
+          maxLength: 32
+        default_unit:
+          allOf:
+          - $ref: '#/components/schemas/SalesImportUnitEnum'
+          description: |-
+            What a quantity counts when the file has no unit column.
+
+            * `pack` - Packs
+            * `part` - Parts (blisters, ampoules)
+        branch:
+          allOf:
+          - $ref: '#/components/schemas/SalesBranchRef'
+          nullable: true
+          readOnly: true
+        branch_map:
+          type: object
+          additionalProperties:
+            type: integer
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        last_import:
+          type: object
+          additionalProperties: {}
+          nullable: true
+          readOnly: true
+      required:
+      - branch
+      - created_at
+      - id
+      - last_import
+      - name
+    SalesImportProfileRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        file_kind:
+          $ref: '#/components/schemas/SalesImportFileKindEnum'
+        encoding:
+          type: string
+          description: 'Empty: UTF-8, else Windows-1251.'
+          maxLength: 16
+        delimiter:
+          type: string
+          description: 'Empty: found from the file.'
+          maxLength: 1
+        header_row:
+          type: integer
+          maximum: 50
+          minimum: 1
+          description: The row that holds the column names.
+        columns:
+          type: object
+          additionalProperties: {}
+        date_format:
+          type: string
+          description: 'Empty: the usual formats ("07.11.2026 14:05").'
+          maxLength: 32
+        default_unit:
+          allOf:
+          - $ref: '#/components/schemas/SalesImportUnitEnum'
+          description: |-
+            What a quantity counts when the file has no unit column.
+
+            * `pack` - Packs
+            * `part` - Parts (blisters, ampoules)
+        branch_id:
+          type: integer
+          writeOnly: true
+          nullable: true
+        branch_map:
+          type: object
+          additionalProperties:
+            type: integer
+        is_active:
+          type: boolean
+      required:
+      - name
+    SalesImportStatusEnum:
+      enum:
+      - queued
+      - processing
+      - ready
+      - failed
+      type: string
+      description: |-
+        * `queued` - Waiting
+        * `processing` - Reading
+        * `ready` - Done
+        * `failed` - Failed
+    SalesImportUnitEnum:
+      enum:
+      - pack
+      - part
+      type: string
+      description: |-
+        * `pack` - Packs
+        * `part` - Parts (blisters, ampoules)
+    SalesInvoiceDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        number:
+          type: string
+        status:
+          type: string
+        total:
+          type: string
+        lines:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+      required:
+      - id
+      - lines
+      - number
+      - status
+      - total
+    SalesInvoiceLineInputRequest:
+      type: object
+      properties:
+        product_id:
+          type: integer
+          nullable: true
+        name:
+          type: string
+          default: ''
+          maxLength: 200
+        quantity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        discount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          default: '0.00'
+      required:
+      - price
+      - quantity
+    SalesInvoicePage:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+      required:
+      - results
+    SalesInvoicePaymentRequest:
+      type: object
+      properties:
+        account_id:
+          type: integer
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        paid_on:
+          type: string
+          format: date
+        debt_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+      required:
+      - account_id
+      - amount
+      - paid_on
+    SalesInvoicePdf:
+      type: object
+      properties:
+        url:
+          type: string
+      required:
+      - url
+    SalesInvoiceSent:
+      type: object
+      properties:
+        delivered:
+          type: string
+        url:
+          type: string
+      required:
+      - delivered
+    SalesInvoiceWriteRequest:
+      type: object
+      properties:
+        customer_id:
+          type: integer
+        branch_id:
+          type: integer
+          nullable: true
+        currency:
+          type: string
+          minLength: 1
+          maxLength: 3
+        notes:
+          type: string
+          maxLength: 4000
+        e_invoice_ref:
+          type: string
+          maxLength: 64
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/SalesInvoiceLineInputRequest'
+    SalesLineCodes:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+      required:
+      - results
+    SalesLineMatched:
+      type: object
+      properties:
+        lines:
+          type: integer
+      required:
+      - lines
+    SalesLineSkipped:
+      type: object
+      properties:
+        lines:
+          type: integer
+      required:
+      - lines
+    SalesLinesSourceEnum:
+      enum:
+      - none
+      - import
+      - receipts
+      type: string
+      description: |-
+        * `none` - No sale lines
+        * `import` - Imported from the cash-register software
+        * `receipts` - Entered with each receipt
     SalesModeEnum:
       enum:
       - shift_totals
@@ -41916,6 +44368,44 @@ components:
       required:
       - id
       - name
+    SalesPosCashier:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        code:
+          type: string
+          readOnly: true
+        member:
+          allOf:
+          - $ref: '#/components/schemas/SalesPerson'
+          nullable: true
+          readOnly: true
+        receipts:
+          type: integer
+          readOnly: true
+        last_sold_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+      required:
+      - code
+      - id
+      - last_sold_at
+      - member
+      - receipts
+    SalesProductLookup:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+      required:
+      - results
     SalesReasonRequest:
       type: object
       properties:
@@ -41925,6 +44415,24 @@ components:
           maxLength: 300
       required:
       - reason
+    SalesReceivablesAging:
+      type: object
+      properties:
+        currency:
+          type: string
+        totals:
+          type: object
+          additionalProperties:
+            type: string
+        customers:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+      required:
+      - currency
+      - customers
+      - totals
     SalesRef:
       type: object
       properties:
@@ -41952,6 +44460,132 @@ components:
       description: |-
         * `sale` - Sale
         * `refund` - Refund
+    SalesSaleLine:
+      type: object
+      description: A sale line with its receipt. `cost` is there only for finance.view.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/SalesSaleLineStatusEnum'
+          readOnly: true
+        receipt:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+        branch:
+          allOf:
+          - $ref: '#/components/schemas/SalesBranchRef'
+          readOnly: true
+        cashier:
+          type: object
+          additionalProperties: {}
+          nullable: true
+          readOnly: true
+        line_number:
+          type: integer
+          readOnly: true
+        code:
+          type: string
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        product:
+          type: object
+          additionalProperties: {}
+          nullable: true
+          readOnly: true
+        batch:
+          type: object
+          additionalProperties: {}
+          nullable: true
+          readOnly: true
+        series:
+          type: string
+          readOnly: true
+        unit:
+          allOf:
+          - $ref: '#/components/schemas/SalesImportUnitEnum'
+          readOnly: true
+          description: |-
+            The unit the file counted in; `quantity` is always in parts once matched.
+
+            * `pack` - Packs
+            * `part` - Parts (blisters, ampoules)
+        quantity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
+        parts_per_pack:
+          type: integer
+          readOnly: true
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        discount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        pack_price:
+          type: string
+          readOnly: true
+        cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        cap:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        over_cap:
+          type: boolean
+          readOnly: true
+        rx_number:
+          type: string
+          readOnly: true
+      required:
+      - batch
+      - branch
+      - cap
+      - cashier
+      - code
+      - cost
+      - discount
+      - id
+      - line_number
+      - name
+      - over_cap
+      - pack_price
+      - parts_per_pack
+      - price
+      - product
+      - quantity
+      - receipt
+      - rx_number
+      - series
+      - status
+      - total
+      - unit
+    SalesSaleLineStatusEnum:
+      enum:
+      - matched
+      - waiting
+      - skipped
+      type: string
+      description: |-
+        * `matched` - Matched
+        * `waiting` - Waiting for a match
+        * `skipped` - Not a product
     SalesSaleSourceEnum:
       enum:
       - app
@@ -42008,6 +44642,37 @@ components:
           maximum: 720
           minimum: 1
           description: A till still open this long after closing time raises an alert.
+        sales_lines:
+          allOf:
+          - $ref: '#/components/schemas/SalesLinesSourceEnum'
+          description: |-
+            Where sale lines come from. Without them stock moves only through receipts of goods, transfers, write-offs and counts.
+
+            * `none` - No sale lines
+            * `import` - Imported from the cash-register software
+            * `receipts` - Entered with each receipt
+        credit_days:
+          type: integer
+          maximum: 365
+          minimum: 1
+          description: A nasiya (credit sale) is due this many days after the sale.
+        invoice_prefix:
+          type: string
+          maxLength: 8
+        invoice_terms_days:
+          type: integer
+          maximum: 365
+          minimum: 0
+          description: An invoice is due this many days after it is issued.
+        invoice_footer:
+          type: string
+          description: Printed at the foot of invoices.
+        rx_wholesale_max_markup_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          description: A prescription medicine sold by invoice above its batch cost
+            plus this markup (or above its reference price) warns at issue.
       required:
       - business_day_ends_at
       - cash_tolerance

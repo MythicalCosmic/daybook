@@ -16,4 +16,8 @@ ENUM_NAME_OVERRIDES = {
     "HrCheckStateEnum": "apps.hr.queries.CHECK_STATES",
     "HrContractKindEnum": "apps.hr.models.ContractKind",
     "HrContractStatusEnum": "apps.hr.models.Contract.Status",
+    "HrPharmacistRoleEnum": "apps.hr.services.PHARMACIST_ROLES",
+    "HrCoverageStateEnum": "apps.hr.coverage.STATES",
+    "HrCoverageReasonEnum": "apps.hr.queries.REASONS",
+    "HrCoverageClosedEnum": "apps.hr.coverage.CLOSED",
 }

@@ -24,6 +24,23 @@ def watch_expiries() -> int:
 
 
 @shared_task
+def watch_coverage() -> int:
+    """Pharmacies open with nobody qualified checked in, and tills opened by someone who isn't
+    a qualified pharmacist → the branch manager and the owners (once each)."""
+    from apps.hr import watch
+
+    return watch.watch_coverage()
+
+
+@shared_task
+def watch_planned_coverage() -> int:
+    """Gaps in the published roster of the coming days → who runs the roster (once per gap)."""
+    from apps.hr import watch
+
+    return watch.watch_planned_coverage()
+
+
+@shared_task
 def post_celebrations() -> int:
     """Today's birthdays and work anniversaries → the groups and the person (once each)."""
     from apps.hr import watch

@@ -22,7 +22,7 @@ import type { Money } from "@/api/types";
 import type { StatusTone } from "@/components/StatusPill.vue";
 import { compare, dec } from "@/lib/decimal";
 
-import type { MethodKind, MovementKind, MovementStatus, ShiftStatus } from "./types";
+import type { ImportStatus, MethodKind, MovementKind, MovementStatus, ShiftStatus } from "./types";
 
 export const SHIFT_TONES: Record<ShiftStatus, StatusTone> = {
   open: "info",
@@ -102,4 +102,19 @@ export function countRows(count: Record<string, number> | null | undefined): Arr
 export function heatHours(cells: ReadonlyArray<{ hour?: number | null; net?: Money | null }>): { first: number; last: number } {
   const busy = cells.filter((cell) => !dec(cell.net ?? "0").isZero()).map((cell) => cell.hour ?? 0);
   return { first: Math.min(7, ...busy), last: Math.max(23, ...busy) };
+}
+
+/** The tone of a sale lines import's status. */
+export function importTone(status: ImportStatus): StatusTone {
+  return ({ queued: "neutral", processing: "info", ready: "success", failed: "danger" } as const)[status];
+}
+
+/**
+ * A quantity in parts as whole packs and the parts left over: 7 blisters of a 2-blister pack
+ * read as 3 packs and 1 blister. A product sold in whole packs only is just packs.
+ */
+export function packsAndParts(parts: string | number, perPack: number): { packs: number; rest: number } {
+  const whole = Math.round(Number(parts) * 1000) / 1000;
+  if (!perPack || perPack <= 1) return { packs: whole, rest: 0 };
+  return { packs: Math.floor(whole / perPack), rest: Math.round((whole - Math.floor(whole / perPack) * perPack) * 1000) / 1000 };
 }

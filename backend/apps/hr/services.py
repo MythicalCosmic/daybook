@@ -49,7 +49,16 @@ REQUIRED = "hr.required"
 SETTINGS = "hr.settings"
 CONTRACTS = "hr.contracts"
 TEMPLATES = "hr.templates"
+COVERAGE = "hr.coverage"
 
+COVERAGE_FIELDS = (
+    "coverage_enabled",
+    "coverage_min",
+    "coverage_needs_documents",
+    "coverage_alert_minutes",
+    "coverage_days",
+    "unqualified_seller_alert",
+)
 SETTINGS_FIELDS = (
     "document_warn_days",
     "contract_warn_days",
@@ -58,6 +67,7 @@ SETTINGS_FIELDS = (
     "celebrate_anniversaries",
     "employer_name",
     "employer_tin",
+    *COVERAGE_FIELDS,
 )
 # What hr.manage edits on a profile; the secret ones go in encrypted and never come back out
 # (only masked) without hr.sensitive.
@@ -131,7 +141,96 @@ def update_settings(company, *, by: Membership | None, **fields) -> HRSettings:
             target=row,
             changes=changes,
         )
-        bump(company.pk, SETTINGS, EXPIRING)
+        bump(
+            company.pk,
+            SETTINGS,
+            EXPIRING,
+            *([COVERAGE] if set(changes) & set(COVERAGE_FIELDS) else []),
+        )
+    return row
+
+
+# Who counts as a pharmacist (the setup step hr.pharmacists) ------------------------------------
+
+HEAD, SENIOR, PHARMACIST, CUSTOM = "head", "senior", "pharmacist", "custom"
+PHARMACIST_ROLES = (HEAD, SENIOR, PHARMACIST, CUSTOM)
+# The documents each kind of pharmacist must have (docs/PLAN-OWNER.md §14.4 row 5, §14.9; to
+# confirm with a lawyer): (kind, level, alternatives). A head may have a medical diploma instead.
+STANDARD_DOCUMENTS = {
+    HEAD: (
+        (DocumentKind.PHARMACY_DIPLOMA, DocumentLevel.HIGHER, (DocumentKind.MEDICAL_DIPLOMA,)),
+        (DocumentKind.PHARMACIST_CERTIFICATE, "", ()),
+    ),
+    SENIOR: (
+        (DocumentKind.PHARMACY_DIPLOMA, DocumentLevel.HIGHER, ()),
+        (DocumentKind.PHARMACIST_CERTIFICATE, "", ()),
+    ),
+    PHARMACIST: (
+        (DocumentKind.PHARMACY_DIPLOMA, "", ()),
+        (DocumentKind.PHARMACIST_CERTIFICATE, "", ()),
+    ),
+}
+
+
+def standard_role(rows) -> str | None:
+    """Which standard set `rows` (one position's required documents) are, or None when they
+    were changed by hand (or there are none)."""
+    found = {(row.kind, row.level, tuple(sorted(row.alternatives or ()))) for row in rows}
+    for role, wanted in STANDARD_DOCUMENTS.items():
+        if found and found == {(kind, level, tuple(sorted(alts))) for kind, level, alts in wanted}:
+            return role
+    return None
+
+
+@transaction.atomic
+def set_pharmacists(company, *, by: Membership | None, roles: dict) -> HRSettings:
+    """Who counts as a pharmacist on duty: `roles` maps each position (a Position of the
+    company) to head, senior, pharmacist, custom, or None (not a pharmacist). The positions
+    with a role become `pharmacist_positions`; one asking for no documents yet gets the
+    standard set of its role, and one whose documents are still a standard set follows a new
+    role. Documents changed by hand (custom) and those of positions that stop counting are kept.
+    """
+    _ensure(by, Perm.HR_MANAGE)
+    for position, role in roles.items():
+        if position.company_id != company.pk:
+            raise DomainError(_("Pick a position of this company."))
+        if role is not None and role not in PHARMACIST_ROLES:
+            raise DomainError(_("Pick what this position does."))
+    row = HRSettings.objects.select_for_update().get(pk=conf.get_settings(company).pk)
+    before = conf.pharmacist_position_ids(row)
+    chosen = {position.pk for position, role in roles.items() if role is not None}
+    kept = before - {position.pk for position in roles}
+    row.pharmacist_positions.set(sorted(chosen | kept))
+    documents = []
+    for position, role in sorted(roles.items(), key=lambda item: item[0].pk):
+        if role in (None, CUSTOM):
+            continue
+        rows = list(RequiredDocument.objects.filter(company=company, position=position))
+        if rows and standard_role(rows) in (None, role):
+            continue
+        RequiredDocument.objects.filter(pk__in=[found.pk for found in rows]).delete()
+        for kind, level, alternatives in STANDARD_DOCUMENTS[role]:
+            RequiredDocument.objects.create(
+                company=company,
+                position=position,
+                kind=kind,
+                level=level,
+                alternatives=list(alternatives),
+            )
+        documents.append(position.name)
+    after = conf.pharmacist_position_ids(row)
+    if after != before or documents:
+        names = dict(Position.objects.filter(pk__in=before | after).values_list("pk", "name"))
+        audit.record(
+            HRAction.PHARMACISTS_CHANGED,
+            company_id=company.pk,
+            actor=by.user if by else None,
+            target=row,
+            positions=sorted(names[pk] for pk in after),
+            removed=sorted(names[pk] for pk in before - after),
+            documents_for=documents,
+        )
+        bump(company.pk, SETTINGS, REQUIRED, EXPIRING, COVERAGE)
     return row
 
 

@@ -2,7 +2,9 @@
  * Sales and cash (plan §6.2 "Sales", package E): the sales overview with comparisons, cashier
  * shifts with a full shift drawer (photos, cash count, movements, verify), "where is my cash",
  * the cashier scorecard, monthly targets with pacing, single receipts and the tills and payment
- * methods setup. Kept light: pages, widgets, panels and the API all load on first use.
+ * methods setup; §14.7 adds the sale lines of the pharmacy's cash-register program (Import with
+ * the column mapper and the match list, Lines with the legal price check, cashier codes in
+ * Settings). Kept light: pages, widgets, panels and the API all load on first use.
  */
 import { Banknote, ClipboardCheck, Store, Target } from "@lucide/vue";
 import { defineAsyncComponent } from "vue";
@@ -29,6 +31,10 @@ export default defineModule({
     { key: "cashiers", title: "sales.nav.cashiers", to: "sales/cashiers", perm: "sales.view" },
     { key: "targets", title: "sales.nav.targets", to: "sales/targets", perm: "sales.view" },
     { key: "entries", title: "sales.nav.entries", to: "sales/entries", perm: "sales.view" },
+    { key: "lines", title: "sales.nav.lines", to: "sales/lines", perm: "sales.view" },
+    { key: "import", title: "sales.nav.import", to: "sales/import", perm: "sales.manage", badge: counter("sales.unmatched") },
+    { key: "customers", title: "sales.nav.customers", to: "sales/customers", perm: "sales.view" },
+    { key: "invoices", title: "sales.nav.invoices", to: "sales/invoices", perm: ["sales.view", "sales.invoices"], badge: counter("sales.invoices_overdue") },
     { key: "setup", title: "sales.nav.setup", to: "sales/setup", perm: "sales.view" },
   ],
   // Shifts closed and waiting for a manager's check.
@@ -99,6 +105,14 @@ export default defineModule({
       feature: "sales",
       order: 42,
       component: defineAsyncComponent(() => import("./components/PaymentMethodsPanel.vue")),
+    },
+    {
+      id: "pos-cashiers",
+      title: "sales.pos.panel",
+      perm: "sales.manage",
+      feature: "sales",
+      order: 43,
+      component: defineAsyncComponent(() => import("./components/PosCashiersPanel.vue")),
     },
   ],
   // Telegram `startapp=shift_1042` opens the shift drawer.

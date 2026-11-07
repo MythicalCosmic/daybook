@@ -14,6 +14,15 @@ urlpatterns = [
     ),
     path("sales/entries/", api.EntryView.as_view(), name="sales-kassa-entries"),
     path(
+        "sales/customers/lookup/",
+        api.CustomerLookupView.as_view(),
+        name="sales-kassa-customer-lookup",
+    ),
+    path("sales/credit/", api.CreditView.as_view(), name="sales-kassa-credit"),
+    path(
+        "sales/credit/<int:pk>/void/", api.CreditVoidView.as_view(), name="sales-kassa-credit-void"
+    ),
+    path(
         "sales/entries/<int:pk>/void/", api.EntryVoidView.as_view(), name="sales-kassa-entry-void"
     ),
     path(

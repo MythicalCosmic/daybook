@@ -8,11 +8,15 @@ To the person (the employee bot, with a way into the app): their contract is in 
 document of theirs expires, their birthday or work anniversary.
 """
 
-from datetime import date
+import hashlib
+from datetime import date, timedelta
+
+from django.utils import timezone
 
 from apps.hr import bot_messages
 from apps.hr.models import Celebration, Contract, EmployeeDocument
 from apps.inbox import services as inbox
+from apps.inbox.models import Notification
 from apps.inbox.services import NotificationAction
 from apps.members import scope
 from apps.members.models import Membership
@@ -27,6 +31,12 @@ PROBATION_ENDING = "hr.probation_ending"
 MY_DOCUMENT = "hr.my_document"
 DOCUMENTS_SCREEN = "hr.documents"
 CELEBRATION = "hr.celebration"
+# The pharmacist coverage rule (docs/PLAN-OWNER.md §14.9).
+COVERAGE_GAP_LIVE = "hr.coverage_gap_live"
+UNQUALIFIED_SELLER = "hr.unqualified_seller"
+COVERAGE_GAP_PLANNED = "hr.coverage_gap_planned"
+# A roster gap told about is remembered this long (longer than the furthest look ahead).
+PLANNED_MEMORY_DAYS = 45
 
 
 def recipients(person: Membership, perm: Perm = Perm.HR_MANAGE) -> list[Membership]:
@@ -121,6 +131,101 @@ def probation_ending(contract: Contract, step: int, today: date) -> int:
                 NotificationAction("extend", lambda reader: bot_messages.extend_label()),
             ],
             dedupe_key=f"hr.probation:{contract.pk}:{contract.probation_until}:{step}",
+        )
+    )
+
+
+def branch_heads(branch) -> list[Membership]:
+    """Who hears that a pharmacy has nobody qualified: its own manager and the owners."""
+    found = {
+        person.pk: person
+        for person in Membership.objects.filter(
+            company_id=branch.company_id, status=Membership.Status.APPROVED, role__is_owner=True
+        ).select_related("user", "role", "company")
+    }
+    if branch.manager_id and branch.manager_id not in found:
+        manager = (
+            Membership.objects.filter(pk=branch.manager_id, status=Membership.Status.APPROVED)
+            .select_related("user", "role", "company")
+            .first()
+        )
+        if manager is not None:
+            found[manager.pk] = manager
+    return list(found.values())
+
+
+def _stamp(moment) -> str:
+    return moment.strftime("%Y%m%dT%H%M")
+
+
+def coverage_gap_live(branch, gap, names: list[str]) -> int:
+    """A pharmacy open with nobody qualified checked in for a while: once per gap."""
+    return len(
+        inbox.notify(
+            branch_heads(branch),
+            COVERAGE_GAP_LIVE,
+            title=lambda reader: bot_messages.live_gap_title(branch.name),
+            body=lambda reader: bot_messages.live_gap_body(gap.since, names),
+            url=f"/c/{branch.company_id}/hr/coverage?branch={branch.pk}",
+            target=branch,
+            severity="critical",
+            dedupe_key=f"{COVERAGE_GAP_LIVE}:{branch.pk}:{_stamp(gap.since)}",
+        )
+    )
+
+
+def unqualified_seller(branch, row: dict, opened_at) -> int:
+    """A till opened by someone who isn't a qualified pharmacist: once per till shift."""
+    return len(
+        inbox.notify(
+            branch_heads(branch),
+            UNQUALIFIED_SELLER,
+            title=lambda reader: bot_messages.seller_title(branch.name),
+            body=lambda reader: bot_messages.seller_body(row["cashier"], opened_at, row["reason"]),
+            url=f"/c/{branch.company_id}/sales/shifts?shift={row['shift_id']}",
+            severity="critical",
+            data={"shift_id": row["shift_id"]},
+            dedupe_key=f"{UNQUALIFIED_SELLER}:{row['shift_id']}",
+        )
+    )
+
+
+def gap_key(gap) -> str:
+    return f"{_stamp(gap.start)}-{_stamp(gap.end)}"
+
+
+def announced_gaps(branch) -> set[str]:
+    """The roster gaps of `branch` already announced (each message keeps its gaps' keys)."""
+    rows = Notification.objects.filter(
+        company_id=branch.company_id,
+        kind=COVERAGE_GAP_PLANNED,
+        target_type="branch",
+        target_id=branch.pk,
+        created_at__gte=timezone.now() - timedelta(days=PLANNED_MEMORY_DAYS),
+    ).values_list("data", flat=True)
+    return {key for data in rows for key in (data or {}).get("gaps", [])}
+
+
+def coverage_gaps_planned(branch, gaps: list, recipients: list[Membership], week: str) -> int:
+    """Gaps of the published roster with no qualified pharmacist, to whoever runs the roster
+    there: the new ones of a run in one message per branch, so each gap is told once."""
+    known = announced_gaps(branch)
+    fresh = [gap for gap in gaps if gap_key(gap) not in known]
+    if not fresh:
+        return 0
+    keys = [gap_key(gap) for gap in fresh]
+    digest = hashlib.sha1("|".join(keys).encode(), usedforsecurity=False).hexdigest()[:20]
+    return len(
+        inbox.notify(
+            recipients,
+            COVERAGE_GAP_PLANNED,
+            title=lambda reader: bot_messages.planned_gap_title(branch.name),
+            body=lambda reader: bot_messages.planned_gaps_body(fresh),
+            url=f"/c/{branch.company_id}/attendance/roster?branch={branch.pk}&week={week}",
+            target=branch,
+            severity="warning",
+            data={"gaps": keys},
+            dedupe_key=f"{COVERAGE_GAP_PLANNED}:{branch.pk}:{digest}",
         )
     )
 

@@ -132,6 +132,8 @@ export const EXTENSION_POINTS = [
   "finance.transactions.toolbar",
   "sales.shift.detail",
   "payroll.run.toolbar",
+  /** Above the roster grid: HR's pharmacist coverage gaps for the week (context: companyId, branchId, week; §14.5). */
+  "attendance.roster.coverage",
 ] as const;
 
 export type ExtensionPoint = (typeof EXTENSION_POINTS)[number];

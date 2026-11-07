@@ -479,3 +479,46 @@ def test_the_pdf_of_a_final_payslip_below_zero(shop, team, cash):
     assert data["net_label"] == "They owe the company"
     assert re.sub(r"\s", "", data["net"]).startswith("2400000")
     assert data["owes_note"]
+
+
+def test_someone_who_left_gets_their_final_payslip_as_a_pdf(
+    shop, team, monkeypatch, django_capture_on_commit_callbacks
+):
+    """They can no longer open the app and the inbox skips people who left, so publishing the
+    final payslip sends its PDF to them in the bot, with the company, month and amount."""
+    from apps.inbox.models import Notification
+    from apps.payroll.models import Payslip
+
+    staff = team
+    history(shop, staff.ali)
+    leave(staff.ali)
+    sent = []
+    monkeypatch.setattr(
+        "apps.notifications.telegram.send_document",
+        lambda bot, chat_id, name, **kwargs: sent.append((chat_id, kwargs["caption"])),
+    )
+    run = services.create_final_run(staff.ali, by=staff.accountant, last_day=LAST_DAY)
+    services.finalize_run(run, by=staff.owner)
+    with django_capture_on_commit_callbacks(execute=True):
+        services.publish(run, by=staff.owner)
+
+    [(chat_id, caption)] = sent
+    assert chat_id == staff.ali.user.telegram_id
+    assert caption.startswith(f"{shop.name}: your final payslip for October 2026, ")
+    assert Payslip.objects.get(run=run).pdf.name.endswith(".pdf")
+    assert not Notification.objects.filter(recipient=staff.ali, kind="payroll.payslip").exists()
+
+
+def test_someone_who_left_gets_no_regular_payslip_pdf(shop, team):
+    from apps.payroll import tasks
+    from apps.payroll.models import Payslip
+
+    staff = team
+    run = services.create_run(shop, by=staff.owner, period="2026-10")
+    payslip = Payslip.objects.get(run=run, membership=staff.sara)
+    assert tasks.receives_pdf(payslip)
+    leave(staff.sara)
+    payslip.refresh_from_db()
+    assert not tasks.receives_pdf(
+        Payslip.objects.select_related("membership", "run").get(pk=payslip.pk)
+    )

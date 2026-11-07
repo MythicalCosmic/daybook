@@ -1360,6 +1360,63 @@ export interface paths {
         patch: operations["v1_companies_reminder_policies_partial_update"];
         trace?: never;
     };
+    "/api/v1/companies/{company_id}/sales/credit/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Nasiya on my open shift: a credit sale to a customer (found by phone, or new), or a
+         *     customer paying it back (cash goes into the till).
+         */
+        post: operations["v1_companies_sales_credit_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/sales/credit/{id}/void/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Cancel a nasiya entry I typed by mistake, while my shift is open. */
+        post: operations["v1_companies_sales_credit_void_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/sales/customers/lookup/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Kassa's nasiya: customers by phone (the whole number or its last digits) or name, with
+         *     what each owes and may still take.
+         */
+        get: operations["v1_companies_sales_customers_lookup_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/companies/{company_id}/sales/entries/": {
         parameters: {
             query?: never;
@@ -2868,6 +2925,16 @@ export interface components {
             record_id?: number | null;
             reason: string;
         };
+        CreditRequest: {
+            kind: components["schemas"]["SalesCreditEntryKindEnum"];
+            customer_id?: number | null;
+            new_customer?: components["schemas"]["KassaNewCustomerRequest"] | null;
+            /** Format: decimal */
+            amount: string;
+            method_id?: number | null;
+            /** @default  */
+            note: string;
+        };
         /**
          * @description * `UZS` - Uzbek som
          *     * `USD` - US dollar
@@ -3138,10 +3205,21 @@ export interface components {
         KassaClosed: {
             id: number;
         };
+        KassaCredit: {
+            id: number;
+        };
+        KassaCreditVoided: {
+            id: number;
+        };
         KassaCurrent: {
             shift: {
                 [key: string]: unknown;
             } | null;
+        };
+        KassaCustomers: {
+            results: {
+                [key: string]: unknown;
+            }[];
         };
         KassaHandoverAnswer: {
             id: number;
@@ -3151,6 +3229,12 @@ export interface components {
             results: {
                 [key: string]: unknown;
             }[];
+        };
+        KassaNewCustomerRequest: {
+            name: string;
+            phone: string;
+            /** @default person */
+            kind: components["schemas"]["SalesCustomerKindEnum"];
         };
         KassaSale: {
             id: number;
@@ -4670,6 +4754,20 @@ export interface components {
          * @enum {string}
          */
         SalesCashMovementKindEnum: "payout" | "deposit" | "handover" | "to_safe" | "from_safe" | "to_bank";
+        /**
+         * @description * `sale` - Sold on credit
+         *     * `payment` - Paid back
+         * @enum {string}
+         */
+        SalesCreditEntryKindEnum: "sale" | "payment";
+        /**
+         * @description * `person` - Person
+         *     * `clinic` - Clinic
+         *     * `pharmacy` - Pharmacy
+         *     * `company` - Company
+         * @enum {string}
+         */
+        SalesCustomerKindEnum: "person" | "clinic" | "pharmacy" | "company";
         SalesPerson: {
             id: number;
             name: string;
@@ -7367,6 +7465,84 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReminderPolicy"];
+                };
+            };
+        };
+    };
+    v1_companies_sales_credit_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreditRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["CreditRequest"];
+                "multipart/form-data": components["schemas"]["CreditRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KassaCredit"];
+                };
+            };
+        };
+    };
+    v1_companies_sales_credit_void_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SalesReasonRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["SalesReasonRequest"];
+                "multipart/form-data": components["schemas"]["SalesReasonRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KassaCreditVoided"];
+                };
+            };
+        };
+    };
+    v1_companies_sales_customers_lookup_retrieve: {
+        parameters: {
+            query?: {
+                phone?: string;
+            };
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KassaCustomers"];
                 };
             };
         };

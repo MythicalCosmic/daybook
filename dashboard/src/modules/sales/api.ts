@@ -13,11 +13,27 @@ import type { Page } from "@/api/types";
 import { useCompanyId } from "@/stores/company";
 
 import type {
+  Aging,
   CashierScore,
   CashPositions,
+  Customer,
+  CustomerDetail,
+  CustomerInput,
+  InvoiceDetail,
+  InvoiceInput,
+  InvoiceRow,
   Entry,
   EntryInput,
+  FileKind,
   GroupBy,
+  ImportPreview,
+  ImportProfile,
+  ImportProfileInput,
+  LineCode,
+  PosCashier,
+  ProductHit,
+  SaleLine,
+  SalesImport,
   Movement,
   MovementInput,
   PaymentLineInput,
@@ -83,6 +99,52 @@ export const salesApi = {
     http.post<{ id: number }>(path(cid, "targets/"), input),
   updateTarget: (cid: number, id: number, amount: string) => http.patch<{ id: number }>(path(cid, `targets/${id}/`), { amount }),
   deleteTarget: (cid: number, id: number) => http.delete(path(cid, `targets/${id}/`)),
+
+  // Sale lines from the cash-register software (§14.7).
+  profiles: (cid: number) => http.get<ImportProfile[]>(path(cid, "import-profiles/")),
+  createProfile: (cid: number, input: ImportProfileInput) => http.post<ImportProfile>(path(cid, "import-profiles/"), input),
+  updateProfile: (cid: number, id: number, input: ImportProfileInput) => http.patch<ImportProfile>(path(cid, `import-profiles/${id}/`), input),
+  preview: (cid: number, file: File, layout: { file_kind: FileKind; encoding?: string; delimiter?: string; header_row?: number }) => {
+    const form = new FormData();
+    form.append("file", file);
+    form.append("file_kind", layout.file_kind);
+    form.append("encoding", layout.encoding ?? "");
+    form.append("delimiter", layout.delimiter ?? "");
+    form.append("header_row", String(layout.header_row ?? 1));
+    return http.form<ImportPreview>(path(cid, "import-profiles/preview/"), form);
+  },
+  imports: (cid: number, params: Query) => http.get<Page<SalesImport>>(path(cid, "imports/"), params),
+  importDetail: (cid: number, id: number) => http.get<SalesImport>(path(cid, `imports/${id}/`)),
+  upload: (cid: number, profileId: number, file: File) => {
+    const form = new FormData();
+    form.append("profile_id", String(profileId));
+    form.append("file", file);
+    return http.form<SalesImport>(path(cid, "imports/"), form);
+  },
+  lines: (cid: number, params: Query) => http.get<Page<SaleLine>>(path(cid, "lines/"), params),
+  codes: (cid: number, status: "waiting" | "skipped") => http.get<{ results: LineCode[] }>(path(cid, "lines/codes/"), { status }),
+  match: (cid: number, code: string, productId: number) => http.post<{ lines: number }>(path(cid, "lines/match/"), { code, product_id: productId }),
+  skip: (cid: number, code: string) => http.post<{ lines: number }>(path(cid, "lines/skip/"), { code }),
+  posCashiers: (cid: number) => http.get<PosCashier[]>(path(cid, "pos-cashiers/")),
+  mapCashier: (cid: number, id: number, memberId: number | null) => http.patch<PosCashier>(path(cid, `pos-cashiers/${id}/`), { member_id: memberId }),
+  products: (cid: number, q: string, signal?: AbortSignal) => http.get<{ results: ProductHit[] }>(path(cid, "products/"), { q }, { signal }),
+
+  // Customers, nasiya and invoices (§11.4).
+  customers: (cid: number, params: Query) => http.get<Page<Customer>>(path(cid, "customers/"), params),
+  customer: (cid: number, id: number) => http.get<CustomerDetail>(path(cid, `customers/${id}/`)),
+  createCustomer: (cid: number, input: CustomerInput) => http.post<Customer>(path(cid, "customers/"), input),
+  updateCustomer: (cid: number, id: number, input: CustomerInput) => http.patch<Customer>(path(cid, `customers/${id}/`), input),
+  aging: (cid: number) => http.get<Aging>(path(cid, "receivables/aging/")),
+  invoices: (cid: number, params: Query) => http.get<Page<InvoiceRow>>(path(cid, "invoices/"), params),
+  invoice: (cid: number, id: number) => http.get<InvoiceDetail>(path(cid, `invoices/${id}/`)),
+  createInvoice: (cid: number, input: InvoiceInput) => http.post<InvoiceDetail>(path(cid, "invoices/"), input),
+  updateInvoice: (cid: number, id: number, input: InvoiceInput) => http.patch<InvoiceDetail>(path(cid, `invoices/${id}/`), input),
+  issueInvoice: (cid: number, id: number) => http.post<InvoiceDetail>(path(cid, `invoices/${id}/issue/`)),
+  voidInvoice: (cid: number, id: number, reason: string) => http.post<InvoiceDetail>(path(cid, `invoices/${id}/void/`), { reason }),
+  sendInvoice: (cid: number, id: number) => http.post<{ delivered: "telegram" | "link"; url?: string }>(path(cid, `invoices/${id}/send/`)),
+  payInvoice: (cid: number, id: number, input: { account_id: number; amount: string; paid_on: string; debt_amount?: string | null }) =>
+    http.post<InvoiceDetail>(path(cid, `invoices/${id}/payments/`), input),
+  invoicePdf: (cid: number, id: number) => http.get<{ url: string }>(path(cid, `invoices/${id}/pdf/`)),
 };
 
 // ─── Keys and queries ────────────────────────────────────────────────────────
@@ -138,6 +200,62 @@ export function useMovements(params: MaybeRefOrGetter<Record<string, unknown>>) 
 
 export function useEntries(params: MaybeRefOrGetter<Record<string, unknown>>) {
   return useResource("entries", params, (cid, p) => salesApi.entries(cid, p as Query), { keep: true });
+}
+
+export const useProfiles = () => useResource("profiles", {}, (cid) => salesApi.profiles(cid));
+export const usePosCashiers = () => useResource("pos-cashiers", {}, (cid) => salesApi.posCashiers(cid));
+
+export function useImports(params: MaybeRefOrGetter<Record<string, unknown>>) {
+  return useResource("imports", params, (cid, p) => salesApi.imports(cid, p as Query), { keep: true });
+}
+
+/** One import; while it is being read, it asks again every two seconds. */
+export function useImport(id: MaybeRefOrGetter<number | null>) {
+  const cid = useCompanyId();
+  return useQuery({
+    queryKey: computed(() => salesKeys.resource(cid.value, "import", { id: toValue(id) })),
+    queryFn: () => salesApi.importDetail(cid.value, toValue(id)!),
+    enabled: computed(() => cid.value > 0 && !!toValue(id)),
+    refetchInterval: (query) => (["queued", "processing"].includes(query.state.data?.status ?? "") ? 2000 : false),
+    staleTime: 5_000,
+  });
+}
+
+export function useLines(params: MaybeRefOrGetter<Record<string, unknown>>) {
+  return useResource("lines", params, (cid, p) => salesApi.lines(cid, p as Query), { keep: true });
+}
+
+export function useCodes(status: MaybeRefOrGetter<"waiting" | "skipped">) {
+  return useResource("codes", () => ({ status: toValue(status) }), (cid, p) => salesApi.codes(cid, p.status as "waiting" | "skipped"), { keep: true });
+}
+
+export function useCustomers(params: MaybeRefOrGetter<Record<string, unknown>>) {
+  return useResource("customers", params, (cid, p) => salesApi.customers(cid, p as Query), { keep: true });
+}
+export const useAging = () => useResource("aging", {}, (cid) => salesApi.aging(cid));
+
+export function useCustomer(id: MaybeRefOrGetter<number | null>) {
+  const cid = useCompanyId();
+  return useQuery({
+    queryKey: computed(() => salesKeys.resource(cid.value, "customer", { id: toValue(id) })),
+    queryFn: () => salesApi.customer(cid.value, toValue(id)!),
+    enabled: computed(() => cid.value > 0 && !!toValue(id)),
+    staleTime: 10_000,
+  });
+}
+
+export function useInvoices(params: MaybeRefOrGetter<Record<string, unknown>>) {
+  return useResource("invoices", params, (cid, p) => salesApi.invoices(cid, p as Query), { keep: true });
+}
+
+export function useInvoice(id: MaybeRefOrGetter<number | null>) {
+  const cid = useCompanyId();
+  return useQuery({
+    queryKey: computed(() => salesKeys.resource(cid.value, "invoice", { id: toValue(id) })),
+    queryFn: () => salesApi.invoice(cid.value, toValue(id)!),
+    enabled: computed(() => cid.value > 0 && !!toValue(id)),
+    staleTime: 10_000,
+  });
 }
 
 export function useTargets(month: MaybeRefOrGetter<string>) {

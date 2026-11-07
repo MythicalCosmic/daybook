@@ -125,7 +125,7 @@ async function skip(rule: RecurringRule): Promise<void> {
     title: t("finance.recurring.skipTitle"),
     message: t("finance.recurring.skipBody", { date: rule.next_due_on ? fmt.day(rule.next_due_on, "long") : "—" }),
     confirmLabel: t("finance.recurring.skip"),
-    onConfirm: () => financeApi.skipRecurring(cid.value, rule.id),
+    onConfirm: () => financeApi.skipRecurring(cid.value, rule.id, rule.next_due_on),
   });
   if (!answer) return;
   toast.success(t("finance.recurring.skipped"));
@@ -137,7 +137,7 @@ async function runNow(rule: RecurringRule): Promise<void> {
     title: t("finance.recurring.runTitle"),
     message: t("finance.recurring.runBody", { amount: fmt.money(rule.amount, rule.currency), account: rule.account?.name ?? "—" }),
     confirmLabel: t("finance.recurring.runNow"),
-    onConfirm: () => financeApi.runRecurring(cid.value, rule.id),
+    onConfirm: () => financeApi.runRecurring(cid.value, rule.id, rule.next_due_on),
   });
   if (!answer) return;
   toast.success(t("finance.recurring.posted", { name: rule.name }));

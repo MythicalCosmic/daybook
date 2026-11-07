@@ -356,9 +356,9 @@ describe("planning endpoints", () => {
     });
     await financeApi.setBudgets(1, { month: "2026-11", rows: [{ category: 5, amount: "3000000" }, { category: 6, amount: null }] });
     await financeApi.copyBudgets(1, "2026-12");
-    await financeApi.payRecurring(1, 12, { account: 3, amount: "12000000", paid_on: "2026-11-06" });
-    await financeApi.skipRecurring(1, 12);
-    await financeApi.runRecurring(1, 12);
+    await financeApi.payRecurring(1, 12, { account: 3, amount: "12000000", paid_on: "2026-11-06", occurrence: "2026-11-05" });
+    await financeApi.skipRecurring(1, 12, "2026-12-05");
+    await financeApi.runRecurring(1, 12, null);
     await financeApi.stopRecurring(1, 12);
     await financeApi.applyTaxTemplate(1, "vat");
     await financeApi.payPayables(1, { account: 5, paid_on: "2026-11-06", debts: [{ id: 1, amount: "5000000" }] });
@@ -372,8 +372,9 @@ describe("planning endpoints", () => {
     const by = (method: string, path: string) => calls.find((call) => call.method === method && call.url.replace(PREFIX, "").split("?")[0] === path);
     expect(by("PUT", "budgets/")?.body).toEqual({ month: "2026-11", rows: [{ category: 5, amount: "3000000" }, { category: 6, amount: null }] });
     expect(by("POST", "budgets/copy/")?.body).toEqual({ month: "2026-12" });
-    expect(by("POST", "recurring/12/pay/")?.body).toEqual({ account: 3, amount: "12000000", paid_on: "2026-11-06" });
-    expect(by("POST", "recurring/12/skip/")?.body).toEqual({});
+    // The occurrence the person saw goes along, so a second press never settles the next one.
+    expect(by("POST", "recurring/12/pay/")?.body).toEqual({ account: 3, amount: "12000000", paid_on: "2026-11-06", occurrence: "2026-11-05" });
+    expect(by("POST", "recurring/12/skip/")?.body).toEqual({ occurrence: "2026-12-05" });
     expect(by("POST", "recurring/12/run-now/")?.body).toEqual({});
     expect(by("DELETE", "recurring/12/")).toBeTruthy();
     expect(by("POST", "recurring/templates/vat/apply/")?.body).toEqual({});
@@ -698,6 +699,63 @@ describe("CalendarPage", () => {
     await flushPromises();
     expect(calls.find((call) => call.method === "POST")?.body).toMatchObject({ account: 5, amount: "12000000.00", paid_on: "2026-11-06" });
     expect(toasts.at(-1)?.title).toBe("Paid: Ijara");
+  });
+});
+
+describe("RecurringRuleDialog", () => {
+  const bill = {
+    id: 12,
+    name: "Ijara",
+    kind: "expense",
+    mode: "bill",
+    frequency: "monthly",
+    interval: 1,
+    day: 25,
+    on_holiday: "before",
+    category: { id: 4, name: "Ijara", kind: "expense", color: "", parent_id: null },
+    counterparty: null,
+    account: { id: 5, name: "Asosiy bank hisobi", kind: "bank", currency: "UZS" },
+    branch: null,
+    amount: "12000000.00",
+    currency: "UZS",
+    amount_varies: false,
+    starts_on: "2026-01-25",
+    ends_on: null,
+    next_due_on: "2026-11-25",
+    overdue: false,
+    remind_days_before: 3,
+    payer: { id: 21, name: "Sevara Tursunova" },
+    create_task: false,
+    template_key: "",
+    is_tax: false,
+    is_active: true,
+    last_done_on: "2026-10-25",
+    upcoming: ["2026-11-25", "2026-12-25", "2027-01-25"],
+    created_at: "2026-01-10T10:00:00+05:00",
+  };
+
+  it("offers the payer a task for each bill and saves the choice", async () => {
+    const calls = stub({
+      "GET options/": () => json({ ...options(), members: [{ id: 21, name: "Sevara Tursunova", position: "Buxgalter" }] }),
+      "GET categories/": () => json([{ id: 4, name: "Ijara", kind: "expense", color: "", parent_id: null, is_active: true, system_code: "rent", order: 1, children: [] }]),
+      "PATCH recurring/12/": (call) => json({ ...bill, ...(call.body as object) }),
+    });
+    const app = await testApp("/c/1/finance/recurring");
+    const RecurringRuleDialog = (await import("../components/RecurringRuleDialog.vue")).default;
+    const { wrapper } = mountWithProviders(RecurringRuleDialog, { plugins: app.plugins, props: { open: true, rule: bill } });
+    await flushPromises();
+    await flushPromises();
+    [...document.querySelectorAll<HTMLButtonElement>("button[aria-expanded]")].find((b) => b.textContent?.includes("More"))?.click();
+    await flushPromises();
+    const box = document.querySelector<HTMLElement>("[data-create-task]");
+    expect(box?.textContent).toContain("Also give them a task");
+    box!.querySelector<HTMLElement>("button[role=checkbox], input[type=checkbox]")!.click();
+    await flushPromises();
+    [...document.querySelectorAll<HTMLButtonElement>("button")].find((b) => b.textContent?.trim() === "Save")?.click();
+    await flushPromises();
+    await flushPromises();
+    expect(calls.find((call) => call.method === "PATCH")?.body).toMatchObject({ payer: 21, create_task: true });
+    wrapper.unmount();
   });
 });
 

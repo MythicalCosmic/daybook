@@ -102,6 +102,53 @@ async def test_expense_command_typed_amount_category_submit(dp, bot, company, me
     )
 
 
+@sync_to_async
+def add_categories(company, count):
+    """The owner's own expense categories, sorted after the defaults."""
+    return [
+        Category.objects.create(
+            company=company, name=f"Own {index:02d}", kind=Category.Kind.EXPENSE, order=900 + index
+        ).pk
+        for index in range(count)
+    ]
+
+
+def buttons(bot) -> list[tuple[str, str]]:
+    """(text, callback data) of the last message's inline keyboard."""
+    last = [r for r in bot.requests if isinstance(r, SendMessage | EditMessageText)][-1]
+    rows = last.reply_markup.inline_keyboard if last.reply_markup else []
+    return [(button.text, button.callback_data) for row in rows for button in row]
+
+
+async def test_every_category_is_reachable_a_page_at_a_time(dp, bot, company, member):
+    """The picker used to show the first 12 categories only, so an owner's own never appeared."""
+    worker = await member.aregistered(company)
+    await books(company)
+    own = await add_categories(company, 15)
+    tg = updates.tg_user(worker.user.telegram_id)
+
+    await dp.feed_update(bot, updates.message(tg, "/expense"))
+    await dp.feed_update(bot, updates.message(tg, "90 000 boshqa"))
+    first = buttons(bot)
+    picks = [data for _text, data in first if data.startswith(press(ClaimAction.CATEGORY)[:-1])]
+    assert len(picks) == flow.CATEGORIES_PER_PAGE
+    assert ("More ›", press(ClaimAction.PAGE, 1)) in first
+    assert not any(text == "‹ Back" for text, _data in first)
+
+    pages = 0
+    while ("More ›", press(ClaimAction.PAGE, pages + 1)) in buttons(bot):
+        pages += 1
+        await dp.feed_update(bot, updates.callback(tg, press(ClaimAction.PAGE, pages)))
+    last = buttons(bot)
+    assert ("‹ Back", press(ClaimAction.PAGE, pages - 1)) in last
+    assert ("Own 14", press(ClaimAction.CATEGORY, own[-1])) in last
+
+    await dp.feed_update(bot, updates.callback(tg, press(ClaimAction.CATEGORY, own[-1])))
+    await dp.feed_update(bot, updates.callback(tg, press(ClaimAction.SUBMIT)))
+    [made] = await claims_of(worker)
+    assert made.category_id == own[-1]
+
+
 async def test_a_tagged_receipt_photo_becomes_a_claim_with_its_receipt(
     dp, bot, company, member, monkeypatch
 ):

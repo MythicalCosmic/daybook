@@ -8,13 +8,16 @@ import logging
 
 from celery import shared_task
 from django.utils import translation
+from django.utils.translation import gettext as _
 
 logger = logging.getLogger(__name__)
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
 def send_payslip_pdf(self, payslip_id: int) -> bool:
-    """The published payslip's PDF, in the person's language, to them in the employee bot."""
+    """The published payslip's PDF, in the person's language, to them in the employee bot.
+    Someone who left (or was blocked) gets their final payslip this way too: it is the one
+    they need, and they can no longer open the app."""
     from aiogram.exceptions import TelegramForbiddenError, TelegramNetworkError
 
     from apps.notifications import telegram
@@ -30,12 +33,18 @@ def send_payslip_pdf(self, payslip_id: int) -> bool:
     if payslip is None:
         return False
     user = payslip.membership.user
-    if not user.telegram_id or payslip.membership.status != "approved":
+    if not user.telegram_id or not receives_pdf(payslip):
         return False
     language = user.language or "uz"
     stored = payslip_pdf.save(payslip, language=language)
     with translation.override(language):
         caption = queries.month_label(payslip.run.period)
+        if payslip.membership.status != "approved":
+            caption = _("%(company)s: your final payslip for %(month)s, %(amount)s") % {
+                "company": payslip.company.name,
+                "month": caption,
+                "amount": queries.money_text(payslip.net, payslip.currency, language),
+            }
     try:
         telegram.send_document(
             BotName.EMPLOYEE,
@@ -50,6 +59,13 @@ def send_payslip_pdf(self, payslip_id: int) -> bool:
     except TelegramNetworkError as exc:
         raise self.retry(exc=exc) from exc
     return True
+
+
+def receives_pdf(payslip) -> bool:
+    """A working member gets every published payslip; someone who left or was blocked only
+    their final one."""
+    status = payslip.membership.status
+    return status == "approved" or (payslip.run.is_final and status in ("left", "blocked"))
 
 
 @shared_task

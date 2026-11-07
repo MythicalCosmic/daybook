@@ -187,6 +187,32 @@ def seed(company, people, now) -> None:
     rollup.rebuild_range(company, first_day, story.today)
 
 
+def finish(company, people, now) -> None:
+    """Once every demo has seeded (the stock demo's catalogue is there): the sale lines of the
+    pharmacy's cash-register program, matching the tills (apps/sales/demo_lines.py), and its
+    nasiya (apps/sales/demo_credit.py). Demo Distribyutor sells by invoice instead."""
+    if not company.has_feature(Feature.SALES):
+        return
+    from apps.sales import demo_credit, demo_lines
+
+    if company.business_kind == "distributor":
+        return
+    demo_lines.seed_lines(company, people, now)
+    demo_credit.seed_credit(company, people, now)
+
+
+def seed_small(company, people, now) -> None:
+    """Demo Distribyutor (when its sales module is on): invoices to invented pharmacies and
+    clinics from its warehouse (apps/sales/demo_credit.py)."""
+    if not company.has_feature(Feature.SALES):
+        return
+    from apps.sales import demo_credit
+
+    finance_defaults.ensure(company)
+    defaults.ensure(company)
+    demo_credit.seed_invoices(company, people, now)
+
+
 @contextmanager
 def _quiet_alerts(back: int):
     """The routine alerts of shifts older than three days (closed, checked, cash handed over)

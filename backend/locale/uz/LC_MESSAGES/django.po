@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-07 03:50+0500\n"
+"POT-Creation-Date: 2026-11-07 06:10+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -200,7 +200,8 @@ msgstr "%(minutes)d daqiqadan keyin: %(title)s"
 msgid "I'll come"
 msgstr "Boraman"
 
-#. Translators: the attendee's own answer on a button ("I can't come"), not their status.
+#. Translators: the attendee's own answer on a button ("I can't come"), not
+#. their status.
 #: backend/apps/agenda/bot_messages.py
 msgctxt "event answer button"
 msgid "Can't come"
@@ -732,14 +733,13 @@ msgstr "Kechki hisobot"
 msgid ""
 "Every workday evening, sum up the day in a few lines: how many tasks were "
 "done and how many are late (name the late ones and whose they are), who came "
-"to work late today, and today's sales at each pharmacy compared with the "
-"same weekday last week. Put anything unusual first."
+"to work late today, and today's sales at each pharmacy compared with the same"
+" weekday last week. Put anything unusual first."
 msgstr ""
 "Har ish kuni kechqurun kunni bir necha qatorda xulosa qil: nechta vazifa "
 "bajarildi va nechtasi kechikdi (kechikkanlarini va kimniki ekanini yoz), "
-"bugun kim ishga kechikib keldi va har bir dorixonaning bugungi savdosi "
-"o‘tgan haftaning shu kuniga nisbatan qanday. G‘ayrioddiy narsalarni birinchi "
-"yoz."
+"bugun kim ishga kechikib keldi va har bir dorixonaning bugungi savdosi o‘tgan"
+" haftaning shu kuniga nisbatan qanday. G‘ayrioddiy narsalarni birinchi yoz."
 
 #: backend/apps/ai/agents/custom_templates.py
 msgid "Monday: the best of last week"
@@ -763,11 +763,11 @@ msgstr "Ishda kim bor (soat 10:00)"
 #: backend/apps/ai/agents/custom_templates.py
 msgid ""
 "Every workday at 10:00: who has not come to work yet, who came late today, "
-"and which pharmacy is short of people right now. If everyone is in, say so "
-"in one line."
+"and which pharmacy is short of people right now. If everyone is in, say so in"
+" one line."
 msgstr ""
-"Har ish kuni, soat 10:00: kim hali ishga kelmadi, bugun kim kechikib keldi "
-"va hozir qaysi dorixonada odam yetishmayapti. Hamma joyida bo‘lsa, shuni bir "
+"Har ish kuni, soat 10:00: kim hali ishga kelmadi, bugun kim kechikib keldi va"
+" hozir qaysi dorixonada odam yetishmayapti. Hamma joyida bo‘lsa, shuni bir "
 "qatorda yoz."
 
 #: backend/apps/ai/agents/custom_templates.py
@@ -780,10 +780,10 @@ msgid ""
 "payments, compared with a usual week (the average of the four weeks before). "
 "Say which expense grew the most, and by how much."
 msgstr ""
-"Har dushanba: o‘tgan haftaning toifalar bo‘yicha eng katta xarajatlari va "
-"eng katta beshta to‘lov, odatdagi hafta bilan solishtirib (undan oldingi "
-"to‘rt haftaning o‘rtachasi). Qaysi xarajat eng ko‘p o‘sganini va qanchaga "
-"o‘sganini yoz."
+"Har dushanba: o‘tgan haftaning toifalar bo‘yicha eng katta xarajatlari va eng"
+" katta beshta to‘lov, odatdagi hafta bilan solishtirib (undan oldingi to‘rt "
+"haftaning o‘rtachasi). Qaysi xarajat eng ko‘p o‘sganini va qanchaga o‘sganini"
+" yoz."
 
 #: backend/apps/ai/agents/custom_templates.py
 msgid "The month in short"
@@ -792,12 +792,12 @@ msgstr "Oy qisqacha"
 #: backend/apps/ai/agents/custom_templates.py
 msgid ""
 "On the 1st of each month: last month in short. Sales and profit, the biggest "
-"expenses, how many tasks the team did on time, and what changed most from "
-"the month before. Five to eight lines."
+"expenses, how many tasks the team did on time, and what changed most from the"
+" month before. Five to eight lines."
 msgstr ""
 "Har oyning 1-sanasida: o‘tgan oy qisqacha. Savdo va foyda, eng katta "
-"xarajatlar, jamoa nechta vazifani o‘z vaqtida bajargani va undan oldingi "
-"oyga nisbatan eng ko‘p nima o‘zgargani. Beshdan sakkiz qatorgacha."
+"xarajatlar, jamoa nechta vazifani o‘z vaqtida bajargani va undan oldingi oyga"
+" nisbatan eng ko‘p nima o‘zgargani. Beshdan sakkiz qatorgacha."
 
 #: backend/apps/ai/agents/custom_templates.py
 msgid "Documents expiring in 30 days"
@@ -820,15 +820,15 @@ msgstr "Odatdagidan kam sotgan dorixona"
 
 #: backend/apps/ai/agents/custom_templates.py
 msgid ""
-"Every evening, compare today's sales at each pharmacy with its usual for "
-"this weekday (the average of the last four same weekdays). Name every "
-"pharmacy that sold more than 15 percent below its usual, with both numbers. "
-"If all are as usual, say so in one line."
+"Every evening, compare today's sales at each pharmacy with its usual for this"
+" weekday (the average of the last four same weekdays). Name every pharmacy "
+"that sold more than 15 percent below its usual, with both numbers. If all are"
+" as usual, say so in one line."
 msgstr ""
 "Har kuni kechqurun har bir dorixonaning bugungi savdosini shu hafta kunidagi "
-"odatdagi savdosi bilan solishtir (oxirgi to‘rtta shunday kunning "
-"o‘rtachasi). Odatdagidan 15 foizdan ko‘proq kam sotgan har bir dorixonani "
-"ikkala raqam bilan yoz. Hammasi odatdagidek bo‘lsa, shuni bir qatorda yoz."
+"odatdagi savdosi bilan solishtir (oxirgi to‘rtta shunday kunning o‘rtachasi)."
+" Odatdagidan 15 foizdan ko‘proq kam sotgan har bir dorixonani ikkala raqam "
+"bilan yoz. Hammasi odatdagidek bo‘lsa, shuni bir qatorda yoz."
 
 #: backend/apps/ai/agents/custom_templates.py
 msgid "Late work every morning"
@@ -840,9 +840,8 @@ msgid ""
 "oldest first, and who has the most. Say how many there are in all in the "
 "first line."
 msgstr ""
-"Har ish kuni, soat 9:00: kechikkan vazifalar, kishilar bo‘yicha va eng "
-"eskisi birinchi, hamda kimda eng ko‘p. Birinchi qatorda jami nechta ekanini "
-"yoz."
+"Har ish kuni, soat 9:00: kechikkan vazifalar, kishilar bo‘yicha va eng eskisi"
+" birinchi, hamda kimda eng ko‘p. Birinchi qatorda jami nechta ekanini yoz."
 
 #: backend/apps/ai/agents/deadline_watcher.py
 #, python-format
@@ -922,9 +921,9 @@ msgstr ""
 "Har ish kuni ertalab kadrlar bo‘limiga bugun nima kutayotganini aytadi: "
 "muddati tugayotgan hujjat va shartnomalar, sinov muddatlari, kutilayotgan "
 "tushuntirish xatlari va tug‘ilgan kunlar. Ish haqi kunidan oldin oylik "
-"qoralamasini hisoblab, unga nima to‘sqinlik qilayotganini aytadi; "
-"vazifalarni o‘z vaqtida eng yaxshi bajarganlarga bonus ham taklif qila "
-"oladi, uni mas’ul xodim tasdiqlaydi."
+"qoralamasini hisoblab, unga nima to‘sqinlik qilayotganini aytadi; vazifalarni"
+" o‘z vaqtida eng yaxshi bajarganlarga bonus ham taklif qila oladi, uni mas’ul"
+" xodim tasdiqlaydi."
 
 #: backend/apps/ai/agents/hr_assistant.py
 msgid "The morning HR note"
@@ -1016,8 +1015,8 @@ msgid ""
 msgid_plural ""
 "Payroll %(month)s is calculated: %(count)s things to settle before pay day"
 msgstr[0] ""
-"Ish haqi hisoblandi (%(month)s): ish haqi kunigacha hal qilinadigan "
-"masalalar — %(count)s ta"
+"Ish haqi hisoblandi (%(month)s): ish haqi kunigacha hal qilinadigan masalalar"
+" — %(count)s ta"
 
 #: backend/apps/ai/agents/hr_assistant.py
 #, python-format
@@ -1042,8 +1041,8 @@ msgid ""
 "Each workday morning, every head and manager gets their team's day: what is "
 "due, what is late, what waits for their check and who is off."
 msgstr ""
-"Har ish kuni ertalab har bir rahbar va menejer jamoasining kunini oladi: "
-"nima muddatli, nima kechikkan, nima tekshiruvini kutmoqda va kim dam olishda."
+"Har ish kuni ertalab har bir rahbar va menejer jamoasining kunini oladi: nima"
+" muddatli, nima kechikkan, nima tekshiruvini kutmoqda va kim dam olishda."
 
 #: backend/apps/ai/agents/morning_plan.py
 msgid "The morning summary for a manager"
@@ -1072,11 +1071,11 @@ msgstr "Ertalabki rejalarni yuboradi"
 #: backend/apps/ai/agents/morning_plan.py
 #, python-format
 msgid ""
-"Morning plan for %(to)s: %(due_today)s due today, %(late)s late, "
-"%(to_check)s to check"
+"Morning plan for %(to)s: %(due_today)s due today, %(late)s late, %(to_check)s"
+" to check"
 msgstr ""
-"Ertalabki reja (%(to)s): bugun muddati — %(due_today)s, kechikkan — "
-"%(late)s, tekshirish — %(to_check)s"
+"Ertalabki reja (%(to)s): bugun muddati — %(due_today)s, kechikkan — %(late)s,"
+" tekshirish — %(to_check)s"
 
 #: backend/apps/ai/agents/photo_checker.py
 msgid "When a routine is finished with a photo"
@@ -1108,9 +1107,9 @@ msgid ""
 "dates) and leaves a note for whoever checks the work. Sends task photos to "
 "Claude."
 msgstr ""
-"Vazifa bajarilganda tasdiq rasmini o‘qiydi (muzlatgich termometri, "
-"yaroqlilik muddatlari) va ishni tekshiradigan odamga izoh qoldiradi. Vazifa "
-"rasmlari Claude xizmatiga yuboriladi."
+"Vazifa bajarilganda tasdiq rasmini o‘qiydi (muzlatgich termometri, yaroqlilik"
+" muddatlari) va ishni tekshiradigan odamga izoh qoldiradi. Vazifa rasmlari "
+"Claude xizmatiga yuboriladi."
 
 #: backend/apps/ai/agents/photo_checker.py
 msgid "Checking a proof photo"
@@ -1431,7 +1430,8 @@ msgstr "Ilovada tahrirlash"
 msgid "Late task"
 msgstr "Kechikkan vazifa"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
+#. on it.
 #: backend/apps/ai/bot_messages.py backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "For: %(name)s"
@@ -1611,8 +1611,8 @@ msgid ""
 msgid_plural ""
 "%(month)s: %(percent)s%% of %(count)s tasks done on time, no lateness fine."
 msgstr[0] ""
-"%(month)s: %(count)s ta vazifaning %(percent)s%% qismi o‘z vaqtida "
-"bajarildi, kechikish uchun jarima yo‘q."
+"%(month)s: %(count)s ta vazifaning %(percent)s%% qismi o‘z vaqtida bajarildi,"
+" kechikish uchun jarima yo‘q."
 
 #: backend/apps/ai/chat.py
 msgid "Ask AI isn't available here."
@@ -1744,6 +1744,7 @@ msgid "Ready"
 msgstr "Tayyor"
 
 #: backend/apps/ai/models.py backend/apps/exports/models.py
+#: backend/apps/sales/models.py
 msgid "Failed"
 msgstr "Xatolik"
 
@@ -1779,7 +1780,8 @@ msgstr "Ishlamoqda"
 
 #: backend/apps/ai/models.py backend/apps/projects/conf.py
 #: backend/apps/projects/models.py backend/apps/reminders/bot_messages.py
-#: backend/apps/tasks/bot_messages.py backend/apps/tasks/services.py
+#: backend/apps/sales/models.py backend/apps/tasks/bot_messages.py
+#: backend/apps/tasks/services.py
 msgid "Done"
 msgstr "Bajarildi"
 
@@ -1886,7 +1888,7 @@ msgstr "Bekor qilindi"
 
 #: backend/apps/ai/models.py backend/apps/finance/exporters.py
 #: backend/apps/payroll/providers.py backend/apps/projects/hooks.py
-#: backend/apps/timeoff/providers.py
+#: backend/apps/sales/models.py backend/apps/timeoff/providers.py
 msgid "Person"
 msgstr "Xodim"
 
@@ -2127,7 +2129,7 @@ msgid "Announcement: %(title)s · %(read)d of %(total)d read"
 msgstr "E’lon: %(title)s · %(total)d kishidan %(read)d tasi o‘qidi"
 
 #: backend/apps/announcements/models.py backend/apps/hr/models.py
-#: backend/apps/knowledge/providers.py
+#: backend/apps/knowledge/providers.py backend/apps/sales/models.py
 msgid "Draft"
 msgstr "Qoralama"
 
@@ -2511,8 +2513,8 @@ msgstr "Har yili yangisi necha foizga qimmatlashadi (rejalashtirish uchun)."
 
 #: backend/apps/assets/models.py
 msgid ""
-"Show the tax depreciation too (straight line at the Tax Code's annual "
-"rates), for companies that pay profit tax."
+"Show the tax depreciation too (straight line at the Tax Code's annual rates),"
+" for companies that pay profit tax."
 msgstr ""
 "Soliq amortizatsiyasini ham ko‘rsatish (Soliq kodeksi yillik normalari "
 "bo‘yicha teng ulushli), foyda solig‘i to‘lovchilar uchun."
@@ -2595,7 +2597,7 @@ msgstr "Eskirgan"
 msgid "Damaged"
 msgstr "Shikastlangan"
 
-#: backend/apps/assets/models.py
+#: backend/apps/assets/models.py backend/apps/sales/hooks.py
 msgid "Sold"
 msgstr "Sotildi"
 
@@ -2923,9 +2925,9 @@ msgstr "Qaysi filialda turganini tanlang."
 msgid "Use its own action for this."
 msgstr "Buning uchun alohida amaldan foydalaning."
 
-#: backend/apps/assets/owner_api.py
-msgid "Pick an account of this company."
-msgstr "Shu kompaniya hisobini tanlang."
+#: backend/apps/assets/owner_api.py backend/apps/finance/owner_api.py
+msgid "Pick one of your accounts."
+msgstr "Hisoblaringizdan birini tanlang."
 
 #: backend/apps/assets/owner_api.py
 msgid "Give a year."
@@ -3042,6 +3044,7 @@ msgstr "Inventar raqami"
 
 #: backend/apps/assets/providers.py backend/apps/members/providers.py
 #: backend/apps/reports/hooks.py
+#: backend/apps/sales/templates/sales/invoice.html
 msgid "Name"
 msgstr "Ism"
 
@@ -3086,6 +3089,7 @@ msgid "In service from"
 msgstr "Foydalanishga topshirilgan"
 
 #: backend/apps/assets/providers.py backend/apps/assets/services.py
+#: backend/apps/sales/hooks.py
 msgid "Cost"
 msgstr "Qiymati"
 
@@ -3268,6 +3272,10 @@ msgid "That expense was voided or rejected."
 msgstr "Bu xarajat bekor qilingan yoki rad etilgan."
 
 #: backend/apps/assets/services.py
+msgid "This expense already bought an asset."
+msgstr "Bu xarajat bilan allaqachon vosita olingan."
+
+#: backend/apps/assets/services.py
 msgid "The cost can't be below zero."
 msgstr "Qiymat noldan kam bo‘lmaydi."
 
@@ -3315,10 +3323,7 @@ msgid "Give the asset a name."
 msgstr "Vositaga nom bering."
 
 #: backend/apps/assets/services.py
-msgid "This expense already bought an asset."
-msgstr "Bu xarajat bilan allaqachon vosita olingan."
-
-#: backend/apps/assets/services.py
+#: backend/apps/sales/templates/sales/invoice.html
 msgid "Price"
 msgstr "Narxi"
 
@@ -3365,11 +3370,34 @@ msgstr "O‘sha kungi kursni kiriting."
 
 #: backend/apps/assets/services.py
 msgid ""
-"Its depreciation is already in the books: use Change estimate, Add to cost "
-"or Write down instead."
+"Its depreciation is already in the books: use Change estimate, Add to cost or"
+" Write down instead."
 msgstr ""
 "Amortizatsiyasi allaqachon hisobda: «Muddatni o‘zgartirish», «Qiymatiga "
 "qo‘shish» yoki «Qiymatini pasaytirish»dan foydalaning."
+
+#: backend/apps/assets/services.py
+msgid ""
+"It is in Finance already: it can't become a low-value item or stop being one."
+msgstr ""
+"Vosita allaqachon Moliyada: uni kam baholi buyumlarga o‘tkazib ham, ulardan "
+"qaytarib ham bo‘lmaydi."
+
+#: backend/apps/assets/services.py
+msgid ""
+"Its purchase left the P&L and comes back as depreciation: booking it can't be"
+" switched off."
+msgstr ""
+"Xaridi foyda va zarar hisobotidan chiqarilgan va amortizatsiya bo‘lib "
+"qaytadi: uni hisobga yozishni o‘chirib bo‘lmaydi."
+
+#: backend/apps/assets/services.py
+msgid ""
+"Its purchase is already a cost in the P&L: booking its depreciation too would"
+" count it twice."
+msgstr ""
+"Xaridi foyda va zarar hisobotida allaqachon xarajat sifatida bor: "
+"amortizatsiyani ham yozish uni ikki marta hisoblaydi."
 
 #: backend/apps/assets/services.py
 msgid "It is already in service and depreciating."
@@ -3430,6 +3458,7 @@ msgstr "Summa butun xarajatga teng bo‘lishi kerak."
 
 #: backend/apps/assets/services.py backend/apps/finance/exporters.py
 #: backend/apps/payroll/templates/payroll/payslip.html
+#: backend/apps/sales/templates/sales/invoice.html
 msgid "Amount"
 msgstr "Summa"
 
@@ -3600,9 +3629,9 @@ msgstr "So‘rov yuborildi! Rahbar tasdiqlaydi."
 
 #: backend/apps/attendance/ai_tools.py
 msgid ""
-"Attendance between two days: totals (present, late, absent, on-time %, "
-"worked hours) and per person scheduled, attended, absent and late days with "
-"worked hours"
+"Attendance between two days: totals (present, late, absent, on-time %, worked"
+" hours) and per person scheduled, attended, absent and late days with worked "
+"hours"
 msgstr ""
 "Ikki sana orasidagi davomat: jami ko‘rsatkichlar (kelganlar, kechikkanlar, "
 "kelmaganlar, o‘z vaqtida kelish %, ishlangan soatlar) va har bir xodim "
@@ -3801,8 +3830,7 @@ msgid ""
 "No shift is planned for you today; it will be marked as an extra day."
 msgstr ""
 "<b>Ishga kelish</b>\n"
-"Bugun sizga smena rejalashtirilmagan, shuning uchun bu kun qo‘shimcha ish "
-"kuni deb belgilanadi."
+"Bugun sizga smena rejalashtirilmagan, shuning uchun bu kun qo‘shimcha ish kuni deb belgilanadi."
 
 #: backend/apps/attendance/bot_messages.py
 msgid "Send your location with the button below."
@@ -3815,8 +3843,7 @@ msgid ""
 "You're in since %(time)s. Send your location to check out."
 msgstr ""
 "<b>Ishdan ketish</b>\n"
-"Ishga kelgan vaqtingiz: %(time)s. Ketganingizni belgilash uchun "
-"joylashuvingizni yuboring."
+"Ishga kelgan vaqtingiz: %(time)s. Ketganingizni belgilash uchun joylashuvingizni yuboring."
 
 #: backend/apps/attendance/bot_messages.py
 msgid "Now a quick selfie to finish checking in."
@@ -3836,8 +3863,8 @@ msgstr "%(late)s kechikdingiz. Keyingi safar biroz ertaroq keling!"
 #, python-format
 msgid "You were %(distance)s from the branch, so this check-in is marked."
 msgstr ""
-"Siz filialdan %(distance)s uzoqlikda edingiz, shuning uchun bu kelishga "
-"belgi qo‘yildi."
+"Siz filialdan %(distance)s uzoqlikda edingiz, shuning uchun bu kelishga belgi"
+" qo‘yildi."
 
 #: backend/apps/attendance/bot_messages.py
 msgid "No shift was planned, so it's recorded as an extra day."
@@ -5210,7 +5237,7 @@ msgstr "Rag‘batlantirish"
 msgid "Assets and equipment"
 msgstr "Asosiy vositalar va jihozlar"
 
-#: backend/apps/companies/models.py
+#: backend/apps/companies/models.py backend/apps/sales/models.py
 msgid "Pharmacy"
 msgstr "Dorixona"
 
@@ -5660,7 +5687,7 @@ msgstr "Endi buni eksport qilishga ruxsatingiz yo‘q."
 msgid "This export can't be made in that format."
 msgstr "Bu eksportni shu formatda tayyorlab bo‘lmaydi."
 
-#: backend/apps/exports/build.py
+#: backend/apps/exports/build.py backend/apps/sales/queries.py
 msgid "Yes"
 msgstr "Ha"
 
@@ -5682,7 +5709,7 @@ msgstr "%(label)s · %(count)s qator"
 msgid "This export took too long. Please try again."
 msgstr "Eksport juda uzoq davom etdi. Iltimos, qayta urinib ko‘ring."
 
-#: backend/apps/exports/models.py
+#: backend/apps/exports/models.py backend/apps/sales/models.py
 msgid "Waiting"
 msgstr "Navbatda"
 
@@ -6030,6 +6057,16 @@ msgstr "Summani o‘zgartirish"
 msgid "Change category"
 msgstr "Toifani o‘zgartirish"
 
+#. Translators: a button showing the next page of categories.
+#: backend/apps/finance/bot_messages.py
+msgid "More ›"
+msgstr "Yana ›"
+
+#. Translators: a button showing the previous page of categories.
+#: backend/apps/finance/bot_messages.py
+msgid "‹ Back"
+msgstr "‹ Orqaga"
+
 #: backend/apps/finance/bot_messages.py
 msgid "Cancelled. Nothing was sent."
 msgstr "Bekor qilindi. Hech narsa yuborilmadi."
@@ -6045,8 +6082,8 @@ msgstr "Qayd etildi. Bu summa uchun tasdiq kerak emas edi."
 #: backend/apps/finance/bot_messages.py
 msgid "This expense was already sent or cancelled. Start again with /expense."
 msgstr ""
-"Bu xarajat allaqachon yuborilgan yoki bekor qilingan. /expense bilan "
-"qaytadan boshlang."
+"Bu xarajat allaqachon yuborilgan yoki bekor qilingan. /expense bilan qaytadan"
+" boshlang."
 
 #: backend/apps/finance/bot_messages.py backend/apps/finance/hooks.py
 msgid "Balances were corrected from the ledger"
@@ -6299,6 +6336,7 @@ msgid "Description"
 msgstr "Tavsif"
 
 #: backend/apps/finance/exporters.py backend/apps/payroll/providers.py
+#: backend/apps/sales/hooks.py
 msgid "Currency"
 msgstr "Valyuta"
 
@@ -6374,15 +6412,19 @@ msgid "Who"
 msgstr "Kim"
 
 #: backend/apps/finance/exporters.py backend/apps/lifecycle/models.py
+#: backend/apps/sales/hooks.py backend/apps/sales/models.py
+#: backend/apps/sales/templates/sales/invoice.html
 msgid "Issued"
 msgstr "Qarz sanasi"
 
 #: backend/apps/finance/exporters.py backend/apps/reports/hooks.py
+#: backend/apps/sales/hooks.py backend/apps/sales/templates/sales/invoice.html
 #: backend/apps/tasks/hooks.py
 msgid "Due"
 msgstr "Muddat"
 
 #: backend/apps/finance/exporters.py backend/apps/finance/models.py
+#: backend/apps/sales/hooks.py backend/apps/sales/models.py
 msgid "Paid"
 msgstr "To‘langan"
 
@@ -6805,7 +6847,8 @@ msgstr "Kategoriyalar ko‘pi bilan ikki darajali bo‘ladi."
 msgid "A subcategory has its parent's kind."
 msgstr "Ichki kategoriya asosiy kategoriya bilan bir xil turda bo‘lishi kerak."
 
-#: backend/apps/finance/models.py
+#: backend/apps/finance/models.py backend/apps/sales/hooks.py
+#: backend/apps/sales/templates/sales/invoice.html
 msgid "Customer"
 msgstr "Mijoz"
 
@@ -6902,7 +6945,7 @@ msgstr ""
 msgid "Posted"
 msgstr "Hisobga olingan"
 
-#: backend/apps/finance/models.py
+#: backend/apps/finance/models.py backend/apps/sales/models.py
 msgid "Void"
 msgstr "Bekor qilingan"
 
@@ -7088,6 +7131,17 @@ msgid "Who is reminded to pay it."
 msgstr "Kimga to‘lash eslatiladi."
 
 #: backend/apps/finance/models.py
+msgid ""
+"The payer also gets a task for each bill, closed when it is paid or skipped."
+msgstr ""
+"To‘lovchi har bir to‘lov uchun vazifa ham oladi; to‘langanda yoki o‘tkazib "
+"yuborilganda u yopiladi."
+
+#: backend/apps/finance/models.py
+msgid "The payer's task for the occurrence of `task_for`."
+msgstr "To‘lovchining `task_for` sanasidagi to‘lov uchun vazifasi."
+
+#: backend/apps/finance/models.py
 msgid "Set on rules made from a tax calendar template."
 msgstr "Soliq kalendari shablonidan yaratilgan to‘lovlarda belgilanadi."
 
@@ -7103,7 +7157,7 @@ msgstr "Asosiy valyutada."
 msgid "Company cash I hold"
 msgstr "Qo‘limdagi kompaniya puli"
 
-#: backend/apps/finance/models.py
+#: backend/apps/finance/models.py backend/apps/sales/models.py
 msgid "Paid back"
 msgstr "Qaytarildi"
 
@@ -7114,10 +7168,6 @@ msgstr "Telegram bot"
 #: backend/apps/finance/owner_api.py
 msgid "The finance module is off for this company."
 msgstr "Bu kompaniyada moliya moduli o‘chirilgan."
-
-#: backend/apps/finance/owner_api.py
-msgid "Pick one of your accounts."
-msgstr "Hisoblaringizdan birini tanlang."
 
 #: backend/apps/finance/owner_api.py
 msgid "Pick a counterparty."
@@ -7139,6 +7189,13 @@ msgstr "Loyihani tanlang."
 #, python-format
 msgid "This entry comes from %(source)s: correct it there."
 msgstr "Bu yozuv «%(source)s» orqali yaratilgan: uni o‘sha yerda tuzating."
+
+#: backend/apps/finance/owner_api.py
+#, python-format
+msgid "This entry comes from %(source)s: decide it there."
+msgstr ""
+"Bu yozuv «%(source)s» orqali yaratilgan: uni o‘sha yerda tasdiqlang yoki rad "
+"eting."
 
 #: backend/apps/finance/owner_api.py
 msgid "Only people with payroll access mark salary categories."
@@ -7168,19 +7225,12 @@ msgstr "Chekni qayta yuklang."
 msgid ""
 "Only finance managers change entries, or whoever made one within 24 hours."
 msgstr ""
-"Yozuvlarni faqat moliya bo‘yicha mas’ullar o‘zgartira oladi, yozuvni "
-"kiritgan odam esa 24 soat ichida o‘zgartirishi mumkin."
+"Yozuvlarni faqat moliya bo‘yicha mas’ullar o‘zgartira oladi, yozuvni kiritgan"
+" odam esa 24 soat ichida o‘zgartirishi mumkin."
 
 #: backend/apps/finance/owner_api.py backend/apps/finance/services.py
 msgid "This entry isn't waiting for approval."
 msgstr "Bu yozuv tasdiqni kutmayapti."
-
-#: backend/apps/finance/owner_api.py
-#, python-format
-msgid "This entry comes from %(source)s: decide it there."
-msgstr ""
-"Bu yozuv «%(source)s» orqali yaratilgan: uni o‘sha yerda tasdiqlang yoki rad "
-"eting."
 
 #: backend/apps/finance/owner_api.py
 msgid "Someone else approves the entries you made."
@@ -7231,7 +7281,8 @@ msgstr "Xodimlar (yashirilgan)"
 msgid "Pick who owes or is owed: a counterparty or an employee."
 msgstr "Kim qarzdor yoki kimga qarzdormiz — kontragent yoki xodimni tanlang."
 
-#: backend/apps/finance/owner_serializers.py backend/apps/sales/services.py
+#: backend/apps/finance/owner_serializers.py backend/apps/sales/owner_api.py
+#: backend/apps/sales/services.py
 msgid "Pick the account."
 msgstr "Hisobni tanlang."
 
@@ -7367,9 +7418,23 @@ msgid ""
 msgstr ""
 "%(currency)s uchun hali valyuta kursi yo‘q. Avval bugungi kursni kiriting."
 
+#: backend/apps/finance/recurring.py backend/apps/inbox/services.py
+msgid "This has already been handled."
+msgstr "Bu allaqachon hal qilingan."
+
 #: backend/apps/finance/recurring.py
 msgid "This payment is posted automatically: run it instead."
 msgstr "Bu to‘lov avtomatik o‘tkaziladi: uni hozir o‘tkazing."
+
+#: backend/apps/finance/recurring.py backend/apps/finance/reminders.py
+msgid "Already paid."
+msgstr "Allaqachon to‘langan."
+
+#: backend/apps/finance/recurring.py backend/apps/finance/services.py
+#: backend/apps/payroll/finance_bridge.py
+#, python-format
+msgid "%(account)s holds %(currency)s."
+msgstr "«%(account)s» hisobining valyutasi — %(currency)s."
 
 #: backend/apps/finance/recurring.py
 msgid "A bill is paid with the amount you paid, not run."
@@ -7378,6 +7443,10 @@ msgstr "Hisob siz to‘lagan summa bilan to‘lanadi, avtomatik o‘tkazilmaydi.
 #: backend/apps/finance/recurring.py
 msgid "Pick the account it is posted on."
 msgstr "To‘lov o‘tkaziladigan hisobni tanlang."
+
+#: backend/apps/finance/recurring.py
+msgid "Paid or skipped in Finance."
+msgstr "Moliyada to‘langan yoki o‘tkazib yuborilgan."
 
 #: backend/apps/finance/recurring.py
 msgid "This recurring payment is switched off."
@@ -7427,6 +7496,10 @@ msgstr "Tugash kuni boshlanishdan oldin bo‘lishi mumkin emas."
 msgid "Pick someone who works here."
 msgstr "Shu yerda ishlaydigan odamni tanlang."
 
+#: backend/apps/finance/recurring.py
+msgid "Pick who pays it, so they get the task."
+msgstr "Kim to‘lashini tanlang: vazifa o‘sha kishiga beriladi."
+
 #: backend/apps/finance/recurring.py backend/apps/payroll/finance_bridge.py
 msgid "Tax office"
 msgstr "Soliq inspeksiyasi"
@@ -7472,6 +7545,19 @@ msgstr "Ertaga"
 
 #: backend/apps/finance/reminders.py
 #, python-format
+msgid "Pay: %(name)s"
+msgstr "To‘lash: %(name)s"
+
+#: backend/apps/finance/reminders.py
+msgid ""
+"Mark it paid in Finance or with Paid in the reminder: this task then closes "
+"by itself."
+msgstr ""
+"Moliyada yoki eslatmadagi to‘lov tugmasi bilan to‘langan deb belgilang: "
+"shunda bu vazifa o‘zi yopiladi."
+
+#: backend/apps/finance/reminders.py
+#, python-format
 msgid "Owed to us: %(party)s"
 msgstr "Bizga qarzdor: %(party)s"
 
@@ -7491,10 +7577,6 @@ msgstr[0] "%(days)s kun kechikdi"
 msgid "%(count)s debt you look after is due or overdue"
 msgid_plural "%(count)s debts you look after are due or overdue"
 msgstr[0] "Siz kuzatadigan qarzlar muddati yetdi yoki o‘tdi: %(count)s ta"
-
-#: backend/apps/finance/reminders.py
-msgid "Already paid."
-msgstr "Allaqachon to‘langan."
 
 #: backend/apps/finance/reminders.py
 msgid "Open the dashboard to enter the amount."
@@ -7552,11 +7634,6 @@ msgstr "%(person)s, qo‘ldagi naqd pul"
 msgid "Pick the account the money went to or came from."
 msgstr "Pul tushgan yoki chiqqan hisobni tanlang."
 
-#: backend/apps/finance/services.py backend/apps/payroll/finance_bridge.py
-#, python-format
-msgid "%(account)s holds %(currency)s."
-msgstr "«%(account)s» hisobining valyutasi — %(currency)s."
-
 #: backend/apps/finance/services.py
 msgid "This debt was cancelled."
 msgstr "Bu qarz bekor qilingan."
@@ -7572,16 +7649,16 @@ msgid "Only a live expense can be the purchase of an asset."
 msgstr "Faqat amaldagi xarajat vosita xaridi bo‘la oladi."
 
 #: backend/apps/finance/services.py
-msgid "This entry is part of a transfer: void the transfer instead."
-msgstr ""
-"Bu yozuv o‘tkazmaning bir qismi: o‘rniga butun o‘tkazmani bekor qiling."
-
-#: backend/apps/finance/services.py
 msgid ""
 "This expense bought a fixed asset: remove or dispose of the asset first."
 msgstr ""
 "Bu xarajat bilan asosiy vosita olingan: avval vositani o‘chiring yoki "
 "hisobdan chiqaring."
+
+#: backend/apps/finance/services.py
+msgid "This entry is part of a transfer: void the transfer instead."
+msgstr ""
+"Bu yozuv o‘tkazmaning bir qismi: o‘rniga butun o‘tkazmani bekor qiling."
 
 #: backend/apps/finance/services.py
 msgid "This entry opened a debt: cancel the debt instead."
@@ -7712,8 +7789,8 @@ msgstr ""
 #: backend/apps/finance/services.py
 msgid "System categories can be renamed, but not archived or deleted."
 msgstr ""
-"Tizim toifalarini qayta nomlash mumkin, lekin arxivlash yoki o‘chirish "
-"mumkin emas."
+"Tizim toifalarini qayta nomlash mumkin, lekin arxivlash yoki o‘chirish mumkin"
+" emas."
 
 #: backend/apps/finance/services.py
 msgid "A system category sits under this one: move it out first."
@@ -8071,7 +8148,8 @@ msgstr "Bu guruh endi <b>%(company)s</b> kompaniyasiga ulandi."
 msgid "Whose news: %(who)s"
 msgstr "Kimning yangiliklari: %(who)s"
 
-#. Translators: closes the group's settings ("Tayyor" / "Готово"), not a task's status.
+#. Translators: closes the group's settings ("Tayyor" / "Готово"), not a task's
+#. status.
 #: backend/apps/groups/bot_messages.py
 msgctxt "group settings"
 msgid "Done"
@@ -8113,12 +8191,10 @@ msgstr "hamma"
 
 #: backend/apps/groups/bot_messages.py
 msgid ""
-"Hi! I post this team's task news here: finished work, late tasks and daily "
-"summaries.\n"
+"Hi! I post this team's task news here: finished work, late tasks and daily summaries.\n"
 "A manager can link me to the company by sending /connect."
 msgstr ""
-"Assalomu alaykum! Men bu yerga jamoaning vazifalar bo‘yicha yangiliklarini "
-"yozaman: bajarilgan ishlar, kechikkan vazifalar va kunlik hisobotlar.\n"
+"Assalomu alaykum! Men bu yerga jamoaning vazifalar bo‘yicha yangiliklarini yozaman: bajarilgan ishlar, kechikkan vazifalar va kunlik hisobotlar.\n"
 "Rahbar /connect yuborib, meni kompaniyaga ulashi mumkin."
 
 #: backend/apps/groups/bot_messages.py
@@ -8136,8 +8212,8 @@ msgstr ""
 
 #: backend/apps/groups/bot_messages.py
 msgid ""
-"Disconnected. I won't post here any more. A manager can send /connect to "
-"link this group again."
+"Disconnected. I won't post here any more. A manager can send /connect to link"
+" this group again."
 msgstr ""
 "Uzildi. Endi bu yerga yozmayman. Rahbar guruhni qayta ulash uchun /connect "
 "yuborishi mumkin."
@@ -8283,6 +8359,20 @@ msgstr ""
 "yetishmayotgan majburiy hujjatlar, kelgusi haftadagi tug‘ilgan kunlar va "
 "ishdagi yubileylar"
 
+#: backend/apps/hr/ai_tools.py
+msgid ""
+"Pharmacist coverage: whether a qualified pharmacist is on the roster for "
+"every hour each pharmacy is open in the coming days (the gaps with their "
+"times), pharmacies with no qualified pharmacist checked in right now, tills "
+"opened by someone who isn't qualified, and the pharmacists who don't count "
+"today and why"
+msgstr ""
+"Smenada farmatsevt: keyingi kunlarda har bir dorixona ochiq bo‘lgan har "
+"soatda smenalar jadvalida malakali farmatsevt bormi (farmatsevtsiz vaqtlar va"
+" ularning soatlari), hozir malakali farmatsevt kelmagan dorixonalar, "
+"malakasiz xodim ochgan kassalar, hamda bugun hisobga olinmaydigan "
+"farmatsevtlar va sababi"
+
 #: backend/apps/hr/api.py backend/apps/hr/owner_api.py
 #: backend/apps/lifecycle/api.py backend/apps/lifecycle/owner_api.py
 msgid "HR isn't switched on for this company."
@@ -8295,6 +8385,10 @@ msgstr "Sizda hali shartnoma yo‘q."
 #: backend/apps/hr/audit_actions.py
 msgid "Changed HR settings"
 msgstr "Kadrlar sozlamalarini o‘zgartirdi"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Chose who counts as a pharmacist"
+msgstr "Farmatsevt hisoblanadigan lavozimlarni tanladi"
 
 #: backend/apps/hr/audit_actions.py
 msgid "Changed an employee profile"
@@ -8407,8 +8501,8 @@ msgstr "Mehnat shartnomangiz"
 #: backend/apps/hr/bot_messages.py
 #, python-format
 msgid ""
-"Contract %(number)s is in force. Read it in the app and confirm you have "
-"read it."
+"Contract %(number)s is in force. Read it in the app and confirm you have read"
+" it."
 msgstr ""
 "%(number)s raqamli shartnoma kuchga kirdi. Uni ilovada o‘qib chiqing va "
 "tanishganingizni tasdiqlang."
@@ -8525,6 +8619,116 @@ msgstr[0] "Jamoamizda %(years)d yil"
 #, python-format
 msgid "The whole team of «%(company)s» congratulates you."
 msgstr "«%(company)s» jamoasi sizni tabriklaydi."
+
+#: backend/apps/hr/bot_messages.py
+msgid "a required document is missing"
+msgstr "kerakli hujjat yo‘q"
+
+#: backend/apps/hr/bot_messages.py
+msgid "a required document has expired"
+msgstr "kerakli hujjatning muddati o‘tgan"
+
+#: backend/apps/hr/bot_messages.py
+msgid "a document is not verified yet"
+msgstr "hujjat hali tekshirilmagan"
+
+#: backend/apps/hr/bot_messages.py
+msgid "not in a pharmacist position"
+msgstr "farmatsevt lavozimida emas"
+
+#: backend/apps/hr/bot_messages.py
+msgid "not working now"
+msgstr "hozir ishlamayapti"
+
+#: backend/apps/hr/bot_messages.py
+msgid "not qualified"
+msgstr "malakali emas"
+
+#. Translators: %(branch)s is a pharmacy's name, e.g. "Yunusobod".
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "No qualified pharmacist on duty: %(branch)s"
+msgstr "Smenada malakali farmatsevt yo‘q: %(branch)s"
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Since %(time)s nobody qualified has checked in."
+msgstr "Malakali xodim kelganini qayd etmagan. Boshlangan vaqt: %(time)s."
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Checked in: %(names)s"
+msgstr "Kelganlar: %(names)s"
+
+#: backend/apps/hr/bot_messages.py
+msgid "Only people with pharmaceutical education may sell medicines."
+msgstr ""
+"Dori vositalarini faqat farmatsevtik ma’lumotli xodimlar sotishi mumkin."
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Till opened by someone not qualified: %(branch)s"
+msgstr "Kassani malakasiz xodim ochdi: %(branch)s"
+
+#. Translators: %(name)s is a person, %(time)s a clock time, %(reason)s a few
+#. words of why.
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Opened at %(time)s. Cashier: %(name)s (%(reason)s)."
+msgstr "Ochilgan vaqt: %(time)s. Kassir: %(name)s (%(reason)s)."
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "No qualified pharmacist in the roster: %(branch)s"
+msgstr "Smenalar jadvalida malakali farmatsevt yo‘q: %(branch)s"
+
+#. Translators: a day (dd.mm.yyyy) and two clock times, e.g. "14.11.2026, 20:00
+#. to 08:00".
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "%(day)s, %(start)s to %(end)s"
+msgstr "%(day)s, %(start)s – %(end)s"
+
+#. Translators: qualified pharmacists planned out of those needed, e.g. "1 of
+#. 2".
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "%(have)d of %(need)d"
+msgstr "%(have)d / %(need)d"
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "More gaps: %(count)d"
+msgstr "Yana farmatsevtsiz vaqtlar: %(count)d"
+
+#: backend/apps/hr/bot_messages.py
+msgid "Add a qualified pharmacist to the roster."
+msgstr "Smenalar jadvaliga malakali farmatsevt qo‘shing."
+
+#: backend/apps/hr/hooks.py
+msgid "A pharmacy open without a qualified pharmacist"
+msgstr "Dorixona malakali farmatsevtsiz ochiq"
+
+#: backend/apps/hr/hooks.py
+msgid "A till opened by someone who isn't a qualified pharmacist"
+msgstr "Kassani malakali farmatsevt bo‘lmagan xodim ochdi"
+
+#: backend/apps/hr/hooks.py
+msgid "Roster gaps without a qualified pharmacist"
+msgstr "Smenalar jadvalida malakali farmatsevtsiz vaqt"
+
+#: backend/apps/hr/hooks.py
+msgid "Choose who counts as a pharmacist"
+msgstr "Farmatsevt kim hisoblanishini tanlang"
+
+#: backend/apps/hr/hooks.py
+msgid ""
+"Choose who counts as a pharmacist and upload their diplomas and certificates,"
+" so every hour a pharmacy is open has a qualified pharmacist on the roster."
+msgstr ""
+"Qaysi lavozimlar farmatsevt hisoblanishini tanlang va ularning diplomlari "
+"hamda sertifikatlarini yuklang: dorixona ochiq har bir soatda smenalar "
+"jadvalida malakali farmatsevt bo‘lsin."
 
 #: backend/apps/hr/hooks.py
 msgid "Documents that expire"
@@ -8760,6 +8964,16 @@ msgstr "Ishdagi yubiley"
 msgid "Pick at most a year, ending after it starts."
 msgstr "Ko‘pi bilan bir yilni tanlang; oxiri boshidan keyin bo‘lsin."
 
+#: backend/apps/hr/owner_api.py
+msgid "Pick at most 62 days, ending after it starts."
+msgstr "Ko‘pi bilan 62 kun tanlang; oxirgi kun birinchi kundan keyin bo‘lsin."
+
+#: backend/apps/hr/owner_api.py backend/apps/hr/services.py
+#: backend/apps/members/join_links.py backend/apps/members/owner_api.py
+#: backend/apps/members/services.py
+msgid "Pick a position of this company."
+msgstr "Shu kompaniyadagi lavozimni tanlang."
+
 #: backend/apps/hr/owner_api.py backend/apps/hr/services.py
 msgid "Pick a kind of document."
 msgstr "Hujjat turini tanlang."
@@ -8820,6 +9034,42 @@ msgid "Probations ending: %(count)d"
 msgstr "Tugayotgan sinov muddatlari: %(count)d"
 
 #: backend/apps/hr/providers.py
+msgid "Pharmacist coverage"
+msgstr "Smenada farmatsevt"
+
+#: backend/apps/hr/providers.py
+#, python-format
+msgid "No qualified pharmacist now: %(branch)s, since %(time)s"
+msgstr "Hozir malakali farmatsevt yo‘q: %(branch)s. Boshlangan vaqt: %(time)s"
+
+#: backend/apps/hr/providers.py
+#, python-format
+msgid "Roster gaps without a qualified pharmacist, next 7 days: %(count)d"
+msgstr "Keyingi 7 kunlik jadvalda malakali farmatsevtsiz vaqtlar: %(count)d"
+
+#: backend/apps/hr/providers.py
+#, python-format
+msgid "Till opened by someone not qualified: %(name)s (%(branch)s)"
+msgstr "Kassani malakasiz xodim ochdi: %(name)s (%(branch)s)"
+
+#: backend/apps/hr/providers.py
+#, python-format
+msgid "Pharmacist certificates to renew within 30 days: %(count)d"
+msgstr ""
+"30 kun ichida yangilanishi kerak bo‘lgan farmatsevt sertifikatlari: %(count)d"
+
+#. Translators: %(date)s is dd.mm.yyyy, %(branch)s a pharmacy's name.
+#: backend/apps/hr/providers.py
+#, python-format
+msgid "Controlled substances licence ended on %(date)s: %(branch)s"
+msgstr "Nazoratdagi moddalar litsenziyasi tugagan (%(date)s): %(branch)s"
+
+#: backend/apps/hr/providers.py
+#, python-format
+msgid "Controlled substances licence not on file: %(branch)s"
+msgstr "Nazoratdagi moddalar litsenziyasi kiritilmagan: %(branch)s"
+
+#: backend/apps/hr/providers.py
 #, python-format
 msgid "Contract ends: %(name)s"
 msgstr "Shartnoma tugaydi: %(name)s"
@@ -8828,6 +9078,10 @@ msgstr "Shartnoma tugaydi: %(name)s"
 #, python-format
 msgid "Probation ends: %(name)s"
 msgstr "Sinov muddati tugaydi: %(name)s"
+
+#: backend/apps/hr/services.py
+msgid "Pick what this position does."
+msgstr "Bu lavozim kim hisoblanishini tanlang."
 
 #: backend/apps/hr/services.py
 msgid "Someone else in the company has this PINFL."
@@ -8881,11 +9135,6 @@ msgstr "Berilgan sana kelajakda bo‘lishi mumkin emas."
 #: backend/apps/hr/services.py
 msgid "A document can't expire before it was issued."
 msgstr "Hujjat muddati berilgan sanadan oldin tugashi mumkin emas."
-
-#: backend/apps/hr/services.py backend/apps/members/join_links.py
-#: backend/apps/members/owner_api.py backend/apps/members/services.py
-msgid "Pick a position of this company."
-msgstr "Shu kompaniyadagi lavozimni tanlang."
 
 #: backend/apps/hr/services.py
 msgid "This document is already required there."
@@ -9071,10 +9320,6 @@ msgid "Give ids or all=true."
 msgstr "ids yoki all=true ni yuboring."
 
 #: backend/apps/inbox/services.py
-msgid "This has already been handled."
-msgstr "Bu allaqachon hal qilingan."
-
-#: backend/apps/inbox/services.py
 msgid "This action isn't available any more."
 msgstr "Bu amal endi mavjud emas."
 
@@ -9086,7 +9331,7 @@ msgstr "Iltimos, sababini yozing."
 msgid "Two-letter country code (ISO 3166-1), e.g. UZ."
 msgstr "Ikki harfli mamlakat kodi (ISO 3166-1), masalan UZ."
 
-#: backend/apps/inventory/models.py
+#: backend/apps/inventory/models.py backend/apps/sales/hooks.py
 msgid "Medicine"
 msgstr "Dori"
 
@@ -9439,7 +9684,8 @@ msgstr "Bilimlar bazasida yangi sahifa: %(title)s"
 msgid "Please read and confirm: %(title)s"
 msgstr "Iltimos, o‘qing va tasdiqlang: %(title)s"
 
-#. Translators: a button that sends the page into the chat ("Read it"), not the status.
+#. Translators: a button that sends the page into the chat ("Read it"), not the
+#. status.
 #: backend/apps/knowledge/bot_messages.py
 msgctxt "knowledge read button"
 msgid "Read"
@@ -9720,9 +9966,9 @@ msgstr "Shu kompaniyadagi sahifani tanlang."
 
 #: backend/apps/lifecycle/ai_tools.py
 msgid ""
-"Discipline at a glance: warnings and reprimands given in a period by kind "
-"and category, those still counting, unacknowledged ones, and who is "
-"suspended until when"
+"Discipline at a glance: warnings and reprimands given in a period by kind and"
+" category, those still counting, unacknowledged ones, and who is suspended "
+"until when"
 msgstr ""
 "Intizom qisqacha: muddat ichida berilgan ogohlantirish va hayfsanlar turi va "
 "sababi bo‘yicha, hali amal qilayotganlari, xodim tanishmaganlari, kim "
@@ -9756,7 +10002,8 @@ msgstr "Tushuntirish xati yozdi"
 msgid "Proposed a fine with a record"
 msgstr "Intizomiy jazo bilan birga jarima taklif qildi"
 
-#. Translators: %(category)s is what it is about, e.g. "Storage conditions breached".
+#. Translators: %(category)s is what it is about, e.g. "Storage conditions
+#. breached".
 #: backend/apps/lifecycle/bot_messages.py
 #, python-format
 msgid ""
@@ -9931,6 +10178,7 @@ msgid "All"
 msgstr "Hammasi"
 
 #: backend/apps/members/admin.py backend/apps/members/providers.py
+#: backend/apps/sales/templates/sales/invoice.html
 msgid "Phone"
 msgstr "Telefon"
 
@@ -10154,8 +10402,8 @@ msgstr "Hisobingiz yaratilishi bilan jamoaga qo‘shilasiz, kutish shart emas."
 #: backend/apps/members/bot_messages.py
 #, python-format
 msgid ""
-"Your request to join <b>%(company)s</b> is waiting for approval. I'll "
-"message you as soon as it's decided."
+"Your request to join <b>%(company)s</b> is waiting for approval. I'll message"
+" you as soon as it's decided."
 msgstr ""
 "<b>%(company)s</b> kompaniyasiga qo‘shilish so‘rovingiz tasdiqlanishini "
 "kutmoqda. Qaror chiqishi bilan sizga yozaman."
@@ -10353,7 +10601,8 @@ msgstr "lavozim"
 msgid "default"
 msgstr "standart"
 
-#. Translators: %(company)s is a company's name, as typed: no case endings on it.
+#. Translators: %(company)s is a company's name, as typed: no case endings on
+#. it.
 #: backend/apps/members/bot_messages.py employee_bot/bot/handlers/company.py
 #: employee_bot/bot/middlewares/access.py
 #, python-format
@@ -10785,8 +11034,8 @@ msgid ""
 "Look up stock, count, receive goods for checking, record expiry checks and "
 "defektura"
 msgstr ""
-"Qoldiqlarni ko‘rish, inventarizatsiya, tovarni tekshirish uchun qabul "
-"qilish, yaroqlilik muddatini tekshirish va defektura"
+"Qoldiqlarni ko‘rish, inventarizatsiya, tovarni tekshirish uchun qabul qilish,"
+" yaroqlilik muddatini tekshirish va defektura"
 
 #: backend/apps/members/permissions.py
 msgid "Keep the controlled-substance register and the prescription log"
@@ -11164,8 +11413,8 @@ msgstr "Lavozim Ega rolini bera olmaydi."
 msgid ""
 "You can only change the access of a job title whose role you could give."
 msgstr ""
-"Faqat o‘zingiz bera oladigan rolni beradigan lavozimning ruxsatini "
-"o‘zgartira olasiz."
+"Faqat o‘zingiz bera oladigan rolni beradigan lavozimning ruxsatini o‘zgartira"
+" olasiz."
 
 #: backend/apps/members/services.py
 msgid "People hold this position: hide it instead of deleting it."
@@ -11461,8 +11710,8 @@ msgstr "Ish haqi (%(month)s): %(name)s"
 #: backend/apps/payroll/finance_bridge.py
 #, python-format
 msgid ""
-"An expense of %(name)s was paid back another way meanwhile: calculate the "
-"run again."
+"An expense of %(name)s was paid back another way meanwhile: calculate the run"
+" again."
 msgstr ""
 "Bu orada xodimning xarajati boshqa yo‘l bilan qoplandi: %(name)s. Ish haqini "
 "qayta hisoblang."
@@ -11485,9 +11734,9 @@ msgid ""
 "Part of this pay was already paid or written off in Finance. Void that "
 "payment first, then reopen the payroll."
 msgstr ""
-"Bu ish haqining bir qismi Moliya bo‘limida allaqachon to‘langan yoki "
-"hisobdan chiqarilgan. Avval o‘sha to‘lovni bekor qiling, keyin ish haqini "
-"qayta oching."
+"Bu ish haqining bir qismi Moliya bo‘limida allaqachon to‘langan yoki hisobdan"
+" chiqarilgan. Avval o‘sha to‘lovni bekor qiling, keyin ish haqini qayta "
+"oching."
 
 #: backend/apps/payroll/finance_bridge.py
 #, python-format
@@ -11821,12 +12070,14 @@ msgstr ""
 #: backend/apps/payroll/labels.py
 #, python-format
 msgid ""
-"The %(month)s payroll paid %(name)s %(amount)s for days after their last "
-"day. Add a line by hand if it should be paid back."
+"The %(month)s payroll paid %(name)s %(amount)s for days after their last day."
+" To take it back, add a line by hand for at most what this payslip pays, and "
+"record the rest in Finance as money they owe."
 msgstr ""
 "Ish haqi hisobi (%(month)s) oxirgi ish kunidan keyingi kunlar uchun ham "
-"to‘lagan: %(name)s, %(amount)s. Qaytarilishi kerak bo‘lsa, qo‘lda qator "
-"qo‘shing."
+"to‘lagan: %(name)s, %(amount)s. Qaytarib olish uchun bu hisob-varaq "
+"to‘laydigan summadan oshmaydigan qatorni qo‘lda qo‘shing, qolganini esa "
+"Moliyada xodimning qarzi sifatida yozing."
 
 #: backend/apps/payroll/models.py
 msgctxt "pay type"
@@ -12265,7 +12516,7 @@ msgctxt "payslip line"
 msgid "Paid leave"
 msgstr "Haq to‘lanadigan ta’til"
 
-#: backend/apps/payroll/models.py
+#: backend/apps/payroll/models.py backend/apps/payroll/providers.py
 msgctxt "payslip line"
 msgid "Unused leave paid out"
 msgstr "Foydalanilmagan ta’til uchun to‘lov"
@@ -12621,11 +12872,13 @@ msgstr "Bu hisob-kitobda ish haqi oladigan hech kim yo‘q."
 #: backend/apps/payroll/runs.py
 #, python-format
 msgid ""
-"The deductions on the final payslip of %(names)s are more than the pay: "
-"lower a line added by hand."
+"The deductions on the final payslip of %(names)s are more than the pay: lower"
+" a line added by hand to at most the pay, and record the rest in Finance as "
+"money they owe."
 msgstr ""
 "Yakuniy hisob-varaqdagi ushlanmalar ish haqidan ko‘p: %(names)s. Qo‘lda "
-"qo‘shilgan qatorni kamaytiring."
+"qo‘shilgan qatorni ish haqidan oshmaydigan qilib kamaytiring, qolganini esa "
+"Moliyada xodimning qarzi sifatida yozing."
 
 #: backend/apps/payroll/runs.py
 #, python-format
@@ -13038,6 +13291,11 @@ msgstr "Yakuniy hisob-varaq allaqachon bor: %(name)s."
 msgid "Only a final payslip pays out unused leave."
 msgstr "Ta’til kompensatsiyasi faqat yakuniy hisob-varaqda to‘lanadi."
 
+#: backend/apps/payroll/tasks.py
+#, python-format
+msgid "%(company)s: your final payslip for %(month)s, %(amount)s"
+msgstr "%(company)s: %(month)s uchun yakuniy hisob-varaqingiz, %(amount)s"
+
 #: backend/apps/payroll/templates/payroll/payslip.html
 msgid "Employee"
 msgstr "Xodim"
@@ -13065,16 +13323,16 @@ msgstr "Buxgalter"
 
 #: backend/apps/projects/ai_tools.py
 msgid ""
-"Projects: every project the asker sees, with progress, health, due date, "
-"lead and budget burn."
+"Projects: every project the asker sees, with progress, health, due date, lead"
+" and budget burn."
 msgstr ""
 "Loyihalar: so‘ragan odam ko‘radigan barcha loyihalar, bajarilishi, ahvoli, "
 "muddati, rahbari va byudjet sarfi bilan."
 
 #: backend/apps/projects/ai_tools.py
 msgid ""
-"One project in detail: milestones with progress, overdue cards, the people "
-"on it, the latest update, and its money when the asker may see it."
+"One project in detail: milestones with progress, overdue cards, the people on"
+" it, the latest update, and its money when the asker may see it."
 msgstr ""
 "Bitta loyiha batafsil: bosqichlar va ularning bajarilishi, muddati o‘tgan "
 "kartalar, loyihadagi odamlar, so‘nggi holat yozuvi, so‘ragan odamga ruxsat "
@@ -13823,8 +14081,8 @@ msgid ""
 "<b>%(name)s</b> is %(late)s late with <b>%(task)s</b>. Reminders sent: "
 "%(count)d."
 msgstr ""
-"<b>%(task)s</b>: <b>%(name)s</b> %(late)s kechikmoqda. Yuborilgan "
-"eslatmalar: %(count)d."
+"<b>%(task)s</b>: <b>%(name)s</b> %(late)s kechikmoqda. Yuborilgan eslatmalar:"
+" %(count)d."
 
 #: backend/apps/reminders/bot_messages.py backend/apps/tasks/bot_messages.py
 msgid "Remind now"
@@ -13837,8 +14095,8 @@ msgstr "Boshqa xodimga"
 #: backend/apps/reminders/bot_messages.py
 #, python-format
 msgid ""
-"<b>%(name)s</b> blocked the bot, so reminders can't reach them. <b>%(task)s</"
-"b> is still open."
+"<b>%(name)s</b> blocked the bot, so reminders can't reach them. "
+"<b>%(task)s</b> is still open."
 msgstr ""
 "<b>%(name)s</b> botni bloklagan, shuning uchun eslatmalar unga yetib "
 "bormaydi. <b>%(task)s</b> hali ochiq."
@@ -13935,8 +14193,8 @@ msgstr "Qoidaga nom bering."
 #, python-format
 msgid "%(value)d is out of range: use %(low)d to %(high)d."
 msgstr ""
-"%(value)d ruxsat etilgan oraliqda emas. Ruxsat etilgan oraliq: %(low)d–"
-"%(high)d."
+"%(value)d ruxsat etilgan oraliqda emas. Ruxsat etilgan oraliq: "
+"%(low)d–%(high)d."
 
 #: backend/apps/reminders/services.py
 msgid "Quiet days are 0 (Monday) to 6 (Sunday)."
@@ -13953,8 +14211,8 @@ msgstr "Vaqtni tanlang."
 #: backend/apps/reminders/services.py
 msgid "Give both ends of the quiet hours, or neither."
 msgstr ""
-"Sokin soatlarning boshlanishi va tugashini birga kiriting yoki ikkalasini "
-"ham bo‘sh qoldiring."
+"Sokin soatlarning boshlanishi va tugashini birga kiriting yoki ikkalasini ham"
+" bo‘sh qoldiring."
 
 #: backend/apps/reminders/services.py
 msgid "Steps start at 1."
@@ -14115,9 +14373,9 @@ msgstr "O‘tgan oy"
 
 #: backend/apps/sales/ai_tools.py
 msgid ""
-"Sales for a range of days: net sales, receipts, average check and cash "
-"share, with a series over time or a breakdown by branch, cashier, payment "
-"method or hour."
+"Sales for a range of days: net sales, receipts, average check and cash share,"
+" with a series over time or a breakdown by branch, cashier, payment method or"
+" hour."
 msgstr ""
 "Tanlangan kunlar uchun savdo: sof savdo, cheklar, o‘rtacha chek va naqd pul "
 "ulushi — vaqt bo‘yicha o‘zgarishi yoki filial, kassir, to‘lov usuli yoxud "
@@ -14132,6 +14390,32 @@ msgstr ""
 "Tanlangan kunlar uchun har bir kassir ko‘rsatkichlari: smenalar, savdo, "
 "o‘rtacha chek, naqd pul sanog‘i qanchalik tez-tez to‘g‘ri chiqqani, kamomad "
 "va ortiqchalar, kassani kech ochish holatlari va tasdiqlashlar."
+
+#: backend/apps/sales/ai_tools.py
+msgid ""
+"The medicines sold most in a range of days, from the cash-register program's "
+"sale lines: packs and amount per item, and how many prescription lines were "
+"sold above the legal price."
+msgstr ""
+"Kunlar oralig‘ida eng ko‘p sotilgan dorilar, kassa dasturining savdo "
+"qatorlaridan: har bir tovar bo‘yicha qadoq va summa hamda chegaraviy narxdan "
+"yuqori sotilgan retseptli qatorlar soni."
+
+#: backend/apps/sales/ai_tools.py
+msgid ""
+"What customers owe (nasiya and invoices) by how long it is past due: not due "
+"yet, 0–30, 31–60 and more than 60 days, in total and per customer."
+msgstr ""
+"Mijozlar qarzi (nasiya va hisob-fakturalar) muddati o‘tganiga qarab: muddati "
+"kelmagan, 0–30, 31–60 va 60 kundan ko‘p, jami va har bir mijoz bo‘yicha."
+
+#: backend/apps/sales/ai_tools.py
+msgid ""
+"Invoices issued in a range of days: number, customer, total, paid, left to "
+"pay, due day and whether it is overdue."
+msgstr ""
+"Kunlar oralig‘ida chiqarilgan hisob-fakturalar: raqami, mijoz, jami, "
+"to‘langan, qolgan, to‘lov muddati va muddati o‘tganmi."
 
 #: backend/apps/sales/alerts.py backend/apps/sales/queries.py
 #: backend/apps/sales/services.py
@@ -14170,6 +14454,15 @@ msgstr "Avval smenani oching."
 #: backend/apps/sales/api.py
 msgid "Single receipts are off: totals come from the Z-report."
 msgstr "Alohida cheklar o‘chirilgan: summalar Z-hisobotdan olinadi."
+
+#: backend/apps/sales/api.py backend/apps/sales/owner_api.py
+#: backend/apps/sales/services.py
+msgid "Pick the customer."
+msgstr "Mijozni tanlang."
+
+#: backend/apps/sales/api.py backend/apps/sales/services.py
+msgid "Pick how the customer paid."
+msgstr "Mijoz nima bilan to‘laganini tanlang."
 
 #: backend/apps/sales/audit_actions.py
 msgid "Changed the sales settings"
@@ -14255,6 +14548,70 @@ msgstr "Chekni qayd etdi"
 msgid "Voided a receipt"
 msgstr "Chekni bekor qildi"
 
+#: backend/apps/sales/audit_actions.py
+msgid "Added a sale lines import profile"
+msgstr "Savdo qatorlari import profilini qo‘shdi"
+
+#: backend/apps/sales/audit_actions.py
+msgid "Changed a sale lines import profile"
+msgstr "Savdo qatorlari import profilini o‘zgartirdi"
+
+#: backend/apps/sales/audit_actions.py
+msgid "Uploaded a sale lines file"
+msgstr "Savdo qatorlari faylini yukladi"
+
+#: backend/apps/sales/audit_actions.py
+msgid "Read a sale lines file"
+msgstr "Savdo qatorlari fayli o‘qildi"
+
+#: backend/apps/sales/audit_actions.py
+msgid "Couldn't read a sale lines file"
+msgstr "Savdo qatorlari faylini o‘qib bo‘lmadi"
+
+#: backend/apps/sales/audit_actions.py
+msgid "Matched an item code to a medicine"
+msgstr "Tovar kodini doriga moslashtirdi"
+
+#: backend/apps/sales/audit_actions.py
+msgid "Marked an item code as not a product"
+msgstr "Tovar kodini tovar emas deb belgiladi"
+
+#: backend/apps/sales/audit_actions.py
+msgid "Linked a cash-register cashier to a person"
+msgstr "Kassa dasturi kassirini xodimga bog‘ladi"
+
+#: backend/apps/sales/audit_actions.py
+msgid "Recorded nasiya"
+msgstr "Nasiyani qayd etdi"
+
+#: backend/apps/sales/audit_actions.py
+msgid "Cancelled a nasiya entry"
+msgstr "Nasiya yozuvini bekor qildi"
+
+#: backend/apps/sales/audit_actions.py
+msgid "Created an invoice"
+msgstr "Hisob-faktura yaratdi"
+
+#: backend/apps/sales/audit_actions.py
+msgid "Changed an invoice"
+msgstr "Hisob-fakturani o‘zgartirdi"
+
+#: backend/apps/sales/audit_actions.py
+msgid "Issued an invoice"
+msgstr "Hisob-fakturani chiqardi"
+
+#: backend/apps/sales/audit_actions.py
+msgid "Recorded a payment on an invoice"
+msgstr "Hisob-faktura bo‘yicha to‘lovni qayd etdi"
+
+#: backend/apps/sales/audit_actions.py
+msgid "Voided an invoice"
+msgstr "Hisob-fakturani bekor qildi"
+
+#: backend/apps/sales/audit_actions.py
+msgid "Sent an invoice"
+msgstr "Hisob-fakturani yubordi"
+
 #: backend/apps/sales/bot_messages.py backend/apps/sales/queries.py
 #, python-format
 msgid "%(person)s handed you %(amount)s"
@@ -14314,8 +14671,8 @@ msgid ""
 "%(cashier)s counted %(counted)s when opening %(till)s; the last shift left "
 "%(expected)s."
 msgstr ""
-"%(cashier)s kassani (%(till)s) ochishda %(counted)s sanadi, oldingi smena "
-"esa %(expected)s qoldirgan."
+"%(cashier)s kassani (%(till)s) ochishda %(counted)s sanadi, oldingi smena esa"
+" %(expected)s qoldirgan."
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
@@ -14740,8 +15097,270 @@ msgid "Verified by"
 msgstr "Tekshirgan"
 
 #: backend/apps/sales/hooks.py
+msgid "Invoice"
+msgstr "Hisob-faktura"
+
+#: backend/apps/sales/hooks.py backend/apps/sales/models.py
+msgid "Invoices"
+msgstr "Hisob-fakturalar"
+
+#: backend/apps/sales/hooks.py backend/apps/sales/templates/sales/invoice.html
+msgid "Total"
+msgstr "Jami"
+
+#: backend/apps/sales/hooks.py
+msgid "Left to pay"
+msgstr "To‘lanishi kerak"
+
+#: backend/apps/sales/hooks.py
+msgid "Overdue"
+msgstr "Muddati o‘tgan"
+
+#: backend/apps/sales/hooks.py
+msgid "Nasiya at the till"
+msgstr "Kassadagi nasiya"
+
+#: backend/apps/sales/hooks.py
+msgid "Overdue nasiya and invoices"
+msgstr "Muddati o‘tgan nasiya va hisob-fakturalar"
+
+#: backend/apps/sales/hooks.py
+msgid "Sale lines to match"
+msgstr "Moslashtiriladigan savdo qatorlari"
+
+#: backend/apps/sales/hooks.py
+msgid "Where do your sales lines come from?"
+msgstr "Savdo qatorlaringiz qayerdan keladi?"
+
+#: backend/apps/sales/hooks.py
+msgid ""
+"Import them from your cash-register program for true stock, margins and the "
+"legal price check, or work without them."
+msgstr ""
+"Aniq qoldiq, ustama va narx chegarasini tekshirish uchun ularni kassa "
+"dasturingizdan import qiling yoki ularsiz ishlang."
+
+#: backend/apps/sales/hooks.py
+msgid "Prescription medicines sold above the legal price"
+msgstr "Chegaraviy narxdan qimmat sotilgan retseptli dorilar"
+
+#: backend/apps/sales/hooks.py
+msgid "A sale lines import didn't finish"
+msgstr "Savdo qatorlari importi tugamadi"
+
+#: backend/apps/sales/hooks.py
+msgid "Sale lines"
+msgstr "Savdo qatorlari"
+
+#: backend/apps/sales/hooks.py
+msgid "Sale or refund"
+msgstr "Sotuv yoki qaytarish"
+
+#: backend/apps/sales/hooks.py
+msgid "Item code"
+msgstr "Tovar kodi"
+
+#: backend/apps/sales/hooks.py backend/apps/sales/templates/sales/invoice.html
+msgid "Series"
+msgstr "Seriya"
+
+#: backend/apps/sales/hooks.py
+msgid "Parts"
+msgstr "Qismlar"
+
+#: backend/apps/sales/hooks.py
+msgid "Parts per pack"
+msgstr "Qadoqdagi qismlar"
+
+#: backend/apps/sales/hooks.py
+msgid "Price per pack"
+msgstr "Qadoq narxi"
+
+#: backend/apps/sales/hooks.py
+msgid "Line total"
+msgstr "Qator summasi"
+
+#: backend/apps/sales/hooks.py
+msgid "Legal price cap"
+msgstr "Chegaraviy narx"
+
+#: backend/apps/sales/hooks.py
+msgid "Above the cap"
+msgstr "Chegaradan yuqori"
+
+#: backend/apps/sales/hooks.py
+msgid "Prescription"
+msgstr "Retsept"
+
+#: backend/apps/sales/hooks.py
 msgid "Kassa"
 msgstr "Kassa"
+
+#: backend/apps/sales/importer.py
+#, python-format
+msgid "The file has no row %(row)s with the column names."
+msgstr "Faylda ustun nomlari bilan qator yo‘q (qator: %(row)s)."
+
+#: backend/apps/sales/importer.py
+#, python-format
+msgid "The file has more than %(count)s rows: split it into smaller files."
+msgstr ""
+"Qatorlar juda ko‘p (eng ko‘pi bilan %(count)s ta): faylni kichikroq fayllarga"
+" bo‘ling."
+
+#: backend/apps/sales/importer.py
+msgid "The file isn't readable as CSV."
+msgstr "Faylni CSV sifatida o‘qib bo‘lmadi."
+
+#: backend/apps/sales/importer.py
+msgid "The file's text can't be read: pick its encoding in the profile."
+msgstr "Fayl matnini o‘qib bo‘lmadi: profilda uning kodlashini tanlang."
+
+#: backend/apps/sales/importer.py
+msgid "The file isn't readable as an Excel workbook."
+msgstr "Faylni Excel kitobi sifatida o‘qib bo‘lmadi."
+
+#: backend/apps/sales/importer.py
+#, python-format
+msgid "The file has no column %(column)s (for %(field)s)."
+msgstr "Faylda bunday ustun yo‘q: %(column)s (%(field)s uchun)."
+
+#: backend/apps/sales/importer.py
+#, python-format
+msgid "Unknown columns: %(names)s."
+msgstr "Noma’lum ustunlar: %(names)s."
+
+#: backend/apps/sales/importer.py
+msgid "the receipt number"
+msgstr "chek raqami"
+
+#: backend/apps/sales/importer.py
+msgid "the item code"
+msgstr "tovar kodi"
+
+#: backend/apps/sales/importer.py
+msgid "the quantity"
+msgstr "miqdor"
+
+#: backend/apps/sales/importer.py
+msgid "the date"
+msgstr "sana"
+
+#: backend/apps/sales/importer.py
+msgid "the line total or the price"
+msgstr "qator summasi yoki narx"
+
+#: backend/apps/sales/importer.py
+msgid "the pharmacy"
+msgstr "dorixona"
+
+#: backend/apps/sales/importer.py
+#, python-format
+msgid "Say which column holds %(fields)s."
+msgstr "Qaysi ustunda turishini ko‘rsating: %(fields)s."
+
+#: backend/apps/sales/importer.py
+msgid "No receipt number."
+msgstr "Chek raqami yo‘q."
+
+#: backend/apps/sales/importer.py
+msgid "No item code."
+msgstr "Tovar kodi yo‘q."
+
+#: backend/apps/sales/importer.py
+msgid "quantity"
+msgstr "miqdor"
+
+#: backend/apps/sales/importer.py
+msgid "No quantity."
+msgstr "Miqdor yo‘q."
+
+#: backend/apps/sales/importer.py
+msgid "price"
+msgstr "narx"
+
+#: backend/apps/sales/importer.py
+msgid "discount"
+msgstr "chegirma"
+
+#: backend/apps/sales/importer.py
+msgid "total"
+msgstr "summa"
+
+#: backend/apps/sales/importer.py
+#, python-format
+msgid "The %(field)s isn't a number."
+msgstr "Bu son emas: %(field)s."
+
+#: backend/apps/sales/importer.py
+msgid "The date isn't readable."
+msgstr "Sanani o‘qib bo‘lmadi."
+
+#: backend/apps/sales/importer.py
+msgid "The time isn't readable."
+msgstr "Vaqtni o‘qib bo‘lmadi."
+
+#: backend/apps/sales/invoice_print.py backend/apps/sales/services.py
+#, python-format
+msgid "Invoice %(number)s"
+msgstr "Hisob-faktura %(number)s"
+
+#: backend/apps/sales/invoice_print.py backend/apps/sales/models.py
+#: backend/apps/sales/queries.py
+msgid "Draft invoice"
+msgstr "Hisob-faktura qoralamasi"
+
+#: backend/apps/sales/lines.py
+msgid "Sale line imports are switched off in the sales settings."
+msgstr "Savdo qatorlarini import qilish savdo sozlamalarida o‘chirilgan."
+
+#: backend/apps/sales/lines.py
+msgid "The file couldn't be read. Check the profile and try again."
+msgstr "Faylni o‘qib bo‘lmadi. Profilni tekshirib, qayta urinib ko‘ring."
+
+#: backend/apps/sales/lines.py
+#, python-format
+msgid "Unknown branch %(branch)s."
+msgstr "Noma’lum filial: %(branch)s."
+
+#: backend/apps/sales/lines.py
+#, python-format
+msgid "Receipt %(number)s adds up to nothing."
+msgstr "Chekning summasi nolga teng: %(number)s."
+
+#: backend/apps/sales/lines.py
+#, python-format
+msgid "%(product)s: the stock wasn't moved (%(reason)s)."
+msgstr "%(product)s: qoldiq o‘zgarmadi (%(reason)s)."
+
+#: backend/apps/sales/lines.py
+msgid "Pick a product of this company."
+msgstr "Shu kompaniyaning tovarini tanlang."
+
+#: backend/apps/sales/lines.py
+msgid "Pick a code to match."
+msgstr "Moslashtiriladigan kodni tanlang."
+
+#: backend/apps/sales/lines.py
+#, python-format
+msgid "%(count)s sale above the legal price at %(branch)s"
+msgid_plural "%(count)s sales above the legal price at %(branch)s"
+msgstr[0] "Chegaraviy narxdan yuqori sotuvlar: %(count)s ta, %(branch)s"
+
+#: backend/apps/sales/lines.py
+#, python-format
+msgid "%(product)s: %(price)s a pack, the cap is %(cap)s"
+msgstr "%(product)s: qadog‘i %(price)s, chegarasi %(cap)s"
+
+#: backend/apps/sales/lines.py
+#, python-format
+msgid "Prescription medicines sold on %(day)s."
+msgstr "Retseptli dorilar sotilgan sana: %(day)s."
+
+#: backend/apps/sales/lines.py
+#, python-format
+msgid "The sale lines import didn't finish (%(profile)s)"
+msgstr "Savdo qatorlari importi tugamadi (%(profile)s)"
 
 #: backend/apps/sales/models.py
 msgid "Shift totals from the Z-report"
@@ -14752,8 +15371,16 @@ msgid "Single receipts"
 msgstr "Alohida cheklar"
 
 #: backend/apps/sales/models.py
-msgid "Invoices"
-msgstr "Hisob-fakturalar"
+msgid "No sale lines"
+msgstr "Savdo qatorlarisiz"
+
+#: backend/apps/sales/models.py
+msgid "Imported from the cash-register software"
+msgstr "Kassa dasturidan import"
+
+#: backend/apps/sales/models.py
+msgid "Entered with each receipt"
+msgstr "Har bir chek bilan kiritiladi"
 
 #: backend/apps/sales/models.py
 msgid "Sales before this time belong to the previous business day."
@@ -14805,6 +15432,42 @@ msgstr "Smena ochilganda qator bloklangan holda olinadi."
 #: backend/apps/sales/models.py
 msgid "The last business day whose sales were posted to groups."
 msgstr "Savdo natijalari guruhlarga yuborilgan oxirgi savdo kuni."
+
+#: backend/apps/sales/models.py
+msgid ""
+"Where sale lines come from. Without them stock moves only through receipts of"
+" goods, transfers, write-offs and counts."
+msgstr ""
+"Savdo qatorlari qayerdan keladi. Ularsiz qoldiq faqat kirim (nakladnoy), "
+"ko‘chirish, hisobdan chiqarish va inventarizatsiya orqali o‘zgaradi."
+
+#: backend/apps/sales/models.py
+msgid "When someone answered where sale lines come from."
+msgstr "Savdo qatorlari qayerdan kelishiga qachon javob berilgan."
+
+#: backend/apps/sales/models.py
+msgid "A nasiya (credit sale) is due this many days after the sale."
+msgstr "Nasiya (qarzga sotuv) sotuvdan shuncha kun o‘tib to‘lanishi kerak."
+
+#: backend/apps/sales/models.py
+msgid "Taken under a row lock when an invoice is issued."
+msgstr "Hisob-faktura chiqarilganda qulf ostida olinadi."
+
+#: backend/apps/sales/models.py
+msgid "An invoice is due this many days after it is issued."
+msgstr "Hisob-faktura chiqarilgandan shuncha kun o‘tib to‘lanishi kerak."
+
+#: backend/apps/sales/models.py
+msgid "Printed at the foot of invoices."
+msgstr "Hisob-fakturalar pastida chop etiladi."
+
+#: backend/apps/sales/models.py
+msgid ""
+"A prescription medicine sold by invoice above its batch cost plus this markup"
+" (or above its reference price) warns at issue."
+msgstr ""
+"Retseptli dori hisob-faktura bilan partiya xarid narxi va shu ustamadan (yoki"
+" referent narxdan) qimmat sotilsa, chiqarishda ogohlantiriladi."
 
 #: backend/apps/sales/models.py
 msgid "QR or wallet"
@@ -14882,6 +15545,129 @@ msgid "Import"
 msgstr "Import"
 
 #: backend/apps/sales/models.py
+msgid "CSV"
+msgstr "CSV"
+
+#: backend/apps/sales/models.py
+msgid "Excel (xlsx)"
+msgstr "Excel (xlsx)"
+
+#: backend/apps/sales/models.py backend/apps/sales/templates/sales/invoice.html
+msgid "Packs"
+msgstr "Qadoqlar"
+
+#: backend/apps/sales/models.py
+msgid "Parts (blisters, ampoules)"
+msgstr "Qismlar (blister, ampula)"
+
+#: backend/apps/sales/models.py
+msgid "Empty: UTF-8, else Windows-1251."
+msgstr "Bo‘sh: UTF-8, aks holda Windows-1251."
+
+#: backend/apps/sales/models.py
+msgid "Empty: found from the file."
+msgstr "Bo‘sh: fayldan aniqlanadi."
+
+#: backend/apps/sales/models.py
+msgid "The row that holds the column names."
+msgstr "Ustun nomlari yozilgan qator."
+
+#: backend/apps/sales/models.py
+msgid "Which column of the file holds what."
+msgstr "Faylning qaysi ustunida nima turadi."
+
+#: backend/apps/sales/models.py
+msgid "Empty: the usual formats (\"07.11.2026 14:05\")."
+msgstr "Bo‘sh: odatiy formatlar («07.11.2026 14:05»)."
+
+#: backend/apps/sales/models.py
+msgid "What a quantity counts when the file has no unit column."
+msgstr "Faylda birlik ustuni bo‘lmasa, miqdor nimani sanaydi."
+
+#: backend/apps/sales/models.py
+msgid "The file's branch names and the branches they mean (else code or name)."
+msgstr ""
+"Fayldagi filial nomlari va ular qaysi filialni bildirishi (aks holda kod yoki"
+" nom)."
+
+#: backend/apps/sales/models.py
+msgid "Reading"
+msgstr "O‘qilmoqda"
+
+#: backend/apps/sales/models.py
+msgid "Rows read from the file."
+msgstr "Fayldan o‘qilgan qatorlar."
+
+#: backend/apps/sales/models.py
+msgid "Receipts added."
+msgstr "Qo‘shilgan cheklar."
+
+#: backend/apps/sales/models.py
+msgid "Lines found in the file."
+msgstr "Faylda topilgan qatorlar."
+
+#: backend/apps/sales/models.py
+msgid "Lines of receipts imported before, left out."
+msgstr "Avval import qilingan cheklarning qatorlari, o‘tkazib yuborildi."
+
+#: backend/apps/sales/models.py
+msgid "Rows that couldn't be read."
+msgstr "O‘qib bo‘lmagan qatorlar."
+
+#: backend/apps/sales/models.py
+msgid "Prescription lines sold above the legal price."
+msgstr "Chegaraviy narxdan yuqori sotilgan retseptli qatorlar."
+
+#: backend/apps/sales/models.py
+msgid "Matched"
+msgstr "Moslashgan"
+
+#: backend/apps/sales/models.py
+msgid "Waiting for a match"
+msgstr "Moslashtirishni kutmoqda"
+
+#: backend/apps/sales/models.py
+msgid "Not a product"
+msgstr "Tovar emas"
+
+#: backend/apps/sales/models.py
+msgid ""
+"The unit the file counted in; `quantity` is always in parts once matched."
+msgstr "Fayl sanagan birlik; moslashgandan keyin miqdor doim qismlarda."
+
+#: backend/apps/sales/models.py
+msgid "Per unit, as the file gave it."
+msgstr "Birlik uchun, fayldagidek."
+
+#: backend/apps/sales/models.py
+msgid "What the customer paid for the line, after the discount."
+msgstr "Xaridor qator uchun to‘lagan summa, chegirmadan keyin."
+
+#: backend/apps/sales/models.py
+msgid "Partly paid"
+msgstr "Qisman to‘langan"
+
+#: backend/apps/sales/models.py
+msgid "The id of the e-invoice (e-faktura), when typed."
+msgstr "Elektron hisob-faktura (e-faktura) raqami, kiritilganda."
+
+#: backend/apps/sales/models.py
+msgid "Clinic"
+msgstr "Klinika"
+
+#: backend/apps/sales/models.py
+msgid "Company"
+msgstr "Kompaniya"
+
+#: backend/apps/sales/models.py
+msgid "Sold on credit"
+msgstr "Qarzga sotildi"
+
+#: backend/apps/sales/models.py
+msgid "How a payment came in (cash goes into the till)."
+msgstr "To‘lov qanday kelgani (naqd pul kassaga tushadi)."
+
+#: backend/apps/sales/models.py
 msgid "Payout"
 msgstr "Kassadan chiqim"
 
@@ -14948,6 +15734,22 @@ msgstr "Noma’lum hisob."
 msgid "Pick the branch."
 msgstr "Filialni tanlang."
 
+#: backend/apps/sales/owner_api.py
+msgid "Pick one of your import profiles."
+msgstr "Import profillaringizdan birini tanlang."
+
+#: backend/apps/sales/owner_api.py
+msgid "Pick a medicine from the catalogue."
+msgstr "Katalogdan dorini tanlang."
+
+#: backend/apps/sales/owner_api.py
+msgid "No line waits for this code."
+msgstr "Bu kodni kutayotgan qator yo‘q."
+
+#: backend/apps/sales/owner_api.py
+msgid "Give the customer a name."
+msgstr "Mijozga nom bering."
+
 #: backend/apps/sales/queries.py
 #, python-format
 msgid "Sales: %(net)s (%(change)s vs last week)"
@@ -14997,8 +15799,8 @@ msgid ""
 "%(count)s cash handovers (%(amount)s) are waiting for them to confirm or "
 "decline."
 msgstr ""
-"Unga %(count)s marta pul topshirilgan (%(amount)s): u hali tasdiqlamagan "
-"yoki rad etmagan."
+"Unga %(count)s marta pul topshirilgan (%(amount)s): u hali tasdiqlamagan yoki"
+" rad etmagan."
 
 #: backend/apps/sales/queries.py
 #, python-format
@@ -15022,6 +15824,48 @@ msgstr ""
 msgid "%(count)s shifts on record, %(unverified)s not verified yet."
 msgstr ""
 "Jami %(count)s ta smena, ulardan %(unverified)s tasi hali tekshirilmagan."
+
+#: backend/apps/sales/queries.py
+#, python-format
+msgid "Match %(code)s · %(name)s"
+msgstr "Moslashtirish: %(code)s · %(name)s"
+
+#: backend/apps/sales/queries.py
+#, python-format
+msgid "%(count)s line waits for it"
+msgid_plural "%(count)s lines wait for it"
+msgstr[0] "Uni kutayotgan qatorlar: %(count)s ta"
+
+#: backend/apps/sales/queries.py
+#, python-format
+msgid "Sold above the legal price yesterday: %(count)s (%(branches)s)"
+msgstr "Kecha chegaraviy narxdan yuqori sotilgan: %(count)s (%(branches)s)"
+
+#: backend/apps/sales/queries.py
+#, python-format
+msgid "The import covers %(percent)s %% of yesterday's tills at %(branch)s"
+msgstr ""
+"Import kechagi kassalarning %(percent)s %% qismini qamraydi: %(branch)s"
+
+#: backend/apps/sales/queries.py
+#, python-format
+msgid ""
+"%(branch)s: sale lines imported for yesterday, but the tills have no totals"
+msgstr ""
+"%(branch)s: kecha uchun savdo qatorlari import qilindi, lekin kassalarda "
+"yakun yo‘q"
+
+#: backend/apps/sales/reminders.py
+#, python-format
+msgid "%(customer)s: %(amount)s, %(days)s day overdue"
+msgid_plural "%(customer)s: %(amount)s, %(days)s days overdue"
+msgstr[0] "%(customer)s: %(amount)s, muddati o‘tgan kunlar: %(days)s"
+
+#: backend/apps/sales/reminders.py
+#, python-format
+msgid "%(count)s customer debt is overdue"
+msgid_plural "%(count)s customer debts are overdue"
+msgstr[0] "Muddati o‘tgan mijoz qarzlari: %(count)s ta"
 
 #: backend/apps/sales/serializers.py
 msgid "Unknown payment method."
@@ -15056,16 +15900,29 @@ msgid "Pick a way of recording sales."
 msgstr "Savdoni qayd etish usulini tanlang."
 
 #: backend/apps/sales/services.py
-msgid "Invoices mode arrives with the invoices module."
+msgid "Pick where your sale lines come from."
+msgstr "Savdo qatorlaringiz qayerdan kelishini tanlang."
+
+#: backend/apps/sales/services.py
+msgid "Sale lines typed with each receipt arrive in a later version."
 msgstr ""
-"Hisob-fakturalar rejimi hisob-fakturalar moduli bilan birga paydo bo‘ladi."
+"Har bir chek bilan kiritiladigan savdo qatorlari keyingi versiyada paydo "
+"bo‘ladi."
+
+#: backend/apps/sales/services.py
+msgid "An invoice prefix has letters or digits, like INV."
+msgstr "Hisob-faktura prefiksi harf yoki raqamlardan iborat, masalan INV."
+
+#: backend/apps/sales/services.py
+msgid "The markup is a percentage from 0 to 100."
+msgstr "Ustama foizda: 0–100."
 
 #: backend/apps/sales/services.py
 #, python-format
 msgid "Sales are in %(currency)s: pick an account in %(currency)s."
 msgstr ""
-"Savdo %(currency)s valyutasida yuritiladi: %(currency)s valyutasidagi "
-"hisobni tanlang."
+"Savdo %(currency)s valyutasida yuritiladi: %(currency)s valyutasidagi hisobni"
+" tanlang."
 
 #: backend/apps/sales/services.py
 msgid "The fee is a percentage from 0 to 100."
@@ -15188,8 +16045,8 @@ msgstr "Kassaning o‘zini emas, boshqa hisobni tanlang."
 #, python-format
 msgid "The till holds %(currency)s: pick an account in %(currency)s."
 msgstr ""
-"Kassa %(currency)s valyutasida yuritiladi: %(currency)s valyutasidagi "
-"hisobni tanlang."
+"Kassa %(currency)s valyutasida yuritiladi: %(currency)s valyutasidagi hisobni"
+" tanlang."
 
 #: backend/apps/sales/services.py
 msgid "Pick what kind of movement this is."
@@ -15255,6 +16112,12 @@ msgid "That till is in another branch."
 msgstr "Bu kassa boshqa filialda."
 
 #: backend/apps/sales/services.py
+msgid ""
+"Imported receipts come from the cash-register program: correct them there."
+msgstr ""
+"Import qilingan cheklar kassa dasturidan keladi: ularni o‘sha yerda tuzating."
+
+#: backend/apps/sales/services.py
 msgid "This receipt is already void."
 msgstr "Bu chek allaqachon bekor qilingan."
 
@@ -15266,6 +16129,289 @@ msgid ""
 msgstr ""
 "Bu chek yopilgan %(shift)s smenasiga tegishli: buning o‘rniga smenani "
 "tuzating."
+
+#: backend/apps/sales/services.py
+msgid "Give the profile a name, e.g. the cash-register program's."
+msgstr "Profilga nom bering, masalan, kassa dasturining nomi."
+
+#: backend/apps/sales/services.py
+#, python-format
+msgid "There is already a profile called %(name)s."
+msgstr "Bunday nomli profil allaqachon bor: %(name)s."
+
+#: backend/apps/sales/services.py
+msgid "Pick CSV or Excel."
+msgstr "CSV yoki Excel ni tanlang."
+
+#: backend/apps/sales/services.py
+msgid "Pick the file's encoding."
+msgstr "Fayl kodlashini tanlang."
+
+#: backend/apps/sales/services.py
+msgid "The delimiter is one character, like ; or ,"
+msgstr "Ajratgich bitta belgi, masalan ; yoki ,"
+
+#: backend/apps/sales/services.py
+msgid "The header row is a number."
+msgstr "Sarlavha qatori son bo‘lishi kerak."
+
+#: backend/apps/sales/services.py
+msgid "The header row is between 1 and 50."
+msgstr "Sarlavha qatorining raqami: 1–50."
+
+#: backend/apps/sales/services.py
+msgid "A date format looks like \"%d.%m.%Y %H:%M\"."
+msgstr "Sana formati shunday ko‘rinadi: «%d.%m.%Y %H:%M»."
+
+#: backend/apps/sales/services.py
+msgid "Pick packs or parts."
+msgstr "Qadoq yoki qismni tanlang."
+
+#: backend/apps/sales/services.py
+msgid "The branch map isn't readable."
+msgstr "Filiallar xaritasini o‘qib bo‘lmadi."
+
+#: backend/apps/sales/services.py
+msgid "The branch map names a branch of another company."
+msgstr "Filiallar xaritasida boshqa kompaniyaning filiali bor."
+
+#: backend/apps/sales/services.py
+msgid "The column map isn't readable."
+msgstr "Ustunlar xaritasini o‘qib bo‘lmadi."
+
+#: backend/apps/sales/services.py
+msgid "Turn on imported sale lines in the sales settings first."
+msgstr "Avval savdo sozlamalarida savdo qatorlari importini yoqing."
+
+#: backend/apps/sales/services.py
+msgid "This profile is archived."
+msgstr "Bu profil arxivda."
+
+#: backend/apps/sales/services.py
+#, python-format
+msgid "%(profile)s reads %(kind)s files."
+msgstr "%(profile)s faqat shu fayllarni o‘qiydi: %(kind)s."
+
+#: backend/apps/sales/services.py
+msgid "Pick a code."
+msgstr "Kodni tanlang."
+
+#: backend/apps/sales/services.py
+#, python-format
+msgid "%(person)s isn't on the team now."
+msgstr "%(person)s hozir jamoada emas."
+
+#: backend/apps/sales/services.py
+msgid "Pick what kind of customer this is."
+msgstr "Mijoz turini tanlang."
+
+#: backend/apps/sales/services.py
+#, python-format
+msgid "%(name)s isn't a customer."
+msgstr "%(name)s mijoz emas."
+
+#: backend/apps/sales/services.py
+#, python-format
+msgid "%(name)s is archived."
+msgstr "%(name)s arxivda."
+
+#: backend/apps/sales/services.py
+msgid "Pick a credit sale or a payment."
+msgstr "Qarzga sotuv yoki to‘lovni tanlang."
+
+#: backend/apps/sales/services.py
+#, python-format
+msgid "%(name)s may not take nasiya now."
+msgstr "%(name)s hozir nasiya ololmaydi."
+
+#: backend/apps/sales/services.py
+#, python-format
+msgid "That goes over %(name)s's limit: %(left)s owed of %(limit)s."
+msgstr "Bu limitdan oshadi: %(name)s, qarzi %(left)s, limit %(limit)s."
+
+#: backend/apps/sales/services.py
+#, python-format
+msgid "%(name)s owes nothing."
+msgstr "%(name)s qarzdor emas."
+
+#: backend/apps/sales/services.py
+#, python-format
+msgid "That's more than the %(left)s %(name)s owes."
+msgstr "Bu qarzdan ko‘p: %(name)s, qarzi %(left)s."
+
+#: backend/apps/sales/services.py
+msgid "Nasiya can't be paid back with nasiya."
+msgstr "Nasiyani nasiya bilan to‘lab bo‘lmaydi."
+
+#: backend/apps/sales/services.py
+#, python-format
+msgid "Nasiya, %(shift)s"
+msgstr "Nasiya, %(shift)s"
+
+#: backend/apps/sales/services.py
+msgid "This entry is already void."
+msgstr "Bu yozuv allaqachon bekor qilingan."
+
+#: backend/apps/sales/services.py
+#, python-format
+msgid "This entry is part of the closed shift %(shift)s."
+msgstr "Bu yozuv yopilgan smenaga tegishli: %(shift)s."
+
+#: backend/apps/sales/services.py
+msgid "Part of this nasiya was already paid back."
+msgstr "Bu nasiyaning bir qismi allaqachon to‘langan."
+
+#: backend/apps/sales/services.py
+#, python-format
+msgid ""
+"Nasiya on the Z-report is %(typed)s, but %(recorded)s was recorded as credit "
+"sales in this shift (a gap of %(gap)s). Record the missing credit sales with "
+"their customers, or correct the total."
+msgstr ""
+"Z-hisobotdagi nasiya: %(typed)s, bu smenada qarzga sotuv sifatida yozilgani: "
+"%(recorded)s (farqi %(gap)s). Yetishmagan qarzga sotuvlarni mijozlari bilan "
+"yozing yoki summani tuzating."
+
+#: backend/apps/sales/services.py
+msgid "Add at least one line."
+msgstr "Kamida bitta qator qo‘shing."
+
+#: backend/apps/sales/services.py
+msgid "An invoice holds at most 300 lines."
+msgstr "Hisob-fakturada ko‘pi bilan 300 ta qator bo‘ladi."
+
+#: backend/apps/sales/services.py
+msgid "Pick medicines of this company's catalogue."
+msgstr "Shu kompaniya katalogidagi dorilarni tanlang."
+
+#: backend/apps/sales/services.py
+#, python-format
+msgid "Line %(n)s needs a name."
+msgstr "Qatorga nom kerak (qator: %(n)s)."
+
+#: backend/apps/sales/services.py
+#, python-format
+msgid "Line %(n)s needs a quantity."
+msgstr "Qatorga miqdor kerak (qator: %(n)s)."
+
+#: backend/apps/sales/services.py
+#, python-format
+msgid "Line %(n)s has a discount above its amount."
+msgstr "Qatordagi chegirma summadan katta (qator: %(n)s)."
+
+#: backend/apps/sales/services.py
+msgid "Pick the invoice's currency."
+msgstr "Hisob-faktura valyutasini tanlang."
+
+#: backend/apps/sales/services.py
+msgid "Only a draft can be changed."
+msgstr "Faqat qoralamani o‘zgartirish mumkin."
+
+#: backend/apps/sales/services.py
+msgid "This invoice is already issued."
+msgstr "Bu hisob-faktura allaqachon chiqarilgan."
+
+#: backend/apps/sales/services.py
+msgid "Add lines with a price before issuing."
+msgstr "Chiqarishdan oldin narxli qatorlar qo‘shing."
+
+#: backend/apps/sales/services.py
+msgid "Pick the warehouse or pharmacy the goods leave from."
+msgstr "Tovar qaysi ombor yoki dorixonadan chiqishini tanlang."
+
+#: backend/apps/sales/services.py
+msgid "Only an issued invoice takes payments."
+msgstr "Faqat chiqarilgan hisob-fakturaga to‘lov qabul qilinadi."
+
+#: backend/apps/sales/services.py
+msgid "This invoice is already void."
+msgstr "Bu hisob-faktura allaqachon bekor qilingan."
+
+#: backend/apps/sales/services.py
+msgid "A payment was made on this invoice: it can't be voided."
+msgstr "Bu hisob-faktura bo‘yicha to‘lov qilingan: uni bekor qilib bo‘lmaydi."
+
+#: backend/apps/sales/services.py
+msgid "Issue the invoice before sending it."
+msgstr "Yuborishdan oldin hisob-fakturani chiqaring."
+
+#: backend/apps/sales/services.py
+#, python-format
+msgid "Invoice %(number)s from %(company)s"
+msgstr "Hisob-faktura %(number)s, %(company)s"
+
+#: backend/apps/sales/templates/sales/invoice.html
+msgid "Taxpayer number"
+msgstr "STIR"
+
+#: backend/apps/sales/templates/sales/invoice.html
+msgid "Address"
+msgstr "Manzil"
+
+#: backend/apps/sales/templates/sales/invoice.html
+msgid "Contact"
+msgstr "Aloqa uchun"
+
+#: backend/apps/sales/templates/sales/invoice.html
+msgid "Bank details"
+msgstr "Bank rekvizitlari"
+
+#: backend/apps/sales/templates/sales/invoice.html
+msgid "E-invoice"
+msgstr "E-faktura"
+
+#: backend/apps/sales/templates/sales/invoice.html
+msgid "To pay"
+msgstr "To‘lanadigan summa"
+
+#: backend/apps/sales/templates/sales/invoice.html
+msgid "Item"
+msgstr "Tovar"
+
+#: backend/apps/sales/templates/sales/invoice.html
+msgid "MXIK code"
+msgstr "MXIK kodi"
+
+#: backend/apps/sales/templates/sales/invoice.html
+msgid "Expires"
+msgstr "Yaroqlilik muddati"
+
+#: backend/apps/sales/templates/sales/invoice.html
+msgid "Discount"
+msgstr "Chegirma"
+
+#: backend/apps/sales/templates/sales/invoice.html
+#, python-format
+msgid "VAT, %%"
+msgstr "QQS, %%"
+
+#: backend/apps/sales/templates/sales/invoice.html
+msgid "VAT"
+msgstr "QQS"
+
+#: backend/apps/sales/templates/sales/invoice.html
+msgid "Subtotal"
+msgstr "Oraliq summa"
+
+#: backend/apps/sales/templates/sales/invoice.html
+msgid "VAT included"
+msgstr "Shu jumladan QQS"
+
+#: backend/apps/sales/templates/sales/invoice.html
+msgid ""
+"This is not an electronic invoice (EHF). The legal document between "
+"businesses is the e-invoice issued in the operator's system."
+msgstr ""
+"Bu elektron hisob-faktura (EHF) emas. Korxonalar o‘rtasidagi rasmiy hujjat "
+"operator tizimida chiqarilgan elektron hisob-fakturadir."
+
+#: backend/apps/sales/templates/sales/invoice.html
+msgid "Released by"
+msgstr "Topshirdi"
+
+#: backend/apps/sales/templates/sales/invoice.html
+msgid "Received by"
+msgstr "Qabul qildi"
 
 #: backend/apps/signin/admin.py
 msgid "End the selected sessions"
@@ -15470,13 +16616,13 @@ msgstr ""
 msgid ""
 "One task in detail: checklist progress, reminders sent, latest comments."
 msgstr ""
-"Bitta vazifa batafsil: nazorat ro‘yxati qadamlarining bajarilishi, "
-"yuborilgan eslatmalar, so‘nggi izohlar."
+"Bitta vazifa batafsil: nazorat ro‘yxati qadamlarining bajarilishi, yuborilgan"
+" eslatmalar, so‘nggi izohlar."
 
 #: backend/apps/tasks/ai_tools.py
 msgid ""
-"Storage readings (fridge and room temperature, humidity): values out of "
-"range and missed readings per routine and branch."
+"Storage readings (fridge and room temperature, humidity): values out of range"
+" and missed readings per routine and branch."
 msgstr ""
 "Saqlash ko‘rsatkichlari (muzlatgich va xona harorati, namlik): har bir "
 "muntazam vazifa va filial bo‘yicha me’yordan chiqqan qiymatlar va olinmagan "
@@ -15793,7 +16939,8 @@ msgstr "Hech qaysi"
 msgid "Which task is this photo for?"
 msgstr "Bu rasm qaysi vazifa uchun?"
 
-#. Translators: %(title)s is the task's title: let a carrier word take any case ending.
+#. Translators: %(title)s is the task's title: let a carrier word take any case
+#. ending.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "Write your comment on <b>%(title)s</b>:"
@@ -15861,25 +17008,29 @@ msgstr "Keyingi"
 msgid "Who is it for?"
 msgstr "Kimga?"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
+#. on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>Today's routine task</b> · %(name)s"
 msgstr "<b>Bugungi muntazam vazifa</b> · %(name)s"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
+#. on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>New task</b> · %(name)s"
 msgstr "<b>Yangi vazifa</b> · %(name)s"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
+#. on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "%(name)s finished a task. Please check it."
 msgstr "%(name)s vazifani bajardi. Iltimos, tekshiring."
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
+#. on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>Task done</b> · %(name)s"
@@ -15890,7 +17041,8 @@ msgstr "<b>Vazifa bajarildi</b> · %(name)s"
 msgid "late by %(duration)s"
 msgstr "%(duration)s kechikdi"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
+#. on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>Your task was accepted</b> · %(name)s"
@@ -15901,19 +17053,22 @@ msgstr "<b>Vazifangiz qabul qilindi</b> · %(name)s"
 msgid "Your task was sent back: %(reason)s"
 msgstr "Vazifangiz qaytarildi: %(reason)s"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
+#. on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "%(name)s is waiting for this task."
 msgstr "%(name)s bu vazifa bajarilishini kutmoqda."
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
+#. on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>%(name)s mentioned you</b>"
 msgstr "<b>%(name)s sizni eslatib o‘tdi</b>"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
+#. on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>New comment</b> · %(name)s"
@@ -15923,7 +17078,8 @@ msgstr "<b>Yangi izoh</b> · %(name)s"
 msgid "Reply"
 msgstr "Javob berish"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
+#. on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>New deadline</b> · %(name)s"
@@ -15935,25 +17091,29 @@ msgstr "<b>Yangi muddat</b> · %(name)s"
 msgid "It was: %(when)s"
 msgstr "Avval: %(when)s"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
+#. on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>Task cancelled</b> · %(name)s"
 msgstr "<b>Vazifa bekor qilindi</b> · %(name)s"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
+#. on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>Given to someone else</b> · %(name)s"
 msgstr "<b>Boshqa xodimga berildi</b> · %(name)s"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
+#. on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "Now it's for: %(name)s"
 msgstr "Endi ijrochi: %(name)s"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
+#. on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>%(name)s can't do this task</b>"
@@ -15963,13 +17123,15 @@ msgstr "<b>%(name)s bu vazifani bajara olmayapti</b>"
 msgid "Cancel task"
 msgstr "Vazifani bekor qilish"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
+#. on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>More time given</b> · %(name)s"
 msgstr "<b>Qo‘shimcha vaqt berildi</b> · %(name)s"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
+#. on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>The deadline stays</b> · %(name)s"
@@ -15983,13 +17145,15 @@ msgstr "<b>Vazifa bekor qilindi</b>"
 msgid "<b>Given to someone else</b>"
 msgstr "<b>Boshqa xodimga berildi</b>"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
+#. on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>Accepted</b> · %(name)s"
 msgstr "<b>Qabul qilindi</b> · %(name)s"
 
-#. Translators: %(time)s is a clock time (14:30); %(late)s a length (25 min, 1 h 5 min).
+#. Translators: %(time)s is a clock time (14:30); %(late)s a length (25 min, 1
+#. h 5 min).
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>Done</b> · %(time)s, %(late)s late"
@@ -16130,7 +17294,8 @@ msgctxt "task list"
 msgid "urgent"
 msgstr "shoshilinch"
 
-#. Translators: %(priority)s is "Urgent" or "High", as the task's priority reads.
+#. Translators: %(priority)s is "Urgent" or "High", as the task's priority
+#. reads.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "Priority: %(priority)s"
@@ -16157,7 +17322,8 @@ msgstr ""
 "Bo‘limlaringizda hali hech kim yo‘q. Xodimlarni boshqaruv panelida qo‘shing: "
 "Xodimlar, Bo‘limlar, keyin bo‘limingiz."
 
-#. Translators: mid-line after a person's name ("Alisher Valiyev — open: 3"), lowercase.
+#. Translators: mid-line after a person's name ("Alisher Valiyev — open: 3"),
+#. lowercase.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "open: %(count)d"
@@ -16386,8 +17552,8 @@ msgid ""
 "An onboarding task: given once to each new person it names when they are "
 "approved, instead of every day."
 msgstr ""
-"Yangi xodim vazifasi: har kuni emas, balki ko‘rsatilgan har bir yangi "
-"xodimga u tasdiqlanganda bir marta beriladi."
+"Yangi xodim vazifasi: har kuni emas, balki ko‘rsatilgan har bir yangi xodimga"
+" u tasdiqlanganda bir marta beriladi."
 
 #: backend/apps/tasks/models.py
 msgid "Onboarding tasks: due this many days after the approval."
@@ -16397,8 +17563,8 @@ msgstr ""
 
 #: backend/apps/tasks/models.py
 msgid ""
-"With the readings proof: 1 to 3 numbers each run asks for, with their "
-"allowed range (`[{\"key\": \"t\", \"label\", \"unit\", \"min\", \"max\", "
+"With the readings proof: 1 to 3 numbers each run asks for, with their allowed"
+" range (`[{\"key\": \"t\", \"label\", \"unit\", \"min\", \"max\", "
 "\"critical\"}]`)."
 msgstr ""
 "Ko‘rsatkichlar dalili bilan: har safar so‘raladigan 1–3 ta raqam va ularning "
@@ -16688,8 +17854,8 @@ msgstr "Sotuv kamerasi: yozib boradi va 30 kun saqlaydi"
 
 #: backend/apps/tasks/presets.py
 msgid ""
-"Check that the camera over the counter is recording and that the last 30 "
-"days of video are kept."
+"Check that the camera over the counter is recording and that the last 30 days"
+" of video are kept."
 msgstr ""
 "Peshtaxta ustidagi kamera yozib borayotganini va oxirgi 30 kunlik video "
 "saqlanganini tekshiring."
@@ -16816,8 +17982,8 @@ msgstr "Mukofot faqat boshqa odamga beriladigan ish uchun belgilanadi."
 #: backend/apps/tasks/services.py
 msgid "Readings are taken on routines: set one up under Routines."
 msgstr ""
-"Ko‘rsatkichlar muntazam vazifalarda olinadi: uni Muntazam vazifalar "
-"bo‘limida sozlang."
+"Ko‘rsatkichlar muntazam vazifalarda olinadi: uni Muntazam vazifalar bo‘limida"
+" sozlang."
 
 #: backend/apps/tasks/services.py
 msgid "This task can go only to someone working in the company."
@@ -16882,8 +18048,8 @@ msgstr "Eslatmalar allaqachon to‘xtatilgan: vazifa qaror kutmoqda."
 #: backend/apps/tasks/services.py
 msgid "Only your own tasks move to tomorrow. Ask for more time instead."
 msgstr ""
-"Ertaga faqat shaxsiy vazifalarni ko‘chirish mumkin. Buning o‘rniga "
-"qo‘shimcha vaqt so‘rang."
+"Ertaga faqat shaxsiy vazifalarni ko‘chirish mumkin. Buning o‘rniga qo‘shimcha"
+" vaqt so‘rang."
 
 #: backend/apps/tasks/services.py
 msgid "No snoozes left for this task."
@@ -17799,7 +18965,8 @@ msgstr "Bu vazifa o‘chirilgan yoki boshqa xodimga berilgan."
 msgid "You can't do that."
 msgstr "Buni qila olmaysiz."
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
+#. on it.
 #: employee_bot/bot/handlers/member/cards.py
 #, python-format
 msgid "Sent for checking · %(name)s"
@@ -18079,8 +19246,8 @@ msgstr "Asosiy valyuta: %(currency)s"
 #: owner_bot/ownerbot/bot_messages.py
 msgid "You can change all of this later in the dashboard settings."
 msgstr ""
-"Bularning hammasini keyinroq boshqaruv paneli sozlamalarida "
-"o‘zgartirishingiz mumkin."
+"Bularning hammasini keyinroq boshqaruv paneli sozlamalarida o‘zgartirishingiz"
+" mumkin."
 
 #: owner_bot/ownerbot/bot_messages.py
 msgid "Create"

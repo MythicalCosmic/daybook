@@ -467,6 +467,14 @@ def transfer_history_check(member: Membership, target_id: int) -> bool:
     return access.visible_transfers(member).filter(pk=target_id).exists()
 
 
+def recurring_history_check(member: Membership, target_id: int) -> bool:
+    """A recurring payment's history, for those who see the payment (its branch scope)."""
+    from apps.finance import recurring
+
+    rules = recurring.visible_rules(member.company, branch_ids=scope.branch_ids(member))
+    return rules.filter(pk=target_id).exists()
+
+
 def company_row_check(model):
     def check(member: Membership, target_id: int) -> bool:
         return model.objects.filter(company=member.company, pk=target_id).exists()

@@ -297,6 +297,161 @@ register_exporter(
 )
 
 
+# Invoices (§3.8, §11.4): the receivable they open links back to them; their PDF is private.
+sources.register(
+    "sales.invoice", label=_("Invoice"), url_template="/c/{company_id}/sales/invoices?invoice={id}"
+)
+
+
+def check_invoice_pdf(user, company_id, object_id) -> bool:
+    from apps.sales.models import Invoice
+
+    invoice = Invoice.objects.for_company(company_id).filter(pk=object_id).first()
+    if invoice is None:
+        return False
+    member = (
+        Membership.objects.select_related("role")
+        .filter(user=user, company_id=company_id, status=Membership.Status.APPROVED)
+        .first()
+    )
+    if member is None:
+        return False
+    if not (member.has_perm(Perm.SALES_VIEW) or member.has_perm(Perm.SALES_INVOICES)):
+        return False
+    branch_ids = scope.branch_ids(member)
+    if invoice.branch_id is None:
+        return branch_ids is None
+    return scope.allows(branch_ids, invoice.branch_id)
+
+
+register_file_check("sales.invoice_pdf", check_invoice_pdf)
+registry.register_pulse("sales.invoices", perm=Perm.SALES_VIEW, count=None, feature=FEATURE)
+registry.register_pulse(
+    "sales.invoices_overdue",
+    perm=Perm.SALES_VIEW,
+    count=queries.overdue_invoices,
+    feature=FEATURE,
+)
+registry.register_search(
+    "sales.invoice", perm=Perm.SALES_VIEW, search=queries.search_invoices, feature=FEATURE
+)
+register_exporter(
+    "sales.invoices",
+    perm=Perm.SALES_VIEW,
+    label=_("Invoices"),
+    columns=[
+        Column("number", _("Invoice")),
+        Column("status", _("Status")),
+        Column("customer", _("Customer")),
+        Column("branch", _("Branch")),
+        Column("issued_on", _("Issued"), "date"),
+        Column("due_on", _("Due"), "date"),
+        Column("currency", _("Currency")),
+        Column("total", _("Total"), "money"),
+        Column("paid", _("Paid"), "money"),
+        Column("left", _("Left to pay"), "money"),
+        Column("overdue", _("Overdue")),
+    ],
+    rows=queries.export_invoices,
+    feature=FEATURE,
+)
+
+
+# Customers and nasiya (§11.4): the credit sales and payments at the till book receivables.
+sources.register(
+    "sales.creditentry",
+    label=_("Nasiya at the till"),
+    url_template="/c/{company_id}/sales/customers?entry={id}",
+)
+registry.register_pulse("sales.customers", perm=Perm.SALES_VIEW, count=None, feature=FEATURE)
+registry.register_search(
+    "sales.customer", perm=Perm.SALES_VIEW, search=queries.search_customers, feature=FEATURE
+)
+register_kind(
+    "sales.customer_debt_due",
+    label=_("Overdue nasiya and invoices"),
+    audience="owner",
+    default_telegram=True,
+    severity="warning",
+)
+
+
+# Sale lines from the cash-register software (PLAN-OWNER §14.7). Nothing here does anything
+# while a company's sale lines don't come from imports (`SalesSettings.sales_lines`).
+registry.register_pulse("sales.lines", perm=Perm.SALES_VIEW, count=None, feature=FEATURE)
+registry.register_pulse(
+    "sales.unmatched", perm=Perm.SALES_MANAGE, count=queries.unmatched_count, feature=FEATURE
+)
+registry.register_queue(
+    "sales.import_unmatched",
+    perm=Perm.SALES_MANAGE,
+    label=_("Sale lines to match"),
+    count=queries.unmatched_count,
+    items=queries.unmatched_items,
+    feature=FEATURE,
+)
+registry.register_setup_step(
+    "sales.lines",
+    perm=Perm.SALES_MANAGE,
+    order=62,
+    label=_("Where do your sales lines come from?"),
+    description=_(
+        "Import them from your cash-register program for true stock, margins and the legal "
+        "price check, or work without them."
+    ),
+    url="settings/sales",
+    done=queries.lines_told,
+    feature=FEATURE,
+)
+registry.register_brief_section(
+    "sales.lines",
+    perm=Perm.SALES_VIEW,
+    order=21,
+    build=queries.lines_brief_section,
+    feature=FEATURE,
+)
+register_kind(
+    "sales.price_cap_breach",
+    label=_("Prescription medicines sold above the legal price"),
+    audience="owner",
+    default_telegram=True,
+    severity="warning",
+)
+register_kind(
+    "sales.import_failed",
+    label=_("A sale lines import didn't finish"),
+    audience="owner",
+    default_telegram=True,
+    severity="warning",
+)
+register_exporter(
+    "sales.lines",
+    perm=Perm.SALES_VIEW,
+    label=_("Sale lines"),
+    columns=[
+        Column("day", _("Business day"), "date"),
+        Column("sold_at", _("Sold"), "datetime"),
+        Column("branch", _("Branch")),
+        Column("receipt", _("Receipt")),
+        Column("kind", _("Sale or refund")),
+        Column("cashier", _("Cashier")),
+        Column("code", _("Item code")),
+        Column("product", _("Medicine")),
+        Column("series", _("Series")),
+        Column("quantity", _("Parts"), "number"),
+        Column("parts_per_pack", _("Parts per pack"), "number"),
+        Column("pack_price", _("Price per pack"), "money"),
+        Column("total", _("Line total"), "money"),
+        Column("cost", _("Cost"), "money"),
+        Column("cap", _("Legal price cap"), "money"),
+        Column("over_cap", _("Above the cap")),
+        Column("rx_number", _("Prescription")),
+    ],
+    rows=queries.export_lines,
+    feature=FEATURE,
+)
+
+
 # A "Kassa" button in the employee bot's menu for people who run a till.
 def _runs_a_till(member) -> bool:
     return member.company.has_feature(FEATURE) and member.has_perm(Perm.SALES_OPERATE)

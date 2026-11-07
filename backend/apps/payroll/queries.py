@@ -329,13 +329,30 @@ def _line_sums(payslip_ids) -> dict[str, Decimal]:
     return totals
 
 
+def month_payslips(company, run: PayrollRun):
+    """The payslips of the month of a regular `run`: its own and those of the month's final
+    runs that aren't cancelled. A leaver is paid by their final run and skipped by the regular
+    one, so the month's figures count both, or the leaver would drop out of them."""
+    return Payslip.objects.filter(
+        Q(run=run)
+        | Q(
+            run__company=company,
+            run__kind=PayrollRun.Kind.FINAL,
+            run__period=run.period,
+            run__status__in=(*DONE_STATUSES, PayrollRun.Status.DRAFT),
+        )
+    )
+
+
 def run_summary(company, period: date, *, branch_ids: list[int] | None = None) -> dict | None:
-    """The month's regular run in sums (people, gross, deductions, net, bonuses, fines,
-    advances) over the people in `branch_ids`; None without a run."""
+    """The month's pay in sums (people, gross, deductions, net, bonuses, fines, advances) over
+    the people in `branch_ids`: the regular run's payslips and the month's final payslips of
+    those who left (`month_payslips`). None without a regular run; `run` and `status` are the
+    regular run's."""
     run = regular_run(company, period)
     if run is None:
         return None
-    payslips = list(people_scope(run.payslips.all(), branch_ids))
+    payslips = list(people_scope(month_payslips(company, run), branch_ids))
     lines = _line_sums(p.pk for p in payslips)
     return {
         "run": run.pk,
@@ -424,7 +441,9 @@ def overview(company, *, months: int, branch_ids: list[int] | None, today: date)
     by_branch: dict = {}
     if latest is not None:
         payslips = people_scope(
-            latest.payslips.select_related("membership__position", "membership__home_branch"),
+            month_payslips(company, latest).select_related(
+                "membership__position", "membership__home_branch"
+            ),
             branch_ids,
         )
         for payslip in payslips:

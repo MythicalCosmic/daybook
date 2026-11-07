@@ -950,5 +950,7 @@
   "finance.widget.budgetsSub": "Три самых использованных",
   "finance.widget.noBudgets": "В этом месяце бюджетов нет",
   "finance.widget.noBudgetsBody": "Задайте месячные лимиты по категориям на странице «Бюджеты».",
-  "finance.widget.budgetOf": "{spent} из {budget}"
+  "finance.widget.budgetOf": "{spent} из {budget}",
+  "finance.recurring.createTask": "Также ставить задачу",
+  "finance.recurring.createTaskHint": "Одна задача на каждый платёж, со сроком в день оплаты. Закрывается сама, когда платёж оплачен или пропущен в Финансах."
 }

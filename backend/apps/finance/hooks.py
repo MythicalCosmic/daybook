@@ -28,7 +28,6 @@ from apps.finance.models import (
     CompanyRate,
     Counterparty,
     FinanceSettings,
-    RecurringRule,
 )
 from apps.inbox.registry import register_action, register_kind
 from apps.members.permissions import Perm
@@ -314,7 +313,7 @@ audit_registry.register_target(
     "companyrate", Perm.FINANCE_VIEW, check=providers.company_row_check(CompanyRate)
 )
 audit_registry.register_target(
-    "recurringrule", Perm.FINANCE_VIEW, check=providers.company_row_check(RecurringRule)
+    "recurringrule", Perm.FINANCE_VIEW, check=providers.recurring_history_check
 )
 audit_registry.register_target(
     "budget", Perm.FINANCE_VIEW, check=providers.company_row_check(Budget)

@@ -1,0 +1,87 @@
+{% extends "core/base_print.html" %}{% load i18n %}
+{% block style %}
+.invoice-parties { display: flex; justify-content: space-between; gap: 8mm; margin-bottom: 6mm; }
+.invoice-parties dl { margin: 0; display: grid; grid-template-columns: auto 1fr; column-gap: 3mm; row-gap: 1mm; font-size: 9pt; }
+.invoice-parties dt { color: #6b6b6b; }
+.invoice-parties dd { margin: 0; }
+.invoice-party-title { font-size: 8pt; text-transform: uppercase; letter-spacing: 0.04em; color: #6b6b6b; margin-bottom: 1.5mm; }
+.invoice-total { font-size: 14pt; font-weight: 700; text-align: right; }
+table.invoice-lines { font-size: 8pt; }
+table.invoice-lines td.code { font-family: monospace; font-size: 7.5pt; color: #555; }
+.not-e-invoice { margin-top: 6mm; padding: 2mm 3mm; border: 0.75pt solid #b4532a; color: #7a3519; font-size: 8.5pt; }
+.notes { font-size: 9pt; margin-top: 4mm; white-space: pre-line; }
+{% endblock %}
+{% block header_details %}<div class="small muted">{{ branch }}</div>{% endblock %}
+{% block header_meta %}<div>{{ title }}</div>{% if issued_on %}<div>{{ issued_on }}</div>{% endif %}{% endblock %}
+{% block content %}
+<h1>{{ title }}</h1>
+<div class="invoice-parties">
+  <div>
+    <div class="invoice-party-title">{% translate "Customer" %}</div>
+    <dl>
+      <dt>{% translate "Name" %}</dt><dd>{{ customer.name }}</dd>
+      {% if customer.tin %}<dt>{% translate "Taxpayer number" %}</dt><dd>{{ customer.tin }}</dd>{% endif %}
+      {% if customer.address %}<dt>{% translate "Address" %}</dt><dd>{{ customer.address }}</dd>{% endif %}
+      {% if customer.phone %}<dt>{% translate "Phone" %}</dt><dd>{{ customer.phone }}</dd>{% endif %}
+      {% if customer.contact %}<dt>{% translate "Contact" %}</dt><dd>{{ customer.contact }}</dd>{% endif %}
+      {% if customer.bank %}<dt>{% translate "Bank details" %}</dt><dd>{{ customer.bank }}</dd>{% endif %}
+    </dl>
+  </div>
+  <div>
+    <dl>
+      {% if issued_on %}<dt>{% translate "Issued" %}</dt><dd>{{ issued_on }}</dd>{% endif %}
+      {% if due_on %}<dt>{% translate "Due" %}</dt><dd>{{ due_on }}</dd>{% endif %}
+      {% if e_invoice_ref %}<dt>{% translate "E-invoice" %}</dt><dd>{{ e_invoice_ref }}</dd>{% endif %}
+    </dl>
+    <div class="small muted">{% translate "To pay" %}</div>
+    <div class="invoice-total">{{ total }}</div>
+  </div>
+</div>
+<table class="invoice-lines">
+  <thead>
+    <tr>
+      <th>№</th>
+      <th>{% translate "Item" %}</th>
+      <th>{% translate "MXIK code" %}</th>
+      <th>{% translate "Series" %}</th>
+      <th>{% translate "Expires" %}</th>
+      <th class="num">{% translate "Packs" %}</th>
+      <th class="num">{% translate "Price" %}</th>
+      <th class="num">{% translate "Discount" %}</th>
+      <th class="num">{% translate "VAT, %" %}</th>
+      <th class="num">{% translate "VAT" %}</th>
+      <th class="num">{% translate "Amount" %}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for line in lines %}
+    <tr>
+      <td>{{ line.number }}</td>
+      <td>{{ line.name }}</td>
+      <td class="code">{{ line.mxik|default:"—" }}</td>
+      <td>{{ line.series|default:"—" }}</td>
+      <td>{{ line.expires_on|default:"—" }}</td>
+      <td class="num">{{ line.quantity }}</td>
+      <td class="num">{{ line.price }}</td>
+      <td class="num">{{ line.discount|default:"—" }}</td>
+      <td class="num">{{ line.vat_percent }}</td>
+      <td class="num">{{ line.vat }}</td>
+      <td class="num">{{ line.total }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr><td colspan="10">{% translate "Subtotal" %}</td><td class="num">{{ subtotal }}</td></tr>
+    {% if discount %}<tr><td colspan="10">{% translate "Discount" %}</td><td class="num">{{ discount }}</td></tr>{% endif %}
+    <tr><td colspan="10">{% translate "VAT included" %}</td><td class="num">{{ vat_total }}</td></tr>
+    <tr><td colspan="10">{% translate "Total" %}</td><td class="num">{{ total }}</td></tr>
+  </tfoot>
+</table>
+{% if notes %}<p class="notes">{{ notes }}</p>{% endif %}
+{% if footer %}<p class="notes small muted">{{ footer }}</p>{% endif %}
+<p class="not-e-invoice">{% translate "This is not an electronic invoice (EHF). The legal document between businesses is the e-invoice issued in the operator's system." %}</p>
+<div class="signatures">
+  <div class="signature">{% translate "Released by" %}</div>
+  <div class="signature">{% translate "Received by" %}</div>
+</div>
+{% endblock %}

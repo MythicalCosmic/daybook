@@ -18,6 +18,8 @@ import type {
   ContractInput,
   ContractParams,
   ContractTemplate,
+  Coverage,
+  CoverageParams,
   DocumentInput,
   DocumentParams,
   EmergencyContact,
@@ -27,6 +29,9 @@ import type {
   HrProfile,
   HrSensitive,
   HrSettings,
+  LiveCoverage,
+  PharmacistRole,
+  Pharmacists,
   ProfileInput,
   RequiredDocument,
   TemplateInput,
@@ -78,7 +83,7 @@ export const hrApi = {
   compliance: (cid: number, params: { branch?: number[]; position?: number[] }, signal?: AbortSignal) => http.get<Compliance>(path(cid, "documents/compliance/"), params as Query, { signal }),
 
   required: (cid: number, signal?: AbortSignal) => http.get<RequiredDocument[] | Page<RequiredDocument>>(path(cid, "required-documents/"), { page_size: 200 }, { signal }),
-  addRequired: (cid: number, input: { kind: string; position_id: number | null }) => http.post<RequiredDocument>(path(cid, "required-documents/"), input),
+  addRequired: (cid: number, input: { kind: string; position_id: number | null; level?: string }) => http.post<RequiredDocument>(path(cid, "required-documents/"), input),
   removeRequired: (cid: number, id: number) => http.delete<void>(path(cid, `required-documents/${id}/`)),
 
   contracts: (cid: number, params: ContractParams, signal?: AbortSignal) => http.get<Page<Contract>>(path(cid, "contracts/"), params as Query, { signal }),
@@ -101,6 +106,12 @@ export const hrApi = {
 
   settings: (cid: number, signal?: AbortSignal) => http.get<HrSettings>(path(cid, "settings/"), undefined, { signal }),
   saveSettings: (cid: number, input: Partial<HrSettings>) => http.patch<HrSettings>(path(cid, "settings/"), input),
+
+  /** Pharmacist coverage (plan §14.9): a period of every pharmacy in scope, and who is missing now. */
+  coverage: (cid: number, params: CoverageParams, signal?: AbortSignal) => http.get<Coverage>(path(cid, "coverage/"), params as unknown as Query, { signal }),
+  liveCoverage: (cid: number, signal?: AbortSignal) => http.get<LiveCoverage>(path(cid, "coverage/live/"), undefined, { signal }),
+  pharmacists: (cid: number, signal?: AbortSignal) => http.get<Pharmacists>(path(cid, "coverage/pharmacists/"), undefined, { signal }),
+  savePharmacists: (cid: number, positions: Array<{ id: number; role: PharmacistRole | null }>) => http.post<Pharmacists>(path(cid, "coverage/pharmacists/"), { positions }),
 };
 
 /** Lists that may come paginated or plain. */
@@ -126,6 +137,9 @@ export const hrKeys = {
   template: (cid: number, id: number) => qk(cid, MODULE, "template", { id }),
   celebrations: (cid: number, range: { from: string; to: string }) => qk(cid, MODULE, "celebrations", { ...range }),
   settings: (cid: number) => qk(cid, MODULE, "settings"),
+  coverage: (cid: number, params: CoverageParams) => qk(cid, MODULE, "coverage", { ...params }),
+  liveCoverage: (cid: number) => qk(cid, MODULE, "coverage-live"),
+  pharmacists: (cid: number) => qk(cid, MODULE, "pharmacists"),
 };
 
 const enabledFor = (cid: { value: number }, extra: MaybeRefOrGetter<boolean> = true) => computed(() => cid.value > 0 && toValue(extra));
@@ -242,6 +256,34 @@ export function useCelebrations(range: MaybeRefOrGetter<{ from: string; to: stri
 export function useHrSettings(enabled: MaybeRefOrGetter<boolean> = true) {
   const cid = useCompanyId();
   return useQuery({ queryKey: computed(() => hrKeys.settings(cid.value)), queryFn: ({ signal }) => hrApi.settings(cid.value, signal), enabled: enabledFor(cid, enabled), staleTime: 60_000 });
+}
+
+export function useCoverage(params: MaybeRefOrGetter<CoverageParams | null>) {
+  const cid = useCompanyId();
+  return useQuery({
+    queryKey: computed(() => hrKeys.coverage(cid.value, toValue(params) ?? { from: "", to: "" })),
+    queryFn: ({ signal }) => hrApi.coverage(cid.value, toValue(params)!, signal),
+    enabled: enabledFor(cid, () => !!toValue(params)),
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
+  });
+}
+
+/** Who is missing right now; refreshed every minute while shown. */
+export function useLiveCoverage(enabled: MaybeRefOrGetter<boolean> = true) {
+  const cid = useCompanyId();
+  return useQuery({
+    queryKey: computed(() => hrKeys.liveCoverage(cid.value)),
+    queryFn: ({ signal }) => hrApi.liveCoverage(cid.value, signal),
+    enabled: enabledFor(cid, enabled),
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+  });
+}
+
+export function usePharmacists(enabled: MaybeRefOrGetter<boolean> = true) {
+  const cid = useCompanyId();
+  return useQuery({ queryKey: computed(() => hrKeys.pharmacists(cid.value)), queryFn: ({ signal }) => hrApi.pharmacists(cid.value, signal), enabled: enabledFor(cid, enabled), staleTime: 60_000 });
 }
 
 /** The company's warning windows (Settings › HR), the defaults until they load. */

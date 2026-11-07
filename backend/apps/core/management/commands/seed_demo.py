@@ -62,10 +62,11 @@ SLUG, SMALL_SLUG = plan.PHARMACY, plan.DISTRIBUTOR
 NAME, SMALL_NAME = "Demo Dorixona", "Demo Distribyutor"
 IN_UZBEK = {Position: plan.IN_UZBEK_POSITIONS, AccessRole: plan.IN_UZBEK_ROLES}
 # The distributor runs other modules, so switching companies changes the navigation too. Its
-# sales are invoices (PLAN-OWNER §14.3), which Wave 2 brings: until then the sales module, which
-# expects tills, stays off (its warehouse would read "not opened" every day).
+# sales are invoices (PLAN-OWNER §14.3): its sales settings start in invoices mode, so its
+# warehouse never reads "not opened" for a till it doesn't have.
 SMALL_FEATURES = [
     Feature.FINANCE,
+    Feature.SALES,
     Feature.STOCK,
     Feature.HR,
     Feature.PAYROLL,

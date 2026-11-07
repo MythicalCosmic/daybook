@@ -15,9 +15,10 @@ right after a manual post never book twice.
   amount that varies, the paid amount becomes the next estimate) or skips it.
 - An **auto** rule posts itself on its due day (`run_due`, every 30 minutes) on its account.
 
-A tax-calendar bill (`template_key` "tax.…") paid while the tax office has open tax payables
-(payroll books the income tax and social tax it withholds as such debts) settles those first,
-oldest first, so the tax is never counted twice; only the rest is booked as an expense.
+A payroll-tax bill of the tax calendar (income tax, pension, social tax) paid while the tax
+office has open tax payables (payroll books the taxes of its runs as such debts) settles those
+first, oldest first, so the tax is never counted twice; only the rest is booked as an expense.
+A VAT, turnover or profit tax bill is always its own expense.
 """
 
 import logging
@@ -29,7 +30,7 @@ from zoneinfo import ZoneInfo
 
 from django.db import transaction
 from django.db.models import Q
-from django.utils import timezone
+from django.utils import timezone, translation
 from django.utils.translation import gettext as _
 
 from apps.core.exceptions import DomainError
@@ -77,6 +78,7 @@ RULE_FIELDS = (
     "ends_on",
     "remind_days_before",
     "payer",
+    "create_task",
     "is_active",
 )
 SCHEDULE_FIELDS = ("frequency", "interval", "day", "starts_on", "ends_on")
@@ -255,10 +257,27 @@ def stop_rule(rule: RecurringRule, *, by: Membership) -> RecurringRule:
     return rule
 
 
-def skip_occurrence(rule: RecurringRule, *, by: Membership) -> RecurringRule:
+class Settled(DomainError):
+    """The occurrence the caller named was paid, posted or skipped meanwhile."""
+
+
+def _need_occurrence(rule: RecurringRule, occurrence: date | None, message) -> None:
+    """A caller that names the occurrence it acts on (a reminder's button, a dialog showing its
+    due day, scheduled or after the holiday move) acts on that one only, checked under the
+    rule's lock: a second press or a second person never settles the next one as well."""
+    if occurrence is None:
+        return
+    if rule.next_due_on is None or occurrence not in (rule.next_due_on, due_on(rule)):
+        raise Settled(message)
+
+
+def skip_occurrence(
+    rule: RecurringRule, *, by: Membership, occurrence: date | None = None
+) -> RecurringRule:
     """Leave the open occurrence unpaid and move on to the next one."""
     with transaction.atomic():
         rule = _lock(rule)
+        _need_occurrence(rule, occurrence, _("This has already been handled."))
         _need_open(rule)
         skipped = rule.next_due_on
         _advance(rule, skipped)
@@ -289,16 +308,26 @@ def pay_occurrence(
     account: MoneyAccount,
     amount=None,
     paid_on: date | None = None,
+    occurrence: date | None = None,
 ) -> Payment:
     """Pay the open occurrence of a bill from `account` (its usual amount unless given), then
-    move on to the next one. Paying the same occurrence again books nothing more."""
+    move on to the next one. With `occurrence` (the due day the person saw), paying it again
+    once it is settled is refused (`Settled`) instead of paying the next one."""
     company = rule.company
     paid_on = paid_on or _today(company)
     with transaction.atomic():
         rule = _lock(rule)
         if rule.mode != Mode.BILL:
             raise DomainError(_("This payment is posted automatically: run it instead."))
+        _need_occurrence(rule, occurrence, _("Already paid."))
         _need_open(rule)
+        if account.currency != rule.currency:
+            # The amount is in the rule's currency: from another account it would be booked as
+            # that many dollars (an exchange is a transfer first).
+            raise DomainError(
+                _("%(account)s holds %(currency)s.")
+                % {"account": account, "currency": account.currency}
+            )
         value = services._money(amount if amount not in (None, "") else rule.amount)
         scheduled = rule.next_due_on
         key = scheduled.isoformat()
@@ -336,12 +365,13 @@ def pay_occurrence(
     return Payment(rule, rows)
 
 
-def run_now(rule: RecurringRule, *, by: Membership) -> Payment:
+def run_now(rule: RecurringRule, *, by: Membership, occurrence: date | None = None) -> Payment:
     """Post the open occurrence of an automatic rule today instead of on its due day."""
     with transaction.atomic():
         rule = _lock(rule)
         if rule.mode != Mode.AUTO:
             raise DomainError(_("A bill is paid with the amount you paid, not run."))
+        _need_occurrence(rule, occurrence, _("This has already been handled."))
         _need_open(rule)
         row = _post(rule, rule.next_due_on, _today(rule.company), by=by)
         _advance(rule, rule.next_due_on)
@@ -422,8 +452,14 @@ def _post(rule: RecurringRule, scheduled: date, occurred_on: date, *, by) -> Tra
 def _settle_tax_debts(
     rule: RecurringRule, *, by: Membership, account: MoneyAccount, amount: Decimal, paid_on: date
 ) -> list[Transaction]:
-    """A tax-calendar bill first settles the open tax payables to its counterparty."""
-    if not rule.template_key.startswith("tax.") or rule.counterparty_id is None:
+    """A payroll-tax bill of the tax calendar first settles the open tax payables to its
+    counterparty: the income tax, pension and social tax payroll booked. VAT, turnover and
+    profit tax never pay those (VAT would read less, and the payroll tax would be booked again
+    as an expense when its own bill is paid)."""
+    from apps.finance.tax_calendar import PAYROLL_TAXES  # tax_calendar builds on this module
+
+    payroll_taxes = {item.key for item in PAYROLL_TAXES}
+    if rule.template_key not in payroll_taxes or rule.counterparty_id is None:
         return []
     debts = Debt.objects.filter(
         company=rule.company,
@@ -464,6 +500,20 @@ def _advance(rule: RecurringRule, settled: date) -> None:
     rule.save(
         update_fields=["last_done_on", "next_due_on", "last_reminded_on", "amount", "updated_at"]
     )
+    if rule.task_id is not None and rule.task_for is not None and rule.task_for <= settled:
+        _finish_task(rule)
+
+
+def _finish_task(rule: RecurringRule) -> None:
+    """The payer's task of a settled occurrence closes by itself."""
+    from apps.tasks.services import finish_system_task
+
+    task = rule.task
+    rule.task = None
+    rule.save(update_fields=["task", "updated_at"])
+    if task is not None:
+        with translation.override(task.assignee.user.language or "uz"):
+            finish_system_task(task, note=_("Paid or skipped in Finance."))
 
 
 def _need_open(rule: RecurringRule) -> None:
@@ -547,6 +597,10 @@ def _apply(rule: RecurringRule, fields: dict, *, by: Membership, creating: bool)
         raise DomainError(_("It can't end before it starts."))
     if rule.payer is not None and rule.payer.status != Membership.Status.APPROVED:
         raise DomainError(_("Pick someone who works here."))
+    # A task is for a bill someone pays by hand; an automatic payment posts itself.
+    rule.create_task = bool(rule.create_task) and rule.mode == Mode.BILL
+    if rule.create_task and rule.payer is None:
+        raise DomainError(_("Pick who pays it, so they get the task."))
 
 
 def _snapshot(rule: RecurringRule) -> dict:
@@ -568,6 +622,7 @@ def _snapshot(rule: RecurringRule) -> dict:
         "ends_on": rule.ends_on.isoformat() if rule.ends_on else None,
         "remind_days_before": rule.remind_days_before,
         "payer": rule.payer_id,
+        "create_task": rule.create_task,
         "is_active": rule.is_active,
     }
 

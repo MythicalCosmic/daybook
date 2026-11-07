@@ -10,7 +10,7 @@ company's morning, once per person and item per day:
 """
 
 import logging
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
 from django.db import transaction
@@ -100,6 +100,8 @@ def remind_bills(company, today: date) -> int:
                 continue  # it posts itself; only one that couldn't is worth a word
         elif today < due - timedelta(days=rule.remind_days_before):
             continue
+        if rule.create_task and rule.mode == RecurringRule.Mode.BILL:
+            _payer_task(rule, due, today)
         people = bill_recipients(rule)
         if not people:
             continue
@@ -153,6 +155,54 @@ def remind_bills(company, today: date) -> int:
         RecurringRule.objects.filter(pk=rule.pk).update(last_reminded_on=today)
         sent += len(made)
     return sent
+
+
+TASK_DUE_AT = (18, 0)  # the bill's due day, company time
+
+
+def _payer_task(rule: RecurringRule, due: date, today: date) -> None:
+    """Once per occurrence, when its reminders start: the payer's task to pay it, due on the
+    bill's day; it closes by itself when the bill is paid or skipped (`recurring._finish_task`).
+    Nothing when the payer isn't working here or the task was already made."""
+    from apps.tasks.services import create_system_task
+
+    payer = rule.payer
+    if (
+        payer is None
+        or rule.task_for == rule.next_due_on
+        or payer.status != Membership.Status.APPROVED
+        or payer.onboarded_at is None
+    ):
+        return
+    zone = ZoneInfo(rule.company.timezone)
+    due_at = datetime.combine(due, time(*TASK_DUE_AT), tzinfo=zone)
+    soonest = timezone.now() + timedelta(hours=2)
+    with translation.override(payer.user.language or "uz"):
+        known = not (rule.amount_varies and not rule.amount)
+        title = _("Pay: %(name)s") % {"name": rule.name}
+        lines = []
+        if known:
+            lines.append(_money(rule.amount, rule.currency, payer))
+        lines.append(due_text(due, today))
+        lines.append(
+            _(
+                "Mark it paid in Finance or with Paid in the reminder: "
+                "this task then closes by itself."
+            )
+        )
+        try:
+            task = create_system_task(
+                rule.company,
+                assignee=payer,
+                title=title,
+                due_at=max(due_at, soonest),
+                description="\n".join(lines),
+            )
+        except DomainError as exc:
+            logger.info("No task for recurring rule %s: %s", rule.pk, exc)
+            return
+    RecurringRule.objects.filter(pk=rule.pk).update(task=task, task_for=rule.next_due_on)
+    rule.task, rule.task_for = task, rule.next_due_on
 
 
 def remind_debts(company, today: date) -> int:
@@ -264,8 +314,15 @@ def paid_action(notification, by: Membership, reason: str) -> str:
         raise DomainError(
             _("You can't record payments on %(account)s.") % {"account": rule.account}
         )
-    with transaction.atomic():
-        recurring.pay_occurrence(rule, by=by, account=rule.account)
+    try:
+        with transaction.atomic():
+            # The occurrence is checked again under the rule's lock: someone may have paid it
+            # in the dashboard since it was read above.
+            recurring.pay_occurrence(
+                rule, by=by, account=rule.account, occurrence=date.fromisoformat(occurrence)
+            )
+    except recurring.Settled:
+        return str(_("Already paid."))
     return str(_("Paid from %(account)s.") % {"account": rule.account.name})
 
 

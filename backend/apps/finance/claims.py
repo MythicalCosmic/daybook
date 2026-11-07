@@ -24,7 +24,7 @@ Approvers hear about a waiting claim in Telegram with the receipt photo and [App
 """
 
 import logging
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 
 from django.db import transaction
@@ -182,8 +182,17 @@ def expense_categories(company) -> QuerySet[Category]:
     )
 
 
-# Categories a person never claims: what the system books by itself.
-CLAIM_EXCLUDED = ("salaries", "payroll_taxes", "cash_shortage", "bad_debts", "fx_diff")
+# Categories a person never claims: what the system books by itself (fixed assets' depreciation
+# and write-offs move no money).
+CLAIM_EXCLUDED = (
+    "salaries",
+    "payroll_taxes",
+    "cash_shortage",
+    "bad_debts",
+    "fx_diff",
+    "depreciation",
+    "asset_disposal",
+)
 
 
 def held_accounts(member: Membership) -> list[MoneyAccount]:
@@ -444,7 +453,8 @@ def sync_paid(company=None) -> int:
 
 def _record_held(claim: Claim, *, by: Membership, posted: bool) -> Transaction:
     company = claim.company
-    account = services.account_for_holder(company, claim.membership)
+    # The cash the person holds in the claim's (base) currency: what submit_claim checked.
+    account = services.account_for_holder(company, claim.membership, currency=claim.currency)
     return services.record_transaction(
         company,
         by=by,
@@ -472,6 +482,11 @@ def _book_approved(claim: Claim, *, by: Membership | None) -> None:
         if row is not None and row.status == Transaction.Status.PENDING:
             if by is None:
                 raise ValueError("A pending held-cash claim is approved by a person.")
+            day = _booking_day(claim, row.occurred_on)
+            if day != row.occurred_on:
+                # A waiting entry has moved no balance yet: it takes the first open day.
+                row.occurred_on = day
+                row.save(update_fields=["occurred_on", "updated_at"])
             row = services.approve_transaction(row, by=by)
     else:
         debt = services.open_debt(
@@ -481,7 +496,7 @@ def _book_approved(claim: Claim, *, by: Membership | None) -> None:
             kind=Debt.Kind.REIMBURSEMENT,
             amount=claim.amount,
             currency=claim.currency,
-            issued_on=claim.spent_on,
+            issued_on=_booking_day(claim, claim.spent_on),
             membership=claim.membership,
             category=claim.category,
             branch=claim.branch,
@@ -496,6 +511,15 @@ def _book_approved(claim: Claim, *, by: Membership | None) -> None:
         Receipt.objects.filter(claim=claim, transaction__isnull=True).update(
             transaction=row, updated_at=timezone.now()
         )
+
+
+def _booking_day(claim: Claim, day: date) -> date:
+    """The day an approved claim is booked: `day` (when the money was spent), or the first open
+    day when the books are closed up to it. A claim still waiting when its period was closed is
+    then booked like any late cost, as depreciation is, instead of only being rejectable; the
+    claim keeps the day it was spent."""
+    locked = conf.get_settings(claim.company).locked_until
+    return locked + timedelta(days=1) if locked is not None and day <= locked else day
 
 
 def _description(claim: Claim) -> str:

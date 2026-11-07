@@ -15,6 +15,7 @@ export const messages = defineMessages({
     "home.expiring_one": "{kind}: {count} day left",
     "home.expiring_other": "{kind}: {count} days left",
     "home.documentBody": "Upload the renewed one",
+    "home.certificateBody": "Upload my renewed certificate",
 
     "profile.since": "Joined: {date}",
     "employment.full_time": "Full time",
@@ -164,6 +165,7 @@ export const messages = defineMessages({
     "home.expiring_many": "{kind}: осталось {count} дней",
     "home.expiring_other": "{kind}: осталось {count} дня",
     "home.documentBody": "Загрузите новый",
+    "home.certificateBody": "Загрузить новый сертификат",
 
     "profile.since": "В компании с {date}",
     "employment.full_time": "Полная занятость",
@@ -313,6 +315,7 @@ export const messages = defineMessages({
     "home.expiring_one": "{kind}: {count} kun qoldi",
     "home.expiring_other": "{kind}: {count} kun qoldi",
     "home.documentBody": "Yangisini yuklang",
+    "home.certificateBody": "Yangilangan sertifikatimni yuklash",
 
     "profile.since": "Ishga kirgan: {date}",
     "employment.full_time": "To‘liq ish vaqti",

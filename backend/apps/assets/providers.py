@@ -78,10 +78,13 @@ def on_member_left(membership: Membership, *, terminated_on: date | None, detail
         if answer == CHOICE_RETURNED:
             services.take_back(asset, by=by, on=day, note=_("Handed back when they left."))
         elif answer == CHOICE_LOST:
+            # Posted months are history: a last day recorded late (before them) is written off
+            # on the first day the books allow, or `dispose` refuses and nothing is written off.
+            posted = asset.entries.order_by("-month").values_list("month", flat=True).first()
             services.dispose(
                 asset,
                 by=by,
-                on=day,
+                on=max(day, posted) if posted else day,
                 kind=Asset.Disposal.LOST,
                 reason=_("Not handed back when %(person)s left.") % {"person": membership},
             )

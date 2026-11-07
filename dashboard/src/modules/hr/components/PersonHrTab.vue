@@ -229,11 +229,14 @@ const contractLink = computed(() => (contract.value ? { path: `/c/${company.curr
             <button type="button" class="flex min-h-12 w-full items-center gap-3 px-5 py-2.5 text-left transition-colors hover:bg-highlight" @click="openDocument(doc.id)">
               <div class="min-w-0 flex-1">
                 <p class="truncate text-sm font-medium text-fg">
-                  {{ t(`hr.kind.${doc.kind}`) }}<span v-if="doc.title && doc.title !== t(`hr.kind.${doc.kind}`)" class="font-normal text-muted"> · {{ doc.title }}</span>
+                  {{ t(`hr.kind.${doc.kind}`) }}<span v-if="doc.level" class="font-normal text-muted" data-doc-level> · {{ t(`hr.level.${doc.level}`) }}</span
+                  ><span v-if="doc.title && doc.title !== t(`hr.kind.${doc.kind}`)" class="font-normal text-muted"> · {{ doc.title }}</span>
                 </p>
                 <p class="truncate text-xs text-muted">
                   {{ doc.expires_on ? t("hr.document.expiresShort", { date: fmt.day(doc.expires_on, "medium") }) : t("hr.document.noExpiry") }}
                   <template v-if="doc.verified"> · {{ t("hr.document.verified") }}</template>
+                  <template v-else> · <span class="text-warning">{{ t("hr.document.notVerified") }}</span></template>
+                  <template v-if="doc.specialty"> · {{ doc.specialty }}</template>
                 </p>
               </div>
               <DaysChip v-if="doc.expires_on" :day="doc.expires_on" :warn-days="warn.documents" prefix="expires" />

@@ -144,17 +144,10 @@ def test_the_spreadsheet_of_a_final_run_shows_the_unused_leave_paid_out(shop, te
     assert "leave_payout" in [column[0] for column in providers.RUN_COLUMNS]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "Product decision for the lead: `queries.run_summary` (the §11.4 contract behind the "
-        "payroll overview's month series, the brief, company facts and Ask AI) sums only the "
-        "month's regular run, so a leaver settled by a final run drops out of the month's "
-        "payroll figures. Suggested: add the payslips of the month's non-cancelled final runs "
-        "to run_summary (and to the overview's by-position and by-branch tables)."
-    ),
-)
 def test_the_months_payroll_figures_count_a_leavers_final_payslip(shop, team):
+    """`queries.run_summary` (the payroll overview's month series, the brief, company facts and
+    Ask AI) counts the month's final payslips too: a leaver settled by a final run is skipped by
+    the regular run and would drop out of the month's figures."""
     staff = team
     leave(staff.ali)
     services.create_final_run(staff.ali, by=staff.accountant, last_day=LAST_DAY)
@@ -165,42 +158,47 @@ def test_the_months_payroll_figures_count_a_leavers_final_payslip(shop, team):
     # Sara's 4 680 000 in the monthly run and Ali's 2 200 000 (11 of 26 days) in his final one.
     assert summary["people"] == 2
     assert summary["net"] == D("6880000.00")
+    # The overview's tables of the latest closed month count him too, a cancelled final run not.
+    run = queries.regular_run(shop, OCTOBER)
+    final = PayrollRun.objects.get(company=shop, kind=PayrollRun.Kind.FINAL)
+    assert queries.month_payslips(shop, run).count() == 2
+    final.status = PayrollRun.Status.CANCELLED
+    final.save(update_fields=["status"])
+    assert queries.run_summary(shop, OCTOBER)["people"] == 1
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "Product decision for the lead: the warning `paid_after_last_day` says to add a line "
-        "by hand to take the overpayment back, but a final payslip whose hand-made deduction "
-        "is more than its pay is refused at finalize ('more than the pay: lower a line added "
-        "by hand'). Either book the rest as a receivable from the person (like an advance "
-        "left) or reword the warning: take back at most what the payslip pays, record the "
-        "rest as a debt in Finance."
-    ),
-)
-def test_what_october_paid_after_the_last_day_can_be_taken_back(shop, team, freeze):
+def test_what_october_paid_after_the_last_day_is_taken_back_up_to_the_pay(shop, team, freeze):
     """October paid Ali 600 000 for the 29th to the 31st; his final payslip pays 2 unused
-    leave days (5 200 000 / 31 x 2 = 335 483.87). Taking the 600 000 back as the warning
-    says leaves him owing 264 516.13, a receivable in Finance."""
+    leave days (5 200 000 / 31 x 2 = 335 483.87). A final payslip's own pay never goes below
+    zero (only advances left may take it there), so the warning says to take back at most what
+    the payslip pays and to record the rest in Finance as money he owes; finalize refuses a
+    bigger line with the same advice."""
+    from apps.core.exceptions import DomainError
+    from apps.payroll import labels
+
     staff = team
     _regular, final = finalized_october_then_ali_leaves(shop, staff, freeze)
     warning = next(w for w in final.warnings if w["code"] == "paid_after_last_day")
     assert warning["amount"] == "600000.00"
+    assert "record the rest in Finance as money they owe" in labels.warning_text(warning)
     payslip = final.payslips.get()
     services.set_manual_lines(
         payslip,
         by=staff.accountant,
         lines=[{"label": "Paid after the last day", "amount": "-600000"}],
     )
+    with pytest.raises(DomainError, match="record the rest in Finance as money they owe"):
+        services.finalize_run(final, by=staff.owner)
 
+    services.set_manual_lines(
+        payslip,
+        by=staff.accountant,
+        lines=[{"label": "Paid after the last day", "amount": "-335483.87"}],
+    )
     services.finalize_run(final, by=staff.owner)
 
     payslip.refresh_from_db()
-    assert payslip.net == D("-264516.13")
-    owed = Debt.objects.filter(
-        membership=staff.ali, direction=Debt.Direction.RECEIVABLE, status=Debt.Status.OPEN
-    )
-    assert sum(debt.amount - debt.paid for debt in owed) == D("264516.13")
+    assert payslip.net == D("0.00")
 
 
 def test_ten_paid_days_read_10_on_the_payslip_and_in_the_wizard(shop, team, freeze):
