@@ -12,6 +12,7 @@ import { dayKey } from "../../lib/time";
 import { useNavigation } from "../../state/navigation";
 import { useMember } from "../../state/session";
 import { Badge, Button, Card, EmptyState, LoadError, PageHeader, Screen, Segmented, Spinner, cx } from "../../ui";
+import { useScrollEdges } from "../../ui/useScrollEdges";
 import { useFeedback } from "../states";
 import { useFeatureOpen } from "../useFeatureOpen";
 import { operatesStock } from "./access";
@@ -42,6 +43,7 @@ export default function ExpiryPage() {
   // Wait for the company's steps, so the list isn't asked for twice.
   const expiry = useExpiry(member.companyId, within, !settings.isPending);
   const [picked, setPicked] = useState<ExpiryGroup | null>(null);
+  const strip = useScrollEdges<HTMLDivElement>();
   const groups = useMemo(() => groupRows(expiry.data ?? [], steps), [expiry.data, steps]);
   const branch = expiry.data?.[0]?.branch ?? member.home_branch?.name ?? member.company.name;
   const header = <PageHeader kicker={branch} title={t("expiry.title")} subtitle={t("expiry.subtitle")} onBack={navigation.pop} />;
@@ -75,9 +77,11 @@ export default function ExpiryPage() {
   return (
     <Screen variant="detail">
       {header}
+      {/* Four groups with counts don't fit every phone in every language: the strip scrolls. */}
       <Segmented
+        ref={strip.ref}
         role="tablist"
-        fit
+        className="seg--scroll"
         label={t("expiry.title")}
         value={current}
         onChange={setPicked}

@@ -172,7 +172,7 @@ describe("the expiry check", () => {
     const file = new File(["jpeg"], "packs.jpg", { type: "image/jpeg" });
     const input = document.querySelector('input[type="file"][capture]') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [file] } });
-    fireEvent.click(screen.getAllByRole("button", { name: "Propose write-off" }).at(-1)!);
+    fireEvent.click(screen.getByRole("button", { name: "Send the proposal" }));
     await waitFor(() => expect(navigationState().sheet).toBeNull());
     expect(await within(cards()[0]).findByText("Sending…")).toBeTruthy();
     const call = server.calls.find((item) => item.path.includes("/expiry-action/"))!;
@@ -190,7 +190,7 @@ describe("the expiry check", () => {
     await screen.findByRole("tablist");
     fireEvent.click(within(cards()[0]).getByRole("button", { name: "Propose write-off" }));
     await screen.findByText("All of series S-1 here: 2 packs 1 blister.");
-    fireEvent.click(screen.getAllByRole("button", { name: "Propose write-off" }).at(-1)!);
+    fireEvent.click(screen.getByRole("button", { name: "Send the proposal" }));
     expect(await screen.findByText("None of this series is here any more.")).toBeTruthy();
     expect(within(cards()[0]).getByRole("button", { name: "Propose write-off" })).toBeTruthy();
     expect(readMarks(1)[1]).toBeUndefined();

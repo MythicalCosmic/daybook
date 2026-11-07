@@ -331,7 +331,8 @@ describe("receiving", () => {
     });
     renderApp(<ReceivePage params={{}} />, { me });
     expect(await screen.findByText("Ko‘kterak Farm Distribyutor", { selector: ".row-title" })).toBeTruthy();
-    expect(screen.getByText(/No\. N-1180 of 06\.11\.2026 · 1 line · Waiting for posting/)).toBeTruthy();
+    expect(screen.getByText("No. N-1180 of 06.11.2026 · 1 line")).toBeTruthy();
+    expect(screen.getByText("Waiting for posting", { selector: ".tag" })).toBeTruthy();
     const select = screen.getByRole("combobox", { name: "Distributor" }) as HTMLSelectElement;
     expect(select.value).toBe("9");
     cleanup();

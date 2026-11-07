@@ -96,7 +96,7 @@ function Counting({ id, lines, header }: { id: number; lines: CountLine[]; heade
       <div className="stk-search" role="search">
         <Search className="stk-search-icon" size={18} strokeWidth={2.5} aria-hidden />
         <Input type="search" className="stk-search-input" aria-label={t("count.search")} placeholder={t("count.search")} value={query} onChange={(event) => setQuery(event.target.value)} />
-        {canScan && <IconButton icon={ScanBarcode} size={44} variant="primary" label={t("search.scan")} onClick={() => open.sheet("scan", { target: COUNT_TARGET })} />}
+        {canScan && <IconButton icon={ScanBarcode} variant="primary" label={t("search.scan")} onClick={() => open.sheet("scan", { target: COUNT_TARGET })} />}
       </div>
       <Segmented
         value={filter}

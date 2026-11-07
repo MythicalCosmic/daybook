@@ -88,7 +88,6 @@ export default function StockPage() {
         {canScan && (
           <IconButton
             icon={ScanBarcode}
-            size={44}
             variant="primary"
             label={t("search.scan")}
             onClick={() => open.sheet("scan", { target: LOOKUP_TARGET })}

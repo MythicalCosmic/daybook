@@ -37,6 +37,7 @@ import {
   Select,
   Stepper,
 } from "../../ui";
+import { EntryRow } from "../EntryRow";
 import type { PageProps } from "../registry";
 import { useFeedback } from "../states";
 import { useFeatureOpen } from "../useFeatureOpen";
@@ -112,20 +113,24 @@ function Start({ receipts, header }: { receipts: Receipt[]; header: ReactNode })
   );
 }
 
+/** A started receipt: the distributor, the nakladnoy and its lines, the state as a chip (nothing cut off). */
 function ReceiptRow({ receipt, onOpen }: { receipt: Receipt; onOpen: () => void }) {
   const t = useStockT();
+  const draft = receipt.status === "draft";
   return (
-    <ListRow
-      variant="card"
+    <EntryRow
       icon={PackagePlus}
-      tone={receipt.status === "draft" ? "accent" : "sage"}
+      tone={draft ? "accent" : "sage"}
       title={receipt.supplier.name}
-      subtitle={[
-        t("receive.invoice", { number: receipt.supplier_invoice_number || `#${receipt.id}`, day: packDate(receipt.supplier_invoice_date) }),
-        t("receive.lineCount", { count: receipt.lines.length }),
-        t(`receive.status.${receipt.status}`),
-      ].join(" · ")}
-      onClick={onOpen}
+      details={[
+        `${t("receive.invoice", { number: receipt.supplier_invoice_number || `#${receipt.id}`, day: packDate(receipt.supplier_invoice_date) })} · ${t("receive.lineCount", { count: receipt.lines.length })}`,
+      ]}
+      chips={
+        <Badge tone={draft ? "neutral" : "sage"} size="small">
+          {t(`receive.status.${receipt.status}`)}
+        </Badge>
+      }
+      onOpen={onOpen}
     />
   );
 }
@@ -258,7 +263,7 @@ function LineRow({ receipt, line, editable }: { receipt: number; line: ReceiptLi
     <Card className="stk-exp-card" data-testid="receipt-line">
       <div className="stk-exp-head">
         <span className="stk-exp-title">{line.product.name}</span>
-        {editable && <IconButton icon={Trash2} size={40} variant="ghost" label={t("receive.removeLine")} disabled={remove.isPending} onClick={() => remove.mutate(line.id, { onError: feedback.fail })} />}
+        {editable && <IconButton icon={Trash2} variant="ghost" label={t("receive.removeLine")} disabled={remove.isPending} onClick={() => remove.mutate(line.id, { onError: feedback.fail })} />}
       </div>
       <span className="stk-exp-meta num">
         {[t("product.series", { series: line.series }), t("product.expires", { day: packDate(line.expires_on) }), qtyText(line.quantity, line.units_per_pack, "", t)].join(" · ")}
@@ -336,7 +341,7 @@ function AddLine({ receipt, onClose }: { receipt: number; onClose: () => void })
     <Card className="stk-form" data-testid="add-line">
       <div className="ui-card-head">
         <span className="card-title">{t("receive.addLine")}</span>
-        <IconButton icon={X} size={40} variant="ghost" label={t("common.close")} onClick={onClose} />
+        <IconButton icon={X} variant="ghost" label={t("common.close")} onClick={onClose} />
       </div>
       <Field label={t("receive.product")}>
         {product ? (
@@ -350,7 +355,7 @@ function AddLine({ receipt, onClose }: { receipt: number; onClose: () => void })
         ) : (
           <div className="stk-search">
             <Input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("search.placeholder")} aria-label={t("receive.product")} autoComplete="off" />
-            {canScan && <IconButton icon={ScanBarcode} size={44} variant="primary" label={t("search.scan")} onClick={() => open.sheet("scan", { target: RECEIVE_TARGET })} />}
+            {canScan && <IconButton icon={ScanBarcode} variant="primary" label={t("search.scan")} onClick={() => open.sheet("scan", { target: RECEIVE_TARGET })} />}
           </div>
         )}
       </Field>

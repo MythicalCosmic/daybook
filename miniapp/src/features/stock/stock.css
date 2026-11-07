@@ -38,7 +38,7 @@
   color: var(--muted);
 }
 .stk-search:has(.btn-icon) .stk-search-clear {
-  right: 58px;
+  right: 62px;
 }
 .stk-hint,
 .stk-note {
@@ -64,14 +64,16 @@
   flex: none;
   color: var(--muted);
 }
+/* The price stays on the title's first line; a long name wraps beside it. */
 .stk-row-head {
   display: flex;
-  flex-wrap: wrap;
-  gap: 2px 10px;
+  gap: 10px;
   align-items: baseline;
   justify-content: space-between;
 }
 .stk-row-title {
+  flex: 1;
+  min-width: 0;
   overflow-wrap: anywhere;
 }
 .stk-row-price {

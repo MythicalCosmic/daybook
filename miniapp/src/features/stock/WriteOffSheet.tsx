@@ -69,7 +69,7 @@ function Form({ row, close }: { row: AppBatch; close: () => void }) {
         <PhotoInput value={photo} onChange={setPhoto} capture="environment" label={t("photo.cta")} />
       </Field>
       <Button variant="primary" size="lg" block icon={Trash2} onClick={submit}>
-        {t("writeoff.title")}
+        {t("writeoff.submit")}
       </Button>
     </>
   );
