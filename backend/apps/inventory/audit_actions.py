@@ -38,6 +38,7 @@ class InventoryAction(models.TextChoices):
     BATCH_QUARANTINED = "inventory.batch_quarantined", _("Put a series in quarantine")
     BATCH_RELEASED = "inventory.batch_released", _("Put a series back on sale")
     PRICE_CHANGED = "inventory.price_changed", _("Changed a price")
+    EXPIRY_CHECKED = "inventory.expiry_checked", _("Checked a series close to expiry on the shelf")
     RECALL_REGISTERED = "inventory.recall_registered", _("Registered a recall")
     RECALL_CLOSED = "inventory.recall_closed", _("Closed a recall")
     MONTH_CLOSED = "inventory.month_closed", _("Closed a month of the controlled register")

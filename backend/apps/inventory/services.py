@@ -1188,7 +1188,7 @@ def line_warnings(receipt: GoodsReceipt, line: GoodsReceiptLine) -> list[str]:
     if line.expires_on is not None and (line.expires_on - today).days < settings.min_shelf_days:
         found.append(W.SHORT_SHELF_LIFE)
     cost = _in_base(receipt, line.unit_cost)
-    last = product.cost_price
+    last = Product.objects.filter(pk=product.pk).values_list("cost_price", flat=True).first()
     if last and cost > last * (1 + Decimal(settings.price_jump_percent) / 100):
         found.append(W.COST_JUMP)
     if open_recall_for(company, product, line.series) is not None:

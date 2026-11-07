@@ -88,20 +88,33 @@ def receipt_waiting(receipt_id: int, *, reminder: bool = False) -> int:
 
     receipt = (
         GoodsReceipt.objects.select_related("company", "branch", "supplier")
-        .filter(pk=receipt_id, status=GoodsReceipt.Status.SUBMITTED)
+        .filter(
+            pk=receipt_id,
+            status__in=(GoodsReceipt.Status.SUBMITTED, GoodsReceipt.Status.DRAFT),
+        )
         .first()
     )
-    if receipt is None:
+    if receipt is None or (receipt.status == GoodsReceipt.Status.DRAFT and not reminder):
         return 0
     people = managers(receipt.company, [receipt.branch_id])
     invoice = receipt.supplier_invoice_number or f"#{receipt.pk}"
+    draft = receipt.status == GoodsReceipt.Status.DRAFT
+
+    def title(person):
+        if draft:
+            return _("Receipt %(invoice)s from %(supplier)s is still a draft") % {
+                "invoice": invoice,
+                "supplier": receipt.supplier.name,
+            }
+        return _("Receipt %(invoice)s from %(supplier)s waits for posting") % {
+            "invoice": invoice,
+            "supplier": receipt.supplier.name,
+        }
+
     sent = inbox.notify(
         people,
         RECEIPT_WAITING,
-        title=lambda person: (
-            _("Receipt %(invoice)s from %(supplier)s waits for posting")
-            % {"invoice": invoice, "supplier": receipt.supplier.name}
-        ),
+        title=title,
         body=lambda person: (
             _("%(branch)s, invoice of %(day)s.")
             % {"branch": receipt.branch.name, "day": _day(receipt.supplier_invoice_date)}
