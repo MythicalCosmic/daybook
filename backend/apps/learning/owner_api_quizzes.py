@@ -35,7 +35,7 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
 from apps.console.base import OwnerAPIView, OwnerViewSet
-from apps.console.perms import AnyOf
+from apps.console.perms import AllOf, AnyOf
 from apps.core.api import Pagination
 from apps.learning import (
     attempts,
@@ -680,3 +680,122 @@ class DraftViewSet(LearningOn, mixins.ListModelMixin, mixins.RetrieveModelMixin,
             s.LearningDraftJobSerializer(quiz_queries.draft_row(job)).data,
             status=status.HTTP_201_CREATED,
         )
+
+
+# The tutor ---------------------------------------------------------------------------------
+
+
+class TutorView(LearningOn, OwnerAPIView):
+    """The tutor's page: is it on, the viewer's last weekly report (or the one it would send
+    now), the open suggestions, the weakest topics, what it did lately."""
+
+    perm = READ
+
+    @extend_schema(responses=s.LearningTutorSerializer)
+    def get(self, request, company_id):
+        from django.utils import timezone
+
+        from apps.ai import agents, availability, chat, events
+        from apps.ai import conf as ai_conf
+        from apps.ai.agents import tutor
+        from apps.ai.models import AgentEvent
+        from apps.inbox.models import Notification
+        from apps.learning import notify_quizzes
+
+        now = timezone.now()
+        agent = agents.get(tutor.KEY)
+        state = agents.state_of(self.company, tutor.KEY)
+        config = agents.config_of(agent, state)
+        last = (
+            Notification.objects.filter(recipient=self.membership, kind=notify_quizzes.TUTOR_REPORT)
+            .order_by("-created_at")
+            .first()
+        )
+        if last is not None and isinstance(last.data, dict) and last.data.get("facts"):
+            facts = last.data["facts"]
+            report = {
+                "sent_at": last.created_at,
+                "week": last.data.get("week", ""),
+                "opening": last.data.get("opening", ""),
+            }
+        else:
+            facts = tutor.report_facts(
+                self.company, self.membership, now, int(config["weak_threshold"])
+            )
+            report = {"sent_at": None, "week": "", "opening": ""}
+        report = (
+            (report | {"facts": facts, "lines": notify_quizzes.report_lines(facts)})
+            if facts
+            else None
+        )
+        counts = {kind: 0 for kind in TutorSuggestion.Kind.values}
+        for kind in suggestions.visible(self.membership).values_list("kind", flat=True):
+            counts[kind] += 1
+        counts["total"] = sum(counts.values())
+        weakest = skills.weakest_topics(self.company, branch_ids=self.branch_scope, limit=5)
+        recent = AgentEvent.objects.filter(company=self.company, agent=tutor.KEY).order_by(
+            "-created_at"
+        )[:8]
+        shape = {
+            "agent": {
+                "listed": ai_conf.ai_on(self.company),
+                "enabled": state.enabled,
+                "ai_on": ai_conf.ai_on(self.company),
+                "claude": availability.claude_state(self.company),
+                "chat": chat.tutor_available(self.membership),
+                "next_report_at": tutor.next_report_at(self.company, state, now)
+                if state.enabled
+                else None,
+                "config": config,
+            },
+            "report": report,
+            "suggestions": counts,
+            "weakest": quiz_queries.matrix_shape({"topics": weakest, "people": []})["topics"],
+            "events": [
+                {"at": event.created_at, "text": events.render(event), "level": event.level}
+                for event in recent
+            ],
+        }
+        return Response(s.LearningTutorSerializer(shape).data)
+
+
+class TutorConversationsView(LearningOn, OwnerAPIView):
+    """The viewer's "Ask the tutor" conversations; the turns go through Ask AI's endpoints
+    (`ai/conversations/{id}/turns/`, `ai/turns/{id}/`, `ai/conversations/{id}/messages/`)."""
+
+    perm = AllOf(READ, Perm.AI_USE)
+
+    @extend_schema(responses=s.LearningTutorConversationSerializer(many=True))
+    def get(self, request, company_id):
+        from apps.ai.models import AIConversation
+
+        rows = AIConversation.objects.filter(
+            company_id=self.company.pk, membership=self.membership, agent="tutor"
+        ).order_by("-last_activity_at")[:50]
+        return Response(
+            s.LearningTutorConversationSerializer(
+                [_conversation(row) for row in rows], many=True
+            ).data
+        )
+
+    @extend_schema(request=None, responses={201: s.LearningTutorConversationSerializer})
+    def post(self, request, company_id):
+        from apps.ai import chat
+
+        try:
+            row = chat.start_conversation(self.membership, agent=chat.TUTOR)
+        except chat.TurnRefused as exc:
+            return Response({"code": exc.code, "detail": str(exc)}, status=exc.status)
+        return Response(
+            s.LearningTutorConversationSerializer(_conversation(row)).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+def _conversation(row) -> dict:
+    return {
+        "id": row.pk,
+        "title": row.title,
+        "created_at": row.created_at,
+        "last_activity_at": row.last_activity_at,
+    }

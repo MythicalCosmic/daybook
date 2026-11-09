@@ -264,8 +264,15 @@ def test_every_installed_tool_follows_the_rules(monkeypatch, real_tools):
         for config in apps.get_app_configs()
         if config.name.startswith("apps.")
     ]
-    writers = {spec.name for spec in specs if spec and "@ai_tool(" in Path(spec.origin).read_text()}
-    assert {tool.fn.__module__ for tool in tools} == writers
+    # An app may split its tools into `ai_tools_<part>.py` modules its `ai_tools` imports
+    # (learning: courses and quizzes); they count as the app's.
+    def writes(spec) -> bool:
+        files = [Path(spec.origin), *Path(spec.origin).parent.glob("ai_tools_*.py")]
+        return any("@ai_tool(" in file.read_text() for file in files)
+
+    writers = {spec.name for spec in specs if spec and writes(spec)}
+    owners = {tool.fn.__module__.rsplit(".", 1)[0] + ".ai_tools" for tool in tools}
+    assert owners == writers
 
 
 def test_the_examples_never_reach_the_real_registry(real_tools):

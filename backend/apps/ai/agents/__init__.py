@@ -11,6 +11,7 @@ from apps.ai.agents import (  # noqa: F401  (each registers itself)
     hr_assistant,
     morning_plan,
     photo_checker,
+    tutor,
     voice_tasks,
 )
 from apps.ai.agents.registry import (

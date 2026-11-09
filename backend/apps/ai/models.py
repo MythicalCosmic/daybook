@@ -343,6 +343,8 @@ class AIConversation(TenantModel):
     title = models.CharField(max_length=120, blank=True)
     last_activity_at = models.DateTimeField(db_index=True)
     turn_count = models.PositiveIntegerField(default=0)
+    # The agent it talks to ("tutor": "Ask the tutor"); empty for Ask AI itself.
+    agent = models.CharField(max_length=32, blank=True, default="")
 
     def __str__(self):
         return self.title or f"Conversation #{self.pk}"

@@ -395,3 +395,14 @@ def accept_all_assign(viewer: Membership) -> int:
         except DomainError:
             continue
     return done
+
+
+def assign_suggested(notification, by: Membership, reason: str) -> str:
+    """The weekly report's "Assign suggested" button: every open `assign` suggestion `by`
+    sees (registered for the inbox kind `learning.tutor_report`)."""
+    count = accept_all_assign(by)
+    if not count:
+        return _("Nothing is left to assign.")
+    return ngettext("Assigned %(count)s course.", "Assigned %(count)s courses.", count) % {
+        "count": count
+    }

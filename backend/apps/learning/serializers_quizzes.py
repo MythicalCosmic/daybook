@@ -548,3 +548,53 @@ class LearningDailySettingsWriteSerializer(serializers.Serializer):
     daily_question = serializers.BooleanField(required=False)
     daily_at = serializers.CharField(required=False, help_text="HH:MM, the company's time.")
     daily_position_ids = serializers.ListField(child=serializers.IntegerField(), required=False)
+
+
+class LearningTutorConfigSerializer(serializers.Serializer):
+    weekly_report = serializers.BooleanField()
+    report_day = serializers.CharField(help_text="0 is Monday.")
+    at = serializers.CharField()
+    nudge_learners = serializers.BooleanField()
+    suggest = serializers.BooleanField()
+    weak_threshold = serializers.IntegerField()
+
+
+class LearningTutorAgentSerializer(serializers.Serializer):
+    listed = serializers.BooleanField(help_text="The company has the AI module (agents run there).")
+    enabled = serializers.BooleanField()
+    ai_on = serializers.BooleanField()
+    claude = serializers.CharField(help_text="connected, fake, not_configured, budget_reached…")
+    chat = serializers.BooleanField(help_text="The viewer may ask the tutor.")
+    next_report_at = serializers.DateTimeField(allow_null=True)
+    config = LearningTutorConfigSerializer()
+
+
+class LearningTutorReportSerializer(serializers.Serializer):
+    sent_at = serializers.DateTimeField(allow_null=True, help_text="Null: worked out now.")
+    week = serializers.CharField(allow_blank=True)
+    opening = serializers.CharField(allow_blank=True)
+    lines = serializers.ListField(child=serializers.CharField())
+    facts = serializers.JSONField()
+
+
+class LearningTutorEventSerializer(serializers.Serializer):
+    at = serializers.DateTimeField()
+    text = serializers.CharField()
+    level = serializers.CharField()
+
+
+class LearningTutorSerializer(serializers.Serializer):
+    agent = LearningTutorAgentSerializer()
+    report = LearningTutorReportSerializer(allow_null=True)
+    suggestions = serializers.DictField(
+        child=serializers.IntegerField(), help_text="Open suggestions by kind, and 'total'."
+    )
+    weakest = LearningSkillTopicSerializer(many=True)
+    events = LearningTutorEventSerializer(many=True)
+
+
+class LearningTutorConversationSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    title = serializers.CharField(allow_blank=True)
+    created_at = serializers.DateTimeField()
+    last_activity_at = serializers.DateTimeField()

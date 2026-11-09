@@ -147,3 +147,31 @@ def quiz(company, questions=(), **fields) -> Quiz:
 
 def position(company, name="Farmatsevt"):
     return PositionFactory(company=company, name=name)
+
+
+@pytest.fixture
+def fake_claude(monkeypatch, settings):
+    """Claude "configured" (a key) and answered by a script: `fake_claude.script(...)`."""
+    from apps.ai import availability
+    from apps.ai.fakes import FakeAnthropic
+
+    settings.ANTHROPIC_API_KEY = "sk-test"
+    fake = FakeAnthropic()
+    monkeypatch.setattr("apps.ai.client.get_client", lambda: fake)
+    availability.reset_breaker()
+    return fake
+
+
+def ai_on(company, *, tutor: bool = True):
+    """The AI module on with an owner's consent, and the tutor switched on."""
+    from apps.ai import agents
+    from apps.ai import conf as ai_conf
+
+    switch_on(company, Feature.AI)
+    row = ai_conf.get_settings(company)
+    row.enabled = True
+    row.save()
+    state = agents.state_of(company, "tutor")
+    state.enabled = tutor
+    state.save()
+    return state

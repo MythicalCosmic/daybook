@@ -26,6 +26,12 @@ urlpatterns = [
     ),
     path("learning/attempts/<int:pk>/", api.AttemptView.as_view(), name="owner-learning-attempt"),
     path("learning/skills/", api.SkillsView.as_view(), name="owner-learning-skills"),
+    path("learning/tutor/", api.TutorView.as_view(), name="owner-learning-tutor"),
+    path(
+        "learning/tutor/conversations/",
+        api.TutorConversationsView.as_view(),
+        name="owner-learning-tutor-conversations",
+    ),
     path(
         "learning/skills/<int:member_id>/",
         api.PersonSkillsView.as_view(),
