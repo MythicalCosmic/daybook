@@ -5,7 +5,7 @@
 # DAVOMAT_DEMO_DIR, default ~/.local/share/davomat-demo): a real install is never touched. No root.
 #   bash deploy/davomat/demo.sh up [--port 18080] [--lan] [--no-seed]
 #                                       build the image if needed, start, add the example data
-#   bash deploy/davomat/demo.sh seed      the example organization (again)
+#   bash deploy/davomat/demo.sh seed      the example organization again (replaces the earlier one)
 #   bash deploy/davomat/demo.sh rebuild   new code: rebuild and restart (update.sh --here)
 #   bash deploy/davomat/demo.sh status | logs [service] | down (the data stays) | wipe (deleted)
 # --lan also listens on this computer's network address, so a terminal on the same network can
@@ -33,9 +33,10 @@ export DAVOMAT_PROJECT=${DAVOMAT_PROJECT:-davomat-demo} DAVOMAT_ENV_FILE=$DIR/.e
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 [ "$PROJECT" != davomat ] || die "The demo never runs as the real project (davomat)."
 
+# The example organization; --reset replaces an earlier one (davomat_demo never removes a real one).
 seed() {
 	step "The example organization (davomat_demo)"
-	compose exec -T backend python manage.py davomat_demo </dev/null
+	compose exec -T backend python manage.py davomat_demo --reset </dev/null
 }
 
 case $command in
@@ -62,7 +63,7 @@ up)
 		"from apps.companies.models import Company; print(Company.objects.exists())" </dev/null 2>/dev/null | tail -n 1 || true)
 	if [ "$SEED" = 1 ] && [ "$exists" != True ]; then seed; fi
 	step "The demo is running"
-	info "Open $(site_url)/  (the example organization: the sign-in davomat_demo printed above)"
+	info "Open $(site_url)/  (the example organization: sign in as davomat_demo said above, admin / Namuna-2026 by default)"
 	info "Without the example data the setup page opens instead: demo.sh wipe, then demo.sh up --no-seed."
 	[ "$LAN" = 0 ] || info "Terminals on this network: host $(env_get PUBLIC_DEVICE_HOST), port $PORT, protocol HTTP."
 	info "Stop it: bash deploy/davomat/demo.sh down"
