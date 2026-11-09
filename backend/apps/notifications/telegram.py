@@ -145,6 +145,11 @@ async def _delete(token: str, chat_id: int, message_id: int) -> None:
 
 
 def _token(bot: BotName) -> str:
+    if settings.EDITION == "davomat":
+        # One bot per install, the organization's own (docs/DAVOMAT.md §1.5): both names.
+        from apps.davomat.queries import bot_token
+
+        return bot_token()
     if bot == BotName.EMPLOYEE:
         return settings.EMPLOYEE_BOT_TOKEN
     return settings.OWNER_BOT_TOKEN

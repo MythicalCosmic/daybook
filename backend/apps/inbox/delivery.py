@@ -32,8 +32,12 @@ BLOCKED_FIELD = {
 
 def bots_for(user: User, audience: str, member: Membership | None = None) -> list[BotName]:
     """The bots to try, in order. The owner bot only for owners and top managers (`member`,
-    when known): everyone else hears through the employee bot."""
+    when known): everyone else hears through the employee bot. The Davomat edition has one
+    bot, the organization's own, for everyone who linked their Telegram (docs/DAVOMAT.md §1.5)."""
     from apps.members.departments import is_top_manager
+
+    if settings.EDITION == "davomat":
+        return [BotName.OWNER]
 
     owner_bot_ready = (
         audience == "owner"
