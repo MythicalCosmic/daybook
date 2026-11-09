@@ -4,7 +4,7 @@
  * Daybook keeps its round check mark; Davomat shows the organization's logo when it has one, else
  * its own mark (a check inside the corners of a face scan).
  */
-import { editionInfo, isDavomat } from "@/core/edition";
+import { editionInfo, isDavomat, productName } from "@/core/edition";
 
 export const DAYBOOK_FAVICON = "/dashboard/favicon.svg";
 
@@ -89,10 +89,7 @@ export async function setFavicon(badged: boolean): Promise<void> {
   link.href = href;
 }
 
-/** The product's name ("Davomat", "Daybook"). */
-export function productName(): string {
-  return editionInfo.value.product;
-}
+export { productName };
 
 /** Marks `<html>` with the edition (its palette) and sets the first title and favicon. Once at startup. */
 export function applyBrand(): void {

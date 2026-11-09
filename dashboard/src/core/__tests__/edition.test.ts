@@ -107,6 +107,17 @@ describe("the registry per edition", () => {
     expect(allModules.length).toBe(new Set([...modulesFor("daybook"), ...modulesFor("davomat")]).size);
   });
 
+  it("names the product in a shared module's texts: Face ID says Davomat in Davomat, Daybook in Daybook", async () => {
+    setEditionInfo(normalizeEdition(DAVOMAT));
+    applyEdition("davomat");
+    const shown = (await findModule("faceid")!.messages("en")) as Record<string, string>;
+    expect(shown["faceid.people.notInDaybook"]).toBe("Not in Davomat");
+    expect(Object.values(shown).some((text) => text.includes("Daybook"))).toBe(false);
+    applyEdition("daybook");
+    const own = (await findModule("faceid")!.messages("en")) as { default?: Record<string, string> } & Record<string, string>;
+    expect((own.default ?? own)["faceid.people.notInDaybook"]).toBe("Not in Daybook");
+  });
+
   it("modules default to Daybook; items follow their module unless they narrow", () => {
     expect(moduleEditions({})).toEqual(["daybook"]);
     expect(inEdition({}, "davomat")).toBe(true);

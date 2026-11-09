@@ -10,7 +10,7 @@ import type { Component } from "vue";
 import type { RouteLocationRaw, RouteRecordRaw, Router } from "vue-router";
 
 import type { Company, Language, Pulse, Range } from "@/api/types";
-import { DEFAULT_EDITIONS, moduleEditions, type Edition } from "@/core/edition";
+import { DEFAULT_EDITIONS, moduleEditions, productName, rebrandMessages, type Edition } from "@/core/edition";
 import type { CompanyFeature } from "@/core/features";
 import type { PermRequirement } from "@/core/perms";
 
@@ -273,7 +273,25 @@ export const modules: DashboardModule[] = modulesFor(DEFAULT_EDITIONS[0]!);
  * widgets or panels load.
  */
 export function applyEdition(edition: Edition): void {
-  modules.splice(0, modules.length, ...modulesFor(edition));
+  const list = modulesFor(edition);
+  modules.splice(0, modules.length, ...(edition === "daybook" ? list : list.map(branded)));
+}
+
+/**
+ * A module shared with Daybook (Face ID) says "Daybook" in its texts; in another edition its
+ * dictionary names the product instead ("Davomat", or the name the organization gave it). A copy:
+ * the module itself stays as it is for Daybook.
+ */
+function branded(module: DashboardModule): DashboardModule {
+  if (!moduleEditions(module).includes("daybook")) return module;
+  return {
+    ...module,
+    messages: (language) =>
+      module.messages(language).then((loaded) => {
+        const inner = (loaded as { default?: unknown }).default;
+        return rebrandMessages((inner && typeof inner === "object" ? inner : loaded) as Messages, productName());
+      }),
+  };
 }
 
 /**

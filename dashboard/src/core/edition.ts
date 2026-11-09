@@ -157,6 +157,23 @@ export function inEdition(item: EditionScoped | undefined, edition: Edition = cu
   return !item?.editions || item.editions.includes(edition);
 }
 
+/** The product's name ("Davomat", the name an organization gave it, "Daybook"). */
+export function productName(): string {
+  return editionInfo.value.product;
+}
+
+/**
+ * A dictionary of a module shared with Daybook, as another edition shows it: "Daybook" in its
+ * texts becomes the product's name ("Not in Daybook" → "Not in Davomat"; Uzbek "Daybookda" →
+ * "Davomatda").
+ */
+export function rebrandMessages(messages: Record<string, string>, product: string): Record<string, string> {
+  if (!product || product === "Daybook") return messages;
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(messages)) out[key] = typeof value === "string" ? value.replace(/Daybook/g, product) : value;
+  return out;
+}
+
 /** The browser-tab and theme-color values of the edition shown now. */
 export function editionThemeColor(theme: "light" | "dark"): string {
   if (isDavomat()) return theme === "dark" ? "#0b0e14" : "#f4f6fa";
