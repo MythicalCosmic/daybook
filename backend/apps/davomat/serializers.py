@@ -52,6 +52,9 @@ class EditionSerializer(serializers.Serializer):
     product = serializers.CharField(help_text='"Davomat", or the name set in Settings.')
     organization = OrganizationSerializer(allow_null=True)
     needs_setup = serializers.BooleanField(help_text="No organization yet: show the setup.")
+    setup_token_required = serializers.BooleanField(
+        help_text="The setup asks for the code the installer printed."
+    )
     default_language = LanguageCodeField()
     languages = serializers.ListField(
         child=serializers.CharField(), help_text='The languages offered: ["uz", "ru", "en"].'
@@ -77,6 +80,12 @@ class SetupSerializer(serializers.Serializer):
     timezone = serializers.CharField(max_length=64, default="Asia/Tashkent")
     language = serializers.ChoiceField(Language.choices, default=Language.UZ)
     admin = SetupAdminSerializer()
+    setup_token = serializers.CharField(
+        max_length=200,
+        required=False,
+        allow_blank=True,
+        help_text="The code the installer printed, when `setup_token_required`.",
+    )
 
     class Meta:
         ref_name = "DavomatSetup"

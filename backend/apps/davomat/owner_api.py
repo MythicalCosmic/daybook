@@ -36,6 +36,7 @@ from django.conf import settings
 from django.db.models import Q
 from django.http import Http404, HttpResponse
 from django.utils import timezone
+from django.utils.crypto import constant_time_compare
 from django.utils.translation import gettext as _
 from django.utils.translation import ngettext
 from drf_spectacular.types import OpenApiTypes
@@ -156,6 +157,7 @@ def edition_payload() -> dict:
             "product": "Daybook",
             "organization": None,
             "needs_setup": False,
+            "setup_token_required": False,
             "default_language": "uz",
             "languages": LANGUAGES,
             "telegram": {
@@ -176,6 +178,7 @@ def edition_payload() -> dict:
         if company
         else None,
         "needs_setup": services.needs_setup(),
+        "setup_token_required": bool(settings.DAVOMAT_SETUP_TOKEN),
         "default_language": company.default_language if company else "uz",
         "languages": LANGUAGES,
         "telegram": {
@@ -225,6 +228,7 @@ class SetupView(PublicCookieView):
         request=shapes.SetupSerializer,
         responses={
             201: OpenApiResponse(description="Signed in: {access} and the refresh cookie."),
+            403: OpenApiResponse(description="A wrong setup code (code: setup_token)."),
             409: OpenApiResponse(description="The organization exists already."),
         },
     )
@@ -234,6 +238,15 @@ class SetupView(PublicCookieView):
         serializer = shapes.SetupSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
+        expected = settings.DAVOMAT_SETUP_TOKEN
+        if expected and not constant_time_compare(data.get("setup_token", ""), expected):
+            return Response(
+                {
+                    "detail": _("This setup code is wrong. Use the one the installer printed."),
+                    "code": "setup_token",
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
         try:
             with field_errors():
                 owner = services.setup_organization(
