@@ -46,8 +46,9 @@ nothing changes.
   that is missing, a strong colleague who could coach, thank the week's best learners.
 - The day after a weak test, a person gets a short note with the lesson that helps.
 - **Ask the tutor**: a chat about your people's training, on the tutor's page.
-- Works without Claude, with templates and rules; with AI on, Claude (Haiku) words the report and
-  writes questions.
+- The tutor runs while the AI module is on, without Claude too (templates and rules); with Claude,
+  Haiku words the report and writes the questions. Courses, quizzes, the question of the day,
+  checks and the skill matrix work with the AI module off.
 
 ### New: recognition (People › Recognition)
 A module an owner switches on per company (Settings › Modules: **Recognition**).
