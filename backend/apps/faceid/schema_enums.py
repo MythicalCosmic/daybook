@@ -7,4 +7,5 @@ ENUM_NAME_OVERRIDES = {
     "FaceidEventActionEnum": "apps.faceid.models.FaceEvent.Action",
     "FaceidEventFlagEnum": "apps.faceid.models.FaceEvent.Flag",
     "FaceidTelegramEnum": "apps.faceid.models.FaceIdSettings.Telegram",
+    "FaceidDeviceStatusEnum": "apps.faceid.serializers.DeviceStatus",
 }

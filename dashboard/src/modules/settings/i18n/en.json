@@ -144,7 +144,7 @@
   "settings.module.learning.title": "Training and quizzes",
   "settings.module.learning.body": "Video lessons and courses, mandatory training with deadlines, quizzes, the question of the day and a tutor that shows who needs help.",
   "settings.module.face_id.title": "Face ID terminals",
-  "settings.module.face_id.body": "Hikvision face terminals send every scan with its photo: who came, when, at which door, in Telegram and the dashboard, and the check-in and check-out in attendance.",
+  "settings.module.face_id.body": "Face recognition terminals at the staff door: every scan with its photo, who came in Telegram, and check-ins and check-outs for Attendance.",
   "settings.branches.description": "Every pharmacy, warehouse or office. Staff check in inside a branch’s circle, and new tasks belong to the branch people work in.",
   "settings.branches.emptyTitle": "No branches yet",
   "settings.branches.emptyBody": "Add your first branch with its address and check-in circle.",

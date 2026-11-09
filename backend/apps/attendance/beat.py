@@ -32,4 +32,9 @@ SCHEDULE = {
         "task": "apps.attendance.tasks.expire_swaps",
         "schedule": crontab(minute="*/15"),
     },
+    # The managers' summary of the day, at each company's evening report time (acts once a day).
+    "attendance-evening-summary": {
+        "task": "apps.attendance.tasks.evening_summaries",
+        "schedule": crontab(minute="*/10"),
+    },
 }

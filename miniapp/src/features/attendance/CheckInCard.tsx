@@ -7,7 +7,7 @@
  * geofence like the server does, and then: outside a "flag" fence it asks to confirm, outside a
  * "reject" fence it explains; a company that wants a selfie gets one before the check-in is sent.
  */
-import { CalendarClock, CalendarDays, CalendarOff, ChevronRight, CircleCheck, Clock3, LogIn, MapPin, MapPinOff, RotateCcw, Settings2, TriangleAlert } from "lucide-react";
+import { CalendarClock, CalendarDays, CalendarOff, ChevronRight, CircleCheck, Clock3, LogIn, MapPin, MapPinOff, RotateCcw, ScanFace, Settings2, TriangleAlert } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { useI18n, type Lang } from "../../i18n";
@@ -323,7 +323,11 @@ function describe(day: MyDay, now: Date, t: T, { timeZone, locale, lang }: LookC
         title: since ? t("card.inSince", { time: wallClock(since) }) : shiftTitle,
         lines: [lines.join(" · ")].filter(Boolean),
         badge:
-          record?.in_distance_m !== null && record?.in_distance_m !== undefined ? (
+          record?.in_source === "face" ? (
+            <Badge tone="sage" size="small" icon={ScanFace}>
+              {t("source.face")}
+            </Badge>
+          ) : record?.in_distance_m !== null && record?.in_distance_m !== undefined ? (
             <Badge tone="sage" size="small" icon={MapPin}>
               {formatDistance(record.in_distance_m, lang)}
             </Badge>

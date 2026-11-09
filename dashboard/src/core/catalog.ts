@@ -139,6 +139,22 @@ export const CATALOG: readonly CatalogEntry[] = [
     ],
   },
   {
+    // Face ID terminals (v8 F): its own module switch; attendance's permissions.
+    id: "faceid",
+    group: "people",
+    order: 21,
+    pkg: "F",
+    perm: "attendance.view",
+    feature: "face_id",
+    badge: "faceid.unlinked",
+    pages: [
+      { id: "live", to: "faceid" },
+      { id: "people", to: "faceid/people" },
+      { id: "terminals", to: "faceid/terminals", perm: "attendance.manage" },
+      { id: "settings", to: "faceid/settings", perm: "attendance.manage" },
+    ],
+  },
+  {
     id: "timeoff",
     group: "people",
     order: 30,

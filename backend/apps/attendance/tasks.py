@@ -46,3 +46,11 @@ def expire_swaps() -> int:
     from apps.attendance import jobs
 
     return jobs.expire_swaps()
+
+
+@shared_task
+def evening_summaries() -> int:
+    """At each company's evening report time, the managers' summary of the day."""
+    from apps.attendance import jobs
+
+    return jobs.evening_summaries()
