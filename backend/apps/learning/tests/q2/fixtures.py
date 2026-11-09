@@ -65,6 +65,17 @@ def switch_on(company, *features: str):
 
 
 @pytest.fixture
+def freeze(monkeypatch):
+    """`freeze(moment)`: `timezone.now()` returns `moment` from then on."""
+
+    def set_now(moment: datetime) -> datetime:
+        monkeypatch.setattr("django.utils.timezone.now", lambda: moment)
+        return moment
+
+    return set_now
+
+
+@pytest.fixture
 def pharmacy(db):
     """A company with learning on (workdays Monday to Saturday, Tashkent)."""
     return switch_on(CompanyFactory(name="Shifo Dorixona", workdays=[0, 1, 2, 3, 4, 5]))

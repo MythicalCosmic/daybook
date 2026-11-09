@@ -4,11 +4,14 @@ Imported by `hooks.py`; register a function only once it exists (inbox kinds and
 pulse keys, search, streams, file checks, setup steps, company facts, signal receivers).
 """
 
+from django.utils.translation import gettext_lazy as _
+
 from apps.audit import registry as audit_registry
 from apps.console import registry
 from apps.console.perms import AnyOf
 from apps.core.files import register_file_check
-from apps.learning import quizzes
+from apps.inbox.registry import register_kind
+from apps.learning import daily, quizzes
 from apps.members.permissions import Perm
 
 FEATURE = "learning"
@@ -21,3 +24,12 @@ registry.register_pulse(quizzes.PULSE_KEY, perm=READ, count=None, feature=FEATUR
 
 for model_name in ("question", "quiz"):
     audit_registry.register_target(model_name, Perm.LEARNING_MANAGE)
+
+# The bot's own message (apps.learning.daily): no notification row; the kind lets a person turn
+# the Telegram copy off in their notification settings (the app's card stays).
+register_kind(
+    daily.KIND,
+    label=_("The question of the day"),
+    audience="employee",
+    default_telegram=True,
+)
