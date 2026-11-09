@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
  * Lessons: every video lesson with its source, length, topics and how many watched it (in the
- * viewer's branches). `?new=1` asks for a title and opens the editor.
+ * viewer's branches). `?new=1` asks for a title and opens the editor (with `&topic=<id>`, the new
+ * lesson is about that topic).
  */
 import { MonitorPlay, Plus, Video as VideoIcon } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
@@ -78,7 +79,14 @@ async function create(): Promise<void> {
   if (!title.value.trim()) return;
   busy.value = true;
   try {
-    const lesson = await learningApi.createLesson(cid.value, { title: title.value.trim(), source: source.value });
+    // Made while the list shows one topic (the tutor's "a lesson is missing" opens ?new=1&topic=<id>):
+    // the lesson is about that topic.
+    const topicId = Number(topic.value);
+    const lesson = await learningApi.createLesson(cid.value, {
+      title: title.value.trim(),
+      source: source.value,
+      ...(topicId > 0 ? { topic_ids: [topicId] } : {}),
+    });
     refresh();
     creating.value = false;
     void router.push(`/c/${company.currentId}/learning/lessons/${lesson.id}`);
