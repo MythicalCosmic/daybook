@@ -9,7 +9,7 @@
 import type { Membership } from "./types";
 
 /** Modules an owner switches on per company (`companies.Feature`): `Company.features` is the only switch. */
-export const MODULES = ["finance", "sales", "stock", "attendance", "hr", "payroll", "ai", "recognition", "assets"] as const;
+export const MODULES = ["finance", "sales", "stock", "attendance", "hr", "payroll", "ai", "recognition", "assets", "learning"] as const;
 export type Module = (typeof MODULES)[number];
 
 type CompanyFacts = {

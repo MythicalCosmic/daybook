@@ -2,16 +2,15 @@
  * The learning feature's small rules: who sees it, the order of the to-do list, which step comes
  * next, when a question counts as answered, and the words for dates (all in the company's zone).
  */
-import { isSuspended } from "../../api/membership";
+import { hasModule, isSuspended } from "../../api/membership";
 import type { Membership } from "../../api/types";
 import { clock, dayKey, dayMonth, daysFromToday, weekdayLong } from "../../lib/time";
 import type { LearningT } from "./text";
 import type { Answer, AssignmentCard, CourseDetail, CourseStep, QuestionPlay } from "./types";
 
-/** The module switch (`companies.Feature.LEARNING`): read straight from the company's list. */
+/** The module switch (`companies.Feature.LEARNING`), read like every module's (`api/membership.ts`). */
 export function learningOn(member: Pick<Membership, "company">): boolean {
-  const features = (member.company as Membership["company"] & { features?: readonly string[] }).features;
-  return features?.includes("learning") ?? false;
+  return hasModule(member, "learning");
 }
 
 /** The whole feature: the module is on and the person works here (a suspended person doesn't train). */

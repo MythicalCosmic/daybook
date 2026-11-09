@@ -374,7 +374,7 @@ export const messages = defineMessages({
   },
   uz: {
     title: "O‘qitish",
-    "me.training": "Mening o‘qishim",
+    "me.training": "Kurslarim",
     "card.all": "Barchasi",
 
     "when.today": "bugun, {time}",
