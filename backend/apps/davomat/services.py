@@ -36,6 +36,7 @@ from django.core.exceptions import PermissionDenied
 from django.db import IntegrityError, connection, transaction
 from django.utils import timezone, translation
 from django.utils.translation import gettext as _
+from django.utils.translation import pgettext
 
 from apps.accounts.models import User
 from apps.attendance import clock
@@ -218,11 +219,13 @@ def _organization_roles(company: Company) -> dict[str, AccessRole]:
     default role, for people who only scan), named in the organization's language. The
     company's pharmacy roles go: nobody holds them yet."""
     with translation.override(company.default_language):
+        # Davomat's own words for its roles, as its screens name them (Daybook's "Manager" is a
+        # pharmacy's head, "Rahbar"; here it is a location's manager, "Menejer").
         names = {
-            queries.OWNER: _("Owner"),
-            queries.ADMIN: _("Administrator"),
-            queries.MANAGER: _("Manager"),
-            queries.VIEWER: _("Viewer"),
+            queries.OWNER: pgettext("davomat role", "Owner"),
+            queries.ADMIN: pgettext("davomat role", "Administrator"),
+            queries.MANAGER: pgettext("davomat role", "Manager"),
+            queries.VIEWER: pgettext("davomat role", "Viewer"),
             queries.EMPLOYEE: _("Employee"),
         }
     roles = AccessRole.objects.for_company(company)
