@@ -621,6 +621,7 @@ class AttendanceReportDaySerializer(serializers.Serializer):
     date = serializers.DateField()
     scheduled = serializers.IntegerField()
     present = serializers.IntegerField()
+    expected_present = serializers.IntegerField(help_text=_("Present of those expected."))
     late = serializers.IntegerField()
     absent = serializers.IntegerField()
     leave = serializers.IntegerField()

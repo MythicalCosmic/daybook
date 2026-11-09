@@ -9,6 +9,7 @@
 export const pages = {
   today: () => import("./pages/TodayPage.vue"),
   timesheet: () => import("./pages/TimesheetPage.vue"),
+  reports: () => import("./pages/ReportsPage.vue"),
   roster: () => import("./pages/RosterPage.vue"),
   schedules: () => import("./pages/SchedulesPage.vue"),
   swaps: () => import("./pages/SwapsPage.vue"),

@@ -140,6 +140,8 @@ def test_the_daily_trend(week):
         ("22", 2, 1, 1, 0, 1),
         ("23", 1, 1, 0, 0, 0),  # today: Ali came; Vali isn't in yet and isn't counted
     ]
+    # Bob's Tuesday without a shift is present but not expected.
+    assert [day["expected_present"] for day in days] == [4, 3, 1, 1, 1]
 
 
 def test_the_punctuality_ranking(week):

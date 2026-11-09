@@ -374,3 +374,147 @@ export interface RecordParams {
   page_size?: number;
   ordering?: string;
 }
+
+// ─── Reports (`attendance/reports/…`, apps/attendance/analytics.py) ─────────────
+
+/** The five reports; each also downloads as Excel or PDF (`?format=xlsx|pdf`). */
+export type ReportKind = "summary" | "departments" | "branches" | "trend" | "punctuality";
+export type ReportFormat = "xlsx" | "pdf";
+
+/** The sums every report row shows. Minutes are integers; percents have one decimal, null without a base. */
+export interface ReportFigures {
+  /** Days with a planned shift (the only days that can be absences). */
+  days_scheduled: number;
+  /** Days with a check-in, planned or not. */
+  days_present: number;
+  days_absent: number;
+  days_leave: number;
+  days_excused: number;
+  worked_minutes: number;
+  late_count: number;
+  late_minutes: number;
+  early_leave_count: number;
+  early_leave_minutes: number;
+  /** Not rejected (approved or waiting). */
+  overtime_minutes: number;
+  /** Check-ins for a planned shift, and those on time. */
+  arrivals: number;
+  on_time: number;
+  punctuality_percent: number | null;
+  attendance_percent: number | null;
+}
+
+export interface ReportTotals extends ReportFigures {
+  people: number;
+}
+
+export interface ReportEmployee {
+  /** The membership id. */
+  id: number;
+  name: string;
+  photo_url: string | null;
+  position: Ref | null;
+  department: Ref | null;
+  /** Their home branch. */
+  branch: Ref | null;
+}
+
+interface ReportBase {
+  range: { from: string; to: string };
+  /** The last day counted (today when the period runs past it); null before the period starts. */
+  counted_until: string | null;
+  today: string;
+  totals: ReportTotals;
+}
+
+export interface PersonReportRow extends ReportFigures {
+  employee: ReportEmployee;
+}
+
+export interface DepartmentReportRow extends ReportFigures {
+  /** null: people without a department. */
+  department: Ref | null;
+  people: number;
+}
+
+export interface BranchReportRow extends ReportFigures {
+  /** null: days that belong to no branch. */
+  branch: BranchRef | null;
+  people: number;
+}
+
+export interface PeopleReport extends ReportBase {
+  rows: PersonReportRow[];
+}
+
+export interface DepartmentReport extends ReportBase {
+  rows: DepartmentReportRow[];
+}
+
+export interface BranchReport extends ReportBase {
+  rows: BranchReportRow[];
+}
+
+export interface TrendDay {
+  date: string;
+  scheduled: number;
+  present: number;
+  /** Of the people expected that day, how many came (the attendance rate's top). */
+  expected_present: number;
+  /** People late that day. */
+  late: number;
+  absent: number;
+  leave: number;
+  excused: number;
+  worked_minutes: number;
+  punctuality_percent: number | null;
+}
+
+export interface TrendReport extends ReportBase {
+  days: TrendDay[];
+}
+
+export interface RankingRow {
+  /** Equal punctuality and late minutes share a rank. */
+  rank: number;
+  employee: ReportEmployee;
+  punctuality_percent: number | null;
+  arrivals: number;
+  on_time: number;
+  late_count: number;
+  late_minutes: number;
+  average_late_minutes: number;
+  days_present: number;
+}
+
+export interface PunctualityReport extends ReportBase {
+  /** The whole selection's punctuality. */
+  average: number | null;
+  /** The most punctual first. */
+  rows: RankingRow[];
+}
+
+export interface ReportOf {
+  summary: PeopleReport;
+  departments: DepartmentReport;
+  branches: BranchReport;
+  trend: TrendReport;
+  punctuality: PunctualityReport;
+}
+
+/** Company-local days, both included; branches within the caller's scope; departments with the ones below them. */
+export interface ReportParams {
+  from: string;
+  to: string;
+  branch?: number[];
+  department?: number[];
+}
+
+/** One row of the members app's `GET departments/` that the filter needs (tree order). */
+export interface DepartmentOption {
+  id: number;
+  name: string;
+  parent_id: number | null;
+  /** Names from the top down to it. */
+  path: string[];
+}

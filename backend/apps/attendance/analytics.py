@@ -405,6 +405,8 @@ def trend(report: Report) -> dict:
                     "date": day.isoformat(),
                     "scheduled": figures.days_scheduled,
                     "present": figures.days_present,
+                    # Of the people expected, how many came (the attendance rate's top).
+                    "expected_present": figures.expected_present,
                     "late": sum(1 for fact in facts if fact.late_count),
                     "absent": figures.days_absent,
                     "leave": figures.days_leave,

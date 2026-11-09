@@ -1,11 +1,11 @@
 <script setup lang="ts">
 /**
  * The header every attendance page shares: title, one line of context and the section tabs
- * (Today · Timesheet · Roster · Schedules · Swaps · Corrections) as links, with the waiting counts
- * from the pulse. Tabs the person may not open are left out. No margin under the tabs: every
- * attendance page is a column with a gap, which spaces it like the other pages.
+ * (Today · Timesheet · Reports · Roster · Schedules · Swaps · Corrections) as links, with the
+ * waiting counts from the pulse. Tabs the person may not open are left out. No margin under the
+ * tabs: every attendance page is a column with a gap, which spaces it like the other pages.
  */
-import { CalendarClock, CalendarDays, CalendarRange, ClipboardCheck, Clock3, Repeat2 } from "@lucide/vue";
+import { CalendarClock, CalendarDays, CalendarRange, ChartColumn, ClipboardCheck, Clock3, Repeat2 } from "@lucide/vue";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -24,6 +24,7 @@ const tabs = computed<PageTab[]>(() => {
   const list: PageTab[] = [
     { id: "today", label: t("attendance.nav.today"), to: base.value, icon: Clock3 },
     { id: "timesheet", label: t("attendance.nav.timesheet"), to: `${base.value}/timesheet`, icon: CalendarDays },
+    { id: "reports", label: t("attendance.nav.reports"), to: `${base.value}/reports`, icon: ChartColumn },
     { id: "roster", label: t("attendance.nav.roster"), to: `${base.value}/roster`, icon: CalendarRange },
   ];
   if (manage) {
