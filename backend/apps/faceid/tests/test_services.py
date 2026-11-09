@@ -2,7 +2,7 @@
 they do to attendance (apps.attendance.services.scan)."""
 
 import json
-from datetime import timedelta
+from datetime import date, timedelta
 
 import pytest
 
@@ -78,9 +78,8 @@ def test_the_owners_terminal_as_it_really_posts(
     staff, device, freeze, django_capture_on_commit_callbacks
 ):
     """Number 00000002 is linked as "2". The wall clock says 07:49:44 with the factory zone
-    (+08:00) while it is 08:01 in Tashkent: the offset means nothing, the clock is 11 minutes
-    slow, so the scan gets its arrival time and is flagged. Once the clock is set right (the
-    zone still +08:00), the terminal's time counts again."""
+    (+08:00) while it is 08:01 in Tashkent: the offset means nothing; a clock behind is still the
+    scan's time (a past time is never replaced), and the terminal's card says the clock is slow."""
     FaceLink.objects.create(company=device.company, employee_no="2", membership=staff.bob)
 
     def post(at, received, serial):
@@ -97,12 +96,13 @@ def test_the_owners_terminal_as_it_really_posts(
         "00000002",
         Action.CHECKED_IN,
     )
-    assert event.device_time.astimezone(local(DAY, 0).tzinfo).strftime("%H:%M:%S") == "07:49:44"
-    assert Flag.CLOCK_OFF in event.flags and event.event_at == local(DAY, 8, 1)
+    assert event.event_at.astimezone(local(DAY, 0).tzinfo).strftime("%H:%M:%S") == "07:49:44"
+    assert Flag.CLOCK_OFF not in event.flags
     assert event.raw["dateTime"] == "2026-10-21T07:49:44+08:00"
-    fixed = post("2026-10-21T18:04:00+08:00", local(DAY, 18, 4), 40586)
-    assert Flag.CLOCK_OFF not in fixed.flags and fixed.event_at == local(DAY, 18, 4)
-    assert fixed.action == Action.CHECKED_OUT
+    device.refresh_from_db()
+    assert device.clock_offset_s == -676  # 11 min 16 s slow: the card warns
+    later = post("2026-10-21T18:04:00+08:00", local(DAY, 18, 4), 40586)
+    assert later.action == Action.CHECKED_OUT and later.event_at == local(DAY, 18, 4)
 
 
 def test_the_five_people_on_the_terminal_link_themselves(staff, device, scan):
@@ -268,12 +268,51 @@ def test_a_scan_older_than_the_record_changes_nothing(staff, device, scan, freez
     assert records(staff.ali)[0].status == AttendanceRecord.Status.OPEN
 
 
-def test_a_clock_ahead_or_before_the_terminal_existed_uses_the_arrival_time(staff, scan):
-    ahead = scan(10, 0, received=local(DAY, 8, 0))
+def test_the_terminals_old_history_is_skipped(staff, device, scan, telegram):
+    """Pointed at us, a terminal uploads everything it ever stored, oldest first (here 2022):
+    nothing is kept, decoded, recorded or sent; the terminal counts what it skipped. The first live
+    scan after it is handled as usual."""
+    old_day = date(2022, 10, 11)
+    for minute in range(5):
+        skipped = scan(16, minute, day=old_day, received=local(DAY, 9, 0), number="1", name="Abdu")
+        assert skipped is None
+    assert FaceEvent.objects.count() == 0
+    assert AttendanceRecord.objects.count() == 0
+    assert not Notification.objects.exists() and telegram == []
+    device.refresh_from_db()
+    assert device.history_skipped == 5
+    assert device.history_until == local(old_day, 16, 4)
+    assert device.history_seen_at == local(DAY, 9, 0)
+    assert device.last_event_at is None  # history never makes the terminal look live
+    assert device.clock_offset_s is None  # nor tells its clock
+    live = scan(9, 1, received=local(DAY, 9, 1) + timedelta(seconds=20))
+    assert live.action == Action.CHECKED_IN and live.event_at == local(DAY, 9, 1)
+    assert Notification.objects.filter(kind="faceid.scan").exists()
+    assert telegram  # the person's own message
+
+
+def test_a_scan_more_than_a_day_old_is_history(staff, device, scan):
+    device.created_at = local(DAY - timedelta(days=5), 9)
+    device.save()
+    assert scan(8, 57, day=DAY - timedelta(days=2), received=local(DAY, 9, 0)) is None
+    device.refresh_from_db()
+    assert device.history_skipped == 1 and FaceEvent.objects.count() == 0
+
+
+def test_a_clock_ahead_takes_the_arrival_time(staff, scan):
+    ahead = scan(10, 20, received=local(DAY, 10, 0))
     assert Flag.CLOCK_OFF in ahead.flags
-    assert ahead.event_at == local(DAY, 8, 0)
-    reset = scan(5, 0, received=local(DAY, 12, 0), number="13", name="Vali")
-    assert Flag.CLOCK_OFF in reset.flags and reset.event_at == local(DAY, 12, 0)
+    assert ahead.event_at == local(DAY, 10, 0)
+
+
+def test_a_delayed_live_scan_keeps_its_time_and_sends_nothing(staff, device, scan, telegram):
+    """Two hours late (the shop's internet was down): attendance takes the terminal's time,
+    quietly; it is no arrival to announce now."""
+    late = scan(8, 57, received=local(DAY, 10, 57))
+    assert late.action == Action.CHECKED_IN and late.event_at == local(DAY, 8, 57)
+    assert Flag.CLOCK_OFF not in late.flags and Flag.DELIVERED_LATE in late.flags
+    assert record_of(late).check_in_at == local(DAY, 8, 57)
+    assert telegram == [] and not Notification.objects.filter(kind="faceid.scan").exists()
 
 
 def test_a_terminal_at_another_branch_than_the_shift(staff, scan, yunusobod, chilonzor):

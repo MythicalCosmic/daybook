@@ -37,6 +37,28 @@ def test_a_multipart_scan_is_answered_200_and_checks_in(device, staff):
     assert device.last_event_at is not None and device.ip == "192.168.1.250"
 
 
+def test_the_terminals_old_history_is_answered_200_and_kept_nowhere(device, monkeypatch):
+    """A terminal newly pointed at us uploads years of stored scans: each is answered 200 at
+    once (or it retries forever) and only counted, its picture never even decoded."""
+    from apps.faceid import services
+
+    def no_decoding(*args, **kwargs):
+        raise AssertionError("a history scan's picture was decoded")
+
+    monkeypatch.setattr(services, "sanitize_image", no_decoding)
+    client = Client()
+    for serial in (1, 2, 3):
+        content_type, body = hik.multipart(
+            hik.event(serial=serial, at=f"2022-10-11T16:0{serial}:00+08:00", name="Abdu"),
+            picture=hik.jpeg(),
+        )
+        assert client.post(url(device), data=body, content_type=content_type).status_code == 200
+    assert not FaceEvent.objects.exists()
+    device.refresh_from_db()
+    assert device.history_skipped == 3 and device.last_event_at is None
+    assert device.history_until.year == 2022 and device.last_seen_at is not None
+
+
 def test_json_xml_and_no_trailing_slash(device):
     client = Client()
     body = json.dumps(hik.event(serial=1)).encode()
