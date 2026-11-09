@@ -231,8 +231,8 @@ export const messages = defineMessages({
 
     "checks.title": "Проверки",
     "check.kicker": "Регулярная проверка",
-    "check.body": "{questions}, до {when}",
-    "check.due": "Ответьте до {when}",
+    "check.body": "{questions}, срок: {when}",
+    "check.due": "Срок ответа: {when}",
     "check.start": "Начать",
     "check.passed": "Сдано",
     "check.failed": "Не сдано",
