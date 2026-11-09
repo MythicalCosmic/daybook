@@ -13,6 +13,7 @@ from apps.core import demo_time
 from apps.davomat import demo, queries
 from apps.davomat.models import Employee
 from apps.faceid.models import FaceDevice, FaceEvent
+from apps.inbox.models import Notification
 from apps.members.models import Membership
 from apps.signin import services as signin
 
@@ -63,6 +64,15 @@ def test_the_demo_organization(built):
     assert {"in", "leave"} <= states
     assert FaceEvent.objects.filter(company=company, kind=FaceEvent.Kind.STRANGER).exists()
     assert WorkShift.objects.filter(company=company, date__gt=NOW.date()).exists()  # the roster
+
+    # Tidy, as the director and the manager would have left it: only the last two days'
+    # overtime waits, and nothing from before today is unread.
+    waiting = records.filter(overtime_status=AttendanceRecord.Overtime.PENDING)
+    assert not waiting.filter(date__lt=NOW.date() - timedelta(days=2)).exists()
+    assert records.filter(overtime_status=AttendanceRecord.Overtime.APPROVED).exists()
+    start_of_today = datetime.combine(NOW.date(), time(0), tzinfo=TZ)
+    unread = Notification.objects.filter(company=company, read_at__isnull=True)
+    assert unread.exists() and not unread.filter(created_at__lt=start_of_today).exists()
 
 
 def test_the_command_needs_the_edition(db):

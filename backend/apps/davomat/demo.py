@@ -21,10 +21,12 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta
 
 from django.db import close_old_connections, connection
+from django.db.models import F
 from django.utils import timezone
 
 from apps.attendance import clock
 from apps.attendance import services as attendance
+from apps.attendance.models import AttendanceRecord
 from apps.companies import services as companies
 from apps.companies.models import BranchKind, Company
 from apps.core import demo_time
@@ -32,6 +34,7 @@ from apps.davomat import services
 from apps.faceid import hikvision, hikvision_sample
 from apps.faceid import services as faceid
 from apps.faceid.models import FaceDevice
+from apps.inbox.models import Notification
 from apps.members import departments
 from apps.members import services as members
 from apps.members.models import Membership
@@ -189,8 +192,26 @@ def build(
         attendance.mark_absences(company, now)
         # The next two weeks of the roster, as the nightly job would have made them.
         attendance.generate_shifts(company, member_ids=[row[0].pk for row in built.scanning])
+    _tidy_inbox(built, today)
     _finish_terminals(devices, now)
     return built
+
+
+def _tidy_inbox(built: Built, today: date) -> None:
+    """As the director and the manager would have left it: overtime decided up to two days ago
+    (the last two days still wait), and every notice from before today read."""
+    company = built.company
+    waiting = AttendanceRecord.objects.filter(
+        company=company,
+        overtime_status=AttendanceRecord.Overtime.PENDING,
+        date__lt=today - timedelta(days=2),
+    ).order_by("date", "pk")
+    for record in waiting:
+        with demo_time.moment(clock.at(company, record.date + timedelta(days=1), time(9, 30))):
+            attendance.decide_overtime(record, by=built.owner, approve=True)
+    Notification.objects.filter(
+        company=company, read_at__isnull=True, created_at__lt=clock.at(company, today, time(0))
+    ).update(read_at=F("created_at") + timedelta(minutes=20))
 
 
 def is_demo(company: Company) -> bool:
