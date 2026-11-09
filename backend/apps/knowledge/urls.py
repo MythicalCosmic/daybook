@@ -2,7 +2,15 @@
 
 from django.urls import path
 
-from apps.knowledge.api import AckView, HomeView, LinkedView, PageView, SearchView, SpaceView
+from apps.knowledge.api import (
+    AckView,
+    HomeView,
+    LinkedView,
+    PageView,
+    SearchView,
+    SpaceView,
+    ViewReportView,
+)
 
 urlpatterns = [
     path("knowledge/", HomeView.as_view(), name="knowledge-home"),
@@ -11,4 +19,7 @@ urlpatterns = [
     path("knowledge/spaces/<int:pk>/", SpaceView.as_view(), name="knowledge-employee-space"),
     path("knowledge/pages/<int:pk>/", PageView.as_view(), name="knowledge-employee-page"),
     path("knowledge/pages/<int:pk>/ack/", AckView.as_view(), name="knowledge-employee-ack"),
+    path(
+        "knowledge/pages/<int:pk>/view/", ViewReportView.as_view(), name="knowledge-employee-view"
+    ),
 ]

@@ -45,6 +45,32 @@
 		file_server
 	}
 
+	# Signed links to private files. Django checks every one (signature, expiry, the person's
+	# access right now) and sends the file itself, except lesson videos and their posters: for
+	# those it answers an empty X-Accel-Redirect: /_learning/<path>, and Caddy sends the bytes
+	# from its read-only mount of the learning_media volume, with Range requests (206), so a
+	# 2 GB video never ties up a gunicorn thread. Never compressed (`encode` is not here).
+	handle /api/v1/files/* {
+		reverse_proxy backend:8000 {
+			transport http {
+				keepalive 60s
+			}
+			@accel header X-Accel-Redirect *
+			handle_response @accel {
+				root * /srv/learning
+				rewrite * {rp.header.X-Accel-Redirect}
+				uri strip_prefix /_learning
+				header {
+					Cache-Control "private, max-age=3600"
+					X-Content-Type-Options "nosniff"
+					Content-Security-Policy "sandbox; default-src 'none'"
+					Referrer-Policy "no-referrer"
+				}
+				file_server
+			}
+		}
+	}
+
 	# Everything else: the API, the admin, the mini app at /app/ and the dashboard at /dashboard/.
 	# Private files go through Django too (/api/v1/files/…), behind signed links.
 	# Connections to gunicorn are kept open between requests, and closed by Caddy before

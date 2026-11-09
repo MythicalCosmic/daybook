@@ -5,7 +5,7 @@ holders of its positions otherwise (`queries.reader_spaces`). Drafts never show 
 to managers, who edit pages in the dashboard.
 """
 
-from django.db.models import Q
+from django.db.models import Q, prefetch_related_objects
 from django.utils.translation import gettext as _
 from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
 from rest_framework import serializers
@@ -14,7 +14,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.knowledge import queries, services, targets
+from apps.knowledge import page_views, queries, services, targets
 from apps.knowledge.models import Page, PageLink
 from apps.knowledge.serializers import (
     KnowledgeLinkSerializer,
@@ -57,17 +57,16 @@ class HomeView(APIView):
         member = self.membership
         pages = queries.reader_pages(member).select_related("space", "updated_by__user")
         context = _context(self) | {"counts": _counts(pages)}
+        to_read = queries.to_read(member)
+        recent = list(pages.order_by("-updated_at")[:6])
+        prefetch_related_objects([*to_read, *recent], "topics")
         return Response(
             {
                 "spaces": KnowledgeSpaceSerializer(
                     queries.reader_spaces(member), many=True, context=context
                 ).data,
-                "to_read": KnowledgePageRowSerializer(
-                    queries.to_read(member), many=True, context=context
-                ).data,
-                "recent": KnowledgePageRowSerializer(
-                    pages.order_by("-updated_at")[:6], many=True, context=context
-                ).data,
+                "to_read": KnowledgePageRowSerializer(to_read, many=True, context=context).data,
+                "recent": KnowledgePageRowSerializer(recent, many=True, context=context).data,
             }
         )
 
@@ -135,6 +134,33 @@ class AckView(PageView):
         return Response({"version": ack.version, "at": ack.at})
 
 
+class ViewReportSerializer(serializers.Serializer):
+    session = serializers.CharField(max_length=40, help_text="A random id per opening.")
+    seconds = serializers.FloatField(
+        min_value=0, required=False, default=0, help_text="Seconds in front since the last report."
+    )
+    scrolled = serializers.FloatField(
+        min_value=0, max_value=100, required=False, default=0, help_text="How far down, percent."
+    )
+
+    class Meta:
+        ref_name = "KnowledgeViewReport"
+
+
+class ViewReportView(PageView):
+    """The reader reports while the page is in front of me: on open, every 15 s, on leaving
+    (docs/PLAN-LEARNING.md §4.1). Nobody else ever sees my views but managers of the page."""
+
+    http_method_names = ["post", "options"]
+
+    @extend_schema(request=ViewReportSerializer, responses={204: None})
+    def post(self, request, company_id, pk):
+        data = ViewReportSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        page_views.record(self._page(pk), self.membership, **data.validated_data)
+        return Response(status=204)
+
+
 class SearchView(APIView):
     permission_classes = (IsAuthenticated, IsCompanyMember)
 
@@ -145,6 +171,7 @@ class SearchView(APIView):
         found = queries.search(
             self.membership, request.query_params.get("q", ""), limit=20, reader=True
         )
+        prefetch_related_objects(found, "topics")
         return Response(KnowledgePageRowSerializer(found, many=True, context=_context(self)).data)
 
 

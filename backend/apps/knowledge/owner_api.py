@@ -6,7 +6,7 @@ with `knowledge.manage` see everything, drafts included). Every change needs `kn
 
 from datetime import timedelta
 
-from django.db.models import Q
+from django.db.models import Q, prefetch_related_objects
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.translation import gettext as _
@@ -19,7 +19,7 @@ from rest_framework.response import Response
 
 from apps.console.base import OwnerAPIView, OwnerViewSet
 from apps.core.files import signed_url
-from apps.knowledge import queries, services, targets
+from apps.knowledge import page_topics, page_views, queries, services, targets
 from apps.knowledge.conf import get_settings
 from apps.knowledge.models import Page, PageLink, PageVersion, Space
 from apps.knowledge.serializers import (
@@ -185,6 +185,7 @@ class PageViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, OwnerViewSet
         "readers": MANAGE,
         "remind": MANAGE,
         "links": None,  # GET for readers; POST checked below
+        "view": None,  # whoever reads the page reports their own view
     }
 
     def get_queryset(self):
@@ -211,6 +212,8 @@ class PageViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, OwnerViewSet
             pages = pages.filter(space_id=space)
         if params.get("require_ack") in ("true", "1"):
             pages = pages.filter(require_ack=True)
+        if topic := _int(params.get("topic"), "topic"):
+            pages = pages.filter(topics=topic)
         if q := (params.get("q") or "").strip():
             pages = pages.filter(Q(title__icontains=q) | Q(body_text__icontains=q))
         ordering = params.get("ordering") or "-updated_at"
@@ -222,11 +225,17 @@ class PageViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, OwnerViewSet
             "archived_at",
         ):
             ordering = "-updated_at"
-        return pages.select_related("space", "updated_by__user").order_by(ordering, "-pk")
+        return (
+            pages.select_related("space", "updated_by__user")
+            .prefetch_related("topics")
+            .distinct()
+            .order_by(ordering, "-pk")
+        )
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context["read_counts"] = getattr(self, "_read_counts", None)
+        context["opened_counts"] = getattr(self, "_opened_counts", None)
         return context
 
     @extend_schema(
@@ -236,6 +245,7 @@ class PageViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, OwnerViewSet
             OpenApiParameter("status", str, enum=["published", "draft", "archived"]),
             OpenApiParameter("require_ack", bool),
             OpenApiParameter("ordering", str),
+            OpenApiParameter("topic", int),
         ]
     )
     def list(self, request, *args, **kwargs):
@@ -244,6 +254,7 @@ class PageViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, OwnerViewSet
         rows = list(page if page is not None else queryset)
         if queries.can_manage(self.membership):
             self._read_counts = queries.read_counts([row for row in rows if row.published])
+            self._opened_counts = page_views.opened_counts(rows)
         data = self.get_serializer(rows, many=True).data
         return self.get_paginated_response(data) if page is not None else Response(data)
 
@@ -257,9 +268,13 @@ class PageViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, OwnerViewSet
         context = self.get_serializer_context()
         if queries.can_manage(self.membership) and page.published:
             context["read_counts"] = queries.read_counts([page])
-        page = Page.objects.select_related("space", "updated_by__user", "created_by__user").get(
-            pk=page.pk
+        page = (
+            Page.objects.select_related("space", "updated_by__user", "created_by__user")
+            .prefetch_related("topics")
+            .get(pk=page.pk)
         )
+        if queries.can_manage(self.membership):
+            context["opened_counts"] = page_views.opened_counts([page])
         return Response(KnowledgePageDetailSerializer(page, context=context).data)
 
     @extend_schema(responses=KnowledgePageDetailSerializer)
@@ -290,6 +305,8 @@ class PageViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, OwnerViewSet
             publish=values["publish"],
             notify_readers=values["notify"],
         )
+        if values["topic_ids"]:
+            page_topics.set_page_topics(page, by=self.membership, topic_ids=values["topic_ids"])
         response = self._detail(page)
         response.status_code = status.HTTP_201_CREATED
         return response
@@ -300,9 +317,12 @@ class PageViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, OwnerViewSet
         data.is_valid(raise_exception=True)
         values = dict(data.validated_data)
         notify = values.pop("notify")
+        topic_ids = values.pop("topic_ids", None)
         page = services.save_page(
             self._page(pk), by=self.membership, notify_readers=notify, **values
         )
+        if topic_ids is not None:
+            page_topics.set_page_topics(page, by=self.membership, topic_ids=topic_ids)
         return self._detail(page)
 
     @extend_schema(request=KnowledgePublishSerializer, responses=KnowledgePageDetailSerializer)
@@ -404,18 +424,50 @@ class PageViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, OwnerViewSet
     )
     @action(detail=True)
     def readers(self, request, company_id, pk):
-        """Who the page is for (in the caller's branch scope) and what they have read."""
+        """Who the page is for (in the caller's branch scope), what they have confirmed and
+        how they read it: opened or not, visits, reading time, how far down, the version seen
+        (docs/PLAN-LEARNING.md §4.1). `counts.opened` counts who opened it."""
         page = self._page(pk)
         rows = queries.readers(page, viewer=self.membership)
+        views = page_views.views_of(page, [row.membership.pk for row in rows])
         counts = {"read": 0, "outdated": 0, "unread": 0}
         for row in rows:
             counts[row.status] += 1
+        counts["opened"] = sum(1 for row in rows if row.membership.pk in views)
         wanted = request.query_params.get("status")
-        if wanted in counts:
+        if wanted in ("read", "outdated", "unread"):
             rows = [row for row in rows if row.status == wanted]
         return Response(
-            {"counts": counts, "results": KnowledgeReaderSerializer(rows, many=True).data}
+            {
+                "counts": counts,
+                "results": KnowledgeReaderSerializer(
+                    rows, many=True, context={"views": views}
+                ).data,
+            }
         )
+
+    @extend_schema(
+        request=inline_serializer(
+            "KnowledgeOwnerViewReport",
+            {
+                "session": serializers.CharField(max_length=40),
+                "seconds": serializers.FloatField(min_value=0, required=False, default=0),
+                "scrolled": serializers.FloatField(
+                    min_value=0, max_value=100, required=False, default=0
+                ),
+            },
+        ),
+        responses={204: None},
+    )
+    @action(detail=True, methods=["post"])
+    def view(self, request, company_id, pk):
+        """The dashboard's page view reports the caller's reading, like the mini app's."""
+        from apps.knowledge.api import ViewReportSerializer
+
+        data = ViewReportSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        page_views.record(self._page(pk), self.membership, **data.validated_data)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @extend_schema(
         request=None,
@@ -587,6 +639,7 @@ class OverviewView(OwnerAPIView):
             counts["awaiting"] = sum(read[page.pk][1] - read[page.pk][0] for page in attention)
             attention = attention[:5]
         to_read = mine[:5]
+        prefetch_related_objects([*attention, *recent, *to_read], "topics")
         return Response(
             {
                 "counts": counts,

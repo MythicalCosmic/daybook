@@ -21,12 +21,15 @@ import UiDrawer from "@/components/UiDrawer.vue";
 import { toast } from "@/components/useToast";
 import { useCompanyStore } from "@/stores/company";
 
+import { useFormat } from "@/lib/useFormat";
+
 import { knowledgeApi, useReaders, useRefresh } from "../api";
-import type { PageDetail, ReaderStatus } from "../types";
+import type { PageDetail, Reader, ReaderStatus } from "../types";
 
 const props = defineProps<{ page: PageDetail }>();
 
 const { t } = useI18n();
+const fmt = useFormat();
 const company = useCompanyStore();
 const refresh = useRefresh();
 const route = useRoute();
@@ -45,6 +48,20 @@ const options = computed(() => [
   { value: "read" as const, label: t("knowledge.readers.read"), count: counts.value.read },
 ]);
 const tones = { read: "success", outdated: "warning", unread: "neutral" } as const;
+const opened = computed(() => readers.data.value?.counts.opened ?? null);
+
+/** "Opened 3 times · 4 min · 80 % down · v2", or "Not opened" (docs/PLAN-LEARNING.md §4.1). */
+function viewLine(row: Reader): string {
+  const view = row.view;
+  if (!view?.opened) return t("knowledge.readers.view.never");
+  const parts = [
+    t("knowledge.readers.view.visits", { n: view.visits }, view.visits),
+    fmt.duration(Math.max(1, Math.round(view.seconds / 60))),
+    t("knowledge.readers.view.scrolled", { n: view.scrolled }),
+  ];
+  if (view.version !== null) parts.push(t("knowledge.readers.view.version", { v: view.version }));
+  return parts.join(" · ");
+}
 
 async function remind(): Promise<void> {
   reminding.value = true;
@@ -74,6 +91,7 @@ async function remind(): Promise<void> {
           <div class="min-w-0 flex-1">
             <p class="text-base font-semibold text-fg">{{ t("knowledge.readers.summary", { read: counts.read, total }) }}</p>
             <p class="text-sm text-muted">{{ page.require_ack ? t("knowledge.readers.versionHint", { v: page.ack_version }) : t("knowledge.readers.optionalHint") }}</p>
+            <p v-if="opened !== null" class="text-xs text-subtle">{{ t("knowledge.readers.view.opened", { opened, total }) }}</p>
           </div>
           <UiButton v-if="counts.unread + counts.outdated > 0" size="sm" :icon="BellRing" :loading="reminding" @click="remind">{{ t("knowledge.readers.remind") }}</UiButton>
         </div>
@@ -81,7 +99,10 @@ async function remind(): Promise<void> {
         <EmptyState v-if="!rows.length" size="sm" tone="success" :icon="CheckCheck" :title="t('knowledge.readers.emptyFilter')" />
         <ul v-else class="flex flex-col">
           <li v-for="row in rows" :key="row.member.id" class="flex items-center gap-3 border-b border-line py-2.5 last:border-0">
-            <PersonCell :person="row.member" :subtitle="[row.member.position, row.member.branch].filter(Boolean).join(' · ') || null" class="min-w-0 flex-1" />
+            <div class="min-w-0 flex-1">
+              <PersonCell :person="row.member" :subtitle="[row.member.position, row.member.branch].filter(Boolean).join(' · ') || null" />
+              <p class="mt-0.5 pl-11 text-[11px] text-subtle">{{ viewLine(row) }}</p>
+            </div>
             <div class="flex shrink-0 flex-col items-end gap-0.5">
               <StatusPill size="sm" :tone="tones[row.status]" :icon="row.status === 'outdated' ? History : row.status === 'unread' ? CircleDashed : undefined" :label="t(`knowledge.readers.status.${row.status}`, { v: row.version ?? '' })" />
               <RelativeTime v-if="row.at" :value="row.at" class="text-[11px] text-subtle" />

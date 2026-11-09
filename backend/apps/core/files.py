@@ -19,27 +19,34 @@ Modules register their checks in `hooks.py`:
     register_file_check("hr.document", lambda user, company_id, object_id: ...)
 
 Files are served only with the types this module knows, never sniffed, sandboxed, and inline
-only for pictures and PDFs; everything else is a download.
+only for pictures, PDFs, voice notes and lesson videos; everything else is a download.
+
+Lesson videos (the `learning` storage, docs/PLAN-LEARNING.md §5) answer byte ranges (206), which
+every video player needs to seek. In production (`LEARNING_MEDIA_ACCEL`, e.g. "/_learning/")
+Django only checks the link and answers with `X-Accel-Redirect`; Caddy then serves the bytes
+from its read-only mount, Range requests and all.
 """
 
 import logging
 import re
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from pathlib import PurePosixPath
+from urllib.parse import quote
 
 from django.apps import apps as django_apps
+from django.conf import settings
 from django.core import signing
 from django.core.files.storage import Storage, default_storage
-from django.http import FileResponse, Http404, HttpResponse
+from django.http import FileResponse, Http404, HttpResponse, StreamingHttpResponse
 from django.urls import reverse
 from django.utils.translation import gettext as _
 from django.views import View
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from apps.core.storage import SANDBOX_HEADERS, private_storage
+from apps.core.storage import SANDBOX_HEADERS, learning_storage, private_storage
 
 logger = logging.getLogger(__name__)
 
@@ -66,9 +73,19 @@ SERVED_TYPES = {
     ".mp3": ("audio/mpeg", True),
     ".wav": ("audio/wav", True),
     ".aac": ("audio/aac", True),
+    # Lesson videos, made by the learning media worker (apps.learning.media).
+    ".mp4": ("video/mp4", True),
 }
 
-STORAGES: dict[str, Storage] = {"private": private_storage, "default": default_storage}
+STORAGES: dict[str, Storage] = {
+    "private": private_storage,
+    "default": default_storage,
+    "learning": learning_storage,
+}
+# Lesson videos and posters may sit in the browser's cache for a while (seeking back
+# shouldn't download them again); everything else is never kept.
+LEARNING_CACHE = "private, max-age=3600"
+STREAM_BLOCK = 256 * 1024
 
 _checks: dict[str, FileCheck] = {}
 # Kinds a suspended member may still open (their own payslips and documents, §13.4).
@@ -118,9 +135,9 @@ def signed_url(
     ttl: int = DEFAULT_TTL,
     filename: str | None = None,
 ) -> str:
-    """A link to `file` (a `FieldFile` of private or default storage) for `user`, valid for
-    `ttl` seconds. `check` is "<kind>:<object id>"; `filename` is the name the browser saves
-    it under (the stored name otherwise)."""
+    """A link to `file` (a `FieldFile` of private, default or learning storage) for `user`,
+    valid for `ttl` seconds. `check` is "<kind>:<object id>"; `filename` is the name the
+    browser saves it under (the stored name otherwise)."""
     kind, object_id = _parse_check(check)
     if kind not in _checks:
         raise ValueError(f"No file check registered for {kind!r}.")
@@ -155,6 +172,7 @@ class _Grant:
     kind: str
     object_id: int
     filename: str | None
+    storage_key: str = "private"
 
 
 class PrivateFileView(View):
@@ -172,22 +190,29 @@ class PrivateFileView(View):
             raise Http404
         extension = PurePosixPath(grant.name).suffix.lower()
         content_type, inline = SERVED_TYPES[extension]
-        try:
-            handle = grant.storage.open(grant.name, "rb")
-        except (FileNotFoundError, OSError) as exc:
-            raise Http404 from exc
         filename = grant.filename or PurePosixPath(grant.name).name
-        if content_type.startswith("audio/"):
-            response = _audio_response(request, handle, content_type, filename)
+        learning = grant.storage_key == "learning"
+        accel = getattr(settings, "LEARNING_MEDIA_ACCEL", "") or ""
+        if learning and accel:
+            response = _accel_response(grant, accel, content_type, filename)
         else:
-            response = FileResponse(
-                handle, content_type=content_type, as_attachment=not inline, filename=filename
-            )
+            try:
+                handle = grant.storage.open(grant.name, "rb")
+            except (FileNotFoundError, OSError) as exc:
+                raise Http404 from exc
+            if content_type.startswith("audio/"):
+                response = _audio_response(request, handle, content_type, filename)
+            elif content_type.startswith("video/"):
+                response = _ranged_response(request, handle, content_type, filename)
+            else:
+                response = FileResponse(
+                    handle, content_type=content_type, as_attachment=not inline, filename=filename
+                )
         for header, value in SANDBOX_HEADERS.items():
             response[header] = value
         # The dashboard's PdfPreview frames contracts and payslips (plan §6.3); nobody else may.
         response["X-Frame-Options"] = "SAMEORIGIN"
-        response["Cache-Control"] = "private, no-store"
+        response["Cache-Control"] = LEARNING_CACHE if learning else "private, no-store"
         response["Referrer-Policy"] = "no-referrer"
         return response
 
@@ -217,6 +242,75 @@ def _audio_response(request, handle, content_type: str, filename: str) -> HttpRe
     response = HttpResponse(body, status=status, content_type=content_type)
     if status == 206:
         response["Content-Range"] = f"bytes {start}-{end}/{size}"
+    response["Accept-Ranges"] = "bytes"
+    response["Content-Disposition"] = f'inline; filename="{filename}"'
+    return response
+
+
+def _byte_range(request, size: int) -> tuple[int, int] | bool | None:
+    """The `Range: bytes=a-b` asked for, as (start, end) within `size`; None without one (or
+    one this server ignores, like several ranges); False when it can't be satisfied."""
+    match = _RANGE.match(request.headers.get("Range", "").strip())
+    if not match or not (match[1] or match[2]):
+        return None
+    if match[1]:
+        start = int(match[1])
+        end = min(int(match[2]), size - 1) if match[2] else size - 1
+    else:  # the last N bytes
+        length = int(match[2])
+        if length == 0:
+            return False
+        start, end = max(size - length, 0), size - 1
+    if start >= size or start > end:
+        return False
+    return start, end
+
+
+def _ranged_response(request, handle, content_type: str, filename: str) -> HttpResponse:
+    """A lesson video, streamed in blocks (it can be 2 GB), with byte ranges: players fetch
+    the start, then seek with `Range` requests, and Safari plays nothing without 206."""
+    handle.seek(0, 2)
+    size = handle.tell()
+    asked = _byte_range(request, size)
+    if asked is False:
+        handle.close()
+        response = HttpResponse(status=416)
+        response["Content-Range"] = f"bytes */{size}"
+        return response
+    start, end = asked if asked else (0, size - 1)
+    length = max(end - start + 1, 0)
+    handle.seek(start)
+    response = StreamingHttpResponse(
+        _blocks(handle, length), status=206 if asked else 200, content_type=content_type
+    )
+    response["Content-Length"] = str(length)
+    if asked:
+        response["Content-Range"] = f"bytes {start}-{end}/{size}"
+    response["Accept-Ranges"] = "bytes"
+    response["Content-Disposition"] = f'inline; filename="{filename}"'
+    return response
+
+
+def _blocks(handle, length: int) -> Iterator[bytes]:
+    try:
+        left = length
+        while left > 0:
+            block = handle.read(min(STREAM_BLOCK, left))
+            if not block:
+                break
+            left -= len(block)
+            yield block
+    finally:
+        handle.close()
+
+
+def _accel_response(grant: _Grant, prefix: str, content_type: str, filename: str) -> HttpResponse:
+    """The link checks out: the web server sends the bytes (`X-Accel-Redirect`, Caddy's
+    `handle_response` in deploy/Caddyfile), Range requests included."""
+    if not grant.storage.exists(grant.name):
+        raise Http404
+    response = HttpResponse(content_type=content_type)
+    response["X-Accel-Redirect"] = f"/{prefix.strip('/')}/{quote(grant.name)}"
     response["Accept-Ranges"] = "bytes"
     response["Content-Disposition"] = f'inline; filename="{filename}"'
     return response
@@ -286,7 +380,7 @@ def _storage_key(storage: Storage) -> str:
     for key, known in STORAGES.items():
         if storage is known or type(storage) is type(known):
             return key
-    raise ValueError("Only files in private or default storage can be signed.")
+    raise ValueError("Only files in private, default or learning storage can be signed.")
 
 
 def _verify(token: str) -> _Grant | object | None:
@@ -300,6 +394,7 @@ def _verify(token: str) -> _Grant | object | None:
             kind=payload["k"],
             object_id=int(payload["o"]),
             filename=payload.get("f"),
+            storage_key=payload["s"],
         )
         expires = int(payload["e"])
     except signing.BadSignature, KeyError, TypeError, ValueError:

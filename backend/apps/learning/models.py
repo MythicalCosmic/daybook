@@ -425,6 +425,12 @@ class Assignment(TenantModel):
     overdue_notices = models.PositiveSmallIntegerField(default=0)
     escalated_at = models.DateTimeField(null=True, blank=True)
     certificate_no = models.CharField(max_length=24, blank=True)
+    certificate_file = models.FileField(
+        storage=private_storage,
+        upload_to=private_upload_to("certificates"),
+        blank=True,
+        help_text=_("The certificate as a PDF, made once the course is finished."),
+    )
     expires_at = models.DateTimeField(
         null=True, blank=True, help_text=_("When the renewal is due (courses that renew).")
     )
@@ -468,6 +474,11 @@ class LessonProgress(TenantModel):
     last_report_at = models.DateTimeField(null=True, blank=True)
     last_session = models.CharField(max_length=40, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
+    days = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text=_("Seconds watched per company day, the last 60 days: {YYYY-MM-DD: seconds}."),
+    )
 
     class Meta:
         ordering = ["-last_at"]

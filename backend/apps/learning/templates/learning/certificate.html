@@ -1,0 +1,37 @@
+{% extends "core/base_print.html" %}{% load i18n %}
+{% block style %}
+.certificate { border: 1.2pt solid #1f6f8b; padding: 3mm; margin-top: 4mm; }
+.certificate__inner { border: 0.5pt solid #9cc3d1; padding: 14mm 12mm 12mm; text-align: center; }
+.certificate__kicker { font-size: 9pt; letter-spacing: 0.18em; text-transform: uppercase; color: #1f6f8b; margin-bottom: 3mm; }
+.certificate__title { font-size: 26pt; font-weight: 700; margin: 0 0 8mm; color: #12394a; }
+.certificate__lead { font-size: 10.5pt; color: #4a4a4a; margin: 0 0 2mm; }
+.certificate__person { font-size: 20pt; font-weight: 700; margin: 0 0 1mm; }
+.certificate__position { font-size: 9.5pt; color: #6b6b6b; margin: 0 0 7mm; }
+.certificate__course { font-size: 15pt; font-weight: 700; margin: 1mm 0 9mm; color: #12394a; }
+.certificate__facts { display: flex; justify-content: center; gap: 12mm; font-size: 9pt; margin-bottom: 2mm; }
+.certificate__facts dt { color: #6b6b6b; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.06em; }
+.certificate__facts dd { margin: 0.5mm 0 0; font-weight: 700; }
+.certificate .signatures { margin-top: 18mm; text-align: left; }
+{% endblock %}
+{% block content %}
+<div class="certificate">
+  <div class="certificate__inner">
+    <div class="certificate__kicker">{{ company.name }}</div>
+    <h1 class="certificate__title">{% translate "Certificate" %}</h1>
+    <p class="certificate__lead">{% translate "This certifies that" %}</p>
+    <p class="certificate__person">{{ person }}</p>
+    {% if position %}<p class="certificate__position">{{ position }}</p>{% endif %}
+    <p class="certificate__lead">{% translate "has completed the course" %}</p>
+    <p class="certificate__course">{{ course }}</p>
+    <dl class="certificate__facts">
+      <div><dt>{% translate "Completed on" %}</dt><dd>{{ completed_on }}</dd></div>
+      <div><dt>{% translate "Certificate number" %}</dt><dd>{{ number }}</dd></div>
+      {% if valid_until %}<div><dt>{% translate "Valid until" %}</dt><dd>{{ valid_until }}</dd></div>{% endif %}
+    </dl>
+    <div class="signatures">
+      <div class="signature">{% if manager %}{{ manager }}{% else %}{% translate "Manager" %}{% endif %}<br><span class="muted">{% translate "Manager" %}</span></div>
+      <div class="signature">{{ company.name }}<br><span class="muted">{% translate "Stamp" %}</span></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
