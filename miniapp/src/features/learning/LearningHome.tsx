@@ -13,6 +13,7 @@ import { dayMonth } from "../../lib/time";
 import { useNavigation } from "../../state/navigation";
 import { useMember } from "../../state/session";
 import { Badge, CardButton, cx, EmptyState, ListCard, ListRow, LoadError, PageHeader, PdfLink, ProgressBar, Screen, SectionHead, Segmented, Skeleton } from "../../ui";
+import { useScrollEdges } from "../../ui/useScrollEdges";
 import { useFeatureOpen } from "../useFeatureOpen";
 import { certificateLink, useChecks, useLearningHome } from "./api";
 import { dueText, sortTodo, whenText } from "./lib";
@@ -57,23 +58,34 @@ export default function LearningHome() {
         )
       ) : (
         <>
-          <Segmented<Tab>
-            role="tablist"
-            fit
-            value={tab}
-            onChange={setTab}
-            options={[
-              { value: "todo", label: t("tab.todo"), count: data.todo.length },
-              { value: "done", label: t("tab.done"), count: data.done.length },
-              { value: "catalog", label: t("tab.catalog"), count: data.catalog.length },
-            ]}
-          />
+          <Tabs tab={tab} onChange={setTab} counts={{ todo: data.todo.length, done: data.done.length, catalog: data.catalog.length }} />
           {tab === "todo" && <TodoList cards={data.todo} />}
           {tab === "done" && <DoneList cards={data.done} />}
           {tab === "catalog" && <Catalog courses={data.catalog} />}
         </>
       )}
     </Screen>
+  );
+}
+
+/** To do, Done, Catalogue: a strip that scrolls (its edges fading) where the words don't fit. */
+function Tabs({ tab, onChange, counts }: { tab: Tab; onChange: (tab: Tab) => void; counts: Record<Tab, number> }) {
+  const t = useLearningT();
+  const strip = useScrollEdges<HTMLDivElement>();
+  return (
+    <Segmented<Tab>
+      ref={strip.ref}
+      role="tablist"
+      className="seg--scroll"
+      label={t("title")}
+      value={tab}
+      onChange={onChange}
+      options={[
+        { value: "todo", label: t("tab.todo"), count: counts.todo },
+        { value: "done", label: t("tab.done"), count: counts.done },
+        { value: "catalog", label: t("tab.catalog"), count: counts.catalog },
+      ]}
+    />
   );
 }
 

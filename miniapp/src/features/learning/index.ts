@@ -32,10 +32,11 @@ export default defineFeature({
     daily: lazy(() => import("./Daily")),
   },
   homeCards: [
-    // A check has a deadline today or tomorrow: before the day's question and the courses.
+    // Together, the most pressing first: a check due within a day or two, the mandatory courses
+    // with their deadlines, then the day's question.
     { id: "check", component: CheckCard, order: 33 },
-    { id: "daily", component: DailyCard, order: 36 },
-    { id: "training", component: TrainingCard, order: 42 },
+    { id: "training", component: TrainingCard, order: 35 },
+    { id: "daily", component: DailyCard, order: 37 },
   ],
   meItems: [{ id: "training", group: "work", label: "me.training", icon: GraduationCap, open: { page: "home" }, order: 25, useStatus: useMeStatus }],
   routes: {

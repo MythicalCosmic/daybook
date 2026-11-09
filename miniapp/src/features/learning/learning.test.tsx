@@ -128,7 +128,7 @@ describe("the feature", () => {
   });
 
   it("puts its cards on Home and My training on Me", () => {
-    expect(homeSlots(features, "home.cards", context()).filter(({ feature }) => feature.id === "learning").map(({ item }) => item.id)).toEqual(["check", "daily", "training"]);
+    expect(homeSlots(features, "home.cards", context()).filter(({ feature }) => feature.id === "learning").map(({ item }) => item.id)).toEqual(["check", "training", "daily"]);
     expect(meItemsByGroup(features, context()).work.map(({ item }) => item.label)).toContain("me.training");
   });
 
