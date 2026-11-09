@@ -421,8 +421,11 @@ class UserViewSet(DavomatOnly, OwnerViewSet):
     perm = Perm.ROLES_MANAGE
     perms_by_action = {"telegram_link": None}
     pagination_class = DavomatPagination
+    lookup_value_regex = r"\d+"
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Membership.objects.none()
         return scope.restrict(queries.users(self.company), self.branch_scope, field="branches")
 
     def _one(self, pk) -> Membership:
@@ -690,8 +693,11 @@ class EmployeeViewSet(DavomatOnly, OwnerViewSet):
         )
     }
     pagination_class = DavomatPagination
+    lookup_value_regex = r"\d+"
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Membership.objects.none()
         return (
             queries.employees(self.company, branch_ids=self.branch_scope)
             .select_related(
