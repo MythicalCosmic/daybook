@@ -53,6 +53,8 @@ logger = logging.getLogger(__name__)
 # Kinds answered with buttons in the bot; the others only in the app.
 BOT_KINDS = bot_messages.BOT_KINDS
 # Points for a try that wasn't right (a right answer earns the company's points for "daily").
+# At integration: `apps.recognition.rules.points_for(conf.get_settings(company), "daily_tried")`
+# (package R's table), which this 1 stands in for until R is merged.
 TRIED_POINTS = 1
 # A question of the day isn't asked again within this many days while others are left; the
 # recent dailies whose kinds the next one varies from.
