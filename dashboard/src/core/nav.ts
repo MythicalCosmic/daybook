@@ -57,44 +57,82 @@ function badgeOf(fn: ((pulse: Pulse) => number | undefined) | undefined, pulse: 
   return typeof value === "number" && value > 0 ? value : 0;
 }
 
+/** One sidebar row of a module: the module itself, or one of its `NavItem.row`s. */
+interface RowSpec {
+  key: string;
+  title: string;
+  icon: Component;
+  group: ModuleGroup;
+  order: number;
+  hotkey: string | undefined;
+  /** The module's own badge counts on its own row only. */
+  own: boolean;
+  items: NavItem[];
+}
+
+/**
+ * A module's rows: everything before its first `row` item is the module's own row, and each `row`
+ * item starts a row with the items after it (one row for a module without any).
+ */
+export function moduleRows(module: DashboardModule): RowSpec[] {
+  const rows: RowSpec[] = [];
+  let current: RowSpec = { key: module.id, title: module.title, icon: module.icon, group: module.group, order: module.order, hotkey: module.hotkey, own: true, items: [] };
+  rows.push(current);
+  for (const item of moduleNavItems(module)) {
+    if (item.row) {
+      current = { key: item.row.key, title: item.row.title, icon: item.row.icon, group: item.row.group, order: item.row.order, hotkey: item.row.hotkey, own: false, items: [] };
+      rows.push(current);
+    }
+    current.items.push(item);
+  }
+  return rows.filter((row) => row.items.length > 0);
+}
+
 export function buildNav(list: readonly DashboardModule[], company: Company | null | undefined, pulse: Pulse = EMPTY_PULSE): NavGroup[] {
   if (!company) return [];
-  const groups = new Map<ModuleGroup, NavModule[]>();
+  const groups = new Map<ModuleGroup, Array<NavModule & { order: number }>>();
   for (const module of list) {
     if (!isModuleVisible(module, company)) continue;
-    const items = moduleNavItems(module).filter((item) => allowed(company, item));
-    if (items.length === 0) continue;
-    const children: NavEntry[] = items.map((item) => ({
-      key: `${module.id}:${item.key}`,
-      moduleId: module.id,
-      title: item.title,
-      to: item.to,
-      path: companyPath(company.id, item.to),
-      icon: item.icon,
-      badge: badgeOf(item.badge, pulse),
-      exact: item.exact ?? item.to === "",
-    }));
-    const head = children[0]!;
-    const own = badgeOf(module.badge, pulse);
-    const entry: NavModule = {
-      key: module.id,
-      moduleId: module.id,
-      group: module.group,
-      title: module.title,
-      to: head.to,
-      path: head.path,
-      icon: module.icon,
-      hotkey: module.hotkey,
-      exact: head.to === "",
-      badge: own || children.reduce((sum, child) => sum + child.badge, 0),
-      children: children.length > 1 ? children : [],
-    };
-    const bucket = groups.get(module.group) ?? [];
-    bucket.push(entry);
-    groups.set(module.group, bucket);
+    for (const row of moduleRows(module)) {
+      const items = row.items.filter((item) => allowed(company, item));
+      if (items.length === 0) continue;
+      const children: NavEntry[] = items.map((item) => ({
+        key: `${module.id}:${item.key}`,
+        moduleId: module.id,
+        title: item.title,
+        to: item.to,
+        path: companyPath(company.id, item.to),
+        icon: item.icon,
+        badge: badgeOf(item.badge, pulse),
+        exact: item.exact ?? item.to === "",
+      }));
+      const head = children[0]!;
+      const own = row.own ? badgeOf(module.badge, pulse) : 0;
+      const entry: NavModule & { order: number } = {
+        key: row.key,
+        moduleId: module.id,
+        group: row.group,
+        title: row.title,
+        to: head.to,
+        path: head.path,
+        icon: row.icon,
+        hotkey: row.hotkey,
+        exact: head.to === "",
+        badge: own || children.reduce((sum, child) => sum + child.badge, 0),
+        children: children.length > 1 ? children : [],
+        order: row.order,
+      };
+      const bucket = groups.get(row.group) ?? [];
+      bucket.push(entry);
+      groups.set(row.group, bucket);
+    }
   }
   return MODULE_GROUPS.filter((id) => groups.has(id)).map((id) => {
-    const modulesInGroup = groups.get(id)!;
+    // Stable: modules arrive in registry order, so rows of equal order keep it.
+    const modulesInGroup: NavModule[] = groups
+      .get(id)!
+      .sort((a, b) => a.order - b.order)
+      .map(({ order: _order, ...entry }) => entry);
     return { id, modules: modulesInGroup, badge: modulesInGroup.reduce((sum, m) => sum + m.badge, 0) };
   });
 }

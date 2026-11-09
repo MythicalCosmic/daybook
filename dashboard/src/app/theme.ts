@@ -5,9 +5,8 @@
  */
 import { watch } from "vue";
 
+import { editionThemeColor } from "@/core/edition";
 import { useUiStore, type Theme, type ThemeMode } from "@/stores/ui";
-
-const THEME_COLOR: Record<Theme, string> = { light: "#f7f3ec", dark: "#141210" };
 
 export function prefersReducedMotion(): boolean {
   return typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -17,7 +16,8 @@ function paint(theme: Theme): void {
   const root = document.documentElement;
   root.dataset.theme = theme;
   root.style.colorScheme = theme;
-  for (const meta of document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')) meta.content = THEME_COLOR[theme];
+  // The browser chrome takes the canvas of the edition shown (Daybook's paper, Davomat's cool grey).
+  for (const meta of document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')) meta.content = editionThemeColor(theme);
 }
 
 /** Keeps <html> in sync with the UI store. Call once at startup. */

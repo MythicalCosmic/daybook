@@ -10,6 +10,7 @@ import type { Component } from "vue";
 import type { RouteLocationRaw, RouteRecordRaw, Router } from "vue-router";
 
 import type { Company, Language, Pulse, Range } from "@/api/types";
+import { DEFAULT_EDITIONS, moduleEditions, type Edition } from "@/core/edition";
 import type { CompanyFeature } from "@/core/features";
 import type { PermRequirement } from "@/core/perms";
 
@@ -34,6 +35,23 @@ export type ModuleMessages = Record<Language, Messages>;
  */
 export type ModuleMessagesLoader = (language: Language) => Promise<Messages | { default: Messages }>;
 
+/**
+ * A sidebar row of its own inside a module (Davomat's one module brings Overview and Team): the
+ * item that names it starts the row, and the items after it, up to the next row, are its pages.
+ */
+export interface NavRow {
+  /** Unique across the sidebar ("davomat.team"). */
+  key: string;
+  /** i18n key. */
+  title: string;
+  icon: Component;
+  group: ModuleGroup;
+  /** Place in its group, like a module's `order`. */
+  order: number;
+  /** Key after "g" that jumps to this row. */
+  hotkey?: string;
+}
+
 export interface NavItem {
   /** Unique within the module (registry.test.ts). */
   key: string;
@@ -44,9 +62,13 @@ export interface NavItem {
   icon?: Component;
   perm?: PermRequirement;
   feature?: CompanyFeature;
+  /** Only in these editions (default: every edition of its module). */
+  editions?: readonly Edition[];
   badge?: (pulse: Pulse) => number | undefined;
   /** Highlight only on an exact path match (default: also on child paths). */
   exact?: boolean;
+  /** Starts a sidebar row of its own (see NavRow); without any, the module is one row. */
+  row?: NavRow;
 }
 
 export interface CommandCtx {
@@ -86,6 +108,8 @@ export interface Widget {
   order: number;
   perm?: PermRequirement;
   feature?: CompanyFeature;
+  /** Only in these editions (default: every edition of its module). */
+  editions?: readonly Edition[];
   kind: "kpi" | "card" | "chart";
   /** Receives WidgetProps. Use defineAsyncComponent so Overview stays small. */
   component: Component;
@@ -97,6 +121,8 @@ export interface SettingsPanel {
   title: string;
   perm?: PermRequirement;
   feature?: CompanyFeature;
+  /** Only in these editions (default: every edition of its module). */
+  editions?: readonly Edition[];
   order?: number;
   icon?: Component;
   component: Component;
@@ -108,6 +134,8 @@ export interface PersonTab {
   title: string;
   perm?: PermRequirement;
   feature?: CompanyFeature;
+  /** Only in these editions (default: every edition of its module). */
+  editions?: readonly Edition[];
   order?: number;
   /** Receives the prop `memberId: number`. */
   component: Component;
@@ -159,11 +187,16 @@ export interface DashboardModule {
   perm?: PermRequirement;
   /** `Company.features` switch. */
   feature?: CompanyFeature;
+  /**
+   * The editions the module is part of (core/edition.ts). Default `["daybook"]`: a module joins
+   * Davomat only by saying so. In any other edition it isn't registered at all.
+   */
+  editions?: readonly Edition[];
   /** Serves `/c/:companyId` itself with a route whose path is "" (only the overview module). */
   index?: boolean;
   /** Children of `/c/:companyId`, lazy components, `meta: { perm, feature, title }`. */
   routes: RouteRecordRaw[];
-  /** Only the auth module: routes outside the shell that need no session (`/login`). */
+  /** Only an edition's sign-in module (auth, davomat): routes outside the shell that need no session (`/login`). */
   publicRoutes?: RouteRecordRaw[];
   /** Signed-in routes outside any company, rendered in the shell without the sidebar (`/portfolio`). */
   rootRoutes?: RouteRecordRaw[];
@@ -208,8 +241,11 @@ export function byGroupThenOrder(a: DashboardModule, b: DashboardModule): number
 // this file is what loads them, which is the case in the app: nothing else imports a module's index.ts.
 const found = import.meta.glob<{ default: DashboardModule }>("../modules/*/index.ts", { eager: true });
 
-/** Every module, sorted for the sidebar. Built once at startup; never mutate it outside dev tooling. */
-export const modules: DashboardModule[] = Object.values(found)
+/**
+ * Every module in the build, whatever the edition, sorted for the sidebar (tests and dev tooling;
+ * the app reads `modules`).
+ */
+export const allModules: DashboardModule[] = Object.values(found)
   .map((m) => m.default)
   .filter((m): m is DashboardModule => {
     // Only possible when a module's index.ts was imported before this file (a test importing the
@@ -218,6 +254,27 @@ export const modules: DashboardModule[] = Object.values(found)
     return !!m;
   })
   .sort(byGroupThenOrder);
+
+/** The modules of one edition, in sidebar order. */
+export function modulesFor(edition: Edition, list: readonly DashboardModule[] = allModules): DashboardModule[] {
+  return list.filter((m) => moduleEditions(m).includes(edition));
+}
+
+/**
+ * The running edition's modules, sorted for the sidebar: what the router, the navigation, the
+ * palette and the settings are built from. Daybook's until main.ts calls `applyEdition`; never
+ * mutate it outside that and dev tooling.
+ */
+export const modules: DashboardModule[] = modulesFor(DEFAULT_EDITIONS[0]!);
+
+/**
+ * Keeps only `edition`'s modules (main.ts, once `GET edition/` answered, before the router is
+ * built). The other edition's modules are never registered, so none of their pages, dictionaries,
+ * widgets or panels load.
+ */
+export function applyEdition(edition: Edition): void {
+  modules.splice(0, modules.length, ...modulesFor(edition));
+}
 
 /**
  * Development only: adds modules that are not in src/modules (the VITE_MOCK stand-ins for packages
@@ -233,4 +290,3 @@ export function registerDevModules(extra: DashboardModule[]): void {
 export function findModule(id: string | undefined): DashboardModule | undefined {
   return id ? modules.find((m) => m.id === id) : undefined;
 }
-

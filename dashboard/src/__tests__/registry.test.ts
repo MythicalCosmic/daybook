@@ -2,15 +2,18 @@
  * The module registry contract (plan §6.6) and the information architecture in core/catalog.ts.
  * Real modules (src/modules/<id>/index.ts) are checked here as they land; the dev placeholders
  * built from the catalog go through the same checks, so the checker itself is always exercised.
+ * Each edition's registry (core/edition.ts) is checked on its own: Daybook's is the catalog's,
+ * Davomat's is its own module with Face ID and attendance.
  */
 import { describe, expect, it } from "vitest";
 import { createMemoryHistory, createRouter, type RouteRecordRaw } from "vue-router";
 
 import { buildRoutes } from "@/app/router";
 import { CATALOG, CATALOG_HEADLESS, catalogEntry } from "@/core/catalog";
+import { EDITIONS, moduleEditions } from "@/core/edition";
 import { FEATURES } from "@/core/features";
-import { EXTENSION_POINTS, MODULE_GROUPS, modules, type DashboardModule, type Messages } from "@/core/modules";
-import { moduleNavItems } from "@/core/nav";
+import { EXTENSION_POINTS, MODULE_GROUPS, allModules, modules, modulesFor, type DashboardModule, type Messages } from "@/core/modules";
+import { moduleNavItems, moduleRows } from "@/core/nav";
 import { PERMS, isPerm, type PermRequirement } from "@/core/perms";
 import { devStubModules } from "@/dev/stubModules";
 
@@ -41,11 +44,14 @@ export function moduleProblems(module: DashboardModule, folder?: string): string
   for (const perm of permsOf(module.perm)) if (!isPerm(perm)) say(`unknown permission "${perm}"`);
   if (module.feature && !(FEATURES as readonly string[]).includes(module.feature)) say(`unknown feature "${module.feature}"`);
 
+  for (const edition of module.editions ?? []) if (!(EDITIONS as readonly string[]).includes(edition)) say(`unknown edition "${edition}"`);
+  // The catalog is Daybook's information architecture; a module of other editions only is outside it.
+  const daybook = moduleEditions(module).includes("daybook");
   const entry = catalogEntry(module.id);
   if (entry) {
     if (entry.group !== module.group) say(`group "${module.group}" differs from the catalog's "${entry.group}"`);
     if (entry.order !== module.order) say(`order ${module.order} differs from the catalog's ${entry.order}`);
-  } else if (!CATALOG_HEADLESS.includes(module.id)) {
+  } else if (daybook && !CATALOG_HEADLESS.includes(module.id)) {
     say("is not in core/catalog.ts: add it there (W0) so the sidebar order is decided in one place");
   }
 
@@ -79,7 +85,8 @@ export function moduleProblems(module: DashboardModule, folder?: string): string
   }
   for (const panel of module.settings ?? []) if (!panel.title.startsWith(`${module.id}.`)) say(`settings panel "${panel.id}" title is outside the namespace`);
   for (const tab of module.personTabs ?? []) if (!tab.title.startsWith(`${module.id}.`)) say(`person tab "${tab.id}" title is outside the namespace`);
-  if (module.publicRoutes?.length && module.id !== "auth") say("only the auth module may bring public routes");
+  // Each edition's sign-in: Telegram's (auth) in Daybook, username and password (davomat) in Davomat.
+  if (module.publicRoutes?.length && module.id !== "auth" && module.id !== "davomat") say("only an edition's sign-in module may bring public routes");
   return problems;
 }
 
@@ -99,7 +106,7 @@ function registryProblems(list: readonly DashboardModule[]): string[] {
   const problems: string[] = [];
   const ids = list.map((m) => m.id);
   for (const id of new Set(ids)) if (ids.filter((x) => x === id).length > 1) problems.push(`duplicate module id "${id}"`);
-  const hotkeys = list.filter((m) => m.hotkey).map((m) => m.hotkey!);
+  const hotkeys = list.flatMap((m) => moduleRows(m).map((row) => row.hotkey)).filter((key): key is string => !!key);
   for (const key of new Set(hotkeys)) if (hotkeys.filter((x) => x === key).length > 1) problems.push(`hotkey "g ${key}" is used twice`);
   const indexModules = list.filter((m) => m.index).map((m) => m.id);
   if (indexModules.length > 1) problems.push(`only one module may serve the index, found ${indexModules.join(", ")}`);
@@ -178,6 +185,8 @@ describe("registry", () => {
       problems.push(...(await messageProblems(mod.default)));
     }
     problems.push(...registryProblems(modules));
+    // Every edition's registry stands on its own (one index module, unique route names and hotkeys…).
+    for (const edition of EDITIONS) problems.push(...registryProblems(modulesFor(edition)).map((problem) => `${edition}: ${problem}`));
     expect(problems).toEqual([]);
     // Every module and its three dictionaries load here (60 files): past vitest's 5 s on a busy
     // machine running the whole suite, though about 1 s on its own.
@@ -205,5 +214,20 @@ describe("registry", () => {
     };
     const problems = moduleProblems(broken, "bad");
     expect(problems.length).toBeGreaterThanOrEqual(7);
+  });
+});
+
+describe("editions", () => {
+  it("Daybook's registry is the one the app starts with, without Davomat's module", () => {
+    expect(modules.map((m) => m.id)).toEqual(modulesFor("daybook").map((m) => m.id));
+    expect(modules.some((m) => m.id === "davomat")).toBe(false);
+    expect(allModules.length).toBeGreaterThan(modules.length);
+  });
+
+  it("Davomat registers only its own modules: Overview and Team, Face ID, attendance and its settings", () => {
+    const ids = modulesFor("davomat").map((m) => m.id);
+    expect(ids).toContain("davomat");
+    expect(ids).toContain("faceid");
+    for (const daybookOnly of ["tasks", "finance", "sales", "payroll", "people", "settings", "auth", "overview", "inbox"]) expect(ids).not.toContain(daybookOnly);
   });
 });

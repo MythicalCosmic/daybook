@@ -2,6 +2,7 @@
 import type { RouteLocationNormalizedLoaded, RouteRecordNormalized } from "vue-router";
 
 import type { Company } from "@/api/types";
+import { currentEdition, inEdition, moduleEditions, type Edition } from "@/core/edition";
 import { hasFeature, type CompanyFeature } from "@/core/features";
 import { findModule, type DashboardModule } from "@/core/modules";
 import { hasPerm, type PermRequirement } from "@/core/perms";
@@ -9,15 +10,17 @@ import { hasPerm, type PermRequirement } from "@/core/perms";
 export interface Gated {
   perm?: PermRequirement;
   feature?: CompanyFeature;
+  /** Only in these editions (an item without it follows its module). */
+  editions?: readonly Edition[];
 }
 
-/** Permission and feature switch both allow it. */
+/** Permission, feature switch and edition all allow it. */
 export function allowed(company: Company | null | undefined, item: Gated): boolean {
-  return !!company && hasPerm(company, item.perm) && hasFeature(company, item.feature);
+  return !!company && hasPerm(company, item.perm) && hasFeature(company, item.feature) && inEdition(item);
 }
 
 export function isModuleVisible(module: DashboardModule, company: Company | null | undefined): boolean {
-  return allowed(company, module);
+  return moduleEditions(module).includes(currentEdition()) && allowed(company, { perm: module.perm, feature: module.feature });
 }
 
 export function visibleModules(list: readonly DashboardModule[], company: Company | null | undefined): DashboardModule[] {
