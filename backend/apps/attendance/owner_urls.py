@@ -12,6 +12,11 @@ from apps.attendance.owner_api import (
     CorrectionViewSet,
     MemberView,
     RecordViewSet,
+    ReportBranchesView,
+    ReportDepartmentsView,
+    ReportPunctualityView,
+    ReportSummaryView,
+    ReportTrendView,
     RosterView,
     ScheduleViewSet,
     SettingsView,
@@ -42,6 +47,28 @@ urlpatterns = [
         "attendance/members/<int:member_id>/",
         MemberView.as_view(),
         name="attendance-member",
+    ),
+    # Reports (docs/DAVOMAT.md §1.6); `?format=xlsx|pdf` downloads each as a file.
+    path(
+        "attendance/reports/summary/",
+        ReportSummaryView.as_view(),
+        name="attendance-report-summary",
+    ),
+    path(
+        "attendance/reports/departments/",
+        ReportDepartmentsView.as_view(),
+        name="attendance-report-departments",
+    ),
+    path(
+        "attendance/reports/branches/",
+        ReportBranchesView.as_view(),
+        name="attendance-report-branches",
+    ),
+    path("attendance/reports/trend/", ReportTrendView.as_view(), name="attendance-report-trend"),
+    path(
+        "attendance/reports/punctuality/",
+        ReportPunctualityView.as_view(),
+        name="attendance-report-punctuality",
     ),
     *router.urls,
 ]
