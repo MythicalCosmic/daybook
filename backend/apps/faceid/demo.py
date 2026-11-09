@@ -1,7 +1,7 @@
 """Demo data of Face ID (apps/core/demo_plan.py): Demo Dorixona's "Chilonzor kirish" terminal at
 the Chilonzor staff door, its people's numbers as the terminal shows them ("00000002"), and this
 morning's scans: every check-in and check-out at Chilonzor came from the terminal, someone
-scanned twice, a delivery driver who isn't in Daybook (number 00000037, "Dilshod") came by
+scanned twice, a delivery driver who isn't in Daybook (number 00000037, "Ravshan") came by
 twice, and an unknown face tried the door. Snapshots are drawn silhouettes, never photos.
 """
 
@@ -92,9 +92,9 @@ def seed(company, people, now) -> None:
         if at < now:
             events.append(
                 (
-                    _event(device, "00000037", "Dilshod", at, next(serials))
+                    _event(device, "00000037", "Ravshan", at, next(serials))
                     | {"action": Action.NOT_LINKED},
-                    "demo:dilshod",
+                    "demo:ravshan",
                 )
             )
     stranger_at = story.at(story.today, time(8, 52))

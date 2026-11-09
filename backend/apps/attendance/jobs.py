@@ -58,6 +58,40 @@ def expire_swaps(now: datetime | None = None) -> int:
     return services.expire_swaps(now)
 
 
+# The managers' summary goes out within this long after the company's evening report time.
+SUMMARY_WINDOW = timedelta(minutes=30)
+
+
+def evening_summaries(now: datetime | None = None) -> int:
+    return _each(summarise_company, now)
+
+
+def summarise_company(company: Company, now: datetime) -> int:
+    """At the company's evening report time, once a day, each `attendance.manage` holder gets
+    the day of the branches they see (the morning post and the late posts are the groups'; this
+    is the managers' own close of the day)."""
+    from apps.members import scope
+    from apps.members.permissions import Perm
+    from apps.members.queries import members_with_perm
+
+    local = clock.local(company, now)
+    at = company.evening_report_at
+    start = local.replace(hour=at.hour, minute=at.minute, second=0, microsecond=0)
+    if not start <= local < start + SUMMARY_WINDOW:
+        return 0
+    day = local.date()
+    if not notify.mark_once(company.pk, f"summary:{day.isoformat()}"):
+        return 0
+    sent = 0
+    managers = members_with_perm(company, Perm.ATTENDANCE_MANAGE).select_related(
+        "user", "role", "company"
+    )
+    for member in managers.prefetch_related("branches"):
+        board = queries.day_board(company, day, branch_ids=scope.branch_ids(member), now=now)
+        sent += notify.evening_summary(member, board, day)
+    return sent
+
+
 def shift_nudges(now: datetime | None = None) -> int:
     return _each(nudge_company, now)
 

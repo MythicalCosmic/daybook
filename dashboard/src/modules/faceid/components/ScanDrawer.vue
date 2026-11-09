@@ -65,7 +65,7 @@ function facts(scan: Scan): DescriptionItem[] {
             <p class="mt-0.5 text-sm text-muted">
               <template v-if="scan.member">{{ scan.member.position?.name || t("faceid.scan.inDaybook") }}</template>
               <template v-else-if="scan.kind === 'stranger'">{{ t("faceid.feed.strangerHint") }}</template>
-              <template v-else>{{ t("faceid.people.notInDaybook") }}</template>
+              <template v-else>{{ t("faceid.feed.number", { number: scan.employee_no }) }}</template>
             </p>
             <div class="mt-3 flex flex-wrap justify-center gap-1.5">
               <StatusPill :tone="ACTION_TONES[scan.action]" :label="t(actionChip(scan).key, { d: actionChip(scan).minutes ? fmt.duration(actionChip(scan).minutes!) : '' })" />

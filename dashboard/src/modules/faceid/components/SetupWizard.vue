@@ -13,6 +13,7 @@ import { useI18n } from "vue-i18n";
 
 import BranchPicker from "@/components/BranchPicker.vue";
 import FormField from "@/components/FormField.vue";
+import { useScopedBranches } from "@/components/pickers";
 import RadioCards from "@/components/RadioCards.vue";
 import TextInput from "@/components/TextInput.vue";
 import UiButton from "@/components/UiButton.vue";
@@ -30,6 +31,7 @@ const props = withDefaults(defineProps<{ device?: Device | null }>(), { device: 
 const { t } = useI18n();
 const companyId = useCompanyId();
 const refresh = useRefresh();
+const branches = useScopedBranches();
 
 type Step = "terminal" | "values" | "first";
 const step = ref<Step>("terminal");
@@ -49,7 +51,9 @@ watch(
     tested.value = false;
     deviceId.value = props.device?.id ?? null;
     step.value = props.device ? "values" : "terminal";
-    form.value = { name: props.device?.name ?? "", branch: props.device?.branch.id ?? null, direction: props.device?.direction ?? "toggle" };
+    // One branch in sight: that's where the terminal is.
+    const only = branches.value.length === 1 ? branches.value[0]!.id : null;
+    form.value = { name: props.device?.name ?? "", branch: props.device?.branch.id ?? only, direction: props.device?.direction ?? "toggle" };
   },
   { immediate: true },
 );

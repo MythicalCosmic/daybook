@@ -4,7 +4,7 @@
  * and direction, the last scan, today's scans and a small per-hour chart, a clock warning when the
  * terminal's time is off, and for managers the setup values, a new code and the switch.
  */
-import { Clock, KeyRound, Power, Settings2, TriangleAlert } from "@lucide/vue";
+import { Clock, DoorOpen, KeyRound, Power, Settings2, TriangleAlert } from "@lucide/vue";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -32,9 +32,8 @@ const now = new Date().getHours();
       </span>
       <div class="min-w-0 flex-1">
         <h3 class="truncate text-base font-semibold text-fg">{{ device.name }}</h3>
-        <p class="truncate text-xs text-muted">
-          {{ device.model || t("faceid.terminals.hikvision") }} · {{ device.branch.name }} · {{ t(directionKey(device.direction)) }}
-        </p>
+        <p class="truncate text-xs text-muted">{{ device.model || t("faceid.terminals.hikvision") }} · {{ device.branch.name }}</p>
+        <p class="mt-0.5 inline-flex items-center gap-1 text-xs text-subtle"><DoorOpen :size="12" aria-hidden="true" />{{ t(directionKey(device.direction)) }}</p>
       </div>
       <StatusPill size="sm" :tone="STATUS_TONES[device.status]" :live="device.status === 'online'" :label="t(`faceid.status.${device.status}`)" />
     </header>
@@ -48,9 +47,9 @@ const now = new Date().getHours();
         <p v-else class="mt-0.5 text-sm text-muted">{{ t("faceid.terminals.noScanYet") }}</p>
       </div>
       <div class="min-w-0 rounded-[10px] bg-surface-2/70 px-3 py-2.5">
-        <p class="text-[11px] font-medium uppercase tracking-wide text-subtle">{{ t("faceid.terminals.today") }}</p>
+        <p class="text-[11px] font-medium uppercase tracking-wide text-subtle">{{ t("faceid.terminals.todayShort") }}</p>
         <p class="mt-0.5 text-xl font-semibold tabular-nums leading-7 text-fg">{{ device.scans_today }}</p>
-        <div class="mt-1 flex h-6 items-end gap-[2px]" :aria-label="t('faceid.terminals.perHour')" role="img">
+        <div class="mt-1 flex h-8 items-end gap-[2px]" :aria-label="t('faceid.terminals.perHour')" role="img">
           <span
             v-for="(count, hour) in device.hourly"
             :key="hour"

@@ -658,6 +658,57 @@ def morning_post(company, branch, board_rows: list[dict], rostered: int) -> int:
     return groups.broadcast(company.pk, GroupEvent.ATTENDANCE, text, branch_id=branch.pk)
 
 
+# The day's summary for managers ---------------------------------------------------------
+
+
+def evening_summary(member: Membership, board: dict, day) -> bool:
+    """One manager's day, about the branches they see (`queries.day_board`): how many came of
+    those rostered, who was late and by how much, who is absent without leave, who is still in.
+    Nothing when nobody was rostered and nobody came."""
+    totals = board["totals"]
+    came = totals[queries.IN] + totals[queries.LATE]
+    if not totals["rostered"] and not came:
+        return False
+    late = [row for row in board["people"] if row["state"] == queries.LATE]
+    absent = [row for row in board["people"] if row["state"] == queries.ABSENT]
+
+    def title(_person):
+        if totals["rostered"]:
+            return _("Attendance today: %(came)s of %(rostered)s came") % {
+                "came": came,
+                "rostered": totals["rostered"],
+            }
+        return _("Attendance today: %(came)s came") % {"came": came}
+
+    def body(_person):
+        lines = [_("On time: %(count)s") % {"count": totals[queries.IN]}]
+        if late:
+            names = ", ".join(
+                _("%(name)s (%(late)s)")
+                % {
+                    "name": row["member"]["name"],
+                    "late": bot_messages.duration(row["record"]["late_minutes"]),
+                }
+                for row in late
+            )
+            lines.append(_("Late: %(names)s") % {"names": names})
+        if absent:
+            names = ", ".join(row["member"]["name"] for row in absent)
+            lines.append(_("Absent without leave: %(names)s") % {"names": names})
+        lines.append(_("Still in: %(count)s") % {"count": totals["present"]})
+        return "\n".join(lines)
+
+    created = inbox.notify(
+        [member],
+        "attendance.summary",
+        title=title,
+        body=body,
+        url=_url(member.company_id, f"?date={day.isoformat()}"),
+        dedupe_key=f"summary:{day.isoformat()}",
+    )
+    return bool(created)
+
+
 # Employee-bot nudges --------------------------------------------------------------------
 
 

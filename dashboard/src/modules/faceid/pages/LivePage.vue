@@ -140,7 +140,7 @@ function photo(scan: Scan): void {
       </template>
     </PageHeader>
 
-    <KpiStrip :items="kpis" :loading="dayScans.isPending.value" :columns="4" phone="grid" />
+    <KpiStrip :items="kpis" :loading="dayScans.isPending.value" :columns="4" phone="compact" />
 
     <div class="flex flex-wrap items-center gap-2">
       <DatePicker v-model="day" size="sm" :max="today" :placeholder="t('common.today')" format="weekday" class="w-56 max-sm:w-full" />

@@ -209,6 +209,12 @@ register_kind(
     default_telegram=True,
     severity="warning",
 )
+register_kind(
+    "attendance.summary",
+    label=_("The day's attendance, in the evening"),
+    audience="owner",
+    default_telegram=True,
+)
 
 # "Keldim / Ketdim" in the employee bot's menu (opens the mini app's check-in when it has
 # an https address; otherwise the bot asks for a location share).

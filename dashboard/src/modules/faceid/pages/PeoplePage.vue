@@ -147,6 +147,7 @@ async function setAside(row: KnownPerson): Promise<void> {
         <div v-else class="flex flex-col gap-2">
           <StatusPill class="self-start" size="sm" tone="warning" :label="t('faceid.people.notInDaybook')" />
           <template v-if="canManage">
+            <p v-if="row.suggestions.length" class="text-xs text-subtle">{{ t("faceid.people.suggestionsHint") }}</p>
             <div v-if="row.suggestions.length" class="flex flex-wrap gap-1.5">
               <button
                 v-for="suggestion in row.suggestions.slice(0, 3)"

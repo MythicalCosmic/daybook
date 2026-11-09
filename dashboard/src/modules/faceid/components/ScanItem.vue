@@ -5,7 +5,7 @@
  * and how long ago) and what it did, as a chip ("On time", "Late 14 min", "Left · 9 h 7 min",
  * "Repeat", "Unknown face", "Not in Daybook").
  */
-import { CreditCard, Fingerprint, ScanFace } from "@lucide/vue";
+import { CreditCard, Fingerprint } from "@lucide/vue";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -36,7 +36,8 @@ const chip = computed(() => {
 });
 const tone = computed(() => (props.scan.flags.includes("simulated") ? "info" : props.scan.action === "checked_in" && props.scan.record?.is_late ? "warning" : ACTION_TONES[props.scan.action]));
 const ring = computed(() => (props.scan.action === "checked_in" && props.scan.record?.is_late ? "var(--c-warning)" : RING_COLORS[props.scan.action]));
-const method = computed(() => ({ fingerprint: Fingerprint, card: CreditCard })[props.scan.method as "fingerprint" | "card"] ?? ScanFace);
+/** Only a finger or a card says how; a face is the usual way. */
+const method = computed(() => ({ fingerprint: Fingerprint, card: CreditCard })[props.scan.method as "fingerprint" | "card"] ?? null);
 </script>
 
 <template>
@@ -48,7 +49,7 @@ const method = computed(() => ({ fingerprint: Fingerprint, card: CreditCard })[p
       <span class="min-w-0 flex-1">
         <span class="flex min-w-0 items-center gap-1.5">
           <span class="truncate text-sm font-semibold text-fg">{{ name }}</span>
-          <component :is="method" :size="13" class="shrink-0 text-subtle" :aria-label="t(`faceid.method.${scan.method || 'face'}`)" />
+          <component :is="method" v-if="method" :size="13" class="shrink-0 text-subtle" :aria-label="t(`faceid.method.${scan.method}`)" />
         </span>
         <span class="block truncate text-xs text-muted">
           {{ subtitle }}<template v-if="showBranch"><template v-if="subtitle"> · </template>{{ scan.branch.name }} · {{ scan.device.name }}</template>
