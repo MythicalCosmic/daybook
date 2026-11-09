@@ -164,3 +164,17 @@ def test_the_employee_shows_in_the_list_at_once(org, scan, owner_api):
     assert [(row["first_name"], row["face_numbers"], row["source"]) for row in rows] == [
         ("Гулирано", ["00000002"], "terminal")
     ]
+
+
+def test_a_failure_never_loses_the_scan(org, scan, monkeypatch):
+    def broken(*args, **kwargs):
+        FaceLink.objects.create(company=org.company, employee_no="X1", ignored=True)
+        raise RuntimeError("a bug")
+
+    monkeypatch.setattr("apps.davomat.services.create_employee", broken)
+
+    event = scan(8, 1)
+
+    assert event is not None and event.action == Action.NOT_LINKED
+    assert not FaceLink.objects.filter(employee_no="X1").exists()  # rolled back
+    assert FaceEvent.objects.filter(pk=event.pk).exists()

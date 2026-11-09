@@ -885,8 +885,13 @@ def auto_create_employee(company: Company, device, employee_no: str, name: str):
         membership = link.membership if link is not None else None
         if membership is None:
             return None
-    except DomainError as exc:
+    except (DomainError, PermissionDenied) as exc:
         logger.warning("Face ID number %s not made an employee: %s", number, exc)
+        return None
+    except Exception:
+        # Best effort: whatever went wrong was rolled back to the savepoint, and the scan is
+        # kept as an unlinked one, never lost.
+        logger.exception("Face ID number %s not made an employee", number)
         return None
     return Membership.objects.select_related("company", "user", "role").get(pk=membership.pk)
 
