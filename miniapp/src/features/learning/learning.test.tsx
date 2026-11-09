@@ -175,7 +175,8 @@ describe("Home's training card", () => {
     const rows = await screen.findAllByRole("button", { name: /Sovuq zanjir|Retsept/ });
     expect(rows.map((row) => row.querySelector(".lrn-mini-title")?.textContent)).toEqual(["Retsept bo‘yicha dori berish", "Sovuq zanjir"]);
     expect(rows[0].textContent).toContain("Late since 19 Oct");
-    expect(rows[1].textContent).toContain("2 of 4 steps done · Due 28 Oct");
+    // "2 of 4" keeps together on a line (no-break spaces).
+    expect(rows[1].textContent).toContain("2\u00a0of\u00a04 steps done · Due 28 Oct");
     // The optional course stays off the card.
     expect(container.textContent).not.toContain("Kassa qoidalari");
     fireEvent.click(rows[1]);
@@ -210,7 +211,7 @@ describe("the learning home", () => {
 
     const checks = await screen.findByText("Dushanba tekshiruvi");
     const open = checks.closest("button")!;
-    expect(open.textContent).toContain("Answer by tomorrow, 10:00");
+    expect(open.textContent).toContain("Due tomorrow, 10:00");
     fireEvent.click(open);
     expect(navigationState().stack.at(-1)).toEqual({ feature: "learning", page: "check", params: { id: 61 } });
     expect(screen.getByText("O‘tgan hafta").closest(".list-item")?.textContent).toContain("Passed");

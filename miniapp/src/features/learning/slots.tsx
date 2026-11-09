@@ -53,8 +53,14 @@ export function TrainingCard({ member }: SlotProps) {
             <span className="lrn-mini-text">
               <span className="lrn-mini-title">{card.course.title}</span>
               <ProgressBar value={card.percent} size="sm" tone="accent" ariaLabel={`${card.percent}%`} />
-              <span className={cx("lrn-mini-meta", card.late && "lrn-late")}>
-                {[t("stepsDone", { done: card.steps_done, total: card.steps_total }), due].filter(Boolean).join(" · ")}
+              <span className="lrn-mini-meta">
+                {t("stepsDone", { done: card.steps_done, total: card.steps_total })}
+                {due && (
+                  <>
+                    {" · "}
+                    <span className={cx(card.late && "lrn-late")}>{due}</span>
+                  </>
+                )}
               </span>
             </span>
             <ChevronRight className="lrn-mini-chevron" size={19} strokeWidth={2.5} aria-hidden />

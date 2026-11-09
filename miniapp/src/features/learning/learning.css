@@ -144,7 +144,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-.lrn-mini-meta.lrn-late {
+.lrn-mini-meta .lrn-late {
   color: var(--color-accent-700);
 }
 
@@ -451,6 +451,9 @@
 /* — the lesson player — */
 .lrn-player {
   position: relative;
+  /* The screen is a flex column: without this a video (no content height of its own) shrank to
+     a strip, then to nothing, as the page grew. */
+  flex: none;
   overflow: hidden;
   border-radius: var(--radius-md);
   background: #0f0e0d;

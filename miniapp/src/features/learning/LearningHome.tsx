@@ -111,7 +111,7 @@ function Checks({ entries }: { entries: CheckEntry[] | undefined }) {
             key={entry.entry_id}
             icon={ClipboardCheck}
             title={entry.title}
-            subtitle={t("check.due", { when: whenText(entry.due_at, now, member.timeZone, locale, t) })}
+            subtitle={t("check.dueShort", { when: whenText(entry.due_at, now, member.timeZone, locale, t) })}
             value={<Badge tone="accent" size="small">{t("check.start")}</Badge>}
             onClick={() => go.page("check", { id: entry.entry_id })}
           />
