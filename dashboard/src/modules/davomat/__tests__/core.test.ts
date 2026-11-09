@@ -139,21 +139,34 @@ describe("sign-in", () => {
     expect(window.localStorage.getItem("daybook.console.remember")).toBe("false");
   });
 
-  it("says when the pair is wrong and when the account is locked for a while", async () => {
+  it("says when the pair is wrong, when the account may not sign in and how long a lockout lasts, in its own words", async () => {
     let answer = 400;
-    stubApi({ "POST auth/password/": () => (answer === 400 ? json({ detail: "Wrong username or password." }, 400) : json({ detail: "Too many attempts. Try again in 15 minutes." }, 429)) });
+    // The server's shapes (apps/davomat): its texts may not be translated; the page uses its codes.
+    stubApi({
+      "POST auth/password/": () =>
+        answer === 400
+          ? json({ detail: "Неверный… (untranslated)", code: "wrong_password" }, 400)
+          : answer === 403
+            ? json({ detail: "This account can't use the web app.", code: "no_access" }, 403)
+            : json({ detail: "Too many wrong passwords. Try again in 12 minutes.", code: "locked" }, 429),
+    });
     const { wrapper } = await mountLogin();
     await wrapper.get("input[data-testid=login-username]").setValue("aziza");
     await wrapper.get("input[data-testid=login-password]").setValue("nope");
     await wrapper.get("form").trigger("submit");
     await flushPromises();
-    expect(wrapper.get("[data-testid=login-problem]").text()).toContain("Wrong username or password.");
+    expect(wrapper.get("[data-testid=login-problem]").text()).toBe(en["davomat.login.wrong"]);
     expect((wrapper.get("input[data-testid=login-password]").element as HTMLInputElement).value).toBe("");
-    answer = 429;
-    await wrapper.get("input[data-testid=login-password]").setValue("again");
-    await wrapper.get("form").trigger("submit");
-    await flushPromises();
-    expect(wrapper.get("[data-testid=login-problem]").text()).toContain("15 minutes");
+    for (const [code, text] of [
+      [403, en["davomat.login.noAccess"]],
+      [429, "Too many wrong passwords. Try again in 12 minutes."],
+    ] as const) {
+      answer = code;
+      await wrapper.get("input[data-testid=login-password]").setValue("again");
+      await wrapper.get("form").trigger("submit");
+      await flushPromises();
+      expect(wrapper.get("[data-testid=login-problem]").text()).toBe(text);
+    }
   });
 
   it("asks for both fields before calling, and shows the password on request", async () => {

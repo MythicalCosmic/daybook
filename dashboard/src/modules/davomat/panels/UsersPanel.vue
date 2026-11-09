@@ -30,7 +30,7 @@ import { useCompanyStore } from "@/stores/company";
 
 import { activateUser, deactivateUser, useRefresh, useRoles, userTelegramLink, userTelegramUnlink, useUsers } from "../api";
 import PasswordDialog from "../components/settings/PasswordDialog.vue";
-import { roleTone, type KnownKind } from "../components/settings/roles";
+import { roleLabel, roleTone, type KnownKind } from "../components/settings/roles";
 import TelegramLinkDialog from "../components/settings/TelegramLinkDialog.vue";
 import UserDialog from "../components/settings/UserDialog.vue";
 import type { RoleKind, User } from "../types";
@@ -52,7 +52,7 @@ const fullName = (user: User) => [user.first_name, user.last_name].filter(Boolea
 const isSelf = (user: User) => user.is_self ?? user.id === company.current?.membership_id;
 /** A user's role kind; "other" for someone whose role isn't a web role any more. */
 const kindOf = (user: User): KnownKind => user.role?.kind ?? "other";
-const roleName = (user: User) => user.role?.name ?? t("davomat.users.noRole");
+const roleName = (user: User) => (user.role ? roleLabel(user.role, t) : t("davomat.users.noRole"));
 
 const ORDER: Record<KnownKind, number> = { owner: 0, admin: 1, manager: 2, viewer: 3, other: 4 };
 const all = computed(() =>
@@ -205,7 +205,7 @@ const roleGuide = computed(() =>
   (["owner", "admin", "manager", "viewer"] as const).map((kind) => ({
     kind,
     icon: ROLE_ICONS[kind],
-    name: roles.data.value?.find((role) => (role.kind ?? (role.is_owner ? "owner" : "")) === kind)?.name ?? t(`davomat.users.role.${kind}.name`),
+    name: t(`davomat.users.role.${kind}.name`),
     can: [1, 2, 3].map((n) => t(`davomat.users.role.${kind}.can${n}`)),
   })),
 );

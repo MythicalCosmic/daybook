@@ -26,7 +26,7 @@ import { createUser, listEmployees, updateUser, type RoleOption } from "../../ap
 import { suggestUsername, USERNAME_PATTERN, MIN_LENGTH } from "../../lib/password";
 import type { Employee, User } from "../../types";
 import PasswordField from "../fields/PasswordField.vue";
-import { assignableRoles, roleKind, SCOPED, type KnownKind } from "./roles";
+import { assignableRoles, roleKind, roleLabel, SCOPED, type KnownKind } from "./roles";
 
 const open = defineModel<boolean>("open", { default: false });
 
@@ -54,7 +54,7 @@ const ICONS: Record<KnownKind, Component> = { owner: Crown, admin: ShieldCheck, 
 const roleOptions = computed<RadioCardOption<number>[]>(() =>
   choices.value.map((role) => ({
     value: role.id,
-    label: role.name,
+    label: roleLabel(role, t),
     description: t(`davomat.users.role.${role.roleKind}.hint`),
     icon: ICONS[role.roleKind],
   })),

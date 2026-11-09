@@ -16,7 +16,7 @@ export const SCOPED: readonly KnownKind[] = ["manager", "viewer"];
 
 const NAMES: Record<Exclude<RoleKind, "owner">, RegExp> = {
   admin: /^(admin|administrator|администратор)$/i,
-  manager: /^(manager|menejer|boshqaruvchi|менеджер|управляющий)$/i,
+  manager: /^(manager|menejer|rahbar|boshqaruvchi|менеджер|руководитель|управляющий)$/i,
   viewer: /^(viewer|kuzatuvchi|наблюдатель)$/i,
 };
 
@@ -39,6 +39,16 @@ export function assignableRoles(roles: readonly RoleOption[], options: { owner?:
     .map((role) => ({ ...role, roleKind: roleKind(role) }))
     .filter((role) => role.roleKind !== "other" && (options.owner || role.roleKind !== "owner"))
     .sort((a, b) => ORDER.indexOf(a.roleKind as RoleKind) - ORDER.indexOf(b.roleKind as RoleKind));
+}
+
+/**
+ * A role's name in the language shown: the four known roles by their kind (their stored names are
+ * in the language the organization had when they were made), any other role by its own name.
+ */
+export function roleLabel(role: { name: string; is_owner?: boolean; kind?: string | null } | null | undefined, t: (key: string) => string): string {
+  if (!role) return "";
+  const kind = roleKind(role);
+  return kind === "other" ? role.name : t(`davomat.users.role.${kind}.name`);
 }
 
 /** The chip's tone for a role. */

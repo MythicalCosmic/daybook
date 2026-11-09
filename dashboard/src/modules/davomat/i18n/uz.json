@@ -660,5 +660,7 @@
   "davomat.users.usernameHint": "Kirishda yoziladi: harflar, raqamlar va . _ -",
   "davomat.users.usernameInvalid": "Faqat harflar, raqamlar va . _ - belgilarini ishlating",
   "davomat.users.usernameShort": "Kamida 3 belgi",
-  "davomat.users.you": "Siz"
+  "davomat.users.you": "Siz",
+  "davomat.login.lockedFor": "Parol ko‘p marta noto‘g‘ri kiritildi. {n} daqiqadan keyin qayta urinib ko‘ring. | Parol ko‘p marta noto‘g‘ri kiritildi. {n} daqiqadan keyin qayta urinib ko‘ring. | Parol ko‘p marta noto‘g‘ri kiritildi. {n} daqiqadan keyin qayta urinib ko‘ring.",
+  "davomat.login.noAccess": "Bu hisob veb-ilovaga kira olmaydi. Administratoringizga murojaat qiling."
 }

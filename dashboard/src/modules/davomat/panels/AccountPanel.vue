@@ -28,6 +28,7 @@ import { useUiStore, type ThemeMode } from "@/stores/ui";
 
 import { changePassword } from "../api";
 import PasswordField from "../components/fields/PasswordField.vue";
+import { roleLabel } from "../components/settings/roles";
 import SecretInput from "../components/settings/SecretInput.vue";
 import { MIN_LENGTH } from "../lib/password";
 
@@ -101,7 +102,7 @@ const theme = computed<ThemeMode>({ get: () => ui.themeMode, set: (mode) => ui.s
         <p class="mt-0.5 flex flex-wrap items-center gap-x-2 text-sm text-muted">
           <span v-if="user?.username" class="font-mono">{{ user.username }}</span>
           <span v-if="user?.username && company.current?.role" aria-hidden="true">·</span>
-          <span v-if="company.current?.role">{{ company.current.role.name }}</span>
+          <span v-if="company.current?.role">{{ roleLabel({ ...company.current.role, is_owner: company.current.is_owner }, t) }}</span>
         </p>
       </div>
       <p class="flex items-center gap-2 text-sm text-muted">

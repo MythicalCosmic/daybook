@@ -49,6 +49,22 @@ function readCaps(event: KeyboardEvent): void {
   capsLock.value = typeof event.getModifierState === "function" && event.getModifierState("CapsLock");
 }
 
+/**
+ * What went wrong, in the page's language: the server's codes (`wrong_password`, `no_access`,
+ * `locked` with the minutes left in its text) map to this module's own sentences.
+ */
+function problemOf(error: unknown): { kind: Problem; text: string } {
+  if (!isApiError(error)) return { kind: "failed", text: t("davomat.login.failed") };
+  if (error.isNetwork) return { kind: "offline", text: t("davomat.login.offline") };
+  if (error.status === 429 || error.code === "locked") {
+    const minutes = Number(/(\d+)/.exec(error.detail ?? "")?.[1] ?? 0);
+    return { kind: "locked", text: minutes > 0 ? t("davomat.login.lockedFor", { n: minutes }, minutes) : t("davomat.login.locked") };
+  }
+  if (error.status === 403 || error.code === "no_access") return { kind: "wrong", text: t("davomat.login.noAccess") };
+  if (error.status === 400 || error.status === 401) return { kind: "wrong", text: t("davomat.login.wrong") };
+  return { kind: "failed", text: t("davomat.login.failed") };
+}
+
 async function submit(): Promise<void> {
   if (busy.value) return;
   const name = username.value.trim();
@@ -66,10 +82,7 @@ async function submit(): Promise<void> {
     await session.loadMe();
     await router.replace(safeNext(route.query.next));
   } catch (error) {
-    if (isApiError(error) && error.status === 429) problem.value = { kind: "locked", text: error.detail ?? t("davomat.login.locked") };
-    else if (isApiError(error) && (error.status === 400 || error.status === 401 || error.status === 403)) problem.value = { kind: "wrong", text: error.detail ?? t("davomat.login.wrong") };
-    else if (isApiError(error) && error.isNetwork) problem.value = { kind: "offline", text: t("davomat.login.offline") };
-    else problem.value = { kind: "failed", text: t("davomat.login.failed") };
+    problem.value = problemOf(error);
     password.value = "";
     await nextTick();
     passwordInput.value?.focus();

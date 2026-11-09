@@ -660,5 +660,7 @@
   "davomat.users.usernameHint": "What they type to sign in: letters, digits and . _ -",
   "davomat.users.usernameInvalid": "Use only letters, digits and . _ -",
   "davomat.users.usernameShort": "At least 3 characters",
-  "davomat.users.you": "You"
+  "davomat.users.you": "You",
+  "davomat.login.lockedFor": "Too many wrong passwords. Try again in {n} minutes. | Too many wrong passwords. Try again in {n} minute. | Too many wrong passwords. Try again in {n} minutes.",
+  "davomat.login.noAccess": "This account can’t use the web app. Ask your administrator."
 }
