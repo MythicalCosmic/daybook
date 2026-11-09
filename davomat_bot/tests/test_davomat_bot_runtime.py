@@ -82,29 +82,47 @@ async def test_a_new_token_stops_polling_without_redis(monkeypatch, tmp_path, fa
     assert await asyncio.wait_for(watching, 2) == "token"
 
 
+@pytest.mark.django_db
 def test_the_version_is_read_with_the_key_prefix(fake_redis, settings):
     settings.REDIS_KEY_PREFIX = "t:f:"
-    assert edition.token_version() is None
+    assert edition.token_version() == "0"  # nothing set up yet
 
     core_redis.get_redis().set("t:f:davomat:bot_token_version", 7)
 
     assert edition.token_version() == "7"
 
 
-def test_redis_down_means_no_version(monkeypatch):
+@pytest.mark.django_db
+def test_without_redis_the_database_has_the_version(monkeypatch, company):
+    from apps.davomat import conf as davomat_conf
+
+    row = davomat_conf.get_settings(company)
+    row.token_version = 4
+    row.save(update_fields=["token_version"])
+
     def down():
         raise ConnectionError("no Redis")
 
     monkeypatch.setattr(core_redis, "get_redis", down)
 
-    assert edition.token_version() is None
+    assert edition.token_version() == "4"
 
 
 @pytest.mark.django_db
-def test_the_setting_is_the_fallback_token(settings):
-    settings.OWNER_BOT_TOKEN = "55:FALLBACK"
+def test_the_token_comes_from_the_organizations_settings(settings, company):
+    from apps.davomat import conf as davomat_conf
 
-    assert edition.stored_token() == "55:FALLBACK"
+    settings.EDITION = "davomat"
+    settings.OWNER_BOT_TOKEN = "55:FROM-ENV"
+    assert edition.stored_token() == ""  # Davomat: only the token pasted in Settings
+
+    row = davomat_conf.get_settings(company)
+    row.bot_token = TOKEN
+    row.save(update_fields=["bot_token"])
+    assert edition.stored_token() == TOKEN
+
+    settings.EDITION = "daybook"  # a developer's Daybook database: the setting stands in
+    assert edition.stored_token() == "55:FROM-ENV"
 
 
 def test_the_health_check_reads_the_heartbeat(tmp_path):

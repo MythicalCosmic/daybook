@@ -1,44 +1,36 @@
 """`/start` for strangers and linked people, `/start link_<code>`, `/help`, anything else, and
 block notices."""
 
+from datetime import timedelta
+
 import pytest
 from aiogram.methods import SetMyCommands
 from asgiref.sync import sync_to_async
+from django.utils import timezone
 
 from apps.accounts.models import User
 from apps.accounts.telegram_chat import LANGUAGE_BUTTON
-from apps.core.exceptions import DomainError
-from apps.members.models import Membership
+from apps.davomat import conf as davomat_conf
+from apps.davomat import services as davomat_services
+from apps.davomat.models import TelegramLink
 from apps.notifications.emoji import has_emoji
-from davomat_bot import edition
 from davomat_bot.tests import updates
 
 pytestmark = pytest.mark.django_db(transaction=True)
 
 
-class Codes(dict[str, Membership]):
-    """Valid link codes, and every claim the bot made."""
-
-    def __init__(self):
-        super().__init__()
-        self.calls: list[tuple] = []
-
-
 @pytest.fixture
-def codes(monkeypatch):
-    """apps.davomat's `claim_link`, faked: `codes["abc"] = membership` makes a valid code."""
-    valid = Codes()
+def link_for(org):
+    """`link_for(membership)`: a fresh one-time link code (apps.davomat), as an admin makes
+    it in the web app (the organization's bot connected)."""
+    row = davomat_conf.get_settings(org)
+    row.bot_username = "davomat_test_bot"
+    row.save(update_fields=["bot_username"])
 
-    def claim(code, *, telegram_id, username, first_name):
-        valid.calls.append((code, telegram_id, username, first_name))
-        membership = valid.pop(code, None)
-        if membership is None:
-            raise DomainError("This link has expired. Ask for a new one.")
-        User.objects.filter(pk=membership.user_id).update(telegram_id=telegram_id)
-        return membership
+    def make(membership) -> str:
+        return davomat_services.make_link(membership, by=None).code
 
-    monkeypatch.setattr(edition, "claim_link", claim)
-    return valid
+    return make
 
 
 def buttons(message) -> list[list[str]]:
@@ -57,13 +49,12 @@ async def test_a_stranger_learns_how_to_link_and_leaves_no_trace(dp, bot, org):
     assert not await User.objects.filter(telegram_id=9001).aexists()
 
 
-async def test_a_link_code_links_this_telegram(dp, bot, linked, codes):
+async def test_a_link_code_links_this_telegram(dp, bot, linked, link_for):
     aziz = await sync_to_async(linked)(first_name="Aziz", last_name="Rahimov")
-    codes["k7Qm2x"] = aziz
+    code = await sync_to_async(link_for)(aziz)
 
-    await dp.feed_update(bot, updates.message(updates.tg_user(9002, "Aziz"), "/start link_k7Qm2x"))
+    await dp.feed_update(bot, updates.message(updates.tg_user(9002, "Aziz"), f"/start link_{code}"))
 
-    assert codes.calls == [("k7Qm2x", 9002, "user9002", "Aziz")]
     [reply] = bot.sent()
     assert "linked to <b>Aziz Rahimov</b> at Namuna MChJ" in reply.text
     assert "/me" in reply.text and "/today" not in reply.text  # an employee: no board
@@ -74,35 +65,41 @@ async def test_a_link_code_links_this_telegram(dp, bot, linked, codes):
     [menu] = [r for r in bot.requests if isinstance(r, SetMyCommands)]
     assert [c.command for c in menu.commands] == ["me", "language", "help", "start"]
 
+    # The same account opening the same link again is fine; anyone else is told it's used.
+    await dp.feed_update(bot, updates.message(updates.tg_user(9002, "Aziz"), f"/start link_{code}"))
+    assert "linked to <b>Aziz Rahimov</b>" in bot.sent()[-1].text
+    await dp.feed_update(bot, updates.message(updates.tg_user(9020), f"/start link_{code}"))
+    assert bot.sent()[-1].text == "This link was used already. Ask for a new one."
+    assert not await User.objects.filter(telegram_id=9020).aexists()
 
-async def test_a_manager_who_links_gets_the_board_too(dp, bot, linked, codes):
+
+async def test_a_manager_who_links_gets_the_board_too(dp, bot, linked, link_for):
     boss = await sync_to_async(linked)("Manager", first_name="Bekzod")
-    codes["boss1"] = boss
+    code = await sync_to_async(link_for)(boss)
 
-    await dp.feed_update(bot, updates.message(updates.tg_user(9003, "Bekzod"), "/start link_boss1"))
+    await dp.feed_update(
+        bot, updates.message(updates.tg_user(9003, "Bekzod"), f"/start link_{code}")
+    )
 
     assert "/today" in bot.sent()[0].text
     [menu] = [r for r in bot.requests if isinstance(r, SetMyCommands)]
     assert "today" in [c.command for c in menu.commands]
 
 
-async def test_a_used_or_expired_link_says_so(dp, bot, org, codes):
-    await dp.feed_update(bot, updates.message(updates.tg_user(9004), "/start link_old"))
+async def test_an_unknown_or_expired_link_says_so(dp, bot, linked, link_for):
+    aziz = await sync_to_async(linked)(first_name="Aziz")
+    code = await sync_to_async(link_for)(aziz)
+    await TelegramLink.objects.filter(membership=aziz).aupdate(
+        expires_at=timezone.now() - timedelta(minutes=1)
+    )
 
-    [reply] = bot.sent()
-    assert reply.text == "This link has expired. Ask for a new one."
+    await dp.feed_update(bot, updates.message(updates.tg_user(9004), "/start link_nonsense"))
+    await dp.feed_update(bot, updates.message(updates.tg_user(9004), f"/start link_{code}"))
+
+    unknown, expired = bot.sent()
+    assert unknown.text == "This link doesn't work. Ask for a new one."
+    assert expired.text == "This link has expired. Ask for a new one."
     assert not await User.objects.filter(telegram_id=9004).aexists()
-
-
-async def test_without_the_edition_core_a_link_fails_politely(dp, bot, org, monkeypatch):
-    def missing(*args, **kwargs):
-        raise ImportError("apps.davomat")
-
-    monkeypatch.setattr(edition, "claim_link", missing)
-
-    await dp.feed_update(bot, updates.message(updates.tg_user(9005), "/start link_abc"))
-
-    assert "doesn't work any more" in bot.sent()[0].text
 
 
 async def test_a_linked_person_is_greeted_with_their_commands(dp, bot, linked):

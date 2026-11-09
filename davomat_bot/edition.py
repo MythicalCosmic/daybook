@@ -4,58 +4,47 @@ the organization, its bot token and the token's version, and claiming a link cod
 All sync (Django); handlers call them through `sync_to_async`.
 """
 
-import logging
-
 from django.conf import settings
 
 from apps.accounts.models import User
 from apps.companies.models import Company
-from apps.core import redis as core_redis
+from apps.davomat import conf as davomat_conf
+from apps.davomat import queries as davomat_queries
+from apps.davomat import services as davomat_services
 from apps.members.models import Membership
 
-logger = logging.getLogger(__name__)
-
 # Bumped by apps.davomat whenever the token is saved; the bot restarts when it changes.
-TOKEN_VERSION_KEY = ("davomat", "bot_token_version")
+TOKEN_VERSION_KEY = davomat_queries.TOKEN_VERSION_KEY
 
 
 def organization() -> Company | None:
-    """The install's organization: one install, one company (the first active one)."""
-    return Company.objects.filter(is_active=True).order_by("pk").first()
+    """The install's organization: one install, one company."""
+    return davomat_conf.organization()
 
 
 def stored_token() -> str:
-    """The organization's bot token from Settings (kept encrypted by apps.davomat), else the
-    `OWNER_BOT_TOKEN` setting, else ""."""
-    token = ""
-    try:
-        from apps.davomat import services as davomat
-    except ImportError:  # an install without the edition core: the setting only
-        davomat = None
-    reader = getattr(davomat, "bot_token", None)
-    if reader is not None:
-        company = organization()
-        if company is not None:
-            token = reader(company) or ""
-    return token or settings.OWNER_BOT_TOKEN or ""
+    """The organization's bot token from Settings (kept encrypted by apps.davomat), or "".
+
+    Outside the Davomat edition (a developer running the bot against a Daybook database) the
+    `OWNER_BOT_TOKEN` setting stands in, since nothing else sends through this bot there."""
+    if settings.EDITION == "davomat":
+        return davomat_queries.bot_token()
+    return settings.OWNER_BOT_TOKEN or ""
 
 
 def token_version() -> str | None:
-    """The token's version as apps.davomat wrote it to Redis; None when unset or unreachable."""
+    """The token's version (Redis, else the database), or None when it can't be read."""
     try:
-        value = core_redis.get_redis().get(core_redis.key(*TOKEN_VERSION_KEY))
-    except Exception as exc:  # Redis down: the stored-token check still catches a change
-        logger.warning("Couldn't read the bot token version from Redis: %s", exc)
+        return str(davomat_queries.token_version())
+    except Exception:  # no database right now: the next look tries again
         return None
-    return str(value) if value is not None else None
 
 
 def claim_link(code: str, *, telegram_id: int, username: str, first_name: str) -> Membership:
-    """Links this Telegram account to the person a one-time link was made for (apps.davomat).
-    Raises `DomainError` with a message to show when the code is unknown, used or expired."""
-    from apps.davomat.services import claim_link as claim
-
-    return claim(code, telegram_id=telegram_id, username=username, first_name=first_name)
+    """Links this Telegram account to the person a one-time link was made for. Raises
+    `apps.davomat.services.LinkRefused` (a DomainError with the message to show) when the code is
+    unknown, used by someone else, expired or the person is no longer active."""
+    return davomat_services.claim_link(code, telegram_id, username, first_name)
 
 
 def linked_user(telegram_id: int) -> User | None:

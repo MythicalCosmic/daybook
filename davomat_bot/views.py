@@ -188,11 +188,7 @@ def _me(member: Membership, *, now: datetime | None) -> BotMessage:
         )
         extra = month.days_present - month.expected_present
         if extra:
-            lines.append(
-                "    "
-                + ngettext("Extra days: %(count)d", "Extra days: %(count)d", extra)
-                % {"count": extra}
-            )
+            lines.append("    " + _("Days without a shift: %(count)d") % {"count": extra})
     else:
         lines.append("    " + _("Days at work: %(count)d") % {"count": month.days_present})
     lines.append("    " + _("Hours worked: %(time)s") % {"time": duration(month.worked_minutes)})

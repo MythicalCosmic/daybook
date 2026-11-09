@@ -70,12 +70,13 @@ def _claim(code: str, telegram_id: int, username: str, first_name: str):
     if not code:
         return None, None
     try:
+        # It also records that this person started the bot (notifications may come now).
         claimed = edition.claim_link(
             code, telegram_id=telegram_id, username=username, first_name=first_name
         )
-    except DomainError as exc:
+    except DomainError as exc:  # apps.davomat's LinkRefused: unknown, used, expired, inactive
         return None, str(exc)
-    except ObjectDoesNotExist, DjangoValidationError, ValueError, ImportError:
+    except ObjectDoesNotExist, DjangoValidationError, ValueError:
         return None, None
     member = (
         Membership.objects.select_related("company", "user", "role", "position")
@@ -84,13 +85,7 @@ def _claim(code: str, telegram_id: int, username: str, first_name: str):
     )
     if member is None:
         return None, None
-    user = member.user
-    if user.telegram_id == telegram_id:
-        User.objects.filter(pk=user.pk).update(
-            owner_bot_started_at=user.owner_bot_started_at or timezone.now(),
-            owner_bot_blocked_at=None,
-        )
-    language = language_of(user.language)
+    language = language_of(member.user.language)
     with translation.override(language):
         text, markup = bot_messages.linked(member)
     return (text, markup, language, bot_messages.sees_attendance(member)), None
