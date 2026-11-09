@@ -44,6 +44,7 @@ from apps.notifications import telegram
 from apps.notifications.telegram import BotName, serialize_markup
 from apps.recognition import conf as recognition_conf
 from apps.recognition import queries as recognition_queries
+from apps.recognition import rules as recognition_rules
 from apps.recognition import services as recognition
 from apps.recognition.models import PointsEntry
 from apps.timeoff.queries import is_holiday, members_off
@@ -52,10 +53,6 @@ logger = logging.getLogger(__name__)
 
 # Kinds answered with buttons in the bot; the others only in the app.
 BOT_KINDS = bot_messages.BOT_KINDS
-# Points for a try that wasn't right (a right answer earns the company's points for "daily").
-# At integration: `apps.recognition.rules.points_for(conf.get_settings(company), "daily_tried")`
-# (package R's table), which this 1 stands in for until R is merged.
-TRIED_POINTS = 1
 # A question of the day isn't asked again within this many days while others are left; the
 # recent dailies whose kinds the next one varies from.
 SEEN_DAYS = 30
@@ -190,6 +187,11 @@ def answer(
     return result
 
 
+def tried_points(company) -> int:
+    """The company's points for a question of the day answered wrong (its points table)."""
+    return recognition_rules.points_for(recognition_conf.get_settings(company), "daily_tried")
+
+
 def _award(daily: DailyQuestion, member: Membership, correct: bool, now: datetime) -> int | None:
     if not recognition_conf.is_on(member.company):
         return None
@@ -199,7 +201,9 @@ def _award(daily: DailyQuestion, member: Membership, correct: bool, now: datetim
                 member,
                 reason=PointsEntry.Reason.DAILY,
                 key=f"daily:{daily.pk}",
-                points=None if correct else TRIED_POINTS,
+                # A right answer earns the company's points for "daily", a try that wasn't
+                # right its points for "daily_tried" (the Recognition settings).
+                points=None if correct else tried_points(member.company),
                 at=now,
             )
     except Exception:

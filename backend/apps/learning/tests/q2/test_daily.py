@@ -9,7 +9,16 @@ import pytest
 from apps.inbox.models import NotificationPreference
 from apps.learning import conf, daily
 from apps.learning.models import AnswerLog, DailyQuestion
-from apps.learning.tests.q2.fixtures import local, person, position, question, topic
+from apps.learning.tests.q2.fixtures import (
+    local,
+    person,
+    position,
+    question,
+    switch_on,
+    topic,
+)
+from apps.recognition import conf as recognition_conf
+from apps.recognition.models import PointsEntry
 from apps.timeoff.models import Holiday, TimeOff
 
 pytestmark = pytest.mark.django_db
@@ -190,6 +199,31 @@ def test_answered_in_the_app_the_bot_message_becomes_the_result(
     letter = "ABC"[found.order.index("a")]
     assert "Not quite." in text and f"The right answer: {letter}. +2 dan +8 gacha" in text
     assert markup is None  # no https mini app in tests: no button
+
+
+def test_a_wrong_answer_earns_the_companys_points_for_trying(on, staff, freeze):
+    """Recognition's points table, not a number of learning's own: 1 by default, or the
+    company's "daily_tried" row (PLAN-LEARNING §7.1)."""
+    switch_on(on, "recognition")
+    table = recognition_conf.get_settings(on)
+    table.points_table = {"daily_tried": 3}
+    table.save()
+    freeze(MONDAY)
+    found = DailyQuestion.objects.create(
+        company=on,
+        membership=staff,
+        day=MONDAY.date(),
+        question=question(on, "single"),
+        order=["c", "a", "b"],
+    )
+    outcome = daily.answer(found, staff, {"option": "b"})
+    assert outcome.correct is False and outcome.points == 3
+    entry = PointsEntry.objects.get(membership=staff)
+    assert (entry.reason, entry.key, entry.points) == ("daily", f"daily:{found.pk}", 3)
+    assert daily.tried_points(on) == 3
+    table.points_table = {}
+    table.save()
+    assert daily.tried_points(on) == 1
 
 
 def test_the_multi_choice_toggles_are_kept_until_answered(on, staff, freeze):
