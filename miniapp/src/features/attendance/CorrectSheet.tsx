@@ -36,7 +36,9 @@ function currentText(record: AttendanceRecord, t: PageT): string {
   if (!record.check_in_at) return t(`code.${record.status === "excused" ? "excused" : "absent"}`);
   const out = record.check_out_at ? wallClock(record.check_out_at) : "…";
   const span = `${wallClock(record.check_in_at)}–${out}`;
-  return record.worked_minutes ? `${span} · ${duration(t, record.worked_minutes)}` : span;
+  const worked = record.worked_minutes ? `${span} · ${duration(t, record.worked_minutes)}` : span;
+  // A Face ID terminal's check-in says so ("09:12–18:00 · 8 h 48 min · Face ID").
+  return record.in_source === "face" ? `${worked} · ${t("source.face")}` : worked;
 }
 
 function CorrectForm({ record, initialDate, close }: { record: AttendanceRecord | null; initialDate: string | null; close: () => void }) {

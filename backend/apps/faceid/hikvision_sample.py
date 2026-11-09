@@ -25,7 +25,8 @@ PALETTES = (
 
 
 def silhouette(seed: str, size=(240, 300)) -> bytes:
-    """A head and shoulders on a pastel background, the same for the same `seed`."""
+    """A friendly drawn head and shoulders (two dots and a smile) on a pastel background, the
+    same for the same `seed`: never a photo of anyone."""
     digest = hashlib.sha256(seed.encode()).digest()
     background, figure = PALETTES[digest[0] % len(PALETTES)]
     width, height = size
@@ -37,12 +38,21 @@ def silhouette(seed: str, size=(240, 300)) -> bytes:
         (centre_x - head, centre_y - head * 1.15, centre_x + head, centre_y + head * 1.05),
         fill=figure,
     )
-    draw.ellipse(
-        (width * 0.14, height * 0.68, width * 0.86, height * 1.25),
-        fill=figure,
+    draw.ellipse((width * 0.14, height * 0.68, width * 0.86, height * 1.25), fill=figure)
+    eye = head * 0.11
+    for side in (-1, 1):
+        x = centre_x + side * head * 0.38
+        draw.ellipse((x - eye, centre_y - eye * 2, x + eye, centre_y), fill=background)
+    smile = head * 0.42
+    draw.arc(
+        (centre_x - smile, centre_y - smile * 0.35, centre_x + smile, centre_y + smile * 0.75),
+        start=20 + digest[1] % 10,
+        end=160 - digest[2] % 10,
+        fill=background,
+        width=max(2, round(width / 70)),
     )
     out = io.BytesIO()
-    image.save(out, "JPEG", quality=82)
+    image.save(out, "JPEG", quality=84)
     return out.getvalue()
 
 

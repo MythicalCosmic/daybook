@@ -143,6 +143,8 @@
   "settings.module.assets.body": "Asosiy vositalar va amortizatsiya, jihozlar va ular kimda turgani, litsenziya va ruxsatnomalar.",
   "settings.module.learning.title": "O‘qitish va testlar",
   "settings.module.learning.body": "Video darslar va kurslar, muddatli majburiy o‘qitish, testlar, kun savoli va kimga yordam kerakligini ko‘rsatadigan ustoz.",
+  "settings.module.face_id.title": "Yuz orqali kirish (Face ID)",
+  "settings.module.face_id.body": "Xodimlar eshigidagi yuzni taniydigan terminallar: har bir skanerlash surati bilan, Telegramda kim kelgani, Davomat uchun kelish va ketish.",
   "settings.branches.description": "Har bir dorixona, ombor yoki ofis. Xodimlar filial doirasi ichida kelganini belgilaydi, yangi vazifalar ular ishlaydigan filialga tegishli bo‘ladi.",
   "settings.branches.emptyTitle": "Hali filial yo‘q",
   "settings.branches.emptyBody": "Birinchi filialni manzili va kelish doirasi bilan qo‘shing.",

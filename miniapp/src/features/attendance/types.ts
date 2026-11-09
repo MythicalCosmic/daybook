@@ -68,6 +68,9 @@ export type AttendanceRecord = {
   flags: string[];
   note: string;
   has_photo: boolean;
+  /** How the check-in and check-out were made: app, bot, manual, system, or face (a Face ID terminal). */
+  in_source?: string;
+  out_source?: string;
 };
 
 export type DayState = "off" | "upcoming" | "due" | "late" | "in" | "done";
