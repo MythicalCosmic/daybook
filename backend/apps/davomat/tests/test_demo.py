@@ -1,0 +1,89 @@
+"""The Davomat demo (`manage.py davomat_demo`, apps/davomat/demo.py)."""
+
+from datetime import date, datetime, time
+from io import StringIO
+from zoneinfo import ZoneInfo
+
+import pytest
+from django.core.management import CommandError, call_command
+
+from apps.attendance.models import AttendanceRecord, WorkShift
+from apps.companies.models import Company
+from apps.core import demo_time
+from apps.davomat import demo, queries
+from apps.davomat.models import Employee
+from apps.faceid.models import FaceDevice, FaceEvent
+from apps.members.models import Membership
+from apps.signin import services as signin
+
+pytestmark = pytest.mark.django_db
+
+TZ = ZoneInfo("Asia/Tashkent")
+NOW = datetime.combine(date(2026, 11, 10), time(10, 30), tzinfo=TZ)  # a Tuesday morning
+
+
+@pytest.fixture
+def built(davomat):
+    with demo_time.quiet():
+        return demo.build(NOW)
+
+
+def test_the_demo_organization(built):
+    """One build for every check (it takes a few seconds)."""
+    company = built.company
+    assert company.name == "Namuna MChJ" and company.default_language == "uz"
+    assert sorted(company.branches.values_list("name", flat=True)) == [
+        "Bosh ofis",
+        "Chilonzor filiali",
+    ]
+    assert FaceDevice.objects.filter(company=company).count() == 2
+    assert demo.is_demo(company)
+    employees = queries.employees(company, branch_ids=None)
+    assert employees.count() == 16  # fifteen, and the newcomer the terminal added
+    assert signin.can_sign_in(built.owner.user) and signin.can_sign_in(built.manager.user)
+    assert queries.role_kind(built.manager.role) == "manager"
+    assert built.owner.user.check_password(demo.PASSWORD)
+
+    # The newcomer added himself this morning.
+    newcomer = Membership.objects.get(company=company, first_name="Ravshan")
+    assert Employee.objects.get(membership=newcomer).source == Employee.Source.TERMINAL
+    assert newcomer.face_links.get().employee_no == "00000016"
+    assert AttendanceRecord.objects.filter(membership=newcomer).exists()
+
+    # The week and this morning have attendance.
+    records = AttendanceRecord.objects.filter(company=company)
+    assert records.filter(status=AttendanceRecord.Status.ABSENT).exists()
+    assert records.filter(status=AttendanceRecord.Status.AUTO_CLOSED).count() == 1  # Nodir
+    assert records.filter(is_late=True).exists()
+    assert built.scans > 100
+    people = list(employees)
+    states = {state["state"] for state in queries.today_states(company, people, NOW).values()}
+    assert {"in", "leave"} <= states
+    assert FaceEvent.objects.filter(company=company, kind=FaceEvent.Kind.STRANGER).exists()
+    assert WorkShift.objects.filter(company=company, date__gt=NOW.date()).exists()  # the roster
+
+
+def test_the_command_needs_the_edition(db):
+    with pytest.raises(CommandError, match="EDITION=davomat"):
+        call_command("davomat_demo", stdout=StringIO())
+
+
+def test_the_command_fills_an_empty_install_and_resets_only_itself(davomat, monkeypatch):
+    monkeypatch.setattr("django.utils.timezone.now", lambda: NOW)
+    out = StringIO()
+
+    call_command("davomat_demo", stdout=out)
+    with pytest.raises(CommandError, match="--reset"):
+        call_command("davomat_demo", stdout=StringIO())
+    call_command("davomat_demo", "--reset", stdout=StringIO())
+
+    assert "Namuna MChJ: 16 employees, 2 terminals" in out.getvalue()
+    assert Company.objects.count() == 1
+    assert Membership.objects.filter(first_name="Ravshan").count() == 1
+
+
+def test_the_command_never_removes_a_real_organization(org):
+    with pytest.raises(CommandError, match="isn't the demo"):
+        call_command("davomat_demo", "--reset", stdout=StringIO())
+
+    assert Company.objects.get() == org.company

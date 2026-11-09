@@ -1,0 +1,78 @@
+"""`manage.py davomat_demo`: the example organization "Namuna MChJ" (apps/davomat/demo.py) for
+screenshots and demos, in a Davomat install that has no organization yet.
+
+    EDITION=davomat manage.py davomat_demo [--admin-username admin] [--admin-password …]
+    EDITION=davomat manage.py davomat_demo --reset      # replace an earlier Namuna MChJ
+
+`--reset` removes only the demo's own organization (by its name), never a real one.
+"""
+
+import os
+
+from django.core.management.base import BaseCommand, CommandError
+from django.db import transaction
+from django.db.models import Count
+from django.utils import translation
+
+from apps.accounts.models import User
+from apps.companies.models import Company
+from apps.core import demo_time
+from apps.davomat import conf, demo
+from apps.davomat.passwords import FieldError
+from apps.faceid.models import FaceEvent
+
+PASSWORD_ENV = "DAVOMAT_ADMIN_PASSWORD"
+
+
+class Command(BaseCommand):
+    help = "Fill an empty Davomat install with the example organization Namuna MChJ."
+
+    def add_arguments(self, parser):
+        parser.add_argument("--admin-username", default="admin")
+        parser.add_argument(
+            "--admin-password", default="", help=f"Default {demo.PASSWORD} (or {PASSWORD_ENV})."
+        )
+        parser.add_argument(
+            "--reset", action="store_true", help="Replace an earlier Namuna MChJ demo."
+        )
+
+    def handle(self, *args, admin_username, admin_password, reset, **options):
+        if not conf.is_on():
+            raise CommandError("Set EDITION=davomat first: this demo is the Davomat edition's.")
+        password = admin_password or os.environ.get(PASSWORD_ENV, "") or demo.PASSWORD
+        existing = Company.objects.order_by("pk").first()
+        if existing is not None:
+            if not reset:
+                raise CommandError(
+                    f"{existing.name} is set up already. Use --reset to replace the demo."
+                )
+            if not demo.is_demo(existing) or Company.objects.count() > 1:
+                raise CommandError(f"{existing.name} isn't the demo: nothing was removed.")
+        try:
+            with transaction.atomic(), translation.override("uz"), demo_time.quiet():
+                if existing is not None:
+                    self._remove(existing)
+                with demo_time.run_hooks():
+                    built = demo.build(username=admin_username, password=password)
+        except FieldError as exc:
+            raise CommandError(f"{exc.field}: {' '.join(exc.messages)}") from exc
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"{built.company.name}: {len(built.employees) + 1} employees, "
+                f"{len(built.devices)} terminals, {built.scans} scans "
+                f"({FaceEvent.objects.filter(company=built.company).count()} kept)."
+            )
+        )
+        self.stdout.write(f"Sign in as {built.owner.user.username} or nodira, password {password}")
+
+    def _remove(self, company: Company) -> None:
+        """The demo organization with every row it has, and the accounts only it had."""
+        from apps.core.management.commands.seed_demo import Command as SeedDemo
+
+        people = list(
+            User.objects.filter(memberships__company=company).values_list("pk", flat=True)
+        )
+        SeedDemo()._remove_company(company)
+        User.objects.filter(pk__in=people).annotate(left=Count("memberships")).filter(
+            left=0
+        ).delete()
