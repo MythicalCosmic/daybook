@@ -732,6 +732,8 @@ def test_the_demo_fills_the_agent_pages(owner_api, pharmacy):
 
 def test_each_page_reads_in_a_bounded_number_of_queries(owner_api, hr_team, shop, member):
     """More runs, calls, people, tasks and documents cost no more queries."""
+    shop.features = [*shop.features, "learning"]  # the tutor's module: every page is read
+    shop.save(update_fields=["features"])
     client = owner_api(hr_team.owner)
     keys = [agent.key for agent in agents.all_agents()]
 

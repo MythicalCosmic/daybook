@@ -108,7 +108,7 @@ def due(team, shop):
 def test_the_hr_assistant_is_an_agent_with_its_settings():
     agent = agents.get(KEY)
 
-    assert [item.key for item in agents.all_agents()][-1] == KEY
+    assert [item.key for item in agents.all_agents()][-2:] == [KEY, "tutor"]
     assert (agent.icon, agent.features, agent.needs_claude, agent.default_enabled) == (
         "briefcase",
         ("hr", "payroll"),

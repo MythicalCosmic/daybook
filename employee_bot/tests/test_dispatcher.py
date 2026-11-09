@@ -27,6 +27,7 @@ AREAS = [
     "projects",
     "lifecycle",
     "knowledge",
+    "learning",
     "agenda",
     "crm",
 ]

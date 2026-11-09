@@ -237,6 +237,14 @@ class Question(TenantModel):
     created_by = models.ForeignKey(
         Membership, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
     )
+    draft_job = models.ForeignKey(
+        "QuestionDraftJob",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="questions",
+        help_text=_("The job that wrote it from a page or a lesson."),
+    )
 
     class Meta:
         ordering = ["-created_at"]
@@ -544,6 +552,12 @@ class CheckRound(TenantModel):
     finished = models.PositiveIntegerField(default=0)
     passed = models.PositiveIntegerField(default=0)
     closed_at = models.DateTimeField(null=True, blank=True)
+    half_reminded_at = models.DateTimeField(
+        null=True, blank=True, help_text=_("When the reminder at half time went out.")
+    )
+    last_reminded_at = models.DateTimeField(
+        null=True, blank=True, help_text=_("When the reminder two hours before the end went out.")
+    )
 
     class Meta:
         ordering = ["-starts_at"]
@@ -586,6 +600,19 @@ class Attempt(TenantModel):
     max_score = models.DecimalField(max_digits=7, decimal_places=2, null=True, blank=True)
     percent = models.PositiveSmallIntegerField(null=True, blank=True)
     passed = models.BooleanField(null=True, blank=True)
+    trial = models.BooleanField(
+        default=False,
+        help_text=_("A manager trying the quiz: never counts in results, skills or points."),
+    )
+    reset_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_("A manager let the person start again: no longer counts against the limit."),
+    )
+    points = models.SmallIntegerField(
+        null=True, blank=True, help_text=_("Points it earned (empty while recognition is off).")
+    )
+    course_step_done = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["-started_at"]
@@ -717,6 +744,9 @@ class QuestionDraftJob(TenantModel):
     state = models.CharField(max_length=8, choices=State.choices, default=State.QUEUED)
     engine = models.CharField(max_length=8, choices=Engine.choices, default=Engine.RULES)
     made = models.PositiveSmallIntegerField(default=0)
+    dropped = models.PositiveSmallIntegerField(
+        default=0, help_text=_("Questions left out: not valid, or a number not in the text.")
+    )
     error = models.CharField(max_length=300, blank=True)
     finished_at = models.DateTimeField(null=True, blank=True)
     created_by = models.ForeignKey(

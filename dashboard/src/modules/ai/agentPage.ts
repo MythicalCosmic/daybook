@@ -30,7 +30,7 @@ export type AgentTab = (typeof AGENT_TABS)[number];
  * The agents with a schedule (they have "Run now"), the ones an owner made among them; a backend
  * that names a next run says so for any other.
  */
-const SCHEDULED_AGENTS = new Set(["deadline_watcher", "morning_plan", "hr_assistant"]);
+const SCHEDULED_AGENTS = new Set(["deadline_watcher", "morning_plan", "hr_assistant", "tutor"]);
 
 export function isScheduled(agent: Pick<Agent, "key" | "next_run_at">): boolean {
   return SCHEDULED_AGENTS.has(agent.key) || isCustomAgent(agent.key) || agent.next_run_at !== null;
