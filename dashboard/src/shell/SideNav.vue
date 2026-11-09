@@ -16,13 +16,16 @@ import KbdKey from "@/components/KbdKey.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import UiBadge from "@/components/UiBadge.vue";
 import UiTooltip from "@/components/UiTooltip.vue";
+import { isDavomat } from "@/core/edition";
 import { activeEntryKey, isActivePath, type NavGroup, type NavModule } from "@/core/nav";
 import { formatCount } from "@/lib/format";
 import { readStored, writeStored } from "@/lib/storage";
 
 import CompanySwitcher from "./CompanySwitcher.vue";
+import EditionBrand from "./EditionBrand.vue";
 
 const props = defineProps<{ groups: NavGroup[]; rail: boolean; ready: boolean; canCollapse: boolean }>();
+const davomat = isDavomat();
 const emit = defineEmits<{ toggle: []; retry: [] }>();
 
 const { t } = useI18n();
@@ -91,7 +94,9 @@ function prefetch(path: string): void {
     :style="{ width: rail ? 'var(--rail-w)' : 'var(--nav-w)' }"
   >
     <div :class="['flex h-[var(--topbar-h)] shrink-0 items-center', rail ? 'justify-center px-0 pt-2' : 'px-3 pt-2']">
-      <CompanySwitcher :variant="rail ? 'rail' : 'sidebar'" />
+      <!-- Davomat is one organization: its brand, not a company switcher. -->
+      <EditionBrand v-if="davomat" :variant="rail ? 'rail' : 'sidebar'" />
+      <CompanySwitcher v-else :variant="rail ? 'rail' : 'sidebar'" />
     </div>
 
     <!-- The slot's own spacing; empty:hidden leaves no gap when the pill hides itself. -->
@@ -102,8 +107,13 @@ function prefetch(path: string): void {
         <SkeletonBlock v-for="n in 9" :key="n" :width="rail ? '24px' : `${55 + ((n * 17) % 40)}%`" height="14px" />
       </div>
       <template v-else>
-        <section v-for="(group, groupIndex) in groups" :key="group.id" :class="groupIndex > 0 && (rail ? 'mt-2 border-t border-line pt-2' : 'mt-5')">
-          <h2 v-if="!rail && group.id !== 'overview'" class="mb-1 truncate px-2.5 text-xs font-medium text-subtle">
+        <!-- Davomat's few rows read better without group headings: a thin line between groups. -->
+        <section
+          v-for="(group, groupIndex) in groups"
+          :key="group.id"
+          :class="groupIndex > 0 && (rail || davomat ? 'mt-2 border-t border-line pt-2' : 'mt-5')"
+        >
+          <h2 v-if="!rail && !davomat && group.id !== 'overview'" class="mb-1 truncate px-2.5 text-xs font-medium text-subtle">
             {{ t(`shell.group.${group.id}`) }}
           </h2>
           <ul class="flex flex-col gap-px">

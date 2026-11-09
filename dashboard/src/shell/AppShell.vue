@@ -16,6 +16,8 @@ import ExtensionSlot from "@/components/ExtensionSlot.vue";
 import { menuPanel, preloadWhenIdle } from "@/components/lazyPart";
 import { toast } from "@/components/useToast";
 import { canAccessRoute, visibleModules } from "@/core/access";
+import { setFavicon } from "@/core/brand";
+import { editionInfo, isDavomat } from "@/core/edition";
 import { hasExtension } from "@/core/extensions";
 import { registerHotkey } from "@/core/hotkeys";
 import { findModule, modules } from "@/core/modules";
@@ -137,18 +139,10 @@ watch(
   },
 );
 
-const FAVICON = "/dashboard/favicon.svg";
-const BADGED =
-  "data:image/svg+xml," +
-  encodeURIComponent(
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50"><circle cx="21" cy="21" r="21" fill="#c67139"/><path d="M12.25 21.9 18.4 28 29.6 15.8" fill="none" stroke="#f5ead8" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="39" cy="11" r="11" fill="#d93a26" stroke="#fff" stroke-width="3"/></svg>',
-  );
+// The edition's mark (Davomat: the organization's logo), with a red dot while criticals wait.
 watch(
-  criticalCount,
-  (count) => {
-    const link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
-    if (link) link.href = count > 0 ? BADGED : FAVICON;
-  },
+  () => [criticalCount.value > 0, editionInfo.value.organization?.logo_url] as const,
+  ([badged]) => void setFavicon(badged),
   { immediate: true },
 );
 
@@ -162,7 +156,8 @@ const pageTitle = computed(() => {
 });
 useTitle(
   computed(() => {
-    const parts = [pageTitle.value, companyless.value ? "" : company.current?.name, t("shell.brand")].filter(Boolean);
+    const brand = isDavomat() ? editionInfo.value.product : t("shell.brand");
+    const parts = [pageTitle.value, companyless.value ? "" : company.current?.name, brand].filter(Boolean);
     const prefix = criticalCount.value > 0 ? `(${criticalCount.value}) ` : "";
     return prefix + parts.join(" · ");
   }),

@@ -1,0 +1,115 @@
+/* Davomat's palette (docs/DAVOMAT.md §0 "UI"): the same semantic tokens as styles/tokens.css,
+   with cool neutrals and an indigo brand instead of Daybook's warm paper and terracotta. Applied
+   when main.ts marks <html data-edition="davomat"> (core/brand.ts); Daybook never matches these.
+   Contrast: every text color is at least 4.5:1 on its surface, as in tokens.css. */
+
+:root[data-edition="davomat"] {
+  --c-canvas: #f4f6fa;
+  --c-surface: #ffffff;
+  --c-surface-2: #eef1f6;
+  --c-surface-3: #e3e8f0;
+  --c-border: rgb(16 24 40 / 0.09);
+  --c-border-strong: rgb(16 24 40 / 0.16);
+
+  --c-text: #101828;
+  --c-muted: #5d6679;
+  --c-subtle: #8b93a5;
+
+  --c-primary: #4f46e5;
+  --c-primary-hover: #4338ca;
+  --c-on-primary: #ffffff;
+  --c-accent-soft: #eef0ff;
+  --c-accent-fg: #3f37c9;
+
+  --c-success: #16803c;
+  --c-success-soft: #e6f6ec;
+  --c-warning: #b25e09;
+  --c-warning-soft: #fdf3e3;
+  --c-danger: #c8312b;
+  --c-danger-soft: #fdecea;
+  --c-info: #2160c4;
+  --c-info-soft: #e8f0fd;
+
+  --c-overlay: rgb(15 20 35 / 0.38);
+  --c-ring: rgb(79 70 229 / 0.5);
+  --c-nav: var(--c-canvas);
+  --c-nav-hover: rgb(16 24 40 / 0.05);
+  --c-nav-active: #ffffff;
+  --c-highlight: rgb(16 24 40 / 0.045);
+  --c-skeleton: rgb(16 24 40 / 0.07);
+  --c-skeleton-shine: rgb(255 255 255 / 0.6);
+
+  --c-chart-1: #5b57e8;
+  --c-chart-2: #0f9e8e;
+  --c-chart-3: #2f80ed;
+  --c-chart-4: #e39a2d;
+  --c-chart-5: #c2549d;
+  --c-chart-6: #16a34a;
+  --c-chart-7: #8b5cf6;
+  --c-chart-8: #8b93a5;
+
+  --sh-xs: 0 1px 2px rgb(16 24 40 / 0.05);
+  --sh-raised: 0 1px 2px rgb(16 24 40 / 0.06), 0 0 0 1px rgb(16 24 40 / 0.07);
+  --sh-pop: 0 0 0 1px rgb(16 24 40 / 0.08), 0 4px 8px -2px rgb(16 24 40 / 0.06), 0 12px 28px -6px rgb(16 24 40 / 0.14);
+  --sh-drawer: 0 0 0 1px rgb(16 24 40 / 0.08), 0 24px 48px -12px rgb(16 24 40 / 0.22);
+  --sh-palette: 0 0 0 1px rgb(16 24 40 / 0.08), 0 8px 20px -6px rgb(16 24 40 / 0.12), 0 32px 72px -16px rgb(16 24 40 / 0.3);
+}
+
+:root[data-edition="davomat"][data-theme="dark"] {
+  --c-canvas: #0b0e14;
+  --c-surface: #11151d;
+  --c-surface-2: #171c26;
+  --c-surface-3: #1f2531;
+  --c-border: rgb(226 232 245 / 0.08);
+  --c-border-strong: rgb(226 232 245 / 0.15);
+
+  --c-text: #e8ebf2;
+  --c-muted: #9aa3b5;
+  --c-subtle: #6c7487;
+
+  --c-primary: #8f8cff;
+  --c-primary-hover: #a9a7ff;
+  --c-on-primary: #0e1020;
+  --c-accent-soft: #1d1f45;
+  --c-accent-fg: #c9c8ff;
+
+  --c-success: #4fd07f;
+  --c-success-soft: #0f2618;
+  --c-warning: #f2b64c;
+  --c-warning-soft: #2b2010;
+  --c-danger: #ff7a70;
+  --c-danger-soft: #33151a;
+  --c-info: #6fa8ff;
+  --c-info-soft: #10213b;
+
+  --c-overlay: rgb(3 5 10 / 0.66);
+  --c-ring: rgb(143 140 255 / 0.6);
+  --c-nav: var(--c-canvas);
+  --c-nav-hover: rgb(226 232 245 / 0.05);
+  --c-nav-active: #171c26;
+  --c-highlight: rgb(226 232 245 / 0.06);
+  --c-skeleton: rgb(226 232 245 / 0.07);
+  --c-skeleton-shine: rgb(226 232 245 / 0.05);
+
+  --c-chart-1: #8f8cff;
+  --c-chart-2: #3fd1bd;
+  --c-chart-3: #6fa8ff;
+  --c-chart-4: #f2c05c;
+  --c-chart-5: #e07dbf;
+  --c-chart-6: #4fd07f;
+  --c-chart-7: #b18cff;
+  --c-chart-8: #a3abbd;
+
+  --sh-xs: 0 1px 2px rgb(0 0 0 / 0.35);
+  --sh-raised: 0 1px 2px rgb(0 0 0 / 0.4), 0 0 0 1px rgb(226 232 245 / 0.07);
+  --sh-pop: 0 0 0 1px rgb(226 232 245 / 0.09), 0 4px 8px -2px rgb(0 0 0 / 0.4), 0 16px 32px -8px rgb(0 0 0 / 0.6);
+  --sh-drawer: 0 0 0 1px rgb(226 232 245 / 0.09), 0 24px 56px -12px rgb(0 0 0 / 0.7);
+  --sh-palette: 0 0 0 1px rgb(226 232 245 / 0.1), 0 8px 20px -6px rgb(0 0 0 / 0.5), 0 32px 80px -16px rgb(0 0 0 / 0.75);
+}
+
+/* Davomat's headings are the body face, bold: Daybook's display face is Daybook's own voice. */
+:root[data-edition="davomat"] .font-display {
+  font-family: "Figtree Variable", "Figtree", "Onest Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}

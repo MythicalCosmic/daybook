@@ -14,6 +14,8 @@ import { routes } from "./routes";
 
 export default defineModule({
   id: "faceid",
+  // Davomat (docs/DAVOMAT.md) is built around it.
+  editions: ["daybook", "davomat"],
   group: "people",
   order: 21,
   icon: ScanFace,
