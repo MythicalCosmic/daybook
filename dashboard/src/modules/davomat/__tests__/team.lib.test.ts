@@ -20,9 +20,9 @@ import {
   zoomAround,
 } from "../components/team/team";
 import { branchesOf } from "../components/team/teamApi";
-import en from "../i18n/parts/team.en.json";
-import ru from "../i18n/parts/team.ru.json";
-import uz from "../i18n/parts/team.uz.json";
+import en from "../i18n/en.json";
+import ru from "../i18n/ru.json";
+import uz from "../i18n/uz.json";
 
 describe("face numbers", () => {
   it("splits what is typed or pasted, without repeats", () => {

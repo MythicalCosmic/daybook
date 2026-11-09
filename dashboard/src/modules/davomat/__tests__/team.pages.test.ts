@@ -19,7 +19,7 @@ import FaceNumbersInput from "../components/team/FaceNumbersInput.vue";
 import ImportDialog from "../components/team/ImportDialog.vue";
 import TodayChip from "../components/team/TodayChip.vue";
 import base from "../i18n/en.json";
-import team from "../i18n/parts/team.en.json";
+import team from "../i18n/en.json";
 import BranchesPage from "../pages/BranchesPage.vue";
 import DepartmentsPage from "../pages/DepartmentsPage.vue";
 import EmployeePage from "../pages/EmployeePage.vue";

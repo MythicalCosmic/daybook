@@ -101,9 +101,5 @@ export default defineModule({
     team: () => "team",
     employee: (id) => (/^\d+$/.test(id) ? `team/${id}` : "team"),
   },
-  // The base dictionary plus the Team and Settings parts (merged into one file before hand-off).
-  messages: (language) =>
-    Promise.all([import(`./i18n/${language}.json`), import(`./i18n/parts/team.${language}.json`), import(`./i18n/parts/settings.${language}.json`)]).then(
-      (loaded) => Object.assign({}, ...loaded.map((part) => part.default)) as Record<string, string>,
-    ),
+  messages: (language) => import(`./i18n/${language}.json`),
 });
