@@ -30,11 +30,13 @@ export default function KudosSheet({ params, close }: SheetProps) {
   const member = useMember();
   const toast = useToast();
   const send = useSendKudos(member.companyId);
+  // The colleague a link names ("Say thanks back"): listed first even from another branch.
+  const linked = typeof params.to === "number" ? params.to : Number(params.to) || null;
   const [query, setQuery] = useState("");
   const q = useDebounced(query.trim());
-  const colleagues = useColleagues(member.companyId, q);
+  const colleagues = useColleagues(member.companyId, q, linked);
   const [picked, setPicked] = useState<Colleague | null>(null);
-  const [pickedId, setPickedId] = useState<number | null>(typeof params.to === "number" ? params.to : Number(params.to) || null);
+  const [pickedId, setPickedId] = useState<number | null>(linked);
   const [badge, setBadge] = useState<KudosBadge>("thanks");
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);

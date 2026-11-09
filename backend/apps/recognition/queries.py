@@ -577,17 +577,29 @@ def kudos_feed(
     return list(rows.order_by("-created_at", "-pk")[:limit])
 
 
-def colleagues(member: Membership, q: str = "", *, limit: int = 50) -> list[Membership]:
-    """Who the person can thank: approved colleagues in their team directory, not themselves."""
+def colleagues(
+    member: Membership, q: str = "", *, include: int | None = None, limit: int = 50
+) -> list[Membership]:
+    """Who the person can thank: approved colleagues in their team directory, not themselves;
+    `include` adds one more approved colleague of the company first (whoever thanked them, to
+    "say thanks back" across branches)."""
     from apps.members import scope
     from apps.members.queries import directory
 
-    people = (
+    people = list(
         directory(member.company, branch_ids=scope.branch_ids(member), q=q or None, status="active")
         .exclude(pk=member.pk)
-        .order_by("first_name", "last_name", "pk")
+        .order_by("first_name", "last_name", "pk")[:limit]
     )
-    return list(people[:limit])
+    if include and include != member.pk and all(person.pk != include for person in people):
+        extra = (
+            Membership.objects.select_related("user", "position", "home_branch")
+            .filter(company=member.company, pk=include, status=Membership.Status.APPROVED)
+            .first()
+        )
+        if extra is not None:
+            people.insert(0, extra)
+    return people
 
 
 # Badges in the company -------------------------------------------------------------------------

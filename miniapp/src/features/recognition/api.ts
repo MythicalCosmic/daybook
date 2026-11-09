@@ -133,10 +133,15 @@ export function useKudosBox(company: number, box: "received" | "given") {
   });
 }
 
-export function useColleagues(company: number, q: string) {
+/** Colleagues to thank; `include` lists one more first (who thanked me, from another branch too). */
+export function useColleagues(company: number, q: string, include: number | null = null) {
+  const query = new URLSearchParams();
+  if (q) query.set("q", q);
+  if (include) query.set("include", String(include));
+  const search = query.toString();
   return useQuery({
-    queryKey: recognitionKeys.colleagues(company, q),
-    queryFn: () => api<Colleagues>(`${base(company)}/kudos/colleagues/${q ? `?q=${encodeURIComponent(q)}` : ""}`),
+    queryKey: [...recognitionKeys.colleagues(company, q), include] as const,
+    queryFn: () => api<Colleagues>(`${base(company)}/kudos/colleagues/${search ? `?${search}` : ""}`),
     staleTime: 60_000,
     placeholderData: (previous) => previous,
   });

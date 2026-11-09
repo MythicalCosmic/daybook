@@ -138,14 +138,24 @@ class KudosView(MemberView):
 
 class ColleaguesView(MemberView):
     @extend_schema(
-        parameters=[OpenApiParameter("q", str)],
+        parameters=[
+            OpenApiParameter("q", str),
+            OpenApiParameter(
+                "include", int, description="A colleague to list first (to thank them back)."
+            ),
+        ],
         responses=s.ColleaguesSerializer,
         operation_id="recognition_kudos_colleagues",
     )
     def get(self, request, company_id):
         member = self.membership
         settings = conf.get_settings(member.company)
-        people = queries.colleagues(member, (request.query_params.get("q") or "").strip()[:60])
+        include = request.query_params.get("include") or ""
+        people = queries.colleagues(
+            member,
+            (request.query_params.get("q") or "").strip()[:60],
+            include=int(include) if include.isdigit() else None,
+        )
         results = [
             {
                 **queries.person(person),

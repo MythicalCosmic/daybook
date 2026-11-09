@@ -205,6 +205,8 @@ describe("KudosSheet", () => {
     });
     renderWith(<KudosSheet params={{ to: 3 }} close={close} />, newClient());
     expect(await screen.findByText("Madina Saidova")).toBeTruthy();
+    // The person the link names is asked for, so another branch's colleague is there too.
+    expect(api).toHaveBeenCalledWith("/companies/1/recognition/kudos/colleagues/?include=3");
     expect(screen.getByText("You can thank 2 more colleagues today")).toBeTruthy();
     fireEvent.click(screen.getByRole("radio", { name: /Careful work/ }));
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "  Muzlatgichni tekshirding " } });

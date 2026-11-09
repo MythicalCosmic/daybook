@@ -155,6 +155,13 @@ def test_colleagues_in_my_scope_and_not_me(shop, ali, madina, nigora, api_as):
     assert data["results"][0]["branch"] == "Chilonzor"
     found = api_as(ali).get(url(shop, "kudos/colleagues/?q=madi")).json()["results"]
     assert [row["id"] for row in found] == [madina.pk]
+    # Thanking back someone of another branch: the link names them, so they come first.
+    back = api_as(ali).get(url(shop, f"kudos/colleagues/?include={nigora.pk}")).json()["results"]
+    assert back[0]["id"] == nigora.pk and back[0]["branch"] == "Yunusobod"
+    assert (
+        api_as(ali).get(url(shop, f"kudos/colleagues/?include={ali.pk}")).json()["results"][0]["id"]
+        != ali.pk
+    )
     settings = conf.get_settings(shop)
     settings.kudos_enabled = False
     settings.save()
