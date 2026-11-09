@@ -14,7 +14,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.knowledge import queries, services, targets
+from apps.knowledge import page_views, queries, services, targets
 from apps.knowledge.models import Page, PageLink
 from apps.knowledge.serializers import (
     KnowledgeLinkSerializer,
@@ -133,6 +133,33 @@ class AckView(PageView):
         """I've read it: confirms the current version."""
         ack = services.acknowledge(self._page(pk), by=self.membership)
         return Response({"version": ack.version, "at": ack.at})
+
+
+class ViewReportSerializer(serializers.Serializer):
+    session = serializers.CharField(max_length=40, help_text="A random id per opening.")
+    seconds = serializers.FloatField(
+        min_value=0, required=False, default=0, help_text="Seconds in front since the last report."
+    )
+    scrolled = serializers.FloatField(
+        min_value=0, max_value=100, required=False, default=0, help_text="How far down, percent."
+    )
+
+    class Meta:
+        ref_name = "KnowledgeViewReport"
+
+
+class ViewReportView(PageView):
+    """The reader reports while the page is in front of me: on open, every 15 s, on leaving
+    (docs/PLAN-LEARNING.md §4.1). Nobody else ever sees my views but managers of the page."""
+
+    http_method_names = ["post", "options"]
+
+    @extend_schema(request=ViewReportSerializer, responses={204: None})
+    def post(self, request, company_id, pk):
+        data = ViewReportSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        page_views.record(self._page(pk), self.membership, **data.validated_data)
+        return Response(status=204)
 
 
 class SearchView(APIView):

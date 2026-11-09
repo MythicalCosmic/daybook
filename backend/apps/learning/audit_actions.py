@@ -16,6 +16,7 @@ class CourseAction(models.TextChoices):
     LESSON_CHANGED = "learning.lesson_changed", _("Changed a lesson")
     LESSON_PUBLISHED = "learning.lesson_published", _("Published a lesson")
     LESSON_ARCHIVED = "learning.lesson_archived", _("Archived a lesson")
+    LESSON_DELETED = "learning.lesson_deleted", _("Deleted a lesson")
     COURSE_CREATED = "learning.course_created", _("Added a course")
     COURSE_CHANGED = "learning.course_changed", _("Changed a course")
     COURSE_PUBLISHED = "learning.course_published", _("Published a course")
@@ -24,6 +25,7 @@ class CourseAction(models.TextChoices):
     EXEMPTED = "learning.exempted", _("Excused someone from a course")
     ASSIGNMENT_CANCELLED = "learning.assignment_cancelled", _("Took a course back")
     DUE_CHANGED = "learning.due_changed", _("Moved a training deadline")
+    REMINDED = "learning.reminded", _("Reminded people about their training")
 
 
 class QuizAction(models.TextChoices):
