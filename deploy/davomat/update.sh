@@ -47,11 +47,13 @@ code_id() {
 	if is_git; then git -C "$ROOT" rev-parse --short HEAD; else app_version; fi
 }
 checksum() { sha256sum "$1" 2>/dev/null | cut -d' ' -f1; }
+# label VERSION CODE: "0.6.0 (a1b2c3d)" in a git checkout, "0.6.0" otherwise.
+label() { if [ "$1" = "$2" ]; then printf '%s' "$1"; else printf '%s (%s)' "$1" "$2"; fi; }
 
 before_version=$(app_version)
 before_code=$(code_id)
 before_backup_job=$(checksum "$DAVOMAT_DIR/backup-run.sh")
-step "Davomat $before_version ($before_code): updating"
+step "Davomat $(label "$before_version" "$before_code"): updating"
 
 # Anything new? Asked before the backup: nothing new means nothing to back up -------------------
 if [ -n "$FROM" ]; then
@@ -172,7 +174,7 @@ until site_get /health/ >/dev/null 2>&1; do
 	sleep 5
 done
 docker image prune -f >/dev/null 2>&1 || true
-step "Updated: $before_version ($before_code) to $after_version ($after_code)"
+step "Updated: $(label "$before_version" "$before_code") to $(label "$after_version" "$after_code")"
 info "The image that ran before is kept as $previous."
 ok "$(site_get /health/ | tr -d '\n' | cut -c1-140)"
 [ -z "$backup_folder" ] || info "The backup from before: $backup_folder"
