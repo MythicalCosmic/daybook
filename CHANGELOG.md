@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.5.1 — 2026-11-09
+
+### New: Face ID terminals (Hikvision)
+A module an owner switches on per company (Settings › Modules: **Face ID terminals**). Until then
+nothing changes.
+- **Your Hikvision face terminal sends every scan to Daybook by itself**: in the terminal's web page,
+  HTTP Listening gets the address Daybook gives for that terminal (HTTPS, or plain HTTP for older
+  firmware). Faces stay on the terminal; Daybook keeps who, when, which terminal and the snapshot.
+- **Everyone the terminal knows is visible**, also people who aren't in Daybook (with the name and
+  number from the terminal). People who are in Daybook are **linked automatically** by name (Uzbek
+  Cyrillic and Latin alike: "Гулирано" finds Gulirano); a name that fits two people waits for you.
+- **Attendance is one switch, on by default**: a linked person's scans check them in and out (the
+  first scan in, the last scan of the day out, repeats within two minutes ignored), with lateness,
+  hours and the timesheet as before. Off: Face ID only shows who came.
+- **Telegram**: the first scan of each person a day reaches the managers with the photo ("Mushtariy
+  · 08:00 · Kirish"), or every scan, or nothing; the person's own "Keldingiz: 08:57" when their
+  attendance is recorded; branch group posts on request. Stored scans the terminal sends after an
+  outage update attendance without messages.
+- Snapshots are private files, deleted after 30 days (a setting).
+
+### New: ask the owner bot anything
+Type a question to the owner bot ("Bugun nechta vazifa kechikdi?"): with AI on, it answers from
+your company's data with the same tools and access as Ask AI in the dashboard, the answer replacing
+"Thinking…", with the whole conversation one tap away. Follow-ups within two hours keep the context.
+
+### Groundwork for training (switched off)
+The data model for lessons, courses, quizzes, the question of the day, regular checks, the tutor
+agent and recognition (points, levels, badges, streaks, kudos), topics on knowledge base pages, page
+views, and the permissions `learning.view`, `learning.manage` and `recognition.manage` (managers get
+the first two). Nothing is visible until the training release.
+
+### Fixes
+- Settings › Modules showed an untranslated name for Assets and equipment.
+
 ## 0.5.0 — 2026-11-07
 
 ### New: stock and medicines (Money › Stock)

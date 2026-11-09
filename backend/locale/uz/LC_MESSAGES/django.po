@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-07 16:22+0500\n"
+"POT-Creation-Date: 2026-11-09 15:17+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -276,9 +276,9 @@ msgid "Deadline"
 msgstr "Oxirgi muddat"
 
 #: backend/apps/agenda/models.py backend/apps/assets/models.py
-#: backend/apps/finance/models.py backend/apps/hr/models.py
-#: backend/apps/inventory/models.py backend/apps/lifecycle/models.py
-#: backend/apps/sales/models.py
+#: backend/apps/faceid/models.py backend/apps/finance/models.py
+#: backend/apps/hr/models.py backend/apps/inventory/models.py
+#: backend/apps/lifecycle/models.py backend/apps/sales/models.py
 msgid "Other"
 msgstr "Boshqa"
 
@@ -1896,9 +1896,10 @@ msgstr "Kimning huquqlari bilan o‘qiydi; «menga» deganda kim."
 msgid "Cancelled"
 msgstr "Bekor qilindi"
 
-#: backend/apps/ai/models.py backend/apps/finance/exporters.py
-#: backend/apps/payroll/providers.py backend/apps/projects/hooks.py
-#: backend/apps/sales/models.py backend/apps/timeoff/providers.py
+#: backend/apps/ai/models.py backend/apps/faceid/models.py
+#: backend/apps/finance/exporters.py backend/apps/payroll/providers.py
+#: backend/apps/projects/hooks.py backend/apps/sales/models.py
+#: backend/apps/timeoff/providers.py
 msgid "Person"
 msgstr "Xodim"
 
@@ -3963,6 +3964,26 @@ msgstr "Ketganingiz belgilandi: %(time)s. Bugungi mehnatingiz uchun rahmat!"
 
 #: backend/apps/attendance/bot_messages.py
 #, python-format
+msgid "You came in: %(time)s, %(branch)s."
+msgstr "Keldingiz: %(time)s, %(branch)s."
+
+#: backend/apps/attendance/bot_messages.py
+#, python-format
+msgid "You came in: %(time)s."
+msgstr "Keldingiz: %(time)s."
+
+#: backend/apps/attendance/bot_messages.py
+#, python-format
+msgid "Late by %(late)s."
+msgstr "Kechikish: %(late)s."
+
+#: backend/apps/attendance/bot_messages.py
+#, python-format
+msgid "You left: %(time)s. You worked %(worked)s today."
+msgstr "Ketdingiz: %(time)s. Bugun ishlagan vaqtingiz: %(worked)s."
+
+#: backend/apps/attendance/bot_messages.py
+#, python-format
 msgid "<b>%(name)s</b> came %(late)s late (shift %(time)s, %(branch)s)."
 msgstr "<b>%(name)s</b> %(late)s kechikib keldi (smena %(time)s, %(branch)s)."
 
@@ -4291,11 +4312,11 @@ msgstr "So‘ralgan hamkasb; bo‘sh: mos keladigan har kim."
 msgid "The shift's start: the request lapses then."
 msgstr "Smena boshlanishi: so‘rov shu paytda o‘z kuchini yo‘qotadi."
 
-#: backend/apps/attendance/models.py
+#: backend/apps/attendance/models.py backend/apps/faceid/models.py
 msgid "Checked in"
 msgstr "Keldi"
 
-#: backend/apps/attendance/models.py
+#: backend/apps/attendance/models.py backend/apps/faceid/models.py
 msgid "Checked out"
 msgstr "Ketdi"
 
@@ -4324,6 +4345,10 @@ msgid "System"
 msgstr "Tizim"
 
 #: backend/apps/attendance/models.py
+msgid "Face ID terminal"
+msgstr "Face ID terminali"
+
+#: backend/apps/attendance/models.py
 msgid "None"
 msgstr "Yo‘q"
 
@@ -4350,6 +4375,14 @@ msgstr "Ketish belgilanmagan"
 #: backend/apps/attendance/models.py
 msgid "Edited by a manager"
 msgstr "Rahbar tahrirlagan"
+
+#: backend/apps/attendance/models.py backend/apps/faceid/models.py
+msgid "At another branch"
+msgstr "Boshqa filialda"
+
+#: backend/apps/attendance/models.py backend/apps/faceid/models.py
+msgid "Came in without a scan"
+msgstr "Kirishda skanerlanmagan"
 
 #: backend/apps/attendance/notify.py backend/apps/attendance/providers.py
 #: backend/apps/finance/claims.py backend/apps/inventory/providers.py
@@ -4671,12 +4704,13 @@ msgstr "Bir martada ko‘pi bilan ikki oylik jadvalni e’lon qilish mumkin."
 msgid "Their coming shifts you could swap for."
 msgstr "Hamkasbning siz almashishingiz mumkin bo‘lgan kelgusi smenalari."
 
-#: backend/apps/attendance/services.py backend/apps/payroll/runs.py
-#: backend/apps/payroll/services.py
+#: backend/apps/attendance/services.py backend/apps/faceid/services.py
+#: backend/apps/payroll/runs.py backend/apps/payroll/services.py
 msgid "That doesn't belong to this company."
 msgstr "Bu boshqa kompaniyaga tegishli."
 
-#: backend/apps/attendance/services.py backend/apps/payroll/services.py
+#: backend/apps/attendance/services.py backend/apps/faceid/services.py
+#: backend/apps/payroll/services.py
 #, python-format
 msgid "Unknown setting: %(name)s"
 msgstr "Noma’lum sozlama: %(name)s"
@@ -5270,6 +5304,10 @@ msgstr "Asosiy vositalar va jihozlar"
 msgid "Training and quizzes"
 msgstr "O‘qitish va testlar"
 
+#: backend/apps/companies/models.py
+msgid "Face ID terminals"
+msgstr "Face ID terminallari"
+
 #: backend/apps/companies/models.py backend/apps/inventory/providers.py
 #: backend/apps/inventory/templates/inventory/controlled_register.html
 #: backend/apps/inventory/templates/inventory/writeoff_act.html
@@ -5775,6 +5813,379 @@ msgstr "Bunday eksport yo‘q."
 #: backend/apps/exports/services.py
 msgid "You don't have permission to export this."
 msgstr "Buni eksport qilishga ruxsatingiz yo‘q."
+
+#: backend/apps/faceid/admin.py
+msgid "Pick a branch of that company."
+msgstr "Shu kompaniyaning filialini tanlang."
+
+#: backend/apps/faceid/admin.py
+msgid "What to type into the terminal"
+msgstr "Terminalga nima kiritiladi"
+
+#: backend/apps/faceid/admin.py
+msgid "Learned from the terminal"
+msgstr "Terminal o‘zi haqida aytgani"
+
+#: backend/apps/faceid/admin.py
+msgid "HTTPS (port 443)"
+msgstr "HTTPS (port: 443)"
+
+#: backend/apps/faceid/admin.py
+msgid "Plain HTTP (port 80)"
+msgstr "Oddiy HTTP (port: 80)"
+
+#: backend/apps/faceid/admin.py
+msgid "HTTP Listening fields"
+msgstr "HTTP Listening maydonlari"
+
+#: backend/apps/faceid/admin.py
+msgid "Save the terminal first."
+msgstr "Avval terminalni saqlang."
+
+#: backend/apps/faceid/admin.py
+msgid "Destination IP or host name"
+msgstr "Qabul qiluvchi IP yoki xost nomi"
+
+#: backend/apps/faceid/admin.py
+msgid "URL"
+msgstr "URL"
+
+#: backend/apps/faceid/admin.py
+msgid "Protocol and port"
+msgstr "Protokol va port"
+
+#: backend/apps/faceid/admin.py
+msgid "fallback"
+msgstr "zaxira"
+
+#: backend/apps/faceid/admin.py
+msgid "Heartbeat, minutes"
+msgstr "Nazorat signali (heartbeat), daqiqa"
+
+#: backend/apps/faceid/admin.py
+msgid "Give the selected terminals new codes"
+msgstr "Tanlangan terminallarga yangi kod berish"
+
+#: backend/apps/faceid/audit_actions.py
+msgid "Changed Face ID settings"
+msgstr "Face ID sozlamalarini o‘zgartirdi"
+
+#: backend/apps/faceid/audit_actions.py
+msgid "Added a Face ID terminal"
+msgstr "Face ID terminalini qo‘shdi"
+
+#: backend/apps/faceid/audit_actions.py
+msgid "Changed a Face ID terminal"
+msgstr "Face ID terminalini o‘zgartirdi"
+
+#: backend/apps/faceid/audit_actions.py
+msgid "Gave a Face ID terminal a new code"
+msgstr "Face ID terminaliga yangi kod berdi"
+
+#: backend/apps/faceid/audit_actions.py
+msgid "Linked a Face ID number to a person"
+msgstr "Face ID raqamini xodimga biriktirdi"
+
+#: backend/apps/faceid/audit_actions.py
+msgid "Removed a Face ID number"
+msgstr "Face ID raqamini olib tashladi"
+
+#: backend/apps/faceid/audit_actions.py
+msgid "Set a Face ID number aside"
+msgstr "Face ID raqamini e’tiborsiz qoldirdi"
+
+#: backend/apps/faceid/audit_actions.py
+msgid "Sent a test Face ID scan"
+msgstr "Sinov Face ID skanerlashini yubordi"
+
+#: backend/apps/faceid/bot_messages.py
+#, python-format
+msgid "%(name)s (No %(number)s)"
+msgstr "%(name)s (raqam: %(number)s)"
+
+#: backend/apps/faceid/bot_messages.py
+#, python-format
+msgid "No %(number)s"
+msgstr "Raqam: %(number)s"
+
+#: backend/apps/faceid/bot_messages.py
+msgid "Not in Daybook yet: link the number to a person."
+msgstr "Daybookda hali yo‘q: raqamni xodimga biriktiring."
+
+#: backend/apps/faceid/bot_messages.py
+#, python-format
+msgid "Came in, %(late)s late."
+msgstr "Keldi, kechikish: %(late)s."
+
+#: backend/apps/faceid/bot_messages.py
+msgid "Came in."
+msgstr "Keldi."
+
+#: backend/apps/faceid/bot_messages.py
+#, python-format
+msgid "Left. Worked today: %(worked)s."
+msgstr "Ketdi. Bugun ishlagan vaqti: %(worked)s."
+
+#: backend/apps/faceid/bot_messages.py
+msgid "Left."
+msgstr "Ketdi."
+
+#: backend/apps/faceid/bot_messages.py
+#, python-format
+msgid "<b>%(name)s</b>: %(time)s, %(device)s."
+msgstr "<b>%(name)s</b>: %(time)s, %(device)s."
+
+#: backend/apps/faceid/hooks.py
+msgid "Who came (Face ID terminals)"
+msgstr "Kim keldi (Face ID terminallari)"
+
+#: backend/apps/faceid/hooks.py
+msgid "Face ID numbers nobody is linked to"
+msgstr "Hech kimga biriktirilmagan Face ID raqamlari"
+
+#: backend/apps/faceid/hooks.py
+msgid "Unknown faces at a Face ID terminal"
+msgstr "Face ID terminalidagi notanish yuzlar"
+
+#: backend/apps/faceid/models.py
+msgid "Nothing"
+msgstr "Hech narsa"
+
+#: backend/apps/faceid/models.py
+msgid "Who came: each person's first scan of the day"
+msgstr "Kim keldi: har bir xodimning kundagi birinchi skanerlashi"
+
+#: backend/apps/faceid/models.py
+msgid "Every scan"
+msgstr "Har bir skanerlash"
+
+#: backend/apps/faceid/models.py
+msgid "A linked person's scan checks them in or out (when Attendance is on)."
+msgstr ""
+"Biriktirilgan xodimning skanerlashi kelish yoki ketishni belgilaydi (Davomat "
+"yoqilgan bo‘lsa)."
+
+#: backend/apps/faceid/models.py
+msgid "What managers who see the branch get in Telegram, with the snapshot."
+msgstr "Filialni ko‘radigan rahbarlar Telegramda nima oladi (surat bilan)."
+
+#: backend/apps/faceid/models.py
+msgid "Arrivals are also posted in the branch's attendance groups."
+msgstr "Kelganlar filialning davomat guruhlariga ham yuboriladi."
+
+#: backend/apps/faceid/models.py
+msgid "Those group posts carry the snapshot."
+msgstr "Guruhdagi xabarlarga surat qo‘shiladi."
+
+#: backend/apps/faceid/models.py
+msgid ""
+"A linked person gets a bot message when the terminal checks them in or out."
+msgstr ""
+"Terminal kelish yoki ketishni belgilaganda biriktirilgan xodimga botdan "
+"xabar keladi."
+
+#: backend/apps/faceid/models.py
+msgid "An unknown face alerts the branch's managers, at most every 10 minutes."
+msgstr ""
+"Notanish yuz haqida filial rahbarlariga xabar beriladi, ko‘pi bilan 10 "
+"daqiqada bir marta."
+
+#: backend/apps/faceid/models.py
+msgid "A second scan this soon after the last one changes nothing."
+msgstr ""
+"Oldingisidan keyin shu vaqt ichidagi takroriy skanerlash hech narsani "
+"o‘zgartirmaydi."
+
+#: backend/apps/faceid/models.py
+msgid "Snapshots are deleted after this many days. 0: none are kept."
+msgstr "Suratlar shuncha kundan keyin o‘chiriladi. 0 — suratlar saqlanmaydi."
+
+#: backend/apps/faceid/models.py
+msgid "Face ID settings"
+msgstr "Face ID sozlamalari"
+
+#: backend/apps/faceid/models.py
+msgid "Entrance: every scan checks in"
+msgstr "Kirish: har bir skanerlash — kelish"
+
+#: backend/apps/faceid/models.py
+msgid "Exit: every scan checks out"
+msgstr "Chiqish: har bir skanerlash — ketish"
+
+#: backend/apps/faceid/models.py
+msgid "One door: in, then out"
+msgstr "Bitta eshik: avval kelish, keyin ketish"
+
+#: backend/apps/faceid/models.py
+msgid "Hikvision"
+msgstr "Hikvision"
+
+#: backend/apps/faceid/models.py
+msgid "One door: no open check-in means in, otherwise out."
+msgstr "Bitta eshik: ochiq kelish bo‘lmasa — kelish, aks holda — ketish."
+
+#: backend/apps/faceid/models.py
+msgid "The address it reports."
+msgstr "Terminal ko‘rsatgan manzil."
+
+#: backend/apps/faceid/models.py
+msgid "Any request, heartbeats included."
+msgstr "Har qanday so‘rov, nazorat signallari ham."
+
+#: backend/apps/faceid/models.py
+msgid ""
+"How far the terminal's clock is from ours, in seconds (ahead is positive)."
+msgstr ""
+"Terminal soati biznikidan qancha farq qiladi, soniyalarda (oldinda bo‘lsa — "
+"musbat)."
+
+#: backend/apps/faceid/models.py
+msgid "Unknown face"
+msgstr "Notanish yuz"
+
+#: backend/apps/faceid/models.py
+msgid "Other event"
+msgstr "Boshqa hodisa"
+
+#: backend/apps/faceid/models.py
+msgid "Face"
+msgstr "Yuz"
+
+#: backend/apps/faceid/models.py
+msgid "Fingerprint"
+msgstr "Barmoq izi"
+
+#: backend/apps/faceid/models.py backend/apps/finance/models.py
+#: backend/apps/hr/models.py backend/apps/sales/models.py
+msgid "Card"
+msgstr "Karta"
+
+#: backend/apps/faceid/models.py
+msgid "Scanned"
+msgstr "Skanerlandi"
+
+#: backend/apps/faceid/models.py
+msgid "Repeat scan"
+msgstr "Takroriy skanerlash"
+
+#: backend/apps/faceid/models.py
+msgid "Not in Daybook"
+msgstr "Daybookda yo‘q"
+
+#: backend/apps/faceid/models.py
+msgid "Logged only"
+msgstr "Faqat qayd etildi"
+
+#: backend/apps/faceid/models.py
+msgid "Face ID is off"
+msgstr "Face ID o‘chirilgan"
+
+#: backend/apps/faceid/models.py
+msgid "Terminal clock is wrong"
+msgstr "Terminal soati noto‘g‘ri"
+
+#: backend/apps/faceid/models.py
+msgid "Arrived late, no messages"
+msgstr "Kechikib yetib keldi, xabar yuborilmadi"
+
+#: backend/apps/faceid/models.py
+msgid "Linked automatically"
+msgstr "Avtomatik biriktirildi"
+
+#: backend/apps/faceid/models.py
+msgid "Replaced an automatic check-out"
+msgstr "Avtomatik ketish o‘rniga yozildi"
+
+#: backend/apps/faceid/models.py
+msgid "Already checked in"
+msgstr "Kelish allaqachon belgilangan"
+
+#: backend/apps/faceid/models.py
+msgid "Older than the attendance record"
+msgstr "Davomat yozuvidan eskiroq"
+
+#: backend/apps/faceid/models.py
+msgid "Break scan"
+msgstr "Tanaffus skanerlashi"
+
+#: backend/apps/faceid/models.py
+msgid "Person not active"
+msgstr "Xodim faol emas"
+
+#: backend/apps/faceid/models.py
+msgid "Number ignored"
+msgstr "Raqam e’tiborga olinmaydi"
+
+#: backend/apps/faceid/models.py
+msgid "Attendance refused it"
+msgstr "Davomat buni qabul qilmadi"
+
+#: backend/apps/faceid/models.py
+msgid "Couldn't read the event"
+msgstr "Hodisani o‘qib bo‘lmadi"
+
+#: backend/apps/faceid/models.py
+msgid "Managers alerted"
+msgstr "Rahbarlarga xabar berildi"
+
+#: backend/apps/faceid/models.py
+msgid "First scan of the day"
+msgstr "Kunning birinchi skanerlashi"
+
+#: backend/apps/faceid/models.py
+msgid "Test scan"
+msgstr "Sinov skanerlash"
+
+#: backend/apps/faceid/models.py
+msgid ""
+"The terminal's time, or when it arrived if the terminal's clock is wrong."
+msgstr ""
+"Terminal vaqti yoki terminal soati noto‘g‘ri bo‘lsa, yetib kelgan vaqti."
+
+#: backend/apps/faceid/models.py
+msgid "Linked automatically by name."
+msgstr "Ism bo‘yicha avtomatik biriktirilgan."
+
+#: backend/apps/faceid/notify.py
+#, python-format
+msgid ""
+"Face ID: number %(number)s (%(name)s on the terminal) isn't linked to anyone"
+msgstr ""
+"Face ID: raqam %(number)s (terminalda: %(name)s) hech kimga biriktirilmagan"
+
+#: backend/apps/faceid/notify.py
+#, python-format
+msgid "Face ID: number %(number)s isn't linked to anyone"
+msgstr "Face ID: raqam %(number)s hech kimga biriktirilmagan"
+
+#: backend/apps/faceid/notify.py
+#, python-format
+msgid "Terminal: %(device)s. Link the number to a person to count their scans."
+msgstr ""
+"Terminal: %(device)s. Skanerlashlar hisobga olinishi uchun raqamni xodimga "
+"biriktiring."
+
+#: backend/apps/faceid/notify.py
+#, python-format
+msgid "Unknown face at %(device)s, %(time)s"
+msgstr "Notanish yuz. Terminal: %(device)s, vaqt: %(time)s"
+
+#: backend/apps/faceid/services.py
+msgid "Give the terminal a name."
+msgstr "Terminalga nom bering."
+
+#: backend/apps/faceid/services.py
+msgid "Pick how the terminal counts scans."
+msgstr "Terminal skanerlashlarni qanday hisoblashini tanlang."
+
+#: backend/apps/faceid/services.py
+msgid "Give the Employee No from the terminal."
+msgstr "Terminaldagi Employee No raqamini kiriting."
+
+#: backend/apps/faceid/services.py
+#, python-format
+msgid "Number %(number)s is already linked to %(name)s."
+msgstr "Raqam %(number)s allaqachon biriktirilgan. Xodim: %(name)s."
 
 #: backend/apps/finance/ai_tools.py
 msgid "Income, expenses, profit, cash now and money owed, for a period"
@@ -6802,11 +7213,6 @@ msgstr "Valyutaning 1 birligi uchun UZS."
 #: backend/apps/finance/models.py
 msgid "Bank account"
 msgstr "Bank hisobi"
-
-#: backend/apps/finance/models.py backend/apps/hr/models.py
-#: backend/apps/sales/models.py
-msgid "Card"
-msgstr "Karta"
 
 #: backend/apps/finance/models.py
 msgid "E-wallet"

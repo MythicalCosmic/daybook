@@ -400,6 +400,7 @@ FEATURE_APPS: dict[str, tuple[str, ...]] = {
     Feature.RECOGNITION: ("recognition",),
     Feature.ASSETS: ("assets",),
     Feature.FACE_ID: ("faceid",),
+    Feature.LEARNING: ("learning", "ai"),  # ai: the tutor comes on with AI on
 }
 
 

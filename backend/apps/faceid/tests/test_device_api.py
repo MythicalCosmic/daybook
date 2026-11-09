@@ -165,3 +165,23 @@ def test_the_command_adds_lists_and_switches_the_module_on(staff, chilonzor, set
     out = StringIO()
     call_command("faceid_device", "list", "--company", company.pk, stdout=out)
     assert "Kirish" in out.getvalue() and "never" in out.getvalue()
+
+
+def test_the_command_takes_a_branch_by_name(chilonzor):
+    from io import StringIO
+
+    from django.core.management import CommandError, call_command
+
+    company = chilonzor.company
+    out = StringIO()
+    call_command(
+        "faceid_device", "add", "--company", company.pk, "--branch", chilonzor.name.upper(),
+        "--name", "Kirish", stdout=out,
+    )  # fmt: skip
+    assert FaceDevice.objects.get(company=company, name="Kirish").branch == chilonzor
+    with pytest.raises(CommandError) as refused:
+        call_command(
+            "faceid_device", "add", "--company", company.pk, "--branch", "Nowhere",
+            "--name", "Chiqish", stdout=StringIO(),
+        )  # fmt: skip
+    assert f"{chilonzor.pk} {chilonzor.name}" in str(refused.value)

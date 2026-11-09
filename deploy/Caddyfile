@@ -1,4 +1,4 @@
-# Face ID terminals (apps/attendance/device_api.py): an event and its snapshot, at most 8 MB.
+# Face ID terminals (apps/faceid/device_api.py): an event and its snapshot, at most 8 MB.
 # The body is buffered so Django always gets a Content-Length, even from firmware that sends
 # chunked bodies. Many terminals can only speak plain HTTP, and can't follow a redirect with
 # their event, so this path is never redirected to HTTPS.

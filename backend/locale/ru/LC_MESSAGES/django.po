@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-07 16:22+0500\n"
+"POT-Creation-Date: 2026-11-09 15:17+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -277,9 +277,9 @@ msgid "Deadline"
 msgstr "Крайний срок"
 
 #: backend/apps/agenda/models.py backend/apps/assets/models.py
-#: backend/apps/finance/models.py backend/apps/hr/models.py
-#: backend/apps/inventory/models.py backend/apps/lifecycle/models.py
-#: backend/apps/sales/models.py
+#: backend/apps/faceid/models.py backend/apps/finance/models.py
+#: backend/apps/hr/models.py backend/apps/inventory/models.py
+#: backend/apps/lifecycle/models.py backend/apps/sales/models.py
 msgid "Other"
 msgstr "Другое"
 
@@ -1932,9 +1932,10 @@ msgstr "С чьими правами он читает; кто такой «мн
 msgid "Cancelled"
 msgstr "Отменена"
 
-#: backend/apps/ai/models.py backend/apps/finance/exporters.py
-#: backend/apps/payroll/providers.py backend/apps/projects/hooks.py
-#: backend/apps/sales/models.py backend/apps/timeoff/providers.py
+#: backend/apps/ai/models.py backend/apps/faceid/models.py
+#: backend/apps/finance/exporters.py backend/apps/payroll/providers.py
+#: backend/apps/projects/hooks.py backend/apps/sales/models.py
+#: backend/apps/timeoff/providers.py
 msgid "Person"
 msgstr "Сотрудник"
 
@@ -3985,6 +3986,26 @@ msgstr "Уход отмечен: %(time)s. Спасибо за сегодняш�
 
 #: backend/apps/attendance/bot_messages.py
 #, python-format
+msgid "You came in: %(time)s, %(branch)s."
+msgstr "Вы пришли: %(time)s, %(branch)s."
+
+#: backend/apps/attendance/bot_messages.py
+#, python-format
+msgid "You came in: %(time)s."
+msgstr "Вы пришли: %(time)s."
+
+#: backend/apps/attendance/bot_messages.py
+#, python-format
+msgid "Late by %(late)s."
+msgstr "Опоздание: %(late)s."
+
+#: backend/apps/attendance/bot_messages.py
+#, python-format
+msgid "You left: %(time)s. You worked %(worked)s today."
+msgstr "Вы ушли: %(time)s. Сегодня отработано: %(worked)s."
+
+#: backend/apps/attendance/bot_messages.py
+#, python-format
 msgid "<b>%(name)s</b> came %(late)s late (shift %(time)s, %(branch)s)."
 msgstr "<b>%(name)s</b>: опоздание на %(late)s (смена %(time)s, %(branch)s)."
 
@@ -4307,11 +4328,11 @@ msgstr "Коллега, которого попросили; пусто: люб�
 msgid "The shift's start: the request lapses then."
 msgstr "Начало смены: в этот момент заявка теряет силу."
 
-#: backend/apps/attendance/models.py
+#: backend/apps/attendance/models.py backend/apps/faceid/models.py
 msgid "Checked in"
 msgstr "Приход отмечен"
 
-#: backend/apps/attendance/models.py
+#: backend/apps/attendance/models.py backend/apps/faceid/models.py
 msgid "Checked out"
 msgstr "Уход отмечен"
 
@@ -4340,6 +4361,10 @@ msgid "System"
 msgstr "Система"
 
 #: backend/apps/attendance/models.py
+msgid "Face ID terminal"
+msgstr "Терминал Face ID"
+
+#: backend/apps/attendance/models.py
 msgid "None"
 msgstr "Нет"
 
@@ -4366,6 +4391,14 @@ msgstr "Уход не отмечен"
 #: backend/apps/attendance/models.py
 msgid "Edited by a manager"
 msgstr "Изменено руководителем"
+
+#: backend/apps/attendance/models.py backend/apps/faceid/models.py
+msgid "At another branch"
+msgstr "В другом филиале"
+
+#: backend/apps/attendance/models.py backend/apps/faceid/models.py
+msgid "Came in without a scan"
+msgstr "Вход без сканирования"
 
 #: backend/apps/attendance/notify.py backend/apps/attendance/providers.py
 #: backend/apps/finance/claims.py backend/apps/inventory/providers.py
@@ -4682,12 +4715,13 @@ msgstr "За один раз можно опубликовать график н
 msgid "Their coming shifts you could swap for."
 msgstr "Предстоящие смены коллеги, на которые можно поменяться."
 
-#: backend/apps/attendance/services.py backend/apps/payroll/runs.py
-#: backend/apps/payroll/services.py
+#: backend/apps/attendance/services.py backend/apps/faceid/services.py
+#: backend/apps/payroll/runs.py backend/apps/payroll/services.py
 msgid "That doesn't belong to this company."
 msgstr "Это принадлежит другой компании."
 
-#: backend/apps/attendance/services.py backend/apps/payroll/services.py
+#: backend/apps/attendance/services.py backend/apps/faceid/services.py
+#: backend/apps/payroll/services.py
 #, python-format
 msgid "Unknown setting: %(name)s"
 msgstr "Неизвестная настройка: %(name)s"
@@ -5272,6 +5306,10 @@ msgstr "Основные средства и оборудование"
 msgid "Training and quizzes"
 msgstr "Обучение и тесты"
 
+#: backend/apps/companies/models.py
+msgid "Face ID terminals"
+msgstr "Терминалы Face ID"
+
 #: backend/apps/companies/models.py backend/apps/inventory/providers.py
 #: backend/apps/inventory/templates/inventory/controlled_register.html
 #: backend/apps/inventory/templates/inventory/writeoff_act.html
@@ -5767,6 +5805,376 @@ msgstr "Такой выгрузки нет."
 #: backend/apps/exports/services.py
 msgid "You don't have permission to export this."
 msgstr "У вас нет прав на выгрузку этих данных."
+
+#: backend/apps/faceid/admin.py
+msgid "Pick a branch of that company."
+msgstr "Выберите филиал этой компании."
+
+#: backend/apps/faceid/admin.py
+msgid "What to type into the terminal"
+msgstr "Что ввести в терминал"
+
+#: backend/apps/faceid/admin.py
+msgid "Learned from the terminal"
+msgstr "Сведения от самого терминала"
+
+#: backend/apps/faceid/admin.py
+msgid "HTTPS (port 443)"
+msgstr "HTTPS (порт 443)"
+
+#: backend/apps/faceid/admin.py
+msgid "Plain HTTP (port 80)"
+msgstr "Обычный HTTP (порт 80)"
+
+#: backend/apps/faceid/admin.py
+msgid "HTTP Listening fields"
+msgstr "Поля HTTP Listening"
+
+#: backend/apps/faceid/admin.py
+msgid "Save the terminal first."
+msgstr "Сначала сохраните терминал."
+
+#: backend/apps/faceid/admin.py
+msgid "Destination IP or host name"
+msgstr "IP-адрес или имя хоста назначения"
+
+#: backend/apps/faceid/admin.py
+msgid "URL"
+msgstr "URL"
+
+#: backend/apps/faceid/admin.py
+msgid "Protocol and port"
+msgstr "Протокол и порт"
+
+#: backend/apps/faceid/admin.py
+msgid "fallback"
+msgstr "запасной"
+
+#: backend/apps/faceid/admin.py
+msgid "Heartbeat, minutes"
+msgstr "Контрольный сигнал (heartbeat), минут"
+
+#: backend/apps/faceid/admin.py
+msgid "Give the selected terminals new codes"
+msgstr "Выдать выбранным терминалам новые коды"
+
+#: backend/apps/faceid/audit_actions.py
+msgid "Changed Face ID settings"
+msgstr "Изменены настройки Face ID"
+
+#: backend/apps/faceid/audit_actions.py
+msgid "Added a Face ID terminal"
+msgstr "Добавлен терминал Face ID"
+
+#: backend/apps/faceid/audit_actions.py
+msgid "Changed a Face ID terminal"
+msgstr "Изменён терминал Face ID"
+
+#: backend/apps/faceid/audit_actions.py
+msgid "Gave a Face ID terminal a new code"
+msgstr "Терминалу Face ID выдан новый код"
+
+#: backend/apps/faceid/audit_actions.py
+msgid "Linked a Face ID number to a person"
+msgstr "Номер Face ID привязан к сотруднику"
+
+#: backend/apps/faceid/audit_actions.py
+msgid "Removed a Face ID number"
+msgstr "Номер Face ID удалён"
+
+#: backend/apps/faceid/audit_actions.py
+msgid "Set a Face ID number aside"
+msgstr "Номер Face ID отложен"
+
+#: backend/apps/faceid/audit_actions.py
+msgid "Sent a test Face ID scan"
+msgstr "Отправлено тестовое сканирование Face ID"
+
+#: backend/apps/faceid/bot_messages.py
+#, python-format
+msgid "%(name)s (No %(number)s)"
+msgstr "%(name)s (№ %(number)s)"
+
+#: backend/apps/faceid/bot_messages.py
+#, python-format
+msgid "No %(number)s"
+msgstr "№ %(number)s"
+
+#: backend/apps/faceid/bot_messages.py
+msgid "Not in Daybook yet: link the number to a person."
+msgstr "Пока нет в Daybook: привяжите номер к сотруднику."
+
+#: backend/apps/faceid/bot_messages.py
+#, python-format
+msgid "Came in, %(late)s late."
+msgstr "Приход, опоздание: %(late)s."
+
+#: backend/apps/faceid/bot_messages.py
+msgid "Came in."
+msgstr "Приход."
+
+#: backend/apps/faceid/bot_messages.py
+#, python-format
+msgid "Left. Worked today: %(worked)s."
+msgstr "Уход. Сегодня отработано: %(worked)s."
+
+#: backend/apps/faceid/bot_messages.py
+msgid "Left."
+msgstr "Уход."
+
+#: backend/apps/faceid/bot_messages.py
+#, python-format
+msgid "<b>%(name)s</b>: %(time)s, %(device)s."
+msgstr "<b>%(name)s</b>: %(time)s, %(device)s."
+
+#: backend/apps/faceid/hooks.py
+msgid "Who came (Face ID terminals)"
+msgstr "Кто пришёл (терминалы Face ID)"
+
+#: backend/apps/faceid/hooks.py
+msgid "Face ID numbers nobody is linked to"
+msgstr "Номера Face ID, не привязанные к сотрудникам"
+
+#: backend/apps/faceid/hooks.py
+msgid "Unknown faces at a Face ID terminal"
+msgstr "Незнакомые лица у терминала Face ID"
+
+#: backend/apps/faceid/models.py
+msgid "Nothing"
+msgstr "Ничего"
+
+#: backend/apps/faceid/models.py
+msgid "Who came: each person's first scan of the day"
+msgstr "Кто пришёл: первое сканирование каждого за день"
+
+#: backend/apps/faceid/models.py
+msgid "Every scan"
+msgstr "Каждое сканирование"
+
+#: backend/apps/faceid/models.py
+msgid "A linked person's scan checks them in or out (when Attendance is on)."
+msgstr ""
+"Сканирование привязанного сотрудника отмечает приход или уход (если включена "
+"посещаемость)."
+
+#: backend/apps/faceid/models.py
+msgid "What managers who see the branch get in Telegram, with the snapshot."
+msgstr ""
+"Что получают в Telegram руководители, которые видят филиал (со снимком)."
+
+#: backend/apps/faceid/models.py
+msgid "Arrivals are also posted in the branch's attendance groups."
+msgstr "Приходы также публикуются в группах посещаемости филиала."
+
+#: backend/apps/faceid/models.py
+msgid "Those group posts carry the snapshot."
+msgstr "К сообщениям в группах прикладывается снимок."
+
+#: backend/apps/faceid/models.py
+msgid ""
+"A linked person gets a bot message when the terminal checks them in or out."
+msgstr ""
+"Привязанный сотрудник получает сообщение бота, когда терминал отмечает "
+"приход или уход."
+
+#: backend/apps/faceid/models.py
+msgid "An unknown face alerts the branch's managers, at most every 10 minutes."
+msgstr ""
+"О незнакомом лице сообщается руководителям филиала, не чаще раза в 10 минут."
+
+#: backend/apps/faceid/models.py
+msgid "A second scan this soon after the last one changes nothing."
+msgstr "Повторное сканирование в течение этого времени ничего не меняет."
+
+#: backend/apps/faceid/models.py
+msgid "Snapshots are deleted after this many days. 0: none are kept."
+msgstr "Снимки удаляются через столько дней. 0 — снимки не хранятся."
+
+#: backend/apps/faceid/models.py
+msgid "Face ID settings"
+msgstr "Настройки Face ID"
+
+#: backend/apps/faceid/models.py
+msgid "Entrance: every scan checks in"
+msgstr "Вход: каждое сканирование — приход"
+
+#: backend/apps/faceid/models.py
+msgid "Exit: every scan checks out"
+msgstr "Выход: каждое сканирование — уход"
+
+#: backend/apps/faceid/models.py
+msgid "One door: in, then out"
+msgstr "Одна дверь: сначала приход, потом уход"
+
+#: backend/apps/faceid/models.py
+msgid "Hikvision"
+msgstr "Hikvision"
+
+#: backend/apps/faceid/models.py
+msgid "One door: no open check-in means in, otherwise out."
+msgstr "Одна дверь: если прихода нет — приход, иначе — уход."
+
+#: backend/apps/faceid/models.py
+msgid "The address it reports."
+msgstr "Адрес, который сообщает терминал."
+
+#: backend/apps/faceid/models.py
+msgid "Any request, heartbeats included."
+msgstr "Любой запрос, включая контрольные сигналы."
+
+#: backend/apps/faceid/models.py
+msgid ""
+"How far the terminal's clock is from ours, in seconds (ahead is positive)."
+msgstr ""
+"Насколько часы терминала расходятся с нашими, в секундах (спешат — "
+"положительное число)."
+
+#: backend/apps/faceid/models.py
+msgid "Unknown face"
+msgstr "Незнакомое лицо"
+
+#: backend/apps/faceid/models.py
+msgid "Other event"
+msgstr "Другое событие"
+
+#: backend/apps/faceid/models.py
+msgid "Face"
+msgstr "Лицо"
+
+#: backend/apps/faceid/models.py
+msgid "Fingerprint"
+msgstr "Отпечаток пальца"
+
+#: backend/apps/faceid/models.py backend/apps/finance/models.py
+#: backend/apps/hr/models.py backend/apps/sales/models.py
+msgid "Card"
+msgstr "Карта"
+
+#: backend/apps/faceid/models.py
+msgid "Scanned"
+msgstr "Отсканировано"
+
+#: backend/apps/faceid/models.py
+msgid "Repeat scan"
+msgstr "Повторное сканирование"
+
+#: backend/apps/faceid/models.py
+msgid "Not in Daybook"
+msgstr "Нет в Daybook"
+
+#: backend/apps/faceid/models.py
+msgid "Logged only"
+msgstr "Только записано"
+
+#: backend/apps/faceid/models.py
+msgid "Face ID is off"
+msgstr "Face ID выключен"
+
+#: backend/apps/faceid/models.py
+msgid "Terminal clock is wrong"
+msgstr "Часы терминала неверны"
+
+#: backend/apps/faceid/models.py
+msgid "Arrived late, no messages"
+msgstr "Пришло с опозданием, без сообщений"
+
+#: backend/apps/faceid/models.py
+msgid "Linked automatically"
+msgstr "Привязано автоматически"
+
+#: backend/apps/faceid/models.py
+msgid "Replaced an automatic check-out"
+msgstr "Заменило автоматический уход"
+
+#: backend/apps/faceid/models.py
+msgid "Already checked in"
+msgstr "Приход уже отмечен"
+
+#: backend/apps/faceid/models.py
+msgid "Older than the attendance record"
+msgstr "Старше записи посещаемости"
+
+#: backend/apps/faceid/models.py
+msgid "Break scan"
+msgstr "Сканирование перерыва"
+
+#: backend/apps/faceid/models.py
+msgid "Person not active"
+msgstr "Сотрудник неактивен"
+
+#: backend/apps/faceid/models.py
+msgid "Number ignored"
+msgstr "Номер игнорируется"
+
+#: backend/apps/faceid/models.py
+msgid "Attendance refused it"
+msgstr "Посещаемость это не приняла"
+
+#: backend/apps/faceid/models.py
+msgid "Couldn't read the event"
+msgstr "Не удалось прочитать событие"
+
+#: backend/apps/faceid/models.py
+msgid "Managers alerted"
+msgstr "Руководители оповещены"
+
+#: backend/apps/faceid/models.py
+msgid "First scan of the day"
+msgstr "Первое сканирование за день"
+
+#: backend/apps/faceid/models.py
+msgid "Test scan"
+msgstr "Тестовое сканирование"
+
+#: backend/apps/faceid/models.py
+msgid ""
+"The terminal's time, or when it arrived if the terminal's clock is wrong."
+msgstr "Время терминала или время получения, если часы терминала неверны."
+
+#: backend/apps/faceid/models.py
+msgid "Linked automatically by name."
+msgstr "Привязано автоматически по имени."
+
+#: backend/apps/faceid/notify.py
+#, python-format
+msgid ""
+"Face ID: number %(number)s (%(name)s on the terminal) isn't linked to anyone"
+msgstr ""
+"Face ID: номер %(number)s (на терминале: %(name)s) ни к кому не привязан"
+
+#: backend/apps/faceid/notify.py
+#, python-format
+msgid "Face ID: number %(number)s isn't linked to anyone"
+msgstr "Face ID: номер %(number)s ни к кому не привязан"
+
+#: backend/apps/faceid/notify.py
+#, python-format
+msgid "Terminal: %(device)s. Link the number to a person to count their scans."
+msgstr ""
+"Терминал: %(device)s. Привяжите номер к сотруднику, чтобы его сканирования "
+"учитывались."
+
+#: backend/apps/faceid/notify.py
+#, python-format
+msgid "Unknown face at %(device)s, %(time)s"
+msgstr "Незнакомое лицо: %(device)s, %(time)s"
+
+#: backend/apps/faceid/services.py
+msgid "Give the terminal a name."
+msgstr "Дайте терминалу название."
+
+#: backend/apps/faceid/services.py
+msgid "Pick how the terminal counts scans."
+msgstr "Выберите, как терминал учитывает сканирования."
+
+#: backend/apps/faceid/services.py
+msgid "Give the Employee No from the terminal."
+msgstr "Укажите Employee No с терминала."
+
+#: backend/apps/faceid/services.py
+#, python-format
+msgid "Number %(number)s is already linked to %(name)s."
+msgstr "Номер %(number)s уже привязан к сотруднику %(name)s."
 
 #: backend/apps/finance/ai_tools.py
 msgid "Income, expenses, profit, cash now and money owed, for a period"
@@ -6780,11 +7188,6 @@ msgstr "UZS за 1 единицу валюты."
 #: backend/apps/finance/models.py
 msgid "Bank account"
 msgstr "Банковский счёт"
-
-#: backend/apps/finance/models.py backend/apps/hr/models.py
-#: backend/apps/sales/models.py
-msgid "Card"
-msgstr "Карта"
 
 #: backend/apps/finance/models.py
 msgid "E-wallet"

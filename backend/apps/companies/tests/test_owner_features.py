@@ -112,3 +112,12 @@ def test_only_company_settings_may_switch_modules(company, member, owner_api, ot
     )
     owner = member(company, "Owner")
     assert owner_api(owner).get(url(other_company)).status_code == 404
+
+
+def test_every_module_knows_the_apps_it_switches_on():
+    """`set_features` looks each switched-on module up in FEATURE_APPS: a module missing there
+    would make switching it on fail."""
+    from apps.companies.models import Feature
+    from apps.companies.services import FEATURE_APPS
+
+    assert set(FEATURE_APPS) == set(Feature.values)

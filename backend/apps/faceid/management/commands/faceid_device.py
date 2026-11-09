@@ -2,6 +2,7 @@
 dashboard page:
 
     manage.py faceid_device add --company 3 --branch 7 --name "Kirish" [--direction toggle]
+    manage.py faceid_device add --company 3 --branch Asosiy --name "Kirish"   (a branch by name)
     manage.py faceid_device list --company 3
     manage.py faceid_device enable-module --company 3
 
@@ -29,7 +30,7 @@ class Command(BaseCommand):
         commands = parser.add_subparsers(dest="action", required=True)
         add = commands.add_parser("add", help="Add a terminal and print what to type into it.")
         add.add_argument("--company", type=int, required=True)
-        add.add_argument("--branch", type=int, required=True)
+        add.add_argument("--branch", required=True, help="The branch's id or its name.")
         add.add_argument("--name", required=True)
         add.add_argument(
             "--direction", choices=FaceDevice.Direction.values, default=FaceDevice.Direction.TOGGLE
@@ -50,10 +51,20 @@ class Command(BaseCommand):
         else:
             self.enable(found)
 
-    def add(self, company, branch_id, name, direction):
-        branch = Branch.objects.filter(company=company, pk=branch_id).first()
+    def add(self, company, branch_ref, name, direction):
+        branches = Branch.objects.filter(company=company)
+        ref = str(branch_ref).strip()
+        if ref.isdigit():
+            branch = branches.filter(pk=int(ref)).first()
+        else:
+            named = list(branches.filter(name__iexact=ref)[:2])
+            branch = named[0] if len(named) == 1 else None
         if branch is None:
-            raise CommandError(f"Company {company.pk} has no branch {branch_id}.")
+            known = ", ".join(f"{row.pk} {row.name}" for row in branches.order_by("pk"))
+            raise CommandError(
+                f"Company {company.pk} has no branch {ref!r} (one by that id or name). "
+                f"Its branches: {known or 'none'}."
+            )
         device = services.create_device(
             company, by=None, name=name, branch=branch, direction=direction
         )
