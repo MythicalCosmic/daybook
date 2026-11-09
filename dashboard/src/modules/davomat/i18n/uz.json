@@ -155,5 +155,9 @@
   "davomat.tz.dubai": "Dubay",
   "davomat.tz.groupMain": "O‘zbekiston va qo‘shnilar",
   "davomat.tz.groupOther": "Boshqa mintaqalar",
-  "davomat.tz.search": "Shahar yoki mintaqani qidiring"
+  "davomat.tz.search": "Shahar yoki mintaqani qidiring",
+  "davomat.overview.kpi.terminalsNever": "Ulanmagan: {n} | Ulanmagan: {n} | Ulanmagan: {n}",
+  "davomat.overview.connect.title": "Terminalni ulashni yakunlang",
+  "davomat.overview.connect.body": "Terminal shu yerga qo‘shildi, lekin hali skan yubormadi. Uning sozlamasini oching va server manzilini qurilmaga kiriting, shunda birinchi yuz shu yerda ko‘rinadi.",
+  "davomat.overview.connect.action": "Terminallarni ochish"
 }

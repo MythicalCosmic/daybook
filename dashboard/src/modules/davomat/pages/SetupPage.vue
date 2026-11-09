@@ -25,7 +25,7 @@ import { currentLanguage, setLanguage } from "@/i18n";
 import { useSessionStore } from "@/stores/session";
 
 import { runSetup } from "../api";
-import DavomatMark from "../components/brand/DavomatMark.vue";
+import OrgBrand from "../components/brand/OrgBrand.vue";
 import PasswordField from "../components/fields/PasswordField.vue";
 import { MIN_LENGTH, suggestUsername, USERNAME_PATTERN } from "../lib/password";
 import { browserZone, DEFAULT_ZONE, MAIN_ZONES, zoneOptions } from "../lib/zones";
@@ -175,13 +175,8 @@ const organizationName = computed(() => editionInfo.value.organization?.name ?? 
   <div class="relative isolate min-h-dvh overflow-hidden bg-canvas">
     <div class="glow pointer-events-none absolute inset-0 -z-10" aria-hidden="true" />
     <div class="mx-auto flex min-h-dvh w-full max-w-[640px] flex-col px-4 py-8 md:py-14">
-      <header class="flex items-center gap-3">
-        <DavomatMark :size="40" />
-        <div class="min-w-0">
-          <p class="text-lg font-bold leading-tight tracking-[-0.02em] text-fg">{{ editionInfo.product }}</p>
-          <p class="text-sm text-muted">{{ t("davomat.brand.tagline") }}</p>
-        </div>
-      </header>
+      <!-- The product until the organization exists, then the organization. -->
+      <header><OrgBrand /></header>
 
       <div class="mt-8 md:mt-10">
         <h1 class="text-[28px] font-bold leading-tight tracking-[-0.025em] text-fg md:text-[34px]">{{ step === "done" ? t("davomat.setup.done.title", { name: greetingName }) : t("davomat.setup.welcome") }}</h1>
@@ -290,7 +285,8 @@ const organizationName = computed(() => editionInfo.value.organization?.name ?? 
         </Transition>
       </div>
 
-      <div class="mt-6 flex items-center justify-center gap-2 text-muted">
+      <!-- The first step picks the organization's language (and switches the wizard); after that, only this browser's. -->
+      <div v-if="step !== 'organization'" class="mt-6 flex items-center justify-center gap-2 text-muted">
         <Languages :size="15" aria-hidden="true" />
         <LanguageChoice />
       </div>

@@ -155,5 +155,9 @@
   "davomat.tz.dubai": "Дубай",
   "davomat.tz.groupMain": "Узбекистан и соседи",
   "davomat.tz.groupOther": "Другие часовые пояса",
-  "davomat.tz.search": "Найдите город или пояс"
+  "davomat.tz.search": "Найдите город или пояс",
+  "davomat.overview.kpi.terminalsNever": "Не подключён: {n} | Не подключены: {n} | Не подключены: {n}",
+  "davomat.overview.connect.title": "Завершите подключение терминала",
+  "davomat.overview.connect.body": "Терминал добавлен, но ещё не прислал ни одной отметки. Откройте его настройку и введите адрес сервера в устройстве, и первое лицо появится здесь.",
+  "davomat.overview.connect.action": "Открыть терминалы"
 }

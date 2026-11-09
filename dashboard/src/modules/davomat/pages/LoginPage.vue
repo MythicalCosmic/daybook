@@ -16,7 +16,6 @@ import FormField from "@/components/FormField.vue";
 import LanguageChoice from "@/components/LanguageChoice.vue";
 import TextInput from "@/components/TextInput.vue";
 import UiButton from "@/components/UiButton.vue";
-import { editionInfo } from "@/core/edition";
 import { rememberSession } from "@/core/remember";
 import { safeNext } from "@/lib/links";
 import { useSessionStore } from "@/stores/session";
@@ -80,7 +79,6 @@ async function submit(): Promise<void> {
 }
 
 const features = computed(() => [t("davomat.login.feature.live"), t("davomat.login.feature.late"), t("davomat.login.feature.reports")]);
-const organization = computed(() => editionInfo.value.organization);
 </script>
 
 <template>
@@ -189,7 +187,6 @@ const organization = computed(() => editionInfo.value.organization);
           {{ t("davomat.login.secure") }}
         </p>
         <LanguageChoice class="mt-3" data-testid="login-languages" />
-        <p v-if="organization" class="mt-4 text-center text-xs text-subtle">{{ editionInfo.product }}</p>
       </section>
     </div>
   </div>

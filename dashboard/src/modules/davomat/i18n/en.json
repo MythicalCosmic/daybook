@@ -155,5 +155,9 @@
   "davomat.tz.dubai": "Dubai",
   "davomat.tz.groupMain": "Uzbekistan and nearby",
   "davomat.tz.groupOther": "Other time zones",
-  "davomat.tz.search": "Search a city or zone"
+  "davomat.tz.search": "Search a city or zone",
+  "davomat.overview.kpi.terminalsNever": "{n} not connected yet | {n} not connected yet | {n} not connected yet",
+  "davomat.overview.connect.title": "Finish connecting your terminal",
+  "davomat.overview.connect.body": "The terminal is added here, but it hasn’t sent a scan yet. Open its setup and type the server’s address into the device; the first face then shows up here.",
+  "davomat.overview.connect.action": "Open the terminals"
 }

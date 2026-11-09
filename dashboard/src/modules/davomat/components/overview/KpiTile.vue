@@ -67,7 +67,7 @@ const percent = computed(() => (props.share === null ? null : fmt.percent(Math.r
     :type="to ? undefined : 'button'"
     :aria-pressed="to ? undefined : active"
     :class="[
-      'tile pressable group relative flex min-w-0 flex-col rounded-[16px] border bg-surface p-4 text-left transition-[border-color,box-shadow,transform] duration-200 md:p-5',
+      'tile pressable group relative flex min-w-0 flex-col rounded-[16px] border bg-surface p-3.5 text-left transition-[border-color,box-shadow,transform] duration-200 sm:p-4 md:p-5',
       active ? 'border-primary/50 shadow-[0_0_0_3px_var(--c-accent-soft)]' : 'border-line hover:border-line-strong hover:shadow-xs',
     ]"
     @click="!to && emit('select')"
@@ -80,9 +80,9 @@ const percent = computed(() => (props.share === null ? null : fmt.percent(Math.r
         <span :class="['relative inline-flex size-2.5 rounded-full', pulse === 'success' ? 'bg-success' : 'bg-warning']" />
       </span>
     </div>
-    <div class="mt-3 flex items-center justify-between gap-3">
+    <div class="mt-2.5 flex items-center justify-between gap-3 sm:mt-3">
       <SkeletonBlock v-if="loading" width="64px" height="34px" radius="8px" />
-      <p v-else class="min-w-0 truncate text-[32px] font-bold leading-none tracking-[-0.03em] tabular-nums text-fg">
+      <p v-else class="min-w-0 truncate text-[26px] font-bold leading-none tracking-[-0.03em] tabular-nums text-fg sm:text-[32px]">
         {{ shown }}<span v-if="total !== null" class="ml-1 text-lg font-semibold tracking-normal text-subtle">/{{ fmt.number(total) }}</span>
       </p>
       <div v-if="share !== null && !loading" class="relative -my-2 shrink-0" :title="percent ?? undefined">
@@ -105,7 +105,7 @@ const percent = computed(() => (props.share === null ? null : fmt.percent(Math.r
       </div>
     </div>
     <SkeletonBlock v-if="loading" class="mt-2.5" width="110px" height="12px" />
-    <p v-else-if="sub" class="mt-2.5 line-clamp-2 text-sm leading-snug text-muted" :title="sub">{{ sub }}</p>
+    <p v-else-if="sub" class="mt-2 line-clamp-2 text-xs leading-snug text-muted sm:mt-2.5 sm:text-sm" :title="sub">{{ sub }}</p>
   </component>
 </template>
 

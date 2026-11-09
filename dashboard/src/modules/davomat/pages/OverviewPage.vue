@@ -68,8 +68,8 @@ const terminalSub = computed(() => {
   const s = terminals.value;
   if (!s || s.total === 0) return t("davomat.overview.kpi.terminalsNone");
   if (s.online === s.total) return t("davomat.overview.kpi.terminalsAll");
-  const quiet = s.total - s.online;
-  return t("davomat.overview.kpi.terminalsQuiet", { n: quiet }, quiet);
+  if (s.quiet > 0) return t("davomat.overview.kpi.terminalsQuiet", { n: s.quiet }, s.quiet);
+  return t("davomat.overview.kpi.terminalsNever", { n: s.never }, s.never);
 });
 const terminalPulse = computed(() => {
   const s = terminals.value;
@@ -77,6 +77,11 @@ const terminalPulse = computed(() => {
   return s.online === s.total ? "success" : "warning";
 });
 const noTerminals = computed(() => status.isSuccess.value && (terminals.value?.total ?? 0) === 0);
+/** Terminals are added but none has sent anything yet: the address still has to go into the device. */
+const notConnected = computed(() => {
+  const s = terminals.value;
+  return !!s && s.total > 0 && s.online === 0 && s.quiet === 0 && s.never > 0;
+});
 
 const base = computed(() => `/c/${company.currentId}`);
 const faceid = computed(() => !!findModule("faceid"));
@@ -176,17 +181,20 @@ const clock = computed(() => fmt.instant(new Date(now.value), "time"));
       />
     </div>
 
-    <!-- No terminal yet: the next thing to do -->
-    <section v-if="noTerminals" class="hero relative overflow-hidden rounded-[20px] border border-line p-6 md:p-8" data-testid="overview-setup">
+    <!-- No terminal yet, or none connected yet: the next thing to do -->
+    <section v-if="noTerminals || notConnected" class="hero relative overflow-hidden rounded-[20px] border border-line p-6 md:p-8" data-testid="overview-setup">
       <div class="relative flex flex-col gap-5 md:flex-row md:items-center">
         <span class="grid size-14 shrink-0 place-items-center rounded-[16px] bg-primary text-on-primary shadow-pop"><ScanFace :size="28" /></span>
         <div class="min-w-0 flex-1">
-          <h2 class="text-lg font-bold tracking-[-0.015em] text-fg">{{ t("davomat.overview.setup.title") }}</h2>
-          <p class="mt-1 max-w-[620px] text-base text-muted">{{ t("davomat.overview.setup.body") }}</p>
+          <h2 class="text-lg font-bold tracking-[-0.015em] text-fg">{{ noTerminals ? t("davomat.overview.setup.title") : t("davomat.overview.connect.title") }}</h2>
+          <p class="mt-1 max-w-[620px] text-base text-muted">{{ noTerminals ? t("davomat.overview.setup.body") : t("davomat.overview.connect.body") }}</p>
         </div>
         <div class="flex flex-wrap gap-2">
-          <UiButton v-if="faceid && canManage" variant="primary" size="lg" :icon="ScanFace" :to="`${base}/faceid/terminals?add=1`">{{ t("davomat.overview.setup.action") }}</UiButton>
-          <UiButton v-if="canAddPeople" variant="secondary" size="lg" :icon="UserPlus" :to="`${base}/team?employee=new`">{{ t("davomat.overview.setup.team") }}</UiButton>
+          <template v-if="noTerminals">
+            <UiButton v-if="faceid && canManage" variant="primary" size="lg" :icon="ScanFace" :to="`${base}/faceid/terminals?add=1`">{{ t("davomat.overview.setup.action") }}</UiButton>
+            <UiButton v-if="canAddPeople" variant="secondary" size="lg" :icon="UserPlus" :to="`${base}/team?employee=new`">{{ t("davomat.overview.setup.team") }}</UiButton>
+          </template>
+          <UiButton v-else-if="faceid && canManage" variant="primary" size="lg" :icon="ScanFace" :to="`${base}/faceid/terminals`">{{ t("davomat.overview.connect.action") }}</UiButton>
         </div>
       </div>
     </section>
