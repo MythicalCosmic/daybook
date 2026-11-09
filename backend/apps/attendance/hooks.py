@@ -5,7 +5,16 @@ Imported by `AppConfig.ready()`; register a function only once it exists.
 
 from django.utils.translation import gettext_lazy as _
 
-from apps.attendance import actions, bot_messages, defaults, providers, queries, services, t13
+from apps.attendance import (
+    actions,
+    bot_messages,
+    defaults,
+    providers,
+    queries,
+    reports,
+    services,
+    t13,
+)
 from apps.attendance.audit_actions import AttendanceAction
 from apps.audit import registry as audit_registry
 from apps.companies.signals import company_created
@@ -143,6 +152,16 @@ register_exporter(
     params=t13.Params,
     feature=FEATURE,
 )
+# The five reports (docs/DAVOMAT.md §1.6), also downloadable at once from their endpoints.
+for _kind, _exporter in reports.EXPORTERS.items():
+    register_exporter(
+        _exporter,
+        perm=VIEW,
+        label=reports.LABELS[_kind],
+        columns=reports.COLUMNS[_kind],
+        rows=reports.export_rows(_kind),
+        feature=FEATURE,
+    )
 
 register_file_check("attendance.selfie", providers.selfie_check)
 

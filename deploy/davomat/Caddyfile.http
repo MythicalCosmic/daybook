@@ -1,0 +1,50 @@
+# Davomat over plain HTTP only (CADDYFILE=Caddyfile.http in .env; deploy/davomat/install.sh
+# --http-only): a trial or a demo on the computer itself, at http://localhost.
+#
+# Browsers keep the dashboard's sign-in cookie over plain HTTP only for localhost: opened at any
+# other address, sign-in lasts until the page is reloaded. For a server on a local network use
+# the HTTPS Caddyfile with CADDY_OPTIONS=local_certs (install.sh --lan) instead.
+{
+	auto_https off
+}
+
+# Face ID terminals (apps/faceid/device_api.py), as in the HTTPS Caddyfile: at most 8 MB, the
+# body buffered, handed to Django under the site's name.
+(devices) {
+	handle /api/v1/devices/* {
+		request_body {
+			max_size 8MB
+		}
+		reverse_proxy backend:8000 {
+			request_buffers 8MB
+			header_up Host {$DOMAIN}
+		}
+	}
+}
+
+:80 {
+	import devices
+
+	# Logos and employee photos: random names, never run by a browser.
+	handle_path /media/* {
+		root * /srv/media
+		header {
+			Cache-Control "private, max-age=86400"
+			X-Content-Type-Options "nosniff"
+			Content-Security-Policy "sandbox; default-src 'none'"
+		}
+		file_server
+	}
+
+	handle {
+		request_body {
+			max_size 100MB
+		}
+		encode zstd gzip
+		reverse_proxy backend:8000 {
+			transport http {
+				keepalive 60s
+			}
+		}
+	}
+}

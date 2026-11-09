@@ -30,3 +30,4 @@ class AttendanceAction(models.TextChoices):
     CORRECTION_REJECTED = "attendance.correction_rejected", _("Rejected an attendance correction")
     SWAP_APPROVED = "attendance.swap_approved", _("Approved a shift swap")
     SWAP_REJECTED = "attendance.swap_rejected", _("Rejected a shift swap")
+    REPORT_EXPORTED = "attendance.report_exported", _("Downloaded an attendance report")

@@ -1,6 +1,7 @@
 /**
  * Routes of attendance, children of /c/:companyId (plan §6.1: attendance, attendance/timesheet,
- * attendance/roster, attendance/schedules, attendance/swaps, attendance/corrections). Pages load
+ * attendance/reports (DAVOMAT.md §1.6), attendance/roster, attendance/schedules, attendance/swaps,
+ * attendance/corrections). Pages load
  * lazily (through lazy.ts) and are prefetched when the pointer rests on their nav link.
  */
 import type { RouteRecordRaw } from "vue-router";
@@ -20,6 +21,12 @@ export const routes: RouteRecordRaw[] = [
     name: "attendance.timesheet",
     component: () => lazy().then((m) => m.pages.timesheet()),
     meta: { title: "attendance.nav.timesheet" },
+  },
+  {
+    path: "attendance/reports",
+    name: "attendance.reports",
+    component: () => lazy().then((m) => m.pages.reports()),
+    meta: { title: "attendance.nav.reports", perm: "attendance.view" },
   },
   {
     path: "attendance/roster",

@@ -8,16 +8,21 @@ the services and bumps the module's pulse keys after commit. Dates are company-l
 
 from datetime import date, datetime
 
+from django.http import HttpResponse
 from django.utils import timezone
 from django.utils.translation import gettext as _
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import mixins, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
+from rest_framework.negotiation import DefaultContentNegotiation
 from rest_framework.response import Response
+from rest_framework.settings import api_settings
 
-from apps.attendance import clock, conf, queries, services
+from apps.attendance import analytics, clock, conf, queries, reports, services
 from apps.attendance import serializers as s
+from apps.attendance.audit_actions import AttendanceAction
 from apps.attendance.models import (
     AttendanceCorrection,
     AttendanceRecord,
@@ -27,8 +32,9 @@ from apps.attendance.models import (
     WorkShift,
 )
 from apps.companies.models import Branch
-from apps.console.base import OwnerAPIView, OwnerViewSet, RangeMixin
+from apps.console.base import OwnerAPIView, OwnerViewSet, RangeMixin, audit
 from apps.core.files import signed_url
+from apps.exports.registry import get_exporter, may_export
 from apps.members import scope
 from apps.members.models import Membership, Position
 from apps.members.permissions import Perm
@@ -870,3 +876,177 @@ class CorrectionViewSet(ModuleOn, Scoped, mixins.ListModelMixin, OwnerViewSet):
             self.get_object(), by=self.membership, **serializer.validated_data
         )
         return Response(queries.correction_payload(correction, self.company))
+
+
+# Reports (docs/DAVOMAT.md §1.6) ---------------------------------------------------------
+
+
+class _NoFormatOverride:
+    """DRF's settings without `?format=` picking a renderer: here it asks for a file."""
+
+    URL_FORMAT_OVERRIDE = None
+
+    def __getattr__(self, name):
+        return getattr(api_settings, name)
+
+
+class FileFormatNegotiation(DefaultContentNegotiation):
+    settings = _NoFormatOverride()
+
+
+FILE_TYPES = {
+    "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "pdf": "application/pdf",
+}
+REPORT_PARAMETERS = [
+    OpenApiParameter("from", str, description="First day, YYYY-MM-DD."),
+    OpenApiParameter("to", str, description="Last day, YYYY-MM-DD (today by default)."),
+    OpenApiParameter("preset", str, description="Instead of from/to; this month by default."),
+    BRANCH_PARAM,
+    OpenApiParameter(
+        "department", int, many=True, description="Department ids (with those below them)."
+    ),
+    OpenApiParameter(
+        "format",
+        str,
+        enum=["json", *FILE_TYPES],
+        description="xlsx or pdf: the report as a file (needs data.export).",
+    ),
+]
+
+
+def report_responses(serializer) -> dict:
+    return {
+        (200, "application/json"): serializer,
+        **{(200, media): OpenApiTypes.BINARY for media in FILE_TYPES.values()},
+    }
+
+
+class ReportView(ModuleOn, Scoped, RangeMixin, OwnerAPIView):
+    """One attendance report over a period (this month by default), in the caller's branches,
+    narrowed by `branch` and `department`; `?format=xlsx|pdf` downloads it as a file."""
+
+    perm = VIEW
+    kind = "summary"
+    content_negotiation_class = FileFormatNegotiation
+
+    def ask(self) -> reports.Ask:
+        period = self.range
+        branches = _ints(self.request.query_params.getlist("branch"))
+        try:
+            departments = [
+                int(value) for value in self.request.query_params.getlist("department") if value
+            ]
+        except ValueError as exc:
+            raise ValidationError({"department": [_("Give department ids.")]}) from exc
+        return reports.Ask(
+            period.start,
+            period.end,
+            self.requested_branches(),
+            analytics.departments_below(self.company, departments),
+            branches,
+            departments,
+        )
+
+    def get(self, request, company_id):
+        wanted = (request.query_params.get("format") or "json").lower()
+        if wanted not in ("json", *FILE_TYPES):
+            raise ValidationError({"format": [_("Use xlsx or pdf.")]})
+        ask = self.ask()
+        if wanted != "json":
+            exporter = get_exporter(reports.EXPORTERS[self.kind])
+            if exporter is None or not may_export(self.membership, exporter):
+                raise PermissionDenied(_("You don't have permission to export this."))
+        data = reports.build(self.company, self.kind, ask)
+        if wanted == "json":
+            return Response(data)
+        return self.file(wanted, data, ask)
+
+    def file(self, wanted: str, data: dict, ask: reports.Ask) -> HttpResponse:
+        if wanted == "xlsx":
+            content = reports.xlsx(self.kind, data, company=self.company, ask=ask)
+        else:
+            language = self.request.user.language or self.company.default_language
+            content = reports.pdf(self.kind, data, company=self.company, ask=ask, language=language)
+        audit(
+            self.membership,
+            AttendanceAction.REPORT_EXPORTED,
+            self.company,
+            report=self.kind,
+            format=wanted,
+            start=ask.start.isoformat(),
+            end=ask.end.isoformat(),
+            branches=ask.branches,
+            departments=ask.departments,
+        )
+        response = HttpResponse(content, content_type=FILE_TYPES[wanted])
+        name = reports.filename(self.kind, self.company, ask, wanted)
+        response["Content-Disposition"] = f'attachment; filename="{name}"'
+        response["Cache-Control"] = "private, no-store"
+        return response
+
+
+class ReportSummaryView(ReportView):
+    """Per person: days planned, present, absent and on leave, hours, lateness, early leaves,
+    overtime, punctuality and attendance rates, with the totals."""
+
+    kind = "summary"
+
+    @extend_schema(
+        parameters=REPORT_PARAMETERS,
+        responses=report_responses(s.AttendanceReportSummarySerializer),
+    )
+    def get(self, request, company_id):
+        return super().get(request, company_id)
+
+
+class ReportDepartmentsView(ReportView):
+    """The same figures per department (people without one in their own row)."""
+
+    kind = "departments"
+
+    @extend_schema(
+        parameters=REPORT_PARAMETERS,
+        responses=report_responses(s.AttendanceReportDepartmentsSerializer),
+    )
+    def get(self, request, company_id):
+        return super().get(request, company_id)
+
+
+class ReportBranchesView(ReportView):
+    """The same figures per branch, where the days happened."""
+
+    kind = "branches"
+
+    @extend_schema(
+        parameters=REPORT_PARAMETERS,
+        responses=report_responses(s.AttendanceReportBranchesSerializer),
+    )
+    def get(self, request, company_id):
+        return super().get(request, company_id)
+
+
+class ReportTrendView(ReportView):
+    """Per day: people planned, present, late, absent and on leave."""
+
+    kind = "trend"
+
+    @extend_schema(
+        parameters=REPORT_PARAMETERS,
+        responses=report_responses(s.AttendanceReportTrendSerializer),
+    )
+    def get(self, request, company_id):
+        return super().get(request, company_id)
+
+
+class ReportPunctualityView(ReportView):
+    """People who checked in for a shift, the most punctual first."""
+
+    kind = "punctuality"
+
+    @extend_schema(
+        parameters=REPORT_PARAMETERS,
+        responses=report_responses(s.AttendanceReportPunctualitySerializer),
+    )
+    def get(self, request, company_id):
+        return super().get(request, company_id)

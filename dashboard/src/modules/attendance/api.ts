@@ -7,16 +7,19 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
 import { computed, toValue, type MaybeRefOrGetter } from "vue";
 
-import { http, ownerPath } from "@/api/http";
+import { http, ownerPath, request } from "@/api/http";
 import { keys as shellKeys, moduleKey, qk } from "@/api/keys";
+import { downloadFile } from "@/lib/csv";
 import { useCompanyId } from "@/stores/company";
 
+import { reportFileName } from "./reports";
 import type {
   AttendanceSettings,
   AttendanceSummary,
   Board,
   BulkAction,
   Correction,
+  DepartmentOption,
   MemberMonth,
   Page,
   RecordCreate,
@@ -24,6 +27,10 @@ import type {
   RecordEdit,
   RecordParams,
   RecordRow,
+  ReportFormat,
+  ReportKind,
+  ReportOf,
+  ReportParams,
   Roster,
   Schedule,
   ScheduleInput,
@@ -174,6 +181,42 @@ export function getMemberMonth(companyId: number, memberId: number, month: strin
   return http.get<MemberMonth>(path(companyId, `members/${memberId}/`), { month }, { signal });
 }
 
+/** The query of a report: empty filters are left out. */
+function reportQuery(params: ReportParams) {
+  return {
+    from: params.from,
+    to: params.to,
+    branch: params.branch?.length ? params.branch : undefined,
+    department: params.department?.length ? params.department : undefined,
+  };
+}
+
+export function getReport<K extends ReportKind>(companyId: number, kind: K, params: ReportParams, signal?: AbortSignal): Promise<ReportOf[K]> {
+  return http.get<ReportOf[K]>(path(companyId, `reports/${kind}/`), reportQuery(params), { signal });
+}
+
+/**
+ * Downloads a report as Excel or PDF (the same figures as the page; needs `data.export`) and gives
+ * the file's name. Refusals are toasted by the HTTP client.
+ */
+export async function downloadReport(companyId: number, kind: ReportKind, params: ReportParams, format: ReportFormat): Promise<string> {
+  const response = await request<Response>(path(companyId, `reports/${kind}/`), {
+    query: { ...reportQuery(params), format },
+    // A file, not JSON: any type is fine (`?format=` says which); errors still come as JSON.
+    headers: { Accept: "*/*" },
+    raw: true,
+    toast: true,
+  });
+  const name = reportFileName(response.headers.get("Content-Disposition"), `attendance-${kind}-${params.from}-${params.to}.${format}`);
+  downloadFile(name, await response.blob());
+  return name;
+}
+
+/** The company's departments for the report filter (the members app's list, tree order). */
+export function listReportDepartments(companyId: number, signal?: AbortSignal): Promise<DepartmentOption[]> {
+  return http.get<DepartmentOption[]>(ownerPath(companyId, "departments/"), undefined, { signal });
+}
+
 // ─── Keys ───────────────────────────────────────────────────────────────────
 
 export const attendanceKeys = {
@@ -194,6 +237,8 @@ export const attendanceKeys = {
   settings: (companyId: number) => qk(companyId, MODULE, "settings"),
   staff: (companyId: number, branch: number | null) => qk(companyId, MODULE, "staff", { branch }),
   member: (companyId: number, memberId: number, month: string) => qk(companyId, MODULE, "member", { memberId, month }),
+  report: (companyId: number, kind: ReportKind, params: ReportParams) => qk(companyId, MODULE, "report", { kind, ...params }),
+  departments: (companyId: number) => qk(companyId, MODULE, "departments"),
 };
 
 // ─── Queries ────────────────────────────────────────────────────────────────
@@ -314,6 +359,29 @@ export function useStaff(branch: MaybeRefOrGetter<number | null> = null) {
     queryKey: computed(() => attendanceKeys.staff(companyId.value, toValue(branch))),
     queryFn: ({ signal }) => listStaff(companyId.value, toValue(branch), signal),
     enabled: computed(() => companyId.value > 0),
+    staleTime: 5 * 60_000,
+  });
+}
+
+/** One report for the page's period and filters; check-ins refresh it through the module's pulse keys. */
+export function useReport<K extends ReportKind>(kind: K, params: MaybeRefOrGetter<ReportParams>, enabled: MaybeRefOrGetter<boolean> = true) {
+  const companyId = useCompanyId();
+  return useQuery({
+    queryKey: computed(() => attendanceKeys.report(companyId.value, kind, toValue(params))),
+    queryFn: ({ signal }) => getReport(companyId.value, kind, toValue(params), signal),
+    enabled: computed(() => companyId.value > 0 && toValue(enabled)),
+    placeholderData: keepPreviousData,
+    staleTime: 60_000,
+  });
+}
+
+/** Departments for the filter; only for people who may list them (`members.view`). */
+export function useReportDepartments(enabled: MaybeRefOrGetter<boolean> = true) {
+  const companyId = useCompanyId();
+  return useQuery({
+    queryKey: computed(() => attendanceKeys.departments(companyId.value)),
+    queryFn: ({ signal }) => listReportDepartments(companyId.value, signal),
+    enabled: computed(() => companyId.value > 0 && toValue(enabled)),
     staleTime: 5 * 60_000,
   });
 }
