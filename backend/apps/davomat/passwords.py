@@ -21,7 +21,7 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import update_last_login
 from django.contrib.auth.password_validation import validate_password
 from django.core.cache import cache
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.utils.translation import gettext as _
 
@@ -247,7 +247,10 @@ def set_password(
     membership: Membership, *, by: Membership, password: str, keep_session: int | None = None
 ) -> None:
     """An administrator gives someone a new password: every session of theirs ends (but the
-    administrator's own browser, when they set their own)."""
+    administrator's own browser, when they set their own). Only owners set an owner's."""
+    owner = by.status == Membership.Status.APPROVED and by.role is not None and by.role.is_owner
+    if membership.role is not None and membership.role.is_owner and not owner:
+        raise PermissionDenied(_("Only owners can change an owner."))
     user = membership.user
     check_password_rules(password, user)
     with transaction.atomic():

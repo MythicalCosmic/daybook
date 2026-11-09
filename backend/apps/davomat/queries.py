@@ -61,9 +61,11 @@ def role_kind(role: AccessRole | None) -> str:
 
 
 def web_role_filter(prefix: str = "role") -> Q:
-    """Roles that open the web app: the Owner role or `dashboard.access`."""
-    return Q(**{f"{prefix}__is_owner": True}) | Q(
-        **{f"{prefix}__permissions__contains": [Perm.DASHBOARD_ACCESS]}
+    """Roles that open the web app: the Owner role or `dashboard.access` (on the role itself
+    with `prefix=""`, on a membership's role by default)."""
+    path = f"{prefix}__" if prefix else ""
+    return Q(**{f"{path}is_owner": True}) | Q(
+        **{f"{path}permissions__contains": [Perm.DASHBOARD_ACCESS]}
     )
 
 

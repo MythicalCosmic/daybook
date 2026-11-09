@@ -333,7 +333,8 @@ def create_user(
         raise PermissionDenied(_("You can only give a role whose permissions you have yourself."))
     chosen = _branches(company, by, branches)
     kind = queries.role_kind(role)
-    if not chosen and kind in (queries.MANAGER, queries.VIEWER):
+    has_branches = bool(chosen) or (employee is not None and employee.branches.exists())
+    if not has_branches and kind in (queries.MANAGER, queries.VIEWER):
         raise FieldError("branch_ids", _("Pick the branches this user sees."))
     now = timezone.now()
     if employee is not None:
@@ -431,6 +432,8 @@ def update_user(
             user.save(update_fields=["username"])
     if role is not None and role.pk != membership.role_id:
         role = _web_role(company, role)
+        if membership.role is not None and membership.role.is_owner and not role.is_owner:
+            _ensure_another_owner(membership)
         changes["role"] = [membership.role.name if membership.role else None, role.name]
         membership = members.change_role(membership, by=by, role=role)
     if first_name is not None or last_name is not None or branches is not None:
@@ -473,6 +476,22 @@ def update_user(
     return membership
 
 
+def _ensure_another_owner(membership: Membership) -> None:
+    """The organization always keeps an owner who can sign in."""
+    others = (
+        Membership.objects.select_for_update(of=("self",))
+        .filter(
+            company_id=membership.company_id,
+            status=Membership.Status.APPROVED,
+            role__is_owner=True,
+            user__is_active=True,
+        )
+        .exclude(pk=membership.pk)
+    )
+    if not list(others.values_list("pk", flat=True)):
+        raise DomainError(_("This is the only owner who can sign in. Make someone else one first."))
+
+
 def _is_active(membership: Membership) -> bool:
     return membership.user.is_active and membership.status == Membership.Status.APPROVED
 
@@ -500,18 +519,7 @@ def set_active(membership: Membership, *, by: Membership | None, active: bool) -
         if by is not None and by.user_id == user.pk:
             raise DomainError(_("You can't switch yourself off."))
         if membership.role is not None and membership.role.is_owner:
-            others = (
-                Membership.objects.filter(
-                    company_id=membership.company_id,
-                    status=Membership.Status.APPROVED,
-                    role__is_owner=True,
-                    user__is_active=True,
-                )
-                .exclude(pk=membership.pk)
-                .exists()
-            )
-            if not others:
-                raise DomainError(_("This is the only owner who can sign in."))
+            _ensure_another_owner(membership)
     user.is_active = active
     user.save(update_fields=["is_active"])
     membership.user = user
