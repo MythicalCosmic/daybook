@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 import time
+from zoneinfo import ZoneInfo
 
 from celery import shared_task
 from django.core.cache import cache
@@ -97,7 +98,7 @@ def nightly() -> int:
     found = 0
     now = timezone.now()
     for company in _companies():
-        local = timezone.localtime(now, services.ZoneInfo(company.timezone))
+        local = timezone.localtime(now, ZoneInfo(company.timezone))
         if local.hour not in NIGHT_HOURS:
             continue
         if not cache.add(f"recognition:sweep:{company.pk}:{local.date()}", 1, timeout=26 * 3600):
