@@ -147,14 +147,17 @@ async def test_a_menu_command_ends_the_conversation_it_interrupts(dp, bot, compa
 
 
 @pytestmark_db
-async def test_a_menu_command_without_a_handler_yet_goes_home(dp, bot, company, member):
+async def test_kudos_from_the_menu_ends_a_half_made_task(dp, bot, company, member):
+    """/kudos was the menu's command without a handler (it went home); recognition answers it
+    now, and it still ends the conversation it interrupts."""
     worker = await member.aregistered(company)
     tg = updates.tg_user(worker.user.telegram_id)
 
     await dp.feed_update(bot, updates.message(tg, "/new"))
     await dp.feed_update(bot, updates.message(tg, "/kudos"))
 
-    assert "You're a member of" in bot.sent_texts()[-1]
+    # /kudos answers for itself (thanks are off here), never as the task's title.
+    assert "Thanks between colleagues aren't switched on" in bot.sent_texts()[-1]
     await dp.feed_update(bot, updates.message(tg, "Thanks Madina"))
     assert ASKS_FOR_DUE not in bot.sent_texts()[-1]
 
