@@ -91,6 +91,18 @@
 	}
 }
 
+# HTTPS for any other name or the bare IP: a terminal given the server's address with HTTPS lands
+# here (it sends no SNI, gets the site's certificate through default_sni, and its Host matches no
+# site). Without this block Caddy would answer its event with an empty 200, the terminal would
+# count it as delivered, and the scan would be lost. Only the device path; the rest goes to the
+# site's name.
+https:// {
+	import devices
+	handle {
+		redir https://{$DOMAIN}{uri} permanent
+	}
+}
+
 # Plain HTTP for the site's name: Face ID terminals whose firmware offers no HTTPS post here;
 # everything else goes to HTTPS (as Caddy does by itself for sites without this block).
 http://{$DOMAIN} {
