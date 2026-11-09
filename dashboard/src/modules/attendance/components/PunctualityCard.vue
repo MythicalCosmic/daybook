@@ -91,7 +91,7 @@ function worstLine(row: RankingRow): string {
                   <p class="min-w-0 flex-1 truncate text-sm font-medium text-fg" :title="row.employee.name">{{ row.employee.name }}</p>
                   <span :class="['shrink-0 text-sm font-semibold tabular-nums', TONE_TEXT[rateTone(row.punctuality_percent)]]">{{ fmt.percent(row.punctuality_percent, 0) }}</span>
                 </div>
-                <ProgressBar class="mt-1" size="xs" :value="row.punctuality_percent ?? 0" :tone="rateTone(row.punctuality_percent)" :label="row.employee.name" />
+                <ProgressBar class="mt-1" size="xs" :value="row.punctuality_percent ?? 0" :tone="rateTone(row.punctuality_percent)" />
                 <p class="mt-1 truncate text-xs text-muted">{{ bestLine(row) }}</p>
               </div>
             </li>
@@ -109,7 +109,7 @@ function worstLine(row: RankingRow): string {
                   <p class="min-w-0 flex-1 truncate text-sm font-medium text-fg" :title="row.employee.name">{{ row.employee.name }}</p>
                   <span :class="['shrink-0 text-sm font-semibold tabular-nums', TONE_TEXT[rateTone(row.punctuality_percent)]]">{{ fmt.percent(row.punctuality_percent, 0) }}</span>
                 </div>
-                <ProgressBar class="mt-1" size="xs" :value="row.punctuality_percent ?? 0" :tone="rateTone(row.punctuality_percent)" :label="row.employee.name" />
+                <ProgressBar class="mt-1" size="xs" :value="row.punctuality_percent ?? 0" :tone="rateTone(row.punctuality_percent)" />
                 <p class="mt-1 truncate text-xs text-muted">{{ worstLine(row) }}</p>
               </div>
             </li>

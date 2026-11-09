@@ -13,7 +13,15 @@ import { counter } from "@/core/pulse";
 
 import { lazy, routes } from "./routes";
 
+/**
+ * Part of both editions: Davomat (docs/DAVOMAT.md) shows attendance and its Reports too. Read by
+ * the edition registry (core/edition.ts, `editions` on the module); spread in so this file also
+ * type-checks where the registry doesn't know editions yet.
+ */
+const EDITIONS = { editions: ["daybook", "davomat"] as const };
+
 export default defineModule({
+  ...EDITIONS,
   id: "attendance",
   group: "people",
   order: 20,

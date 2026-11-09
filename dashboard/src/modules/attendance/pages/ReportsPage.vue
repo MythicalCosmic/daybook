@@ -273,19 +273,21 @@ const labelHeader = computed(() =>
 );
 
 // Short headers (the full words are in the KPI strip and the hints); long ones clip in uz and ru.
+// The rates first, then the days and the minutes; the rarer figures last (they scroll in on a
+// narrow screen).
 const columns = computed<TableColumn<Row>[]>(() => [
-  { id: "label", header: labelHeader.value, sortable: true, minWidth: 230, sticky: true, hideable: false },
-  ...(view.value === "people" ? [] : [{ id: "people", header: t("attendance.reports.col.people"), sortable: true, numeric: true, width: 110 } as TableColumn<Row>]),
-  { id: "days_scheduled", header: t("attendance.reports.col.scheduled"), hint: t("attendance.reports.col.scheduledHint"), sortable: true, numeric: true, width: 110 },
-  { id: "days_present", header: t("attendance.reports.col.present"), sortable: true, numeric: true, width: 100 },
-  { id: "days_absent", header: t("attendance.reports.col.absent"), sortable: true, numeric: true, width: 100 },
-  { id: "days_leave", header: t("attendance.reports.col.leave"), sortable: true, numeric: true, width: 96 },
-  { id: "worked_minutes", header: t("attendance.reports.col.hours"), sortable: true, numeric: true, width: 120, format: (value) => fmt.duration(value as number), csv: (row) => Math.round((row.worked_minutes / 60) * 10) / 10 },
-  { id: "late_count", header: t("attendance.reports.col.late"), sortable: true, numeric: true, width: 140 },
-  { id: "early_leave_count", header: t("attendance.reports.col.early"), sortable: true, numeric: true, width: 120 },
-  { id: "overtime_minutes", header: t("attendance.reports.col.overtime"), sortable: true, numeric: true, width: 124, format: (value) => (value ? fmt.duration(value as number) : "—") },
-  { id: "punctuality_percent", header: t("attendance.reports.col.punctuality"), hint: t("attendance.reports.col.punctualityHint"), sortable: true, width: 200 },
-  { id: "attendance_percent", header: t("attendance.reports.col.attendance"), hint: t("attendance.reports.col.attendanceHint"), sortable: true, numeric: true, width: 120, format: (value) => fmt.percent(value as number | null, 1) },
+  { id: "label", header: labelHeader.value, sortable: true, minWidth: 220, sticky: true, hideable: false },
+  ...(view.value === "people" ? [] : [{ id: "people", header: t("attendance.reports.col.people"), sortable: true, numeric: true, width: 112 } as TableColumn<Row>]),
+  { id: "punctuality_percent", header: t("attendance.reports.col.punctuality"), hint: t("attendance.reports.col.punctualityHint"), sortable: true, width: 180 },
+  { id: "attendance_percent", header: t("attendance.reports.col.attendance"), hint: t("attendance.reports.col.attendanceHint"), sortable: true, numeric: true, width: 124, format: (value) => fmt.percent(value as number | null, 1) },
+  { id: "days_present", header: t("attendance.reports.col.present"), sortable: true, numeric: true, width: 84 },
+  { id: "days_scheduled", header: t("attendance.reports.col.scheduled"), hint: t("attendance.reports.col.scheduledHint"), sortable: true, numeric: true, width: 108 },
+  { id: "days_absent", header: t("attendance.reports.col.absent"), sortable: true, numeric: true, width: 108 },
+  { id: "late_count", header: t("attendance.reports.col.late"), sortable: true, numeric: true, width: 130 },
+  { id: "worked_minutes", header: t("attendance.reports.col.hours"), sortable: true, numeric: true, width: 130, format: (value) => fmt.duration(value as number), csv: (row) => Math.round((row.worked_minutes / 60) * 10) / 10 },
+  { id: "overtime_minutes", header: t("attendance.reports.col.overtime"), sortable: true, numeric: true, width: 120, format: (value) => (value ? fmt.duration(value as number) : "—") },
+  { id: "early_leave_count", header: t("attendance.reports.col.early"), sortable: true, numeric: true, width: 110 },
+  { id: "days_leave", header: t("attendance.reports.col.leave"), sortable: true, numeric: true, width: 84 },
 ]);
 
 function personLine(employee: ReportEmployee): string | null {
@@ -341,7 +343,7 @@ const schedulesLink = computed(() => (company.can("attendance.manage") ? `/c/${c
     </EmptyState>
 
     <template v-else>
-      <div class="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+      <div class="grid min-w-0 gap-4 xl:grid-cols-2">
         <ChartCard
           :title="t('attendance.reports.trend.title')"
           :subtitle="trendSubtitle"
@@ -351,9 +353,9 @@ const schedulesLink = computed(() => (company.can("attendance.manage") ? `/c/${c
           :empty="trendEmpty"
           :empty-text="t('attendance.reports.trend.empty')"
           :csv="trendCsv as ChartCsv<never>"
-          height="260px"
+          height="320px"
         >
-          <BarChart :categories="categories" :series="trendSeries" stacked integer :x-format="days.length > 62 ? 'month' : 'day'" height="260px" />
+          <BarChart :categories="categories" :series="trendSeries" stacked integer :x-format="days.length > 62 ? 'month' : 'day'" height="320px" />
         </ChartCard>
         <PunctualityCard :report="ranking.data.value" :loading="ranking.isPending.value" :error="ranking.error.value" :retry="() => ranking.refetch()" />
       </div>
@@ -399,8 +401,8 @@ const schedulesLink = computed(() => (company.can("attendance.manage") ? `/c/${c
           <span :class="['tabular-nums', row.early_leave_count ? 'text-fg' : 'text-subtle']" :title="row.early_leave_count ? fmt.duration(row.early_leave_minutes) : undefined">{{ row.early_leave_count }}</span>
         </template>
         <template #cell-punctuality_percent="{ row }">
-          <span v-if="row.punctuality_percent !== null" class="flex min-w-0 items-center gap-2">
-            <ProgressBar class="flex-1" :value="row.punctuality_percent" :tone="rateTone(row.punctuality_percent)" :label="row.label" />
+          <span v-if="row.punctuality_percent !== null" class="flex w-full min-w-0 items-center gap-2">
+            <ProgressBar class="flex-1" :value="row.punctuality_percent" :tone="rateTone(row.punctuality_percent)" />
             <span :class="['w-12 text-right text-sm font-semibold tabular-nums', TONE_TEXT[rateTone(row.punctuality_percent)]]">{{ fmt.percent(row.punctuality_percent, 0) }}</span>
           </span>
           <span v-else class="text-subtle">—</span>
