@@ -94,9 +94,21 @@ locked docker compose -p "$PROJECT" -f "$COMPOSE_YML" --env-file "$ENV_FILE" bui
 bash "$DAVOMAT_DIR/install.sh" --yes
 
 step "Every service is up"
+# Healthy where the service has a health check (its first one may take half a minute), running
+# otherwise.
 for service in caddy backend worker beat bot backup db redis; do
-	state=$(service_state "$service")
-	case $state in healthy | running) ok "$service: $state" ;; *) die "$service: $state" ;; esac
+	deadline=$((SECONDS + 120))
+	while :; do
+		state=$(service_state "$service")
+		case $state in
+		healthy | running) break ;;
+		starting) ;;
+		*) die "$service: $state: $(compose logs --no-color --tail 20 "$service" </dev/null 2>&1)" ;;
+		esac
+		[ "$SECONDS" -lt "$deadline" ] || die "$service: still $state after 120 s"
+		sleep 3
+	done
+	ok "$service: $state"
 done
 
 step "Setup, a terminal and its events"

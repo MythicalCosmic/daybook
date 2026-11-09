@@ -470,7 +470,9 @@ main() {
 		build_image
 	else
 		step "Image"
-		ok "Using $(image_name), built $(docker image inspect -f '{{.Created}}' "$(image_name)" | cut -c1-16 | tr T ' ') UTC (new code: deploy/davomat/update.sh)"
+		local built
+		built=$(docker image inspect -f '{{.Created}}' "$(image_name)")
+		ok "Using $(image_name), built $(date -d "$built" '+%Y-%m-%d %H:%M' 2>/dev/null || echo "$built") (new code: deploy/davomat/update.sh)"
 	fi
 	start_stack
 	init_organization

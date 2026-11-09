@@ -153,7 +153,9 @@ restart_count() {
 # wait_healthy SERVICE [seconds]: waits until the service's health check passes, showing the
 # backend's progress (migrations) on the way. Fails when it crashes, turns unhealthy or times out.
 wait_healthy() {
-	local service=$1 timeout=${2:-1500} started=$SECONDS state line last='' restarts
+	local service=$1 timeout=${2:-1500} started=$SECONDS state line last='' restarts since
+	# Only this start's lines: a restarted container keeps the log of its earlier runs.
+	since=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 	while :; do
 		state=$(service_state "$service")
 		case $state in
@@ -172,7 +174,7 @@ wait_healthy() {
 			warn "$service: still $state after $timeout s"
 			return 1
 		fi
-		line=$(compose logs --no-color --no-log-prefix --tail 30 "$service" </dev/null 2>/dev/null |
+		line=$(compose logs --no-color --no-log-prefix --since "$since" --tail 30 "$service" </dev/null 2>/dev/null |
 			grep -E 'Applying |Operations to perform|Booting worker|Listening at' | tail -n 1 | cut -c1-100 || true)
 		if [ -n "$line" ] && [ "$line" != "$last" ]; then
 			info "${DIM}${line}${RESET}"
