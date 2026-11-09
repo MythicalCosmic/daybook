@@ -58,6 +58,18 @@ export default defineModule({
       run: () => ctx.go("learning/people"),
     },
   ],
+  // Today: how much mandatory training is done and who is late with it.
+  widgets: [
+    {
+      id: "learning.compliance",
+      span: 1,
+      order: 62,
+      kind: "card",
+      perm: READ,
+      feature: "learning",
+      component: defineAsyncComponent(() => import("./widgets/ComplianceWidget.vue")),
+    },
+  ],
   settings: [
     {
       id: "learning",

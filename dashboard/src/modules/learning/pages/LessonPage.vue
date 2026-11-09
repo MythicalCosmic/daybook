@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
  * A lesson: its video (uploaded in pieces with a progress bar, or a YouTube link) with a preview,
- * the notes in the knowledge base's editor, topics and audience, publishing; and "Who watched"
+ * the notes in the knowledge base's editor (its extension `learning.lesson.notes`), topics and
+ * audience, publishing; and "Who watched"
  * (docs/PLAN-LEARNING.md §4.2): everyone it is for, never opened, watching (with the parts they
  * really played) or watched, the time spent, the sessions and when.
  */
@@ -12,6 +13,7 @@ import { useRoute, useRouter } from "vue-router";
 
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
+import ExtensionSlot from "@/components/ExtensionSlot.vue";
 import FormField from "@/components/FormField.vue";
 import InlineAlert from "@/components/InlineAlert.vue";
 import MultiSelect from "@/components/MultiSelect.vue";
@@ -27,9 +29,7 @@ import TextInput from "@/components/TextInput.vue";
 import UiButton from "@/components/UiButton.vue";
 import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
-import RichEditor from "@/modules/knowledge/components/editor/RichEditor.vue";
-import "@/modules/knowledge/prose.css";
-import { topicColor } from "@/modules/knowledge/topics";
+import { topicColor } from "@/lib/topicColors";
 import { useCompanyId, useCompanyStore } from "@/stores/company";
 
 import { learningApi, useLesson, useRefresh, useTopics, useViewers } from "../api";
@@ -111,6 +111,14 @@ async function noPictures(): Promise<{ id: number; url: string }> {
   toast.error(t("learning.lesson.noPictures"));
   throw new Error("pictures belong on pages");
 }
+// The notes are written in the knowledge base's editor, which that module provides.
+const notesContext = computed(() => ({
+  html: canManage.value ? form.notes : (data.value?.notes ?? ""),
+  editable: canManage.value,
+  placeholder: t("learning.lesson.notesPlaceholder"),
+  update: (html: string) => (form.notes = html),
+  upload: noPictures,
+}));
 
 const saving = ref(false);
 async function save(): Promise<void> {
@@ -217,9 +225,7 @@ const viewerOptions = computed(() => {
           </FormField>
 
           <FormField :label="t('learning.lesson.notes')" :hint="t('learning.lesson.notesHint')">
-            <RichEditor v-if="canManage" v-model="form.notes" :upload="noPictures" :placeholder="t('learning.lesson.notesPlaceholder')" />
-            <!-- eslint-disable-next-line vue/no-v-html -- notes are cleaned by the server (knowledge sanitizer) -->
-            <div v-else class="kb-prose text-sm" v-html="data.notes" />
+            <ExtensionSlot name="learning.lesson.notes" as="none" :context="notesContext" />
           </FormField>
           <FormField :label="t('learning.lesson.topics')" :hint="t('learning.lesson.topicsHint')" optional>
             <MultiSelect v-model="form.topic_ids" :options="topicOptions" :placeholder="t('learning.lesson.pickTopics')" display="chips" :disabled="!canManage" />

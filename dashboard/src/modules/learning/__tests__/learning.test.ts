@@ -1,6 +1,6 @@
 // Training screens against a stubbed API: the helpers (clock, ranges strip, YouTube links), the
 // resumable upload (resumes from the server's offset, retries, finishes), the overview, a course's
-// steps and People tab, a lesson's "Who watched", and the people grid.
+// steps and People tab, a lesson's "Who watched", the people grid and the Today tile.
 // The registry first, as in the app (core/modules loads every module's index.ts).
 import "@/core/modules";
 
@@ -12,7 +12,6 @@ import { createMemoryHistory, createRouter, type RouteRecordRaw } from "vue-rout
 
 import { ApiError } from "@/api/http";
 import { i18n, mergeModuleMessages, setLanguage } from "@/i18n";
-import { scrolledPercent } from "@/modules/knowledge/views";
 import { useCompanyStore } from "@/stores/company";
 import { useSessionStore } from "@/stores/session";
 import { company, json, me } from "@/test/fixtures";
@@ -27,6 +26,7 @@ import PeoplePage from "../pages/PeoplePage.vue";
 import { routes } from "../routes";
 import type { ChunkResult, CourseDetail, LessonDetail, Overview, PeopleGrid, Video, Viewers } from "../types";
 import { sendFile, type UploadApi } from "../upload";
+import ComplianceWidget from "../widgets/ComplianceWidget.vue";
 
 vi.setConfig({ testTimeout: 20_000 });
 
@@ -126,11 +126,6 @@ describe("helpers", () => {
       expect(youtubeId(link)).toBeNull();
     }
   });
-
-  it("measures how far down the reader got", () => {
-    expect(scrolledPercent(0, 800, 600)).toBe(100);
-    expect(scrolledPercent(200, 800, 2000)).toBe(50);
-  });
 });
 
 describe("the upload", () => {
@@ -217,6 +212,33 @@ describe("the overview", () => {
     expect(text).toContain("8 days late");
     expect(text).toContain("Sovuq zanjir");
     expect(text).toContain("4 of 6");
+  });
+
+  it("puts a tile on Today with who is late, linking to each person", async () => {
+    stub({ "GET learning/overview/": () => json(overview()) });
+    const app = await pageApp("/c/1/learning");
+    const { wrapper } = mountWithProviders(ComplianceWidget, { props: { companyId: 1 }, plugins: app.plugins });
+    await settle();
+    const text = wrapper.text();
+    expect(text).toContain(en["learning.overview.compliance"]);
+    expect(text).toContain("4 of 6");
+    expect(text).toContain("8 days late");
+    expect(wrapper.find('a[href="/c/1/learning/people/3"]').text()).toBe("Alisher Valiyev");
+    expect(wrapper.find('[role="progressbar"]').attributes("aria-valuenow")).toBe("66");
+  });
+
+  it("says when there is no mandatory training and when nobody is late", async () => {
+    stub({ "GET learning/overview/": () => json({ ...overview(), compliance: { people: 0, completed: 0, overdue_people: 0, percent: 0 }, late: [] }) });
+    const app = await pageApp("/c/1/learning");
+    const { wrapper } = mountWithProviders(ComplianceWidget, { props: { companyId: 1 }, plugins: app.plugins });
+    await settle();
+    expect(wrapper.text()).toContain(en["learning.grid.noCourses"]);
+
+    stub({ "GET learning/overview/": () => json({ ...overview(), late: [] }) });
+    const again = await pageApp("/c/1/learning");
+    const second = mountWithProviders(ComplianceWidget, { props: { companyId: 1 }, plugins: again.plugins });
+    await settle();
+    expect(second.wrapper.text()).toContain(en["learning.overview.nobodyLate"]);
   });
 });
 

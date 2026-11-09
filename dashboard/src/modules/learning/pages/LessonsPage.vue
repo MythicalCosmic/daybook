@@ -20,8 +20,8 @@ import TextInput from "@/components/TextInput.vue";
 import UiButton from "@/components/UiButton.vue";
 import UiDialog from "@/components/UiDialog.vue";
 import { useDataTable } from "@/components/useDataTable";
+import { topicColor } from "@/lib/topicColors";
 import { rs, useRouteState } from "@/lib/useRouteState";
-import { topicColor } from "@/modules/knowledge/topics";
 import { useCompanyId, useCompanyStore } from "@/stores/company";
 
 import { learningApi, useLessons, useRefresh, useTopics } from "../api";

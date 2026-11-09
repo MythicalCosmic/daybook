@@ -32,7 +32,7 @@ import UiButton from "@/components/UiButton.vue";
 import UiDialog from "@/components/UiDialog.vue";
 import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
-import { TOPIC_COLOR_KEYS, topicColor } from "@/modules/knowledge/topics";
+import { TOPIC_COLOR_KEYS, topicColor } from "@/lib/topicColors";
 import { useFormat } from "@/lib/useFormat";
 import { useCompanyId, useCompanyStore, useCompanyToday } from "@/stores/company";
 
