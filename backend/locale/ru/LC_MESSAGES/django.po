@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-10 00:47+0500\n"
+"POT-Creation-Date: 2026-11-10 02:07+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -12,12 +12,10 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=4; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
-"n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || "
-"(n%100>=11 && n%100<=14)? 2 : 3);\n"
+"Plural-Forms: nplurals=4; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || (n%100>=11 && n%100<=14)? 2 : 3);\n"
 
-#: backend/apps/accounts/admin.py backend/apps/inventory/models.py
-#: backend/apps/members/providers.py
+#: backend/apps/accounts/admin.py backend/apps/davomat/importing.py
+#: backend/apps/inventory/models.py backend/apps/members/providers.py
 msgid "Telegram"
 msgstr "Telegram"
 
@@ -54,7 +52,8 @@ msgstr ""
 msgid "When the Telegram profile photo was last fetched."
 msgstr "Когда фото профиля в последний раз загружали из Telegram."
 
-#: backend/apps/accounts/telegram_chat.py owner_bot/ownerbot/commands.py
+#: backend/apps/accounts/telegram_chat.py davomat_bot/commands.py
+#: owner_bot/ownerbot/commands.py
 msgid "Home"
 msgstr "Главная"
 
@@ -104,11 +103,12 @@ msgstr "Отправить объявление (для руководителе
 msgid "Switch company"
 msgstr "Сменить компанию"
 
-#: backend/apps/accounts/telegram_chat.py owner_bot/ownerbot/commands.py
+#: backend/apps/accounts/telegram_chat.py davomat_bot/commands.py
+#: owner_bot/ownerbot/commands.py
 msgid "Change language"
 msgstr "Сменить язык"
 
-#: backend/apps/accounts/telegram_chat.py
+#: backend/apps/accounts/telegram_chat.py davomat_bot/commands.py
 msgid "Help"
 msgstr "Помощь"
 
@@ -202,7 +202,8 @@ msgstr "Через %(minutes)d мин: %(title)s"
 msgid "I'll come"
 msgstr "Приду"
 
-#. Translators: the attendee's own answer on a button ("I can't come"), not their status.
+#. Translators: the attendee's own answer on a button ("I can't come"), not
+#. their status.
 #: backend/apps/agenda/bot_messages.py
 msgctxt "event answer button"
 msgid "Can't come"
@@ -530,8 +531,8 @@ msgstr "Итоги команды"
 msgid "People and time off"
 msgstr "Сотрудники и отпуска"
 
-#: backend/apps/ai/agents/custom.py backend/apps/companies/models.py
-#: owner_bot/ownerbot/brief.py
+#: backend/apps/ai/agents/custom.py backend/apps/attendance/reports.py
+#: backend/apps/companies/models.py owner_bot/ownerbot/brief.py
 msgid "Attendance"
 msgstr "Посещаемость"
 
@@ -749,13 +750,13 @@ msgstr "Вечерний отчёт"
 msgid ""
 "Every workday evening, sum up the day in a few lines: how many tasks were "
 "done and how many are late (name the late ones and whose they are), who came "
-"to work late today, and today's sales at each pharmacy compared with the "
-"same weekday last week. Put anything unusual first."
+"to work late today, and today's sales at each pharmacy compared with the same"
+" weekday last week. Put anything unusual first."
 msgstr ""
 "Каждый рабочий вечер подведи итоги дня в нескольких строках: сколько задач "
 "выполнено и сколько просрочено (назови просроченные и чьи они), кто сегодня "
-"опоздал на работу и как прошли сегодняшние продажи каждой аптеки по "
-"сравнению с тем же днём прошлой недели. Необычное — в начале."
+"опоздал на работу и как прошли сегодняшние продажи каждой аптеки по сравнению"
+" с тем же днём прошлой недели. Необычное — в начале."
 
 #: backend/apps/ai/agents/custom_templates.py
 msgid "Monday: the best of last week"
@@ -779,12 +780,12 @@ msgstr "Кто на работе в 10:00"
 #: backend/apps/ai/agents/custom_templates.py
 msgid ""
 "Every workday at 10:00: who has not come to work yet, who came late today, "
-"and which pharmacy is short of people right now. If everyone is in, say so "
-"in one line."
+"and which pharmacy is short of people right now. If everyone is in, say so in"
+" one line."
 msgstr ""
-"Каждый рабочий день в 10:00: кто ещё не пришёл на работу, кто сегодня "
-"опоздал и в какой аптеке сейчас не хватает людей. Если все на месте — скажи "
-"об этом одной строкой."
+"Каждый рабочий день в 10:00: кто ещё не пришёл на работу, кто сегодня опоздал"
+" и в какой аптеке сейчас не хватает людей. Если все на месте — скажи об этом "
+"одной строкой."
 
 #: backend/apps/ai/agents/custom_templates.py
 msgid "Last week's biggest expenses"
@@ -807,8 +808,8 @@ msgstr "Месяц вкратце"
 #: backend/apps/ai/agents/custom_templates.py
 msgid ""
 "On the 1st of each month: last month in short. Sales and profit, the biggest "
-"expenses, how many tasks the team did on time, and what changed most from "
-"the month before. Five to eight lines."
+"expenses, how many tasks the team did on time, and what changed most from the"
+" month before. Five to eight lines."
 msgstr ""
 "1-го числа каждого месяца: прошлый месяц вкратце. Продажи и прибыль, "
 "крупнейшие расходы, сколько задач команда выполнила в срок и что изменилось "
@@ -834,15 +835,15 @@ msgstr "Аптека продала меньше обычного"
 
 #: backend/apps/ai/agents/custom_templates.py
 msgid ""
-"Every evening, compare today's sales at each pharmacy with its usual for "
-"this weekday (the average of the last four same weekdays). Name every "
-"pharmacy that sold more than 15 percent below its usual, with both numbers. "
-"If all are as usual, say so in one line."
+"Every evening, compare today's sales at each pharmacy with its usual for this"
+" weekday (the average of the last four same weekdays). Name every pharmacy "
+"that sold more than 15 percent below its usual, with both numbers. If all are"
+" as usual, say so in one line."
 msgstr ""
-"Каждый вечер сравни сегодняшние продажи каждой аптеки с её обычными для "
-"этого дня недели (среднее за последние четыре таких дня). Назови каждую "
-"аптеку, которая продала больше чем на 15 процентов меньше обычного, с обеими "
-"цифрами. Если всё как обычно — скажи об этом одной строкой."
+"Каждый вечер сравни сегодняшние продажи каждой аптеки с её обычными для этого"
+" дня недели (среднее за последние четыре таких дня). Назови каждую аптеку, "
+"которая продала больше чем на 15 процентов меньше обычного, с обеими цифрами."
+" Если всё как обычно — скажи об этом одной строкой."
 
 #: backend/apps/ai/agents/custom_templates.py
 msgid "Late work every morning"
@@ -935,8 +936,8 @@ msgstr ""
 "Каждое рабочее утро сообщает кадровикам, что требует внимания: истекающие "
 "документы и договоры, испытательные сроки, ожидаемые объяснительные и дни "
 "рождения. Перед днём зарплаты рассчитывает черновик и говорит, что ему "
-"мешает; может предложить премии тем, кто лучше всех выполняет задачи "
-"вовремя, а утверждает их человек."
+"мешает; может предложить премии тем, кто лучше всех выполняет задачи вовремя,"
+" а утверждает их человек."
 
 #: backend/apps/ai/agents/hr_assistant.py
 msgid "The morning HR note"
@@ -1096,8 +1097,8 @@ msgstr "Разошлёт утренние планы"
 #: backend/apps/ai/agents/morning_plan.py
 #, python-format
 msgid ""
-"Morning plan for %(to)s: %(due_today)s due today, %(late)s late, "
-"%(to_check)s to check"
+"Morning plan for %(to)s: %(due_today)s due today, %(late)s late, %(to_check)s"
+" to check"
 msgstr ""
 "Утренний план (%(to)s): сегодня к сроку — %(due_today)s, опаздывают — "
 "%(late)s, на проверке — %(to_check)s"
@@ -1221,11 +1222,11 @@ msgstr "Наставник"
 
 #: backend/apps/ai/agents/tutor.py
 msgid ""
-"Coaches the pharmacy's training: each week managers hear who is ahead and "
-"who needs help and why, with suggestions to act on in one tap (assign a "
-"course, a lesson that is missing, someone who could coach, a thank-you); "
-"after a hard test the person hears which lesson helps. It also writes "
-"questions from a page or a lesson and answers questions about the training."
+"Coaches the pharmacy's training: each week managers hear who is ahead and who"
+" needs help and why, with suggestions to act on in one tap (assign a course, "
+"a lesson that is missing, someone who could coach, a thank-you); after a hard"
+" test the person hears which lesson helps. It also writes questions from a "
+"page or a lesson and answers questions about the training."
 msgstr ""
 "Помогает с обучением сотрудников аптеки: каждую неделю руководители узнают, "
 "кто впереди, кому нужна помощь и почему, с предложениями в одно касание "
@@ -1591,7 +1592,8 @@ msgstr "Изменить в приложении"
 msgid "Late task"
 msgstr "Просроченная задача"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
+#. on it.
 #: backend/apps/ai/bot_messages.py backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "For: %(name)s"
@@ -1838,8 +1840,8 @@ msgstr[3] "**Сейчас опаздывают %(count)s задачи.** Сна�
 
 #: backend/apps/ai/chat.py
 msgid ""
-"**Nobody has answered enough questions yet** to rate a topic. Start a quiz "
-"or switch the question of the day on, and ask me again in a week."
+"**Nobody has answered enough questions yet** to rate a topic. Start a quiz or"
+" switch the question of the day on, and ask me again in a week."
 msgstr ""
 "**Пока никто не ответил на достаточное число вопросов**, чтобы оценить тему. "
 "Запустите тест или включите вопрос дня и спросите меня снова через неделю."
@@ -2092,10 +2094,11 @@ msgstr "С чьими правами он читает; кто такой «мн
 msgid "Cancelled"
 msgstr "Отменена"
 
-#: backend/apps/ai/models.py backend/apps/faceid/models.py
-#: backend/apps/finance/exporters.py backend/apps/payroll/providers.py
-#: backend/apps/projects/hooks.py backend/apps/sales/models.py
-#: backend/apps/timeoff/providers.py
+#: backend/apps/ai/models.py backend/apps/attendance/providers.py
+#: backend/apps/attendance/reports.py backend/apps/attendance/t13.py
+#: backend/apps/faceid/models.py backend/apps/finance/exporters.py
+#: backend/apps/payroll/providers.py backend/apps/projects/hooks.py
+#: backend/apps/sales/models.py backend/apps/timeoff/providers.py
 msgid "Person"
 msgstr "Сотрудник"
 
@@ -2459,6 +2462,7 @@ msgstr "Срок действия должен заканчиваться пос
 
 #: backend/apps/announcements/services.py backend/apps/attendance/api.py
 #: backend/apps/attendance/services.py backend/apps/console/base.py
+#: backend/apps/davomat/owner_api.py backend/apps/davomat/services.py
 #: backend/apps/finance/api.py backend/apps/finance/claims.py
 #: backend/apps/hr/services.py backend/apps/inbox/services.py
 #: backend/apps/inventory/api.py backend/apps/inventory/notify.py
@@ -2726,8 +2730,8 @@ msgstr "На сколько процентов в год дорожает зам
 
 #: backend/apps/assets/models.py
 msgid ""
-"Show the tax depreciation too (straight line at the Tax Code's annual "
-"rates), for companies that pay profit tax."
+"Show the tax depreciation too (straight line at the Tax Code's annual rates),"
+" for companies that pay profit tax."
 msgstr ""
 "Показывать и налоговую амортизацию (линейно по годовым нормам Налогового "
 "кодекса) для плательщиков налога на прибыль."
@@ -2928,6 +2932,7 @@ msgid "Found in a count"
 msgstr "Найдено при инвентаризации"
 
 #: backend/apps/assets/models.py backend/apps/projects/hooks.py
+#: backend/apps/tasks/feeds.py
 #: backend/apps/tasks/templates/tasks/readings_journal.html
 msgid "Note"
 msgstr "Заметка"
@@ -3096,9 +3101,9 @@ msgstr ""
 "карточке."
 
 #: backend/apps/assets/owner_api.py backend/apps/assets/services.py
-#: backend/apps/attendance/owner_api.py backend/apps/faceid/owner_api.py
-#: backend/apps/hr/owner_api.py backend/apps/inventory/api.py
-#: backend/apps/inventory/owner_api.py
+#: backend/apps/attendance/owner_api.py backend/apps/davomat/owner_api.py
+#: backend/apps/faceid/owner_api.py backend/apps/hr/owner_api.py
+#: backend/apps/inventory/api.py backend/apps/inventory/owner_api.py
 #: backend/apps/learning/owner_api_courses.py
 #: backend/apps/lifecycle/owner_api.py backend/apps/payroll/owner_api.py
 #: backend/apps/recognition/owner_api.py
@@ -3278,15 +3283,18 @@ msgstr "Категория"
 msgid "Kind"
 msgstr "Тип"
 
-#: backend/apps/assets/providers.py backend/apps/finance/exporters.py
-#: backend/apps/payroll/providers.py
+#: backend/apps/assets/providers.py backend/apps/attendance/providers.py
+#: backend/apps/attendance/reports.py backend/apps/davomat/importing.py
+#: backend/apps/finance/exporters.py backend/apps/payroll/providers.py
 #: backend/apps/payroll/templates/payroll/payslip.html
-#: backend/apps/sales/hooks.py backend/apps/tasks/hooks.py
+#: backend/apps/sales/hooks.py backend/apps/tasks/feeds.py
+#: backend/apps/tasks/hooks.py
 #: backend/apps/tasks/templates/tasks/readings_journal.html
 msgid "Branch"
 msgstr "Филиал"
 
-#: backend/apps/assets/providers.py backend/apps/finance/exporters.py
+#: backend/apps/assets/providers.py backend/apps/attendance/providers.py
+#: backend/apps/davomat/importing.py backend/apps/finance/exporters.py
 #: backend/apps/inventory/providers.py backend/apps/members/providers.py
 #: backend/apps/payroll/providers.py backend/apps/sales/hooks.py
 #: backend/apps/tasks/hooks.py backend/apps/timeoff/providers.py
@@ -3591,8 +3599,8 @@ msgstr "Укажите курс на тот день."
 
 #: backend/apps/assets/services.py
 msgid ""
-"Its depreciation is already in the books: use Change estimate, Add to cost "
-"or Write down instead."
+"Its depreciation is already in the books: use Change estimate, Add to cost or"
+" Write down instead."
 msgstr ""
 "Амортизация уже в учёте: используйте «Изменить срок», «Увеличить стоимость» "
 "или «Уменьшить стоимость»."
@@ -3606,16 +3614,16 @@ msgstr ""
 
 #: backend/apps/assets/services.py
 msgid ""
-"Its purchase left the P&L and comes back as depreciation: booking it can't "
-"be switched off."
+"Its purchase left the P&L and comes back as depreciation: booking it can't be"
+" switched off."
 msgstr ""
 "Покупка исключена из отчёта о прибыли и возвращается амортизацией: учёт "
 "амортизации нельзя отключить."
 
 #: backend/apps/assets/services.py
 msgid ""
-"Its purchase is already a cost in the P&L: booking its depreciation too "
-"would count it twice."
+"Its purchase is already a cost in the P&L: booking its depreciation too would"
+" count it twice."
 msgstr ""
 "Покупка уже учтена в расходах отчёта о прибыли: учёт амортизации посчитал бы "
 "её дважды."
@@ -3846,13 +3854,13 @@ msgstr "Запрос отправлен! Руководитель подтвер
 
 #: backend/apps/attendance/ai_tools.py
 msgid ""
-"Attendance between two days: totals (present, late, absent, on-time %, "
-"worked hours) and per person scheduled, attended, absent and late days with "
-"worked hours"
+"Attendance between two days: totals (present, late, absent, on-time %, worked"
+" hours) and per person scheduled, attended, absent and late days with worked "
+"hours"
 msgstr ""
 "Посещаемость за период между двумя датами: итоги (пришли, опоздали, "
-"отсутствовали, % вовремя, отработанные часы) и по каждому сотруднику — дни "
-"по графику, дни присутствия, отсутствия и опозданий, отработанные часы"
+"отсутствовали, % вовремя, отработанные часы) и по каждому сотруднику — дни по"
+" графику, дни присутствия, отсутствия и опозданий, отработанные часы"
 
 #: backend/apps/attendance/api.py backend/apps/attendance/owner_api.py
 #: backend/apps/attendance/services.py
@@ -3964,6 +3972,10 @@ msgstr "Обмен сменами одобрен"
 msgid "Rejected a shift swap"
 msgstr "Обмен сменами отклонён"
 
+#: backend/apps/attendance/audit_actions.py
+msgid "Downloaded an attendance report"
+msgstr "Скачан отчёт по посещаемости"
+
 #: backend/apps/attendance/bot_messages.py
 msgid "Check in / out"
 msgstr "Приход / уход"
@@ -4048,8 +4060,7 @@ msgid ""
 "No shift is planned for you today; it will be marked as an extra day."
 msgstr ""
 "<b>Отметка прихода</b>\n"
-"На сегодня у вас нет смены, поэтому день будет отмечен как дополнительный "
-"рабочий."
+"На сегодня у вас нет смены, поэтому день будет отмечен как дополнительный рабочий."
 
 #: backend/apps/attendance/bot_messages.py
 msgid "Send your location with the button below."
@@ -4135,7 +4146,7 @@ msgstr "Ваша смена закончилась в %(time)s. Ещё рабо�
 msgid "I'm done now"
 msgstr "Уже ухожу"
 
-#: backend/apps/attendance/bot_messages.py
+#: backend/apps/attendance/bot_messages.py davomat_bot/views.py
 msgid "Still here"
 msgstr "Ещё работаю"
 
@@ -4415,7 +4426,7 @@ msgstr "Для сменного графика: W — рабочий день, O
 msgid "The day the rotation's first letter falls on."
 msgstr "День, на который приходится первая буква чередования."
 
-#: backend/apps/attendance/models.py
+#: backend/apps/attendance/models.py backend/apps/attendance/reports.py
 msgid "Planned"
 msgstr "Запланирована"
 
@@ -4427,7 +4438,8 @@ msgstr "Запланирована"
 msgid "Open"
 msgstr "Открыть"
 
-#: backend/apps/attendance/models.py
+#: backend/apps/attendance/models.py backend/apps/attendance/reports.py
+#: davomat_bot/views.py
 msgid "On leave"
 msgstr "В отпуске"
 
@@ -4435,7 +4447,7 @@ msgstr "В отпуске"
 msgid "From the schedule"
 msgstr "По графику"
 
-#: backend/apps/attendance/models.py
+#: backend/apps/attendance/models.py backend/apps/davomat/models.py
 msgid "Added by hand"
 msgstr "Добавлена вручную"
 
@@ -4517,7 +4529,8 @@ msgstr "Уход отмечен"
 msgid "Closed automatically"
 msgstr "Закрыто автоматически"
 
-#: backend/apps/attendance/models.py
+#: backend/apps/attendance/models.py backend/apps/attendance/reports.py
+#: davomat_bot/views.py
 msgid "Absent"
 msgstr "Неявка"
 
@@ -4808,6 +4821,18 @@ msgstr "Ещё на месте: %(count)s"
 msgid "Give branch ids."
 msgstr "Укажите ID филиалов."
 
+#: backend/apps/attendance/owner_api.py
+msgid "Give department ids."
+msgstr "Укажите идентификаторы отделов."
+
+#: backend/apps/attendance/owner_api.py
+msgid "Use xlsx or pdf."
+msgstr "Укажите xlsx или pdf."
+
+#: backend/apps/attendance/owner_api.py backend/apps/exports/services.py
+msgid "You don't have permission to export this."
+msgstr "У вас нет прав на выгрузку этих данных."
+
 #: backend/apps/attendance/providers.py
 #, python-format
 msgid "came %(time)s"
@@ -4881,6 +4906,59 @@ msgstr "%(branch)s: на смене %(count)s"
 msgid "The last day can't be before the first."
 msgstr "Последний день не может быть раньше первого."
 
+#: backend/apps/attendance/providers.py backend/apps/attendance/reports.py
+#: backend/apps/finance/exporters.py
+#: backend/apps/inventory/templates/inventory/controlled_register.html
+#: backend/apps/inventory/templates/inventory/rx_journal.html
+#: backend/apps/tasks/templates/tasks/readings_journal.html
+msgid "Date"
+msgstr "Дата"
+
+#: backend/apps/attendance/providers.py backend/apps/attendance/reports.py
+#: backend/apps/attendance/t13.py backend/apps/davomat/importing.py
+#: backend/apps/members/providers.py backend/apps/payroll/providers.py
+#: backend/apps/payroll/templates/payroll/payslip.html
+#: backend/apps/recognition/providers.py backend/apps/reports/hooks.py
+#: backend/apps/tasks/hooks.py backend/apps/timeoff/providers.py
+msgid "Position"
+msgstr "Должность"
+
+#: backend/apps/attendance/providers.py
+msgid "Check-in"
+msgstr "Приход"
+
+#: backend/apps/attendance/providers.py
+msgid "Check-out"
+msgstr "Уход"
+
+#: backend/apps/attendance/providers.py
+msgid "Worked hours"
+msgstr "Отработанные часы"
+
+#: backend/apps/attendance/providers.py backend/apps/attendance/reports.py
+msgid "Late, min"
+msgstr "Опоздания, мин"
+
+#: backend/apps/attendance/providers.py
+msgid "Left early, min"
+msgstr "Ранний уход, мин"
+
+#: backend/apps/attendance/providers.py
+msgid "Overtime, min"
+msgstr "Сверхурочно, мин"
+
+#: backend/apps/attendance/providers.py
+msgid "Overtime"
+msgstr "Сверхурочные"
+
+#: backend/apps/attendance/providers.py
+msgid "Distance, m"
+msgstr "Расстояние, м"
+
+#: backend/apps/attendance/providers.py
+msgid "Flags"
+msgstr "Пометки"
+
 #: backend/apps/attendance/queries.py
 #, python-format
 msgid "Checked in %(minutes)s min late · %(branch)s"
@@ -4890,6 +4968,133 @@ msgstr "Приход с опозданием на %(minutes)s мин · %(branch
 #, python-format
 msgid "Checked in · %(branch)s"
 msgstr "Приход · %(branch)s"
+
+#: backend/apps/attendance/reports.py
+msgid "Attendance by person"
+msgstr "Посещаемость по сотрудникам"
+
+#: backend/apps/attendance/reports.py
+msgid "Attendance by department"
+msgstr "Посещаемость по отделам"
+
+#: backend/apps/attendance/reports.py
+msgid "Attendance by branch"
+msgstr "Посещаемость по филиалам"
+
+#: backend/apps/attendance/reports.py
+msgid "Attendance by day"
+msgstr "Посещаемость по дням"
+
+#: backend/apps/attendance/reports.py
+msgid "Punctuality ranking"
+msgstr "Рейтинг пунктуальности"
+
+#: backend/apps/attendance/reports.py
+msgid "Days planned"
+msgstr "Дней по графику"
+
+#: backend/apps/attendance/reports.py
+msgid "Days present"
+msgstr "Дней явки"
+
+#: backend/apps/attendance/reports.py backend/apps/attendance/t13.py
+#: backend/apps/payroll/models.py
+msgid "Absences"
+msgstr "Прогулы"
+
+#: backend/apps/attendance/reports.py backend/apps/attendance/t13.py
+msgid "Days on leave"
+msgstr "Дней в отпуске"
+
+#: backend/apps/attendance/reports.py backend/apps/attendance/t13.py
+#: backend/apps/payroll/models.py
+msgid "Hours worked"
+msgstr "Отработанные часы"
+
+#: backend/apps/attendance/reports.py backend/apps/payroll/models.py
+msgid "Late arrivals"
+msgstr "Опоздания"
+
+#: backend/apps/attendance/reports.py backend/apps/payroll/models.py
+msgid "Early leaves"
+msgstr "Ранние уходы"
+
+#: backend/apps/attendance/reports.py
+msgid "Overtime, h"
+msgstr "Сверхурочно, ч"
+
+#: backend/apps/attendance/reports.py backend/apps/reports/hooks.py
+msgid "On time, %"
+msgstr "Вовремя, %"
+
+#: backend/apps/attendance/reports.py
+msgid "Attendance, %"
+msgstr "Явка, %"
+
+#: backend/apps/attendance/reports.py backend/apps/davomat/importing.py
+msgid "Department"
+msgstr "Отдел"
+
+#: backend/apps/attendance/reports.py owner_bot/ownerbot/brief.py
+msgid "People"
+msgstr "Сотрудники"
+
+#: backend/apps/attendance/reports.py
+msgid "Present"
+msgstr "Пришли"
+
+#: backend/apps/attendance/reports.py backend/apps/reports/hooks.py
+#: davomat_bot/views.py
+msgid "Late"
+msgstr "С просрочкой"
+
+#: backend/apps/attendance/reports.py
+msgid "Rank"
+msgstr "Место"
+
+#: backend/apps/attendance/reports.py
+msgid "Arrivals"
+msgstr "Приходы"
+
+#: backend/apps/attendance/reports.py backend/apps/reports/hooks.py
+msgid "On time"
+msgstr "Вовремя"
+
+#: backend/apps/attendance/reports.py
+msgid "Average lateness, min"
+msgstr "Среднее опоздание, мин"
+
+#: backend/apps/attendance/reports.py backend/apps/sales/hooks.py
+#: backend/apps/sales/templates/sales/invoice.html
+msgid "Total"
+msgstr "Итого"
+
+#: backend/apps/attendance/reports.py
+msgid "No department"
+msgstr "Без отдела"
+
+#: backend/apps/attendance/reports.py
+msgid "No branch"
+msgstr "Без филиала"
+
+#: backend/apps/attendance/reports.py
+msgid "Average"
+msgstr "В среднем"
+
+#: backend/apps/attendance/reports.py
+#, python-format
+msgid "%(period)s, counted until %(day)s"
+msgstr "%(period)s, посчитано по %(day)s"
+
+#: backend/apps/attendance/reports.py
+#, python-format
+msgid "Branches: %(names)s"
+msgstr "Филиалы: %(names)s"
+
+#: backend/apps/attendance/reports.py
+#, python-format
+msgid "Departments: %(names)s"
+msgstr "Отделы: %(names)s"
 
 #: backend/apps/attendance/serializers.py
 msgid "Local start time, HH:MM."
@@ -4922,6 +5127,30 @@ msgstr "За один раз можно опубликовать график н
 #: backend/apps/attendance/serializers.py
 msgid "Their coming shifts you could swap for."
 msgstr "Предстоящие смены коллеги, на которые можно поменяться."
+
+#: backend/apps/attendance/serializers.py
+msgid "The membership id."
+msgstr "Идентификатор участника."
+
+#: backend/apps/attendance/serializers.py
+msgid "The home branch."
+msgstr "Основной филиал."
+
+#: backend/apps/attendance/serializers.py
+msgid "Days with a planned shift."
+msgstr "Дни с запланированной сменой."
+
+#: backend/apps/attendance/serializers.py
+msgid "Check-ins for a shift."
+msgstr "Отметки прихода на смену."
+
+#: backend/apps/attendance/serializers.py
+msgid "The last day counted: the end, or today."
+msgstr "Последний учтённый день: конец периода или сегодня."
+
+#: backend/apps/attendance/serializers.py
+msgid "Present of those expected."
+msgstr "Пришли из ожидаемых."
 
 #: backend/apps/attendance/services.py backend/apps/faceid/services.py
 #: backend/apps/payroll/runs.py backend/apps/payroll/services.py
@@ -5212,7 +5441,7 @@ msgstr "Эта заявка не ждёт одобрения."
 msgid "%(name)s can't take this shift any more."
 msgstr "%(name)s больше не может взять эту смену."
 
-#: backend/apps/attendance/services.py
+#: backend/apps/attendance/services.py backend/apps/tasks/feeds.py
 msgid "Taken"
 msgstr "Занято"
 
@@ -5227,6 +5456,28 @@ msgstr "Эту смену взял другой коллега."
 #: backend/apps/attendance/services.py
 msgid "The shift changed."
 msgstr "Смена изменилась."
+
+#: backend/apps/attendance/t13.py backend/apps/davomat/importing.py
+#: backend/apps/exports/build.py
+msgid "No"
+msgstr "Нет"
+
+#: backend/apps/attendance/t13.py
+msgid "Days at work"
+msgstr "Отработано дней"
+
+#: backend/apps/attendance/templates/attendance/report.html
+msgid ""
+"Nothing to show for this period: nobody was expected and nobody came in."
+msgstr "За этот период показать нечего: никого не ждали, и никто не приходил."
+
+#: backend/apps/attendance/templates/attendance/report.html
+msgid ""
+"Hours and percentages have one decimal. Absences count once a day is over; a "
+"day without a planned shift is never an absence."
+msgstr ""
+"Часы и проценты — с одним знаком после запятой. Неявки учитываются после "
+"окончания дня; день без запланированной смены неявкой не считается."
 
 #: backend/apps/audit/models.py
 msgid "Approved a join request"
@@ -5914,7 +6165,8 @@ msgstr "Доллар США"
 msgid "This isn't a recording we can play. Record it again."
 msgstr "Эту запись не открыть. Запишите ещё раз."
 
-#: backend/apps/core/uploads.py backend/apps/inventory/importing.py
+#: backend/apps/core/uploads.py backend/apps/davomat/importing.py
+#: backend/apps/inventory/importing.py
 msgid "The file is empty."
 msgstr "Файл пустой."
 
@@ -5941,6 +6193,500 @@ msgid "This type of file isn't accepted. Send one of: %(kinds)s."
 msgstr ""
 "Такой тип файла не принимается. Пришлите файл одного из типов: %(kinds)s."
 
+#: backend/apps/davomat/admin.py
+msgid "Token set"
+msgstr "Токен задан"
+
+#: backend/apps/davomat/audit_actions.py
+msgid "Set up the organization"
+msgstr "Организация настроена"
+
+#: backend/apps/davomat/audit_actions.py
+msgid "Changed the Davomat settings"
+msgstr "Изменены настройки Davomat"
+
+#: backend/apps/davomat/audit_actions.py
+msgid "Signed in with a password"
+msgstr "Вход по паролю"
+
+#: backend/apps/davomat/audit_actions.py
+msgid "Sign-in locked after wrong passwords"
+msgstr "Вход заблокирован после неверных паролей"
+
+#: backend/apps/davomat/audit_actions.py
+msgid "Changed their password"
+msgstr "Пароль изменён"
+
+#: backend/apps/davomat/audit_actions.py
+msgid "Set a user's password"
+msgstr "Пользователю задан пароль"
+
+#: backend/apps/davomat/audit_actions.py
+msgid "Added a user"
+msgstr "Добавлен пользователь"
+
+#: backend/apps/davomat/audit_actions.py
+msgid "Changed a user"
+msgstr "Изменён пользователь"
+
+#: backend/apps/davomat/audit_actions.py
+msgid "Switched a user off"
+msgstr "Пользователь отключён"
+
+#: backend/apps/davomat/audit_actions.py
+msgid "Switched a user back on"
+msgstr "Пользователь снова включён"
+
+#: backend/apps/davomat/audit_actions.py
+msgid "Added an employee"
+msgstr "Добавлен сотрудник"
+
+#: backend/apps/davomat/audit_actions.py
+msgid "Changed an employee"
+msgstr "Изменены данные сотрудника"
+
+#: backend/apps/davomat/audit_actions.py
+msgid "Changed an employee's photo"
+msgstr "Изменено фото сотрудника"
+
+#: backend/apps/davomat/audit_actions.py
+msgid "Took an employee back"
+msgstr "Сотрудник возвращён на работу"
+
+#: backend/apps/davomat/audit_actions.py
+msgid "A terminal added an employee"
+msgstr "Терминал добавил сотрудника"
+
+#: backend/apps/davomat/audit_actions.py
+msgid "Imported employees"
+msgstr "Импортированы сотрудники"
+
+#: backend/apps/davomat/audit_actions.py
+msgid "Connected the Telegram bot"
+msgstr "Подключён Telegram-бот"
+
+#: backend/apps/davomat/audit_actions.py
+msgid "Disconnected the Telegram bot"
+msgstr "Отключён Telegram-бот"
+
+#: backend/apps/davomat/audit_actions.py
+msgid "Made a Telegram link"
+msgstr "Создана ссылка для Telegram"
+
+#: backend/apps/davomat/audit_actions.py
+msgid "Linked a Telegram account"
+msgstr "Привязан аккаунт Telegram"
+
+#: backend/apps/davomat/audit_actions.py
+msgid "Unlinked a Telegram account"
+msgstr "Отвязан аккаунт Telegram"
+
+#: backend/apps/davomat/importing.py
+msgid "First name"
+msgstr "Имя"
+
+#: backend/apps/davomat/importing.py
+msgid "Last name"
+msgstr "Фамилия"
+
+#: backend/apps/davomat/importing.py backend/apps/inventory/models.py
+#: backend/apps/members/admin.py backend/apps/members/providers.py
+#: backend/apps/sales/templates/sales/invoice.html
+msgid "Phone"
+msgstr "Телефон"
+
+#: backend/apps/davomat/importing.py
+msgid "Face ID number"
+msgstr "Номер Face ID"
+
+#: backend/apps/davomat/importing.py
+msgid "Hire date"
+msgstr "Дата приёма"
+
+#: backend/apps/davomat/importing.py
+msgid "Left on"
+msgstr "Дата увольнения"
+
+#: backend/apps/davomat/importing.py
+msgid "Schedule"
+msgstr "График"
+
+#: backend/apps/davomat/importing.py
+msgid "The spreadsheet can't be read. Save it again and retry."
+msgstr "Не удаётся прочитать таблицу. Сохраните её заново и повторите."
+
+#: backend/apps/davomat/importing.py backend/apps/inventory/importing.py
+msgid "The file's text can't be read: save it as UTF-8 CSV or XLSX."
+msgstr ""
+"Не удаётся прочитать текст файла: сохраните его как CSV в UTF-8 или как XLSX."
+
+#: backend/apps/davomat/importing.py backend/apps/inventory/importing.py
+#, python-format
+msgid "At most %(count)s rows at a time."
+msgstr "Не больше %(count)s строк за раз."
+
+#: backend/apps/davomat/importing.py
+msgid "Write dates as 2026-11-10 or 10.11.2026."
+msgstr "Пишите даты так: 2026-11-10 или 10.11.2026."
+
+#: backend/apps/davomat/importing.py
+msgid "No column with the first name (or the full name) was found."
+msgstr "Не найден столбец с именем (или полным именем)."
+
+#: backend/apps/davomat/importing.py
+msgid "This row clashes with a change made a moment ago. Try again."
+msgstr ""
+"Эта строка конфликтует с только что внесённым изменением. Повторите попытку."
+
+#: backend/apps/davomat/importing.py
+#, python-format
+msgid "Unknown position: %(name)s"
+msgstr "Неизвестная должность: %(name)s"
+
+#: backend/apps/davomat/importing.py
+#, python-format
+msgid "Unknown department: %(name)s"
+msgstr "Неизвестный отдел: %(name)s"
+
+#: backend/apps/davomat/importing.py
+#, python-format
+msgid "%(name)s works at a branch you don't manage."
+msgstr "%(name)s работает в филиале, которым вы не управляете."
+
+#: backend/apps/davomat/importing.py backend/apps/davomat/services.py
+msgid "Pick the branch they work at."
+msgstr "Выберите филиал, где работает сотрудник."
+
+#: backend/apps/davomat/importing.py backend/apps/davomat/services.py
+#: backend/apps/members/join_links.py backend/apps/members/services.py
+msgid "You can only give the branches you manage."
+msgstr "Можно назначать только те филиалы, которыми вы управляете."
+
+#: backend/apps/davomat/importing.py backend/apps/davomat/services.py
+#: backend/apps/members/services.py
+msgid "A first name is required."
+msgstr "Нужно указать имя."
+
+#: backend/apps/davomat/importing.py
+#, python-format
+msgid "Unknown branch: %(name)s"
+msgstr "Неизвестный филиал: %(name)s"
+
+#: backend/apps/davomat/importing.py backend/apps/davomat/services.py
+#: backend/apps/faceid/services.py
+msgid "Give the Employee No from the terminal."
+msgstr "Укажите Employee No с терминала."
+
+#: backend/apps/davomat/importing.py
+msgid "The face number repeats an earlier row."
+msgstr "Этот номер Face ID уже есть в строке выше."
+
+#: backend/apps/davomat/importing.py
+#, python-format
+msgid "Number %(number)s is set aside."
+msgstr "Номер %(number)s отложен."
+
+#: backend/apps/davomat/importing.py
+msgid "These numbers belong to different people."
+msgstr "Эти номера принадлежат разным людям."
+
+#: backend/apps/davomat/importing.py
+#, python-format
+msgid "Number %(number)s belongs to a user."
+msgstr "Номер %(number)s принадлежит пользователю."
+
+#: backend/apps/davomat/importing.py
+#, python-format
+msgid "%(name)s has left: take them back first."
+msgstr ""
+"%(name)s: сотрудник уже не работает. Сначала верните сотрудника на работу."
+
+#: backend/apps/davomat/importing.py backend/apps/members/models.py
+#: backend/apps/members/providers.py
+msgid "Left"
+msgstr "Не в компании"
+
+#: backend/apps/davomat/importing.py backend/apps/learning/models.py
+#: backend/apps/members/models.py backend/apps/projects/models.py
+msgid "Active"
+msgstr "Активен"
+
+#: backend/apps/davomat/importing.py backend/apps/exports/build.py
+#: backend/apps/sales/queries.py
+msgid "Yes"
+msgstr "Да"
+
+#: backend/apps/davomat/models.py
+msgid "Connected"
+msgstr "Подключён"
+
+#: backend/apps/davomat/models.py
+msgid "Telegram refuses the token"
+msgstr "Telegram не принимает токен"
+
+#: backend/apps/davomat/models.py
+msgid "Not connected"
+msgstr "Не подключён"
+
+#: backend/apps/davomat/models.py
+msgid "The app's name on the sign-in page and in the bot. Empty: Davomat."
+msgstr "Название приложения на странице входа и в боте. Если пусто: Davomat."
+
+#: backend/apps/davomat/models.py
+msgid "A terminal's unknown number becomes a new employee, named as on it."
+msgstr ""
+"Неизвестный номер с терминала становится новым сотрудником с именем, как на "
+"терминале."
+
+#: backend/apps/davomat/models.py
+msgid "Davomat settings"
+msgstr "Настройки Davomat"
+
+#: backend/apps/davomat/models.py
+msgid "Imported from a list"
+msgstr "Импортирован из списка"
+
+#: backend/apps/davomat/models.py
+msgid "Added by a terminal"
+msgstr "Добавлен терминалом"
+
+#: backend/apps/davomat/models.py
+msgid "The Telegram account that used it."
+msgstr "Аккаунт Telegram, который её использовал."
+
+#: backend/apps/davomat/owner_api.py
+msgid "Pick one of the options offered."
+msgstr "Выберите один из предложенных вариантов."
+
+#: backend/apps/davomat/owner_api.py backend/apps/davomat/services.py
+msgid "Pick branches of this organization."
+msgstr "Выберите филиалы этой организации."
+
+#: backend/apps/davomat/owner_api.py
+msgid "This setup code is wrong. Use the one the installer printed."
+msgstr "Неверный код настройки. Введите код, который показал установщик."
+
+#: backend/apps/davomat/owner_api.py backend/apps/davomat/services.py
+msgid "The organization is already set up. Sign in instead."
+msgstr "Организация уже настроена. Войдите в систему."
+
+#: backend/apps/davomat/owner_api.py
+#, python-format
+msgid "Too many wrong passwords. Try again in %(count)s minute."
+msgid_plural "Too many wrong passwords. Try again in %(count)s minutes."
+msgstr[0] "Слишком много неверных паролей. Повторите через %(count)s минуту."
+msgstr[1] "Слишком много неверных паролей. Повторите через %(count)s минуты."
+msgstr[2] "Слишком много неверных паролей. Повторите через %(count)s минут."
+
+#: backend/apps/davomat/owner_api.py
+msgid "Wrong username or password."
+msgstr "Неверный логин или пароль."
+
+#: backend/apps/davomat/owner_api.py
+msgid "This account can't use the web app. Ask your administrator."
+msgstr ""
+"Этот аккаунт не может пользоваться веб-приложением. Обратитесь к "
+"администратору."
+
+#: backend/apps/davomat/owner_api.py backend/apps/davomat/services.py
+msgid "Pick one of the roles offered."
+msgstr "Выберите одну из предложенных ролей."
+
+#: backend/apps/davomat/owner_api.py backend/apps/davomat/services.py
+msgid "Pick a current employee."
+msgstr "Выберите действующего сотрудника."
+
+#: backend/apps/davomat/owner_api.py
+msgid "Choose a photo."
+msgstr "Выберите фото."
+
+#: backend/apps/davomat/owner_api.py
+msgid "Choose a file."
+msgstr "Выберите файл."
+
+#: backend/apps/davomat/owner_api.py
+msgid "Employees"
+msgstr "Сотрудники"
+
+#: backend/apps/davomat/owner_api.py backend/apps/davomat/services.py
+msgid "Paste the token BotFather gave you."
+msgstr "Вставьте токен, который выдал BotFather."
+
+#: backend/apps/davomat/owner_api.py
+msgid "Connect the Telegram bot first."
+msgstr "Сначала подключите Telegram-бота."
+
+#: backend/apps/davomat/owner_api.py
+msgid "Link your Telegram first, then try again."
+msgstr "Сначала привяжите свой Telegram, затем повторите."
+
+#: backend/apps/davomat/owner_api.py
+#, python-format
+msgid "Test message from %(product)s."
+msgstr "Тестовое сообщение от %(product)s."
+
+#: backend/apps/davomat/owner_api.py
+msgid "Telegram doesn't accept the bot's token any more. Paste a new one."
+msgstr "Telegram больше не принимает токен бота. Вставьте новый."
+
+#: backend/apps/davomat/owner_api.py
+msgid "Open the bot in Telegram, press Start, then try again."
+msgstr "Откройте бота в Telegram, нажмите «Запустить» и повторите."
+
+#: backend/apps/davomat/owner_api.py backend/apps/davomat/services.py
+msgid "Telegram can't be reached right now. Try again in a minute."
+msgstr "Сейчас нет связи с Telegram. Повторите через минуту."
+
+#: backend/apps/davomat/passwords.py
+msgid "A username is 3–150 letters, digits and . @ + - _ only."
+msgstr "Логин: от 3 до 150 букв, цифр и знаков . @ + - _."
+
+#: backend/apps/davomat/passwords.py
+msgid "This username is taken. Pick another one."
+msgstr "Этот логин уже занят. Выберите другой."
+
+#: backend/apps/davomat/passwords.py
+msgid "The current password is wrong."
+msgstr "Текущий пароль неверен."
+
+#: backend/apps/davomat/passwords.py
+msgid "The new password must differ from the current one."
+msgstr "Новый пароль должен отличаться от текущего."
+
+#: backend/apps/davomat/passwords.py backend/apps/davomat/services.py
+#: backend/apps/members/departments.py backend/apps/members/services.py
+msgid "Only owners can change an owner."
+msgstr "Изменить владельца может только владелец."
+
+#: backend/apps/davomat/services.py
+msgid "Check the phone number."
+msgstr "Проверьте номер телефона."
+
+#: backend/apps/davomat/services.py
+msgid "Give the organization a name."
+msgstr "Укажите название организации."
+
+#: backend/apps/davomat/services.py
+msgid "Main"
+msgstr "Основной"
+
+#: backend/apps/davomat/services.py
+msgctxt "davomat role"
+msgid "Owner"
+msgstr "Владелец"
+
+#: backend/apps/davomat/services.py
+msgctxt "davomat role"
+msgid "Administrator"
+msgstr "Администратор"
+
+#: backend/apps/davomat/services.py
+msgctxt "davomat role"
+msgid "Manager"
+msgstr "Менеджер"
+
+#: backend/apps/davomat/services.py
+msgctxt "davomat role"
+msgid "Viewer"
+msgstr "Наблюдатель"
+
+#: backend/apps/davomat/services.py
+#: backend/apps/payroll/templates/payroll/payslip.html
+msgid "Employee"
+msgstr "Сотрудник"
+
+#: backend/apps/davomat/services.py backend/apps/members/join_links.py
+#: backend/apps/members/services.py
+msgid "You can only give a role whose permissions you have yourself."
+msgstr "Можно выдать только ту роль, все права которой есть и у вас."
+
+#: backend/apps/davomat/services.py
+msgid "Pick the branches this user sees."
+msgstr "Выберите филиалы, которые видит этот пользователь."
+
+#: backend/apps/davomat/services.py
+msgid "This employee is a user already."
+msgstr "Этот сотрудник уже является пользователем."
+
+#: backend/apps/davomat/services.py
+msgid "This is the only owner who can sign in. Make someone else one first."
+msgstr ""
+"Это единственный владелец, который может войти. Сначала назначьте владельцем "
+"кого-то ещё."
+
+#: backend/apps/davomat/services.py
+msgid "You can't switch yourself off."
+msgstr "Нельзя отключить самого себя."
+
+#: backend/apps/davomat/services.py
+msgid "Pick a position of this organization."
+msgstr "Выберите должность этой организации."
+
+#: backend/apps/davomat/services.py
+msgid "Pick a department of this organization."
+msgstr "Выберите отдел этой организации."
+
+#: backend/apps/davomat/services.py
+msgid "Pick a schedule of this organization."
+msgstr "Выберите график этой организации."
+
+#: backend/apps/davomat/services.py backend/apps/hr/services.py
+msgid "The hire date can't be in the future."
+msgstr "Дата приёма на работу не может быть в будущем."
+
+#: backend/apps/davomat/services.py
+msgid "The organization has no role for employees."
+msgstr "В организации нет роли для сотрудников."
+
+#: backend/apps/davomat/services.py
+msgid "Take them back first to change them."
+msgstr "Чтобы изменить данные, сначала верните сотрудника на работу."
+
+#: backend/apps/davomat/services.py
+msgid "No terminal snapshot of them yet."
+msgstr "Снимка этого сотрудника с терминала пока нет."
+
+#: backend/apps/davomat/services.py
+msgid "Only someone who has left can come back."
+msgstr "Вернуть можно только уволившегося сотрудника."
+
+#: backend/apps/davomat/services.py
+msgid "This number isn't theirs."
+msgstr "Этот номер не принадлежит этому сотруднику."
+
+#: backend/apps/davomat/services.py
+#, python-format
+msgid "Employee %(number)s"
+msgstr "Сотрудник %(number)s"
+
+#: backend/apps/davomat/services.py
+msgid "Telegram doesn't accept this token. Copy it from BotFather again."
+msgstr "Telegram не принимает этот токен. Скопируйте его из BotFather ещё раз."
+
+#: backend/apps/davomat/services.py
+msgid "Connect the Telegram bot first (Settings, Telegram)."
+msgstr "Сначала подключите Telegram-бота (Настройки, Telegram)."
+
+#: backend/apps/davomat/services.py
+msgid "Only current people can link their Telegram."
+msgstr "Привязать Telegram могут только действующие сотрудники и пользователи."
+
+#: backend/apps/davomat/services.py
+msgid "This link doesn't work. Ask for a new one."
+msgstr "Эта ссылка не работает. Попросите новую."
+
+#: backend/apps/davomat/services.py
+msgid "This link was used already. Ask for a new one."
+msgstr "Эта ссылка уже использована. Попросите новую."
+
+#: backend/apps/davomat/services.py
+msgid "This link has expired. Ask for a new one."
+msgstr "Срок действия ссылки истёк. Попросите новую."
+
+#: backend/apps/davomat/services.py
+msgid "This account is no longer active."
+msgstr "Этот аккаунт больше не активен."
+
 #: backend/apps/exports/audit_actions.py
 msgid "Exported data"
 msgstr "Выгружены данные"
@@ -5960,14 +6706,6 @@ msgstr "У вас больше нет прав на выгрузку этих д
 #: backend/apps/exports/build.py backend/apps/exports/services.py
 msgid "This export can't be made in that format."
 msgstr "Эту выгрузку нельзя сделать в таком формате."
-
-#: backend/apps/exports/build.py backend/apps/sales/queries.py
-msgid "Yes"
-msgstr "Да"
-
-#: backend/apps/exports/build.py
-msgid "No"
-msgstr "Нет"
 
 #: backend/apps/exports/build.py
 #, python-format
@@ -6003,16 +6741,12 @@ msgstr "Также отправить файл в Telegram тому, кто ег
 #: backend/apps/exports/models.py
 msgid "Salaries, IDs or per-person money: copied from the exporter."
 msgstr ""
-"Зарплаты, номера документов или суммы по конкретным людям. Копируется из "
-"типа выгрузки."
+"Зарплаты, номера документов или суммы по конкретным людям. Копируется из типа"
+" выгрузки."
 
 #: backend/apps/exports/services.py
 msgid "This export doesn't exist."
 msgstr "Такой выгрузки нет."
-
-#: backend/apps/exports/services.py
-msgid "You don't have permission to export this."
-msgstr "У вас нет прав на выгрузку этих данных."
 
 #: backend/apps/faceid/admin.py
 msgid "Pick a branch of that company."
@@ -6182,8 +6916,8 @@ msgstr "К сообщениям в группах прикладывается �
 msgid ""
 "A linked person gets a bot message when the terminal checks them in or out."
 msgstr ""
-"Привязанный сотрудник получает сообщение бота, когда терминал отмечает "
-"приход или уход."
+"Привязанный сотрудник получает сообщение бота, когда терминал отмечает приход"
+" или уход."
 
 #: backend/apps/faceid/models.py
 msgid "An unknown face alerts the branch's managers, at most every 10 minutes."
@@ -6404,10 +7138,6 @@ msgid "Pick how the terminal counts scans."
 msgstr "Выберите, как терминал учитывает сканирования."
 
 #: backend/apps/faceid/services.py
-msgid "Give the Employee No from the terminal."
-msgstr "Укажите Employee No с терминала."
-
-#: backend/apps/faceid/services.py
 #, python-format
 msgid "Number %(number)s is already linked to %(name)s."
 msgstr "Номер %(number)s уже привязан к сотруднику %(name)s."
@@ -6428,8 +7158,8 @@ msgstr "Деньги на каждом счёте (кассы, банк, кар�
 msgid ""
 "Open debts (nasiya): who owes us, whom we owe, due dates and overdue days"
 msgstr ""
-"Открытые долги (насия): кто должен нам, кому должны мы, сроки погашения и "
-"дни просрочки"
+"Открытые долги (насия): кто должен нам, кому должны мы, сроки погашения и дни"
+" просрочки"
 
 #: backend/apps/finance/ai_tools.py
 msgid ""
@@ -6780,8 +7510,8 @@ msgstr "Бюджет: %(budget)s."
 msgid ""
 "%(category)s: %(percent)s%% of the %(month)s budget used, %(days)s days left"
 msgstr ""
-"%(category)s: использовано %(percent)s%% бюджета на %(month)s, осталось "
-"дней: %(days)s"
+"%(category)s: использовано %(percent)s%% бюджета на %(month)s, осталось дней:"
+" %(days)s"
 
 #: backend/apps/finance/budgets.py
 #, python-format
@@ -6982,13 +7712,6 @@ msgstr "Касса"
 #: backend/apps/finance/defaults.py
 msgid "Card terminal"
 msgstr "Терминал"
-
-#: backend/apps/finance/exporters.py
-#: backend/apps/inventory/templates/inventory/controlled_register.html
-#: backend/apps/inventory/templates/inventory/rx_journal.html
-#: backend/apps/tasks/templates/tasks/readings_journal.html
-msgid "Date"
-msgstr "Дата"
 
 #: backend/apps/finance/exporters.py
 msgid "Account"
@@ -7579,8 +8302,8 @@ msgid ""
 "is settled, so a payment at another rate books the exchange difference."
 msgstr ""
 "UZS за 1 USD на день открытия долга (1 — для долга в базовой валюте). По "
-"этому курсу оценивается погашенная сумма, поэтому при оплате по другому "
-"курсу проводится курсовая разница."
+"этому курсу оценивается погашенная сумма, поэтому при оплате по другому курсу"
+" проводится курсовая разница."
 
 #: backend/apps/finance/models.py
 msgid "Who chases it."
@@ -7875,8 +8598,8 @@ msgstr "Загрузите чек ещё раз."
 msgid ""
 "Only finance managers change entries, or whoever made one within 24 hours."
 msgstr ""
-"Изменять проводки могут только ответственные за финансы, а автор проводки — "
-"в течение 24 часов."
+"Изменять проводки могут только ответственные за финансы, а автор проводки — в"
+" течение 24 часов."
 
 #: backend/apps/finance/owner_api.py backend/apps/finance/services.py
 msgid "This entry isn't waiting for approval."
@@ -8029,8 +8752,8 @@ msgstr "%(account)s: %(balance)s"
 #, python-format
 msgid "%(person)s holds %(amount)s. Choose where to move it, or move it first."
 msgstr ""
-"%(person)s: на руках %(amount)s. Выберите, куда перевести деньги, или "
-"сначала переведите их."
+"%(person)s: на руках %(amount)s. Выберите, куда перевести деньги, или сначала"
+" переведите их."
 
 #: backend/apps/finance/providers.py
 #, python-format
@@ -8748,7 +9471,7 @@ msgstr[2] "<b>В команде %(count)d новых сотрудников</b>"
 msgstr[3] "<b>В команде %(count)d новых сотрудников</b>"
 
 #: backend/apps/groups/bot_messages.py backend/apps/members/join_links.py
-#: owner_bot/ownerbot/brief.py
+#: davomat_bot/views.py owner_bot/ownerbot/brief.py
 #, python-format
 msgid "and %(count)d more"
 msgstr "и ещё %(count)d"
@@ -8793,7 +9516,8 @@ msgstr "Группа подключена к компании <b>%(company)s</b>
 msgid "Whose news: %(who)s"
 msgstr "Чьи новости: %(who)s"
 
-#. Translators: closes the group's settings ("Tayyor" / "Готово"), not a task's status.
+#. Translators: closes the group's settings ("Tayyor" / "Готово"), not a task's
+#. status.
 #: backend/apps/groups/bot_messages.py
 msgctxt "group settings"
 msgid "Done"
@@ -8835,20 +9559,18 @@ msgstr "все"
 
 #: backend/apps/groups/bot_messages.py
 msgid ""
-"Hi! I post this team's task news here: finished work, late tasks and daily "
-"summaries.\n"
+"Hi! I post this team's task news here: finished work, late tasks and daily summaries.\n"
 "A manager can link me to the company by sending /connect."
 msgstr ""
-"Здравствуйте! Я присылаю сюда новости команды по задачам: выполненные дела, "
-"просрочки и итоги дня.\n"
+"Здравствуйте! Я присылаю сюда новости команды по задачам: выполненные дела, просрочки и итоги дня.\n"
 "Руководитель может подключить меня к компании командой /connect."
 
 #: backend/apps/groups/bot_messages.py
 msgid ""
 "This group isn't connected to a company yet. A manager can send /connect."
 msgstr ""
-"Эта группа ещё не подключена к компании. Руководитель может отправить /"
-"connect."
+"Эта группа ещё не подключена к компании. Руководитель может отправить "
+"/connect."
 
 #: backend/apps/groups/bot_messages.py
 msgid ""
@@ -8860,8 +9582,8 @@ msgstr ""
 
 #: backend/apps/groups/bot_messages.py
 msgid ""
-"Disconnected. I won't post here any more. A manager can send /connect to "
-"link this group again."
+"Disconnected. I won't post here any more. A manager can send /connect to link"
+" this group again."
 msgstr ""
 "Отключено. Больше не буду сюда писать. Руководитель может снова подключить "
 "группу командой /connect."
@@ -8958,8 +9680,8 @@ msgstr "Выключается, когда бота удаляют или гру
 msgid ""
 "Only a company manager can connect this group. Ask one to send /connect here."
 msgstr ""
-"Подключить группу может только руководитель компании. Попросите его "
-"отправить сюда /connect."
+"Подключить группу может только руководитель компании. Попросите его отправить"
+" сюда /connect."
 
 #: backend/apps/groups/services.py
 msgid "This group is already connected to another company."
@@ -9002,8 +9724,8 @@ msgid ""
 "expired, contracts and probation that end, missing required documents, "
 "birthdays and work anniversaries of the coming week"
 msgstr ""
-"Кадры кратко: численность и её динамика, документы, срок которых истекает "
-"или истёк, заканчивающиеся договоры и испытательные сроки, недостающие "
+"Кадры кратко: численность и её динамика, документы, срок которых истекает или"
+" истёк, заканчивающиеся договоры и испытательные сроки, недостающие "
 "обязательные документы, дни рождения и трудовые юбилеи на ближайшую неделю"
 
 #: backend/apps/hr/ai_tools.py
@@ -9017,8 +9739,8 @@ msgstr ""
 "Фармацевт на смене: есть ли в графике квалифицированный фармацевт на каждый "
 "час работы каждой аптеки в ближайшие дни (окна и их время), аптеки, где "
 "сейчас не отметился ни один квалифицированный фармацевт, кассы, открытые "
-"сотрудником без квалификации, и фармацевты, которые сегодня не учитываются, "
-"с причиной"
+"сотрудником без квалификации, и фармацевты, которые сегодня не учитываются, с"
+" причиной"
 
 #: backend/apps/hr/api.py backend/apps/hr/owner_api.py
 #: backend/apps/lifecycle/api.py backend/apps/lifecycle/owner_api.py
@@ -9148,8 +9870,8 @@ msgstr "Ваш трудовой договор"
 #: backend/apps/hr/bot_messages.py
 #, python-format
 msgid ""
-"Contract %(number)s is in force. Read it in the app and confirm you have "
-"read it."
+"Contract %(number)s is in force. Read it in the app and confirm you have read"
+" it."
 msgstr ""
 "Договор № %(number)s вступил в силу. Прочитайте его в приложении и "
 "подтвердите, что ознакомились."
@@ -9323,7 +10045,8 @@ msgstr ""
 msgid "Till opened by someone not qualified: %(branch)s"
 msgstr "Кассу открыл сотрудник без квалификации: %(branch)s"
 
-#. Translators: %(name)s is a person, %(time)s a clock time, %(reason)s a few words of why.
+#. Translators: %(name)s is a person, %(time)s a clock time, %(reason)s a few
+#. words of why.
 #: backend/apps/hr/bot_messages.py
 #, python-format
 msgid "Opened at %(time)s. Cashier: %(name)s (%(reason)s)."
@@ -9334,13 +10057,15 @@ msgstr "Открыта в %(time)s. Кассир: %(name)s (%(reason)s)."
 msgid "No qualified pharmacist in the roster: %(branch)s"
 msgstr "В графике смен нет квалифицированного фармацевта: %(branch)s"
 
-#. Translators: a day (dd.mm.yyyy) and two clock times, e.g. "14.11.2026, 20:00 to 08:00".
+#. Translators: a day (dd.mm.yyyy) and two clock times, e.g. "14.11.2026, 20:00
+#. to 08:00".
 #: backend/apps/hr/bot_messages.py
 #, python-format
 msgid "%(day)s, %(start)s to %(end)s"
 msgstr "%(day)s, с %(start)s до %(end)s"
 
-#. Translators: qualified pharmacists planned out of those needed, e.g. "1 of 2".
+#. Translators: qualified pharmacists planned out of those needed, e.g. "1 of
+#. 2".
 #: backend/apps/hr/bot_messages.py
 #, python-format
 msgid "%(have)d of %(need)d"
@@ -9373,9 +10098,8 @@ msgstr "Выберите, кто считается фармацевтом"
 
 #: backend/apps/hr/hooks.py
 msgid ""
-"Choose who counts as a pharmacist and upload their diplomas and "
-"certificates, so every hour a pharmacy is open has a qualified pharmacist on "
-"the roster."
+"Choose who counts as a pharmacist and upload their diplomas and certificates,"
+" so every hour a pharmacy is open has a qualified pharmacist on the roster."
 msgstr ""
 "Выберите, кто считается фармацевтом, и загрузите их дипломы и сертификаты, "
 "чтобы в каждый час работы аптеки в графике смен был квалифицированный "
@@ -9750,10 +10474,6 @@ msgid "Check the date of birth."
 msgstr "Проверьте дату рождения."
 
 #: backend/apps/hr/services.py
-msgid "The hire date can't be in the future."
-msgstr "Дата приёма на работу не может быть в будущем."
-
-#: backend/apps/hr/services.py
 msgid "Only someone who has left has a last day."
 msgstr "Последний рабочий день бывает только у уволившихся."
 
@@ -9986,10 +10706,9 @@ msgid ""
 "part, whether it is prescription-only or controlled, and the nearest expiry "
 "date on hand"
 msgstr ""
-"Поиск препарата или другого товара в каталоге по названию, МНН или "
-"штрихкоду: остаток в частях по каждой аптеке, цена за упаковку и за часть, "
-"отпускается ли он по рецепту и подконтрольный ли он, ближайший срок годности "
-"в наличии"
+"Поиск препарата или другого товара в каталоге по названию, МНН или штрихкоду:"
+" остаток в частях по каждой аптеке, цена за упаковку и за часть, отпускается "
+"ли он по рецепту и подконтрольный ли он, ближайший срок годности в наличии"
 
 #: backend/apps/inventory/ai_tools.py
 msgid ""
@@ -10423,16 +11142,6 @@ msgid "Write-offs waiting for approval"
 msgstr "Списания, ждущие утверждения"
 
 #: backend/apps/inventory/importing.py
-msgid "The file's text can't be read: save it as UTF-8 CSV or XLSX."
-msgstr ""
-"Не удаётся прочитать текст файла: сохраните его как CSV в UTF-8 или как XLSX."
-
-#: backend/apps/inventory/importing.py
-#, python-format
-msgid "At most %(count)s rows at a time."
-msgstr "Не больше %(count)s строк за раз."
-
-#: backend/apps/inventory/importing.py
 #, python-format
 msgid "%(field)s: “%(value)s” can't be read"
 msgstr "%(field)s: не удалось прочитать «%(value)s»"
@@ -10569,8 +11278,8 @@ msgstr "Ценники"
 msgid ""
 "Days before expiry to warn, e.g. 90, 60, 30. The expiry day always warns."
 msgstr ""
-"За сколько дней до истечения срока предупреждать, например 90, 60, 30. В "
-"день истечения срока предупреждение будет всегда."
+"За сколько дней до истечения срока предупреждать, например 90, 60, 30. В день"
+" истечения срока предупреждение будет всегда."
 
 #: backend/apps/inventory/models.py
 msgid "A delivery expiring sooner than this many days gets a warning."
@@ -10646,8 +11355,8 @@ msgstr "Вести журнал регистрации рецептов по о�
 #: backend/apps/inventory/models.py
 msgid "A stock count shortage above this, at cost, notifies the owners."
 msgstr ""
-"О недостаче по инвентаризации больше этой суммы (по себестоимости) "
-"сообщается владельцам."
+"О недостаче по инвентаризации больше этой суммы (по себестоимости) сообщается"
+" владельцам."
 
 #: backend/apps/inventory/models.py
 msgid "Unfit goods are destroyed within this many days of approval."
@@ -10972,12 +11681,6 @@ msgstr "Код кассовой программы"
 msgid "Email"
 msgstr "Эл. почта"
 
-#: backend/apps/inventory/models.py backend/apps/members/admin.py
-#: backend/apps/members/providers.py
-#: backend/apps/sales/templates/sales/invoice.html
-msgid "Phone"
-msgstr "Телефон"
-
 #: backend/apps/inventory/models.py
 msgid "Their website"
 msgstr "Их сайт"
@@ -11287,8 +11990,8 @@ msgid ""
 "The missing goods stay on the way until a manager decides: lost, found or "
 "back at %(branch)s."
 msgstr ""
-"Недостающий товар числится в пути, пока руководитель не решит: утерян, "
-"найден или вернулся в аптеку %(branch)s."
+"Недостающий товар числится в пути, пока руководитель не решит: утерян, найден"
+" или вернулся в аптеку %(branch)s."
 
 #: backend/apps/inventory/notify.py
 #, python-format
@@ -11311,11 +12014,11 @@ msgstr "Акт %(number)s: уничтожьте товар до %(day)s"
 #: backend/apps/inventory/notify.py
 #, python-format
 msgid ""
-"Unfit goods are destroyed within the legal term, by a commission, with "
-"photos and an act: %(branch)s."
+"Unfit goods are destroyed within the legal term, by a commission, with photos"
+" and an act: %(branch)s."
 msgstr ""
-"Непригодный товар уничтожается в установленный законом срок комиссией, с "
-"фото и актом: %(branch)s."
+"Непригодный товар уничтожается в установленный законом срок комиссией, с фото"
+" и актом: %(branch)s."
 
 #: backend/apps/inventory/notify.py
 #, python-format
@@ -11401,9 +12104,9 @@ msgstr "Расхождение в журнале ПКУ: %(product)s, аптек
 #: backend/apps/inventory/notify.py
 #, python-format
 msgid ""
-"Counted %(counted)s, the register says %(closing)s. Report it to the "
-"internal affairs bodies and the Ministry of Health within %(days)s days, "
-"then mark it reported."
+"Counted %(counted)s, the register says %(closing)s. Report it to the internal"
+" affairs bodies and the Ministry of Health within %(days)s days, then mark it"
+" reported."
 msgstr ""
 "Подсчитано %(counted)s, по журналу %(closing)s. Сообщите в органы внутренних "
 "дел и Минздрав в течение %(days)s дн., затем отметьте, что сообщено."
@@ -11866,8 +12569,8 @@ msgstr "Приход %(number)s, накладная %(invoice)s"
 
 #: backend/apps/inventory/services.py
 msgid ""
-"Some of these goods were already sold, moved or counted: the receipt can't "
-"be voided. Return the goods to the distributor instead."
+"Some of these goods were already sold, moved or counted: the receipt can't be"
+" voided. Return the goods to the distributor instead."
 msgstr ""
 "Часть этого товара уже продана, перемещена или посчитана: приход нельзя "
 "аннулировать. Вместо этого верните товар дистрибьютору."
@@ -12072,6 +12775,7 @@ msgstr ""
 "не было."
 
 #: backend/apps/inventory/templates/inventory/controlled_register.html
+#: backend/apps/tasks/feeds.py
 msgid "Unit"
 msgstr "Единица измерения"
 
@@ -12327,7 +13031,8 @@ msgstr "Новая статья в базе знаний: %(title)s"
 msgid "Please read and confirm: %(title)s"
 msgstr "Пожалуйста, прочитайте и подтвердите: %(title)s"
 
-#. Translators: a button that sends the page into the chat ("Read it"), not the status.
+#. Translators: a button that sends the page into the chat ("Read it"), not the
+#. status.
 #: backend/apps/knowledge/bot_messages.py
 msgctxt "knowledge read button"
 msgid "Read"
@@ -12430,8 +13135,8 @@ msgstr "Когда читателей попросили прочитать `ack
 #: backend/apps/knowledge/models.py
 msgid "The ack version the unread reminder was last sent for."
 msgstr ""
-"Версия для подтверждения, по которой в последний раз отправляли напоминание "
-"о непрочитанной странице."
+"Версия для подтверждения, по которой в последний раз отправляли напоминание о"
+" непрочитанной странице."
 
 #: backend/apps/knowledge/models.py
 msgid "What changed."
@@ -12454,7 +13159,8 @@ msgstr "Самая новая открытая версия."
 msgid "How far down the page they got, in percent (the most seen)."
 msgstr "Как далеко вниз дочитали страницу, в процентах (наибольшее значение)."
 
-#: backend/apps/knowledge/models.py backend/apps/tasks/hooks.py
+#: backend/apps/knowledge/models.py backend/apps/tasks/feeds.py
+#: backend/apps/tasks/hooks.py
 msgid "Routine"
 msgstr "Регулярная задача"
 
@@ -12702,13 +13408,13 @@ msgstr ""
 
 #: backend/apps/learning/ai_tools_courses.py
 msgid ""
-"Who watched a video lesson: everyone it is for, whether they never opened "
-"it, are watching (how much of it they really played) or watched it, the time "
+"Who watched a video lesson: everyone it is for, whether they never opened it,"
+" are watching (how much of it they really played) or watched it, the time "
 "spent and when"
 msgstr ""
-"Кто смотрел видеоурок: все, для кого он предназначен, — не открывали, "
-"смотрят (сколько действительно просмотрено) или посмотрели, затраченное "
-"время и когда"
+"Кто смотрел видеоурок: все, для кого он предназначен, — не открывали, смотрят"
+" (сколько действительно просмотрено) или посмотрели, затраченное время и "
+"когда"
 
 #: backend/apps/learning/ai_tools_courses.py
 msgid ""
@@ -12721,8 +13427,8 @@ msgstr ""
 #: backend/apps/learning/ai_tools_quizzes.py
 msgid ""
 "The skill matrix: each topic's average mastery (0–100 from the questions "
-"answered lately), how many people are weak or strong in it, and each "
-"person's weak and strong topics, the weakest people first"
+"answered lately), how many people are weak or strong in it, and each person's"
+" weak and strong topics, the weakest people first"
 msgstr ""
 "Матрица навыков: средний уровень освоения каждой темы (0–100 по последним "
 "ответам), сколько сотрудников знают её слабо или сильно, слабые и сильные "
@@ -12733,17 +13439,17 @@ msgid ""
 "Quiz results: for each published quiz the attempts, people, pass rate and "
 "average score in the last N days, and its hardest questions"
 msgstr ""
-"Результаты тестов: по каждому опубликованному тесту попытки, сотрудники, "
-"доля сдавших и средний балл за последние N дней и самые трудные вопросы"
+"Результаты тестов: по каждому опубликованному тесту попытки, сотрудники, доля"
+" сдавших и средний балл за последние N дней и самые трудные вопросы"
 
 #: backend/apps/learning/ai_tools_quizzes.py
 msgid ""
 "The tutor's open suggestions: who to assign which course, topics a lesson is "
-"missing for, who is late with mandatory training, who could coach others, "
-"who to thank"
+"missing for, who is late with mandatory training, who could coach others, who"
+" to thank"
 msgstr ""
-"Открытые предложения наставника: кому какой курс назначить, по каким темам "
-"не хватает урока, кто опаздывает с обязательным обучением, кто может помочь "
+"Открытые предложения наставника: кому какой курс назначить, по каким темам не"
+" хватает урока, кто опаздывает с обязательным обучением, кто может помочь "
 "другим, кого поблагодарить"
 
 #: backend/apps/learning/ai_tools_quizzes.py
@@ -12751,9 +13457,8 @@ msgid ""
 "Regular checks: each active check's schedule and its latest round (people, "
 "answered, passed, who hasn't answered), and how the last rounds went"
 msgstr ""
-"Регулярные проверки: расписание каждой активной проверки и её последний "
-"раунд (сотрудники, ответившие, сдавшие, кто не ответил), итоги прошлых "
-"раундов"
+"Регулярные проверки: расписание каждой активной проверки и её последний раунд"
+" (сотрудники, ответившие, сдавшие, кто не ответил), итоги прошлых раундов"
 
 #: backend/apps/learning/attempts.py
 msgid "This quiz isn't open at the moment."
@@ -13437,8 +14142,8 @@ msgstr "На этом сервере пока нельзя обрабатыва�
 
 #: backend/apps/learning/media.py
 msgid ""
-"This video carries subtitles or attached files. Export it again with just "
-"the picture and the sound."
+"This video carries subtitles or attached files. Export it again with just the"
+" picture and the sound."
 msgstr ""
 "В этом видео есть субтитры или вложенные файлы. Экспортируйте его заново "
 "только с изображением и звуком."
@@ -13594,11 +14299,6 @@ msgstr "Средний"
 #: backend/apps/learning/models.py
 msgid "Hard"
 msgstr "Сложный"
-
-#: backend/apps/learning/models.py backend/apps/members/models.py
-#: backend/apps/projects/models.py
-msgid "Active"
-msgstr "Активен"
 
 #: backend/apps/learning/models.py
 msgid "Written by hand"
@@ -14267,9 +14967,9 @@ msgstr "На этом сервере не настроен сервис расп
 
 #: backend/apps/lifecycle/ai_tools.py
 msgid ""
-"Discipline at a glance: warnings and reprimands given in a period by kind "
-"and category, those still counting, unacknowledged ones, and who is "
-"suspended until when"
+"Discipline at a glance: warnings and reprimands given in a period by kind and"
+" category, those still counting, unacknowledged ones, and who is suspended "
+"until when"
 msgstr ""
 "Дисциплина кратко: предупреждения и выговоры за период по видам и причинам, "
 "ещё действующие, неподтверждённые, и кто отстранён и до какого числа"
@@ -14302,7 +15002,8 @@ msgstr "Написана объяснительная"
 msgid "Proposed a fine with a record"
 msgstr "Предложен штраф к взысканию"
 
-#. Translators: %(category)s is what it is about, e.g. "Storage conditions breached".
+#. Translators: %(category)s is what it is about, e.g. "Storage conditions
+#. breached".
 #: backend/apps/lifecycle/bot_messages.py
 #, python-format
 msgid ""
@@ -14679,8 +15380,8 @@ msgstr "Ссылка для команды: %(link)s"
 #: backend/apps/members/bot_messages.py
 msgid "Hi! To join your company, open the invite link your manager sent you."
 msgstr ""
-"Здравствуйте! Чтобы присоединиться к компании, откройте ссылку-приглашение "
-"от руководителя."
+"Здравствуйте! Чтобы присоединиться к компании, откройте ссылку-приглашение от"
+" руководителя."
 
 #: backend/apps/members/bot_messages.py
 #, python-format
@@ -14694,8 +15395,8 @@ msgstr "Как только создадите аккаунт, сразу поп
 #: backend/apps/members/bot_messages.py
 #, python-format
 msgid ""
-"Your request to join <b>%(company)s</b> is waiting for approval. I'll "
-"message you as soon as it's decided."
+"Your request to join <b>%(company)s</b> is waiting for approval. I'll message"
+" you as soon as it's decided."
 msgstr ""
 "Ваша заявка в компанию <b>%(company)s</b> ждёт одобрения. Я напишу, как "
 "только будет решение."
@@ -14770,8 +15471,8 @@ msgstr "Пожалуйста, поделитесь своим номером к�
 #, python-format
 msgid "Welcome to the team, %(name)s! You've joined <b>%(company)s</b>."
 msgstr ""
-"Добро пожаловать в команду, %(name)s! Теперь вы в компании <b>%(company)s</"
-"b>."
+"Добро пожаловать в команду, %(name)s! Теперь вы в компании "
+"<b>%(company)s</b>."
 
 #: backend/apps/members/bot_messages.py
 #, python-format
@@ -14884,7 +15585,8 @@ msgstr "должность"
 msgid "default"
 msgstr "по умолчанию"
 
-#. Translators: %(company)s is a company's name, as typed: no case endings on it.
+#. Translators: %(company)s is a company's name, as typed: no case endings on
+#. it.
 #: backend/apps/members/bot_messages.py employee_bot/bot/handlers/company.py
 #: employee_bot/bot/middlewares/access.py
 #, python-format
@@ -14904,10 +15606,6 @@ msgstr "Распределять можно только текущих сотр
 #, python-format
 msgid "%(name)s works in a branch you don't manage."
 msgstr "%(name)s работает в филиале, которым вы не управляете."
-
-#: backend/apps/members/departments.py backend/apps/members/services.py
-msgid "Only owners can change an owner."
-msgstr "Изменить владельца может только владелец."
 
 #: backend/apps/members/departments.py
 msgid "Give the department a name."
@@ -14989,10 +15687,6 @@ msgstr "Дайте ссылке название."
 msgid "A link's name can be at most 100 characters."
 msgstr "Название ссылки может быть не длиннее 100 символов."
 
-#: backend/apps/members/join_links.py backend/apps/members/services.py
-msgid "You can only give the branches you manage."
-msgstr "Можно назначать только те филиалы, которыми вы управляете."
-
 #: backend/apps/members/join_links.py backend/apps/members/owner_api.py
 #: backend/apps/members/services.py
 msgid "Pick a role of this company."
@@ -15014,10 +15708,6 @@ msgstr "Окончание должно быть в будущем."
 #: backend/apps/members/join_links.py backend/apps/members/link_api.py
 msgid "A link can work for at most a year."
 msgstr "Ссылка может работать не больше года."
-
-#: backend/apps/members/join_links.py backend/apps/members/services.py
-msgid "You can only give a role whose permissions you have yourself."
-msgstr "Можно выдать только ту роль, все права которой есть и у вас."
 
 #: backend/apps/members/join_links.py
 msgid "Choose one of your branches."
@@ -15081,10 +15771,6 @@ msgstr "Ожидает"
 #: backend/apps/members/models.py
 msgid "Blocked"
 msgstr "Заблокировано"
-
-#: backend/apps/members/models.py backend/apps/members/providers.py
-msgid "Left"
-msgstr "Не в компании"
 
 #: backend/apps/members/models.py
 msgid "Suspended"
@@ -15274,8 +15960,8 @@ msgid ""
 "Run their own till: open and close shifts, record sales, payouts and "
 "handovers"
 msgstr ""
-"Работа со своей кассой: открытие и закрытие смен, учёт продаж, выдач из "
-"кассы и передач наличных"
+"Работа со своей кассой: открытие и закрытие смен, учёт продаж, выдач из кассы"
+" и передач наличных"
 
 #: backend/apps/members/permissions.py
 msgid ""
@@ -15352,8 +16038,8 @@ msgstr ""
 msgid ""
 "See passport, PINFL and card numbers and ID scans (every view is audited)"
 msgstr ""
-"Просмотр номеров паспорта, ПИНФЛ и банковских карт, а также сканов "
-"документов (каждый просмотр записывается в журнал)"
+"Просмотр номеров паспорта, ПИНФЛ и банковских карт, а также сканов документов"
+" (каждый просмотр записывается в журнал)"
 
 #: backend/apps/members/permissions.py
 msgid "Manage vacancies and applicants"
@@ -15537,18 +16223,12 @@ msgid "This is the company's only owner. Make someone else an owner first."
 msgstr ""
 "Это единственный владелец компании. Сначала сделайте владельцем кого-то ещё."
 
-#: backend/apps/members/providers.py backend/apps/payroll/providers.py
-#: backend/apps/payroll/templates/payroll/payslip.html
-#: backend/apps/recognition/providers.py backend/apps/reports/hooks.py
-#: backend/apps/tasks/hooks.py backend/apps/timeoff/providers.py
-msgid "Position"
-msgstr "Должность"
-
 #: backend/apps/members/providers.py
 msgid "Home branch"
 msgstr "Основной филиал"
 
-#: backend/apps/members/providers.py owner_bot/ownerbot/brief.py
+#: backend/apps/members/providers.py davomat_bot/views.py
+#: owner_bot/ownerbot/brief.py
 msgid "Branches"
 msgstr "Филиалы"
 
@@ -15623,10 +16303,6 @@ msgstr "Этот человек не заблокирован."
 #: backend/apps/members/services.py
 msgid "Only current members can be changed."
 msgstr "Изменять можно только действующих сотрудников."
-
-#: backend/apps/members/services.py
-msgid "A first name is required."
-msgstr "Нужно указать имя."
 
 #: backend/apps/members/services.py
 msgid "The home branch must be one of their branches."
@@ -15998,8 +16674,8 @@ msgstr "Зарплата (%(month)s): %(name)s"
 #: backend/apps/payroll/finance_bridge.py
 #, python-format
 msgid ""
-"An expense of %(name)s was paid back another way meanwhile: calculate the "
-"run again."
+"An expense of %(name)s was paid back another way meanwhile: calculate the run"
+" again."
 msgstr ""
 "Тем временем расход сотрудника возмещён иначе: %(name)s. Пересчитайте "
 "зарплату."
@@ -16022,8 +16698,8 @@ msgid ""
 "Part of this pay was already paid or written off in Finance. Void that "
 "payment first, then reopen the payroll."
 msgstr ""
-"Часть этой зарплаты уже выплачена или списана в Финансах. Сначала "
-"аннулируйте тот платёж, затем откройте зарплату заново."
+"Часть этой зарплаты уже выплачена или списана в Финансах. Сначала аннулируйте"
+" тот платёж, затем откройте зарплату заново."
 
 #: backend/apps/payroll/finance_bridge.py
 #, python-format
@@ -16351,8 +17027,8 @@ msgid ""
 "%(name)s has no pay history or monthly pay to work out a leave day: add the "
 "unused leave as a line by hand."
 msgstr ""
-"Для расчёта дня отпуска нет ни истории выплат, ни оклада (%(name)s): "
-"добавьте компенсацию отпуска строкой вручную."
+"Для расчёта дня отпуска нет ни истории выплат, ни оклада (%(name)s): добавьте"
+" компенсацию отпуска строкой вручную."
 
 #: backend/apps/payroll/labels.py
 #, python-format
@@ -16375,13 +17051,13 @@ msgstr ""
 #: backend/apps/payroll/labels.py
 #, python-format
 msgid ""
-"The %(month)s payroll paid %(name)s %(amount)s for days after their last "
-"day. To take it back, add a line by hand for at most what this payslip pays, "
-"and record the rest in Finance as money they owe."
+"The %(month)s payroll paid %(name)s %(amount)s for days after their last day."
+" To take it back, add a line by hand for at most what this payslip pays, and "
+"record the rest in Finance as money they owe."
 msgstr ""
-"Ведомость (%(month)s) оплатила и дни после последнего рабочего дня: "
-"%(name)s, %(amount)s. Чтобы вернуть сумму, добавьте вручную строку не больше "
-"того, что платит этот расчётный лист, а остаток запишите в Финансах как долг "
+"Ведомость (%(month)s) оплатила и дни после последнего рабочего дня: %(name)s,"
+" %(amount)s. Чтобы вернуть сумму, добавьте вручную строку не больше того, что"
+" платит этот расчётный лист, а остаток запишите в Финансах как долг "
 "сотрудника."
 
 #: backend/apps/payroll/models.py
@@ -16462,8 +17138,8 @@ msgid ""
 "Hours in a normal working day: turns monthly and daily pay into an hourly "
 "rate."
 msgstr ""
-"Часов в обычном рабочем дне: по ним месячная и дневная оплата "
-"пересчитывается в часовую."
+"Часов в обычном рабочем дне: по ним месячная и дневная оплата пересчитывается"
+" в часовую."
 
 #: backend/apps/payroll/models.py
 msgid "Prepare last month's draft run on the 1st of each month."
@@ -16540,24 +17216,8 @@ msgid "Average delay, minutes"
 msgstr "Средняя задержка, минут"
 
 #: backend/apps/payroll/models.py
-msgid "Late arrivals"
-msgstr "Опоздания"
-
-#: backend/apps/payroll/models.py
 msgid "Minutes late"
 msgstr "Минуты опоздания"
-
-#: backend/apps/payroll/models.py
-msgid "Absences"
-msgstr "Прогулы"
-
-#: backend/apps/payroll/models.py
-msgid "Early leaves"
-msgstr "Ранние уходы"
-
-#: backend/apps/payroll/models.py
-msgid "Hours worked"
-msgstr "Отработанные часы"
 
 #: backend/apps/payroll/models.py backend/apps/sales/hooks.py
 msgid "Net sales"
@@ -17173,9 +17833,9 @@ msgstr "В этом расчёте некому платить."
 #: backend/apps/payroll/runs.py
 #, python-format
 msgid ""
-"The deductions on the final payslip of %(names)s are more than the pay: "
-"lower a line added by hand to at most the pay, and record the rest in "
-"Finance as money they owe."
+"The deductions on the final payslip of %(names)s are more than the pay: lower"
+" a line added by hand to at most the pay, and record the rest in Finance as "
+"money they owe."
 msgstr ""
 "Удержания в окончательном расчёте больше заработка: %(names)s. Уменьшите "
 "строку, добавленную вручную, до суммы заработка, а остаток запишите в "
@@ -17595,10 +18255,6 @@ msgid "%(company)s: your final payslip for %(month)s, %(amount)s"
 msgstr "%(company)s: ваш окончательный расчёт за %(month)s, %(amount)s"
 
 #: backend/apps/payroll/templates/payroll/payslip.html
-msgid "Employee"
-msgstr "Сотрудник"
-
-#: backend/apps/payroll/templates/payroll/payslip.html
 msgid "Pay"
 msgstr "Оплата"
 
@@ -17621,16 +18277,16 @@ msgstr "Бухгалтер"
 
 #: backend/apps/projects/ai_tools.py
 msgid ""
-"Projects: every project the asker sees, with progress, health, due date, "
-"lead and budget burn."
+"Projects: every project the asker sees, with progress, health, due date, lead"
+" and budget burn."
 msgstr ""
 "Проекты: все проекты, которые видит пользователь, с прогрессом, состоянием, "
 "сроком, руководителем и расходом бюджета."
 
 #: backend/apps/projects/ai_tools.py
 msgid ""
-"One project in detail: milestones with progress, overdue cards, the people "
-"on it, the latest update, and its money when the asker may see it."
+"One project in detail: milestones with progress, overdue cards, the people on"
+" it, the latest update, and its money when the asker may see it."
 msgstr ""
 "Один проект подробно: этапы с прогрессом, просроченные карточки, участники, "
 "последний статус и финансы проекта, если пользователю можно их видеть."
@@ -18016,8 +18672,8 @@ msgstr ""
 msgid ""
 "Below this share of done cards a project close to its due date is at risk."
 msgstr ""
-"Если у проекта с близким сроком доля готовых карточек ниже этой, он "
-"считается под угрозой."
+"Если у проекта с близким сроком доля готовых карточек ниже этой, он считается"
+" под угрозой."
 
 #: backend/apps/projects/owner_api.py
 msgid "Attach a file."
@@ -18329,8 +18985,8 @@ msgid ""
 "The leaderboard: who has the most points this week, this month or all time "
 "(all points or learning only), with their level"
 msgstr ""
-"Рейтинг: у кого больше всего баллов за неделю, месяц или всё время (все "
-"баллы или только обучение), с уровнем"
+"Рейтинг: у кого больше всего баллов за неделю, месяц или всё время (все баллы"
+" или только обучение), с уровнем"
 
 #: backend/apps/recognition/ai_tools.py
 msgid ""
@@ -18782,8 +19438,8 @@ msgstr "Передать другому"
 #: backend/apps/reminders/bot_messages.py
 #, python-format
 msgid ""
-"<b>%(name)s</b> blocked the bot, so reminders can't reach them. <b>%(task)s</"
-"b> is still open."
+"<b>%(name)s</b> blocked the bot, so reminders can't reach them. "
+"<b>%(task)s</b> is still open."
 msgstr ""
 "<b>%(name)s</b>: бот заблокирован, напоминания не доходят. Задача "
 "<b>%(task)s</b> всё ещё открыта."
@@ -18931,8 +19587,8 @@ msgid ""
 "Who did their tasks on time over a period, by person, position, routine, "
 "branch or day."
 msgstr ""
-"Кто выполнял задачи вовремя за период: по сотрудникам, должностям, "
-"регулярным задачам, филиалам или дням."
+"Кто выполнял задачи вовремя за период: по сотрудникам, должностям, регулярным"
+" задачам, филиалам или дням."
 
 #: backend/apps/reports/ai_tools.py
 msgid ""
@@ -19005,20 +19661,8 @@ msgid "Open the app"
 msgstr "Открыть приложение"
 
 #: backend/apps/reports/hooks.py
-msgid "On time"
-msgstr "Вовремя"
-
-#: backend/apps/reports/hooks.py
-msgid "Late"
-msgstr "С просрочкой"
-
-#: backend/apps/reports/hooks.py
 msgid "Missed"
 msgstr "Не выполнено"
-
-#: backend/apps/reports/hooks.py
-msgid "On time, %"
-msgstr "Вовремя, %"
 
 #: backend/apps/reports/hooks.py
 msgid "Average delay, min"
@@ -19055,9 +19699,9 @@ msgstr "Прошлый месяц"
 
 #: backend/apps/sales/ai_tools.py
 msgid ""
-"Sales for a range of days: net sales, receipts, average check and cash "
-"share, with a series over time or a breakdown by branch, cashier, payment "
-"method or hour."
+"Sales for a range of days: net sales, receipts, average check and cash share,"
+" with a series over time or a breakdown by branch, cashier, payment method or"
+" hour."
 msgstr ""
 "Продажи за период: выручка, чеки, средний чек и доля наличных — в динамике "
 "или с разбивкой по филиалам, кассирам, способам оплаты или часам."
@@ -19094,8 +19738,8 @@ msgid ""
 "Invoices issued in a range of days: number, customer, total, paid, left to "
 "pay, due day and whether it is overdue."
 msgstr ""
-"Счета, выставленные за период: номер, клиент, сумма, оплачено, осталось, "
-"срок оплаты и просрочен ли он."
+"Счета, выставленные за период: номер, клиент, сумма, оплачено, осталось, срок"
+" оплаты и просрочен ли он."
 
 #: backend/apps/sales/alerts.py backend/apps/sales/queries.py
 #: backend/apps/sales/services.py
@@ -19405,8 +20049,8 @@ msgstr "Филиал %(branch)s ещё не открылся"
 #, python-format
 msgid "It opens at %(time)s; no till was open %(minutes)s minutes later."
 msgstr ""
-"Филиал открывается в %(time)s, но и через %(minutes)s мин ни одна касса так "
-"и не открылась."
+"Филиал открывается в %(time)s, но и через %(minutes)s мин ни одна касса так и"
+" не открылась."
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
@@ -19771,10 +20415,6 @@ msgstr "Счёт"
 msgid "Invoices"
 msgstr "Счета-фактуры"
 
-#: backend/apps/sales/hooks.py backend/apps/sales/templates/sales/invoice.html
-msgid "Total"
-msgstr "Итого"
-
 #: backend/apps/sales/hooks.py
 msgid "Left to pay"
 msgstr "Осталось оплатить"
@@ -19804,8 +20444,8 @@ msgid ""
 "Import them from your cash-register program for true stock, margins and the "
 "legal price check, or work without them."
 msgstr ""
-"Импортируйте их из кассовой программы для точных остатков, наценки и "
-"проверки предельных цен или работайте без них."
+"Импортируйте их из кассовой программы для точных остатков, наценки и проверки"
+" предельных цен или работайте без них."
 
 #: backend/apps/sales/hooks.py
 msgid "Prescription medicines sold above the legal price"
@@ -20083,8 +20723,8 @@ msgstr "Последний торговый день, итоги которог�
 
 #: backend/apps/sales/models.py
 msgid ""
-"Where sale lines come from. Without them stock moves only through receipts "
-"of goods, transfers, write-offs and counts."
+"Where sale lines come from. Without them stock moves only through receipts of"
+" goods, transfers, write-offs and counts."
 msgstr ""
 "Откуда берутся строки продаж. Без них остатки меняются только приходами, "
 "перемещениями, списаниями и инвентаризациями."
@@ -20112,8 +20752,8 @@ msgstr "Печатается внизу счетов."
 
 #: backend/apps/sales/models.py
 msgid ""
-"A prescription medicine sold by invoice above its batch cost plus this "
-"markup (or above its reference price) warns at issue."
+"A prescription medicine sold by invoice above its batch cost plus this markup"
+" (or above its reference price) warns at issue."
 msgstr ""
 "Если рецептурный препарат продаётся по счёту дороже закупочной цены партии с "
 "этой наценкой (или дороже референтной цены), при выставлении будет "
@@ -21044,8 +21684,8 @@ msgstr "Завершить выбранные сеансы"
 #, python-brace-format
 msgid "Signup code <b>{code}</b>. Copy it now: it is shown only once."
 msgstr ""
-"Код регистрации: <b>{code}</b>. Скопируйте его сейчас: он показывается "
-"только один раз."
+"Код регистрации: <b>{code}</b>. Скопируйте его сейчас: он показывается только"
+" один раз."
 
 #: backend/apps/signin/auth.py
 msgid "Sign in to the dashboard again."
@@ -21240,8 +21880,8 @@ msgstr ""
 
 #: backend/apps/tasks/ai_tools.py
 msgid ""
-"Storage readings (fridge and room temperature, humidity): values out of "
-"range and missed readings per routine and branch."
+"Storage readings (fridge and room temperature, humidity): values out of range"
+" and missed readings per routine and branch."
 msgstr ""
 "Показания условий хранения (температура холодильников и помещения, "
 "влажность): значения вне нормы и пропущенные замеры по регулярным задачам и "
@@ -21549,7 +22189,8 @@ msgstr "Ни к какой"
 msgid "Which task is this photo for?"
 msgstr "К какой задаче это фото?"
 
-#. Translators: %(title)s is the task's title: let a carrier word take any case ending.
+#. Translators: %(title)s is the task's title: let a carrier word take any case
+#. ending.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "Write your comment on <b>%(title)s</b>:"
@@ -21617,25 +22258,29 @@ msgstr "Следующие"
 msgid "Who is it for?"
 msgstr "Кому?"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
+#. on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>Today's routine task</b> · %(name)s"
 msgstr "<b>Регулярная задача на сегодня</b> · %(name)s"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
+#. on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>New task</b> · %(name)s"
 msgstr "<b>Новая задача</b> · %(name)s"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
+#. on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "%(name)s finished a task. Please check it."
 msgstr "%(name)s: задача выполнена. Пожалуйста, проверьте."
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
+#. on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>Task done</b> · %(name)s"
@@ -21646,7 +22291,8 @@ msgstr "<b>Задача выполнена</b> · %(name)s"
 msgid "late by %(duration)s"
 msgstr "просрочено на %(duration)s"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
+#. on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>Your task was accepted</b> · %(name)s"
@@ -21657,19 +22303,22 @@ msgstr "<b>Ваша задача принята</b> · %(name)s"
 msgid "Your task was sent back: %(reason)s"
 msgstr "Задачу вернули: %(reason)s"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
+#. on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "%(name)s is waiting for this task."
 msgstr "%(name)s ждёт выполнения этой задачи."
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
+#. on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>%(name)s mentioned you</b>"
 msgstr "<b>Вас упомянули</b> · %(name)s"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
+#. on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>New comment</b> · %(name)s"
@@ -21679,7 +22328,8 @@ msgstr "<b>Новый комментарий</b> · %(name)s"
 msgid "Reply"
 msgstr "Ответить"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
+#. on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>New deadline</b> · %(name)s"
@@ -21691,25 +22341,29 @@ msgstr "<b>Новый срок</b> · %(name)s"
 msgid "It was: %(when)s"
 msgstr "Было: %(when)s"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
+#. on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>Task cancelled</b> · %(name)s"
 msgstr "<b>Задача отменена</b> · %(name)s"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
+#. on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>Given to someone else</b> · %(name)s"
 msgstr "<b>Передана другому</b> · %(name)s"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
+#. on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "Now it's for: %(name)s"
 msgstr "Теперь исполнитель: %(name)s"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
+#. on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>%(name)s can't do this task</b>"
@@ -21719,13 +22373,15 @@ msgstr "<b>Не получается выполнить</b> · %(name)s"
 msgid "Cancel task"
 msgstr "Отменить задачу"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
+#. on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>More time given</b> · %(name)s"
 msgstr "<b>Время продлено</b> · %(name)s"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
+#. on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>The deadline stays</b> · %(name)s"
@@ -21739,13 +22395,15 @@ msgstr "<b>Задача отменена</b>"
 msgid "<b>Given to someone else</b>"
 msgstr "<b>Передана другому</b>"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
+#. on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>Accepted</b> · %(name)s"
 msgstr "<b>Принято</b> · %(name)s"
 
-#. Translators: %(time)s is a clock time (14:30); %(late)s a length (25 min, 1 h 5 min).
+#. Translators: %(time)s is a clock time (14:30); %(late)s a length (25 min, 1
+#. h 5 min).
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "<b>Done</b> · %(time)s, %(late)s late"
@@ -21885,7 +22543,8 @@ msgctxt "task list"
 msgid "urgent"
 msgstr "срочно"
 
-#. Translators: %(priority)s is "Urgent" or "High", as the task's priority reads.
+#. Translators: %(priority)s is "Urgent" or "High", as the task's priority
+#. reads.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "Priority: %(priority)s"
@@ -21912,7 +22571,8 @@ msgstr ""
 "В ваших отделах пока никого нет. Добавьте людей в панели управления: "
 "Сотрудники, Отделы, затем ваш отдел."
 
-#. Translators: mid-line after a person's name ("Alisher Valiyev — open: 3"), lowercase.
+#. Translators: mid-line after a person's name ("Alisher Valiyev — open: 3"),
+#. lowercase.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "open: %(count)d"
@@ -21969,6 +22629,37 @@ msgstr "Выполнено: %(name)s"
 #, python-format
 msgid "Finished “%(title)s”"
 msgstr "Выполнена задача «%(title)s»"
+
+#: backend/apps/tasks/feeds.py
+#: backend/apps/tasks/templates/tasks/readings_journal.html
+msgid "Instrument"
+msgstr "Место измерения"
+
+#: backend/apps/tasks/feeds.py
+#: backend/apps/tasks/templates/tasks/readings_journal.html
+msgid "Value"
+msgstr "Значение"
+
+#: backend/apps/tasks/feeds.py
+msgid "Lowest allowed"
+msgstr "Допустимый минимум"
+
+#: backend/apps/tasks/feeds.py
+msgid "Highest allowed"
+msgstr "Допустимый максимум"
+
+#: backend/apps/tasks/feeds.py
+msgid "In range"
+msgstr "В норме"
+
+#: backend/apps/tasks/feeds.py
+msgid "Recheck"
+msgstr "Повторный замер"
+
+#: backend/apps/tasks/feeds.py
+#: backend/apps/tasks/templates/tasks/readings_journal.html
+msgid "Taken by"
+msgstr "Кто измерил"
 
 #: backend/apps/tasks/feeds.py
 #, python-format
@@ -22108,8 +22799,8 @@ msgid ""
 "With needs_confirmation: a run finished with a photo or text proof is "
 "accepted automatically; without one, someone checks it."
 msgstr ""
-"Если нужна проверка: выполнение с фото или отчётом принимается "
-"автоматически, без них его проверяют."
+"Если нужна проверка: выполнение с фото или отчётом принимается автоматически,"
+" без них его проверяют."
 
 #: backend/apps/tasks/models.py
 msgid "Made by an employee for themselves; it repeats a personal task."
@@ -22147,8 +22838,8 @@ msgstr "Задачи адаптации: срок — через столько 
 
 #: backend/apps/tasks/models.py
 msgid ""
-"With the readings proof: 1 to 3 numbers each run asks for, with their "
-"allowed range (`[{\"key\": \"t\", \"label\", \"unit\", \"min\", \"max\", "
+"With the readings proof: 1 to 3 numbers each run asks for, with their allowed"
+" range (`[{\"key\": \"t\", \"label\", \"unit\", \"min\", \"max\", "
 "\"critical\"}]`)."
 msgstr ""
 "С подтверждением показаниями: 1–3 числа, которые запрашиваются при каждом "
@@ -22159,8 +22850,8 @@ msgid ""
 "One of us does it: the first person to finish closes everyone else's copy of "
 "that day at the same branch."
 msgstr ""
-"Делает кто-то один: первый выполнивший закрывает копии остальных за этот "
-"день в том же филиале."
+"Делает кто-то один: первый выполнивший закрывает копии остальных за этот день"
+" в том же филиале."
 
 #: backend/apps/tasks/models.py
 msgid "Daily"
@@ -22220,8 +22911,8 @@ msgid ""
 "With needs_confirmation: finished with a photo or text proof, it is accepted "
 "automatically; without one, someone checks it."
 msgstr ""
-"Если нужна проверка: с фото или отчётом задача принимается автоматически, "
-"без них её проверяют."
+"Если нужна проверка: с фото или отчётом задача принимается автоматически, без"
+" них её проверяют."
 
 #: backend/apps/tasks/models.py
 msgid ""
@@ -22438,11 +23129,11 @@ msgstr "Камера отпуска: ведёт запись и хранит 30 
 
 #: backend/apps/tasks/presets.py
 msgid ""
-"Check that the camera over the counter is recording and that the last 30 "
-"days of video are kept."
+"Check that the camera over the counter is recording and that the last 30 days"
+" of video are kept."
 msgstr ""
-"Проверьте, что камера над прилавком ведёт запись и видео за последние 30 "
-"дней сохранено."
+"Проверьте, что камера над прилавком ведёт запись и видео за последние 30 дней"
+" сохранено."
 
 #: backend/apps/tasks/presets.py backend/apps/tasks/services.py
 msgid "You can't change routines."
@@ -22879,8 +23570,8 @@ msgstr "Выберите, к какому времени задачу нужно
 #: backend/apps/tasks/services.py
 msgid "Readings are taken on routines, not on onboarding or personal tasks."
 msgstr ""
-"Показания снимаются в регулярных задачах, а не в задачах адаптации или "
-"личных задачах."
+"Показания снимаются в регулярных задачах, а не в задачах адаптации или личных"
+" задачах."
 
 #: backend/apps/tasks/services.py
 msgid "Add at least one reading: what is measured and its allowed values."
@@ -23043,10 +23734,6 @@ msgid "This branch has no readings routines yet."
 msgstr "В этом филиале пока нет регулярных задач с показаниями."
 
 #: backend/apps/tasks/templates/tasks/readings_journal.html
-msgid "Instrument"
-msgstr "Место измерения"
-
-#: backend/apps/tasks/templates/tasks/readings_journal.html
 msgid "Allowed"
 msgstr "Допустимо"
 
@@ -23057,14 +23744,6 @@ msgstr "Вне нормы"
 #: backend/apps/tasks/templates/tasks/readings_journal.html
 msgid "Time"
 msgstr "Время"
-
-#: backend/apps/tasks/templates/tasks/readings_journal.html
-msgid "Value"
-msgstr "Значение"
-
-#: backend/apps/tasks/templates/tasks/readings_journal.html
-msgid "Taken by"
-msgstr "Кто измерил"
 
 #: backend/apps/tasks/templates/tasks/readings_journal.html
 msgid "recheck"
@@ -23408,6 +24087,248 @@ msgstr "Выберите год от 2000 до 2100."
 msgid "Name the holiday."
 msgstr "Укажите название праздника."
 
+#: davomat_bot/bot_messages.py
+msgid "Open Davomat"
+msgstr "Открыть Davomat"
+
+#: davomat_bot/bot_messages.py
+msgid "/today: who is at work, who is late and who isn't in yet"
+msgstr "/today: кто на работе, кто опоздал и кто ещё не пришёл"
+
+#: davomat_bot/bot_messages.py
+msgid "/me: your day and your month"
+msgstr "/me: ваш день и месяц"
+
+#: davomat_bot/bot_messages.py
+msgid "/language: change language"
+msgstr "/language: сменить язык"
+
+#: davomat_bot/bot_messages.py
+msgid "/help: what this bot does"
+msgstr "/help: что умеет бот"
+
+#: davomat_bot/bot_messages.py
+msgid ""
+"Davomat isn't set up yet. Come back once your administrator has set it up."
+msgstr ""
+"Davomat ещё не настроен. Возвращайтесь, когда администратор его настроит."
+
+#: davomat_bot/bot_messages.py owner_bot/ownerbot/bot_messages.py
+#, python-format
+msgid "Hello, %(name)s!"
+msgstr "Здравствуйте, %(name)s!"
+
+#: davomat_bot/bot_messages.py
+msgid "Hello!"
+msgstr "Здравствуйте!"
+
+#: davomat_bot/bot_messages.py
+#, python-format
+msgid "This is the attendance bot of %(organization)s."
+msgstr "Это бот учёта посещаемости. Организация: %(organization)s."
+
+#: davomat_bot/bot_messages.py
+msgid ""
+"To get your arrivals, departures and reports here, ask your administrator for"
+" the Telegram link of your profile and open it."
+msgstr ""
+"Чтобы получать сюда приходы, уходы и отчёты, попросите у администратора "
+"ссылку Telegram для вашего профиля и откройте её."
+
+#: davomat_bot/bot_messages.py
+#, python-format
+msgid "You are linked to %(organization)s."
+msgstr "Вы привязаны к организации %(organization)s."
+
+#: davomat_bot/bot_messages.py
+msgid "Your arrivals and departures come here."
+msgstr "Сюда приходят ваши приходы и уходы."
+
+#: davomat_bot/bot_messages.py
+#, python-format
+msgid "Done. This Telegram is now linked to %(name)s at %(organization)s."
+msgstr "Готово. Этот Telegram теперь привязан: %(name)s, %(organization)s."
+
+#: davomat_bot/bot_messages.py
+msgid "This link doesn't work any more. Ask your administrator for a new one."
+msgstr "Эта ссылка больше не работает. Попросите у администратора новую."
+
+#: davomat_bot/bot_messages.py
+msgid ""
+"This Telegram isn't linked to anyone yet. Ask your administrator for the "
+"Telegram link of your profile and open it."
+msgstr ""
+"Этот Telegram пока ни к кому не привязан. Попросите у администратора ссылку "
+"Telegram для вашего профиля и откройте её."
+
+#: davomat_bot/bot_messages.py
+msgid "Only managers see who is at work today. Your own day: /me"
+msgstr "Кто сегодня на работе, видят только руководители. Ваш день: /me"
+
+#: davomat_bot/bot_messages.py
+msgid "Attendance isn't switched on."
+msgstr "Учёт посещаемости не включён."
+
+#: davomat_bot/bot_messages.py
+msgid "Your arrivals and departures come here, as the terminals see you."
+msgstr "Когда терминал вас видит, ваши приходы и уходы приходят сюда."
+
+#: davomat_bot/bot_messages.py
+msgid "Reports, schedules and the team are in the Davomat web app."
+msgstr "Отчёты, графики и команда — в веб-приложении Davomat."
+
+#: davomat_bot/commands.py
+msgid "My day and month"
+msgstr "Мой день и месяц"
+
+#: davomat_bot/commands.py
+msgid "Who is at work today"
+msgstr "Кто сегодня на работе"
+
+#: davomat_bot/handlers/today.py
+msgid "Updated"
+msgstr "Обновлено"
+
+#: davomat_bot/views.py
+#, python-format
+msgid "In the building now: %(count)d"
+msgstr "Сейчас в здании: %(count)d"
+
+#: davomat_bot/views.py
+#, python-format
+msgid "Came today: %(came)d of %(rostered)d"
+msgstr "Сегодня пришли: %(came)d из %(rostered)d"
+
+#: davomat_bot/views.py
+#, python-format
+msgid "Came today: %(came)d"
+msgstr "Сегодня пришли: %(came)d"
+
+#: davomat_bot/views.py
+#, python-format
+msgid "%(name)s · %(minutes)s late, at %(time)s"
+msgstr "%(name)s · опоздание %(minutes)s, приход в %(time)s"
+
+#: davomat_bot/views.py
+#, python-format
+msgid "%(name)s · shift from %(time)s"
+msgstr "%(name)s · смена с %(time)s"
+
+#: davomat_bot/views.py
+msgid "Not in yet"
+msgstr "Ещё не пришли"
+
+#: davomat_bot/views.py
+msgid "Nobody is expected and nobody has come in yet today."
+msgstr "Сегодня никого не ждут, и пока никто не пришёл."
+
+#: davomat_bot/views.py
+#, python-format
+msgid "%(came)d of %(rostered)d"
+msgstr "%(came)d из %(rostered)d"
+
+#: davomat_bot/views.py
+msgid "Refresh"
+msgstr "Обновить"
+
+#: davomat_bot/views.py
+msgid "All branches"
+msgstr "Все филиалы"
+
+#: davomat_bot/views.py
+msgid "Open in Davomat"
+msgstr "Открыть в Davomat"
+
+#: davomat_bot/views.py
+msgid "Today"
+msgstr "Сегодня"
+
+#: davomat_bot/views.py
+#, python-format
+msgid "Days at work: %(present)d of %(scheduled)d"
+msgstr "Дней на работе: %(present)d из %(scheduled)d"
+
+#: davomat_bot/views.py
+#, python-format
+msgid "Days without a shift: %(count)d"
+msgstr "Дни вне графика: %(count)d"
+
+#: davomat_bot/views.py
+#, python-format
+msgid "Days at work: %(count)d"
+msgstr "Дней на работе: %(count)d"
+
+#: davomat_bot/views.py
+#, python-format
+msgid "Hours worked: %(time)s"
+msgstr "Отработано: %(time)s"
+
+#: davomat_bot/views.py
+#, python-format
+msgid "Late: %(count)d time, %(time)s in all"
+msgid_plural "Late: %(count)d times, %(time)s in all"
+msgstr[0] "Опоздания: %(count)d раз, всего %(time)s"
+msgstr[1] "Опоздания: %(count)d раза, всего %(time)s"
+msgstr[2] "Опоздания: %(count)d раз, всего %(time)s"
+
+#: davomat_bot/views.py
+#, python-format
+msgid "Left early: %(count)d time"
+msgid_plural "Left early: %(count)d times"
+msgstr[0] "Ранний уход: %(count)d раз"
+msgstr[1] "Ранний уход: %(count)d раза"
+msgstr[2] "Ранний уход: %(count)d раз"
+
+#: davomat_bot/views.py
+#, python-format
+msgid "Absent: %(count)d day"
+msgid_plural "Absent: %(count)d days"
+msgstr[0] "Неявки: %(count)d день"
+msgstr[1] "Неявки: %(count)d дня"
+msgstr[2] "Неявки: %(count)d дней"
+
+#: davomat_bot/views.py
+#, python-format
+msgid "On leave: %(count)d day"
+msgid_plural "On leave: %(count)d days"
+msgstr[0] "В отпуске: %(count)d день"
+msgstr[1] "В отпуске: %(count)d дня"
+msgstr[2] "В отпуске: %(count)d дней"
+
+#: davomat_bot/views.py
+#, python-format
+msgid "Overtime: %(time)s"
+msgstr "Сверхурочно: %(time)s"
+
+#: davomat_bot/views.py
+#, python-format
+msgid "On time: %(percent)s%%"
+msgstr "Вовремя: %(percent)s%%"
+
+#: davomat_bot/views.py
+#, python-format
+msgid "Shift: %(start)s–%(end)s"
+msgstr "Смена: %(start)s–%(end)s"
+
+#: davomat_bot/views.py
+#, python-format
+msgid "In: %(time)s"
+msgstr "Приход: %(time)s"
+
+#: davomat_bot/views.py
+#, python-format
+msgid "%(time)s late"
+msgstr "опоздание %(time)s"
+
+#: davomat_bot/views.py
+#, python-format
+msgid "Out: %(time)s · %(worked)s"
+msgstr "Уход: %(time)s · %(worked)s"
+
+#: davomat_bot/views.py
+msgid "No shift today"
+msgstr "Сегодня смены нет"
+
 #: employee_bot/bot/handlers/admin/approvals.py
 msgid "Choose at least one branch."
 msgstr "Выберите хотя бы один филиал."
@@ -23520,7 +24441,8 @@ msgstr "Эту задачу удалили или передали другом�
 msgid "You can't do that."
 msgstr "Это действие вам недоступно."
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings
+#. on it.
 #: employee_bot/bot/handlers/member/cards.py
 #, python-format
 msgid "Sent for checking · %(name)s"
@@ -23670,11 +24592,6 @@ msgstr "Открыть панель управления"
 #: owner_bot/ownerbot/bot_messages.py
 msgid "there"
 msgstr "уважаемый пользователь"
-
-#: owner_bot/ownerbot/bot_messages.py
-#, python-format
-msgid "Hello, %(name)s!"
-msgstr "Здравствуйте, %(name)s!"
 
 #: owner_bot/ownerbot/bot_messages.py
 msgid "Your companies:"
@@ -23859,8 +24776,8 @@ msgstr "Ваша работа и команда — в боте для сотр�
 msgid ""
 "You don't have a company with dashboard access yet. Create one with /new."
 msgstr ""
-"У вас пока нет компании с доступом к панели управления. Создайте её "
-"командой /new."
+"У вас пока нет компании с доступом к панели управления. Создайте её командой "
+"/new."
 
 #: owner_bot/ownerbot/bot_messages.py
 msgid "Which company?"
@@ -24039,10 +24956,6 @@ msgstr "Новые на этой неделе: %(names)s"
 #, python-format
 msgid "Access paused: %(count)d"
 msgstr "Доступ приостановлен: %(count)d"
-
-#: owner_bot/ownerbot/brief.py
-msgid "People"
-msgstr "Сотрудники"
 
 #: owner_bot/ownerbot/brief.py
 #, python-format
