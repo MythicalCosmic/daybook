@@ -70,6 +70,11 @@ def level_of(total: int) -> Level:
     )
 
 
+def next_level_name(level: Level) -> str | None:
+    """The name of the level after `level` (None at the top)."""
+    return rules.level_name(level.number + 1) if level.next_at is not None else None
+
+
 def levels() -> list[Level]:
     """Every level, lowest first, named in the active language (apps.recognition.rules)."""
     return [level_of(start) for start in rules.LEVELS]
@@ -502,6 +507,7 @@ def me(member: Membership, *, now: datetime | None = None) -> dict:
             "name": level.name,
             "starts_at": level.starts_at,
             "next_at": level.next_at,
+            "next_name": next_level_name(level),
         },
         "streak": current_streak(streak, member, now),
         "best_streak": streak.best if streak else 0,
@@ -626,6 +632,7 @@ def profile(member: Membership, *, now: datetime | None = None) -> dict:
             "name": level.name,
             "starts_at": level.starts_at,
             "next_at": level.next_at,
+            "next_name": next_level_name(level),
         },
         "streak": current_streak(streak, member, now),
         "best_streak": streak.best if streak else 0,

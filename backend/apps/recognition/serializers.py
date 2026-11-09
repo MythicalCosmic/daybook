@@ -34,6 +34,9 @@ class LevelSerializer(serializers.Serializer):
     name = serializers.CharField()
     starts_at = serializers.IntegerField()
     next_at = serializers.IntegerField(allow_null=True)
+    next_name = serializers.CharField(
+        allow_null=True, required=False, help_text="The next level's name (None at the top)."
+    )
 
     class Meta:
         ref_name = "RecognitionLevel"

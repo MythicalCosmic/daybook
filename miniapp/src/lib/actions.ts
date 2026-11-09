@@ -1,6 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 
 import { api, ApiError } from "../api/client";
+import { celebrateTaskDone } from "../features/recognition/parts";
 import { isMissingEndpoint, keys, refreshAfterTaskChange, refreshWork, reopenTask, useTaskAction } from "../api/hooks";
 import type { ConfirmMany, Task } from "../api/types";
 import { useI18n, type Translate } from "../i18n";
@@ -28,8 +29,11 @@ export function useDoneToast(): (done: Task) => void {
   const client = useQueryClient();
   const toast = useToast();
   const { t } = useI18n();
-  const { companyId } = useMember();
+  const member = useMember();
+  const { companyId } = member;
   return (done) => {
+    // Recognition (PLAN-LEARNING §12.2): a small burst of confetti for shared work done on time.
+    celebrateTaskDone(member, done);
     toast(done.status === "review" ? t("toast.sentForCheck") : done.accepted_automatically ? t("toast.accepted") : t("toast.doneShort"), {
       tone: "success",
       action: {

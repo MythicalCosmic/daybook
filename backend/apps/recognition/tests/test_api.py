@@ -44,7 +44,13 @@ def test_me_has_the_contract_shape(shop, ali, api_as):
         3,
         5,
     )
-    assert data["level"] == {"number": 2, "name": "Learner", "starts_at": 100, "next_at": 250}
+    assert data["level"] == {
+        "number": 2,
+        "name": "Learner",
+        "starts_at": 100,
+        "next_at": 250,
+        "next_name": "Active",
+    }
     assert data["badges"][0]["key"] == "first_lesson" and data["badges"][0]["tier"] == "bronze"
     assert data["badges"][0]["icon"] == "circle-play"
     assert "first_lesson" not in {badge["key"] for badge in data["locked"]}

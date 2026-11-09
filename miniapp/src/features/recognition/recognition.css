@@ -1,0 +1,932 @@
+/* Recognition in Daybook: the level chip, medals, the podium and the celebrations, in the app's
+   own tokens (sand, terracotta, sage) with three metals for the badge tiers. Motion is gentle and
+   brief, and only for people who haven't asked for less of it. */
+
+:root {
+  --rcg-bronze-1: #e8b07a;
+  --rcg-bronze-2: #b7733d;
+  --rcg-silver-1: #eef1f4;
+  --rcg-silver-2: #a5adb6;
+  --rcg-gold-1: #ffe08a;
+  --rcg-gold-2: #d39b22;
+  --rcg-flame: #e8743b;
+  --rcg-medal-ink: #3a2a1a;
+}
+
+:root[data-theme="dark"] {
+  --rcg-bronze-1: #d59a63;
+  --rcg-bronze-2: #8f5427;
+  --rcg-silver-1: #cfd5db;
+  --rcg-silver-2: #7f8892;
+  --rcg-gold-1: #f2cd62;
+  --rcg-gold-2: #a8760f;
+  --rcg-flame: #f6a06b;
+  --rcg-medal-ink: #22180e;
+}
+
+.rcg-screen {
+  gap: var(--space-3);
+}
+
+/* The Home chip ------------------------------------------------------------------------------- */
+
+.rcg-chip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 14px 10px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-surface) 82%, var(--color-accent-2-200));
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: transform 160ms ease;
+}
+
+.rcg-chip:active {
+  transform: scale(0.985);
+}
+
+.rcg-chip-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.rcg-chip-name {
+  font-weight: 700;
+  font-size: 15.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rcg-chip-week {
+  font-size: 13.5px;
+  color: var(--muted);
+}
+
+.rcg-chip-flame {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--rcg-flame) 16%, transparent);
+  color: var(--rcg-flame);
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.rcg-chip-chevron {
+  color: var(--muted);
+  flex: none;
+}
+
+/* The level ring ------------------------------------------------------------------------------ */
+
+.rcg-level-ring {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+}
+
+.rcg-level-ring svg {
+  position: absolute;
+  inset: 0;
+}
+
+.rcg-level-ring-track {
+  stroke: color-mix(in srgb, var(--color-text) 12%, transparent);
+}
+
+.rcg-level-ring-value {
+  stroke: var(--color-accent);
+  transition: stroke-dashoffset 700ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.rcg-level-ring-number {
+  position: relative;
+  font-family: var(--font-heading);
+  line-height: 1;
+  color: var(--color-accent-700);
+}
+
+/* Achievements -------------------------------------------------------------------------------- */
+
+.rcg-level-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 14px 16px;
+}
+
+.rcg-level-card > :last-child {
+  grid-column: 1 / -1;
+}
+
+.rcg-level-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rcg-level-kicker {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-accent-700);
+}
+
+.rcg-level-name {
+  font-size: 26px;
+  line-height: 1.1;
+}
+
+.rcg-level-points {
+  font-size: 14.5px;
+  color: var(--muted);
+}
+
+.rcg-level-top {
+  margin: 0;
+  font-weight: 600;
+}
+
+.rcg-streak-card {
+  align-items: center;
+  gap: 14px;
+}
+
+.rcg-flame {
+  display: inline-grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--color-neutral-200);
+  color: var(--muted);
+}
+
+.rcg-flame--on {
+  background: color-mix(in srgb, var(--rcg-flame) 18%, transparent);
+  color: var(--rcg-flame);
+}
+
+.rcg-streak-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rcg-streak-kicker,
+.rcg-subhead {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.rcg-subhead {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 4px 0;
+}
+
+.rcg-streak-days {
+  font-weight: 700;
+  font-size: 17px;
+}
+
+.rcg-streak-note {
+  font-size: 13.5px;
+  color: var(--muted);
+}
+
+.rcg-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.rcg-action {
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 52px;
+  font-weight: 700;
+  color: var(--color-accent-700);
+}
+
+.rcg-badges {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.rcg-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 8px 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  text-align: center;
+}
+
+.rcg-badge-name {
+  font-weight: 700;
+  font-size: 13.5px;
+  line-height: 1.2;
+}
+
+.rcg-badge-how {
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--muted);
+}
+
+.rcg-badge--locked {
+  background: transparent;
+  border: 1.5px dashed var(--color-divider);
+}
+
+.rcg-badge--locked .rcg-badge-name {
+  color: var(--muted);
+}
+
+/* Medals --------------------------------------------------------------------------------------- */
+
+.rcg-medal {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  border-radius: 50%;
+  color: var(--rcg-medal-ink);
+  box-shadow:
+    inset 0 -3px 0 color-mix(in srgb, black 14%, transparent),
+    0 2px 6px color-mix(in srgb, black 14%, transparent);
+}
+
+.rcg-medal--bronze {
+  background: radial-gradient(circle at 32% 28%, var(--rcg-bronze-1), var(--rcg-bronze-2));
+}
+
+.rcg-medal--silver {
+  background: radial-gradient(circle at 32% 28%, var(--rcg-silver-1), var(--rcg-silver-2));
+}
+
+.rcg-medal--gold {
+  background: radial-gradient(circle at 32% 28%, var(--rcg-gold-1), var(--rcg-gold-2));
+}
+
+.rcg-medal--locked {
+  background: var(--color-neutral-200);
+  color: var(--color-neutral-500);
+  box-shadow: none;
+}
+
+.rcg-medal-lock {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--color-bg);
+  color: var(--muted);
+}
+
+.rcg-tier {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--rcg-medal-ink);
+}
+
+.rcg-tier--bronze {
+  background: color-mix(in srgb, var(--rcg-bronze-1) 70%, transparent);
+}
+
+.rcg-tier--silver {
+  background: color-mix(in srgb, var(--rcg-silver-2) 45%, transparent);
+}
+
+.rcg-tier--gold {
+  background: color-mix(in srgb, var(--rcg-gold-1) 80%, transparent);
+}
+
+/* Points history ------------------------------------------------------------------------------- */
+
+.rcg-history {
+  gap: 12px;
+  min-height: 58px;
+}
+
+.rcg-history-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.rcg-history-label {
+  font-weight: 600;
+}
+
+.rcg-history-detail {
+  font-size: 13.5px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rcg-history-points {
+  font-weight: 700;
+  color: var(--color-accent-2-700);
+}
+
+.rcg-history-points--minus {
+  color: var(--color-accent-700);
+}
+
+/* Leaderboard ---------------------------------------------------------------------------------- */
+
+.rcg-scope {
+  align-self: flex-start;
+}
+
+.rcg-me {
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.rcg-me-label {
+  font-weight: 700;
+}
+
+.rcg-me-value {
+  font-weight: 700;
+  color: var(--color-accent-700);
+}
+
+.rcg-me-none {
+  color: var(--muted);
+  font-size: 14px;
+  text-align: right;
+}
+
+.rcg-podium {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+  gap: 8px;
+  padding-top: 18px;
+}
+
+.rcg-podium-place {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.rcg-podium-who {
+  position: relative;
+  display: inline-flex;
+}
+
+.rcg-podium-crown {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-8deg);
+  color: var(--rcg-gold-2);
+}
+
+.rcg-podium-name {
+  max-width: 100%;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rcg-podium-points {
+  font-size: 13.5px;
+  color: var(--muted);
+}
+
+.rcg-podium-step {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  margin-top: 4px;
+  border-radius: var(--radius-md) var(--radius-md) 6px 6px;
+  font-family: var(--font-heading);
+  font-size: 24px;
+  color: var(--rcg-medal-ink);
+}
+
+.rcg-podium-place--1 .rcg-podium-step {
+  height: 92px;
+  background: linear-gradient(180deg, var(--rcg-gold-1), var(--rcg-gold-2));
+}
+
+.rcg-podium-place--2 .rcg-podium-step {
+  height: 68px;
+  background: linear-gradient(180deg, var(--rcg-silver-1), var(--rcg-silver-2));
+}
+
+.rcg-podium-place--3 .rcg-podium-step {
+  height: 52px;
+  background: linear-gradient(180deg, var(--rcg-bronze-1), var(--rcg-bronze-2));
+}
+
+.rcg-podium-place--me .rcg-podium-name {
+  color: var(--color-accent-700);
+}
+
+.rcg-board-row {
+  gap: 12px;
+  min-height: 60px;
+}
+
+.rcg-board-row--me {
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+}
+
+.rcg-board-place {
+  width: 26px;
+  flex: none;
+  text-align: center;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.rcg-board-who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.rcg-board-name {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rcg-board-level {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.rcg-board-points {
+  font-weight: 700;
+}
+
+/* Say thanks ----------------------------------------------------------------------------------- */
+
+.rcg-kudos {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rcg-kudos-label {
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.rcg-search {
+  position: relative;
+}
+
+.rcg-search .input {
+  padding-left: 44px;
+}
+
+.rcg-search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.rcg-people {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 2px 2px 6px;
+  scrollbar-width: none;
+}
+
+.rcg-person {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  width: 72px;
+  min-height: 76px;
+  padding: 6px 2px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.rcg-person:active {
+  background: var(--color-surface);
+}
+
+.rcg-person-name {
+  max-width: 100%;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rcg-people-none {
+  padding: 10px 4px;
+  color: var(--muted);
+}
+
+.rcg-kudos-chosen {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 8px 8px 10px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.rcg-kudos-person {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.rcg-kudos-person-name {
+  font-weight: 700;
+}
+
+.rcg-kudos-person-sub {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.rcg-kudos-badges {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.rcg-kudos-badge {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 84px;
+  padding: 10px 6px;
+  border: 1.5px solid transparent;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.rcg-kudos-badge svg {
+  color: var(--rcg-kudos-tone, var(--color-accent));
+}
+
+.rcg-kudos-badge--thanks {
+  --rcg-kudos-tone: #d9534f;
+}
+
+.rcg-kudos-badge--teamwork {
+  --rcg-kudos-tone: var(--color-accent-2-600);
+}
+
+.rcg-kudos-badge--fast {
+  --rcg-kudos-tone: #d39b22;
+}
+
+.rcg-kudos-badge--careful {
+  --rcg-kudos-tone: #3f8f8a;
+}
+
+.rcg-kudos-badge--helpful {
+  --rcg-kudos-tone: var(--color-accent);
+}
+
+.rcg-kudos-badge--star {
+  --rcg-kudos-tone: #c08a14;
+}
+
+.rcg-kudos-badge--on {
+  border-color: var(--rcg-kudos-tone, var(--color-accent));
+  background: color-mix(in srgb, var(--rcg-kudos-tone, var(--color-accent)) 12%, var(--color-surface));
+}
+
+.rcg-kudos-badge-check {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  color: var(--rcg-kudos-tone, var(--color-accent));
+}
+
+.rcg-kudos-left,
+.rcg-kudos-error {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.rcg-kudos-left--none,
+.rcg-kudos-error {
+  color: var(--color-accent-700);
+}
+
+/* The feed ------------------------------------------------------------------------------------- */
+
+.rcg-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rcg-feed-card {
+  gap: 8px;
+}
+
+.rcg-feed-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rcg-feed-who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.rcg-feed-name {
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rcg-feed-when {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.rcg-feed-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 45%;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--rcg-kudos-tone, var(--color-accent)) 14%, transparent);
+  color: var(--color-text);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.rcg-feed-badge svg {
+  flex: none;
+  color: var(--rcg-kudos-tone, var(--color-accent));
+}
+
+.rcg-feed-message {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.rcg-feed-task {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.rcg-feed-back {
+  align-self: flex-start;
+  margin-left: -10px;
+}
+
+/* The celebration ------------------------------------------------------------------------------ */
+
+.rcg-celebrate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 4px 4px;
+  text-align: center;
+}
+
+.rcg-celebrate-step {
+  align-self: flex-end;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.rcg-celebrate-stage {
+  display: grid;
+  place-items: center;
+  width: 148px;
+  height: 148px;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--rcg-gold-1) 38%, transparent) 0%, transparent 70%);
+}
+
+.rcg-celebrate-level {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 104px;
+  height: 104px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 28%, var(--color-accent-300), var(--color-accent));
+  color: #fff;
+  font-family: var(--font-heading);
+  font-size: 46px;
+  box-shadow: var(--shadow-md);
+}
+
+.rcg-celebrate-sparkle {
+  position: absolute;
+  top: -6px;
+  right: -4px;
+  color: var(--rcg-gold-2);
+}
+
+.rcg-celebrate-kicker {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-accent-700);
+}
+
+.rcg-celebrate-title {
+  margin: 0;
+  font-size: 26px;
+  line-height: 1.15;
+}
+
+.rcg-celebrate-body {
+  margin: 0 0 6px;
+  max-width: 30ch;
+  color: var(--muted);
+}
+
+.rcg-celebrate .btn {
+  margin-top: 8px;
+}
+
+/* Motion, for people who haven't asked for less of it ------------------------------------------- */
+
+@media (prefers-reduced-motion: no-preference) {
+  .rcg-chip-flame svg {
+    animation: rcg-flicker 1.6s ease-in-out 3;
+    transform-origin: 50% 90%;
+  }
+
+  .rcg-medal--pop,
+  .rcg-celebrate-level {
+    animation: rcg-pop 620ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  .rcg-celebrate-stage {
+    animation: rcg-glow 2.4s ease-in-out 1;
+  }
+
+  .rcg-podium-step {
+    animation: rcg-rise 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .rcg-podium-place--2 .rcg-podium-step {
+    animation-delay: 80ms;
+  }
+
+  .rcg-podium-place--3 .rcg-podium-step {
+    animation-delay: 160ms;
+  }
+
+  .rcg-kudos-badge--on svg {
+    animation: rcg-pop 360ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rcg-level-ring-value,
+  .rcg-chip,
+  .rcg-kudos-badge {
+    transition: none;
+  }
+}
+
+@media (hover: hover) {
+  .rcg-chip:hover {
+    box-shadow: var(--shadow-md);
+  }
+
+  .rcg-person:hover,
+  .rcg-kudos-badge:hover {
+    background: color-mix(in srgb, var(--color-text) 6%, var(--color-surface));
+  }
+}
+
+@keyframes rcg-flicker {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+  35% {
+    transform: scale(1.12) rotate(-6deg);
+  }
+  70% {
+    transform: scale(0.96) rotate(4deg);
+  }
+}
+
+@keyframes rcg-pop {
+  0% {
+    transform: scale(0.4) rotate(-12deg);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes rcg-glow {
+  0%,
+  100% {
+    transform: scale(0.96);
+  }
+  50% {
+    transform: scale(1.04);
+  }
+}
+
+@keyframes rcg-rise {
+  from {
+    transform: translateY(18px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
