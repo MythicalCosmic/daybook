@@ -36,6 +36,7 @@ from django.conf import settings
 from django.db.models import Q
 from django.http import Http404, HttpResponse
 from django.utils import timezone
+from django.utils.crypto import constant_time_compare
 from django.utils.translation import gettext as _
 from django.utils.translation import ngettext
 from drf_spectacular.types import OpenApiTypes
@@ -69,7 +70,6 @@ from apps.signin import services as signin
 from apps.signin.auth import FromDashboard, OwnerJWTAuthentication
 from apps.signin.tokens import SESSION_CLAIM
 
-PHOTO_SIDE = 640
 LANGUAGES = list(shapes.LANGUAGES)
 YES, NO = ("1", "true", "yes", "on", "linked"), ("0", "false", "no", "off", "not_linked")
 
@@ -156,6 +156,7 @@ def edition_payload() -> dict:
             "product": "Daybook",
             "organization": None,
             "needs_setup": False,
+            "setup_token_required": False,
             "default_language": "uz",
             "languages": LANGUAGES,
             "telegram": {
@@ -176,6 +177,7 @@ def edition_payload() -> dict:
         if company
         else None,
         "needs_setup": services.needs_setup(),
+        "setup_token_required": bool(settings.DAVOMAT_SETUP_TOKEN),
         "default_language": company.default_language if company else "uz",
         "languages": LANGUAGES,
         "telegram": {
@@ -225,6 +227,7 @@ class SetupView(PublicCookieView):
         request=shapes.SetupSerializer,
         responses={
             201: OpenApiResponse(description="Signed in: {access} and the refresh cookie."),
+            403: OpenApiResponse(description="A wrong setup code (code: setup_token)."),
             409: OpenApiResponse(description="The organization exists already."),
         },
     )
@@ -234,6 +237,15 @@ class SetupView(PublicCookieView):
         serializer = shapes.SetupSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
+        expected = settings.DAVOMAT_SETUP_TOKEN
+        if expected and not constant_time_compare(data.get("setup_token", ""), expected):
+            return Response(
+                {
+                    "detail": _("This setup code is wrong. Use the one the installer printed."),
+                    "code": "setup_token",
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
         try:
             with field_errors():
                 owner = services.setup_organization(
@@ -684,6 +696,7 @@ class EmployeeViewSet(DavomatOnly, OwnerViewSet):
             "create",
             "partial_update",
             "photo",
+            "photo_from_scan",
             "leave",
             "return_",
             "face_numbers",
@@ -817,8 +830,16 @@ class EmployeeViewSet(DavomatOnly, OwnerViewSet):
             upload = request.FILES.get("photo")
             if upload is None:
                 raise ValidationError({"photo": [_("Choose a photo.")]})
-            picture = sanitize_image(upload, max_side=PHOTO_SIDE)
+            picture = sanitize_image(upload, max_side=services.PHOTO_SIDE)
         services.set_photo(person, by=self.membership, photo=picture)
+        return Response(self._payload(person))
+
+    @extend_schema(request=None, responses=shapes.EmployeeSerializer)
+    @action(detail=True, methods=["post"], url_path="photo/from-scan")
+    def photo_from_scan(self, request, company_id, pk):
+        """Their latest terminal snapshot becomes their photo (400 when there is none)."""
+        person = self._one(pk)
+        services.photo_from_scan(person, by=self.membership)
         return Response(self._payload(person))
 
     @extend_schema(request=shapes.LeaveSerializer, responses=shapes.EmployeeSerializer)
