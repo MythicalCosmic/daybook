@@ -18,7 +18,7 @@ import io
 from datetime import date, datetime
 
 from django.core.exceptions import PermissionDenied
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.utils.translation import gettext as _
 
 from apps.companies.models import Branch, Company
@@ -73,7 +73,15 @@ SYNONYMS = {
         "номер",
         "номерfaceid",
     ),
-    "hire_date": ("hiredate", "hired", "startdate", "ishgakirgan", "ishgakirgansana", "датаприема"),
+    "hire_date": (
+        "hiredate",
+        "hired",
+        "startdate",
+        "ishgakirgan",
+        "ishgakirgansana",
+        "датаприема",
+        "датаприёма",
+    ),
 }
 
 
@@ -264,6 +272,9 @@ def import_employees(company: Company, upload, *, by: Membership, dry_run: bool 
                         _update(match, by, fields_)
         except (DomainError, PermissionDenied) as exc:
             entry["action"], entry["errors"] = "skip", [str(exc)]
+        except IntegrityError:  # saved by someone else a moment ago (a number, a username)
+            entry["action"] = "skip"
+            entry["errors"] = [_("This row clashes with a change made a moment ago. Try again.")]
         result[{"create": "created", "update": "updated", "skip": "skipped"}[entry["action"]]] += 1
         result["rows"].append(entry)
     result["rows"] = result["rows"][:MAX_REPORTED]
