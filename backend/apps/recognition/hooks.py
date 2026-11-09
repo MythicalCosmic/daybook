@@ -7,6 +7,7 @@ from django.utils.translation import gettext_lazy as _
 
 from apps.audit import registry as audit_registry
 from apps.console import registry
+from apps.exports.registry import register_exporter
 from apps.inbox.registry import register_kind
 from apps.members.permissions import Perm
 from apps.recognition import notify, providers
@@ -22,6 +23,14 @@ audit_registry.register_target("kudos", Perm.RECOGNITION_MANAGE)
 registry.register_pulse("recognition", perm=providers.READ, count=None, feature=FEATURE)
 registry.register_stream(
     "recognition.kudos", perm=providers.READ, fetch=providers.stream, feature=FEATURE
+)
+register_exporter(
+    "recognition.leaderboard",
+    perm=providers.READ,
+    label=_("Leaderboard"),
+    columns=providers.LEADERBOARD_COLUMNS,
+    rows=providers.leaderboard_rows,
+    feature=FEATURE,
 )
 
 # The bot message with "Say thanks back" goes out on its own (notify.kudos), like the tasks

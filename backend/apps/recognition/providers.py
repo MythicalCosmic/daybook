@@ -20,6 +20,46 @@ READ = AnyOf(Perm.MEMBERS_VIEW, Perm.LEARNING_VIEW, Perm.RECOGNITION_MANAGE)
 MANAGE = Perm.RECOGNITION_MANAGE
 
 
+LEADERBOARD_COLUMNS = (
+    ("place", _("Place"), "number"),
+    ("name", _("Name"), "text"),
+    ("position", _("Position"), "text"),
+    ("points", _("Points"), "number"),
+    ("level", _("Level"), "number"),
+    ("level_name", _("Level name"), "text"),
+)
+
+
+def leaderboard_rows(member: Membership, params: dict):
+    """The dashboard's leaderboard as it is filtered (`period`, `date`, `branch`, `kind`), in
+    the member's branch scope."""
+    from django.utils.dateparse import parse_date
+
+    period = params.get("period") if params.get("period") in queries.PERIODS else "week"
+    seen = scope.branch_ids(member)
+    branch_ids = seen
+    branch = str(params.get("branch") or "")
+    if branch.isdigit() and (seen is None or int(branch) in seen):
+        branch_ids = [int(branch)]
+    reasons = queries.LEARNING_REASONS if params.get("kind") == "learning" else None
+    board = queries.leaderboard(
+        member.company,
+        period=period,
+        branch_ids=branch_ids,
+        day=parse_date(str(params.get("date") or "")) if params.get("date") else None,
+        reasons=reasons,
+    )
+    for row in board.rows:
+        yield {
+            "place": row.place,
+            "name": str(row.member),
+            "position": row.member.position.name if row.member.position_id else "",
+            "points": row.points,
+            "level": row.level.number,
+            "level_name": row.level.name,
+        }
+
+
 def stream(member: Membership, since: datetime | None, limit: int) -> list:
     """Thanks between colleagues, newest first, in the member's scope."""
     from apps.console.registry import StreamItem

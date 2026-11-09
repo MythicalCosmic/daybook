@@ -103,6 +103,29 @@ def test_staff_board_off_and_branch_scope(shop, ali, nigora, madina, head):
     ]
 
 
+def test_the_export_follows_the_filters_and_the_scope(shop, owner, head, ali, nigora, yunusobod):
+    from apps.recognition import providers
+
+    give(ali, 30, MONDAY)
+    give(nigora, 50, MONDAY, reason="lesson")
+    rows = list(providers.leaderboard_rows(owner, {"period": "week"}))
+    assert [row["name"] for row in rows] == ["Nigora Azimova", "Alisher Valiyev"]
+    assert rows[0] == {
+        "place": 1,
+        "name": "Nigora Azimova",
+        "position": "",
+        "points": 50,
+        "level": 1,
+        "level_name": "Newcomer",
+    }
+    only = list(providers.leaderboard_rows(owner, {"period": "week", "branch": str(yunusobod.pk)}))
+    assert [row["name"] for row in only] == ["Nigora Azimova"]
+    # The head sees Chilonzor only, whatever the filter asks.
+    assert [row["name"] for row in providers.leaderboard_rows(head, {"branch": yunusobod.pk})] == [
+        "Alisher Valiyev"
+    ]
+
+
 def test_summary_and_levels_contract(shop, ali, freeze):
     give(ali, 300, MONDAY - timedelta(days=10))
     give(ali, 40, MONDAY + timedelta(days=1))
