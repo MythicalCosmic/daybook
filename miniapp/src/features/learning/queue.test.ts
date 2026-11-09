@@ -6,11 +6,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ApiError } from "../../api/client";
-import { drain, mergeJobs, queueState, resetQueue, restore, retryAll, send, type QueueJob } from "./queue";
+import { initData } from "../../telegram";
+import { drain, mergeJobs, queueState, resetQueue, restore, retryAll, send, storageKey, type QueueJob } from "./queue";
 import type { ProgressReport } from "./types";
 
 const api = vi.hoisted(() => vi.fn());
 vi.mock("../../api/client", async (importOriginal) => ({ ...(await importOriginal<typeof import("../../api/client")>()), api }));
+vi.mock("../../telegram", async (importOriginal) => ({ ...(await importOriginal<typeof import("../../telegram")>()), initData: vi.fn(() => "") }));
 
 const progress = (report: Partial<ProgressReport> = {}): QueueJob => {
   const body: ProgressReport = { session: "s1", position: 10, duration: 120, ranges: [[0, 10]], playing: true, ...report };
@@ -134,6 +136,30 @@ describe("the retry queue", () => {
     await vi.advanceTimersByTimeAsync(0);
     await expect(again).resolves.toBe(true);
     await expect(drain("answer:9:")).resolves.toBe(true);
+  });
+
+  it("keeps each Telegram account's reports apart (a phone may hold two)", async () => {
+    const as = (id: number) => vi.mocked(initData).mockReturnValue(`user=${encodeURIComponent(JSON.stringify({ id, first_name: "A" }))}&hash=x`);
+    as(4242);
+    expect(storageKey()).toBe("daybook.learning.queue.v1:4242");
+    api.mockImplementation(offline);
+    void send(answer(12, "a"));
+    await flush();
+    expect(localStorage.getItem("daybook.learning.queue.v1:4242")).toContain("answer:9:12");
+    resetQueue();
+    localStorage.setItem("daybook.learning.queue.v1:4242", JSON.stringify([{ job: answer(12, "a"), at: Date.now() }]));
+    api.mockReset();
+    api.mockResolvedValue(undefined);
+    // Someone else opens the app on this phone: Alisher's report stays for Alisher.
+    as(1004);
+    restore();
+    await flush();
+    expect(api).not.toHaveBeenCalled();
+    as(4242);
+    restore();
+    await flush();
+    expect(bodies()).toEqual([{ question: 12, answer: { option: "a" } }]);
+    vi.mocked(initData).mockReturnValue("");
   });
 
   it("merges reading time and keeps the furthest scroll", () => {

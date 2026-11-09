@@ -14,6 +14,7 @@
 import { useSyncExternalStore } from "react";
 
 import { api, ApiError } from "../../api/client";
+import { initData } from "../../telegram";
 import type { Answer, PageViewReport, ProgressReport, Range } from "./types";
 import { capRanges, normaliseRanges } from "./tracker";
 
@@ -65,11 +66,24 @@ function changed(): void {
   listeners.forEach((listener) => listener());
 }
 
+/**
+ * Where the reports are kept: per Telegram account (a phone may hold two, sharing the webview's
+ * storage), so one person's reports never go out signed in as the other.
+ */
+export function storageKey(): string {
+  try {
+    const user = JSON.parse(new URLSearchParams(initData()).get("user") ?? "null") as { id?: number } | null;
+    return user?.id ? `${STORAGE_KEY}:${user.id}` : STORAGE_KEY;
+  } catch {
+    return STORAGE_KEY;
+  }
+}
+
 function persist(): void {
   try {
     const kept = [...slots.values()].flatMap((slot) => [slot.inflight, slot.waiting]).filter((entry): entry is Entry => entry !== null);
-    if (kept.length) localStorage.setItem(STORAGE_KEY, JSON.stringify(kept.map(({ job, at }) => ({ job, at }))));
-    else localStorage.removeItem(STORAGE_KEY);
+    if (kept.length) localStorage.setItem(storageKey(), JSON.stringify(kept.map(({ job, at }) => ({ job, at }))));
+    else localStorage.removeItem(storageKey());
   } catch {
     // Private mode or full storage: the reports still go while the app is open.
   }
@@ -221,7 +235,7 @@ export function restoreOnce(): void {
 export function restore(): void {
   let saved: { job: QueueJob; at: number }[] = [];
   try {
-    saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]") as { job: QueueJob; at: number }[];
+    saved = JSON.parse(localStorage.getItem(storageKey()) ?? "[]") as { job: QueueJob; at: number }[];
   } catch {
     return;
   }
