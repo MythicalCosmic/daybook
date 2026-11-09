@@ -26,6 +26,8 @@ import ToggleSwitch from "@/components/ToggleSwitch.vue";
 import UiButton from "@/components/UiButton.vue";
 import { toast } from "@/components/useToast";
 import { editionInfo } from "@/core/edition";
+import { formatDay, formatInstant, zonedDay } from "@/lib/dates";
+import { capitalize } from "@/lib/format";
 import { useCan } from "@/lib/usePermission";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useForm } from "@/lib/useForm";
@@ -99,15 +101,13 @@ watch(
 const zones = computed(() => zoneOptions(t, form.values.timezone));
 const languages = computed(() => LANGUAGES.map((language: Language) => ({ value: language, label: t(`shell.language.${language}`) })));
 
+// The house date helpers: they spell Uzbek weekdays themselves (browsers often lack Uzbek).
 const localTime = computed(() => {
   try {
-    return new Intl.DateTimeFormat(locale.value === "en" ? "en-GB" : locale.value, {
-      timeZone: form.values.timezone,
-      hour: "2-digit",
-      minute: "2-digit",
-      weekday: "long",
-      hour12: false,
-    }).format(new Date(now.value));
+    const lang: Language = locale.value === "ru" || locale.value === "en" ? locale.value : "uz";
+    const moment = new Date(now.value);
+    const zone = form.values.timezone;
+    return `${capitalize(formatDay(zonedDay(moment, zone), lang, "weekday"))} ${formatInstant(moment, zone, lang, "time")}`;
   } catch {
     return "";
   }

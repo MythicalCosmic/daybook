@@ -49,7 +49,7 @@
   "davomat.branches.reopened": "Филиал снова открыт: {name}",
   "davomat.branches.saved": "Сохранено: {name}",
   "davomat.branches.terminals": "Терминалы Face ID",
-  "davomat.brand.tagline": "Учёт посещаемости и Face ID",
+  "davomat.brand.tagline": "Учёт рабочего времени и Face ID",
   "davomat.cmd.addEmployee": "Добавить сотрудника",
   "davomat.cmd.import": "Импорт сотрудников из Excel",
   "davomat.cmd.telegram": "Telegram-бот",
@@ -662,5 +662,10 @@
   "davomat.users.usernameShort": "Не менее 3 символов",
   "davomat.users.you": "Вы",
   "davomat.login.lockedFor": "Слишком много неверных паролей. Попробуйте через {n} минуту. | Слишком много неверных паролей. Попробуйте через {n} минуты. | Слишком много неверных паролей. Попробуйте через {n} минут.",
-  "davomat.login.noAccess": "У этого аккаунта нет доступа к веб-приложению. Обратитесь к администратору."
+  "davomat.login.noAccess": "У этого аккаунта нет доступа к веб-приложению. Обратитесь к администратору.",
+  "davomat.overview.feed.filter.label": "Показать",
+  "davomat.overview.feed.filter.all": "Все",
+  "davomat.overview.feed.filter.late": "Опоздания",
+  "davomat.overview.feed.filter.unknown": "Неизвестные лица",
+  "davomat.overview.feed.filter.none": "Сегодня таких отметок нет."
 }

@@ -49,7 +49,7 @@
   "davomat.branches.reopened": "Qayta ochildi: {name}",
   "davomat.branches.saved": "Saqlandi: {name}",
   "davomat.branches.terminals": "Face ID terminallari",
-  "davomat.brand.tagline": "Davomat va Face ID",
+  "davomat.brand.tagline": "Ish vaqti hisobi va Face ID",
   "davomat.cmd.addEmployee": "Xodim qo‘shish",
   "davomat.cmd.import": "Xodimlarni Exceldan yuklash",
   "davomat.cmd.telegram": "Telegram bot",
@@ -662,5 +662,10 @@
   "davomat.users.usernameShort": "Kamida 3 belgi",
   "davomat.users.you": "Siz",
   "davomat.login.lockedFor": "Parol ko‘p marta noto‘g‘ri kiritildi. {n} daqiqadan keyin qayta urinib ko‘ring. | Parol ko‘p marta noto‘g‘ri kiritildi. {n} daqiqadan keyin qayta urinib ko‘ring. | Parol ko‘p marta noto‘g‘ri kiritildi. {n} daqiqadan keyin qayta urinib ko‘ring.",
-  "davomat.login.noAccess": "Bu hisob veb-ilovaga kira olmaydi. Administratoringizga murojaat qiling."
+  "davomat.login.noAccess": "Bu hisob veb-ilovaga kira olmaydi. Administratoringizga murojaat qiling.",
+  "davomat.overview.feed.filter.label": "Ko‘rsatish",
+  "davomat.overview.feed.filter.all": "Hammasi",
+  "davomat.overview.feed.filter.late": "Kechikkanlar",
+  "davomat.overview.feed.filter.unknown": "Noma’lum yuzlar",
+  "davomat.overview.feed.filter.none": "Bugun bunday skan yo‘q."
 }

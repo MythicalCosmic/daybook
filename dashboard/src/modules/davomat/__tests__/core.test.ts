@@ -347,6 +347,12 @@ describe("overview", () => {
     expect(feed).toContain("Late 14 min");
     expect(feed).toContain("Unknown face");
     expect(wrapper.get("[data-testid=here-now]").text()).toContain("Person");
+    // The feed's own filter: only the faces nobody is linked to.
+    const unknown = wrapper.get("[data-testid=feed-filter]").findAll("[role=radio]").find((item) => item.text().includes("Unknown faces"))!;
+    await unknown.trigger("click");
+    await flushPromises();
+    expect(wrapper.get("[data-testid=feed-list]").text()).not.toContain("Late 14 min");
+    expect(wrapper.get("[data-testid=feed-list]").text()).toContain("Unknown face");
     // A KPI narrows "Needs a look" to its people.
     await wrapper.get("[data-testid=kpi-leave]").trigger("click");
     expect(wrapper.get("[data-testid=attention]").text()).toContain("Person 5");
