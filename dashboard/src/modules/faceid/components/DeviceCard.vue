@@ -1,8 +1,9 @@
 <script setup lang="ts">
 /**
  * One terminal: a status ring (online, quiet, never connected, switched off), its model, branch
- * and direction, the last scan, today's scans and a small per-hour chart, a clock warning when the
- * terminal's time is off, and for managers the setup values, a new code and the switch.
+ * and direction, the last scan, today's scans and a small per-hour chart, the old history it sent
+ * first (skipped), a clock warning when the terminal's time is off, and for managers the setup
+ * values, a new code and the switch.
  */
 import { Clock, DoorOpen, KeyRound, Power, Settings2, TriangleAlert } from "@lucide/vue";
 import { computed } from "vue";
@@ -14,6 +15,7 @@ import UiButton from "@/components/UiButton.vue";
 
 import { clockOf, directionKey, peak, STATUS_TONES } from "../lib";
 import type { Device } from "../types";
+import HistoryNote from "./HistoryNote.vue";
 
 const props = defineProps<{ device: Device; canManage: boolean; busy?: boolean }>();
 defineEmits<{ setup: [device: Device]; regenerate: [device: Device]; toggle: [device: Device] }>();
@@ -61,7 +63,8 @@ const now = new Date().getHours();
       </div>
     </div>
 
-    <p v-if="device.clock_off" class="flex items-start gap-2 rounded-[10px] bg-warning-soft px-3 py-2 text-sm text-warning">
+    <HistoryNote :history="device.history" />
+    <p v-if="device.clock_off && !device.history.clock_hides" class="flex items-start gap-2 rounded-[10px] bg-warning-soft px-3 py-2 text-sm text-warning">
       <TriangleAlert :size="15" class="mt-0.5 shrink-0" aria-hidden="true" />
       <span>{{ (device.clock_offset_s ?? 0) < 0 ? t("faceid.terminals.clockBehind", { n: offMinutes }) : t("faceid.terminals.clockAhead", { n: offMinutes }) }}</span>
     </p>
