@@ -26,6 +26,7 @@ import { useCan } from "@/lib/usePermission";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useForm } from "@/lib/useForm";
 import { useCompanyId, useCompanyStore } from "@/stores/company";
+import { useSessionStore } from "@/stores/session";
 
 import { davomatKeys, disconnectTelegram, saveTelegramToken, testTelegram, useBrandRefresh, useTelegram, userTelegramLink } from "../api";
 import BotFatherGuide from "../components/settings/BotFatherGuide.vue";
@@ -124,14 +125,18 @@ async function sendTest(): Promise<void> {
 
 // ─── Your own Telegram ────────────────────────────────────────────────────────
 
+const session = useSessionStore();
 const users = useUsersWhen(canSeeUsers);
 const me = computed(() => (users.data.value ?? []).find((user) => user.id === company.current?.membership_id) ?? null);
-const meLinked = computed(() => me.value?.telegram_linked ?? false);
+// The users list when the person may read it, else their own account (a linked Telegram has an id).
+const meLinked = computed(() => me.value?.telegram_linked ?? (session.me?.user.telegram_id ?? null) !== null);
 const linkOpen = ref(false);
 const createMyLink = () => userTelegramLink(cid.value, company.current?.membership_id ?? 0);
 watch(linkOpen, (open) => {
   // Back from the dialog: the person may have linked; show it.
-  if (!open && canSeeUsers.value) void users.refetch();
+  if (open) return;
+  if (canSeeUsers.value) void users.refetch();
+  void session.loadMe().catch(() => undefined);
 });
 
 const sends = computed(() => [
