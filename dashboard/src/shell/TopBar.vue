@@ -4,7 +4,7 @@
  * available), the inbox bell, theme, language and the account menu. On phones: the company
  * switcher, search, bell and account.
  */
-import { Bell, Keyboard, Languages, LogOut, Monitor, Moon, MonitorSmartphone, Rows3, Search, Sparkles, Sun } from "@lucide/vue";
+import { Bell, Keyboard, Languages, LogOut, Monitor, Moon, MonitorSmartphone, Rows3, Search, Sparkles, Sun, UserRoundCog } from "@lucide/vue";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
@@ -20,8 +20,9 @@ import KbdKey from "@/components/KbdKey.vue";
 import UiTooltip from "@/components/UiTooltip.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
 import { LANGUAGES } from "@/api/types";
-import { findModule } from "@/core/modules";
-import { moduleNavItems } from "@/core/nav";
+import { isDavomat } from "@/core/edition";
+import { findModule, type DashboardModule, type ModuleGroup, type NavItem } from "@/core/modules";
+import { moduleNavItems, moduleRows } from "@/core/nav";
 import { currentLanguage } from "@/i18n";
 import { pageTitleFor } from "@/lib/usePageTitle";
 import { usePaletteStore } from "@/stores/palette";
@@ -29,7 +30,16 @@ import { useSessionStore } from "@/stores/session";
 import { useUiStore, type Density, type ThemeMode } from "@/stores/ui";
 
 import CompanySwitcher from "./CompanySwitcher.vue";
+import EditionBrand from "./EditionBrand.vue";
 import { loadPalette } from "./paletteLoader";
+
+/** What a breadcrumb needs of a sidebar row. */
+interface NavRowSpec {
+  key: string;
+  title: string;
+  group: ModuleGroup;
+  items: NavItem[];
+}
 
 const props = defineProps<{
   phone: boolean;
@@ -47,6 +57,23 @@ const session = useSessionStore();
 const ui = useUiStore();
 const palette = usePaletteStore();
 
+/**
+ * The module's sidebar row this page belongs to (a module may bring several, like Davomat's
+ * Overview, Team and Settings): the row with the longest item path the page sits under.
+ */
+function rowOf(module: DashboardModule, path: string, base: string): NavRowSpec {
+  const rows = moduleRows(module);
+  let best: { row: NavRowSpec; length: number } | null = null;
+  for (const row of rows) {
+    for (const item of row.items) {
+      const full = `${base}/${item.to}`.replace(/\/$/, "");
+      const inside = item.to === "" ? path.replace(/\/$/, "") === full : path === full || path.startsWith(`${full}/`);
+      if (inside && (!best || full.length > best.length)) best = { row, length: full.length };
+    }
+  }
+  return best?.row ?? rows[0] ?? { key: module.id, title: module.title, group: module.group, items: moduleNavItems(module) };
+}
+
 const crumbs = computed<Crumb[]>(() => {
   const module = findModule(route.matched.map((r) => r.meta.module).find(Boolean));
   if (!module) {
@@ -54,23 +81,25 @@ const crumbs = computed<Crumb[]>(() => {
     return title ? [{ label: t(title) }] : [];
   }
   const companyId = route.params.companyId;
-  const first = moduleNavItems(module)[0];
   const base = `/c/${Array.isArray(companyId) ? companyId[0] : companyId}`;
-  const list: Crumb[] = [{ label: t(`shell.group.${module.group}`) }];
-  const moduleTitle = t(module.title);
+  const row = rowOf(module, route.path, base);
+  const first = row.items[0];
+  const list: Crumb[] = [{ label: t(`shell.group.${row.group}`) }];
+  const moduleTitle = t(row.title);
   list.push({ label: moduleTitle, to: first ? `${base}/${first.to}`.replace(/\/$/, "") : base });
   const pageTitle = [...route.matched].reverse().find((r) => r.meta.title)?.meta.title;
   // A page showing one record names it (usePageTitle): "Projects › Yunusobod storage room".
   const named = pageTitleFor(route);
   if (named) list.push({ label: named });
   else if (pageTitle && t(pageTitle) !== moduleTitle) list.push({ label: t(pageTitle) });
-  return module.group === "overview" ? list.slice(1) : list;
+  return row.group === "overview" ? list.slice(1) : list;
 });
 
 const user = computed(() => session.me?.user ?? null);
+const davomat = isDavomat();
 const hasSessionsPage = computed(() => {
   const id = route.params.companyId;
-  if (!id) return false;
+  if (!id || davomat) return false;
   return router.resolve(`/c/${Array.isArray(id) ? id[0] : id}/settings/sessions`).name !== "company-not-found";
 });
 
@@ -78,6 +107,15 @@ const languageNames = computed(() => Object.fromEntries(LANGUAGES.map((l) => [l,
 
 const accountMenu = computed<MenuEntry[]>(() => {
   const entries: MenuEntry[] = [];
+  // Davomat: the password, language and appearance live in Settings › Your account.
+  if (davomat && route.params.companyId) {
+    const id = route.params.companyId;
+    entries.push({
+      label: t("davomat.settings.account.title"),
+      icon: UserRoundCog,
+      onSelect: () => void router.push(`/c/${Array.isArray(id) ? id[0] : id}/settings/account`),
+    });
+  }
   if (hasSessionsPage.value) {
     const id = route.params.companyId;
     entries.push({
@@ -151,7 +189,10 @@ const languageMenu = computed<MenuEntry[]>(() => [
     class="flex h-[var(--topbar-h)] shrink-0 items-center gap-2 border-b border-line bg-surface/85 px-3 backdrop-blur-md md:px-4"
     :class="phone && 'sticky top-0 z-30 pt-[var(--safe-top)] h-[calc(var(--topbar-h)+var(--safe-top))]'"
   >
-    <CompanySwitcher v-if="phone || companyless" variant="compact" />
+    <template v-if="phone || companyless">
+      <EditionBrand v-if="davomat" variant="compact" />
+      <CompanySwitcher v-else variant="compact" />
+    </template>
 
     <Breadcrumbs v-if="!phone && !companyless && crumbs.length" :items="crumbs" />
 

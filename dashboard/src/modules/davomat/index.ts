@@ -46,7 +46,6 @@ export default defineModule({
       key: "employees",
       title: "davomat.nav.employees",
       to: "team",
-      exact: true,
       perm: "members.view",
       row: { key: "davomat.team", title: "davomat.nav.team", icon: Users, group: "people", order: 25, hotkey: "e" },
     },
@@ -55,8 +54,9 @@ export default defineModule({
     { key: "branches", title: "davomat.nav.branches", to: "team/branches", perm: "members.view" },
     { key: "settings", title: "davomat.nav.settings", to: "settings", row: { key: "davomat.settings", title: "davomat.nav.settings", icon: Settings, group: "company", order: 10, hotkey: "," } },
   ],
-  // apps/davomat (users, employees, telegram), people and company changes (members, companies).
-  invalidates: ["davomat", "members", "companies"],
+  // apps/davomat (users, employees, telegram), people and company changes (members, companies),
+  // and every scan and check-in (the Overview, the employees' "today", the employee page).
+  invalidates: ["davomat", "members", "companies", "faceid", "attendance"],
   commands: (ctx) => [
     {
       id: "davomat.addEmployee",

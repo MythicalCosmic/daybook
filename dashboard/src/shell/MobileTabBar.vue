@@ -8,8 +8,9 @@ import { computed, type Component } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink, useRoute } from "vue-router";
 
+import { isDavomat } from "@/core/edition";
 import type { ModuleGroup } from "@/core/modules";
-import type { NavGroup, NavModule } from "@/core/nav";
+import { isActivePath, type NavGroup, type NavModule } from "@/core/nav";
 import { findModule } from "@/core/modules";
 import { formatCount } from "@/lib/format";
 
@@ -37,7 +38,20 @@ function badgeOf(groupIds: ModuleGroup[]): number {
   return props.groups.filter((g) => groupIds.includes(g.id)).reduce((sum, g) => sum + g.badge, 0);
 }
 
+/** Davomat: its own rows as tabs (Overview, Attendance, Face ID, Team); Settings is under More. */
+const DAVOMAT_TABS = ["davomat", "attendance", "faceid", "davomat.team"];
+const davomat = isDavomat();
+const rows = computed(() => props.groups.flatMap((group) => group.modules));
+const contains = (row: NavModule, path: string) => [row, ...row.children].some((entry) => isActivePath(entry, path));
+
 const tabs = computed<Tab[]>(() => {
+  if (davomat) {
+    return DAVOMAT_TABS.flatMap((key) => {
+      const row = rows.value.find((entry) => entry.key === key);
+      if (!row) return [];
+      return [{ id: key, label: t(row.title), icon: row.icon ?? House, target: row, groups: [row.group], badge: row.badge }];
+    });
+  }
   const specs: Array<{ id: string; icon: Component; groups: ModuleGroup[]; preferred: string[] }> = [
     { id: "today", icon: House, groups: ["overview"], preferred: ["overview", "inbox"] },
     { id: "work", icon: ListChecks, groups: ["work"], preferred: ["tasks", "projects"] },
@@ -54,6 +68,7 @@ const tabs = computed<Tab[]>(() => {
 const currentGroup = computed(() => findModule(route.matched.map((r) => r.meta.module).find(Boolean))?.group);
 const activeTab = computed(() => {
   if (props.moreOpen) return "more";
+  if (davomat) return tabs.value.find((tab) => contains(tab.target, route.path))?.id ?? "more";
   const group = currentGroup.value;
   return tabs.value.find((tab) => group && tab.groups.includes(group))?.id ?? "more";
 });

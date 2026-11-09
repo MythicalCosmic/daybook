@@ -7,19 +7,15 @@
   "davomat.nav.branches": "Filiallar",
   "davomat.nav.settings": "Sozlamalar",
   "davomat.employee.title": "Xodim",
-
   "davomat.cmd.addEmployee": "Xodim qo‘shish",
   "davomat.cmd.import": "Xodimlarni Exceldan yuklash",
   "davomat.cmd.users": "Foydalanuvchilar va rollar",
   "davomat.cmd.telegram": "Telegram bot",
-
   "davomat.settings.organization.title": "Tashkilot",
   "davomat.settings.users.title": "Foydalanuvchilar va rollar",
   "davomat.settings.telegram.title": "Telegram",
   "davomat.settings.account.title": "Hisobingiz",
-
   "davomat.brand.tagline": "Davomat va Face ID",
-
   "davomat.login.title": "Kirish",
   "davomat.login.lead": "Xush kelibsiz. Login va parolingiz bilan kiring.",
   "davomat.login.username": "Login",
@@ -43,7 +39,6 @@
   "davomat.login.feature.late": "Kechikish va erta ketish daqiqasigacha hisoblanadi",
   "davomat.login.feature.reports": "Tabel va hisobotlar bir bosishda",
   "davomat.login.secure": "Ma’lumotlaringiz tashkilotingizning o‘z serverida saqlanadi.",
-
   "davomat.setup.title": "Sozlash",
   "davomat.setup.welcome": "Xush kelibsiz",
   "davomat.setup.lead": "Uchta qisqa qadam va davomat tizimingiz tayyor.",
@@ -84,7 +79,6 @@
   "davomat.setup.error.taken": "Bu server allaqachon sozlangan. Tizimga kiring.",
   "davomat.setup.error.generic": "Sozlashni yakunlab bo‘lmadi. Maydonlarni tekshirib, qayta urinib ko‘ring.",
   "davomat.setup.signIn": "Kirish sahifasiga o‘tish",
-
   "davomat.password.tooShort": "Kamida 8 belgi.",
   "davomat.password.strength.weak": "Kuchsiz",
   "davomat.password.strength.fair": "O‘rtacha",
@@ -93,7 +87,6 @@
   "davomat.password.generate": "Kuchli parol taklif qilish",
   "davomat.password.copy": "Nusxalash",
   "davomat.password.copied": "Parol nusxalandi",
-
   "davomat.overview.greeting.morning": "Xayrli tong",
   "davomat.overview.greeting.afternoon": "Xayrli kun",
   "davomat.overview.greeting.evening": "Xayrli kech",
@@ -150,5 +143,17 @@
   "davomat.overview.setup.action": "Terminal qo‘shish",
   "davomat.overview.setup.team": "Xodim qo‘shish",
   "davomat.overview.person.open": "Profilni ochish",
-  "davomat.overview.updated": "Yangilandi: {time}"
+  "davomat.overview.updated": "Yangilandi: {time}",
+  "davomat.tz.tashkent": "Toshkent",
+  "davomat.tz.samarkand": "Samarqand",
+  "davomat.tz.almaty": "Olmaota",
+  "davomat.tz.bishkek": "Bishkek",
+  "davomat.tz.dushanbe": "Dushanbe",
+  "davomat.tz.ashgabat": "Ashxobod",
+  "davomat.tz.moscow": "Moskva",
+  "davomat.tz.istanbul": "Istanbul",
+  "davomat.tz.dubai": "Dubay",
+  "davomat.tz.groupMain": "O‘zbekiston va qo‘shnilar",
+  "davomat.tz.groupOther": "Boshqa mintaqalar",
+  "davomat.tz.search": "Shahar yoki mintaqani qidiring"
 }

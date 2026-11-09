@@ -14,7 +14,7 @@ export interface Ref {
 
 // First run (§1.1) -----------------------------------------------------------------------------
 
-export interface SetupAdmin {
+export type SetupAdmin = {
   username: string;
   password: string;
   first_name: string;
@@ -22,7 +22,7 @@ export interface SetupAdmin {
 }
 
 /** `POST edition/setup/` */
-export interface SetupInput {
+export type SetupInput = {
   organization: string;
   timezone: string;
   language: Language;
@@ -45,20 +45,27 @@ export interface User {
   username: string;
   first_name: string;
   last_name: string;
-  role: UserRole;
+  /** null for a person whose role isn't one of the web roles (an employee who lost access). */
+  role: UserRole | null;
   branch_ids: number[];
   is_active: boolean;
   last_login: string | null;
   telegram_linked: boolean;
+  /** Also scans at the terminals. */
+  is_employee?: boolean;
+  /** The person signed in now. */
+  is_self?: boolean;
 }
 
-export interface UserInput {
+export type UserInput = {
   username: string;
   password?: string;
   first_name: string;
   last_name: string;
   role_id: number;
   branch_ids: number[];
+  /** Give an existing employee a sign-in instead of making a new person. */
+  employee_id?: number | null;
 }
 
 export type UserPatch = Partial<Omit<UserInput, "password">> & { is_active?: boolean };
@@ -94,10 +101,12 @@ export interface Employee {
   telegram_linked: boolean;
   /** Also signs in to the web app. */
   is_user: boolean;
+  /** How they came in: added by hand, from an import, or by a terminal's unknown number. */
+  source?: "manual" | "import" | "terminal" | string;
   today: EmployeeToday | null;
 }
 
-export interface EmployeeInput {
+export type EmployeeInput = {
   first_name: string;
   last_name: string;
   phone: string;
@@ -110,39 +119,45 @@ export interface EmployeeInput {
 }
 
 export interface EmployeeParams {
+  /** Name, phone or face number. */
   search?: string;
+  /** One branch (the server reads one). */
   branch?: number[];
   department?: number;
   position?: number;
+  /** Empty: both. */
   status?: EmployeeStatus | "all";
+  /** Telegram linked or not. */
   linked?: "1" | "0";
+  /** Has face numbers or none. */
+  face?: "1" | "0";
   page?: number;
   page_size?: number;
 }
 
-/** One row of an import's preview: what it would create or change, or why it can't. */
+/** One row of an import's report: what it would do (or did), or why it can't. */
 export interface ImportRow {
-  /** 1-based, as in the spreadsheet (after its header row). */
+  /** The spreadsheet's row number (the header is row 1). */
   row: number;
   action: "create" | "update" | "skip";
-  first_name: string;
-  last_name: string;
-  phone: string;
-  position: string;
-  department: string;
-  branch: string;
-  face_number: string;
+  /** The person's name as read from the row. */
+  name: string;
+  /** The employee it matched (update) or made (create, after a real run). */
+  employee_id: number | null;
   errors: string[];
 }
 
 /** `POST employees/import/` (with `?dry_run=1` only checks). */
 export interface ImportResult {
   dry_run: boolean;
-  total: number;
+  /** The header row as read. */
+  columns: string[];
+  /** Header → field it was read as ("Ism" → "first_name"). */
+  mapping: Record<string, string>;
   created: number;
   updated: number;
   skipped: number;
-  errors: number;
+  /** At most the first few hundred rows. */
   rows: ImportRow[];
 }
 
@@ -184,7 +199,7 @@ export interface Branch {
   people: number;
 }
 
-export interface BranchInput {
+export type BranchInput = {
   name: string;
   code?: string;
   address?: string;
@@ -218,6 +233,12 @@ export interface ScheduleOption {
   name: string;
   kind: string;
   is_active: boolean;
+}
+
+/** `GET/PATCH davomat/settings/`: the product's name on this install and the terminals' unknown numbers. */
+export interface DavomatSettings {
+  product_name: string;
+  auto_create_employees: boolean;
 }
 
 /** `GET settings/` (the fields the organization panel edits). */

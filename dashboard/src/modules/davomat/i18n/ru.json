@@ -7,19 +7,15 @@
   "davomat.nav.branches": "Филиалы",
   "davomat.nav.settings": "Настройки",
   "davomat.employee.title": "Сотрудник",
-
   "davomat.cmd.addEmployee": "Добавить сотрудника",
   "davomat.cmd.import": "Импорт сотрудников из Excel",
   "davomat.cmd.users": "Пользователи и роли",
   "davomat.cmd.telegram": "Telegram-бот",
-
   "davomat.settings.organization.title": "Организация",
   "davomat.settings.users.title": "Пользователи и роли",
   "davomat.settings.telegram.title": "Telegram",
   "davomat.settings.account.title": "Ваш аккаунт",
-
   "davomat.brand.tagline": "Учёт посещаемости и Face ID",
-
   "davomat.login.title": "Вход",
   "davomat.login.lead": "С возвращением. Войдите по логину и паролю.",
   "davomat.login.username": "Логин",
@@ -43,7 +39,6 @@
   "davomat.login.feature.late": "Опоздания и ранние уходы с точностью до минуты",
   "davomat.login.feature.reports": "Табель и отчёты в один клик",
   "davomat.login.secure": "Данные хранятся на собственном сервере вашей организации.",
-
   "davomat.setup.title": "Настройка",
   "davomat.setup.welcome": "Добро пожаловать",
   "davomat.setup.lead": "Три коротких шага, и система учёта готова.",
@@ -84,7 +79,6 @@
   "davomat.setup.error.taken": "Этот сервер уже настроен. Войдите в систему.",
   "davomat.setup.error.generic": "Не удалось завершить настройку. Проверьте поля и попробуйте снова.",
   "davomat.setup.signIn": "На страницу входа",
-
   "davomat.password.tooShort": "Не менее 8 символов.",
   "davomat.password.strength.weak": "Слабый",
   "davomat.password.strength.fair": "Средний",
@@ -93,7 +87,6 @@
   "davomat.password.generate": "Предложить надёжный пароль",
   "davomat.password.copy": "Копировать",
   "davomat.password.copied": "Пароль скопирован",
-
   "davomat.overview.greeting.morning": "Доброе утро",
   "davomat.overview.greeting.afternoon": "Добрый день",
   "davomat.overview.greeting.evening": "Добрый вечер",
@@ -150,5 +143,17 @@
   "davomat.overview.setup.action": "Добавить терминал",
   "davomat.overview.setup.team": "Добавить сотрудников",
   "davomat.overview.person.open": "Открыть профиль",
-  "davomat.overview.updated": "Обновлено в {time}"
+  "davomat.overview.updated": "Обновлено в {time}",
+  "davomat.tz.tashkent": "Ташкент",
+  "davomat.tz.samarkand": "Самарканд",
+  "davomat.tz.almaty": "Алматы",
+  "davomat.tz.bishkek": "Бишкек",
+  "davomat.tz.dushanbe": "Душанбе",
+  "davomat.tz.ashgabat": "Ашхабад",
+  "davomat.tz.moscow": "Москва",
+  "davomat.tz.istanbul": "Стамбул",
+  "davomat.tz.dubai": "Дубай",
+  "davomat.tz.groupMain": "Узбекистан и соседи",
+  "davomat.tz.groupOther": "Другие часовые пояса",
+  "davomat.tz.search": "Найдите город или пояс"
 }

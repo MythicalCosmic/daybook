@@ -43,7 +43,7 @@ export function installGuards(router: Router): void {
         await loadMessages(to);
         return true;
       }
-      if (to.name === "setup" && !to.query.done) return session.signedIn ? { path: "/", replace: true } : { name: "login", replace: true };
+      if (to.name === "setup") return session.signedIn ? { path: "/", replace: true } : { name: "login", replace: true };
     }
 
     if (to.meta.public) {

@@ -7,19 +7,15 @@
   "davomat.nav.branches": "Locations",
   "davomat.nav.settings": "Settings",
   "davomat.employee.title": "Employee",
-
   "davomat.cmd.addEmployee": "Add an employee",
   "davomat.cmd.import": "Import employees from Excel",
   "davomat.cmd.users": "Users and roles",
   "davomat.cmd.telegram": "Telegram bot",
-
   "davomat.settings.organization.title": "Organization",
   "davomat.settings.users.title": "Users and roles",
   "davomat.settings.telegram.title": "Telegram",
   "davomat.settings.account.title": "Your account",
-
   "davomat.brand.tagline": "Attendance and Face ID",
-
   "davomat.login.title": "Sign in",
   "davomat.login.lead": "Welcome back. Sign in with your username and password.",
   "davomat.login.username": "Username",
@@ -43,7 +39,6 @@
   "davomat.login.feature.late": "Lateness and early leaving counted to the minute",
   "davomat.login.feature.reports": "Timesheets and reports in one click",
   "davomat.login.secure": "Your data stays on your organization’s own server.",
-
   "davomat.setup.title": "Setup",
   "davomat.setup.welcome": "Welcome",
   "davomat.setup.lead": "Three short steps and your attendance system is ready.",
@@ -84,7 +79,6 @@
   "davomat.setup.error.taken": "This server is already set up. Sign in instead.",
   "davomat.setup.error.generic": "Couldn’t finish the setup. Check the fields and try again.",
   "davomat.setup.signIn": "Go to sign-in",
-
   "davomat.password.tooShort": "At least 8 characters.",
   "davomat.password.strength.weak": "Weak",
   "davomat.password.strength.fair": "Fair",
@@ -93,7 +87,6 @@
   "davomat.password.generate": "Suggest a strong password",
   "davomat.password.copy": "Copy",
   "davomat.password.copied": "Password copied",
-
   "davomat.overview.greeting.morning": "Good morning",
   "davomat.overview.greeting.afternoon": "Good afternoon",
   "davomat.overview.greeting.evening": "Good evening",
@@ -150,5 +143,17 @@
   "davomat.overview.setup.action": "Add a terminal",
   "davomat.overview.setup.team": "Add employees",
   "davomat.overview.person.open": "Open profile",
-  "davomat.overview.updated": "Updated {time}"
+  "davomat.overview.updated": "Updated {time}",
+  "davomat.tz.tashkent": "Tashkent",
+  "davomat.tz.samarkand": "Samarkand",
+  "davomat.tz.almaty": "Almaty",
+  "davomat.tz.bishkek": "Bishkek",
+  "davomat.tz.dushanbe": "Dushanbe",
+  "davomat.tz.ashgabat": "Ashgabat",
+  "davomat.tz.moscow": "Moscow",
+  "davomat.tz.istanbul": "Istanbul",
+  "davomat.tz.dubai": "Dubai",
+  "davomat.tz.groupMain": "Uzbekistan and nearby",
+  "davomat.tz.groupOther": "Other time zones",
+  "davomat.tz.search": "Search a city or zone"
 }

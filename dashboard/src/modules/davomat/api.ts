@@ -17,6 +17,7 @@ import { useCompanyId } from "@/stores/company";
 import type {
   Branch,
   BranchInput,
+  DavomatSettings,
   Department,
   Employee,
   EmployeeInput,
@@ -25,6 +26,7 @@ import type {
   Organization,
   Page,
   Position,
+  RoleKind,
   ScheduleOption,
   SetupInput,
   TelegramLink,
@@ -57,21 +59,22 @@ export const listUsers = (cid: number, signal?: AbortSignal) => http.get<User[] 
 export const createUser = (cid: number, body: UserInput) => http.post<User>(path(cid, "users/"), body, { toast: false });
 export const updateUser = (cid: number, id: number, body: UserPatch) => http.patch<User>(path(cid, `users/${id}/`), body, { toast: false });
 export const setUserPassword = (cid: number, id: number, password: string) => http.post<void>(path(cid, `users/${id}/password/`), { password }, { toast: false });
-export const deactivateUser = (cid: number, id: number) => http.delete<void>(path(cid, `users/${id}/`));
+/** Switches the user off (nothing is deleted); `activateUser` brings them back. */
+export const deactivateUser = (cid: number, id: number) => http.post<User>(path(cid, `users/${id}/deactivate/`));
+export const activateUser = (cid: number, id: number) => http.post<User>(path(cid, `users/${id}/activate/`));
 export const userTelegramLink = (cid: number, id: number) => http.post<TelegramLink>(path(cid, `users/${id}/telegram-link/`));
 export const userTelegramUnlink = (cid: number, id: number) => http.delete<void>(path(cid, `users/${id}/telegram-link/`));
 
-/** `GET roles/`: the four roles made at setup (Owner, Administrator, Manager, Viewer) and any others. */
+/** A role a user can be given (`GET users/roles/`, strongest first): Owner, Administrator, Manager, Viewer. */
 export interface RoleOption {
   id: number;
   name: string;
+  kind: RoleKind;
+  /** Derived from `kind` for older callers. */
   is_owner: boolean;
-  is_default?: boolean;
-  kind?: string;
-  can_assign?: boolean;
-  members_count?: number;
 }
-export const listRoles = (cid: number, signal?: AbortSignal) => http.get<RoleOption[]>(path(cid, "roles/"), undefined, { signal });
+export const listRoles = (cid: number, signal?: AbortSignal) =>
+  http.get<Array<Omit<RoleOption, "is_owner">>>(path(cid, "users/roles/"), undefined, { signal }).then((roles) => roles.map((role) => ({ ...role, is_owner: role.kind === "owner" })));
 
 // ─── Employees (§1.4) ───────────────────────────────────────────────────────
 
@@ -89,8 +92,14 @@ export function uploadEmployeePhoto(cid: number, id: number, photo: Blob): Promi
   form.append("photo", photo, "photo.jpg");
   return http.form<Employee>(path(cid, `employees/${id}/photo/`), form);
 }
-export const employeeLeaves = (cid: number, id: number, date: string) => http.post<Employee>(path(cid, `employees/${id}/leave/`), { left_on: date, date });
-export const employeeReturns = (cid: number, id: number) => http.post<Employee>(path(cid, `employees/${id}/return/`));
+export const removeEmployeePhoto = (cid: number, id: number) => http.delete<Employee>(path(cid, `employees/${id}/photo/`));
+/** They left on `date` (today when empty). */
+export const employeeLeaves = (cid: number, id: number, date?: string | null) => http.post<Employee>(path(cid, `employees/${id}/leave/`), date ? { left_on: date } : {});
+/** Someone who left comes back, hired again on `hireDate` (today when empty). */
+export const employeeReturns = (cid: number, id: number, hireDate?: string | null) => http.post<Employee>(path(cid, `employees/${id}/return/`), hireDate ? { hire_date: hireDate } : {});
+/** One more terminal number for them (a 400 names the person who has it). */
+export const addFaceNumber = (cid: number, id: number, number: string) => http.post<Employee>(path(cid, `employees/${id}/face-numbers/`), { number }, { toast: false });
+export const removeFaceNumber = (cid: number, id: number, number: string) => http.delete<Employee>(path(cid, `employees/${id}/face-numbers/${encodeURIComponent(number)}/`));
 export const employeeTelegramLink = (cid: number, id: number) => http.post<TelegramLink>(path(cid, `employees/${id}/telegram-link/`));
 export const employeeTelegramUnlink = (cid: number, id: number) => http.delete<void>(path(cid, `employees/${id}/telegram-link/`));
 
@@ -101,9 +110,14 @@ export function importEmployees(cid: number, file: File, dryRun: boolean): Promi
   return http.form<ImportResult>(path(cid, "employees/import/"), form, { query: dryRun ? { dry_run: 1 } : undefined, toast: false });
 }
 
-/** `GET employees/export/` as a file download (the browser's own save). */
-export async function exportEmployees(cid: number, params: EmployeeParams = {}): Promise<void> {
-  const response = await request<Response>(path(cid, "employees/export/"), { query: { ...params, branch: params.branch?.length ? params.branch : undefined }, raw: true, toast: true });
+/** `GET employees/export/` (the list's filters, in the columns the import reads) as a file download. */
+export async function exportEmployees(cid: number, params: EmployeeParams = {}, format: "xlsx" | "csv" = "xlsx"): Promise<void> {
+  const response = await request<Response>(path(cid, "employees/export/"), {
+    query: { ...params, branch: params.branch?.length ? params.branch : undefined, format },
+    raw: true,
+    toast: true,
+    headers: { Accept: format === "csv" ? "text/csv" : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" },
+  });
   const blob = await response.blob();
   const disposition = response.headers.get("Content-Disposition") ?? "";
   const named = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(disposition)?.[1];
@@ -125,7 +139,13 @@ export function saveBlob(blob: Blob, filename: string): void {
 
 export const getTelegram = (cid: number, signal?: AbortSignal) => http.get<TelegramSettings>(path(cid, "telegram/"), undefined, { signal });
 export const saveTelegramToken = (cid: number, token: string) => http.put<TelegramSettings>(path(cid, "telegram/"), { token }, { toast: false });
+export const disconnectTelegram = (cid: number) => http.delete<void>(path(cid, "telegram/"));
+/** A test message from the bot to the caller; 400 `{detail}` says what to do first (link your Telegram, press Start). */
 export const testTelegram = (cid: number) => http.post<{ detail?: string } | void>(path(cid, "telegram/test/"), {}, { toast: false });
+
+/** `davomat/settings/`: the product's name on this install, and terminals adding unknown numbers as employees. */
+export const getDavomatSettings = (cid: number, signal?: AbortSignal) => http.get<DavomatSettings>(path(cid, "davomat/settings/"), undefined, { signal });
+export const saveDavomatSettings = (cid: number, body: Partial<DavomatSettings>) => http.patch<DavomatSettings>(path(cid, "davomat/settings/"), body, { toast: false });
 
 // ─── Organization and shared lists (existing endpoints) ─────────────────────
 
@@ -166,6 +186,7 @@ export const davomatKeys = {
   employees: (cid: number, params: EmployeeParams) => qk(cid, MODULE, "employees", { ...params }),
   employee: (cid: number, id: number) => qk(cid, MODULE, "employee", { id }),
   telegram: (cid: number) => qk(cid, MODULE, "telegram"),
+  settings: (cid: number) => qk(cid, MODULE, "settings"),
   organization: (cid: number) => qk(cid, MODULE, "organization"),
   branches: (cid: number) => qk(cid, MODULE, "branches"),
   departments: (cid: number) => qk(cid, MODULE, "departments"),
@@ -220,6 +241,15 @@ export function useTelegram(enabled: MaybeRefOrGetter<boolean> = true) {
   return useQuery({
     queryKey: computed(() => davomatKeys.telegram(cid.value)),
     queryFn: ({ signal }) => getTelegram(cid.value, signal),
+    enabled: computed(() => cid.value > 0 && toValue(enabled)),
+  });
+}
+
+export function useDavomatSettings(enabled: MaybeRefOrGetter<boolean> = true) {
+  const cid = useCompanyId();
+  return useQuery({
+    queryKey: computed(() => davomatKeys.settings(cid.value)),
+    queryFn: ({ signal }) => getDavomatSettings(cid.value, signal),
     enabled: computed(() => cid.value > 0 && toValue(enabled)),
   });
 }
