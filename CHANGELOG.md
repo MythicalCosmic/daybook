@@ -75,6 +75,33 @@ A module an owner switches on per company (Settings › Modules: **Recognition**
   and the leaderboard; confetti and a buzz for a passed quiz, a finished course, a new level or
   badge, the day's question right and a task done on time.
 
+### New: Davomat, Face ID attendance as an app of its own (docs/DAVOMAT.md, docs/davomat/)
+The same code run as its own edition (`EDITION=davomat`) on its own server: one organization with
+its locations, only Face ID, attendance and the team. Daybook itself doesn't change.
+- **Sign in with a username and password** (locked for 15 minutes after five wrong ones), a
+  first-run setup page (the organization and its owner, with the installer's setup code), and
+  four roles: Owner, Administrator, Manager (only their locations) and Viewer.
+- **Overview**: who is in the building, late (with the minutes), not in yet, on leave, and the
+  terminals; the live feed of scans with their photos; who is here now, by location.
+- **Team**: employees with photo, position, department, location and Face ID numbers; added by
+  hand, imported from Excel or CSV (with a check before anything is saved), or made by the
+  terminal itself from a face it knows that nobody added. Each person's day on a timeline, their
+  month on a calendar, and their scans.
+- **Reports**: by person, department and location (days, hours, lateness, early leaving,
+  absences, overtime), the day-by-day chart, who comes on time, compared with the period before;
+  Excel and PDF.
+- **Its own Telegram bot** (the token pasted in Settings, checked at once): arrivals with the
+  photo, lateness and the day's summary; `/today` for managers, `/me` for employees, `/report`
+  as Excel or PDF. People link their Telegram by a one-time link or QR code.
+- **Install**: `deploy/davomat/install.sh` on a fresh Ubuntu server (HTTPS by itself, nightly
+  backups, update, restore and status scripts), and the guides in Uzbek, Russian and English.
+
+### Fixes
+- Caddy: a terminal set to HTTPS on the server's bare IP address reached no site and got an empty
+  answer, so its scans were lost; they now reach Daybook.
+- The timesheet's, the T-13's and the temperature log's column names are translated (they were
+  always English).
+
 ### For the server
 - A new `media-worker` service makes the lesson videos with ffmpeg (one at a time, on at most two
   CPUs), and a new `learning_media` volume keeps them. Caddy sends a video's bytes once Django has
