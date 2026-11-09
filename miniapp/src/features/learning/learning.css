@@ -153,12 +153,24 @@
   color: var(--muted);
 }
 
-.lrn-check-card {
-  flex-direction: row;
+/* A check to answer: the circle, the words, Start. On a phone Start goes under the words (beside
+   them, Russian read "РЕГУЛЯРНАЯ / ПРОВЕРКА" in a sliver at 360 px). */
+.card.lrn-check-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 14px;
+  column-gap: 14px;
+  row-gap: 10px;
   padding: 14px 14px 14px 16px;
   border-radius: 22px;
+  container-type: inline-size;
+}
+
+@container (max-width: 420px) {
+  .lrn-check-start {
+    grid-column: 2 / -1;
+    justify-self: start;
+  }
 }
 
 .lrn-check-text {
@@ -948,6 +960,8 @@ button.lrn-strip-seg::before {
 .lrn-review {
   gap: 10px;
   padding: 16px;
+  /* A smaller round than a card's, so the coloured edge reads as an edge. */
+  border-radius: 20px;
 }
 
 .lrn-review--right {
