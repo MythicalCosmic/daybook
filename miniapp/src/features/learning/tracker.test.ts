@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { normaliseRanges, rangesLength, sessionId, WatchTracker } from "./tracker";
+import { capRanges, MAX_RANGES, normaliseRanges, rangesLength, sessionId, WatchTracker } from "./tracker";
 
 /** Play from `from` to `to` in steps of `step` seconds, as `timeupdate` would. */
 function play(tracker: WatchTracker, from: number, to: number, step = 0.25, rate = 1): void {
@@ -86,6 +86,15 @@ describe("the watch tracker", () => {
       [30, 41],
     ]);
     expect(rangesLength([[0, 10], [5, 15], [20, 25]])).toBe(20);
+  });
+
+  it("sends at most the 50 ranges the server takes, the longest", () => {
+    const many: [number, number][] = Array.from({ length: 60 }, (_, index) => [index * 10, index * 10 + (index === 7 ? 5 : 1)]);
+    const kept = capRanges(many);
+    expect(kept).toHaveLength(MAX_RANGES);
+    expect(kept).toContainEqual([70, 75]);
+    expect(kept.map(([start]) => start)).toEqual([...kept.map(([start]) => start)].sort((a, b) => a - b));
+    expect(capRanges([[0, 5]])).toEqual([[0, 5]]);
   });
 
   it("names each opening of a lesson anew", () => {

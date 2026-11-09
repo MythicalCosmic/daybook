@@ -9,7 +9,7 @@
 import { useEffect, useMemo, useRef } from "react";
 
 import { reportProgress } from "./api";
-import { sessionId, WatchTracker } from "./tracker";
+import { capRanges, sessionId, WatchTracker } from "./tracker";
 import type { ProgressAnswer } from "./types";
 
 export const REPORT_EVERY_MS = 10_000;
@@ -76,7 +76,7 @@ export function useWatchReporter({
       } catch {
         // A player on its way out: the last position seen will do.
       }
-      const ranges = s.tracker.take(s.duration);
+      const ranges = capRanges(s.tracker.take(s.duration));
       const position = Math.max(0, Math.min(Math.floor(s.position), Math.floor(s.duration)));
       const same = s.sent && s.sent.position === position && s.sent.playing === s.playing;
       if (!ranges.length && same && reason !== "start") return;

@@ -92,7 +92,7 @@ export const courseDetail = (over: Partial<CourseDetail> = {}): CourseDetail => 
     steps: [
       step({ id: 101, done: true, done_at: "2026-10-15T06:00:00Z" }),
       step({ id: 102, kind: "page", title: "Harorat jurnali", lesson_id: null, page_id: 5, minutes: 4, done: true }),
-      step({ id: 103, kind: "lesson", title: "Sovuq zanjir buzilsa", lesson_id: 12, minutes: 8 }),
+      step({ id: 103, kind: "lesson", title: "Sovuq zanjir buzilsa", lesson_id: 12, minutes: 8, best_percent: 35 }),
       step({ id: 104, kind: "quiz", title: "Sovuq zanjir testi", lesson_id: null, quiz_id: 8, minutes: 10, locked: true, best_percent: 60 }),
     ],
     ...over,

@@ -75,6 +75,7 @@ export const messages = defineMessages({
     "step.page": "Page to read",
     "step.quiz": "Test",
     "step.best": "Best {percent}%",
+    "step.watched": "{percent}% watched",
     "step.done": "Done",
     "step.locked": "Locked",
 
@@ -258,6 +259,7 @@ export const messages = defineMessages({
     "step.page": "Страница для чтения",
     "step.quiz": "Тест",
     "step.best": "Лучший результат {percent}%",
+    "step.watched": "Просмотрено {percent}%",
     "step.done": "Готово",
     "step.locked": "Закрыто",
 
@@ -439,6 +441,7 @@ export const messages = defineMessages({
     "step.page": "O‘qish uchun sahifa",
     "step.quiz": "Test",
     "step.best": "Eng yaxshi natija: {percent}%",
+    "step.watched": "Ko‘rildi: {percent}%",
     "step.done": "Bajarildi",
     "step.locked": "Yopiq",
 

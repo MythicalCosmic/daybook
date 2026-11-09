@@ -63,7 +63,7 @@ export type CourseStep = {
   page_id: number | null;
   quiz_id: number | null;
   minutes: number | null;
-  /** A quiz step's best result so far. */
+  /** A quiz step's best result so far; a lesson step's watched percent (Q1). */
   best_percent: number | null;
 };
 

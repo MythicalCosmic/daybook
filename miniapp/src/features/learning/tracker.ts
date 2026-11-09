@@ -70,6 +70,18 @@ export class WatchTracker {
   }
 }
 
+/** The most ranges one report may carry (the server refuses more). */
+export const MAX_RANGES = 50;
+
+/** At most `MAX_RANGES` ranges: the longest are kept (a storm of tiny seeks loses a few seconds, never a report). */
+export function capRanges(ranges: readonly Range[]): Range[] {
+  if (ranges.length <= MAX_RANGES) return [...ranges];
+  return [...ranges]
+    .sort((a, b) => b[1] - b[0] - (a[1] - a[0]))
+    .slice(0, MAX_RANGES)
+    .sort((a, b) => a[0] - b[0]);
+}
+
 /** Whole seconds, clipped to `[0, duration]` (no cap when the duration is unknown), sorted and merged. */
 export function normaliseRanges(ranges: readonly Range[], duration: number): Range[] {
   const top = duration > 0 ? Math.ceil(duration) : Number.POSITIVE_INFINITY;

@@ -263,6 +263,8 @@ describe("the course page", () => {
       "lrn-step lrn-step--locked",
     ]);
     expect(steps[3].textContent).toContain("Test · 10 min · Best 60%");
+    // A lesson part-watched says how much (Q1 sends it as the lesson step's best_percent).
+    expect(steps[2].textContent).toContain("Video lesson · 8 min · 35% watched");
 
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     expect(navigationState().stack.at(-1)).toEqual({ feature: "learning", page: "lesson", params: { id: 12, course: 4 } });

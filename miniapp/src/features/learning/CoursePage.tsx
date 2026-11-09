@@ -158,6 +158,8 @@ function StepRow({ step, index, current, onOpen }: { step: CourseStep; index: nu
     t(STEP_LABEL[step.kind]),
     step.minutes ? t("min", { count: step.minutes }) : null,
     step.kind === "quiz" && step.best_percent !== null ? t("step.best", { percent: step.best_percent }) : null,
+    // A lesson's best_percent is how much of it was watched (Q1): worth saying while it isn't done.
+    step.kind === "lesson" && !step.done && step.best_percent ? t("step.watched", { percent: step.best_percent }) : null,
   ]
     .filter(Boolean)
     .join(" · ");

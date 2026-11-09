@@ -15,7 +15,7 @@ import { useSyncExternalStore } from "react";
 
 import { api, ApiError } from "../../api/client";
 import type { Answer, PageViewReport, ProgressReport, Range } from "./types";
-import { normaliseRanges } from "./tracker";
+import { capRanges, normaliseRanges } from "./tracker";
 
 export type QueueJob =
   | { kind: "progress"; key: string; path: string; method: "POST"; body: ProgressReport }
@@ -41,7 +41,7 @@ let restored = false;
 /** Two reports of one key as one: the older's content first, the newer's state on top. */
 export function mergeJobs(older: QueueJob, newer: QueueJob): QueueJob {
   if (older.kind === "progress" && newer.kind === "progress") {
-    const ranges: Range[] = normaliseRanges([...older.body.ranges, ...newer.body.ranges], newer.body.duration || older.body.duration);
+    const ranges: Range[] = capRanges(normaliseRanges([...older.body.ranges, ...newer.body.ranges], newer.body.duration || older.body.duration));
     return { ...newer, body: { ...newer.body, ranges } };
   }
   if (older.kind === "view" && newer.kind === "view") {
