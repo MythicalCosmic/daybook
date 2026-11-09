@@ -1,0 +1,97 @@
+# Davomat (docker-compose.davomat.yml): HTTPS for the site, plain HTTP for Face ID terminals.
+#
+# DOMAIN is the site's name: a domain, <public ip>.nip.io, or on a local network the server's
+# address. Caddy gets and renews the certificate by itself: from Let's Encrypt (or ZeroSSL) for a
+# public name, from its own authority for an IP address, localhost, or with CADDY_OPTIONS=local_certs
+# (deploy/davomat/install.sh --lan), when nothing on the internet can reach the server.
+{
+	# Some clients start TLS without saying which site they want (no SNI): Hikvision terminals'
+	# firmware among them, and anything connecting to the bare IP. They get this site's
+	# certificate instead of a failed handshake.
+	default_sni {$DOMAIN}
+	# Caddy's own authority (local networks) stays in its volume; the server's trust store is
+	# never touched.
+	skip_install_trust
+	# Empty, or one global option: local_certs.
+	{$CADDY_OPTIONS}
+}
+
+# Face ID terminals (apps/faceid/device_api.py): an event and its snapshot, at most 8 MB. The body
+# is buffered so Django always gets a Content-Length, even from firmware that sends chunked
+# bodies, and it reaches Django under the site's name whatever address the terminal was given.
+# Many terminals can only speak plain HTTP and can't follow a redirect with their event, so this
+# path is never redirected.
+(devices) {
+	handle /api/v1/devices/* {
+		request_body {
+			max_size 8MB
+		}
+		reverse_proxy backend:8000 {
+			request_buffers 8MB
+			header_up Host {$DOMAIN}
+		}
+	}
+}
+
+{$DOMAIN} {
+	# Face ID terminals that speak HTTPS post here (the others over plain HTTP, below).
+	import devices
+
+	# Logos and employee photos. Their names are random, so links can't be guessed, and whatever
+	# a file contains, a browser never runs it: no sniffing, a sandbox, nothing loads.
+	# Scan snapshots never come this way: Django serves them behind signed links.
+	handle_path /media/* {
+		root * /srv/media
+		header {
+			Cache-Control "private, max-age=86400"
+			X-Content-Type-Options "nosniff"
+			Content-Security-Policy "sandbox; default-src 'none'"
+		}
+		file_server
+	}
+
+	# Everything else: the dashboard at /dashboard/ (the bare address opens it), the API, the
+	# admin. Connections to gunicorn are kept open between requests and closed by Caddy before
+	# gunicorn would close them (GUNICORN_KEEPALIVE, 75 s), so none is reused just as it drops.
+	handle {
+		# Uploads (photos, employee lists) are at most 20 MB a file; anything far bigger is
+		# refused here, before Django spools it to disk.
+		request_body {
+			max_size 100MB
+		}
+		encode zstd gzip
+		reverse_proxy backend:8000 {
+			transport http {
+				keepalive 60s
+			}
+		}
+	}
+}
+
+# HTTPS for any other name or the bare IP: a terminal given the server's address with HTTPS
+# lands here. Without this site Caddy would answer such an event with an empty 200, and the
+# terminal would count it as delivered. Only the device path; the rest goes to the site's name.
+https:// {
+	import devices
+	handle {
+		redir https://{$DOMAIN}{uri} permanent
+	}
+}
+
+# Plain HTTP for the site's name: terminals whose firmware offers no HTTPS post here; everything
+# else goes to HTTPS.
+http://{$DOMAIN} {
+	import devices
+	handle {
+		redir https://{host}{uri} permanent
+	}
+}
+
+# Plain HTTP on the bare IP (or any other name), for terminals that take an address rather than
+# a name: only the device path; the rest goes to HTTPS.
+:80 {
+	import devices
+	handle {
+		redir https://{$DOMAIN}{uri} permanent
+	}
+}
