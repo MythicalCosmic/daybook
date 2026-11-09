@@ -1,12 +1,23 @@
 """Shapes of Davomat's owner API (docs/DAVOMAT.md §1). Times are UTC ISO strings, dates
 company-local `YYYY-MM-DD`."""
 
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from apps.core.models import Language
 from apps.davomat import queries
 from apps.davomat.models import DavomatSettings
 
-LANGUAGES = ("uz", "ru", "en")
+LANGUAGES = tuple(Language.values)
+
+
+@extend_schema_field({"type": "string", "enum": list(Language.values)})
+class LanguageCodeField(serializers.ChoiceField):
+    """A language code, described inline: another component for the choices `me.language`
+    names (LanguageEnum) would make the schema warn (as companies' DefaultLanguageField)."""
+
+    def __init__(self, **kwargs):
+        super().__init__(Language.choices, **kwargs)
 
 
 class NamedSerializer(serializers.Serializer):
@@ -41,8 +52,13 @@ class EditionSerializer(serializers.Serializer):
     product = serializers.CharField(help_text='"Davomat", or the name set in Settings.')
     organization = OrganizationSerializer(allow_null=True)
     needs_setup = serializers.BooleanField(help_text="No organization yet: show the setup.")
-    default_language = serializers.ChoiceField(LANGUAGES)
-    languages = serializers.ListField(child=serializers.ChoiceField(LANGUAGES))
+    setup_token_required = serializers.BooleanField(
+        help_text="The setup asks for the code the installer printed."
+    )
+    default_language = LanguageCodeField()
+    languages = serializers.ListField(
+        child=serializers.CharField(), help_text='The languages offered: ["uz", "ru", "en"].'
+    )
     telegram = EditionTelegramSerializer()
 
     class Meta:
@@ -62,8 +78,14 @@ class SetupAdminSerializer(serializers.Serializer):
 class SetupSerializer(serializers.Serializer):
     organization = serializers.CharField(max_length=200)
     timezone = serializers.CharField(max_length=64, default="Asia/Tashkent")
-    language = serializers.ChoiceField(LANGUAGES, default="uz")
+    language = serializers.ChoiceField(Language.choices, default=Language.UZ)
     admin = SetupAdminSerializer()
+    setup_token = serializers.CharField(
+        max_length=200,
+        required=False,
+        allow_blank=True,
+        help_text="The code the installer printed, when `setup_token_required`.",
+    )
 
     class Meta:
         ref_name = "DavomatSetup"

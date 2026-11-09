@@ -69,6 +69,7 @@ def test_davomat_before_setup_asks_for_it(client, davomat):
         "product": "Davomat",
         "organization": None,
         "needs_setup": True,
+        "setup_token_required": False,
         "default_language": "uz",
         "languages": ["uz", "ru", "en"],
         "telegram": {"configured": False, "bot_username": None},
@@ -178,6 +179,19 @@ def test_setup_only_from_the_dashboard(client, davomat):
 
     assert response.status_code == 403
     assert not Company.objects.exists()
+
+
+def test_a_setup_code_keeps_strangers_out(client, davomat):
+    davomat.DAVOMAT_SETUP_TOKEN = "installer-printed-this-code"
+
+    assert client.get(EDITION).json()["setup_token_required"] is True
+    missing = post_setup(client)
+    wrong = post_setup(client, setup_body(setup_token="guess"))
+    right = post_setup(client, setup_body(setup_token="installer-printed-this-code"))
+
+    assert missing.status_code == wrong.status_code == 403
+    assert wrong.json()["code"] == "setup_token"
+    assert right.status_code == 201
 
 
 def test_daybook_has_no_setup(client):

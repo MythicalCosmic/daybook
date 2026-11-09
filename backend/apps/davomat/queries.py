@@ -3,6 +3,7 @@
     role_kind(role)                         owner · admin · manager · viewer · employee
     users(company)                          memberships whose role opens the web app
     employees(company, *, branch_ids)       memberships with an `Employee` row, in scope
+    membership_for_telegram(telegram_id)    who a linked Telegram account is (the bot)
     is_employee(membership)
     today_states(company, members, now)     {membership id: {state, since} | None}
     bot_token() · token_version()           the organization's bot, for the bot process
@@ -110,6 +111,21 @@ def employees(company: Company, *, branch_ids: list[int] | None) -> QuerySet[Mem
     return scope.restrict(people, branch_ids, field="branches")
 
 
+def membership_for_telegram(telegram_id: int) -> Membership | None:
+    """The organization's current person whose linked Telegram this is (the bot's `/today` and
+    `/me` ask), or None."""
+    company = conf.organization()
+    if company is None or telegram_id is None:
+        return None
+    return (
+        Membership.objects.filter(
+            company=company, user__telegram_id=telegram_id, status__in=CURRENT
+        )
+        .select_related("company", "user", "role", "position", "home_branch")
+        .first()
+    )
+
+
 def is_employee(membership: Membership) -> bool:
     return Employee.objects.filter(membership=membership).exists()
 
@@ -169,7 +185,7 @@ def today_states(
     shifts: dict[int, set[str]] = {}
     for member_id, status in (
         WorkShift.objects.live()
-        .filter(company=company, date=today, membership_id__in=ids, published_at__isnull=False)
+        .filter(company=company, date=today, membership_id__in=ids)
         .exclude(status=WorkShift.Status.OPEN)
         .values_list("membership_id", "status")
     ):

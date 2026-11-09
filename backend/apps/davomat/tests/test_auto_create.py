@@ -164,3 +164,31 @@ def test_the_employee_shows_in_the_list_at_once(org, scan, owner_api):
     assert [(row["first_name"], row["face_numbers"], row["source"]) for row in rows] == [
         ("Гулирано", ["00000002"], "terminal")
     ]
+
+
+def test_a_failure_never_loses_the_scan(org, scan, monkeypatch):
+    def broken(*args, **kwargs):
+        FaceLink.objects.create(company=org.company, employee_no="X1", ignored=True)
+        raise RuntimeError("a bug")
+
+    monkeypatch.setattr("apps.davomat.services.create_employee", broken)
+
+    event = scan(8, 1)
+
+    assert event is not None and event.action == Action.NOT_LINKED
+    assert not FaceLink.objects.filter(employee_no="X1").exists()  # rolled back
+    assert FaceEvent.objects.filter(pk=event.pk).exists()
+
+
+def test_the_terminals_snapshot_becomes_their_photo_when_asked(org, scan, owner_api):
+    person = scan(8, 1).membership
+    other = org.employee("Bobur")
+    api = owner_api(org.owner)
+
+    assert person.user.photo.name == ""  # never automatic
+    made = api.post(org.url(f"employees/{person.pk}/photo/from-scan/"))
+    none = api.post(org.url(f"employees/{other.pk}/photo/from-scan/"))
+
+    assert made.status_code == 200, made.content
+    assert made.json()["photo_url"].endswith(".jpg")
+    assert none.status_code == 400

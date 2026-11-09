@@ -39,7 +39,9 @@ def test_the_demo_organization(built):
     assert FaceDevice.objects.filter(company=company).count() == 2
     assert demo.is_demo(company)
     employees = queries.employees(company, branch_ids=None)
-    assert employees.count() == 16  # fifteen, and the newcomer the terminal added
+    # Fifteen, the newcomer the terminal added, the director and the branch manager.
+    assert employees.count() == 18
+    assert queries.is_employee(built.owner) and queries.is_user(built.owner)
     assert signin.can_sign_in(built.owner.user) and signin.can_sign_in(built.manager.user)
     assert queries.role_kind(built.manager.role) == "manager"
     assert built.owner.user.check_password(demo.PASSWORD)
@@ -77,7 +79,7 @@ def test_the_command_fills_an_empty_install_and_resets_only_itself(davomat, monk
         call_command("davomat_demo", stdout=StringIO())
     call_command("davomat_demo", "--reset", stdout=StringIO())
 
-    assert "Namuna MChJ: 16 employees, 2 terminals" in out.getvalue()
+    assert "Namuna MChJ: 18 employees, 2 terminals" in out.getvalue()
     assert Company.objects.count() == 1
     assert Membership.objects.filter(first_name="Ravshan").count() == 1
 

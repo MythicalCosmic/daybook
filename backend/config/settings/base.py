@@ -281,6 +281,9 @@ OWNER_INIT_DATA_MAX_AGE = env.int("OWNER_INIT_DATA_MAX_AGE", default=60 * 60)
 EDITION = env("EDITION", default="daybook")
 if EDITION not in ("daybook", "davomat"):
     raise ImproperlyConfigured("EDITION must be daybook or davomat.")
+# Davomat's first-run setup page: when set, it also asks for this code (the installer prints
+# it), so nobody else can claim a fresh install before its owner opens the page.
+DAVOMAT_SETUP_TOKEN = env("DAVOMAT_SETUP_TOKEN", default="")
 # Who may create a company: "code" (a signup code from a platform admin), "open" or "off".
 COMPANY_SIGNUP = env("COMPANY_SIGNUP", default="code")
 if COMPANY_SIGNUP not in ("code", "open", "off"):

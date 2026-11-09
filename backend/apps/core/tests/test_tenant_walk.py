@@ -47,10 +47,12 @@ MISSING = 1_900_000_000
 # Their first rows: a route whose lookup wants a certain kind of row (an open task, a card)
 # gets a few chances to meet one.
 TRIES = 3
-# Routes outside any company: sign-in, the caller's own profile and sessions, new companies and
-# signed files. Each has its own tests (accounts, signin, companies, core.files).
+# Routes outside any company: sign-in, the caller's own profile and sessions, new companies,
+# the edition and its first-run setup, and signed files. Each has its own tests (accounts,
+# signin, companies, davomat, core.files).
 OUTSIDE = re.compile(
-    r"^api/v1/(auth/|me/|files/|devices/|owner/(auth/|me/|permissions/|ai/|companies/(new/)?$))"
+    r"^api/v1/(auth/|me/|files/|devices/"
+    r"|owner/(auth/|me/|permissions/|ai/|edition/|companies/(new/)?$))"
 )
 # Every id filter a list route reads from the query string.
 ID_FILTERS = (

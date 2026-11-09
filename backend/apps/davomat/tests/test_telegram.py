@@ -206,6 +206,8 @@ def test_a_link_for_an_employee_links_their_telegram(org, owner_api, connected):
     assert person.first_name == "Aziza"  # the administrator's names stay
     row = owner_api(org.owner).get(org.url(f"employees/{person.pk}/")).json()
     assert row["telegram_linked"] is True
+    assert queries.membership_for_telegram(4242) == person  # who the bot is talking to
+    assert queries.membership_for_telegram(5353) is None
     assert AuditLog.objects.filter(action=DavomatAction.TELEGRAM_LINKED).exists()
 
 
@@ -313,3 +315,14 @@ def test_no_bot_connected_means_nothing_is_sent(org, settings):
 
     assert bots._token(BotName.EMPLOYEE) == ""
     assert bots.send_message("employee", 99001, "Hello") is None
+
+
+def test_the_admin_never_shows_the_token(org, connected, admin_client):
+    row = DavomatSettings.objects.get(company=org.company)
+
+    page = admin_client.get(f"/admin/davomat/davomatsettings/{row.pk}/change/")
+
+    assert page.status_code == 200
+    assert TOKEN not in page.content.decode()
+    assert admin_client.get("/admin/davomat/employee/").status_code == 200
+    assert admin_client.get("/admin/davomat/telegramlink/").status_code == 200

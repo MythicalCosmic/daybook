@@ -46,6 +46,7 @@ from apps.companies import services as companies
 from apps.companies.models import Branch, BranchKind, Company, Feature
 from apps.console import pulse
 from apps.core.exceptions import DomainError
+from apps.core.uploads import sanitize_image
 from apps.davomat import conf, queries
 from apps.davomat import telegram as tg
 from apps.davomat.audit_actions import DavomatAction
@@ -54,7 +55,7 @@ from apps.davomat.passwords import FieldError, check_password_rules, clean_usern
 from apps.faceid import conf as faceid_conf
 from apps.faceid import hikvision
 from apps.faceid import services as faceid
-from apps.faceid.models import FaceLink
+from apps.faceid.models import FaceEvent, FaceLink
 from apps.hr import services as hr
 from apps.members import scope
 from apps.members import services as members
@@ -71,6 +72,8 @@ PULSE_SETTINGS = "davomat.settings"
 PEOPLE = "members.people"
 
 LINK_LIFETIME = timedelta(hours=24)
+# Employees' photos (their avatars everywhere) are scaled down to this.
+PHOTO_SIDE = 640
 LINK_PREFIX = "link_"
 UNSET = members.UNSET
 CURRENT = queries.CURRENT
@@ -769,6 +772,23 @@ def set_photo(membership: Membership, *, by: Membership, photo) -> Membership:
     return membership
 
 
+def photo_from_scan(membership: Membership, *, by: Membership) -> Membership:
+    """Their latest terminal snapshot (a private file) becomes their photo, re-encoded: the
+    administrator's choice, never automatic."""
+    _require(by, Perm.MEMBERS_MANAGE)
+    event = (
+        FaceEvent.objects.filter(membership=membership, kind=FaceEvent.Kind.PERSON)
+        .exclude(photo="")
+        .order_by("-event_at", "-pk")
+        .first()
+    )
+    if event is None:
+        raise DomainError(_("No terminal snapshot of them yet."))
+    with event.photo.open("rb") as file:
+        picture = sanitize_image(file.read(), max_side=PHOTO_SIDE)
+    return set_photo(membership, by=by, photo=picture)
+
+
 def leave(membership: Membership, *, by: Membership, left_on: date | None = None) -> Membership:
     """The employee left on `left_on` (today when not given; never in the future): members'
     offboarding ends their access, closes an open check-in, cancels their future shifts and
@@ -885,8 +905,13 @@ def auto_create_employee(company: Company, device, employee_no: str, name: str):
         membership = link.membership if link is not None else None
         if membership is None:
             return None
-    except DomainError as exc:
+    except (DomainError, PermissionDenied) as exc:
         logger.warning("Face ID number %s not made an employee: %s", number, exc)
+        return None
+    except Exception:
+        # Best effort: whatever went wrong was rolled back to the savepoint, and the scan is
+        # kept as an unlinked one, never lost.
+        logger.exception("Face ID number %s not made an employee", number)
         return None
     return Membership.objects.select_related("company", "user", "role").get(pk=membership.pk)
 

@@ -43,6 +43,8 @@ POSITIONS = (
     "Omborchi",
     "Haydovchi",
     "Qorovul",
+    "Direktor",
+    "Filial rahbari",
 )
 # (first, last, name on the terminal, position, department, branch, phone, hired days ago)
 PEOPLE = (
@@ -63,6 +65,8 @@ PEOPLE = (
     ("Zafar", "Sobirov", "Zafar", 4, 3, BRANCH, "901112215", 45),
 )
 NEWCOMER = ("00000016", "Ravshan")
+# The director and the branch's manager sign in to the web app and scan at the door too.
+USERS_WHO_SCAN = (("00000020", "Sardor", OFFICE, 7), ("00000021", "Nodira", BRANCH, 8))
 SERIAL = "DS-K1T341AMF-NAMUNA-"
 
 
@@ -73,6 +77,8 @@ class Built:
     manager: Membership
     employees: list[Membership]
     devices: dict[str, FaceDevice]
+    # (membership, number, name on the terminal, branch) of everyone who scans.
+    scanning: list[tuple] = field(default_factory=list)
     scans: int = 0
     notes: list[str] = field(default_factory=list)
 
@@ -134,15 +140,23 @@ def build(now: datetime | None = None, *, username: str = "admin", password: str
                     face_numbers=[f"{len(people) + 1:08d}"],
                 )
             )
+        scanning = [
+            (person, f"{index + 1:08d}", PEOPLE[index][2], PEOPLE[index][5])
+            for index, person in enumerate(people)
+        ]
+        for user, (number, shown, where, title) in zip(
+            (owner, manager), USERS_WHO_SCAN, strict=True
+        ):
+            members.update_member(user, by=owner, position=positions[title], department=units[0])
+            services.update_user(user, by=owner, is_employee=True)
+            services.add_face_number(user, by=owner, number=number)
+            scanning.append((user, number, shown, where))
+        ids = [row[0].pk for row in scanning]
         start = today - timedelta(days=DAYS_BACK + 1)
-        attendance.assign_schedule(
-            company, schedule, [person.pk for person in people], by=owner, effective_from=start
-        )
-        attendance.generate_shifts(
-            company, start=start, days=DAYS_BACK + 1, member_ids=[p.pk for p in people]
-        )
+        attendance.assign_schedule(company, schedule, ids, by=owner, effective_from=start)
+        attendance.generate_shifts(company, start=start, days=DAYS_BACK + 1, member_ids=ids)
     devices = _terminals(company, branches, now)
-    built = Built(company, owner, manager, people, devices)
+    built = Built(company, owner, manager, people, devices, scanning)
     # Oydin is on leave from today (a family wedding); her shifts say so.
     with demo_time.moment(now - timedelta(days=2)):
         timeoff.record_time_off(
@@ -153,7 +167,7 @@ def build(now: datetime | None = None, *, username: str = "admin", password: str
         attendance.auto_close(company, now)
         attendance.mark_absences(company, now)
         # The next two weeks of the roster, as the nightly job would have made them.
-        attendance.generate_shifts(company, member_ids=[person.pk for person in people])
+        attendance.generate_shifts(company, member_ids=[row[0].pk for row in built.scanning])
     _finish_terminals(devices, now)
     return built
 
@@ -241,6 +255,14 @@ def _post(built: Built, device: FaceDevice, number: str, name: str, at: datetime
     built.scans += 1
 
 
+def _newcomer_day(company: Company, today: date, now: datetime) -> date:
+    """This morning, once it is past 08:52; before that, the last workday's."""
+    if clock.at(company, today, time(8, 52)) < now:
+        return today
+    day = today - timedelta(days=1)
+    return day - timedelta(days=1) if day.weekday() == 6 else day
+
+
 def _scan_the_week(built: Built, today: date, now: datetime) -> None:
     """Each workday this past week and this morning: everyone in between 08:35 and 09:15 (a
     few late), out after 18:00; someone off sick now and then, someone who forgot to scan out.
@@ -262,8 +284,7 @@ def _scan_the_week(built: Built, today: date, now: datetime) -> None:
         if day.weekday() == 6:
             continue  # Sunday
         moments = []
-        for index, _person in enumerate(built.employees):
-            shown, where = PEOPLE[index][2], PEOPLE[index][5]
+        for index, (_person, terminal_number, shown, where) in enumerate(built.scanning):
             if index == 4 and day >= today:
                 continue  # on leave
             if (index * 3 + number) % 13 == 0:
@@ -272,11 +293,10 @@ def _scan_the_week(built: Built, today: date, now: datetime) -> None:
             if luck.random() < 0.12:
                 came += timedelta(minutes=luck.randint(20, 50))  # late
             went = clock.at(company, day, time(18, 0)) + timedelta(minutes=luck.randint(0, 45))
-            terminal_number = f"{index + 1:08d}"
             moments.append((came, where, terminal_number, shown))
             if not (day == today - timedelta(days=1) and index == 9):  # Nodir forgot
                 moments.append((went, where, terminal_number, shown))
-        if day == today:
+        if day == _newcomer_day(company, today, now):
             # The newcomer the terminal knows, twice; an unknown face at the branch.
             newcomer, name = NEWCOMER
             moments.append((clock.at(company, day, time(8, 47)), OFFICE, newcomer, name))
