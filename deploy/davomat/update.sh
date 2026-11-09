@@ -28,7 +28,7 @@ while [ $# -gt 0 ]; do
 	--no-backup) BACKUP=0 ;;
 	-y | --yes) ;;
 	-h | --help)
-		sed -n '2,9p' "$0"
+		header_help "$0"
 		exit 0
 		;;
 	*) die "Unknown option: $1 (see --help)" ;;

@@ -31,6 +31,11 @@ die() {
 
 is_root() { [ "$(id -u)" -eq 0 ]; }
 
+# header_help SCRIPT: the comment block at the top of SCRIPT, without the #s (its --help).
+header_help() {
+	awk 'NR == 1 { next } /^#/ { sub(/^# ?/, ""); print; next } { exit }' "$1"
+}
+
 # Every docker compose call of the scripts. Callers pass < /dev/null where nothing should be read
 # from stdin: piped into `ssh host 'bash -s'`, a compose exec would swallow the rest of the script.
 compose() { docker compose -p "$PROJECT" -f "$COMPOSE_YML" --env-file "$ENV_FILE" "$@"; }

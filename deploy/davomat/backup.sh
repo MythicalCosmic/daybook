@@ -10,7 +10,7 @@ umask 077
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 case ${1:-} in -h | --help)
-	sed -n '2,7p' "$0"
+	header_help "$0"
 	exit 0
 	;;
 esac

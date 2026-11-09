@@ -21,7 +21,7 @@ while [ $# -gt 0 ]; do
 	--https-port) HTTPS_PORT=$2; shift ;;
 	--build-lock) LOCK=$2; shift ;;
 	-h | --help)
-		sed -n '2,13p' "$0"
+		awk 'NR == 1 { next } /^#/ { sub(/^# ?/, ""); print; next } { exit }' "$0"
 		exit 0
 		;;
 	*)

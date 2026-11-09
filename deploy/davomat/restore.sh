@@ -16,7 +16,7 @@ while [ $# -gt 0 ]; do
 	-y | --yes) YES=1 ;;
 	--no-safety-backup) SAFETY=0 ;;
 	-h | --help)
-		sed -n '2,8p' "$0"
+		header_help "$0"
 		exit 0
 		;;
 	-*) die "Unknown option: $1" ;;

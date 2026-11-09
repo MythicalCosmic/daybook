@@ -98,7 +98,7 @@ wipe)
 	ok "The demo and its data are gone."
 	;;
 -h | --help | help)
-	sed -n '2,12p' "$0"
+	header_help "$0"
 	;;
 *)
 	die "Unknown command: $command (up, seed, rebuild, status, logs, down, wipe)"

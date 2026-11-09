@@ -8,7 +8,7 @@ set -Euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 case ${1:-} in -h | --help)
-	sed -n '2,5p' "$0"
+	header_help "$0"
 	exit 0
 	;;
 esac
