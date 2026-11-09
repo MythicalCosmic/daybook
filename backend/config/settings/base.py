@@ -73,6 +73,8 @@ INSTALLED_APPS = [
     "apps.agenda",
     "apps.crm",
     "apps.assets",
+    # The Davomat edition (docs/DAVOMAT.md): after attendance and faceid, whose services it uses.
+    "apps.davomat",
 ]
 
 AUTH_USER_MODEL = "accounts.User"
@@ -274,6 +276,11 @@ SIMPLE_JWT = {
 OWNER_ACCESS_TOKEN_LIFETIME = timedelta(minutes=env.int("OWNER_ACCESS_TOKEN_MINUTES", default=15))
 # How old the owner bot's Mini App launch data may be before sign-in is refused (seconds).
 OWNER_INIT_DATA_MAX_AGE = env.int("OWNER_INIT_DATA_MAX_AGE", default=60 * 60)
+# Which product this install is (docs/DAVOMAT.md): "daybook", the multi-company platform, or
+# "davomat", one organization's Face ID attendance app with password sign-in and its own bot.
+EDITION = env("EDITION", default="daybook")
+if EDITION not in ("daybook", "davomat"):
+    raise ImproperlyConfigured("EDITION must be daybook or davomat.")
 # Who may create a company: "code" (a signup code from a platform admin), "open" or "off".
 COMPANY_SIGNUP = env("COMPANY_SIGNUP", default="code")
 if COMPANY_SIGNUP not in ("code", "open", "off"):

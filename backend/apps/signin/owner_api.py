@@ -31,6 +31,16 @@ from apps.signin.tokens import SESSION_CLAIM, owner_token_backend
 POLL_HEADER = "X-Login-Poll"
 
 
+class TelegramSignIn:
+    """Signing in through Telegram (login links, Mini App initData). The Davomat edition signs
+    in with passwords only (docs/DAVOMAT.md §1.2): there these endpoints don't exist."""
+
+    def initial(self, request, *args, **kwargs):
+        if settings.EDITION == "davomat":
+            raise Http404
+        super().initial(request, *args, **kwargs)
+
+
 class AccessSerializer(serializers.Serializer):
     access = serializers.CharField(help_text="Owner access token (aud=dashboard), 15 minutes.")
 
@@ -157,7 +167,7 @@ class LinkPollThrottle(SimpleRateThrottle):
         return self.cache_format % {"scope": self.scope, "ident": str(view.kwargs.get("link_id"))}
 
 
-class LoginLinksView(APIView):
+class LoginLinksView(TelegramSignIn, APIView):
     """Start a desktop sign-in: show `deep_link` as a QR and `match_code` in large type."""
 
     authentication_classes = ()
@@ -200,7 +210,7 @@ class LoginLinksView(APIView):
 _POLL = OpenApiParameter(POLL_HEADER, str, OpenApiParameter.HEADER, required=True)
 
 
-class LoginLinkView(APIView):
+class LoginLinkView(TelegramSignIn, APIView):
     """Where a sign-in stands. Never changes anything and never returns a token."""
 
     authentication_classes = ()
@@ -215,7 +225,7 @@ class LoginLinkView(APIView):
         return Response({"status": found})
 
 
-class LoginLinkClaimView(APIView):
+class LoginLinkClaimView(TelegramSignIn, APIView):
     """Collect the session of an approved sign-in, once."""
 
     authentication_classes = ()
@@ -266,7 +276,7 @@ class TelegramLoginSerializer(serializers.Serializer):
     init_data = serializers.CharField(max_length=4096)
 
 
-class TelegramLoginView(APIView):
+class TelegramLoginView(TelegramSignIn, APIView):
     """Sign in with `Telegram.WebApp.initData` (owner bot, else employee bot), at most
     `OWNER_INIT_DATA_MAX_AGE` old. Answers an access token only; post the same initData again
     when it runs out."""
