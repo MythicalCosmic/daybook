@@ -5,7 +5,7 @@ holders of its positions otherwise (`queries.reader_spaces`). Drafts never show 
 to managers, who edit pages in the dashboard.
 """
 
-from django.db.models import Q
+from django.db.models import Q, prefetch_related_objects
 from django.utils.translation import gettext as _
 from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
 from rest_framework import serializers
@@ -57,17 +57,16 @@ class HomeView(APIView):
         member = self.membership
         pages = queries.reader_pages(member).select_related("space", "updated_by__user")
         context = _context(self) | {"counts": _counts(pages)}
+        to_read = queries.to_read(member)
+        recent = list(pages.order_by("-updated_at")[:6])
+        prefetch_related_objects([*to_read, *recent], "topics")
         return Response(
             {
                 "spaces": KnowledgeSpaceSerializer(
                     queries.reader_spaces(member), many=True, context=context
                 ).data,
-                "to_read": KnowledgePageRowSerializer(
-                    queries.to_read(member), many=True, context=context
-                ).data,
-                "recent": KnowledgePageRowSerializer(
-                    pages.order_by("-updated_at")[:6], many=True, context=context
-                ).data,
+                "to_read": KnowledgePageRowSerializer(to_read, many=True, context=context).data,
+                "recent": KnowledgePageRowSerializer(recent, many=True, context=context).data,
             }
         )
 
@@ -172,6 +171,7 @@ class SearchView(APIView):
         found = queries.search(
             self.membership, request.query_params.get("q", ""), limit=20, reader=True
         )
+        prefetch_related_objects(found, "topics")
         return Response(KnowledgePageRowSerializer(found, many=True, context=_context(self)).data)
 
 

@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+from datetime import timedelta
 
 from django.core.cache import cache
 from django.db import transaction
@@ -44,6 +45,8 @@ RESUME_TAIL = 5
 MAX_RANGES = 50
 # A learning day for the streak: at least this many seconds watched (or a lesson finished).
 STREAK_SECONDS = 60
+# Seconds watched per day are kept this long (the overview's activity by day).
+KEEP_DAYS = 60
 
 
 @dataclass(frozen=True)
@@ -116,6 +119,15 @@ def trim(ranges: list[list[int]], allowance: int) -> list[list[int]]:
     return [item for item in ranges if item[1] > item[0]]
 
 
+def _tally(days: dict, day, seconds: int) -> dict:
+    """Seconds watched per company day, the last `KEEP_DAYS` days only."""
+    days = dict(days or {})
+    key = day.isoformat()
+    days[key] = int(days.get(key, 0)) + seconds
+    oldest = (day - timedelta(days=KEEP_DAYS)).isoformat()
+    return {when: value for when, value in days.items() if when > oldest}
+
+
 def _duration(lesson: Lesson, reported) -> int:
     """The lesson's length; a YouTube lesson without one takes the player's (kept)."""
     if lesson.source == Lesson.Source.UPLOAD:
@@ -182,6 +194,8 @@ def report(
             resume = 0
         row.position = resume
         row.spent_seconds += counted
+        if counted:
+            row.days = _tally(row.days, queries.local_day(lesson.company, now), counted)
         if new_session:
             row.sessions += 1
         row.last_session = session

@@ -474,6 +474,11 @@ class LessonProgress(TenantModel):
     last_report_at = models.DateTimeField(null=True, blank=True)
     last_session = models.CharField(max_length=40, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
+    days = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text=_("Seconds watched per company day, the last 60 days: {YYYY-MM-DD: seconds}."),
+    )
 
     class Meta:
         ordering = ["-last_at"]

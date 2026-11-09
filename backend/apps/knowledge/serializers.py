@@ -141,6 +141,12 @@ class KnowledgeReadCountSerializer(serializers.Serializer):
     total = serializers.IntegerField()
 
 
+class KnowledgeTopicRefSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    color = serializers.CharField()
+
+
 class KnowledgePageRowSerializer(serializers.ModelSerializer):
     """A page in lists and search results."""
 
@@ -149,6 +155,8 @@ class KnowledgePageRowSerializer(serializers.ModelSerializer):
     excerpt = serializers.SerializerMethodField()
     read = serializers.SerializerMethodField()
     archived = serializers.SerializerMethodField()
+    topics = serializers.SerializerMethodField()
+    opened = serializers.SerializerMethodField()
 
     class Meta:
         model = Page
@@ -168,6 +176,8 @@ class KnowledgePageRowSerializer(serializers.ModelSerializer):
             "updated_by",
             "excerpt",
             "read",
+            "topics",
+            "opened",
         ]
 
     @extend_schema_field(KnowledgeSpaceRefSerializer)
@@ -191,6 +201,24 @@ class KnowledgePageRowSerializer(serializers.ModelSerializer):
             return None
         read, total = counts[page.pk]
         return {"read": read, "total": total}
+
+    @extend_schema_field(KnowledgeTopicRefSerializer(many=True))
+    def get_topics(self, page) -> list[dict]:
+        return [
+            {"id": topic.pk, "name": topic.name, "color": topic.color}
+            for topic in page.topics.all()
+        ]
+
+    @extend_schema_field(
+        serializers.IntegerField(
+            allow_null=True, help_text="People who opened it (managers' lists only)."
+        )
+    )
+    def get_opened(self, page) -> int | None:
+        counts = self.context.get("opened_counts")
+        if counts is None:
+            return None
+        return counts.get(page.pk, 0)
 
 
 class KnowledgeLinkSerializer(serializers.ModelSerializer):
@@ -337,6 +365,9 @@ class KnowledgePageCreateSerializer(serializers.Serializer):
     require_ack = serializers.BooleanField(required=False, default=False)
     publish = serializers.BooleanField(required=False, default=False)
     notify = serializers.BooleanField(required=False, default=True)
+    topic_ids = serializers.ListField(
+        child=serializers.IntegerField(), required=False, default=list, max_length=20
+    )
 
 
 class KnowledgePageSaveSerializer(serializers.Serializer):
@@ -348,6 +379,9 @@ class KnowledgePageSaveSerializer(serializers.Serializer):
     base_version = serializers.IntegerField(required=False, allow_null=True, default=None)
     reread = serializers.BooleanField(required=False, default=False)
     notify = serializers.BooleanField(required=False, default=True)
+    topic_ids = serializers.ListField(
+        child=serializers.IntegerField(), required=False, max_length=20
+    )
 
 
 class KnowledgePublishSerializer(serializers.Serializer):
@@ -387,11 +421,37 @@ class KnowledgeVersionDetailSerializer(KnowledgeVersionSerializer):
         return body_with_images(version.body, user=request.user, company_id=version.company_id)
 
 
+class KnowledgeReaderViewSerializer(serializers.Serializer):
+    opened = serializers.BooleanField()
+    visits = serializers.IntegerField()
+    seconds = serializers.IntegerField(help_text="Reading time.")
+    scrolled = serializers.IntegerField(help_text="How far down, percent.")
+    version = serializers.IntegerField(allow_null=True, help_text="The newest version opened.")
+    first_at = serializers.DateTimeField(allow_null=True)
+    last_at = serializers.DateTimeField(allow_null=True)
+
+
 class KnowledgeReaderSerializer(serializers.Serializer):
     member = serializers.SerializerMethodField()
     status = serializers.ChoiceField(choices=["read", "outdated", "unread"])
     version = serializers.IntegerField(allow_null=True)
     at = serializers.DateTimeField(allow_null=True)
+    view = serializers.SerializerMethodField()
+
+    @extend_schema_field(KnowledgeReaderViewSerializer)
+    def get_view(self, row) -> dict:
+        from apps.knowledge import page_views
+
+        facts = self.context.get("views", {}).get(row.membership.pk, page_views.NOT_OPENED)
+        return {
+            "opened": facts.opened,
+            "visits": facts.visits,
+            "seconds": facts.seconds,
+            "scrolled": facts.scrolled,
+            "version": facts.version,
+            "first_at": facts.first_at,
+            "last_at": facts.last_at,
+        }
 
     @extend_schema_field(serializers.DictField(help_text="{id, name, photo_url, position, branch}"))
     def get_member(self, row) -> dict:

@@ -308,3 +308,404 @@ def can_open_lesson(member: Membership, lesson: Lesson) -> bool:
         course__archived_at__isnull=True,
         course__steps__lesson=lesson,
     ).exists()
+
+
+# The dashboard --------------------------------------------------------------------------
+
+
+def person_ref(member: Membership) -> dict:
+    """`{id, name, photo_url, position, branch}`: how the dashboard names a learner (no phone,
+    no pay)."""
+    photo = getattr(member.user, "photo", None)
+    return {
+        "id": member.pk,
+        "name": str(member),
+        "photo_url": photo.url if photo else None,
+        "position": member.position.name if member.position_id else None,
+        "branch": member.home_branch.name if member.home_branch_id else None,
+    }
+
+
+def people_in_scope(company, *, branch_ids: list[int] | None) -> QuerySet[Membership]:
+    """Approved people the viewer sees (people are branch-bound by their branches)."""
+    return scope.restrict(approved(company), branch_ids, field="branches").select_related(
+        "user", "position", "home_branch"
+    )
+
+
+def assignment_row(row: Assignment, now: datetime) -> dict:
+    late = is_late(row, now)
+    return {
+        "id": row.pk,
+        "state": row.state,
+        "source": row.source,
+        "cycle": row.cycle,
+        "percent": row.percent,
+        "steps_done": row.steps_done,
+        "steps_total": row.steps_total,
+        "assigned_at": row.assigned_at,
+        "due_at": row.due_at,
+        "late": late,
+        "days_late": days_late(row.company, row.due_at, now) if late else 0,
+        "started_at": row.started_at,
+        "last_activity_at": row.last_activity_at,
+        "completed_at": row.completed_at,
+        "certificate_no": row.certificate_no,
+        "expires_at": row.expires_at,
+        "exempt_reason": row.exempt_reason,
+    }
+
+
+def _newest(rows) -> dict[tuple[int, int], Assignment]:
+    newest: dict[tuple[int, int], Assignment] = {}
+    for row in rows.order_by("course_id", "membership_id", "-cycle"):
+        newest.setdefault((row.course_id, row.membership_id), row)
+    return newest
+
+
+def course_stats(company, *, branch_ids: list[int] | None, now: datetime) -> dict[int, dict]:
+    """{course id: {people, completed, in_progress, overdue, percent}}: the current cycle of
+    the people in scope (exempt and cancelled ones don't count)."""
+    people = people_in_scope(company, branch_ids=branch_ids).values("pk")
+    stats: dict[int, dict] = defaultdict(
+        lambda: {"people": 0, "completed": 0, "in_progress": 0, "overdue": 0, "percent": 0}
+    )
+    rows = Assignment.objects.filter(company=company, membership_id__in=people).select_related(
+        "company"
+    )
+    for (course_id, _member_id), row in _newest(rows).items():
+        if row.state not in HELD:
+            continue
+        found = stats[course_id]
+        found["people"] += 1
+        if row.state == Assignment.State.COMPLETED:
+            found["completed"] += 1
+        elif is_late(row, now):
+            found["overdue"] += 1
+        else:
+            found["in_progress"] += 1
+    for found in stats.values():
+        found["percent"] = found["completed"] * 100 // found["people"] if found["people"] else 0
+    return dict(stats)
+
+
+EMPTY_STATS = {"people": 0, "completed": 0, "in_progress": 0, "overdue": 0, "percent": 0}
+
+
+def overview(company, *, branch_ids: list[int] | None, now: datetime | None = None) -> dict:
+    """The learning overview: mandatory compliance, who is late, time watched this week and by
+    day (two weeks), each live course's completion, and what there is."""
+    from datetime import timedelta
+
+    from apps.learning.models import LessonProgress
+
+    now = now or timezone.now()
+    report = compliance(company, branch_ids=branch_ids, now=now)
+    people = list(people_in_scope(company, branch_ids=branch_ids).values_list("pk", flat=True))
+    today = local_day(company, now)
+    first = today - timedelta(days=13)
+    week = today - timedelta(days=today.weekday())
+    seconds: dict[str, int] = defaultdict(int)
+    lessons: dict[str, int] = defaultdict(int)
+    since = datetime.combine(first, datetime.min.time(), tzinfo=zone(company))
+    for days, done_at in LessonProgress.objects.filter(
+        company=company, membership_id__in=people, last_at__gte=since
+    ).values_list("days", "completed_at"):
+        for key, value in (days or {}).items():
+            if key >= first.isoformat():
+                seconds[key] += int(value)
+        if done_at is not None and done_at >= since:
+            lessons[local_day(company, done_at).isoformat()] += 1
+    finished: dict[str, int] = defaultdict(int)
+    for done_at in Assignment.objects.filter(
+        company=company,
+        membership_id__in=people,
+        state=Assignment.State.COMPLETED,
+        completed_at__gte=since,
+    ).values_list("completed_at", flat=True):
+        finished[local_day(company, done_at).isoformat()] += 1
+    activity = []
+    for offset in range(14):
+        key = (first + timedelta(days=offset)).isoformat()
+        activity.append(
+            {"day": key, "seconds": seconds[key], "lessons": lessons[key], "courses": finished[key]}
+        )
+    stats = course_stats(company, branch_ids=branch_ids, now=now)
+    live = Course.objects.filter(company=company).filter(LIVE).order_by("position", "pk")
+    names = {
+        person.pk: person
+        for person in people_in_scope(company, branch_ids=branch_ids).filter(
+            pk__in=[item.membership_id for item in report.late[:10]]
+        )
+    }
+    return {
+        "compliance": {
+            "people": report.people,
+            "completed": report.completed,
+            "overdue_people": report.overdue_people,
+            "percent": report.completed * 100 // report.people if report.people else 0,
+        },
+        "late": [
+            {
+                "member": person_ref(names[item.membership_id]),
+                "course": {"id": item.course_id, "title": item.course_title},
+                "due_at": item.due_at,
+                "days_late": item.days_late,
+            }
+            for item in report.late[:10]
+            if item.membership_id in names
+        ],
+        "watched_week_seconds": sum(
+            value for key, value in seconds.items() if key >= week.isoformat()
+        ),
+        "activity": activity,
+        "courses": [
+            {
+                "id": course.pk,
+                "title": course.title,
+                "emoji": course.emoji,
+                "color": course.color,
+                "mandatory": course.mandatory,
+                **stats.get(course.pk, EMPTY_STATS),
+            }
+            for course in live
+        ],
+        "counts": {
+            "courses": Course.objects.filter(company=company)
+            .exclude(status=Status.ARCHIVED)
+            .count(),
+            "published_courses": live.count(),
+            "lessons": Lesson.objects.filter(company=company)
+            .exclude(status=Status.ARCHIVED)
+            .count(),
+            "published_lessons": Lesson.objects.filter(company=company).filter(LIVE).count(),
+            "processing_videos": Video.objects.filter(
+                company=company, state__in=(Video.State.UPLOADING, Video.State.PROCESSING)
+            ).count(),
+        },
+    }
+
+
+def course_people(course: Course, *, branch_ids: list[int] | None, now: datetime) -> list[dict]:
+    """Everyone with an assignment of `course` (its newest cycle), in scope: the People tab."""
+    people = {
+        person.pk: person
+        for person in people_in_scope(course.company, branch_ids=branch_ids).filter(
+            learning_assignments__course=course
+        )
+    }
+    rows = Assignment.objects.filter(course=course, membership_id__in=list(people)).select_related(
+        "company"
+    )
+    found = [
+        {"assignment": assignment_row(row, now), "member": person_ref(people[member_id])}
+        for (_course_id, member_id), row in _newest(rows).items()
+    ]
+    order = {"in_progress": 0, "assigned": 1, "completed": 2, "exempt": 3, "cancelled": 4}
+    found.sort(
+        key=lambda item: (
+            not item["assignment"]["late"],
+            order.get(item["assignment"]["state"], 9),
+            item["member"]["name"].lower(),
+        )
+    )
+    return found
+
+
+def lesson_viewers(lesson: Lesson, *, branch_ids: list[int] | None) -> list[dict]:
+    """Who watched what (§4.2): everyone the lesson is for or with it in an open course, and
+    anyone who watched it, in scope: never opened, watching (percent, ranges) or watched."""
+    from apps.learning.models import LessonProgress
+
+    wanted = set(
+        Assignment.objects.filter(
+            company_id=lesson.company_id, state__in=OPEN, course__steps__lesson=lesson
+        ).values_list("membership_id", flat=True)
+    )
+    if is_live(lesson):
+        wanted |= set(lesson_audience(lesson).values_list("pk", flat=True))
+    watched = {row.membership_id: row for row in LessonProgress.objects.filter(lesson=lesson)}
+    wanted |= set(watched)
+    rows = []
+    for person in people_in_scope(lesson.company, branch_ids=branch_ids).filter(pk__in=wanted):
+        row = watched.get(person.pk)
+        state = "never" if row is None else ("watched" if row.completed_at else "watching")
+        rows.append(
+            {
+                "member": person_ref(person),
+                "state": state,
+                "percent": row.percent if row else 0,
+                "ranges": row.ranges if row else [],
+                "watched_seconds": row.watched_seconds if row else 0,
+                "spent_seconds": row.spent_seconds if row else 0,
+                "sessions": row.sessions if row else 0,
+                "first_at": row.first_at if row else None,
+                "last_at": row.last_at if row else None,
+                "completed_at": row.completed_at if row else None,
+            }
+        )
+    order = {"watching": 0, "never": 1, "watched": 2}
+    rows.sort(key=lambda item: (order[item["state"]], item["member"]["name"].lower()))
+    return rows
+
+
+def viewer_counts(lessons, *, branch_ids: list[int] | None) -> dict[int, dict]:
+    """{lesson id: {watched, watching}} among the people in scope."""
+    from apps.learning.models import LessonProgress
+
+    if not lessons:
+        return {}
+    people = people_in_scope(lessons[0].company, branch_ids=branch_ids)
+    counts: dict[int, dict] = defaultdict(lambda: {"watched": 0, "watching": 0})
+    for lesson_id, completed_at in LessonProgress.objects.filter(
+        lesson__in=lessons, membership_id__in=people.values("pk")
+    ).values_list("lesson_id", "completed_at"):
+        counts[lesson_id]["watched" if completed_at else "watching"] += 1
+    return dict(counts)
+
+
+def people_grid(
+    company,
+    *,
+    branch_ids: list[int] | None,
+    now: datetime,
+    position_id: int | None = None,
+    q: str = "",
+    late_only: bool = False,
+) -> dict:
+    """Every person in scope against the mandatory courses, with each state (the People page)."""
+    live = list(
+        Course.objects.filter(company=company, mandatory=True).filter(LIVE).order_by("position")
+    )
+    people = people_in_scope(company, branch_ids=branch_ids)
+    if position_id:
+        people = people.filter(position_id=position_id)
+    if q:
+        people = people.filter(Q(first_name__icontains=q) | Q(last_name__icontains=q))
+    people = list(people.order_by("first_name", "last_name", "pk"))
+    rows = Assignment.objects.filter(
+        company=company, membership_id__in=[person.pk for person in people]
+    ).select_related("company")
+    current = _newest(rows.filter(course__in=live))
+    table = []
+    for person in people:
+        cells: dict[str, dict | None] = {}
+        done = total = late = 0
+        for course in live:
+            row = current.get((course.pk, person.pk))
+            if row is None or row.state not in HELD:
+                cells[str(course.pk)] = (
+                    {
+                        "assignment_id": row.pk,
+                        "state": row.state,
+                        "percent": row.percent,
+                        "due_at": row.due_at,
+                        "late": False,
+                    }
+                    if row is not None
+                    else None
+                )
+                continue
+            total += 1
+            done += row.state == Assignment.State.COMPLETED
+            overdue = is_late(row, now)
+            late += overdue
+            cells[str(course.pk)] = {
+                "assignment_id": row.pk,
+                "state": row.state,
+                "percent": row.percent,
+                "due_at": row.due_at,
+                "late": overdue,
+            }
+        if late_only and not late:
+            continue
+        table.append(
+            {
+                "member": person_ref(person),
+                "cells": cells,
+                "done": done,
+                "total": total,
+                "late": late,
+            }
+        )
+    return {
+        "courses": [
+            {"id": course.pk, "title": course.title, "emoji": course.emoji, "color": course.color}
+            for course in live
+        ],
+        "rows": table,
+    }
+
+
+def person_learning(member: Membership, *, now: datetime) -> dict:
+    """One person's training: every assignment (newest first), the lessons they watched and the
+    knowledge base pages they opened."""
+    from apps.knowledge.models import PageView
+    from apps.learning.models import LessonProgress
+
+    assignments = list(
+        Assignment.objects.filter(membership=member)
+        .select_related("course", "company")
+        .order_by("-assigned_at", "-pk")
+    )
+    progress = list(
+        LessonProgress.objects.filter(membership=member)
+        .select_related("lesson")
+        .order_by("-last_at")[:100]
+    )
+    views = list(
+        PageView.objects.filter(membership=member).select_related("page").order_by("-last_at")[:100]
+    )
+    current = _newest(Assignment.objects.filter(membership=member))
+    held = [row for row in current.values() if row.state in HELD]
+    return {
+        "member": person_ref(member),
+        "summary": {
+            "open": sum(1 for row in held if row.state in OPEN),
+            "completed": sum(1 for row in held if row.state == Assignment.State.COMPLETED),
+            "late": sum(1 for row in held if is_late(row, now)),
+            "certificates": sum(1 for row in assignments if row.certificate_no),
+            "watched_seconds": sum(row.spent_seconds for row in progress),
+            "lessons_watched": sum(1 for row in progress if row.completed_at),
+        },
+        "assignments": [
+            {
+                **assignment_row(row, now),
+                "course": {
+                    "id": row.course_id,
+                    "title": row.course.title,
+                    "emoji": row.course.emoji,
+                    "mandatory": row.course.mandatory,
+                },
+            }
+            for row in assignments
+        ],
+        "lessons": [
+            {
+                "lesson": {
+                    "id": row.lesson_id,
+                    "title": row.lesson.title,
+                    "emoji": row.lesson.emoji,
+                },
+                "percent": row.percent,
+                "ranges": row.ranges,
+                "completed_at": row.completed_at,
+                "last_at": row.last_at,
+                "spent_seconds": row.spent_seconds,
+                "sessions": row.sessions,
+            }
+            for row in progress
+        ],
+        "pages": [
+            {
+                "page": {"id": row.page_id, "title": row.page.title, "emoji": row.page.emoji},
+                "visits": row.visits,
+                "seconds": row.seconds,
+                "scrolled": row.scrolled,
+                "version": row.version,
+                "last_at": row.last_at,
+            }
+            for row in views
+            if row.page.archived_at is None
+        ],
+    }

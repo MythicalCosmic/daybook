@@ -84,3 +84,76 @@ def test_the_endpoint_answers_204_and_404_for_pages_i_cant_read(company, member,
         client.post(f"{base}{draft.pk}/view/", {"session": "x"}, format="json").status_code == 404
     )
     assert client.post(f"{base}{page.pk}/view/", {}, format="json").status_code == 400
+
+
+# The dashboard: readers, page topics ------------------------------------------------------
+
+
+def knowledge_manager(company, member):
+    from apps.members.models import AccessRole
+
+    made = AccessRole.objects.create(
+        company=company,
+        name="Knowledge lead",
+        permissions=["dashboard.access", "knowledge.manage", "branches.all"],
+    )
+    return member(company, made.name)
+
+
+def test_readers_show_who_opened_the_page_and_how_far_they_read(company, member, owner_api):
+    lead = knowledge_manager(company, member)
+    page = PageFactory(space__company=company)
+    reader, idle = member(company, first_name="Madina"), member(company, first_name="Jasur")
+    report(page, reader, at=0, scrolled=80)
+    report(page, reader, at=15, seconds=15, scrolled=40)
+    base = f"/api/v1/owner/companies/{company.pk}/knowledge/pages/{page.pk}/"
+    body = owner_api(lead).get(f"{base}readers/").json()
+    assert body["counts"]["opened"] == 1
+    views = {row["member"]["id"]: row["view"] for row in body["results"]}
+    assert views[reader.pk]["opened"] is True and views[reader.pk]["scrolled"] == 80
+    assert views[reader.pk]["seconds"] == 20 and views[reader.pk]["visits"] == 1
+    assert views[idle.pk] == {
+        "opened": False,
+        "visits": 0,
+        "seconds": 0,
+        "scrolled": 0,
+        "version": None,
+        "first_at": None,
+        "last_at": None,
+    }
+    listed = owner_api(lead).get(f"/api/v1/owner/companies/{company.pk}/knowledge/pages/").json()
+    row = next(item for item in listed["results"] if item["id"] == page.pk)
+    assert row["opened"] == 1
+    reported = owner_api(lead).post(f"{base}view/", {"session": "d", "seconds": 4}, format="json")
+    assert reported.status_code == 204
+    assert PageView.objects.filter(page=page, membership=lead).exists()
+
+
+def test_pages_carry_topics_from_the_editor_and_filter_by_them(
+    company, other_company, member, owner_api
+):
+    from apps.knowledge import topics
+
+    lead = knowledge_manager(company, member)
+    cold = topics.create_topic(company, by=None, name="Sovuq zanjir")
+    till = topics.create_topic(company, by=None, name="Kassa")
+    space = SpaceFactory(company=company)
+    client = owner_api(lead)
+    base = f"/api/v1/owner/companies/{company.pk}/knowledge/pages/"
+    made = client.post(
+        base,
+        {"space": space.pk, "title": "Muzlatgich", "body": "<p>+2…+8</p>", "topic_ids": [cold.pk]},
+        format="json",
+    )
+    assert made.status_code == 201, made.content
+    assert made.json()["topics"] == [{"id": cold.pk, "name": "Sovuq zanjir", "color": ""}]
+    page_id = made.json()["id"]
+    saved = client.patch(f"{base}{page_id}/", {"topic_ids": [till.pk, cold.pk]}, format="json")
+    assert {topic["id"] for topic in saved.json()["topics"]} == {till.pk, cold.pk}
+    other = PageFactory(space=space)
+    filtered = client.get(f"{base}?topic={till.pk}").json()["results"]
+    assert [row["id"] for row in filtered] == [page_id]
+    assert other.pk not in [row["id"] for row in filtered]
+    theirs = topics.create_topic(other_company, by=None, name="Boshqa")
+    refused = client.patch(f"{base}{page_id}/", {"topic_ids": [theirs.pk]}, format="json")
+    assert refused.status_code == 400

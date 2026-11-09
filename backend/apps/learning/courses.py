@@ -925,3 +925,40 @@ def _renew(row: Assignment, now: datetime) -> Assignment | None:
         )
         notify_courses.assigned([made])
     return refresh(made, now=now)
+
+
+# Settings -------------------------------------------------------------------------------
+
+SETTINGS_FIELDS = {
+    "completion_percent",
+    "max_speed_percent",
+    "remind_before_days",
+    "escalate_after_days",
+    "certificates",
+    "certificate_prefix",
+    "catalog_for_staff",
+    "storage_limit_mb",
+}
+
+
+@transaction.atomic
+def update_settings(company, *, by: Membership | None, **changes) -> LearningSettings:
+    """The Settings > Training panel's fields (the daily question's belong to the quizzes)."""
+    ensure_manager(by)
+    unknown = set(changes) - SETTINGS_FIELDS
+    if unknown:
+        raise ValueError(f"Can't change {sorted(unknown)} in the training settings.")
+    row = conf.get_settings(company)
+    row = LearningSettings.objects.select_for_update().get(pk=row.pk)
+    for name, value in changes.items():
+        setattr(row, name, value.upper() if name == "certificate_prefix" else value)
+    row.save()
+    audit.record(
+        CourseAction.SETTINGS_CHANGED,
+        company_id=company.pk,
+        actor=by.user if by is not None else None,
+        target=row,
+        changed=sorted(changes),
+    )
+    transaction.on_commit(lambda: pulse.bump(company.pk, PULSE_KEY))
+    return row
