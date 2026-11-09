@@ -70,7 +70,6 @@ from apps.signin import services as signin
 from apps.signin.auth import FromDashboard, OwnerJWTAuthentication
 from apps.signin.tokens import SESSION_CLAIM
 
-PHOTO_SIDE = 640
 LANGUAGES = list(shapes.LANGUAGES)
 YES, NO = ("1", "true", "yes", "on", "linked"), ("0", "false", "no", "off", "not_linked")
 
@@ -697,6 +696,7 @@ class EmployeeViewSet(DavomatOnly, OwnerViewSet):
             "create",
             "partial_update",
             "photo",
+            "photo_from_scan",
             "leave",
             "return_",
             "face_numbers",
@@ -830,8 +830,16 @@ class EmployeeViewSet(DavomatOnly, OwnerViewSet):
             upload = request.FILES.get("photo")
             if upload is None:
                 raise ValidationError({"photo": [_("Choose a photo.")]})
-            picture = sanitize_image(upload, max_side=PHOTO_SIDE)
+            picture = sanitize_image(upload, max_side=services.PHOTO_SIDE)
         services.set_photo(person, by=self.membership, photo=picture)
+        return Response(self._payload(person))
+
+    @extend_schema(request=None, responses=shapes.EmployeeSerializer)
+    @action(detail=True, methods=["post"], url_path="photo/from-scan")
+    def photo_from_scan(self, request, company_id, pk):
+        """Their latest terminal snapshot becomes their photo (400 when there is none)."""
+        person = self._one(pk)
+        services.photo_from_scan(person, by=self.membership)
         return Response(self._payload(person))
 
     @extend_schema(request=shapes.LeaveSerializer, responses=shapes.EmployeeSerializer)

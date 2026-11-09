@@ -178,3 +178,17 @@ def test_a_failure_never_loses_the_scan(org, scan, monkeypatch):
     assert event is not None and event.action == Action.NOT_LINKED
     assert not FaceLink.objects.filter(employee_no="X1").exists()  # rolled back
     assert FaceEvent.objects.filter(pk=event.pk).exists()
+
+
+def test_the_terminals_snapshot_becomes_their_photo_when_asked(org, scan, owner_api):
+    person = scan(8, 1).membership
+    other = org.employee("Bobur")
+    api = owner_api(org.owner)
+
+    assert person.user.photo.name == ""  # never automatic
+    made = api.post(org.url(f"employees/{person.pk}/photo/from-scan/"))
+    none = api.post(org.url(f"employees/{other.pk}/photo/from-scan/"))
+
+    assert made.status_code == 200, made.content
+    assert made.json()["photo_url"].endswith(".jpg")
+    assert none.status_code == 400
