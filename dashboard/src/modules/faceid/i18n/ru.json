@@ -9,7 +9,6 @@
   "faceid.unit.min": "мин",
   "faceid.unit.days": "дн.",
   "faceid.privacy": "Лица остаются на терминале: Daybook хранит только время и снимок каждого сканирования и удаляет снимки через заданное число дней. Попросите сотрудников дать письменное согласие.",
-
   "faceid.live.title": "Живая лента",
   "faceid.live.description": "Каждое лицо у терминалов, со снимком, в момент сканирования.",
   "faceid.live.live": "В эфире",
@@ -20,7 +19,12 @@
   "faceid.live.emptyPastTitle": "В тот день сканирований не было",
   "faceid.live.noneFiltered": "Нет сканирований с такими фильтрами",
   "faceid.live.more": "Последние {shown} из {total}. Отфильтруйте по терминалу или результату.",
-
+  "faceid.today.title": "У терминалов",
+  "faceid.today.terminals": "Терминалы на связи: {online}/{total}",
+  "faceid.today.feed": "Живая лента",
+  "faceid.today.hereNow": "Сейчас на месте · {n}",
+  "faceid.today.nobody": "Сегодня через терминалы ещё никто не проходил.",
+  "faceid.today.latest": "Последние сканирования",
   "faceid.kpi.scansToday": "Сканирований сегодня",
   "faceid.kpi.scans": "Сканирования",
   "faceid.kpi.people": "Пришли",
@@ -31,7 +35,6 @@
   "faceid.kpi.quiet": "{n} молчит | {n} молчат | {n} молчат",
   "faceid.kpi.allOnline": "Все работают",
   "faceid.kpi.noTerminals": "Пока не добавлены",
-
   "faceid.filter.all": "Все",
   "faceid.filter.in": "Пришли",
   "faceid.filter.out": "Ушли",
@@ -39,12 +42,10 @@
   "faceid.filter.unknown": "Незнакомые лица",
   "faceid.filter.anyTerminal": "Все терминалы",
   "faceid.filter.clear": "Сбросить фильтры",
-
   "faceid.feed.unknown": "Незнакомое лицо",
   "faceid.feed.strangerHint": "Терминал не узнал это лицо",
   "faceid.feed.number": "№ {number}",
   "faceid.feed.photo": "Снимок: {name}",
-
   "faceid.action.checked_in": "Вовремя",
   "faceid.action.late": "Опоздание {d}",
   "faceid.action.checked_out": "Уход",
@@ -56,12 +57,10 @@
   "faceid.action.ignored": "Записано",
   "faceid.action.module_off": "Face ID выключен",
   "faceid.action.test": "Тест",
-
   "faceid.method.face": "Лицо",
   "faceid.method.fingerprint": "Отпечаток",
   "faceid.method.card": "Карта",
   "faceid.method.other": "Другое",
-
   "faceid.flag.auto_linked": "Привязано автоматически",
   "faceid.flagHint.clock_off": "Часы терминала неверны, поэтому у сканирования время его получения.",
   "faceid.flagHint.delivered_late": "Сканирование пришло в Daybook более чем через 30 минут (терминал был без связи), поэтому сообщения не отправлялись.",
@@ -74,7 +73,6 @@
   "faceid.flagHint.not_approved": "Сотрудник неактивен в Daybook.",
   "faceid.flagHint.ignored_number": "Номер отложен: его сканирования только записываются.",
   "faceid.flagHint.refused": "Посещаемость не приняла это сканирование.",
-
   "faceid.scan.title": "Сканирование",
   "faceid.scan.time": "Время",
   "faceid.scan.terminal": "Терминал",
@@ -84,7 +82,6 @@
   "faceid.scan.record": "Посещаемость",
   "faceid.scan.inDaybook": "Есть в Daybook",
   "faceid.scan.gone": "Этого сканирования больше нет на странице.",
-
   "faceid.people.title": "Люди",
   "faceid.people.description": "Все, кого знают терминалы: кто каждый номер в Daybook и кого там ещё нет.",
   "faceid.people.all": "Все",
@@ -121,7 +118,6 @@
   "faceid.people.allLinkedBody": "Каждый номер, который видели терминалы, — сотрудник в Daybook.",
   "faceid.people.emptyTitle": "Пока никого",
   "faceid.people.emptyBody": "Люди появляются здесь после первого сканирования у терминала.",
-
   "faceid.terminals.title": "Терминалы",
   "faceid.terminals.description": "Терминалы распознавания лиц у служебных входов и их состояние.",
   "faceid.terminals.add": "Добавить терминал",
@@ -148,19 +144,16 @@
   "faceid.terminals.onDone": "Терминал включён",
   "faceid.terminals.emptyTitle": "Терминалов пока нет",
   "faceid.terminals.emptyBody": "Добавьте терминал распознавания лиц у служебного входа: три шага, несколько минут.",
-
   "faceid.status.online": "На связи",
   "faceid.status.quiet": "Молчит",
   "faceid.status.never": "Не подключён",
   "faceid.status.disabled": "Выключен",
-
   "faceid.direction.toggle": "Одна дверь",
   "faceid.direction.toggleHint": "Первое сканирование — приход, следующее — уход",
   "faceid.direction.in": "Вход",
   "faceid.direction.inHint": "Каждое сканирование — приход",
   "faceid.direction.out": "Выход",
   "faceid.direction.outHint": "Каждое сканирование — уход",
-
   "faceid.wizard.title": "Добавить терминал",
   "faceid.wizard.setupTitle": "Настройка: {name}",
   "faceid.wizard.description": "Терминал распознавания лиц Hikvision (MinMoe DS-K1T341AMF и похожие).",
@@ -204,7 +197,6 @@
   "faceid.wizard.tested": "Тестовое сканирование получено: так сканирования выглядят в ленте. Оно не учитывается.",
   "faceid.wizard.done": "Готово",
   "faceid.wizard.close": "Закрыть",
-
   "faceid.settings.title": "Настройки Face ID",
   "faceid.settings.description": "К чему ведёт сканирование: посещаемость, сообщения в Telegram и срок хранения снимков.",
   "faceid.settings.saved": "Настройки Face ID сохранены",

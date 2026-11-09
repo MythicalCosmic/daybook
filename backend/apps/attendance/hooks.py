@@ -5,7 +5,7 @@ Imported by `AppConfig.ready()`; register a function only once it exists.
 
 from django.utils.translation import gettext_lazy as _
 
-from apps.attendance import actions, bot_messages, defaults, providers, queries, services
+from apps.attendance import actions, bot_messages, defaults, providers, queries, services, t13
 from apps.attendance.audit_actions import AttendanceAction
 from apps.audit import registry as audit_registry
 from apps.companies.signals import company_created
@@ -132,6 +132,15 @@ register_exporter(
     columns=providers.TIMESHEET_COLUMNS,
     rows=providers.timesheet_rows,
     params=providers.TimesheetExportParams,
+    feature=FEATURE,
+)
+register_exporter(
+    "attendance.t13",
+    perm=VIEW,
+    label=_("Timesheet, form T-13"),
+    columns=t13.COLUMNS,
+    rows=t13.rows,
+    params=t13.Params,
     feature=FEATURE,
 )
 

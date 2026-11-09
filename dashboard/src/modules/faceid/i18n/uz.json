@@ -9,7 +9,6 @@
   "faceid.unit.min": "daq",
   "faceid.unit.days": "kun",
   "faceid.privacy": "Yuzlar terminalda qoladi: Daybook har bir skanerlashning vaqti va suratini saqlaydi, suratlarni siz belgilagan kunlardan keyin o‘chiradi. Xodimlardan yozma rozilik oling.",
-
   "faceid.live.title": "Jonli lenta",
   "faceid.live.description": "Terminallardagi har bir yuz, surati bilan, shu zahoti.",
   "faceid.live.live": "Jonli",
@@ -20,7 +19,12 @@
   "faceid.live.emptyPastTitle": "O‘sha kuni skanerlash bo‘lmagan",
   "faceid.live.noneFiltered": "Bu filtrlarga mos skanerlash yo‘q",
   "faceid.live.more": "Oxirgi skanerlashlar: {shown} / {total}. Terminal yoki natija bo‘yicha filtrlang.",
-
+  "faceid.today.title": "Terminallarda",
+  "faceid.today.terminals": "Ishlayotgan terminallar: {online}/{total}",
+  "faceid.today.feed": "Jonli lenta",
+  "faceid.today.hereNow": "Hozir binoda · {n}",
+  "faceid.today.nobody": "Bugun terminal orqali hali hech kim kelmadi.",
+  "faceid.today.latest": "Oxirgi skanerlashlar",
   "faceid.kpi.scansToday": "Bugungi skanerlashlar",
   "faceid.kpi.scans": "Skanerlashlar",
   "faceid.kpi.people": "Kelganlar",
@@ -31,7 +35,6 @@
   "faceid.kpi.quiet": "Jim terminallar: {n} | Jim terminallar: {n} | Jim terminallar: {n}",
   "faceid.kpi.allOnline": "Hammasi ishlayapti",
   "faceid.kpi.noTerminals": "Hali qo‘shilmagan",
-
   "faceid.filter.all": "Hammasi",
   "faceid.filter.in": "Kelganlar",
   "faceid.filter.out": "Ketganlar",
@@ -39,12 +42,10 @@
   "faceid.filter.unknown": "Notanish yuzlar",
   "faceid.filter.anyTerminal": "Barcha terminallar",
   "faceid.filter.clear": "Filtrlarni tozalash",
-
   "faceid.feed.unknown": "Notanish yuz",
   "faceid.feed.strangerHint": "Terminal bu yuzni tanimadi",
   "faceid.feed.number": "Raqam: {number}",
   "faceid.feed.photo": "Surat: {name}",
-
   "faceid.action.checked_in": "Vaqtida",
   "faceid.action.late": "Kechikish: {d}",
   "faceid.action.checked_out": "Ketdi",
@@ -56,12 +57,10 @@
   "faceid.action.ignored": "Qayd etildi",
   "faceid.action.module_off": "Face ID o‘chiq",
   "faceid.action.test": "Sinov",
-
   "faceid.method.face": "Yuz",
   "faceid.method.fingerprint": "Barmoq izi",
   "faceid.method.card": "Karta",
   "faceid.method.other": "Boshqa",
-
   "faceid.flag.auto_linked": "Avtomatik biriktirildi",
   "faceid.flagHint.clock_off": "Terminal soati noto‘g‘ri, shuning uchun skanerlashga Daybookka yetib kelgan vaqti yozildi.",
   "faceid.flagHint.delivered_late": "Bu skanerlash Daybookka 30 daqiqadan ko‘proq kechikib yetib keldi (terminal internetsiz edi), shuning uchun xabar yuborilmadi.",
@@ -74,7 +73,6 @@
   "faceid.flagHint.not_approved": "Xodim Daybookda faol emas.",
   "faceid.flagHint.ignored_number": "Bu raqam chetga qo‘yilgan: skanerlashlari faqat qayd etiladi.",
   "faceid.flagHint.refused": "Davomat bu skanerlashni qabul qilmadi.",
-
   "faceid.scan.title": "Skanerlash",
   "faceid.scan.time": "Vaqt",
   "faceid.scan.terminal": "Terminal",
@@ -84,7 +82,6 @@
   "faceid.scan.record": "Davomat",
   "faceid.scan.inDaybook": "Daybookda bor",
   "faceid.scan.gone": "Bu skanerlash sahifada endi yo‘q.",
-
   "faceid.people.title": "Odamlar",
   "faceid.people.description": "Terminallar taniydigan hamma: har bir raqam Daybookda kim, yoki kim hali u yerda yo‘q.",
   "faceid.people.all": "Hammasi",
@@ -121,7 +118,6 @@
   "faceid.people.allLinkedBody": "Terminallar ko‘rgan har bir raqam Daybookdagi xodim.",
   "faceid.people.emptyTitle": "Hali hech kim yo‘q",
   "faceid.people.emptyBody": "Odamlar terminaldagi birinchi skanerlashdan keyin shu yerda paydo bo‘ladi.",
-
   "faceid.terminals.title": "Terminallar",
   "faceid.terminals.description": "Xodimlar eshigidagi yuzni taniydigan terminallar va ularning holati.",
   "faceid.terminals.add": "Terminal qo‘shish",
@@ -148,19 +144,16 @@
   "faceid.terminals.onDone": "Terminal yoqildi",
   "faceid.terminals.emptyTitle": "Hali terminal yo‘q",
   "faceid.terminals.emptyBody": "Xodimlar eshigidagi yuzni taniydigan terminalni qo‘shing: uch qadam, bir necha daqiqa.",
-
   "faceid.status.online": "Aloqada",
   "faceid.status.quiet": "Jim",
   "faceid.status.never": "Ulanmagan",
   "faceid.status.disabled": "O‘chirilgan",
-
   "faceid.direction.toggle": "Bitta eshik",
   "faceid.direction.toggleHint": "Birinchi skanerlash kelish, keyingisi ketish",
   "faceid.direction.in": "Kirish",
   "faceid.direction.inHint": "Har bir skanerlash kelish",
   "faceid.direction.out": "Chiqish",
   "faceid.direction.outHint": "Har bir skanerlash ketish",
-
   "faceid.wizard.title": "Terminal qo‘shish",
   "faceid.wizard.setupTitle": "Sozlash: {name}",
   "faceid.wizard.description": "Hikvision yuzni taniydigan terminali (MinMoe DS-K1T341AMF va shunga o‘xshashlar).",
@@ -204,7 +197,6 @@
   "faceid.wizard.tested": "Sinov skanerlashi keldi: lentada skanerlashlar shunday ko‘rinadi. U hisobga olinmaydi.",
   "faceid.wizard.done": "Tayyor",
   "faceid.wizard.close": "Yopish",
-
   "faceid.settings.title": "Face ID sozlamalari",
   "faceid.settings.description": "Skanerlash nimaga olib keladi: davomat, Telegram xabarlari va suratlar qancha saqlanishi.",
   "faceid.settings.saved": "Face ID sozlamalari saqlandi",
