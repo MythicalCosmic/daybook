@@ -16,6 +16,7 @@ import { company, json, me } from "@/test/fixtures";
 import { mountWithProviders, testApp } from "@/test/plugins";
 
 import { attentionOf, insideNow, kpisOf, type Board, type BoardRow, type Scan } from "../components/overview/overviewApi";
+import DayTimeline from "../components/team/DayTimeline.vue";
 import en from "../i18n/en.json";
 import ru from "../i18n/ru.json";
 import uz from "../i18n/uz.json";
@@ -327,6 +328,48 @@ const board = (): Board => ({
     row(4, { state: "not_yet", reason: "late", record: null }),
     row(5, { state: "off", reason: "leave", record: null, shift: null }),
   ],
+});
+
+describe("a person's day", () => {
+  it("draws the shift, the time at work with the late part, a tick per scan, and says when they came and went", async () => {
+    const day = "2026-11-09";
+    const at = (time: string) => `${day}T${time}:00+05:00`;
+    const person = row(7, {
+      state: "late",
+      shift: { id: 70, starts_at: at("09:00"), ends_at: at("18:00"), start: "09:00", end: "18:00", branch: null },
+      record: { id: 700, status: "closed", check_in_at: at("09:22"), check_out_at: at("18:24"), late_minutes: 22, early_leave_minutes: 0, worked_minutes: 482, is_late: true },
+    });
+    const scan = (id: number, time: string, action: Scan["action"]): Scan => ({
+      id,
+      event_at: at(time),
+      received_at: at(time),
+      device: { id: 1, name: "Kirish" },
+      branch: { id: 1, name: "Bosh ofis", code: "BO" },
+      kind: "person",
+      action,
+      employee_no: "00000007",
+      name_on_device: "Person 7",
+      member: person.member,
+      record: { id: 700, status: "closed", check_in_at: at("09:22"), check_out_at: at("18:24"), is_late: true, late_minutes: 22, worked_minutes: 482 },
+      photo_url: null,
+    });
+    stubApi({
+      "GET attendance/board/": () => json({ ...board(), date: day, is_today: false, people: [person] }),
+      "GET faceid/events/": () => json({ count: 2, next: null, previous: null, results: [scan(2, "18:24", "checked_out"), scan(1, "09:22", "checked_in")] }),
+    });
+    const app = await testApp("/c/1/team/7");
+    const { wrapper } = mountWithProviders(DayTimeline, { plugins: app.plugins, props: { memberId: 7, day } });
+    mounted.push(wrapper);
+    await flushPromises();
+    await flushPromises();
+    const timeline = wrapper.get("[data-testid=day-timeline]");
+    expect(timeline.findAll("[data-tick]")).toHaveLength(2);
+    expect(timeline.text()).toContain("In 09:22 · Out 18:24 · 8h 2m at work");
+    expect(timeline.find('[title="09:00–18:00"]').exists()).toBe(true);
+    // The two ticks sit in order along the bar.
+    const lefts = timeline.findAll("[data-tick]").map((tick) => parseFloat((tick.element as HTMLElement).style.left));
+    expect(lefts[0]).toBeLessThan(lefts[1]!);
+  });
 });
 
 describe("overview", () => {

@@ -670,5 +670,13 @@
   "davomat.overview.feed.filter.none": "Nothing of this kind today.",
   "davomat.setup.org.code": "Setup code",
   "davomat.setup.org.codeHint": "The code the installer printed on the server",
-  "davomat.setup.org.codeWrong": "This setup code is wrong. Use the one the installer printed."
+  "davomat.setup.org.codeWrong": "This setup code is wrong. Use the one the installer printed.",
+  "davomat.employee.timeline.title": "The day",
+  "davomat.employee.timeline.shift": "Shift",
+  "davomat.employee.timeline.atWork": "At work",
+  "davomat.employee.timeline.late": "Late",
+  "davomat.employee.timeline.now": "Now",
+  "davomat.employee.timeline.summary": "In {in} · Out {out} · {worked} at work",
+  "davomat.employee.timeline.stillIn": "In {in} · still here",
+  "davomat.employee.timeline.none": "No scans this day"
 }

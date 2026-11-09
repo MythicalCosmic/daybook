@@ -31,6 +31,7 @@ import { patchQuery, rs, useRouteState } from "@/lib/useRouteState";
 import { useCompanyStore, useCompanyToday } from "@/stores/company";
 
 import { useEmployee } from "../api";
+import DayTimeline from "../components/team/DayTimeline.vue";
 import EmployeeCalendar from "../components/team/EmployeeCalendar.vue";
 import ScanList from "../components/team/ScanList.vue";
 import { branchNames } from "../components/team/team";
@@ -169,6 +170,8 @@ const menu = computed<MenuEntry[]>(() => {
           <UiButton size="sm" variant="secondary" :icon="Pencil" @click="edit">{{ t("davomat.employee.fromTerminal.fix") }}</UiButton>
         </template>
       </InlineAlert>
+
+      <DayTimeline :member-id="employee.id" :day="day" />
 
       <div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(320px,380px)]">
         <EmployeeCalendar v-model:day="day" :member-id="employee.id" />

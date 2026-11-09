@@ -670,5 +670,13 @@
   "davomat.overview.feed.filter.none": "Сегодня таких отметок нет.",
   "davomat.setup.org.code": "Код настройки",
   "davomat.setup.org.codeHint": "Код, который установщик вывел на сервере",
-  "davomat.setup.org.codeWrong": "Неверный код настройки. Введите код, который вывел установщик."
+  "davomat.setup.org.codeWrong": "Неверный код настройки. Введите код, который вывел установщик.",
+  "davomat.employee.timeline.title": "День",
+  "davomat.employee.timeline.shift": "Смена",
+  "davomat.employee.timeline.atWork": "На работе",
+  "davomat.employee.timeline.late": "Опоздание",
+  "davomat.employee.timeline.now": "Сейчас",
+  "davomat.employee.timeline.summary": "Приход {in} · Уход {out} · На работе {worked}",
+  "davomat.employee.timeline.stillIn": "Приход {in} · сейчас на месте",
+  "davomat.employee.timeline.none": "В этот день отметок нет"
 }
