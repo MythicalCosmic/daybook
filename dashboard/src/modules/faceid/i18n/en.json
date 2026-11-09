@@ -9,7 +9,6 @@
   "faceid.unit.min": "min",
   "faceid.unit.days": "days",
   "faceid.privacy": "Faces stay on the terminal: Daybook keeps each scan's time and snapshot only, and deletes snapshots after the days you set. Ask employees to agree in writing.",
-
   "faceid.live.title": "Live feed",
   "faceid.live.description": "Every face at the terminals, as it happens, with its snapshot.",
   "faceid.live.live": "Live",
@@ -20,7 +19,12 @@
   "faceid.live.emptyPastTitle": "No scans that day",
   "faceid.live.noneFiltered": "No scans match these filters",
   "faceid.live.more": "The latest {shown} of {total} scans. Filter by terminal or result to narrow it.",
-
+  "faceid.today.title": "At the terminals",
+  "faceid.today.terminals": "Terminals online: {online}/{total}",
+  "faceid.today.feed": "Live feed",
+  "faceid.today.hereNow": "Here now · {n}",
+  "faceid.today.nobody": "Nobody has come through the terminals yet today.",
+  "faceid.today.latest": "Latest scans",
   "faceid.kpi.scansToday": "Scans today",
   "faceid.kpi.scans": "Scans",
   "faceid.kpi.people": "People",
@@ -31,7 +35,6 @@
   "faceid.kpi.quiet": "{n} quiet | {n} quiet | {n} quiet",
   "faceid.kpi.allOnline": "All working",
   "faceid.kpi.noTerminals": "None added yet",
-
   "faceid.filter.all": "All",
   "faceid.filter.in": "Came in",
   "faceid.filter.out": "Left",
@@ -39,12 +42,10 @@
   "faceid.filter.unknown": "Unknown faces",
   "faceid.filter.anyTerminal": "All terminals",
   "faceid.filter.clear": "Clear the filters",
-
   "faceid.feed.unknown": "Unknown face",
   "faceid.feed.strangerHint": "The terminal didn't recognise this face",
   "faceid.feed.number": "No {number}",
   "faceid.feed.photo": "Snapshot of {name}",
-
   "faceid.action.checked_in": "On time",
   "faceid.action.late": "Late {d}",
   "faceid.action.checked_out": "Left",
@@ -56,12 +57,10 @@
   "faceid.action.ignored": "Logged",
   "faceid.action.module_off": "Face ID off",
   "faceid.action.test": "Test scan",
-
   "faceid.method.face": "Face",
   "faceid.method.fingerprint": "Fingerprint",
   "faceid.method.card": "Card",
   "faceid.method.other": "Other",
-
   "faceid.flag.auto_linked": "Linked automatically",
   "faceid.flagHint.clock_off": "The terminal's clock is off, so this scan has the time it reached Daybook.",
   "faceid.flagHint.delivered_late": "This scan reached Daybook more than 30 minutes late (the terminal was offline), so no messages went out.",
@@ -74,7 +73,6 @@
   "faceid.flagHint.not_approved": "The person isn't active in Daybook.",
   "faceid.flagHint.ignored_number": "This number is set aside: its scans are logged only.",
   "faceid.flagHint.refused": "Attendance didn't take this scan.",
-
   "faceid.scan.title": "Scan",
   "faceid.scan.time": "Time",
   "faceid.scan.terminal": "Terminal",
@@ -84,7 +82,6 @@
   "faceid.scan.record": "Attendance",
   "faceid.scan.inDaybook": "In Daybook",
   "faceid.scan.gone": "This scan isn't on the page any more.",
-
   "faceid.people.title": "People",
   "faceid.people.description": "Everyone the terminals know: who each number is in Daybook, or who isn't there yet.",
   "faceid.people.all": "All",
@@ -121,7 +118,6 @@
   "faceid.people.allLinkedBody": "Every number the terminals saw is a Daybook person.",
   "faceid.people.emptyTitle": "No one yet",
   "faceid.people.emptyBody": "People appear here after their first scan at a terminal.",
-
   "faceid.terminals.title": "Terminals",
   "faceid.terminals.description": "The face recognition terminals at your staff doors, and how they are doing.",
   "faceid.terminals.add": "Add a terminal",
@@ -148,19 +144,16 @@
   "faceid.terminals.onDone": "Terminal switched on",
   "faceid.terminals.emptyTitle": "No terminals yet",
   "faceid.terminals.emptyBody": "Add the face recognition terminal at your staff door: three steps, a few minutes.",
-
   "faceid.status.online": "Online",
   "faceid.status.quiet": "Quiet",
   "faceid.status.never": "Not connected",
   "faceid.status.disabled": "Switched off",
-
   "faceid.direction.toggle": "One door",
   "faceid.direction.toggleHint": "First scan in, next one out",
   "faceid.direction.in": "Entrance",
   "faceid.direction.inHint": "Every scan checks in",
   "faceid.direction.out": "Exit",
   "faceid.direction.outHint": "Every scan checks out",
-
   "faceid.wizard.title": "Add a terminal",
   "faceid.wizard.setupTitle": "Set up {name}",
   "faceid.wizard.description": "Hikvision face recognition terminal (MinMoe DS-K1T341AMF and the like).",
@@ -204,7 +197,6 @@
   "faceid.wizard.tested": "Test scan received: this is how scans appear in the feed. It doesn't count.",
   "faceid.wizard.done": "Done",
   "faceid.wizard.close": "Close",
-
   "faceid.settings.title": "Face ID settings",
   "faceid.settings.description": "What a scan sets off: attendance, Telegram messages and how long snapshots are kept.",
   "faceid.settings.saved": "Face ID settings saved",

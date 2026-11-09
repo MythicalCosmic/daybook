@@ -175,6 +175,8 @@ watch(
   <div class="flex flex-col gap-5">
     <AttendanceHeader :title="t('attendance.sheet.title')" :description="t('attendance.sheet.description')">
       <template #actions>
+        <!-- The standard form (people by days, letter codes and hours) next to the list of records. -->
+        <ExportButton kind="attendance.t13" variant="ghost" :label="t('attendance.sheet.t13')" :params="{ month, branch: branch ?? undefined }" />
         <ExportButton kind="attendance.timesheet" :params="{ month, branch: branch ?? undefined }" />
       </template>
     </AttendanceHeader>

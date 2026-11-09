@@ -1,6 +1,8 @@
 """Face ID owner endpoints (`faceid/…`): permissions, another company, the module switch, branch
 scope, hidden fields, audited writes and the shapes the dashboard reads."""
 
+import json
+
 import pytest
 
 from apps.audit.models import AuditLog
@@ -245,6 +247,40 @@ def test_status_counts_terminals(staff, owner_api, device, yunusobod_device):
     assert data["unlinked"] == 0
     viewer = owner_api(staff.accountant).get(url(staff.ali.company, "status/")).json()
     assert viewer["unlinked"] is None
+
+
+def test_the_terminal_and_its_setup_show_the_old_history_coming_in(
+    staff, owner_api, device, freeze
+):
+    """While a terminal uploads its stored history the card and the setup's last step say so,
+    with the count; when it stops coming the count stays."""
+    company = staff.ali.company
+    client = owner_api(staff.manager)
+    path = f"devices/{device.pk}/"
+    assert client.get(url(company, "devices/")).json()[0]["history"] == {
+        "skipped": 0, "until": None, "active": False, "clock_hides": False,
+    }  # fmt: skip
+    for serial, day in ((1, "2022-10-11T16:00:00"), (2, "2023-03-02T09:15:00")):
+        content_type, body = hik.multipart(hik.event(serial=serial, at=day + "+08:00"))
+        face.receive(device, hikvision.parse(content_type, body), received_at=local(DAY, 10, 0))
+    history = client.get(url(company, "devices/")).json()[0]["history"]
+    assert history["skipped"] == 2 and history["active"] and not history["clock_hides"]
+    assert history["until"].startswith("2023-03-02T09:15:00")
+    setup = client.get(url(company, path + "setup/")).json()
+    assert setup["history"]["active"] and setup["last_event_at"] is None and setup["last_seen_at"]
+    freeze(local(DAY, 10, 20))
+    history = client.get(url(company, "devices/")).json()[0]["history"]
+    assert history["skipped"] == 2 and not history["active"]
+
+
+def test_a_clock_days_behind_is_told_apart_from_history(staff, owner_api, device):
+    """A terminal whose clock is years behind makes every live scan look old: its heartbeats
+    show it, and the card asks for the clock to be set instead of waiting for the history."""
+    company = staff.ali.company
+    body = json.dumps(hik.heartbeat(at="2000-01-01T10:00:00+08:00")).encode()
+    face.receive(device, hikvision.parse("application/json", body), received_at=local(DAY, 10, 0))
+    history = owner_api(staff.manager).get(url(company, "devices/")).json()[0]["history"]
+    assert history["clock_hides"] and history["skipped"] == 0
 
 
 def test_a_test_scan_from_the_setup_card(staff, owner_api, device):

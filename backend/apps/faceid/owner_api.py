@@ -172,6 +172,18 @@ def _who(event: FaceEvent) -> str:
     return event.name_on_device or event.employee_no
 
 
+def history_payload(device: FaceDevice, now: datetime) -> dict:
+    """The stored history a terminal uploads when first pointed at us: skipped, only counted.
+    `active` while it is still coming (live scans follow it); `clock_hides`: the terminal's
+    clock is so far behind that its live scans look old too."""
+    return {
+        "skipped": device.history_skipped,
+        "until": _iso(device.company, device.history_until),
+        "active": services.history_active(device, now),
+        "clock_hides": services.clock_hides_scans(device, now),
+    }
+
+
 def device_payload(device: FaceDevice, today: list[FaceEvent], now: datetime) -> dict:
     company = device.company
     hourly = [0] * 24
@@ -200,6 +212,7 @@ def device_payload(device: FaceDevice, today: list[FaceEvent], now: datetime) ->
         "last_scan": {"at": _iso(company, last.event_at), "name": _who(last), "action": last.action}
         if last
         else None,
+        "history": history_payload(device, now),
         "created_at": _iso(company, device.created_at),
     }
 
@@ -213,7 +226,9 @@ def setup_payload(device: FaceDevice) -> dict:
     )
     return services.setup(device) | {
         "last_event_at": _iso(device.company, device.last_event_at),
+        "last_seen_at": _iso(device.company, device.last_seen_at),
         "last_test_at": _iso(device.company, last_test),
+        "history": history_payload(device, timezone.now()),
     }
 
 

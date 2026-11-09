@@ -37,6 +37,8 @@ import type { BoardRow, BoardState } from "../types";
 const MapView = defineAsyncComponent(() => import("@/components/MapView.vue"));
 const PersonMonth = defineAsyncComponent(() => import("../components/PersonMonth.vue"));
 const SettingsForm = defineAsyncComponent(() => import("../components/SettingsForm.vue"));
+// Loaded only for companies that run Face ID.
+const TodayFacePanel = defineAsyncComponent(() => import("@/modules/faceid/components/TodayFacePanel.vue"));
 
 const { t } = useI18n();
 const fmt = useFormat();
@@ -182,6 +184,9 @@ const columnLabel = (state: BoardState) => t(`attendance.state.${state}`);
     <template v-else-if="data">
       <!-- Five zeros say nothing before anyone has a schedule: the empty state explains instead. -->
       <KpiStrip v-if="data.people.length && !unplanned" :items="kpis" :columns="5" phone="compact" />
+
+      <!-- Face ID terminals (their own module): who is in the building now, as faces, and the latest scans. -->
+      <TodayFacePanel v-if="isToday && company.enabled('face_id')" />
 
       <EmptyState
         v-if="!data.people.length || unplanned"

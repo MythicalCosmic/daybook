@@ -37,6 +37,28 @@ def test_a_multipart_scan_is_answered_200_and_checks_in(device, staff):
     assert device.last_event_at is not None and device.ip == "192.168.1.250"
 
 
+def test_the_terminals_old_history_is_answered_200_and_kept_nowhere(device, monkeypatch):
+    """A terminal newly pointed at us uploads years of stored scans: each is answered 200 at
+    once (or it retries forever) and only counted, its picture never even decoded."""
+    from apps.faceid import services
+
+    def no_decoding(*args, **kwargs):
+        raise AssertionError("a history scan's picture was decoded")
+
+    monkeypatch.setattr(services, "sanitize_image", no_decoding)
+    client = Client()
+    for serial in (1, 2, 3):
+        content_type, body = hik.multipart(
+            hik.event(serial=serial, at=f"2022-10-11T16:0{serial}:00+08:00", name="Abdu"),
+            picture=hik.jpeg(),
+        )
+        assert client.post(url(device), data=body, content_type=content_type).status_code == 200
+    assert not FaceEvent.objects.exists()
+    device.refresh_from_db()
+    assert device.history_skipped == 3 and device.last_event_at is None
+    assert device.history_until.year == 2022 and device.last_seen_at is not None
+
+
 def test_json_xml_and_no_trailing_slash(device):
     client = Client()
     body = json.dumps(hik.event(serial=1)).encode()
@@ -185,3 +207,58 @@ def test_the_command_takes_a_branch_by_name(chilonzor):
             "--name", "Chiqish", stdout=StringIO(),
         )  # fmt: skip
     assert f"{chilonzor.pk} {chilonzor.name}" in str(refused.value)
+
+
+def test_the_command_purges_a_companys_scans_received_before_a_time(
+    device, staff, freeze, django_capture_on_commit_callbacks
+):
+    """The cleanup after a terminal's history was taken for live scans: the scans received
+    before the time go, with their snapshots and the Face ID notifications about them; the
+    attendance they made stays (it's listed, to check on the timesheet)."""
+    from io import StringIO
+
+    from django.core.management import call_command
+
+    from apps.attendance.models import AttendanceRecord
+    from apps.inbox.models import Notification
+
+    client = Client()
+    freeze(local(DAY, 9, 0))
+    content_type, body = hik.multipart(
+        hik.event(serial=1, at="2026-10-21T08:59:30+05:00"), picture=hik.jpeg()
+    )
+    with django_capture_on_commit_callbacks(execute=True):
+        client.post(url(device), data=body, content_type=content_type)
+    old = FaceEvent.objects.get()
+    storage, photo = old.photo.storage, old.photo.name
+    assert photo and storage.exists(photo) and old.record_id is not None
+    notices = Notification.objects.filter(kind="faceid.scan", target_id=old.pk).count()
+    assert notices >= 1  # one per manager who sees Chilonzor
+    freeze(local(DAY, 11, 0))
+    later = hik.event(serial=2, number="13", name="Vali", at="2026-10-21T10:59:40+05:00")
+    with django_capture_on_commit_callbacks(execute=True):
+        client.post(url(device), json.dumps(later).encode(), content_type="application/json")
+    kept = FaceEvent.objects.get(serial_no=2)
+    company = device.company
+
+    def purge(*args):
+        out = StringIO()
+        call_command("faceid_device", "purge", "--company", company.pk, *args, stdout=out)
+        return out.getvalue()
+
+    text = purge("--before", "2026-10-21T10:00", "--dry-run")
+    assert f"Would delete 1 scans, 1 snapshots and {notices} notifications" in text, text
+    assert FaceEvent.objects.count() == 2
+
+    text = purge("--before", "2026-10-21T10:00")
+    assert f"Deleted 1 scans, 1 snapshots and {notices} notifications" in text, text
+    assert "Attendance records those scans made or changed (kept" in text
+    assert list(FaceEvent.objects.all()) == [kept]
+    assert not storage.exists(photo)
+    assert not Notification.objects.filter(target_type="faceevent", target_id=old.pk).exists()
+    assert Notification.objects.filter(target_type="faceevent", target_id=kept.pk).exists()
+    assert AttendanceRecord.objects.filter(pk=old.record_id).exists()
+
+    freeze(local(DAY, 11, 5))
+    assert "Deleted 1 scans" in purge()
+    assert not FaceEvent.objects.exists()

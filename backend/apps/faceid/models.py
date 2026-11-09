@@ -123,6 +123,17 @@ class FaceDevice(TenantModel):
         help_text=_("How far the terminal's clock is from ours, in seconds (ahead is positive)."),
     )
     clock_checked_at = models.DateTimeField(null=True, blank=True)
+    # A terminal pointed at us for the first time uploads its whole stored history, oldest first:
+    # those scans are skipped (nothing kept) and only counted.
+    history_skipped = models.PositiveIntegerField(
+        default=0,
+        db_default=0,
+        help_text=_("Old scans the terminal sent that were skipped."),
+    )
+    history_until = models.DateTimeField(
+        null=True, blank=True, help_text=_("The newest skipped old scan's time.")
+    )
+    history_seen_at = models.DateTimeField(null=True, blank=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,

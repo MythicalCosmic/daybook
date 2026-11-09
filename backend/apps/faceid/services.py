@@ -20,9 +20,14 @@ Rules:
   terminal's direction, repeats, late deliveries and every check-in rule); otherwise the scan is
   `seen`. A scan within `repeat_minutes` of the person's last scan is a `repeat`.
 * **When.** The terminal's date and clock read in the company's timezone (its own offset is often
-  a factory one and means nothing), or the arrival time when the clock is off by more than 10
-  minutes (ahead, behind even in its newest events, or before the terminal was added). Events
-  arriving more than 30 minutes after the scan send no messages.
+  a factory one and means nothing); a past time always stands (a delivery after an outage keeps
+  its scans' times), only a time more than 10 minutes ahead of ours takes the arrival time
+  (`clock_off`). Events arriving more than 30 minutes after the scan change attendance quietly:
+  no messages.
+* **History.** A terminal pointed at us uploads everything it ever stored, oldest first (tens of
+  thousands of scans, years back). A scan dated before the terminal was added (less 10 minutes),
+  or more than a day before it arrived, is history: nothing is kept or sent, no picture is
+  decoded; it is only counted on the terminal (`history_skipped`, `history_until`).
 * **Telegram.** `telegram`: each person's first scan of the day (or every scan) goes with its
   snapshot to the holders of `attendance.view` who see the branch; unknown faces alert the
   managers when `alert_strangers` is on; a linked person hears about their own check-in or
@@ -41,6 +46,7 @@ from urllib.parse import urlsplit
 
 from django.core.files.base import ContentFile
 from django.db import IntegrityError, transaction
+from django.db.models import F
 from django.utils import timezone
 from django.utils.translation import gettext
 
@@ -65,6 +71,10 @@ CLOCK_TOLERANCE = timedelta(minutes=10)
 CLOCK_MEMORY = timedelta(days=7)
 # Events delivered this long after the scan send no messages.
 QUIET_AFTER = timedelta(minutes=30)
+# Events older than this when they arrive are the terminal's stored history: skipped.
+HISTORY_AFTER = timedelta(hours=24)
+# A terminal is still sending its history while some came this recently.
+HISTORY_ACTIVE = timedelta(minutes=10)
 # At most one unknown-face alert per terminal this often.
 STRANGER_ALERT_EVERY = timedelta(minutes=10)
 # An unreadable body is kept at most this often per terminal (a firmware that always sends one).
@@ -81,20 +91,55 @@ Telegram = FaceIdSettings.Telegram
 # Receiving ----------------------------------------------------------------------------------
 
 
+def is_history(device: FaceDevice, item: hikvision.DeviceEvent, received_at: datetime) -> bool:
+    """A scan from the terminal's stored history, not a live one: dated before the terminal was
+    added (a terminal pointed at us uploads everything it ever stored, oldest first), or more
+    than a day before it arrived. Kept nowhere and acted on never: only counted."""
+    moment = _wall_time(device, item)
+    if moment is None or item.kind == hikvision.HEARTBEAT:
+        return False
+    return moment < device.created_at - CLOCK_TOLERANCE or received_at - moment > HISTORY_AFTER
+
+
+def history_active(device: FaceDevice, now: datetime | None = None) -> bool:
+    """The terminal is still sending its old history (some came in the last 10 minutes)."""
+    seen = device.history_seen_at
+    return seen is not None and (now or timezone.now()) - seen < HISTORY_ACTIVE
+
+
+def clock_hides_scans(device: FaceDevice, now: datetime | None = None) -> bool:
+    """The terminal's clock (learned from its heartbeats and live events) is so far behind that
+    a scan made now would look like history, and be skipped: its date and time need setting."""
+    if device.clock_offset_s is None:
+        return False
+    behind = -timedelta(seconds=device.clock_offset_s)
+    shown = (now or timezone.now()) - behind
+    return behind > HISTORY_AFTER or shown < device.created_at - CLOCK_TOLERANCE
+
+
 def receive(
     device: FaceDevice, parsed: hikvision.ParsedBody, *, received_at: datetime | None = None
 ) -> list[FaceEvent]:
     """Store and act on what one request carried. Returns the events stored (none for a
-    heartbeat, a retry of an event already stored, or a disabled terminal)."""
+    heartbeat, history, a retry of an event already stored, or a disabled terminal).
+
+    History is decided from the event's JSON alone, before any picture is decoded, so a
+    terminal replaying tens of thousands of old scans costs next to nothing."""
     received_at = received_at or timezone.now()
-    _learn(device, parsed, received_at)
+    history, current = [], []
+    for item in parsed.events:
+        (history if is_history(device, item, received_at) else current).append(item)
+    if history and not history_active(device, received_at):
+        # The terminals page shows the history coming in; its count refreshes on its own.
+        transaction.on_commit(lambda: pulse.bump(device.company_id, PULSE_FEED))
+    _learn(device, current, received_at, history=history)
     if not device.enabled:
         return []
     stored = []
     readable = parsed.events or parsed.problem in ("", "empty", "no event")
     if not readable and (unreadable := _unreadable(device, parsed, received_at)) is not None:
         stored.append(unreadable)
-    for item in parsed.events:
+    for item in current:
         if item.kind == hikvision.HEARTBEAT:
             continue
         event = _receive_one(device, item, parsed.pictures, received_at)
@@ -110,12 +155,13 @@ def receive(
     return stored
 
 
-def _learn(device: FaceDevice, parsed: hikvision.ParsedBody, received_at: datetime) -> None:
-    """The terminal's status and what it says about itself; its clock from what it says now."""
+def _learn(device: FaceDevice, items: list, received_at: datetime, *, history: list = ()) -> None:
+    """The terminal's status and what it says about itself; its clock from what it says now
+    (live events and heartbeats only); how much old history it has sent."""
     changes = {"last_seen_at": received_at}
-    if any(item.kind == hikvision.HEARTBEAT for item in parsed.events):
+    if any(item.kind == hikvision.HEARTBEAT for item in items):
         changes["last_heartbeat_at"] = received_at
-    for item in parsed.events:
+    for item in [*items, *history]:
         for field, value in (
             ("mac", item.mac),
             ("ip", item.ip),
@@ -124,6 +170,7 @@ def _learn(device: FaceDevice, parsed: hikvision.ParsedBody, received_at: dateti
         ):
             if value and getattr(device, field) != value and field not in changes:
                 changes[field] = value
+    for item in items:
         moment = _wall_time(device, item)
         if moment is not None:
             _observe_clock(device, int((moment - received_at).total_seconds()), received_at)
@@ -131,6 +178,16 @@ def _learn(device: FaceDevice, parsed: hikvision.ParsedBody, received_at: dateti
     changes["clock_checked_at"] = device.clock_checked_at
     for field, value in changes.items():
         setattr(device, field, value)
+    if history:
+        newest = max(_wall_time(device, item) for item in history)
+        until = max(device.history_until or newest, newest)
+        changes |= {
+            "history_skipped": F("history_skipped") + len(history),
+            "history_until": until,
+            "history_seen_at": received_at,
+        }
+        device.history_skipped += len(history)
+        device.history_until, device.history_seen_at = until, received_at
     FaceDevice.objects.filter(pk=device.pk).update(**changes)
 
 
@@ -156,17 +213,14 @@ def _wall_time(device: FaceDevice, item: hikvision.DeviceEvent) -> datetime | No
 
 
 def _event_time(device, item, received_at) -> tuple[datetime, datetime | None, list[str]]:
-    """(when it happened, what the terminal said, flags)."""
+    """(when it happened, what the terminal said, flags). The terminal's time stands, however
+    late the event came (a past time is never replaced: a delivery after an outage keeps its
+    scans' times); only a time ahead of ours by more than 10 minutes can't be right, and takes
+    the arrival time (flag `clock_off`)."""
     moment = _wall_time(device, item)
     if moment is None:
         return received_at, None, [Flag.CLOCK_OFF]
-    offset = device.clock_offset_s
-    wrong = (
-        moment - received_at > CLOCK_TOLERANCE
-        or moment < device.created_at - CLOCK_TOLERANCE
-        or (offset is not None and abs(offset) > CLOCK_TOLERANCE.total_seconds())
-    )
-    if wrong:
+    if moment - received_at > CLOCK_TOLERANCE:
         return received_at, moment, [Flag.CLOCK_OFF]
     return moment, moment, []
 

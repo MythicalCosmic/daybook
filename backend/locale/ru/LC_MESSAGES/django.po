@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-09 15:50+0500\n"
+"POT-Creation-Date: 2026-11-09 16:22+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -4101,6 +4101,10 @@ msgid "Attendance timesheet"
 msgstr "Табель посещаемости"
 
 #: backend/apps/attendance/hooks.py
+msgid "Timesheet, form T-13"
+msgstr "Табель, форма Т-13"
+
+#: backend/apps/attendance/hooks.py
 msgid "Attendance corrections to approve"
 msgstr "Исправления посещаемости на одобрение"
 
@@ -6065,6 +6069,14 @@ msgid ""
 msgstr ""
 "Насколько часы терминала расходятся с нашими, в секундах (спешат — "
 "положительное число)."
+
+#: backend/apps/faceid/models.py
+msgid "Old scans the terminal sent that were skipped."
+msgstr "Старые сканирования, присланные терминалом и пропущенные."
+
+#: backend/apps/faceid/models.py
+msgid "The newest skipped old scan's time."
+msgstr "Время самого нового из пропущенных старых сканирований."
 
 #: backend/apps/faceid/models.py
 msgid "Unknown face"

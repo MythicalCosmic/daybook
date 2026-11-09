@@ -156,6 +156,7 @@
   "attendance.cell.unscheduled.short": "+",
   "attendance.sheet.title": "Timesheet",
   "attendance.sheet.description": "Every day of the month at a glance. Click a day to see or correct it.",
+  "attendance.sheet.t13": "T-13 form",
   "attendance.sheet.thisMonth": "This month",
   "attendance.sheet.attendanceRate": "Attendance",
   "attendance.sheet.onTime": "On time",

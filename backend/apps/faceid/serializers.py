@@ -48,6 +48,18 @@ class LastScanSerializer(serializers.Serializer):
     action = serializers.ChoiceField(choices=FaceEvent.Action.choices)
 
 
+class HistorySerializer(serializers.Serializer):
+    skipped = serializers.IntegerField(help_text="Old scans the terminal sent that were skipped.")
+    until = serializers.DateTimeField(allow_null=True, help_text="The newest skipped one's time.")
+    active = serializers.BooleanField(help_text="Still coming: live scans start after it.")
+    clock_hides = serializers.BooleanField(
+        help_text="The terminal's clock is so far behind that its live scans look old too."
+    )
+
+    class Meta:
+        ref_name = "FaceIdHistory"
+
+
 class DeviceOutSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
@@ -67,6 +79,7 @@ class DeviceOutSerializer(serializers.Serializer):
     scans_today = serializers.IntegerField()
     hourly = serializers.ListField(child=serializers.IntegerField())
     last_scan = LastScanSerializer(allow_null=True)
+    history = HistorySerializer()
     created_at = serializers.DateTimeField()
 
     class Meta:
@@ -90,7 +103,9 @@ class SetupSerializer(serializers.Serializer):
     http = ProtocolSerializer()
     https = ProtocolSerializer()
     last_event_at = serializers.DateTimeField(allow_null=True)
+    last_seen_at = serializers.DateTimeField(allow_null=True)
     last_test_at = serializers.DateTimeField(allow_null=True)
+    history = HistorySerializer()
 
     class Meta:
         ref_name = "FaceIdSetup"

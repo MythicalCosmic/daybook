@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-09 15:50+0500\n"
+"POT-Creation-Date: 2026-11-09 16:22+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -4079,6 +4079,10 @@ msgid "Attendance timesheet"
 msgstr "Davomat tabeli"
 
 #: backend/apps/attendance/hooks.py
+msgid "Timesheet, form T-13"
+msgstr "Tabel, T-13 shakli"
+
+#: backend/apps/attendance/hooks.py
 msgid "Attendance corrections to approve"
 msgstr "Tasdiqlanadigan davomat tuzatishlari"
 
@@ -6075,6 +6079,15 @@ msgid ""
 msgstr ""
 "Terminal soati biznikidan qancha farq qiladi, soniyalarda (oldinda bo‘lsa — "
 "musbat)."
+
+#: backend/apps/faceid/models.py
+msgid "Old scans the terminal sent that were skipped."
+msgstr "Terminal yuborgan, lekin o‘tkazib yuborilgan eski skanerlashlar."
+
+#: backend/apps/faceid/models.py
+msgid "The newest skipped old scan's time."
+msgstr ""
+"O‘tkazib yuborilgan eski skanerlashlarning eng yangisi qachon bo‘lgani."
 
 #: backend/apps/faceid/models.py
 msgid "Unknown face"

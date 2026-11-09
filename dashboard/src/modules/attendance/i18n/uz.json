@@ -156,6 +156,7 @@
   "attendance.cell.unscheduled.short": "+",
   "attendance.sheet.title": "Tabel",
   "attendance.sheet.description": "Oyning har bir kuni bir qarashda. Ko‘rish yoki tuzatish uchun kunni bosing.",
+  "attendance.sheet.t13": "T-13 shakli",
   "attendance.sheet.thisMonth": "Shu oy",
   "attendance.sheet.attendanceRate": "Davomat",
   "attendance.sheet.onTime": "O‘z vaqtida",
