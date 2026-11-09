@@ -358,7 +358,7 @@ const movingOpen = computed({ get: () => moving.value !== null, set: (value: boo
           <li v-for="row in rows" :key="row.assignment.id" class="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
             <PersonCell :person="row.member" :subtitle="[row.member.position, row.member.branch].filter(Boolean).join(' · ') || null" link class="min-w-0 flex-1 basis-48" />
             <div class="flex w-full items-center gap-2 sm:w-48">
-              <ProgressBar class="flex-1" size="sm" :value="row.assignment.percent" :max="100" tone="auto" :label="row.member.name" />
+              <ProgressBar class="flex-1" size="sm" :value="row.assignment.percent" :max="100" tone="auto" />
               <span class="w-14 text-right text-xs text-muted tabular-nums">{{ row.assignment.steps_done }}/{{ row.assignment.steps_total }}</span>
             </div>
             <div class="flex w-40 flex-col items-start gap-0.5">

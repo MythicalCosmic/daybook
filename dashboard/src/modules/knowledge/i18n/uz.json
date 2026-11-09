@@ -288,5 +288,6 @@
   "knowledge.readers.view.visits": "{n} marta ochilgan | {n} marta ochilgan | {n} marta ochilgan",
   "knowledge.readers.view.scrolled": "o‘qilgan qismi: {n} %",
   "knowledge.readers.view.version": "v{v}",
-  "knowledge.readers.view.opened": "Ochganlar: {opened} / {total}"
+  "knowledge.readers.view.opened": "Ochganlar: {opened} / {total}",
+  "knowledge.readers.view.openedTitle": "Ochgan xodimlar"
 }

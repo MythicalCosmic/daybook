@@ -149,7 +149,7 @@ function open(row: CourseRow): void {
       </template>
       <template #cell-progress="{ row }">
         <div class="flex items-center gap-2">
-          <ProgressBar class="flex-1" size="sm" :value="row.stats.completed" :max="row.stats.people || 1" tone="auto" :label="row.title" />
+          <ProgressBar class="flex-1" size="sm" :value="row.stats.completed" :max="row.stats.people || 1" tone="auto" />
           <span class="w-16 text-right text-xs text-muted tabular-nums">{{ row.stats.people ? `${row.stats.completed}/${row.stats.people}` : "—" }}</span>
         </div>
       </template>

@@ -24,7 +24,7 @@ import { useFormat } from "@/lib/useFormat";
 import { useCompanyId, useCompanyStore } from "@/stores/company";
 
 import { learningApi, usePerson } from "../api";
-import { STATE_TONES } from "../lib";
+import { clock, STATE_TONES } from "../lib";
 
 const { t } = useI18n();
 const fmt = useFormat();
@@ -72,7 +72,7 @@ async function certificate(assignmentId: number): Promise<void> {
               <span v-if="row.cycle > 1" class="text-xs font-normal text-muted"> · {{ t("learning.person.cycle", { n: row.cycle }) }}</span>
             </RouterLink>
             <div class="flex w-full items-center gap-2 sm:w-44">
-              <ProgressBar class="flex-1" size="sm" :value="row.percent" :max="100" tone="auto" :label="row.course.title" />
+              <ProgressBar class="flex-1" size="sm" :value="row.percent" :max="100" tone="auto" />
               <span class="w-12 text-right text-xs text-muted tabular-nums">{{ row.steps_done }}/{{ row.steps_total }}</span>
             </div>
             <StatusPill v-if="row.late" size="sm" tone="danger" :label="t('learning.daysLate', { n: row.days_late }, row.days_late)" />
@@ -92,8 +92,8 @@ async function certificate(assignmentId: number): Promise<void> {
                 <RouterLink :to="`/c/${company.currentId}/learning/lessons/${row.lesson.id}`" class="min-w-0 flex-1 truncate text-sm text-fg hover:underline">{{ row.lesson.emoji ? `${row.lesson.emoji} ` : "" }}{{ row.lesson.title }}</RouterLink>
                 <StatusPill size="sm" :tone="row.completed_at ? 'success' : 'info'" :label="row.completed_at ? t('learning.watched.watched') : `${row.percent}%`" />
               </div>
-              <ProgressBar size="xs" :value="row.percent" :max="100" :tone="row.completed_at ? 'success' : 'info'" :label="row.lesson.title" />
-              <span class="text-[11px] text-subtle">{{ t("learning.person.spent", { time: fmt.duration(Math.round(row.spent_seconds / 60)), sessions: row.sessions }) }} · <RelativeTime :value="row.last_at" /></span>
+              <ProgressBar size="xs" :value="row.percent" :max="100" :tone="row.completed_at ? 'success' : 'info'" />
+              <span class="text-[11px] text-subtle">{{ t("learning.person.spent", { time: clock(row.spent_seconds), sessions: row.sessions }) }} · <RelativeTime :value="row.last_at" /></span>
             </li>
           </ul>
         </section>

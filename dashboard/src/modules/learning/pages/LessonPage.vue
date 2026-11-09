@@ -27,7 +27,6 @@ import TextInput from "@/components/TextInput.vue";
 import UiButton from "@/components/UiButton.vue";
 import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
-import { useFormat } from "@/lib/useFormat";
 import RichEditor from "@/modules/knowledge/components/editor/RichEditor.vue";
 import "@/modules/knowledge/prose.css";
 import { topicColor } from "@/modules/knowledge/topics";
@@ -40,7 +39,6 @@ import { clock, STATUS_TONES, VIDEO_TONES, VIEWER_TONES, youtubeEmbed, youtubeId
 import type { LessonDetail, LessonInput, LessonSource, Video, ViewerState } from "../types";
 
 const { t } = useI18n();
-const fmt = useFormat();
 const route = useRoute();
 const router = useRouter();
 const company = useCompanyStore();
@@ -293,7 +291,7 @@ const viewerOptions = computed(() => {
             <div class="flex w-full flex-col gap-1 sm:w-64">
               <RangesStrip :ranges="row.ranges" :duration="viewers.data.value?.duration_seconds ?? 0" :percent="row.percent" />
               <span class="text-xs text-muted tabular-nums">
-                {{ t("learning.watched.summary", { percent: row.percent, spent: fmt.duration(Math.round(row.spent_seconds / 60)), sessions: row.sessions }) }}
+                {{ t("learning.watched.summary", { percent: row.percent, spent: clock(row.spent_seconds), sessions: row.sessions }) }}
               </span>
             </div>
             <div class="flex w-36 flex-col items-start gap-0.5">

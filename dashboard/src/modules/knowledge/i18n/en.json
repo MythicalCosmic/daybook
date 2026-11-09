@@ -288,5 +288,6 @@
   "knowledge.readers.view.visits": "opened {n} times | opened {n} time | opened {n} times",
   "knowledge.readers.view.scrolled": "{n} % down",
   "knowledge.readers.view.version": "v{v}",
-  "knowledge.readers.view.opened": "{opened} of {total} have opened it"
+  "knowledge.readers.view.opened": "{opened} of {total} have opened it",
+  "knowledge.readers.view.openedTitle": "People who opened it"
 }

@@ -288,5 +288,6 @@
   "knowledge.readers.view.visits": "открыл {n} раз | открыл {n} раза | открыл {n} раз",
   "knowledge.readers.view.scrolled": "прочитано {n} %",
   "knowledge.readers.view.version": "в{v}",
-  "knowledge.readers.view.opened": "Открыли: {opened} из {total}"
+  "knowledge.readers.view.opened": "Открыли: {opened} из {total}",
+  "knowledge.readers.view.openedTitle": "Сотрудники, открывшие страницу"
 }

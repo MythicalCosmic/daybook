@@ -1,5 +1,7 @@
 <script setup lang="ts">
-/** A page in a list: emoji, title, its space and when it changed; read progress for managers. */
+/** A page in a list: emoji, title, its space and when it changed; read progress and how many
+ * opened it, for managers. */
+import { Eye } from "@lucide/vue";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink } from "vue-router";
@@ -35,6 +37,9 @@ const to = computed(() => `/c/${company.currentId}/knowledge/p/${props.page.id}`
       </span>
     </span>
     <ReadProgress v-if="showRead && page.require_ack && page.read" :read="page.read" compact class="hidden sm:flex" />
+    <span v-if="showRead && page.published && typeof page.opened === 'number'" class="hidden shrink-0 items-center gap-1 text-xs text-muted tabular-nums sm:inline-flex" :title="t('knowledge.readers.view.openedTitle')">
+      <Eye :size="13" aria-hidden="true" />{{ page.opened }}
+    </span>
     <slot name="end" />
   </RouterLink>
 </template>

@@ -117,7 +117,7 @@ const sentText = computed(() =>
   <div class="flex flex-col gap-3">
     <div v-if="busy || (progress && pending)" class="ui-card flex flex-col gap-2 p-4" aria-live="polite">
       <div class="flex items-center gap-3">
-        <CloudUpload :size="18" class="shrink-0 text-accent" aria-hidden="true" />
+        <CloudUpload :size="18" class="shrink-0 text-primary" aria-hidden="true" />
         <p class="min-w-0 flex-1 truncate text-sm font-medium text-fg">{{ pending?.file.name }}</p>
         <UiButton v-if="busy" size="sm" variant="ghost" :icon="X" @click="cancel">{{ t("common.cancel") }}</UiButton>
       </div>

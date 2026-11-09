@@ -20,7 +20,7 @@ const label = computed(() => t("learning.watched.strip", { percent: props.percen
 
 <template>
   <div
-    class="relative w-full overflow-hidden rounded-full bg-surface-2"
+    class="relative w-full overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--c-text)_8%,transparent)]"
     :class="size === 'sm' ? 'h-1.5' : 'h-2.5'"
     role="img"
     :aria-label="label"
@@ -29,7 +29,7 @@ const label = computed(() => t("learning.watched.strip", { percent: props.percen
     <span
       v-for="(part, index) in parts"
       :key="index"
-      class="absolute inset-y-0 rounded-full bg-accent"
+      class="absolute inset-y-0 rounded-full bg-primary"
       :style="{ left: `${part.left}%`, width: `${part.width}%` }"
     />
   </div>

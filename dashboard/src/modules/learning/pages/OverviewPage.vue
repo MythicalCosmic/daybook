@@ -121,7 +121,7 @@ function openCourse(id: number): void {
                 <StatusPill v-if="course.mandatory" size="sm" variant="outline" tone="primary" :label="t('learning.mandatory')" />
               </span>
               <span class="flex w-full items-center gap-3 sm:w-72">
-                <ProgressBar class="flex-1" size="sm" :value="course.completed" :max="course.people || 1" tone="auto" :label="course.title" />
+                <ProgressBar class="flex-1" size="sm" :value="course.completed" :max="course.people || 1" tone="auto" />
                 <span class="w-24 text-right text-xs text-muted tabular-nums">{{ t("learning.ofPeople", { done: course.completed, people: course.people }) }}</span>
               </span>
               <StatusPill v-if="course.overdue" size="sm" tone="danger" variant="plain" :label="t('learning.lateCount', { n: course.overdue }, course.overdue)" />
