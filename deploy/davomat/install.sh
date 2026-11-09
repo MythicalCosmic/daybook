@@ -442,6 +442,7 @@ summary() {
 		info "Open ${BOLD}$url/${RESET} and sign in as ${BOLD}$ADMIN_USERNAME${RESET}."
 	else
 		info "Open ${BOLD}$url/${RESET} in a browser to set up your organization."
+		info "Do it now: until the setup is done, whoever opens the address first becomes its owner."
 	fi
 	info "Face ID terminals post to $(env_get PUBLIC_DEVICE_HOST "$(env_get DOMAIN)") over HTTP, port $(env_get HTTP_PORT 80): Face ID › Add a terminal shows the exact values."
 	info "Settings:  $ENV_FILE (keep a copy somewhere safe)"
