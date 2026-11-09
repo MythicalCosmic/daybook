@@ -70,7 +70,7 @@ known-first-party = ["apps", "bot", "config", "core", "main", "ownerbot", "utils
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings.test"
 pythonpath = ["backend", "employee_bot", "owner_bot"]
-testpaths = ["backend", "employee_bot/tests", "owner_bot/ownerbot/tests"]
+testpaths = ["backend", "employee_bot/tests", "owner_bot/ownerbot/tests", "davomat_bot/tests"]
 python_files = ["test_*.py"]
 addopts = "-ra --strict-markers"
 asyncio_mode = "auto"
