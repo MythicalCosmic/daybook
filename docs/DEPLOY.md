@@ -103,6 +103,28 @@ When HTTPS works, set `DJANGO_SECURE_HSTS_SECONDS=31536000` in `.env` and run `m
 
 Uploads live in two volumes: `trello911_media` (proof photos, logos, avatars: public at unguessable addresses) and `trello911_private_media` (receipts, Z-reports, documents, contracts, payslips and exports: never served by Caddy, only through short-lived signed links that re-check the person's access).
 
+## Face ID terminals
+
+A Hikvision face recognition terminal (MinMoe: DS-K1T341AMF, DS-K1T341, DS-K1T342, DS-K1T343, DS-K1T671, DS-K1T804…) at the staff door recognises people itself, against its own list (Employee No, name, face, finger, card), and posts each event with its snapshot to us. Faces and templates stay on the terminal. Each terminal has its own code in the address; anyone who knows the code can post events as that terminal, so treat the address like a password (a new code is one click in Attendance › Face ID, or the admin action "Give the selected terminals new codes").
+
+**Add the terminal** in the dashboard (Attendance › Face ID › Add a terminal: name, branch, direction), or in the Django admin (Attendance › Face ID terminals › Add). The terminal's page shows the values below with its own code.
+
+**On the terminal** (a browser on the pharmacy's network at the terminal's address, e.g. `http://192.168.1.250`, signed in as `admin`): Configuration › Network › Advanced Settings › HTTP Listening (on some firmware: Event › Alarm Server, or Platform Access):
+
+| Field | Value |
+|---|---|
+| Destination IP or Host Name | `PUBLIC_DEVICE_HOST`, else the host of `DASHBOARD_URL` (e.g. `144.91.81.29.nip.io`, or `144.91.81.29` when the firmware takes only an address) |
+| URL | `/api/v1/devices/hik/<code>/` |
+| Port | `80` with protocol HTTP (DS-K1T341AMF firmware V3.2.x offers only HTTP); `443` with HTTPS where the firmware offers it |
+
+Save, then press Test if the page has one (it answers 200). Then check:
+
+- Each person on the terminal has the Employee No the dashboard shows for them (Attendance › Face ID › Not linked links the numbers it hasn't seen before; a number whose name on the terminal is exactly one person's full name links itself).
+- The terminal's time is right (Configuration › System › Time Settings: NTP, or the right time zone, GMT+05:00 for Tashkent). A terminal whose clock is more than 10 minutes off is shown as such, and its scans get the time they arrived.
+- To get a snapshot with each event, switch on uploading the captured picture in the terminal's access control or picture settings (the name differs by firmware).
+
+**How it reaches Django**: Caddy proxies `/api/v1/devices/*` over HTTPS (`{$DOMAIN}`), over plain HTTP for the same name (`http://{$DOMAIN}`) and on the bare IP (`:80`, sent on as `{$DOMAIN}`); everything else on port 80 still redirects to HTTPS. Bodies are at most 8 MB. Django never redirects that path to HTTPS (`SECURE_REDIRECT_EXEMPT`), answers 200 to every request with a known code (even an event it ignores or can't read, so the terminal never retries it forever), 404 to an unknown one, and allows 1200 requests a minute per code. Port 80 must be open on the server's firewall.
+
 ## Performance
 
 The defaults are sized for one server with 12 vCPU and 47 GB of memory serving a few hundred people at once, where a whole shift opens the mini app in the same minute from mobile networks (carrier-grade NAT puts hundreds of them behind one public address).

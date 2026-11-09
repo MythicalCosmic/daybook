@@ -65,6 +65,7 @@ OWNER_APPS = (
     "sales",
     "inventory",
     "attendance",
+    "faceid",
     "hr",
     "payroll",
     "ai",
@@ -130,4 +131,6 @@ urlpatterns = [
     ),
     # Private files
     path("files/<str:token>/", private_file, name="private-file"),
+    # Devices that post events (Face ID terminals): their own code in the path, no session.
+    path("devices/", include("apps.faceid.device_urls")),
 ]

@@ -68,6 +68,43 @@ def event(
     }
 
 
+def k1t341amf(
+    *, number="00000002", name="Гулирано", serial=40585, at="2026-10-21T07:49:44+08:00", minor=75
+) -> dict:
+    """The owner's DS-K1T341AMF (V3.2.30 build 220311) as read over ISAPI: a zero-padded number,
+    a first name (here in Cyrillic), the factory time zone (+08:00) on a wall clock set by
+    hand, no attendanceStatus (the firmware has no attendance mode), the picture's LAN link."""
+    return {
+        "ipAddress": "192.168.1.250",
+        "portNo": 80,
+        "protocol": "HTTP",
+        "macAddress": "e8:a0:ed:12:34:56",
+        "channelID": 1,
+        "dateTime": at,
+        "activePostCount": 1,
+        "eventType": "AccessControllerEvent",
+        "eventState": "active",
+        "eventDescription": "Access Controller Event",
+        "AccessControllerEvent": {
+            "major": 5,
+            "minor": minor,
+            "time": at,
+            "cardType": 1,
+            "name": name,
+            "cardReaderNo": 1,
+            "doorNo": 1,
+            "employeeNoString": number,
+            "type": 0,
+            "serialNo": serial,
+            "userType": "normal",
+            "currentVerifyMode": "cardOrFaceOrFp",
+            "mask": "no",
+            "picturesNumber": 1,
+            "pictureURL": "http://192.168.1.250/LOCALS/pic/acsLinkCap/202611_00/09_074944_30075_0.jpeg@WEB000000000014",
+        },
+    }
+
+
 def heartbeat(at="2026-10-21T08:57:12+05:00") -> dict:
     return {
         "ipAddress": "192.168.1.250",

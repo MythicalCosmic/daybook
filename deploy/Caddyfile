@@ -1,5 +1,24 @@
+# Face ID terminals (apps/attendance/device_api.py): an event and its snapshot, at most 8 MB.
+# The body is buffered so Django always gets a Content-Length, even from firmware that sends
+# chunked bodies. Many terminals can only speak plain HTTP, and can't follow a redirect with
+# their event, so this path is never redirected to HTTPS.
+(devices) {
+	handle /api/v1/devices/* {
+		request_body {
+			max_size 8MB
+		}
+		reverse_proxy backend:8000 {
+			request_buffers 8MB
+			header_up Host {$DOMAIN}
+		}
+	}
+}
+
 # HTTPS for the whole site; Caddy gets and renews the certificate for {$DOMAIN} by itself.
 {$DOMAIN} {
+	# Face ID terminals post their events here (and over plain HTTP, below).
+	import devices
+
 	# AI answers as server-sent events, from the stream service. Matched before the catch-all,
 	# flushed as they arrive, and never compressed (`encode` would hold events back).
 	handle /api/v1/owner/ai/turns/* {
@@ -37,5 +56,23 @@
 				keepalive 60s
 			}
 		}
+	}
+}
+
+# Plain HTTP for the site's name: Face ID terminals whose firmware offers no HTTPS post here;
+# everything else goes to HTTPS (as Caddy does by itself for sites without this block).
+http://{$DOMAIN} {
+	import devices
+	handle {
+		redir https://{host}{uri} permanent
+	}
+}
+
+# The server's bare address over plain HTTP, for terminals that take an IP address rather than
+# a name: only the device path, handed to Django under the site's name; the rest to HTTPS.
+:80 {
+	import devices
+	handle {
+		redir https://{$DOMAIN}{uri} permanent
 	}
 }

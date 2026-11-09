@@ -242,6 +242,37 @@ def done_now(record: AttendanceRecord) -> str:
     }
 
 
+# Face ID terminals ------------------------------------------------------------------------
+
+
+def face_checked_in(record: AttendanceRecord) -> str:
+    """What the person hears when the terminal checks them in: "Keldingiz: 08:57, Chilonzor.\""""
+    values = {"time": clock.hhmm(record.company, record.check_in_at)}
+    if record.branch_id:
+        text = _("You came in: %(time)s, %(branch)s.") % {
+            **values,
+            "branch": html.quote(record.branch.name),
+        }
+    else:
+        text = _("You came in: %(time)s.") % values
+    if record.is_late:
+        text += "\n" + _("Late by %(late)s.") % {"late": duration(record.late_minutes)}
+    return text
+
+
+def face_checked_out(record: AttendanceRecord) -> str:
+    """ "Ketdingiz: 18:04. Bugun ishlagan vaqtingiz: 9 soat 7 daq." """
+    text = _("You left: %(time)s. You worked %(worked)s today.") % {
+        "time": clock.hhmm(record.company, record.check_out_at),
+        "worked": duration(record.worked_minutes),
+    }
+    if record.overtime_status == AttendanceRecord.Overtime.PENDING:
+        text += "\n" + _("%(extra)s of overtime is waiting for approval.") % {
+            "extra": duration(record.overtime_minutes)
+        }
+    return text
+
+
 # Group posts (GroupEvent.ATTENDANCE and SHIFTS) -------------------------------------------
 
 

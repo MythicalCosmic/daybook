@@ -661,6 +661,20 @@ def morning_post(company, branch, board_rows: list[dict], rostered: int) -> int:
 # Employee-bot nudges --------------------------------------------------------------------
 
 
+def scan_message(record_id: int, *, checked_in: bool) -> bool:
+    """The person's bot message when a Face ID terminal checked them in ("Keldingiz: 08:57,
+    Chilonzor.") or out (with today's worked time)."""
+    record = (
+        AttendanceRecord.objects.select_related("company", "branch", "membership__user")
+        .filter(pk=record_id)
+        .first()
+    )
+    if record is None:
+        return False
+    render = bot_messages.face_checked_in if checked_in else bot_messages.face_checked_out
+    return send_direct(record.membership, lambda: (render(record), None))
+
+
 def nudge_pre_shift(shift: WorkShift) -> bool:
     return send_direct(shift.membership, lambda: bot_messages.pre_shift(shift))
 

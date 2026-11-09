@@ -57,6 +57,8 @@ INSTALLED_APPS = [
     "apps.sales",
     "apps.inventory",
     "apps.attendance",
+    # After attendance: its scans check people in and out through attendance's services.
+    "apps.faceid",
     "apps.hr",
     "apps.payroll",
     "apps.ai",
@@ -137,6 +139,9 @@ MINIAPP_DIST = Path(env("MINIAPP_DIST", default=str(ROOT_DIR / "miniapp" / "dist
 DASHBOARD_DIST = Path(env("DASHBOARD_DIST", default=str(ROOT_DIR / "dashboard" / "dist")))
 # Public address of the dashboard, for "Open dashboard" buttons in the bots.
 DASHBOARD_URL = env("DASHBOARD_URL", default="")
+# The host Face ID terminals post to (a bare IP for firmware that takes no names); empty: the
+# host of DASHBOARD_URL.
+PUBLIC_DEVICE_HOST = env("PUBLIC_DEVICE_HOST", default="")
 # POST /api/v1/owner/auth/dev-login/ (only together with DEBUG).
 DASHBOARD_DEV_LOGIN = env.bool("DASHBOARD_DEV_LOGIN", default=False)
 MEDIA_URL = "media/"

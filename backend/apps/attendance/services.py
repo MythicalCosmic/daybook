@@ -1056,6 +1056,8 @@ def check_in(
     photo=None,
     source: str = Source.APP,
     now: datetime | None = None,
+    branch: Branch | None = None,
+    quiet: bool = False,
 ) -> CheckResult:
     """Check `membership` in at `now`.
 
@@ -1063,13 +1065,22 @@ def check_in(
     without one it is an unscheduled check-in. Distance and flags come from the shift's
     branch, else the person's home branch. A second tap within two minutes returns the same
     record; a row lock on the person and a unique constraint make a double tap one record.
-    Checking in again during a shift whose check-out was a mistake reopens that record."""
+    Checking in again during a shift whose check-out was a mistake reopens that record.
+
+    `branch` (a Face ID terminal's) is where it happened: it becomes the record's branch, no
+    location is asked or judged, and a branch other than the shift's is flagged. `quiet`
+    sends no messages (events a terminal delivers long after the scan)."""
     company = membership.company
     _ensure_module(company)
     settings = conf.get_settings(company)
     now = now or timezone.now()
     lat, lng, accuracy = _point(lat, lng, accuracy)
-    if settings.require_location and lat is None and source in (Source.APP, Source.BOT):
+    if (
+        settings.require_location
+        and lat is None
+        and branch is None
+        and source in (Source.APP, Source.BOT)
+    ):
         raise DomainError(_("Share your location to check in."))
     if settings.require_photo and photo is None and source == Source.APP:
         raise DomainError(_("Take a selfie to check in."))
@@ -1095,8 +1106,14 @@ def check_in(
                 % {"time": clock.hhmm(company, current.check_in_at)}
             )
         shift = queries.current_shift(member, now, settings=settings)
-        branch = (shift.branch if shift else None) or member.home_branch
-        distance, outside, flags = _locate(branch, lat, lng, accuracy, settings)
+        if branch is None:
+            branch = (shift.branch if shift else None) or member.home_branch
+            distance, outside, flags = _locate(branch, lat, lng, accuracy, settings)
+        else:
+            # A terminal at the door knows the place: nothing to measure.
+            distance, outside, flags = None, False, []
+            if shift is not None and shift.branch_id and shift.branch_id != branch.pk:
+                flags.append(Flag.OTHER_BRANCH)
         if outside and settings.outside_action == AttendanceSettings.OutsideAction.REJECT:
             raise DomainError(
                 _("You're %(distance)s from %(branch)s. Check in when you get there.")
@@ -1151,9 +1168,9 @@ def check_in(
             record.in_photo.save(selfie.name, selfie, save=False)
             record.save(update_fields=["in_photo", "updated_at"])
         record_id = record.pk
-        if record.is_late and not reopened:
+        if record.is_late and not reopened and not quiet:
             transaction.on_commit(lambda: notify.late_arrival(record_id))
-        if outside and not reopened:
+        if outside and not reopened and not quiet:
             transaction.on_commit(lambda: notify.outside_check_in(record_id))
     _bump(company.pk, PULSE_BOARD, PULSE_NOT_IN)
     return CheckResult(record, created, outside, distance)
@@ -1167,9 +1184,11 @@ def check_out(
     accuracy=None,
     source: str = Source.APP,
     now: datetime | None = None,
+    quiet: bool = False,
 ) -> CheckResult:
     """Check `membership` out of their open record at `now` (a second tap within two minutes
-    returns the record just closed). Overtime beyond the shift waits for approval."""
+    returns the record just closed). Overtime beyond the shift waits for approval. A Face ID
+    terminal's check-out (`source` face) measures no location; `quiet` sends no messages."""
     company = membership.company
     _ensure_module(company)
     settings = conf.get_settings(company)
@@ -1192,7 +1211,10 @@ def check_out(
             if recent is not None:
                 return CheckResult(recent, False, False, recent.out_distance_m)
             raise DomainError(_("You haven't checked in."))
-        distance, outside, flags = _locate(record.branch, lat, lng, accuracy, settings)
+        if source == Source.FACE:
+            distance, outside, flags = None, False, []
+        else:
+            distance, outside, flags = _locate(record.branch, lat, lng, accuracy, settings)
         record.check_out_at = max(now, record.check_in_at)
         record.out_lat, record.out_lng, record.out_accuracy_m = lat, lng, accuracy
         record.out_distance_m = distance
@@ -1203,7 +1225,7 @@ def check_out(
                 rules.add_flag(record, flag)
         rules.compute(record, settings)
         record.save()
-        if record.overtime_status == AttendanceRecord.Overtime.PENDING:
+        if record.overtime_status == AttendanceRecord.Overtime.PENDING and not quiet:
             record_id = record.pk
             transaction.on_commit(lambda: notify.overtime_waiting(record_id))
     _bump(company.pk, PULSE_BOARD, PULSE_CORRECTIONS)
@@ -1232,6 +1254,179 @@ def check_out_now(membership: Membership, *, source: str = Source.BOT) -> CheckR
             transaction.on_commit(lambda: notify.overtime_waiting(record_id))
     _bump(company.pk, PULSE_BOARD, PULSE_CORRECTIONS)
     return CheckResult(record, False, False, None)
+
+
+# Face ID scans (apps.faceid) ------------------------------------------------------------
+
+
+@dataclass
+class ScanResult:
+    """What a terminal's scan did: `action` is checked_in · checked_out · repeat · ignored;
+    `flags` say why (other_branch, missed_entry, late_check_out, already_in, out_of_order,
+    refused, not_approved); `message` is a refusal's reason."""
+
+    action: str
+    record: AttendanceRecord | None
+    flags: list[str]
+    message: str = ""
+
+
+def scan(
+    membership: Membership,
+    *,
+    at: datetime,
+    wants: str,
+    branch: Branch,
+    photo=None,
+    quiet: bool = False,
+    repeat_window: timedelta = timedelta(minutes=2),
+    notify_person: bool = True,
+) -> ScanResult:
+    """A face recognition terminal at `branch` verified `membership` at `at`: check them in or out.
+
+    `wants` is the terminal's direction: "in" (an entrance), "out" (an exit) or "toggle" (one
+    door: no open check-in means in, otherwise out). Within `repeat_window` of the person's own
+    check-in or check-out nothing changes (a repeat); a scan older than what is on record changes
+    nothing either (a late delivery after the app was used). An exit scan, or a toggle, while a
+    record the system closed was still open delivers its real check-out; an exit scan after a
+    check-out earlier that shift moves the check-out (the last exit is the check-out); an exit scan
+    without any check-in checks in and is flagged `missed_entry`. Every check-in rule still holds.
+    `quiet`: no messages at all; `notify_person`: the person's own bot message."""
+    _ensure_module(membership.company)
+    settings = conf.get_settings(membership.company)
+    with transaction.atomic():
+        member = (
+            Membership.objects.select_for_update(of=("self",))
+            .select_related("company", "home_branch", "user")
+            .get(pk=membership.pk)
+        )
+        if member.status != Membership.Status.APPROVED:
+            return ScanResult("ignored", None, ["not_approved"])
+        current = queries.open_record(member)
+        latest = (
+            AttendanceRecord.objects.filter(membership=member, check_in_at__isnull=False)
+            .select_related("shift", "branch")
+            .order_by("-check_in_at")
+            .first()
+        )
+        touches = _scan_touches(current, latest)
+        if any(abs(at - moment) < repeat_window for moment in touches):
+            return ScanResult("repeat", current or latest, [])
+        if touches and at < max(touches):
+            return ScanResult("ignored", current or latest, ["out_of_order"])
+        message = (not quiet) and notify_person
+        if wants == "in":
+            if current is not None:
+                return ScanResult("repeat", current, ["already_in"])
+            return _scan_in(member, at, branch, photo, quiet, message)
+        if current is not None:
+            return _scan_out(member, at, quiet, message)
+        if latest is not None and _open_until_closed(latest, at, settings):
+            return _scan_late_out(latest, at, settings, quiet, message)
+        if wants == "out":
+            if latest is not None and _same_session(latest, at, settings):
+                return _scan_late_out(latest, at, settings, quiet, message)
+            return _scan_in(member, at, branch, photo, quiet, message, missed_entry=True)
+        return _scan_in(member, at, branch, photo, quiet, message)
+
+
+def _scan_touches(current, latest) -> list[datetime]:
+    """The person's own check-ins and real check-outs on record."""
+    moments = []
+    for record in (current, latest):
+        if record is None:
+            continue
+        moments.append(record.check_in_at)
+        if record.check_out_at and record.status == AttendanceRecord.Status.CLOSED:
+            moments.append(record.check_out_at)
+    return [moment for moment in moments if moment is not None]
+
+
+def _closes_at(record: AttendanceRecord, settings) -> datetime:
+    """When `auto_close` closes a forgotten check-in."""
+    if record.shift_id:
+        return record.shift.ends_at + timedelta(hours=settings.auto_close_after_hours)
+    return record.check_in_at + timedelta(hours=rules.UNSCHEDULED_AUTO_CLOSE_HOURS)
+
+
+def _open_until_closed(record: AttendanceRecord, at: datetime, settings) -> bool:
+    """`record` was still open at `at`; only the system closed it later."""
+    return (
+        record.status == AttendanceRecord.Status.AUTO_CLOSED
+        and record.check_in_at < at <= _closes_at(record, settings)
+    )
+
+
+def _same_session(record: AttendanceRecord, at: datetime, settings) -> bool:
+    """A record closed earlier in the same shift (or, without a shift, the same day)."""
+    if record.status not in (AttendanceRecord.Status.CLOSED, AttendanceRecord.Status.AUTO_CLOSED):
+        return False
+    if record.check_out_at is None or record.check_out_at >= at:
+        return False
+    if record.shift_id:
+        return at <= _closes_at(record, settings)
+    return record.date == clock.local(record.company, at).date()
+
+
+def _scan_in(member, at, branch, photo, quiet, message, *, missed_entry=False) -> ScanResult:
+    try:
+        result = check_in(
+            member, source=Source.FACE, now=at, photo=photo, branch=branch, quiet=quiet
+        )
+    except DomainError as exc:
+        return ScanResult("ignored", None, ["refused"], str(exc)[:200])
+    record = result.record
+    flags = [Flag.OTHER_BRANCH.value] if Flag.OTHER_BRANCH in record.flags else []
+    if missed_entry:
+        flags.append(Flag.MISSED_ENTRY.value)
+        rules.add_flag(record, Flag.MISSED_ENTRY)
+        record.save(update_fields=["flags", "updated_at"])
+    if message:
+        transaction.on_commit(lambda: notify.scan_message(record.pk, checked_in=True))
+    return ScanResult("checked_in", record, flags)
+
+
+def _scan_out(member, at, quiet, message) -> ScanResult:
+    try:
+        result = check_out(member, source=Source.FACE, now=at, quiet=quiet)
+    except DomainError as exc:
+        return ScanResult("ignored", None, ["refused"], str(exc)[:200])
+    record = result.record
+    if message:
+        transaction.on_commit(lambda: notify.scan_message(record.pk, checked_in=False))
+    return ScanResult("checked_out", record, [])
+
+
+def _scan_late_out(record, at, settings, quiet, message) -> ScanResult:
+    """The real check-out at `at`, in place of the system's guess or an earlier exit."""
+    record = AttendanceRecord.objects.select_for_update(of=("self",)).get(pk=record.pk)
+    record.check_out_at = max(at, record.check_in_at)
+    record.status = AttendanceRecord.Status.CLOSED
+    record.out_source = Source.FACE
+    rules.drop_flag(record, Flag.AUTO_CLOSED)
+    record.overtime_status = AttendanceRecord.Overtime.NONE
+    rules.compute(record, settings)
+    record.save()
+    if record.overtime_status == AttendanceRecord.Overtime.PENDING and not quiet:
+        transaction.on_commit(lambda: notify.overtime_waiting(record.pk))
+    if message:
+        transaction.on_commit(lambda: notify.scan_message(record.pk, checked_in=False))
+    _bump(record.company_id, PULSE_BOARD, PULSE_CORRECTIONS)
+    return ScanResult("checked_out", record, ["late_check_out"])
+
+
+def drop_face_photos(company: Company, *, before: datetime) -> int:
+    """Delete the snapshots Face ID check-ins keep (`in_photo` of source face) from before
+    `before` (apps.faceid's retention). Returns how many files went."""
+    records = AttendanceRecord.objects.filter(
+        company=company, in_source=Source.FACE, check_in_at__lt=before
+    ).exclude(in_photo="")
+    removed = 0
+    for record in records.iterator():
+        record.in_photo.delete(save=False)
+        AttendanceRecord.objects.filter(pk=record.pk).update(in_photo="")
+        removed += 1
+    return removed
 
 
 # Records: manager edits -----------------------------------------------------------------

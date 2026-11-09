@@ -100,6 +100,12 @@ JPEG_MAGIC = b"\xff\xd8\xff"
 PERSON, STRANGER, OTHER, HEARTBEAT = "person", "stranger", "other", "heartbeat"
 
 
+def number_key(value) -> str:
+    """An Employee No as we match it: no spaces or leading zeros, upper case ("00000002" is
+    "2"); "" for no number at all ("0", "000", nothing)."""
+    return str(value or "").strip().lstrip("0").upper()[:32]
+
+
 @dataclass
 class DeviceEvent:
     """One event as the terminal described it."""
@@ -130,7 +136,7 @@ class DeviceEvent:
 
     @property
     def has_number(self) -> bool:
-        return bool(self.employee_no) and self.employee_no.strip("0") != ""
+        return bool(number_key(self.employee_no))
 
     @property
     def kind(self) -> str:
@@ -498,7 +504,14 @@ def _drop_long(value, depth: int = 0):
         return None
     if isinstance(value, dict):
         return {
-            str(key)[:64]: _drop_long(item, depth + 1) for key, item in list(value.items())[:80]
+            str(key)[:64]: (
+                # The terminal's own picture links (pictureURL) only work on its network: never
+                # kept, so nobody tries to fetch them.
+                "<link left out>"
+                if isinstance(item, str) and "url" in str(key).lower()
+                else _drop_long(item, depth + 1)
+            )
+            for key, item in list(value.items())[:80]
         }
     if isinstance(value, list):
         return [_drop_long(item, depth + 1) for item in value[:40]]

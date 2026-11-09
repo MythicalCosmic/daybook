@@ -36,6 +36,7 @@ class Feature(models.TextChoices):
     RECOGNITION = "recognition", _("Recognition")
     ASSETS = "assets", _("Assets and equipment")
     LEARNING = "learning", _("Training and quizzes")
+    FACE_ID = "face_id", _("Face ID terminals")
 
 
 class BusinessKind(models.TextChoices):

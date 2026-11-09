@@ -6,8 +6,8 @@ from datetime import UTC, datetime, timedelta, timezone
 
 import pytest
 
-from apps.attendance import hikvision
-from apps.attendance.tests import hikvision_samples as hik
+from apps.faceid import hikvision
+from apps.faceid.tests import samples as hik
 
 TASHKENT = timezone(timedelta(hours=5))
 
@@ -37,6 +37,45 @@ def test_multipart_with_the_json_part_and_the_snapshot():
     assert event.verify_mode == "cardOrFaceOrFp"
     # The picture never lands in what we keep, nor do long strings.
     assert "Picture" not in json.dumps(event.raw)
+
+
+def test_the_owners_ds_k1t341amf_event():
+    """The real shapes: a zero-padded number, a Cyrillic first name, +08:00 on a hand-set wall
+    clock, `major`/`minor` names, no attendanceStatus, a LAN picture link."""
+    content_type, body = hik.multipart(hik.k1t341amf(), part="event_log", picture=hik.jpeg())
+    parsed = hikvision.parse(content_type, body)
+    (event,) = parsed.events
+    assert (event.kind, event.method) == ("person", "face")
+    assert event.employee_no == "00000002"
+    assert hikvision.number_key(event.employee_no) == "2"
+    assert event.name == "Гулирано"
+    assert event.serial_no == 40585
+    assert event.wants == ""  # no attendanceStatus: the terminal's direction decides
+    assert event.device_time == datetime(
+        2026, 10, 21, 7, 49, 44, tzinfo=timezone(timedelta(hours=8))
+    )
+    assert "LOCALS" not in json.dumps(event.raw)  # the LAN link is never kept
+    assert parsed.pictures
+
+
+@pytest.mark.parametrize(
+    ("minor", "number", "kind"),
+    [(0x4B, "00000004", "person"), (0x26, "00000006", "person"), (0x1, "00000008", "person"),
+     (0x68, "00000009", "person"), (0x69, "00000009", "person"), (0x4C, "", "stranger"),
+     (0x27, "00000006", "other"), (0x9, "", "other"), (0x68, "", "other")],
+)  # fmt: skip
+def test_the_minor_codes_this_terminal_lists(minor, number, kind):
+    data = json.dumps(hik.k1t341amf(minor=minor, number=number)).encode()
+    assert one("application/json", data).kind == kind
+
+
+@pytest.mark.parametrize(
+    ("value", "key"),
+    [("00000002", "2"), ("2", "2"), (" 0012 ", "12"), ("0", ""), ("000", ""), ("", ""),
+     ("a7", "A7")],
+)  # fmt: skip
+def test_number_keys(value, key):
+    assert hikvision.number_key(value) == key
 
 
 def test_multipart_named_event_log_without_a_content_type_and_bare_newlines():
