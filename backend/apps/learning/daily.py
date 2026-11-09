@@ -477,3 +477,71 @@ def send_daily_questions(now: datetime | None = None) -> int:
         except Exception:  # one company's trouble never stops the others
             logger.exception("Daily questions of company %s failed", company.pk)
     return done
+
+
+# Settings ---------------------------------------------------------------------------------
+
+
+SETTING_FIELDS = {"daily_question", "daily_at", "daily_position_ids"}
+
+
+@transaction.atomic
+def update_settings(company, *, by: Membership | None, **changes):
+    """The question of the day's settings (`LearningSettings.daily_*`), audited."""
+    from datetime import time
+
+    from apps.audit import services as audit
+    from apps.learning.audit_actions import QuizAction
+    from apps.learning.services import ensure_manager
+    from apps.members.models import Position
+
+    ensure_manager(by)
+    unknown = set(changes) - SETTING_FIELDS
+    if unknown:
+        raise ValueError(f"Unknown settings: {sorted(unknown)}")
+    row = conf.get_settings(company)
+    row = type(row).objects.select_for_update().get(pk=row.pk)
+    changed = []
+    if "daily_question" in changes and row.daily_question != bool(changes["daily_question"]):
+        row.daily_question = bool(changes["daily_question"])
+        changed.append("daily_question")
+    if "daily_at" in changes:
+        try:
+            moment = time.fromisoformat(str(changes["daily_at"])).replace(second=0, microsecond=0)
+        except ValueError:
+            raise DomainError(_("Enter the time as HH:MM.")) from None
+        if moment != row.daily_at:
+            row.daily_at = moment
+            changed.append("daily_at")
+    if "daily_position_ids" in changes:
+        wanted = sorted({int(pk) for pk in changes["daily_position_ids"] or []})
+        found = Position.objects.filter(company=company, pk__in=wanted).count()
+        if found != len(wanted):
+            raise DomainError(_("Pick positions of this company."))
+        if wanted != sorted(row.daily_position_ids or []):
+            row.daily_position_ids = wanted
+            changed.append("daily_position_ids")
+    if changed:
+        row.save()
+        audit.record(
+            QuizAction.DAILY_CHANGED,
+            company_id=company.pk,
+            actor=by.user if by is not None else None,
+            target=row,
+            fields=changed,
+        )
+        company_id = company.pk
+        transaction.on_commit(lambda: pulse.bump(company_id, quizzes.PULSE_KEY))
+    return row
+
+
+def today_stats(company, now: datetime | None = None) -> dict:
+    """Today's questions of the day: how many were asked, answered and answered right."""
+    day = today(company, now)
+    rows = DailyQuestion.objects.filter(company=company, day=day)
+    return {
+        "day": day,
+        "asked": rows.count(),
+        "answered": rows.filter(answered_at__isnull=False).count(),
+        "right": rows.filter(correct=True).count(),
+    }
