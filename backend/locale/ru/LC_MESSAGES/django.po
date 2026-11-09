@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-09 15:17+0500\n"
+"POT-Creation-Date: 2026-11-09 15:50+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -2933,9 +2933,10 @@ msgstr ""
 "карточке."
 
 #: backend/apps/assets/owner_api.py backend/apps/assets/services.py
-#: backend/apps/attendance/owner_api.py backend/apps/hr/owner_api.py
-#: backend/apps/inventory/api.py backend/apps/inventory/owner_api.py
-#: backend/apps/lifecycle/owner_api.py backend/apps/payroll/owner_api.py
+#: backend/apps/attendance/owner_api.py backend/apps/faceid/owner_api.py
+#: backend/apps/hr/owner_api.py backend/apps/inventory/api.py
+#: backend/apps/inventory/owner_api.py backend/apps/lifecycle/owner_api.py
+#: backend/apps/payroll/owner_api.py
 msgid "Give a number."
 msgstr "Укажите число."
 
@@ -3693,7 +3694,8 @@ msgid "Attendance isn't switched on for this company."
 msgstr "Учёт посещаемости в этой компании не включён."
 
 #: backend/apps/attendance/api.py backend/apps/attendance/owner_api.py
-#: backend/apps/hr/owner_api.py backend/apps/lifecycle/owner_api.py
+#: backend/apps/faceid/owner_api.py backend/apps/hr/owner_api.py
+#: backend/apps/lifecycle/owner_api.py
 msgid "Give a day as YYYY-MM-DD."
 msgstr "Укажите день в формате YYYY-MM-DD."
 
@@ -4024,7 +4026,8 @@ msgstr "Пришли %(present)s из %(rostered)s по графику."
 msgid "On time: %(names)s"
 msgstr "Пришли вовремя: %(names)s"
 
-#: backend/apps/attendance/bot_messages.py owner_bot/ownerbot/brief.py
+#: backend/apps/attendance/bot_messages.py backend/apps/attendance/notify.py
+#: owner_bot/ownerbot/brief.py
 #, python-format
 msgid "Late: %(names)s"
 msgstr "Опоздали: %(names)s"
@@ -4132,6 +4135,10 @@ msgstr "Ответы на ваши заявки по посещаемости"
 #: backend/apps/attendance/hooks.py
 msgid "Forgotten check-outs"
 msgstr "Забытые отметки ухода"
+
+#: backend/apps/attendance/hooks.py
+msgid "The day's attendance, in the evening"
+msgstr "Посещаемость за день, вечером"
 
 #: backend/apps/attendance/models.py
 msgid "Allow and mark it"
@@ -4595,6 +4602,36 @@ msgstr "%(name)s: ещё нет отметки о приходе (смена %(t
 #, python-format
 msgid "%(name)s checked in %(distance)s from %(branch)s"
 msgstr "%(name)s: отметка прихода в %(distance)s от филиала %(branch)s"
+
+#: backend/apps/attendance/notify.py
+#, python-format
+msgid "Attendance today: %(came)s of %(rostered)s came"
+msgstr "Посещаемость за сегодня: пришли %(came)s из %(rostered)s"
+
+#: backend/apps/attendance/notify.py
+#, python-format
+msgid "Attendance today: %(came)s came"
+msgstr "Посещаемость за сегодня: пришли %(came)s"
+
+#: backend/apps/attendance/notify.py
+#, python-format
+msgid "On time: %(count)s"
+msgstr "Вовремя: %(count)s"
+
+#: backend/apps/attendance/notify.py
+#, python-format
+msgid "%(name)s (%(late)s)"
+msgstr "%(name)s (%(late)s)"
+
+#: backend/apps/attendance/notify.py
+#, python-format
+msgid "Absent without leave: %(names)s"
+msgstr "Отсутствуют без причины: %(names)s"
+
+#: backend/apps/attendance/notify.py
+#, python-format
+msgid "Still in: %(count)s"
+msgstr "Ещё на месте: %(count)s"
 
 #: backend/apps/attendance/owner_api.py
 msgid "Give branch ids."
@@ -6158,6 +6195,26 @@ msgstr ""
 #, python-format
 msgid "Unknown face at %(device)s, %(time)s"
 msgstr "Незнакомое лицо: %(device)s, %(time)s"
+
+#: backend/apps/faceid/serializers.py
+msgid "Online"
+msgstr "На связи"
+
+#: backend/apps/faceid/serializers.py
+msgid "Quiet"
+msgstr "Молчит"
+
+#: backend/apps/faceid/serializers.py
+msgid "Never connected"
+msgstr "Ещё не подключался"
+
+#: backend/apps/faceid/serializers.py
+msgid "Switched off"
+msgstr "Выключен"
+
+#: backend/apps/faceid/serializers.py
+msgid "How close the names are, 0 to 100."
+msgstr "Насколько похожи имена, 0–100."
 
 #: backend/apps/faceid/services.py
 msgid "Give the terminal a name."

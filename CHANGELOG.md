@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.5.2 — 2026-11-09
+
+### New: the Face ID page (People › Face ID)
+- **Live feed**: every scan with its snapshot, as it happens: who, which terminal, when, and what
+  it did (came in on time or late, left with the day's hours, a repeat, not in Daybook, an unknown
+  face); today's numbers on top (scans, people in, not in Daybook, terminals working).
+- **People**: everyone the terminals know, linked to their Daybook person or not, with suggestions
+  for those who aren't; link or unlink in one tap.
+- **Terminals**: each terminal's status (working, quiet, never connected) and a setup wizard with
+  the exact values for the Hikvision DS-K1T341 web page, each with a copy button, that waits for the
+  first face.
+- **Settings**: attendance on or off, Telegram (each person's first scan, every scan, or nothing),
+  group posts, how long snapshots are kept.
+- **The managers' summary of the day** in Telegram at the evening report time: who came, who was
+  late and by how much, who is missing without leave, who is still in.
+
 ## 0.5.1 — 2026-11-09
 
 ### New: Face ID terminals (Hikvision)

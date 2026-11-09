@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-09 15:17+0500\n"
+"POT-Creation-Date: 2026-11-09 15:50+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -2901,9 +2901,10 @@ msgstr ""
 "kartasiga yozing."
 
 #: backend/apps/assets/owner_api.py backend/apps/assets/services.py
-#: backend/apps/attendance/owner_api.py backend/apps/hr/owner_api.py
-#: backend/apps/inventory/api.py backend/apps/inventory/owner_api.py
-#: backend/apps/lifecycle/owner_api.py backend/apps/payroll/owner_api.py
+#: backend/apps/attendance/owner_api.py backend/apps/faceid/owner_api.py
+#: backend/apps/hr/owner_api.py backend/apps/inventory/api.py
+#: backend/apps/inventory/owner_api.py backend/apps/lifecycle/owner_api.py
+#: backend/apps/payroll/owner_api.py
 msgid "Give a number."
 msgstr "Son kiriting."
 
@@ -3666,7 +3667,8 @@ msgid "Attendance isn't switched on for this company."
 msgstr "Bu kompaniyada davomat yoqilmagan."
 
 #: backend/apps/attendance/api.py backend/apps/attendance/owner_api.py
-#: backend/apps/hr/owner_api.py backend/apps/lifecycle/owner_api.py
+#: backend/apps/faceid/owner_api.py backend/apps/hr/owner_api.py
+#: backend/apps/lifecycle/owner_api.py
 msgid "Give a day as YYYY-MM-DD."
 msgstr "Kunni YYYY-MM-DD ko‘rinishida kiriting."
 
@@ -4002,7 +4004,8 @@ msgstr "Smenadagi %(rostered)s kishidan %(present)s tasi ishda."
 msgid "On time: %(names)s"
 msgstr "O‘z vaqtida kelganlar: %(names)s"
 
-#: backend/apps/attendance/bot_messages.py owner_bot/ownerbot/brief.py
+#: backend/apps/attendance/bot_messages.py backend/apps/attendance/notify.py
+#: owner_bot/ownerbot/brief.py
 #, python-format
 msgid "Late: %(names)s"
 msgstr "Kechikib kelganlar: %(names)s"
@@ -4110,6 +4113,10 @@ msgstr "Davomat bo‘yicha so‘rovlaringizga javoblar"
 #: backend/apps/attendance/hooks.py
 msgid "Forgotten check-outs"
 msgstr "Belgilanmay qolgan ketishlar"
+
+#: backend/apps/attendance/hooks.py
+msgid "The day's attendance, in the evening"
+msgstr "Kunning davomati, kechqurun"
 
 #: backend/apps/attendance/models.py
 msgid "Allow and mark it"
@@ -4584,6 +4591,36 @@ msgstr "%(name)s hali kelganini belgilamadi (smena %(time)s, %(branch)s)"
 msgid "%(name)s checked in %(distance)s from %(branch)s"
 msgstr ""
 "%(name)s %(branch)s filialidan %(distance)s uzoqda turib kelganini belgiladi"
+
+#: backend/apps/attendance/notify.py
+#, python-format
+msgid "Attendance today: %(came)s of %(rostered)s came"
+msgstr "Bugungi davomat. Kelganlar: %(came)s / %(rostered)s"
+
+#: backend/apps/attendance/notify.py
+#, python-format
+msgid "Attendance today: %(came)s came"
+msgstr "Bugungi davomat. Kelganlar: %(came)s"
+
+#: backend/apps/attendance/notify.py
+#, python-format
+msgid "On time: %(count)s"
+msgstr "Vaqtida: %(count)s"
+
+#: backend/apps/attendance/notify.py
+#, python-format
+msgid "%(name)s (%(late)s)"
+msgstr "%(name)s (%(late)s)"
+
+#: backend/apps/attendance/notify.py
+#, python-format
+msgid "Absent without leave: %(names)s"
+msgstr "Sababsiz kelmaganlar: %(names)s"
+
+#: backend/apps/attendance/notify.py
+#, python-format
+msgid "Still in: %(count)s"
+msgstr "Hali ishda: %(count)s"
 
 #: backend/apps/attendance/owner_api.py
 msgid "Give branch ids."
@@ -6169,6 +6206,26 @@ msgstr ""
 #, python-format
 msgid "Unknown face at %(device)s, %(time)s"
 msgstr "Notanish yuz. Terminal: %(device)s, vaqt: %(time)s"
+
+#: backend/apps/faceid/serializers.py
+msgid "Online"
+msgstr "Aloqada"
+
+#: backend/apps/faceid/serializers.py
+msgid "Quiet"
+msgstr "Jim"
+
+#: backend/apps/faceid/serializers.py
+msgid "Never connected"
+msgstr "Hali ulanmagan"
+
+#: backend/apps/faceid/serializers.py
+msgid "Switched off"
+msgstr "O‘chirilgan"
+
+#: backend/apps/faceid/serializers.py
+msgid "How close the names are, 0 to 100."
+msgstr "Ismlar qanchalik yaqin, 0–100."
 
 #: backend/apps/faceid/services.py
 msgid "Give the terminal a name."
