@@ -399,6 +399,7 @@ FEATURE_APPS: dict[str, tuple[str, ...]] = {
     Feature.AI: ("ai",),
     Feature.RECOGNITION: ("recognition",),
     Feature.ASSETS: ("assets",),
+    Feature.FACE_ID: ("faceid",),
 }
 
 

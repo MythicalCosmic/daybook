@@ -50,7 +50,7 @@ TRIES = 3
 # Routes outside any company: sign-in, the caller's own profile and sessions, new companies and
 # signed files. Each has its own tests (accounts, signin, companies, core.files).
 OUTSIDE = re.compile(
-    r"^api/v1/(auth/|me/|files/|owner/(auth/|me/|permissions/|ai/|companies/(new/)?$))"
+    r"^api/v1/(auth/|me/|files/|devices/|owner/(auth/|me/|permissions/|ai/|companies/(new/)?$))"
 )
 # Every id filter a list route reads from the query string.
 ID_FILTERS = (

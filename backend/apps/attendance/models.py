@@ -392,6 +392,7 @@ class AttendanceRecord(TenantModel):
         BOT = "bot", _("Bot")
         MANUAL = "manual", _("Manager")
         SYSTEM = "system", _("System")
+        FACE = "face", _("Face ID terminal")
 
     class Overtime(models.TextChoices):
         NONE = "none", _("None")
@@ -406,6 +407,8 @@ class AttendanceRecord(TenantModel):
         UNSCHEDULED = "unscheduled", _("No shift planned")
         AUTO_CLOSED = "auto_closed", _("Check-out forgotten")
         EDITED = "edited", _("Edited by a manager")
+        OTHER_BRANCH = "other_branch", _("At another branch")
+        MISSED_ENTRY = "missed_entry", _("Came in without a scan")
 
     ATTENDED = (Status.OPEN, Status.CLOSED, Status.AUTO_CLOSED)
 
