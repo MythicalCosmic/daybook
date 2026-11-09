@@ -41,7 +41,10 @@ const isFuture = (value: string) => value > today.value;
 const stats = computed(() => {
   const totals = data.value?.totals;
   if (!totals) return [];
-  const expected = Math.max(0, totals.scheduled_days - totals.leave_days);
+  // Expected so far: the month's working days up to today (the days still ahead are "planned"),
+  // so "6 of 8" mid-month, not "6 of 20".
+  const ahead = Object.values(data.value?.cells ?? {}).filter((cell) => cell.code === "planned").length;
+  const expected = Math.max(0, totals.scheduled_days - totals.leave_days - ahead);
   return [
     { id: "present", label: t("davomat.employee.month.present"), value: fmt.number(totals.attended_days), hint: totals.has_schedule ? t("davomat.employee.month.ofExpected", { n: fmt.number(expected) }) : "", tone: "text-fg" },
     { id: "late", label: t("davomat.employee.month.late"), value: fmt.number(totals.late_arrivals), hint: totals.late_minutes ? fmt.duration(totals.late_minutes) : "", tone: totals.late_arrivals ? "text-warning" : "text-fg" },

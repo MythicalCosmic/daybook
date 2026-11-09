@@ -137,3 +137,31 @@ def test_the_mini_app_is_still_served(middleware, rf):
 
 def test_the_old_middleware_name_still_works():
     assert miniapp.MiniAppWhiteNoiseMiddleware is SpaWhiteNoiseMiddleware
+
+
+BOOT = (
+    b"<!doctype html><html><head><title>Daybook Console</title>"
+    b'<link rel="icon" type="image/svg+xml" href="/dashboard/favicon.svg" />'
+    b"<style>html { background: #f7f3ec; } @media (prefers-color-scheme: dark) "
+    b'{ html { background: #141210; } }</style></head><body><div id="app">'
+    b'<div class="boot" aria-hidden="true">\n        <svg viewBox="0 0 50 50">'
+    b'<circle cx="21" cy="21" r="21" fill="#c67139"/></svg></div></div></body></html>'
+)
+
+
+def test_davomat_never_flashes_daybooks_splash(client, dashboard, settings):
+    (dashboard / "index.html").write_bytes(BOOT)
+    assert client.get("/dashboard/").content == BOOT  # Daybook: the page as built
+    daybook_etag = client.get("/dashboard/")["ETag"]
+
+    settings.EDITION = "davomat"
+    response = client.get("/dashboard/")
+
+    page = response.content
+    assert b"<title>Davomat</title>" in page and b"Daybook" not in page
+    assert b'href="data:image/svg+xml,' in page and b"/dashboard/favicon.svg" not in page
+    assert b"#f4f6fa" in page and b"#0b0e14" in page and b"#f7f3ec" not in page
+    assert b'<div class="boot" aria-hidden="true">\n        <svg xmlns=' in page
+    assert b"#c67139" not in page  # Daybook's orange mark is gone
+    assert response["ETag"] != daybook_etag
+    assert_page_headers(response)

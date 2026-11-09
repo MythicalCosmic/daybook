@@ -394,10 +394,10 @@ describe("EmployeePage", () => {
         json({
           schedule: { id: 4, name: "Five days" },
           month: "2026-11",
-          days: ["2026-11-02", "2026-11-03"],
+          days: ["2026-11-02", "2026-11-03", "2026-11-04"],
           today: "2026-11-03",
           holidays: {},
-          cells: { "2026-11-02": { code: "present", minutes: 540, late: 0, record_id: 1, shift_id: 1 }, "2026-11-03": { code: "late", minutes: 500, late: 14, record_id: 2, shift_id: 2 } },
+          cells: { "2026-11-02": { code: "present", minutes: 540, late: 0, record_id: 1, shift_id: 1 }, "2026-11-03": { code: "late", minutes: 500, late: 14, record_id: 2, shift_id: 2 }, "2026-11-04": { code: "planned", minutes: 0, late: 0, record_id: null, shift_id: 3 } },
           totals: { scheduled_days: 20, attended_days: 2, leave_days: 0, absent_days: 0, worked_minutes: 1040, approved_overtime_minutes: 0, late_arrivals: 1, late_minutes: 14, has_schedule: true },
         }),
       "GET faceid/events/": () =>
@@ -431,7 +431,7 @@ describe("EmployeePage", () => {
     expect(text).toContain("Five days");
     expect(text).toContain("In since 08:02");
     expect(text).toContain("Days at work");
-    expect(text).toContain("of 20 expected");
+    expect(text).toContain("of 19 expected"); // the day still ahead isn't expected yet
     expect(text).toContain("Late 14m");
     expect(calls.some((call) => path(call).startsWith("faceid/events/?member=7&date="))).toBe(true);
     expect(calls.some((call) => path(call).startsWith("attendance/members/7/?month="))).toBe(true);
