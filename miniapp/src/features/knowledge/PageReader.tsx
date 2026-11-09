@@ -1,11 +1,11 @@
 import { BookOpenCheck, CheckCheck } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 
 import type { PageProps } from "../registry";
 import { useI18n } from "../../i18n";
 import { useFeatureT } from "../../i18n/feature";
 import { dayMonth } from "../../lib/time";
-import { useNavigation } from "../../state/navigation";
+import { samePage, useNavigation } from "../../state/navigation";
 import { useMember } from "../../state/session";
 import { useToast } from "../../state/toast";
 import { haptic } from "../../telegram";
@@ -16,8 +16,14 @@ import "./knowledge.css";
 import { messages } from "./messages";
 import { safeHtml } from "./safeHtml";
 import { PageIcon } from "./icons";
+import { usePageViews } from "./views";
 
-/** Reading a page, and confirming it with "I've read it" when the page asks for it. */
+/**
+ * Reading a page, and confirming it with "I've read it" when the page asks for it, or when it is
+ * a step of a course (`params.course`): there the confirmation finishes the step, whatever the
+ * page's own setting. While it is in front, it reports the reading time and how far down
+ * (docs/PLAN-LEARNING.md §4.1).
+ */
 export function PageReader({ params }: PageProps) {
   const t = useFeatureT(messages);
   const { locale } = useI18n();
@@ -29,6 +35,9 @@ export function PageReader({ params }: PageProps) {
   const ack = useAcknowledge(member.companyId, id);
   const body = useMemo(() => safeHtml(page.data?.body ?? ""), [page.data?.body]);
   const followLink = useFollowLink();
+  const article = useRef<HTMLElement>(null);
+  const inFront = samePage(navigation.top ?? undefined, { feature: "knowledge", page: "page", params });
+  usePageViews(member.companyId, id, { ready: Boolean(page.data), active: inFront, inside: article });
 
   if (!page.data) {
     return (
@@ -42,7 +51,9 @@ export function PageReader({ params }: PageProps) {
     );
   }
   const data = page.data;
-  const mustConfirm = data.require_ack && !data.my_ack?.current;
+  // A course step is done once the page is confirmed, so the reader asks for it there too.
+  const asks = data.require_ack || Boolean(params.course);
+  const mustConfirm = asks && !data.my_ack?.current;
   const confirm = () =>
     ack.mutate(undefined, {
       onSuccess: () => {
@@ -73,12 +84,13 @@ export function PageReader({ params }: PageProps) {
         />
         {mustConfirm ? (
           <Banner tone="accent" icon={BookOpenCheck} title={t("read.ask")} />
-        ) : data.require_ack && data.my_ack ? (
+        ) : asks && data.my_ack ? (
           <Banner tone="sage" icon={CheckCheck} title={t("read.confirmed", { version: data.my_ack.version })} />
         ) : null}
         {/* Cleaned by the server's allow-list, then again by safeHtml. Its links open through the
             app: one into the app opens that screen here, others in Telegram's browser. */}
         <article
+          ref={article}
           className="kbm-article"
           onClick={(event) => {
             const anchor = event.target instanceof Element ? event.target.closest("a[href]") : null;

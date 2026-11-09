@@ -3,7 +3,8 @@
  * The AI's little helpers, drawn: a pixel creature (no image file) in five looks — Claude itself
  * (orange) and one chibi per agent: voice tasks (violet, headphones and a mic), morning plan
  * (yellow, a rising sun on its head), deadline watcher (red, an alarm clock on its head) and photo
- * checker (teal, round glasses); an agent an owner made is the same little creature in the colour
+ * checker (teal, square glasses) and the tutor (warm amber, a mortarboard, round glasses and a
+ * book); an agent an owner made is the same little creature in the colour
  * its owner picked, with a heart on an antenna (`variant="custom"`, `color`). Expressions: open eyes, a blink, a look around, ^ ^ when happy,
  * heart eyes, closed eyes asleep, a wink, star eyes, wide-eyed surprise, shy eyes down, dizzy X
  * eyes, eyes up thinking. Little dances: wiggle, twist, disco arms, spin, bounce, jumping jacks. Moves: breathing, hop, wave, dance, typing, a poke, walking,
@@ -175,6 +176,13 @@ onBeforeUnmount(() => {
           <rect class="buddy-ink" x="2" y="17" width="2" height="1" />
           <rect class="buddy-gear" x="1" y="12" width="3" height="2" />
         </g>
+        <!-- The tutor's book, held like HR's clipboard. -->
+        <g v-else-if="variant === 'tutor'" class="buddy-arm-left" data-prop="book">
+          <rect class="buddy-book" x="0" y="13" width="5" height="7" />
+          <rect class="buddy-book-spine" x="0" y="13" width="1" height="7" />
+          <rect class="buddy-pages" x="4" y="14" width="1" height="5" />
+          <rect class="buddy-tassel" x="2" y="15" width="2" height="1" />
+        </g>
         <rect class="buddy-limb buddy-arm-right" x="30" y="9" width="4" height="5" />
         <rect class="buddy-limb buddy-leg buddy-leg-a" x="8" y="18" width="3" height="6" />
         <rect class="buddy-limb buddy-leg buddy-leg-b" x="13" y="18" width="3" height="6" />
@@ -308,6 +316,32 @@ onBeforeUnmount(() => {
           <rect class="buddy-glint" x="10" y="7" width="1" height="1" />
           <rect class="buddy-glint" x="21" y="7" width="1" height="1" />
         </g>
+        <template v-else-if="variant === 'tutor'">
+          <g data-prop="round-glasses">
+            <rect class="buddy-gear" x="10" y="6" width="5" height="1" />
+            <rect class="buddy-gear" x="10" y="12" width="5" height="1" />
+            <rect class="buddy-gear" x="9" y="7" width="1" height="5" />
+            <rect class="buddy-gear" x="15" y="7" width="1" height="5" />
+            <rect class="buddy-gear" x="21" y="6" width="5" height="1" />
+            <rect class="buddy-gear" x="21" y="12" width="5" height="1" />
+            <rect class="buddy-gear" x="20" y="7" width="1" height="5" />
+            <rect class="buddy-gear" x="26" y="7" width="1" height="5" />
+            <rect class="buddy-gear" x="16" y="8" width="4" height="1" />
+            <rect class="buddy-gear" x="7" y="8" width="2" height="1" />
+            <rect class="buddy-gear" x="27" y="8" width="2" height="1" />
+            <rect class="buddy-glint" x="10" y="7" width="1" height="1" />
+            <rect class="buddy-glint" x="21" y="7" width="1" height="1" />
+          </g>
+          <g data-prop="mortarboard">
+            <rect class="buddy-gear" x="11" y="0" width="14" height="2" />
+            <rect class="buddy-gear" x="7" y="-2" width="22" height="2" />
+            <rect class="buddy-cap-top" x="8" y="-3" width="20" height="1" />
+            <rect class="buddy-tassel" x="17" y="-4" width="2" height="1" />
+            <rect class="buddy-tassel" x="19" y="-3" width="8" height="1" />
+            <rect class="buddy-tassel" x="27" y="-3" width="1" height="6" />
+            <rect class="buddy-tassel" x="26" y="3" width="3" height="2" />
+          </g>
+        </template>
         <g v-else-if="variant === 'custom'" data-prop="antenna">
           <rect class="buddy-gear" x="17" y="-1" width="2" height="3" />
           <g class="buddy-antenna">
@@ -402,6 +436,7 @@ onBeforeUnmount(() => {
 .ai-buddy[data-variant="deadline"] { --buddy-main: #e8625a; --buddy-light: #f08883; --buddy-dark: #c2453e; --buddy-gear: #7c2a24; }
 .ai-buddy[data-variant="photo"] { --buddy-main: #36b1a4; --buddy-light: #5fc8bc; --buddy-dark: #24897f; --buddy-gear: #1d3b57; }
 .ai-buddy[data-variant="hr"] { --buddy-main: #4fb36f; --buddy-light: #78c991; --buddy-dark: #34925a; --buddy-gear: #22324a; }
+.ai-buddy[data-variant="tutor"] { --buddy-main: #d9893b; --buddy-light: #e8a865; --buddy-dark: #b56d26; --buddy-gear: #3b2a1f; }
 
 .buddy-body { fill: var(--buddy-main); }
 .buddy-light { fill: var(--buddy-light); }
@@ -428,6 +463,11 @@ onBeforeUnmount(() => {
 .buddy-board { fill: #a8744a; }
 .buddy-ink { fill: #9fb3a6; }
 .buddy-tie { fill: #2f4a73; }
+.buddy-cap-top { fill: #5a4434; }
+.buddy-tassel { fill: var(--buddy-gold); }
+.buddy-book { fill: #2f6f8f; }
+.buddy-book-spine { fill: #1f4f66; }
+.buddy-pages { fill: #fbf7ee; }
 .buddy-heartbit { fill: var(--buddy-pink); }
 /* Its little heart beats while its agent works. */
 .buddy-antenna { transform-box: fill-box; transform-origin: center bottom; }

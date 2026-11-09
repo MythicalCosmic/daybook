@@ -16,6 +16,8 @@ class CourseAction(models.TextChoices):
     LESSON_CHANGED = "learning.lesson_changed", _("Changed a lesson")
     LESSON_PUBLISHED = "learning.lesson_published", _("Published a lesson")
     LESSON_ARCHIVED = "learning.lesson_archived", _("Archived a lesson")
+    LESSON_DELETED = "learning.lesson_deleted", _("Deleted a lesson")
+    TRANSCRIPT_REQUESTED = "learning.transcript_requested", _("Had a lesson's video written down")
     COURSE_CREATED = "learning.course_created", _("Added a course")
     COURSE_CHANGED = "learning.course_changed", _("Changed a course")
     COURSE_PUBLISHED = "learning.course_published", _("Published a course")
@@ -24,6 +26,7 @@ class CourseAction(models.TextChoices):
     EXEMPTED = "learning.exempted", _("Excused someone from a course")
     ASSIGNMENT_CANCELLED = "learning.assignment_cancelled", _("Took a course back")
     DUE_CHANGED = "learning.due_changed", _("Moved a training deadline")
+    REMINDED = "learning.reminded", _("Reminded people about their training")
 
 
 class QuizAction(models.TextChoices):
@@ -40,3 +43,10 @@ class QuizAction(models.TextChoices):
     CHECK_ARCHIVED = "learning.check_archived", _("Archived a regular check")
     SUGGESTION_ACCEPTED = "learning.suggestion_accepted", _("Accepted a tutor's suggestion")
     SUGGESTION_DISMISSED = "learning.suggestion_dismissed", _("Dismissed a tutor's suggestion")
+    QUESTION_ACTIVATED = "learning.question_activated", _("Put a question into use")
+    QUESTION_DELETED = "learning.question_deleted", _("Deleted a question")
+    QUIZ_RESTORED = "learning.quiz_restored", _("Brought a quiz back as a draft")
+    QUIZ_DELETED = "learning.quiz_deleted", _("Deleted a quiz")
+    CHECK_PAUSED = "learning.check_paused", _("Paused a regular check")
+    CHECK_RESUMED = "learning.check_resumed", _("Restarted a regular check")
+    DAILY_CHANGED = "learning.daily_changed", _("Changed the question of the day")

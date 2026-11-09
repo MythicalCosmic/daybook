@@ -11,10 +11,13 @@ services:
       - "${HTTP_PORT:-80}:80"
       - "${HTTPS_PORT:-443}:443"
       - "${HTTPS_PORT:-443}:443/udp"
-    # Public uploads only. Private files never reach Caddy: Django serves them behind signed links.
+    # Public uploads, and lesson videos read-only: Django checks each signed video link and
+    # answers X-Accel-Redirect, then Caddy sends the bytes (Range requests and all). Other private
+    # files never reach Caddy: Django serves them behind signed links.
     volumes:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
       - media:/srv/media:ro
+      - learning_media:/srv/learning:ro
       - caddy_data:/data
       - caddy_config:/config
     # Not on stream: without it the site still works and the dashboard polls for AI answers.
@@ -48,9 +51,31 @@ services:
     # Parallel queries share memory through /dev/shm; Docker's 64 MB default is too small.
     shm_size: 512mb
 
-  # Only Caddy talks to these.
+  # Only Caddy talks to these. The backend leaves lesson videos' bytes to Caddy (/_learning/,
+  # deploy/Caddyfile).
   backend:
     ports: !reset []
+    environment:
+      LEARNING_MEDIA_ACCEL: /_learning/
+
+  # The media queue has its own worker below.
+  worker:
+    environment:
+      CELERY_QUEUES: celery,default
+
+  # Lesson videos (docs/PLAN-LEARNING.md §5): ffmpeg makes each upload into a 720p MP4 here, one
+  # at a time on at most two CPUs, so a long video never slows the site or the other jobs.
+  media-worker:
+    extends:
+      file: docker-compose.yml
+      service: worker
+    command: celery -A config worker -Q media -c 1 --prefetch-multiplier 1 --max-tasks-per-child 50 -l info
+    cpus: 2
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   stream:
     ports: !reset []
@@ -83,7 +108,8 @@ services:
     profiles: ["app"]
 
   # Every night: a compressed database dump and an archive of the private files (receipts,
-  # documents, contracts, payslips), keeping the last 14 days of each in ./backups.
+  # documents, contracts, payslips), keeping the last 14 days of each in ./backups. Lesson videos
+  # are big and can be uploaded again: they get a copy once a week (Sundays), the last 2 kept.
   backup:
     image: postgres:18-alpine
     environment:
@@ -94,6 +120,7 @@ services:
     volumes:
       - ./backups:/backups
       - private_media:/private_media:ro
+      - learning_media:/learning_media:ro
     entrypoint:
       - sh
       - -c
@@ -104,6 +131,11 @@ services:
           pg_dump --no-owner | gzip > /backups/trello-$$(date +%F).sql.gz
           tar czf /backups/private-media-$$(date +%F).tgz -C /private_media .
           find /backups \( -name 'trello-*.sql.gz' -o -name 'private-media-*.tgz' \) -mtime +14 -delete
+          # MP4s are compressed already: a plain tar. Keep the newest two.
+          if [ "$$(date +%u)" = "7" ]; then
+            tar cf /backups/learning-media-$$(date +%F).tar -C /learning_media .
+            ls -1t /backups/learning-media-*.tar | tail -n +3 | xargs -r rm -f
+          fi
           sleep 86400
         done
     depends_on:

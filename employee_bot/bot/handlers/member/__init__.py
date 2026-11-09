@@ -8,6 +8,7 @@ from bot.handlers.features.finance import router as finance_router
 from bot.handlers.features.hr import router as hr_router
 from bot.handlers.features.inbox_actions import router as inbox_actions_router
 from bot.handlers.features.knowledge import router as knowledge_router
+from bot.handlers.features.learning import router as learning_router
 from bot.handlers.features.lifecycle import router as lifecycle_router
 from bot.handlers.features.payroll import router as payroll_router
 from bot.handlers.features.projects import router as projects_router
@@ -35,6 +36,7 @@ FEATURE_ROUTERS = [
     projects_router,
     lifecycle_router,
     knowledge_router,
+    learning_router,
     agenda_router,
     crm_router,
 ]

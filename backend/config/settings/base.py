@@ -152,6 +152,9 @@ MEDIA_ROOT = Path(env("MEDIA_ROOT", default=str(BASE_DIR / "media")))
 PRIVATE_MEDIA_ROOT = Path(env("PRIVATE_MEDIA_ROOT", default=str(BASE_DIR / "private_media")))
 # Lesson videos and posters (apps.core.storage.learning_storage): private, in a volume of their own.
 LEARNING_MEDIA_ROOT = Path(env("LEARNING_MEDIA_ROOT", default=str(BASE_DIR / "learning_media")))
+# Production: "/_learning/". Django checks a video link and answers X-Accel-Redirect; the web
+# server (deploy/Caddyfile) sends the bytes from its read-only mount. Empty: Django streams them.
+LEARNING_MEDIA_ACCEL = env("LEARNING_MEDIA_ACCEL", default="")
 
 REDIS_URL = env("REDIS_URL")
 # Added to every key apps.core.redis writes, so several runs can share one Redis.
@@ -173,6 +176,7 @@ CELERY_TIMEZONE = TIME_ZONE
 CELERY_TASK_ROUTES = {
     "apps.ai.tasks.*": {"queue": "ai"},
     "apps.learning.tasks.process_video": {"queue": "media"},
+    "apps.learning.tasks.transcribe_lesson": {"queue": "ai"},
     "apps.learning.tasks.draft_questions": {"queue": "ai"},
 }
 CELERY_BEAT_SCHEDULE = {
@@ -319,6 +323,8 @@ SPECTACULAR_SETTINGS = {
             "RepeatEnum": "apps.tasks.models.Repeat",
             "TaskMoveEnum": ["todo", "in_progress", "review", "returned", "done"],
             "TimeOffStatusEnum": "apps.timeoff.models.TimeOff.Status",
+            # Kept by name: recognition's leaderboard has a "period" of its own.
+            "PeriodEnum": "apps.reports.periods.Period",
             # Currencies with their names, and the bare codes some write serializers accept.
             "CurrencyEnum": "apps.core.money.Currency",
             "CurrencyCodeEnum": ["UZS", "USD"],

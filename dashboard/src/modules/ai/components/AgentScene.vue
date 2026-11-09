@@ -9,8 +9,8 @@
  * The room lives too: the wall clock and the calendar show the company's time and day, a cat sits
  * on the windowsill (curled up asleep at night or while the agent sleeps), birds cross the day sky
  * and stars shoot through the night, dust floats in the sunbeam, the plants sway, and each agent's
- * desk has its own thing (a microphone, an alarm clock, an hourglass, a camera, folders, a Claude
- * plush). A tap on the chibi makes it say what it does, what it did today and when it runs next;
+ * desk has its own thing (a microphone, an alarm clock, an hourglass, a camera, folders, a pile of
+ * books with chalk on top, a Claude plush). A tap on the chibi makes it say what it does, what it did today and when it runs next;
  * the cat purrs, the window sends a bird (or a shooting star), the lamp switches, the mug steams
  * and the desk thing does its trick. Those are a pointer's fun only: the picture has one name for
  * screen readers.
@@ -67,7 +67,7 @@ const props = withDefaults(
 );
 
 const { t } = useI18n();
-const VARIANTS = new Set(["claude", "voice", "morning", "deadline", "photo", "hr", "custom"]);
+const VARIANTS = new Set(["claude", "voice", "morning", "deadline", "photo", "hr", "tutor", "custom"]);
 const chibi = computed(() => (VARIANTS.has(props.variant) ? (props.variant as ReturnType<typeof buddyVariant>) : buddyVariant(props.variant)));
 const buddy = computed(() => sceneBuddy(props.state));
 const reduced = reducedMotion();
@@ -703,6 +703,17 @@ onBeforeUnmount(() => {
               <rect class="sc-pen" x="125" y="84" width="1" height="8" />
               <rect class="sc-gear" x="125" y="84" width="1" height="1" />
             </template>
+            <template v-else-if="chibi === 'tutor'">
+              <!-- A pile of books with a stick of chalk on top. -->
+              <rect class="sc-book-1" x="111" y="94" width="17" height="6" />
+              <rect class="sc-book-band" x="113" y="96" width="13" height="1" />
+              <rect class="sc-book-2" x="113" y="90" width="14" height="4" />
+              <rect class="sc-paper" x="113" y="91" width="13" height="2" />
+              <rect class="sc-book-3" x="112" y="87" width="13" height="3" />
+              <rect class="sc-book-band-3" x="114" y="88" width="9" height="1" />
+              <rect class="sc-chalk" x="116" y="85" width="6" height="2" />
+              <rect class="sc-chalk-shade" x="116" y="86" width="6" height="1" />
+            </template>
             <template v-else-if="chibi === 'custom'">
               <!-- The report it is about to send: an envelope with a heart seal. -->
               <rect class="sc-paper" x="113" y="90" width="14" height="10" />
@@ -1099,6 +1110,13 @@ onBeforeUnmount(() => {
 .sc-plush-cheek { fill: #f39a88; }
 .sc-envelope-flap { fill: #d8cfbd; }
 .sc-seal { fill: #f06b9b; }
+.sc-book-1 { fill: #2f6f8f; }
+.sc-book-2 { fill: #c4523f; }
+.sc-book-3 { fill: #4fb36f; }
+.sc-book-band { fill: #f2b544; }
+.sc-book-band-3 { fill: #9ad8a8; }
+.sc-chalk { fill: #f7f3e8; }
+.sc-chalk-shade { fill: #d9d2c2; }
 /* At work, the envelope lifts a little: the report is on its way. */
 .agent-scene[data-state="working"] .sc-prop[data-prop="custom"] { animation: sc-wobble 2.4s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 100%; }
 .agent-scene[data-state="working"] .sc-prop[data-prop="morning"] { animation: sc-wobble 2.4s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 100%; }

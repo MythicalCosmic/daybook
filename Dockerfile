@@ -27,10 +27,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PATH="/opt/venv/bin:$PATH"
 
 # WeasyPrint renders payslips, contracts and invoices through Pango and HarfBuzz. The PDFs embed
-# their own Noto Sans; DejaVu (Latin and Cyrillic) is only the fallback.
+# their own Noto Sans; DejaVu (Latin and Cyrillic) is only the fallback. ffmpeg makes lesson
+# videos into phone-sized MP4s on the media worker (apps.learning.media).
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 fonts-dejavu-core \
+        libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 fonts-dejavu-core ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=ghcr.io/astral-sh/uv:0.12.1 /uv /uvx /bin/

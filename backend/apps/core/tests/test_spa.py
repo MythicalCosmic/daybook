@@ -8,8 +8,10 @@ from apps.core.spa import DASHBOARD_CSP, SpaWhiteNoiseMiddleware
 
 INDEX = b'<!doctype html><script type="module" src="/dashboard/assets/index-BJyE8SXe.js"></script>'
 CSP = (
-    "default-src 'self'; img-src 'self' data: blob: https://*.tile.openstreetmap.org; "
-    "connect-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' https://telegram.org; "
+    "default-src 'self'; img-src 'self' data: blob: https://*.tile.openstreetmap.org "
+    "https://i.ytimg.com; media-src 'self' blob:; connect-src 'self'; "
+    "style-src 'self' 'unsafe-inline'; script-src 'self' https://telegram.org "
+    "https://www.youtube.com; frame-src 'self' https://www.youtube-nocookie.com; "
     "frame-ancestors https://web.telegram.org; base-uri 'none'; form-action 'self'"
 )
 

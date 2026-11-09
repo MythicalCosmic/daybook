@@ -89,10 +89,11 @@ When HTTPS works, set `DJANGO_SECURE_HSTS_SECONDS=31536000` in `.env` and run `m
 
 | Service | What it does |
 |---|---|
-| `caddy` | HTTPS, uploaded photos at `/media/` (sandboxed: browsers never run them), AI answer streams to `stream`, everything else to Django |
+| `caddy` | HTTPS, uploaded photos at `/media/` (sandboxed: browsers never run them), AI answer streams to `stream`, the bytes of lesson videos once Django has checked their signed link (`X-Accel-Redirect`, below), everything else to Django |
 | `backend` | Django with gunicorn (12 processes of 4 threads, `backend/config/gunicorn.conf.py`): API, admin, the mini app at `/app/`, the owner dashboard at `/dashboard/`, signed private file downloads. When it starts it applies migrations and fills in default rows for every company (`ensure_company_defaults`) |
 | `worker` | Celery on the `celery` and `default` queues (8 processes, one job each at a time): notifications, group posts, exports, reports |
 | `ai-worker` | Celery on the `ai` queue (four at a time): AI answers, receipt reading, briefings. AI calls take seconds, so they never hold up reminders |
+| `media-worker` | Celery on the `media` queue, one job at a time on at most two CPUs: ffmpeg makes each uploaded lesson video into a 720p MP4 with a poster (`apps/learning/media.py`). A long video never slows the site or the other workers. In development the `worker` takes the `media` queue too |
 | `stream` | uvicorn (ASGI) on port 8001: live AI answers as server-sent events at `/api/v1/owner/ai/turns/…` |
 | `stt` | speech to text for voice tasks (`deploy/stt`): Whisper on the CPU behind an OpenAI-compatible endpoint, reached only by the other containers. One voice message at a time, so a burst queues instead of slowing the site; the model sits in the `stt_models` volume |
 | `beat` | Celery beat: daily tasks, reminders, digests, reports and every module's schedule |
@@ -101,7 +102,17 @@ When HTTPS works, set `DJANGO_SECURE_HSTS_SECONDS=31536000` in `.env` and run `m
 | `db`, `redis` | PostgreSQL and Redis |
 | `backup` | a compressed database dump and an archive of the private files every night |
 
-Uploads live in two volumes: `trello911_media` (proof photos, logos, avatars: public at unguessable addresses) and `trello911_private_media` (receipts, Z-reports, documents, contracts, payslips and exports: never served by Caddy, only through short-lived signed links that re-check the person's access).
+Uploads live in three volumes: `trello911_media` (proof photos, logos, avatars: public at unguessable addresses), `trello911_private_media` (receipts, Z-reports, documents, contracts, payslips and exports: never served by Caddy, only through short-lived signed links that re-check the person's access) and `trello911_learning_media` (lesson videos and posters, private too).
+
+### Lesson videos
+
+Training (docs/PLAN-LEARNING.md §5) takes videos of up to 2 GB and 3 hours, in 8 MB pieces that resume after a dropped connection. The `media-worker` checks each upload's first bytes (only MP4/MOV/3GP and MKV/WebM are read, AVI and anything else is refused before ffmpeg sees it), then makes a 720p H.264 MP4 with AAC sound and a poster; the original is deleted. ffmpeg and ffprobe run with an explicit demuxer, `-protocol_whitelist file` and an empty environment, so a crafted file can't make them read other files.
+
+- **Where they are**: the `learning_media` volume, mounted read-write in the app containers (`backend`, `worker`, `media-worker`, and the `ai-worker`, which reads it for transcripts) and read-only in `caddy` at `/srv/learning`. `LEARNING_MEDIA_ROOT` moves it outside containers.
+- **Transcripts**: a manager can have an uploaded video written down (the lesson editor's "Write down from the video"). The `ai-worker` cuts 30-second pieces of the MP4's sound into mono Opus with the same hardened ffmpeg call and sends them, one task per piece, to the speech service voice drafts use (`AI_SPEECH_URL`), so voice drafts never wait behind a long lesson. The company's AI switch must be on; videos over an hour aren't written down. On the server's own CPU Whisper a 20-minute lesson takes roughly 20 to 50 minutes of one ai-worker process.
+- **Serving**: a video link is a signed `/api/v1/files/…` link like any private file. In production `LEARNING_MEDIA_ACCEL=/_learning/` (set in `docker-compose.prod.yml`): Django checks the signature, the expiry and the person's access right now, then answers an empty `X-Accel-Redirect: /_learning/<path>`; Caddy's `handle_response` (`deploy/Caddyfile`) sends the file from its mount with Range requests (206), so seeking works and no gunicorn thread is held by a 2 GB download. Without the setting (development) Django streams the bytes itself, with Range requests too.
+- **Limits**: each company may keep `storage_limit_mb` of video (10 GB by default; Settings › Training). Uploads nobody finished within a day, and videos no lesson took up within a week, are deleted every night (`learning-clean-uploads`).
+- **Checking it**: `docker compose -f docker-compose.yml -f docker-compose.prod.yml --profile app logs media-worker` shows each video made or refused; the lesson shows the same in the dashboard.
 
 ## Face ID terminals
 
@@ -183,6 +194,13 @@ Migrations and company defaults run when the backend starts.
 ## Backups
 
 - **Database and private files.** The `backup` service writes `backups/trello-<date>.sql.gz` and `backups/private-media-<date>.tgz` every night and keeps 14 days of each. `make prod-backup` dumps the database right away. Only root can read these files (they include contracts, ID scans and salaries), so use `sudo` to copy them. Copy the `backups` folder off the server regularly and store the copies encrypted.
+- **Lesson videos.** They are big and can be uploaded again, so the nightly archive leaves the `trello911_learning_media` volume out; every Sunday the `backup` service copies it to `backups/learning-media-<date>.tar` and keeps the newest two. Restore one with the stack stopped:
+
+  ```bash
+  docker run --rm -v trello911_learning_media:/learning_media -v "$PWD/backups":/backups alpine \
+    sh -c 'tar xf /backups/learning-media-<date>.tar -C /learning_media && chown -R 10001 /learning_media'
+  ```
+
 - **Uploaded photos.** They live in the `trello911_media` volume:
 
   ```bash

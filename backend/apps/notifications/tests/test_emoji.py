@@ -13,8 +13,12 @@ ROOT = Path(settings.BASE_DIR).parent
 # digests, services that name outcomes) and both bots.
 SOURCES = [ROOT / "backend" / "apps", ROOT / "employee_bot", ROOT / "owner_bot"]
 # Where an emoji alone is an icon the mini app and the dashboard draw (knowledge spaces and
-# pages); the bots never print them.
-ICON_FILES = {"backend/apps/knowledge/demo.py", "backend/apps/knowledge/defaults.py"}
+# pages, training courses and lessons); the bots never print them.
+ICON_FILES = {
+    "backend/apps/knowledge/demo.py",
+    "backend/apps/knowledge/defaults.py",
+    "backend/apps/learning/demo_courses.py",
+}
 
 
 @pytest.mark.parametrize(

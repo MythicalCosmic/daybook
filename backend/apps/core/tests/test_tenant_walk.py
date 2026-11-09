@@ -115,13 +115,17 @@ BODIES = {
     r"attendance/corrections/(?P<pk>\d+)/decide/$": {"approve": True},
 }
 # What anyone with the dashboard writes for themselves: their saved views, inbox and
-# notification settings, their own timer, "I've read it" on a page they're asked to read.
+# notification settings, their own timer, "I've read it" on a page they're asked to read,
+# and in training their own assignment of a course meant for them and their own attempt at a
+# quiz open to them (the demo's are for everyone).
 OWN_THINGS = (
     "saved-views/",
     "inbox/",
     "notification-preferences/",
     "projects/timers/",
     "/ack/",
+    "learning/courses/<int:pk>/start/",
+    "learning/quizzes/<int:pk>/attempts/",
 )
 PARAM = re.compile(r"<(?:\w+:)?(?P<name>\w+)>|\(\?P<(?P<regex_name>\w+)>[^)]*\)")
 # Timestamps differ between two calls a moment apart.

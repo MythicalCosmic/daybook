@@ -83,11 +83,24 @@ def available(member: Membership) -> bool:
 # Starting a turn -------------------------------------------------------------------------------
 
 
-def start_conversation(by: Membership) -> AIConversation:
-    if not available(by):
+TUTOR = "tutor"
+
+
+def tutor_available(member: Membership) -> bool:
+    """ "Ask the tutor": Ask AI, and the company runs learning (the tutor's module)."""
+    from apps.learning import conf as learning_conf
+
+    return available(member) and learning_conf.is_on(member.company)
+
+
+def start_conversation(by: Membership, *, agent: str = "") -> AIConversation:
+    """A new conversation of `by`'s; `agent` "tutor" makes it "Ask the tutor"."""
+    if agent not in ("", TUTOR):
+        raise ValueError(f"No conversations with agent {agent!r}.")
+    if not (tutor_available(by) if agent == TUTOR else available(by)):
         raise TurnRefused("ai_off", _("Ask AI isn't available here."), 403)
     return AIConversation.objects.create(
-        company_id=by.company_id, membership=by, last_activity_at=timezone.now()
+        company_id=by.company_id, membership=by, last_activity_at=timezone.now(), agent=agent
     )
 
 
@@ -281,11 +294,32 @@ def turn_context(member: Membership, page: str = "") -> str:
     )
 
 
+def system_text(conversation: AIConversation, company) -> str:
+    """The system prompt: Ask AI's rules; for "Ask the tutor" the tutor's own after them, then
+    the company's instructions for the tutor (apps.ai.instructions)."""
+    if conversation.agent != TUTOR:
+        return SYSTEM
+    from apps.ai import instructions
+    from apps.ai.agents import tutor
+
+    return instructions.system_for(company, tutor.KEY, f"{SYSTEM}\n\n{tutor.CHAT_SYSTEM}")
+
+
+def conversation_tools(conversation: AIConversation, ctx: ToolContext) -> list:
+    """The tools of the conversation: all the asker may use, or the tutor's domains."""
+    tools = registry.tools_for(ctx)
+    if conversation.agent != TUTOR:
+        return tools
+    from apps.ai.agents import tutor
+
+    return [tool for tool in tools if tool.domain in tutor.CHAT_DOMAINS]
+
+
 def _loop(turn: AITurn, ctx: ToolContext) -> str | None:
     conversation = turn.conversation
-    definitions, by_name = _tool_definitions(ctx)
+    definitions, by_name = _tool_definitions(ctx, conversation_tools(conversation, ctx))
     system = [
-        {"type": "text", "text": SYSTEM},
+        {"type": "text", "text": system_text(conversation, ctx.company)},
         {
             "type": "text",
             "text": company_block(ctx.company),
@@ -404,8 +438,11 @@ def clean_answer(text: str, ctx: ToolContext) -> str:
 
 
 def _fake_answer(turn: AITurn, ctx: ToolContext) -> str:
-    """A canned answer that calls one real tool: the late work, as the asker may see it."""
+    """A canned answer that calls one real tool: the late work, as the asker may see it (the
+    tutor: the weakest topics)."""
     conversation = turn.conversation
+    if conversation.agent == TUTOR:
+        return _fake_tutor_answer(turn, ctx)
     started = time.monotonic()
     tool_name = "tasks_search"
     tool = registry.get_tool(tool_name)
@@ -444,6 +481,50 @@ def _fake_answer(turn: AITurn, ctx: ToolContext) -> str:
                 )
             text = "\n".join(lines)
     text = clean_answer(text, ctx)
+    content = [{"type": "text", "text": text}]
+    message = _add_message(conversation, turn, "assistant", content, text)
+    AITurn.objects.filter(pk=turn.pk).update(steps=steps, message=message, model="fake")
+    return text
+
+
+def _fake_tutor_answer(turn: AITurn, ctx: ToolContext) -> str:
+    """The tutor's canned answer: the skill matrix's weakest topics, through the real tool."""
+    conversation = turn.conversation
+    started = time.monotonic()
+    tool = registry.get_tool("learning_skills")
+    if tool is None or not tool.allowed(ctx):
+        steps = []
+        text = _("I can only see what your access allows; ask about your own work in the app.")
+    else:
+        result = registry.run_tool(tool.name, ctx, {})
+        steps = [
+            {
+                "label": str(tool.label),
+                "status": "error" if "error" in result else "done",
+                "ms": int((time.monotonic() - started) * 1000),
+            }
+        ]
+        topics = (result.get("data") or {}).get("topics") or []
+        rated = [row for row in topics if row.get("average") is not None]
+        rated.sort(key=lambda row: row["average"])
+        if not rated:
+            text = _(
+                "**Nobody has answered enough questions yet** to rate a topic. Start a quiz or "
+                "switch the question of the day on, and ask me again in a week."
+            )
+        else:
+            lines = [_("**The weakest topics right now:**")]
+            for row in rated[:3]:
+                lines.append(
+                    ngettext(
+                        "- %(topic)s: %(average)s %% on average, %(count)s person weak",
+                        "- %(topic)s: %(average)s %% on average, %(count)s people weak",
+                        row.get("weak", 0),
+                    )
+                    % {"topic": row["name"], "average": row["average"], "count": row.get("weak", 0)}
+                )
+            lines.append(_("Assign the course that covers the weakest one, or add a lesson."))
+            text = "\n".join(lines)
     content = [{"type": "text", "text": text}]
     message = _add_message(conversation, turn, "assistant", content, text)
     AITurn.objects.filter(pk=turn.pk).update(steps=steps, message=message, model="fake")

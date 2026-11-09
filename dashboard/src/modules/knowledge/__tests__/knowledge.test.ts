@@ -16,6 +16,7 @@ import { useSessionStore } from "@/stores/session";
 
 import { kbKeys, knowledgeApi } from "../api";
 import ArchiveDrawer from "../components/ArchiveDrawer.vue";
+import LessonNotes from "../components/LessonNotes.vue";
 import PageBody from "../components/PageBody.vue";
 import { buildExtensions } from "../components/editor/extensions";
 import en from "../i18n/en.json";
@@ -25,6 +26,7 @@ import { moveData, normalizeBody, pathTo, readTone, safeBody, toTreeNodes } from
 import PageEditor from "../pages/PageEditor.vue";
 import PageView from "../pages/PageView.vue";
 import type { PageDetail, TreeNodeData } from "../types";
+import { scrolledPercent } from "../views";
 
 interface Call {
   method: string;
@@ -134,11 +136,11 @@ describe("api", () => {
     expect(kbKeys.all(4)).toEqual([4, "knowledge"]);
   });
 
-  it("registers as the catalog says, with a widget, commands, settings and the tasks slot", () => {
+  it("registers as the catalog says, with a widget, commands, settings, the tasks slot and the lesson notes", () => {
     expect(module).toMatchObject({ id: "knowledge", group: "comms", order: 40, hotkey: "k", invalidates: ["knowledge"] });
     expect(module.widgets?.map((w) => w.id)).toEqual(["knowledge.reading"]);
     expect(module.settings?.map((s) => s.id)).toEqual(["knowledge"]);
-    expect(Object.keys(module.extensions ?? {})).toEqual(["tasks.drawer.actions"]);
+    expect(Object.keys(module.extensions ?? {})).toEqual(["tasks.drawer.actions", "learning.lesson.notes"]);
     expect(module.deepLinks?.kb?.("12")).toBe("knowledge/p/12");
   });
 });
@@ -236,6 +238,26 @@ describe("editor", () => {
     wrapper.unmount();
   });
 
+  it("gives learning's lesson notes the editor, or the prose for a reader", async () => {
+    const app = await testApp("/c/1/learning/lessons/5");
+    const read = mountWithProviders(LessonNotes, { props: { context: { html: "<p>Muzlatgich</p>", editable: false } }, plugins: app.plugins });
+    expect(read.wrapper.find(".kb-prose").html()).toContain("<p>Muzlatgich</p>");
+    expect(read.wrapper.find(".ProseMirror").exists()).toBe(false);
+    read.wrapper.unmount();
+
+    const changes: string[] = [];
+    const edit = mountWithProviders(LessonNotes, {
+      props: { context: { html: "<p>Muzlatgich\nharorati</p>", editable: true, placeholder: "Notes", update: (html: string) => changes.push(html), upload: vi.fn() } },
+      plugins: app.plugins,
+    });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    await flushPromises();
+    expect(edit.wrapper.find(".ProseMirror").text()).toContain("Muzlatgich");
+    // The editor reflows what it loads and hands the result back through `update`.
+    expect(changes.at(-1)).toBe("<p>Muzlatgich harorati</p>");
+    edit.wrapper.unmount();
+  });
+
   it("ignores the editor's empty last paragraph when comparing bodies", () => {
     expect(normalizeBody("<p>A</p><p></p>")).toBe("<p>A</p>");
     expect(normalizeBody("<p>A</p><p><br></p> <p></p>")).toBe("<p>A</p>");
@@ -244,6 +266,12 @@ describe("editor", () => {
 });
 
 describe("reading", () => {
+  it("measures how far down the reader got, for the readers' view", () => {
+    expect(scrolledPercent(0, 800, 600)).toBe(100);
+    expect(scrolledPercent(200, 800, 2000)).toBe(50);
+    expect(scrolledPercent(1400, 800, 2000)).toBe(100);
+  });
+
   it("cleans the body once more and keeps checklists read-only", async () => {
     const clean = await safeBody('<p onclick="x()">Hi</p><script>alert(1)</script><ul data-type="taskList"><li data-type="taskItem" data-checked="false"><label><input type="checkbox"></label><div><p>Do</p></div></li></ul>');
     expect(clean).not.toContain("script");

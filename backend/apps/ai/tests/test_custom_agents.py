@@ -634,6 +634,7 @@ def test_it_is_listed_after_the_built_in_agents(crew):
         "morning_plan",
         "photo_checker",
         "hr_assistant",
+        "tutor",
     ]
 
 

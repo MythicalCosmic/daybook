@@ -6,6 +6,7 @@
  * Saving checks the version the editor started from, so two editors never overwrite each other.
  */
 import { ArrowLeft, Check, CircleAlert, Eye, Save, Send } from "@lucide/vue";
+import { useQuery } from "@tanstack/vue-query";
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { onBeforeRouteLeave, useRoute, useRouter } from "vue-router";
@@ -14,6 +15,7 @@ import ErrorState from "@/components/ErrorState.vue";
 import FormField from "@/components/FormField.vue";
 import IconButton from "@/components/IconButton.vue";
 import InlineAlert from "@/components/InlineAlert.vue";
+import MultiSelect from "@/components/MultiSelect.vue";
 import type { SelectOption } from "@/components/options";
 import SelectBox from "@/components/SelectBox.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
@@ -31,6 +33,7 @@ import { knowledgeApi, usePage, usePutPage, useRefresh, useSpaces, useTree } fro
 import EmojiPicker from "../components/EmojiPicker.vue";
 import RichEditor from "../components/editor/RichEditor.vue";
 import { flatten, normalizeBody } from "../lib";
+import { topicColor, topicsApi } from "../topics";
 import type { PageDetail } from "../types";
 
 const { t } = useI18n();
@@ -47,8 +50,16 @@ const pageId = computed(() => (route.params.pageId ? Number(route.params.pageId)
 const isNew = computed(() => pageId.value === null);
 const query = usePage(pageId);
 const spaces = useSpaces();
+// The topics the page is about (pages, lessons and questions share them).
+const topicList = useQuery({
+  queryKey: computed(() => [cid.value, "knowledge", "topics", { archived: false }]),
+  queryFn: () => topicsApi.list(cid.value),
+  enabled: computed(() => cid.value > 0),
+  staleTime: 60_000,
+});
+const topicOptions = computed(() => (topicList.data.value ?? []).map((topic) => ({ value: topic.id, label: topic.name, color: topicColor(topic.color) })));
 
-const draft = reactive({ title: "", emoji: "", body: "", requireAck: false, note: "", reread: false, notify: true, space: 0, parent: 0 });
+const draft = reactive({ title: "", emoji: "", body: "", requireAck: false, note: "", reread: false, notify: true, space: 0, parent: 0, topics: [] as number[] });
 const baseline = ref("");
 const loaded = ref(false);
 /**
@@ -64,7 +75,7 @@ const savedAt = ref<string | null>(null);
 const titleEl = ref<HTMLTextAreaElement | null>(null);
 
 // The editor's own normalisation (an empty last paragraph) isn't an unsaved change.
-const snapshot = () => JSON.stringify([draft.title, draft.emoji, normalizeBody(draft.body), draft.requireAck]);
+const snapshot = () => JSON.stringify([draft.title, draft.emoji, normalizeBody(draft.body), draft.requireAck, [...draft.topics].sort()]);
 const dirty = computed(() => loaded.value && snapshot() !== baseline.value);
 const page = computed<PageDetail | null>(() => query.data.value ?? null);
 const published = computed(() => !!page.value?.published);
@@ -76,6 +87,7 @@ function load(from: PageDetail | null): void {
     draft.emoji = from.emoji;
     draft.body = from.body;
     draft.requireAck = from.require_ack;
+    draft.topics = (from.topics ?? []).map((topic) => topic.id);
     draft.space = from.space.id;
     draft.parent = from.parent_id ?? 0;
   } else {
@@ -83,6 +95,7 @@ function load(from: PageDetail | null): void {
     draft.emoji = "";
     draft.body = "";
     draft.requireAck = false;
+    draft.topics = [];
     draft.space = Number(route.query.space) || spaces.data.value?.[0]?.id || 0;
     draft.parent = Number(route.query.parent) || 0;
   }
@@ -167,6 +180,7 @@ async function save(options: { quiet?: boolean } = {}): Promise<PageDetail | nul
         emoji: draft.emoji,
         body: draft.body,
         require_ack: draft.requireAck,
+        topic_ids: draft.topics,
       });
     } else {
       result = await knowledgeApi.savePage(cid.value, pageId.value!, {
@@ -178,6 +192,7 @@ async function save(options: { quiet?: boolean } = {}): Promise<PageDetail | nul
         base_version: baseVersion,
         reread: published.value && draft.requireAck && draft.reread,
         notify: draft.notify,
+        topic_ids: draft.topics,
       });
     }
     putPage(result);
@@ -316,6 +331,9 @@ const status = computed(() => {
               </FormField>
             </template>
             <ToggleSwitch v-model="draft.requireAck" layout="row" :label="t('knowledge.editor.requireAck')" :description="t('knowledge.editor.requireAckHint')" />
+            <FormField :label="t('knowledge.editor.topics')" :hint="t('knowledge.editor.topicsHint')" optional>
+              <MultiSelect v-model="draft.topics" :options="topicOptions" :placeholder="t('knowledge.editor.pickTopics')" display="chips" />
+            </FormField>
             <template v-if="published">
               <ToggleSwitch v-if="draft.requireAck" v-model="draft.reread" layout="row" :label="t('knowledge.editor.reread')" :description="t('knowledge.editor.rereadHint')" />
               <FormField :label="t('knowledge.editor.note')" :hint="t('knowledge.editor.noteHint')" optional>

@@ -1,5 +1,86 @@
 # Changelog
 
+## 0.6.0 — 2026-11-10
+
+### New: training (People › Training)
+A module an owner switches on per company (Settings › Modules: **Training and quizzes**). Until then
+nothing changes.
+- **Video lessons**: upload a video (up to 2 GB and 3 hours, in pieces that pick up again after a
+  dropped connection) and Daybook makes it a phone-sized 720p video with a poster, or paste a YouTube
+  link. Notes under the video, topics, and who the lesson is for. An uploaded video's speech can be
+  written down as text, for search and for writing questions (when the speech service is set up).
+- **Who watched what**: only seconds really played count, skipping ahead never does, and a lesson is
+  watched at 90 %. For each lesson: who never opened it, who is watching (how far, which parts), who
+  watched it and when; for each person, every lesson.
+- **Courses** of lessons, knowledge base pages and quizzes, step by step or in any order; optional or
+  mandatory; for everyone or chosen positions and branches; a deadline and a renewal every N months;
+  a PDF certificate with its own number.
+- **Mandatory training**: everyone a mandatory course is for gets it, new people too. Reminders
+  before the deadline, notices when late, and the manager is told after N days late. Managers assign
+  courses, move deadlines, exempt or cancel.
+- **People**: the people × mandatory courses grid, each person's training page, and an overview with
+  completion, who is late and the minutes watched; Today gets a training tile.
+- **Knowledge base**: pages get topics, and the Readers list shows who opened a page, how long they
+  read, how far down and which version (also without the training module).
+
+### New: quizzes, the question of the day, regular checks (People › Quizzes)
+- **Question bank** with seven kinds of question: one answer, several answers, true or false, put in
+  order, match pairs, type the answer, a number with its unit; pictures, topics and difficulty.
+  "Write questions from…" a page or a lesson drafts them for you to check and put into use.
+- **Quizzes**: a fixed list or a fresh random draw from topics for each person, shuffled answers, a
+  time limit, a pass mark, attempts and a wait between them, partial credit, and the right answers
+  shown after, once passed, or never. Results: every attempt, the score spread, the hardest
+  questions; a manager can let someone start again.
+- **The question of the day**: on workdays each person gets one question, from their weakest topic
+  first, in the bot (one tap for one-answer and true-or-false questions) and on the app's Home.
+- **Regular checks**: a quiz sent to chosen people every week or month with a deadline, reminders at
+  half time and two hours before the end, and the results to managers (who passed, the weakest
+  questions, who didn't answer).
+- **Skill matrix**: people × topics, each scored from their recent answers (weak, OK, strong).
+
+### New: the tutor (Ustoz)
+- A new agent in the agents' room, with its own chibi (a mortarboard, round glasses and a pile of
+  books). Every week it sends managers the training report: mandatory training done and late, the
+  week's tests, the weakest topic, the top learners, and who needs help.
+- **Suggestions** to accept in one tap: assign a course to someone weak in a topic, add a lesson
+  that is missing, a strong colleague who could coach, thank the week's best learners.
+- The day after a weak test, a person gets a short note with the lesson that helps.
+- **Ask the tutor**: a chat about your people's training, on the tutor's page.
+- The tutor runs while the AI module is on, without Claude too (templates and rules); with Claude,
+  Haiku words the report and writes the questions. Courses, quizzes, the question of the day,
+  checks and the skill matrix work with the AI module off.
+
+### New: recognition (People › Recognition)
+A module an owner switches on per company (Settings › Modules: **Recognition**).
+- **Points** for lessons watched, quizzes passed, courses finished, the question of the day, checks,
+  learning streaks, thanks received and shared work done on time; each company sets its own numbers
+  (Settings › Recognition). Points are never money.
+- **Ten levels** (Yangi boshlovchi to Afsona), **15 badges** (first lesson, perfect score, a 7, 30
+  or 100 day streak, topic expert, early bird, helper and more) and **learning streaks** that days
+  off and leave never break.
+- **Thanks**: thank a colleague with a badge and a note (the app's "Say thanks", the bot's /kudos,
+  or a person's page in the dashboard); they get points and a message with "Say thanks back".
+  Owners can hide one; thanks can also be posted to the branch's linked group.
+- **Leaderboards**: this week, this month and all time, for the company or a branch, with a podium;
+  staff see the top ten and their own place (a setting); export to Excel.
+
+### New in the mini app
+- **Kurslarim** (My training) on Me, and Home cards: the open mandatory courses, the question of the
+  day answered in place, an open check with Start.
+- **Courses and lessons**: the video resumes where you stopped and counts what you watched, even
+  with a weak connection (reports go out later); "Next step"; certificates as PDF.
+- **Quizzes**: one question a screen with big buttons for every kind, answers saved as you go, a
+  timer, then the score and the review.
+- **Achievements**: your level, this week's points and your streak on Home; badges, points history
+  and the leaderboard; confetti and a buzz for a passed quiz, a finished course, a new level or
+  badge, the day's question right and a task done on time.
+
+### For the server
+- A new `media-worker` service makes the lesson videos with ffmpeg (one at a time, on at most two
+  CPUs), and a new `learning_media` volume keeps them. Caddy sends a video's bytes once Django has
+  checked its link, so seeking works and a big video never holds up the site. The nightly backup
+  leaves the videos out; a weekly copy keeps the last two (docs/DEPLOY.md).
+
 ## 0.5.2 — 2026-11-09
 
 ### New: the Face ID page (People › Face ID)

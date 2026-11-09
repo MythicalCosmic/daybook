@@ -836,7 +836,7 @@ class ConversationListView(ChatAccess):
         from apps.ai.models import AIConversation
 
         rows = AIConversation.objects.filter(
-            company_id=self.company.pk, membership=self.membership
+            company_id=self.company.pk, membership=self.membership, agent=""
         ).order_by("-last_activity_at")[:100]
         return Response(
             AIConversationSerializer([_conversation_row(c) for c in rows], many=True).data

@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-09 16:22+0500\n"
+"POT-Creation-Date: 2026-11-10 00:47+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -220,6 +220,7 @@ msgid "This event was cancelled."
 msgstr "Bu tadbir bekor qilingan."
 
 #: backend/apps/agenda/bot_messages.py backend/apps/knowledge/bot_messages.py
+#: backend/apps/learning/bot_messages.py
 msgid "Open in the app"
 msgstr "Ilovada ochish"
 
@@ -576,31 +577,38 @@ msgstr "Bilimlar bazasi"
 msgid "Equipment and depreciation"
 msgstr "Jihozlar va amortizatsiya"
 
-#: backend/apps/ai/agents/custom.py backend/apps/tasks/models.py
+#: backend/apps/ai/agents/custom.py backend/apps/ai/agents/tutor.py
+#: backend/apps/tasks/models.py
 msgid "Monday"
 msgstr "Dushanba"
 
-#: backend/apps/ai/agents/custom.py backend/apps/tasks/models.py
+#: backend/apps/ai/agents/custom.py backend/apps/ai/agents/tutor.py
+#: backend/apps/tasks/models.py
 msgid "Tuesday"
 msgstr "Seshanba"
 
-#: backend/apps/ai/agents/custom.py backend/apps/tasks/models.py
+#: backend/apps/ai/agents/custom.py backend/apps/ai/agents/tutor.py
+#: backend/apps/tasks/models.py
 msgid "Wednesday"
 msgstr "Chorshanba"
 
-#: backend/apps/ai/agents/custom.py backend/apps/tasks/models.py
+#: backend/apps/ai/agents/custom.py backend/apps/ai/agents/tutor.py
+#: backend/apps/tasks/models.py
 msgid "Thursday"
 msgstr "Payshanba"
 
-#: backend/apps/ai/agents/custom.py backend/apps/tasks/models.py
+#: backend/apps/ai/agents/custom.py backend/apps/ai/agents/tutor.py
+#: backend/apps/tasks/models.py
 msgid "Friday"
 msgstr "Juma"
 
-#: backend/apps/ai/agents/custom.py backend/apps/tasks/models.py
+#: backend/apps/ai/agents/custom.py backend/apps/ai/agents/tutor.py
+#: backend/apps/tasks/models.py
 msgid "Saturday"
 msgstr "Shanba"
 
-#: backend/apps/ai/agents/custom.py backend/apps/tasks/models.py
+#: backend/apps/ai/agents/custom.py backend/apps/ai/agents/tutor.py
+#: backend/apps/tasks/models.py
 msgid "Sunday"
 msgstr "Yakshanba"
 
@@ -675,6 +683,7 @@ msgid "Write what it should do, in a sentence or more."
 msgstr "U nima qilishi kerakligini kamida bir gap bilan yozing."
 
 #: backend/apps/ai/agents/custom.py backend/apps/knowledge/topics.py
+#: backend/apps/learning/courses.py
 msgid "Pick one of the colours."
 msgstr "Ranglardan birini tanlang."
 
@@ -686,7 +695,8 @@ msgstr "Qanchalik tez-tez ishlashini tanlang."
 msgid "Enter a time as HH:MM."
 msgstr "Vaqtni 08:30 kabi kiriting."
 
-#: backend/apps/ai/agents/custom.py backend/apps/projects/services.py
+#: backend/apps/ai/agents/custom.py backend/apps/learning/checks.py
+#: backend/apps/projects/services.py
 msgid "Pick a day of the week."
 msgstr "Hafta kunini tanlang."
 
@@ -946,7 +956,7 @@ msgid "A bonus reason"
 msgstr "Mukofot sababi"
 
 #: backend/apps/ai/agents/hr_assistant.py
-#: backend/apps/ai/agents/morning_plan.py
+#: backend/apps/ai/agents/morning_plan.py backend/apps/ai/agents/tutor.py
 msgid "Send at"
 msgstr "Yuborish vaqti"
 
@@ -1171,6 +1181,121 @@ msgstr "Variantlardan birini tanlang."
 #: backend/apps/ai/agents/registry.py
 msgid "Unknown setting."
 msgstr "Noma’lum sozlama."
+
+#: backend/apps/ai/agents/tutor.py
+#, python-format
+msgid "Workdays at %(time)s; the weekly report on %(day)s"
+msgstr "Ish kunlari, soat %(time)s; haftalik hisobot kuni: %(day)s"
+
+#: backend/apps/ai/agents/tutor.py
+msgid "Assign suggested"
+msgstr "Taklif qilinganlarni biriktirish"
+
+#: backend/apps/ai/agents/tutor.py backend/apps/learning/notify_quizzes.py
+msgid "Weekly training report"
+msgstr "Haftalik o‘qitish hisoboti"
+
+#: backend/apps/ai/agents/tutor.py
+#, python-format
+msgid "Question of the day: %(count)s person"
+msgid_plural "Question of the day: %(count)s people"
+msgstr[0] "Kun savoli, xodimlar soni: %(count)s"
+
+#: backend/apps/ai/agents/tutor.py
+#, python-format
+msgid "Open suggestions: %(count)s"
+msgstr "Ochiq takliflar: %(count)s"
+
+#: backend/apps/ai/agents/tutor.py
+msgid "Tutor"
+msgstr "Ustoz"
+
+#: backend/apps/ai/agents/tutor.py
+msgid ""
+"Coaches the pharmacy's training: each week managers hear who is ahead and "
+"who needs help and why, with suggestions to act on in one tap (assign a "
+"course, a lesson that is missing, someone who could coach, a thank-you); "
+"after a hard test the person hears which lesson helps. It also writes "
+"questions from a page or a lesson and answers questions about the training."
+msgstr ""
+"Dorixona xodimlarini o‘qitishga yo‘l-yo‘riq beradi: har hafta rahbarlar kim "
+"oldinda, kimga yordam kerak va nima uchun ekanini bilib oladi, bir bosishda "
+"bajariladigan takliflar bilan (kurs biriktirish, yetishmayotgan dars, "
+"boshqalarga yordam bera oladigan xodim, minnatdorchilik); qiyin testdan "
+"keyin xodim qaysi dars yordam berishini bilib oladi. Sahifa yoki darsdan "
+"savollar yozadi va o‘qitish haqidagi savollarga javob beradi."
+
+#: backend/apps/ai/agents/tutor.py
+msgid "The weekly training report"
+msgstr "Haftalik o‘qitish hisoboti"
+
+#: backend/apps/ai/agents/tutor.py
+msgid "Ask the tutor"
+msgstr "Ustozdan so‘rang"
+
+#: backend/apps/ai/agents/tutor.py
+msgid "Weekly report"
+msgstr "Haftalik hisobot"
+
+#: backend/apps/ai/agents/tutor.py
+msgid "Report day"
+msgstr "Hisobot kuni"
+
+#: backend/apps/ai/agents/tutor.py
+msgid "Nudge after a hard test"
+msgstr "Qiyin testdan keyin eslatish"
+
+#: backend/apps/ai/agents/tutor.py
+msgid "The next workday a person who failed a test hears which lesson helps."
+msgstr ""
+"Testdan o‘tolmagan xodim keyingi ish kuni qaysi dars yordam berishini bilib "
+"oladi."
+
+#: backend/apps/ai/agents/tutor.py
+msgid "Make suggestions"
+msgstr "Takliflar berish"
+
+#: backend/apps/ai/agents/tutor.py
+msgid "Who to assign a course, what lesson is missing, who could coach."
+msgstr ""
+"Kimga kurs biriktirish, qaysi dars yetishmaydi, kim boshqalarga yordam bera "
+"oladi."
+
+#: backend/apps/ai/agents/tutor.py
+msgid "Weak below"
+msgstr "Sust chegarasi"
+
+#: backend/apps/ai/agents/tutor.py
+msgid "A topic counts as weak below this mastery score."
+msgstr "O‘zlashtirish balli bundan past bo‘lsa, mavzu sust hisoblanadi."
+
+#: backend/apps/ai/agents/tutor.py
+msgid "The tutor's morning"
+msgstr "Ustozning ertalabki ishi"
+
+#: backend/apps/ai/agents/tutor.py
+#, python-format
+msgid "Sent the weekly training report to %(count)s person"
+msgid_plural "Sent the weekly training report to %(count)s people"
+msgstr[0] "Haftalik o‘qitish hisoboti yuborildi, kishi: %(count)s"
+
+#: backend/apps/ai/agents/tutor.py
+#, python-format
+msgid "Made %(count)s suggestion"
+msgid_plural "Made %(count)s suggestions"
+msgstr[0] "Takliflar tayyorlandi: %(count)s"
+
+#: backend/apps/ai/agents/tutor.py
+#, python-format
+msgid "Pointed %(count)s person to a lesson after a hard test"
+msgid_plural "Pointed %(count)s people to a lesson after a hard test"
+msgstr[0] "Qiyin testdan keyin darsga yo‘naltirilganlar: %(count)s"
+
+#: backend/apps/ai/agents/tutor.py
+#, python-format
+msgid "Wrote %(count)s question for the bank"
+msgid_plural "Wrote %(count)s questions for the bank"
+msgstr[0] "Savollar bazasi uchun yozilgan savollar: %(count)s"
 
 #: backend/apps/ai/agents/voice_tasks.py
 msgid "When someone dictates; creates the tasks at once"
@@ -1642,7 +1767,8 @@ msgstr "Bu suhbat to‘ldi: yangisini boshlang."
 msgid "Wait for the answer to the last question."
 msgstr "Oxirgi savolga javobni kuting."
 
-#: backend/apps/ai/chat.py
+#: backend/apps/ai/chat.py backend/apps/learning/daily.py
+#: employee_bot/bot/handlers/features/learning.py
 msgid "This question isn't yours."
 msgstr "Bu savol sizniki emas."
 
@@ -1666,6 +1792,30 @@ msgstr ""
 msgid "**%(count)s task is late right now:**"
 msgid_plural "**%(count)s tasks are late right now.** The oldest first:"
 msgstr[0] "**Hozir %(count)s ta vazifa kechikmoqda.** Eng eskisi birinchi:"
+
+#: backend/apps/ai/chat.py
+msgid ""
+"**Nobody has answered enough questions yet** to rate a topic. Start a quiz "
+"or switch the question of the day on, and ask me again in a week."
+msgstr ""
+"**Hali hech kim yetarlicha savolga javob bermagan**, shuning uchun "
+"mavzularni baholab bo‘lmaydi. Test boshlang yoki kun savolini yoqing va bir "
+"haftadan keyin yana so‘rang."
+
+#: backend/apps/ai/chat.py
+msgid "**The weakest topics right now:**"
+msgstr "**Hozir eng sust mavzular:**"
+
+#: backend/apps/ai/chat.py
+#, python-format
+msgid "- %(topic)s: %(average)s %% on average, %(count)s person weak"
+msgid_plural "- %(topic)s: %(average)s %% on average, %(count)s people weak"
+msgstr[0] ""
+"- %(topic)s: o‘rtacha %(average)s %%, sust bilganlar: %(count)s kishi"
+
+#: backend/apps/ai/chat.py
+msgid "Assign the course that covers the weakest one, or add a lesson."
+msgstr "Eng sust mavzu bo‘yicha kursni biriktiring yoki yangi dars qo‘shing."
 
 #: backend/apps/ai/drafts.py
 msgid "There is nothing to create."
@@ -2170,18 +2320,21 @@ msgid "When the author heard who still hadn't read it."
 msgstr "Muallifga kim hali o‘qimagani aytilgan vaqt."
 
 #: backend/apps/announcements/owner_api.py backend/apps/groups/services.py
-#: backend/apps/knowledge/services.py
+#: backend/apps/knowledge/services.py backend/apps/learning/checks.py
+#: backend/apps/learning/courses.py backend/apps/learning/daily.py
+#: backend/apps/learning/lessons.py backend/apps/learning/quizzes.py
 msgid "Pick positions of this company."
 msgstr "Shu kompaniyaning lavozimlarini tanlang."
 
 #: backend/apps/announcements/owner_api.py backend/apps/groups/services.py
+#: backend/apps/learning/checks.py backend/apps/learning/courses.py
 #: backend/apps/members/owner_api.py backend/apps/members/services.py
 msgid "Pick branches of this company."
 msgstr "Shu kompaniyaning filiallarini tanlang."
 
 #: backend/apps/announcements/owner_api.py backend/apps/console/owner_api.py
 #: backend/apps/finance/filters.py backend/apps/knowledge/owner_api.py
-#: backend/apps/timeoff/owner_api.py
+#: backend/apps/learning/owner_api_courses.py backend/apps/timeoff/owner_api.py
 msgid "Must be a whole number."
 msgstr "Butun son bo‘lishi kerak."
 
@@ -2903,8 +3056,10 @@ msgstr ""
 #: backend/apps/assets/owner_api.py backend/apps/assets/services.py
 #: backend/apps/attendance/owner_api.py backend/apps/faceid/owner_api.py
 #: backend/apps/hr/owner_api.py backend/apps/inventory/api.py
-#: backend/apps/inventory/owner_api.py backend/apps/lifecycle/owner_api.py
-#: backend/apps/payroll/owner_api.py
+#: backend/apps/inventory/owner_api.py
+#: backend/apps/learning/owner_api_courses.py
+#: backend/apps/lifecycle/owner_api.py backend/apps/payroll/owner_api.py
+#: backend/apps/recognition/owner_api.py
 msgid "Give a number."
 msgstr "Son kiriting."
 
@@ -2912,7 +3067,7 @@ msgstr "Son kiriting."
 msgid "Pick a branch you work with."
 msgstr "O‘zingiz ishlaydigan filialni tanlang."
 
-#: backend/apps/assets/owner_api.py
+#: backend/apps/assets/owner_api.py backend/apps/learning/attempts.py
 msgid "Pick someone of this company."
 msgstr "Shu kompaniya xodimini tanlang."
 
@@ -3062,7 +3217,8 @@ msgstr "Inventar raqami"
 
 #: backend/apps/assets/providers.py
 #: backend/apps/inventory/templates/inventory/writeoff_act.html
-#: backend/apps/members/providers.py backend/apps/reports/hooks.py
+#: backend/apps/members/providers.py backend/apps/recognition/providers.py
+#: backend/apps/reports/hooks.py
 #: backend/apps/sales/templates/sales/invoice.html
 msgid "Name"
 msgstr "Ism"
@@ -4348,6 +4504,7 @@ msgid "Bot"
 msgstr "Bot"
 
 #: backend/apps/attendance/models.py
+#: backend/apps/learning/templates/learning/certificate.html
 msgid "Manager"
 msgstr "Rahbar"
 
@@ -11274,7 +11431,7 @@ msgstr ""
 "ichida ichki ishlar organlari va Sog‘liqni saqlash vazirligiga xabar bering, "
 "so‘ng «Xabar berildi» deb belgilang."
 
-#: backend/apps/inventory/owner_api.py
+#: backend/apps/inventory/owner_api.py backend/apps/recognition/owner_api.py
 msgid "Give a date as YYYY-MM-DD."
 msgstr "Sanani YYYY-MM-DD ko‘rinishida kiriting."
 
@@ -12043,6 +12200,7 @@ msgid "No prescriptions this month."
 msgstr "Bu oyda retseptlar yo‘q."
 
 #: backend/apps/inventory/templates/inventory/writeoff_act.html
+#: backend/apps/recognition/providers.py
 msgid "Place"
 msgstr "Joy"
 
@@ -12394,16 +12552,19 @@ msgstr "Rasm"
 msgid "Only people who manage the knowledge base can do this."
 msgstr "Buni faqat bilimlar bazasini boshqaradiganlar qila oladi."
 
-#: backend/apps/knowledge/services.py
+#: backend/apps/knowledge/services.py backend/apps/learning/courses.py
+#: backend/apps/learning/lessons.py
 msgid "Give it a title."
 msgstr "Nom bering."
 
-#: backend/apps/knowledge/services.py
+#: backend/apps/knowledge/services.py backend/apps/learning/courses.py
+#: backend/apps/learning/lessons.py
 #, python-format
 msgid "Keep the title under %(n)d characters."
 msgstr "Nom %(n)d belgidan oshmasin."
 
-#: backend/apps/knowledge/services.py
+#: backend/apps/knowledge/services.py backend/apps/learning/courses.py
+#: backend/apps/learning/lessons.py
 msgid "Pick one emoji."
 msgstr "Faqat bitta emoji tanlang."
 
@@ -12548,6 +12709,124 @@ msgstr "Shu kompaniyaning mavzularini tanlang."
 msgid "There is already a topic with this name."
 msgstr "Bu nomli mavzu allaqachon bor."
 
+#: backend/apps/learning/ai_tools_courses.py
+msgid ""
+"Training courses and mandatory training: each course with how many people "
+"have it, finished it, are on it or are late; who is late with mandatory "
+"training and by how many days"
+msgstr ""
+"O‘qitish kurslari va majburiy o‘qitish: har bir kurs bo‘yicha uni olganlar, "
+"tugatganlar, o‘tayotganlar va kechikayotganlar soni; majburiy o‘qitishni kim "
+"va necha kun kechiktirayotgani"
+
+#: backend/apps/learning/ai_tools_courses.py
+msgid ""
+"One course's people: each person's progress (steps done of the required "
+"ones), deadline, days late, when they finished and their certificate number"
+msgstr ""
+"Bitta kurs xodimlari: har birining jarayoni (majburiy qadamlardan "
+"bajarilgani), muddati, kechikish kunlari, tugatgan sanasi va sertifikat "
+"raqami"
+
+#: backend/apps/learning/ai_tools_courses.py
+msgid ""
+"Who watched a video lesson: everyone it is for, whether they never opened "
+"it, are watching (how much of it they really played) or watched it, the time "
+"spent and when"
+msgstr ""
+"Video darsni kim ko‘rgani: u kimlar uchun bo‘lsa, hammasi — ochmaganmi, "
+"ko‘rmoqdami (haqiqatan qanchasini ko‘rgan) yoki ko‘rib bo‘lganmi, sarflangan "
+"vaqt va qachon"
+
+#: backend/apps/learning/ai_tools_courses.py
+msgid ""
+"One person's training: their courses (open, finished, late, certificates), "
+"the video lessons they watched and the knowledge base pages they read"
+msgstr ""
+"Bitta xodimning o‘qitishi: kurslari (ochiq, tugatilgan, kechikkan, "
+"sertifikatlar), ko‘rgan video darslari va o‘qigan bilimlar bazasi sahifalari"
+
+#: backend/apps/learning/ai_tools_quizzes.py
+msgid ""
+"The skill matrix: each topic's average mastery (0–100 from the questions "
+"answered lately), how many people are weak or strong in it, and each "
+"person's weak and strong topics, the weakest people first"
+msgstr ""
+"Ko‘nikmalar xaritasi: har bir mavzuning o‘rtacha o‘zlashtirilishi (oxirgi "
+"javoblar bo‘yicha 0–100), unda nechta xodim sust yoki kuchli, har bir "
+"xodimning sust va kuchli mavzulari, avval eng sustlari"
+
+#: backend/apps/learning/ai_tools_quizzes.py
+msgid ""
+"Quiz results: for each published quiz the attempts, people, pass rate and "
+"average score in the last N days, and its hardest questions"
+msgstr ""
+"Test natijalari: har bir e’lon qilingan test bo‘yicha oxirgi N kundagi "
+"urinishlar, xodimlar, o‘tganlar ulushi va o‘rtacha ball, eng qiyin savollari"
+
+#: backend/apps/learning/ai_tools_quizzes.py
+msgid ""
+"The tutor's open suggestions: who to assign which course, topics a lesson is "
+"missing for, who is late with mandatory training, who could coach others, "
+"who to thank"
+msgstr ""
+"Ustozning ochiq takliflari: kimga qaysi kursni biriktirish, qaysi mavzularga "
+"dars yetishmaydi, kim majburiy o‘qitishni kechiktirmoqda, kim boshqalarga "
+"yordam bera oladi, kimga rahmat aytish kerak"
+
+#: backend/apps/learning/ai_tools_quizzes.py
+msgid ""
+"Regular checks: each active check's schedule and its latest round (people, "
+"answered, passed, who hasn't answered), and how the last rounds went"
+msgstr ""
+"Muntazam tekshiruvlar: har bir faol tekshiruvning jadvali va oxirgi bosqichi "
+"(xodimlar, javob berganlar, o‘tganlar, javob bermaganlar), oldingi "
+"bosqichlar natijalari"
+
+#: backend/apps/learning/attempts.py
+msgid "This quiz isn't open at the moment."
+msgstr "Bu test hozir ochiq emas."
+
+#: backend/apps/learning/attempts.py
+msgid "This quiz isn't open for you at the moment."
+msgstr "Bu test hozir siz uchun ochiq emas."
+
+#: backend/apps/learning/attempts.py
+msgid "This check has closed."
+msgstr "Bu tekshiruv yopilgan."
+
+#: backend/apps/learning/attempts.py
+msgid "This quiz has no questions yet."
+msgstr "Bu testda hali savol yo‘q."
+
+#: backend/apps/learning/attempts.py
+msgid "You've used all your attempts at this quiz."
+msgstr "Bu test bo‘yicha barcha urinishlaringizdan foydalandingiz."
+
+#: backend/apps/learning/attempts.py
+msgid "You've already answered this check."
+msgstr "Bu tekshiruvga javob bergansiz."
+
+#: backend/apps/learning/attempts.py
+msgid "You can try again a little later."
+msgstr "Birozdan keyin yana urinib ko‘rishingiz mumkin."
+
+#: backend/apps/learning/attempts.py
+msgid "This attempt is over."
+msgstr "Bu urinish yakunlangan."
+
+#: backend/apps/learning/attempts.py
+msgid "This question isn't in your attempt."
+msgstr "Bu savol urinishingizda yo‘q."
+
+#: backend/apps/learning/attempts.py
+msgid "This question can't be answered any more."
+msgstr "Bu savolga endi javob berib bo‘lmaydi."
+
+#: backend/apps/learning/attempts.py
+msgid "Time is up: your attempt was graded with the answers you saved."
+msgstr "Vaqt tugadi: urinishingiz saqlangan javoblar bo‘yicha baholandi."
+
 #: backend/apps/learning/audit_actions.py
 msgid "Changed the training settings"
 msgstr "O‘qitish sozlamalarini o‘zgartirdi"
@@ -12575,6 +12854,14 @@ msgstr "Darsni e’lon qildi"
 #: backend/apps/learning/audit_actions.py
 msgid "Archived a lesson"
 msgstr "Darsni arxivladi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Deleted a lesson"
+msgstr "Darsni o‘chirdi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Had a lesson's video written down"
+msgstr "Dars videosini matnga o‘girtirdi"
 
 #: backend/apps/learning/audit_actions.py
 msgid "Added a course"
@@ -12607,6 +12894,10 @@ msgstr "Biriktirilgan kursni bekor qildi"
 #: backend/apps/learning/audit_actions.py
 msgid "Moved a training deadline"
 msgstr "O‘qish muddatini o‘zgartirdi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Reminded people about their training"
+msgstr "Xodimlarga o‘qitishni eslatdi"
 
 #: backend/apps/learning/audit_actions.py
 msgid "Added a question"
@@ -12659,6 +12950,551 @@ msgstr "Ustoz taklifini qabul qildi"
 #: backend/apps/learning/audit_actions.py
 msgid "Dismissed a tutor's suggestion"
 msgstr "Ustoz taklifini rad etdi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Put a question into use"
+msgstr "Savolni faollashtirdi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Deleted a question"
+msgstr "Savolni o‘chirdi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Brought a quiz back as a draft"
+msgstr "Testni qoralamaga qaytardi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Deleted a quiz"
+msgstr "Testni o‘chirdi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Paused a regular check"
+msgstr "Muntazam tekshiruvni to‘xtatib qo‘ydi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Restarted a regular check"
+msgstr "Muntazam tekshiruvni qayta yoqdi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Changed the question of the day"
+msgstr "Kun savoli sozlamalarini o‘zgartirdi"
+
+#: backend/apps/learning/bot_messages.py backend/apps/learning/models.py
+#: backend/apps/recognition/models.py
+msgid "Question of the day"
+msgstr "Kun savoli"
+
+#: backend/apps/learning/bot_messages.py
+msgctxt "true or false answer"
+msgid "True"
+msgstr "To‘g‘ri"
+
+#: backend/apps/learning/bot_messages.py
+msgctxt "true or false answer"
+msgid "False"
+msgstr "Noto‘g‘ri"
+
+#: backend/apps/learning/bot_messages.py
+msgid "True or false?"
+msgstr "To‘g‘rimi yoki noto‘g‘ri?"
+
+#: backend/apps/learning/bot_messages.py
+msgid "Choose one answer."
+msgstr "Bitta javobni tanlang."
+
+#: backend/apps/learning/bot_messages.py
+msgid "Choose every right answer, then press «Answer»."
+msgstr ""
+"Barcha to‘g‘ri javoblarni tanlang, so‘ng «Javob berish» tugmasini bosing."
+
+#: backend/apps/learning/bot_messages.py
+#, python-format
+msgid "Chosen: %(letters)s"
+msgstr "Tanlangan: %(letters)s"
+
+#: backend/apps/learning/bot_messages.py
+msgctxt "question of the day button"
+msgid "Answer"
+msgstr "Javob berish"
+
+#: backend/apps/learning/bot_messages.py
+#: employee_bot/bot/handlers/features/learning.py
+msgid "This one is answered in the app."
+msgstr "Bu savolga ilovada javob beriladi."
+
+#: backend/apps/learning/bot_messages.py
+msgid "Answer in the app"
+msgstr "Ilovada javob berish"
+
+#: backend/apps/learning/bot_messages.py
+#, python-format
+msgid "Your answer: %(answer)s"
+msgstr "Javobingiz: %(answer)s"
+
+#: backend/apps/learning/bot_messages.py
+#: employee_bot/bot/handlers/features/learning.py
+msgid "Right!"
+msgstr "To‘g‘ri!"
+
+#: backend/apps/learning/bot_messages.py
+#: employee_bot/bot/handlers/features/learning.py
+msgid "Not quite."
+msgstr "Afsus, noto‘g‘ri."
+
+#: backend/apps/learning/bot_messages.py
+#, python-format
+msgid "The right answer: %(answer)s"
+msgstr "To‘g‘ri javob: %(answer)s"
+
+#: backend/apps/learning/bot_messages.py
+#, python-format
+msgid "Points: +%(points)s"
+msgstr "Ball: +%(points)s"
+
+#: backend/apps/learning/bot_messages.py
+#, python-format
+msgid "Learning streak: %(count)s day"
+msgid_plural "Learning streak: %(count)s days"
+msgstr[0] "Ketma-ket kunlar: %(count)s"
+
+#: backend/apps/learning/certificates.py
+#: backend/apps/learning/templates/learning/certificate.html
+msgid "Certificate"
+msgstr "Sertifikat"
+
+#: backend/apps/learning/checks.py backend/apps/learning/daily.py
+msgid "Enter the time as HH:MM."
+msgstr "Vaqtni 10:00 ko‘rinishida kiriting."
+
+#: backend/apps/learning/checks.py
+msgid "Give the check a name."
+msgstr "Tekshiruvga nom bering."
+
+#: backend/apps/learning/checks.py backend/apps/learning/quizzes.py
+#, python-format
+msgid "Keep the name under %(max)s characters."
+msgstr "Nom: ko‘pi bilan %(max)s belgi."
+
+#: backend/apps/learning/checks.py
+msgid "Pick a quiz of this company that isn't archived."
+msgstr "Shu kompaniyaning arxivlanmagan testini tanlang."
+
+#: backend/apps/learning/checks.py
+msgid "Pick every week or every month."
+msgstr "Har hafta yoki har oy ekanini tanlang."
+
+#: backend/apps/learning/checks.py
+msgid "Pick a day of the month, 1–28."
+msgstr "Oy kunini tanlang: 1–28."
+
+#: backend/apps/learning/checks.py
+msgid "Give 1–168 hours to answer."
+msgstr "Javob berish uchun vaqt: 1–168 soat."
+
+#: backend/apps/learning/checks.py
+msgid "Pick a quiz."
+msgstr "Testni tanlang."
+
+#: backend/apps/learning/checks.py backend/apps/learning/quizzes.py
+msgid "Pick a state."
+msgstr "Holatni tanlang."
+
+#: backend/apps/learning/courses.py
+msgid "You can only do this for people you see."
+msgstr "Buni faqat siz ko‘radigan xodimlar uchun qila olasiz."
+
+#: backend/apps/learning/courses.py
+msgid "Give 1–365 days to finish, or none."
+msgstr "Tugatish uchun 1–365 kun bering yoki muddat qo‘ymang."
+
+#: backend/apps/learning/courses.py
+msgid "Renew after 1–60 months, or never."
+msgstr "Yangilash muddati: 1–60 oy yoki hech qachon."
+
+#: backend/apps/learning/courses.py
+msgid "Pick who the course is for: everyone or some positions."
+msgstr "Kurs kim uchunligini tanlang: hamma yoki ayrim lavozimlar."
+
+#: backend/apps/learning/courses.py
+msgid "This course is archived. Restore it first."
+msgstr "Bu kurs arxivda. Avval uni qaytaring."
+
+#: backend/apps/learning/courses.py
+msgid "Add at least one step before publishing the course."
+msgstr "Kursni e’lon qilishdan oldin kamida bitta qadam qo‘shing."
+
+#: backend/apps/learning/courses.py backend/apps/learning/owner_api_courses.py
+msgid "A step is a lesson, a page or a quiz."
+msgstr "Qadam — bu dars, sahifa yoki test."
+
+#: backend/apps/learning/courses.py
+msgid "Pick a lesson, page or quiz of this company that isn't archived."
+msgstr ""
+"Shu kompaniyaning arxivda bo‘lmagan darsi, sahifasi yoki testini tanlang."
+
+#: backend/apps/learning/courses.py
+msgid "This is already a step of the course."
+msgstr "Bu allaqachon kursning qadami."
+
+#: backend/apps/learning/courses.py
+msgid "A published course needs at least one step."
+msgstr "E’lon qilingan kursda kamida bitta qadam bo‘lishi kerak."
+
+#: backend/apps/learning/courses.py
+msgid "Give every step of the course, in the new order."
+msgstr "Kursning barcha qadamlarini yangi tartibda bering."
+
+#: backend/apps/learning/courses.py backend/apps/learning/media.py
+#: employee_bot/bot/handlers/features/learning.py
+msgid "Training isn't switched on for this company."
+msgstr "Bu kompaniyada o‘qitish yoqilmagan."
+
+#: backend/apps/learning/courses.py
+msgid "Publish the course before assigning it."
+msgstr "Kursni biriktirishdan oldin uni e’lon qiling."
+
+#: backend/apps/learning/courses.py backend/apps/members/department_api.py
+msgid "Pick people of this company."
+msgstr "Shu kompaniyadagi xodimlarni tanlang."
+
+#: backend/apps/learning/courses.py
+msgid "This course isn't open to you."
+msgstr "Bu kurs siz uchun ochiq emas."
+
+#: backend/apps/learning/courses.py
+msgid "This training is already closed."
+msgstr "Bu o‘qitish allaqachon yopilgan."
+
+#: backend/apps/learning/courses.py
+msgid "Say why they are excused."
+msgstr "Nima uchun ozod qilinayotganini yozing."
+
+#: backend/apps/learning/daily.py
+msgid "This was the question of another day."
+msgstr "Bu boshqa kunning savoli edi."
+
+#: backend/apps/learning/daily.py
+msgid "Choose an answer first."
+msgstr "Avval javobni tanlang."
+
+#: backend/apps/learning/daily.py
+#: employee_bot/bot/handlers/features/learning.py
+msgid "You've answered it already."
+msgstr "Siz unga javob bergansiz."
+
+#: backend/apps/learning/daily.py backend/apps/learning/grading.py
+msgid "This answer doesn't fit the question."
+msgstr "Bu javob savolga mos kelmaydi."
+
+#: backend/apps/learning/drafting.py
+msgid "Pick a page or a lesson to write questions from."
+msgstr "Savollar yoziladigan sahifa yoki darsni tanlang."
+
+#: backend/apps/learning/drafting.py
+msgid "Pick a page or a lesson of this company."
+msgstr "Shu kompaniyaning sahifa yoki darsini tanlang."
+
+#: backend/apps/learning/drafting.py
+msgid "Ask for 1–15 questions."
+msgstr "Savollar soni: 1–15."
+
+#: backend/apps/learning/drafting.py backend/apps/learning/grading.py
+#: backend/apps/learning/quizzes.py
+msgid "Pick a kind of question."
+msgstr "Savol turini tanlang."
+
+#: backend/apps/learning/drafting.py backend/apps/learning/quizzes.py
+msgid "Pick how hard the question is."
+msgstr "Savolning qiyinligini tanlang."
+
+#: backend/apps/learning/drafting.py
+msgid "There is no text to write questions from."
+msgstr "Savollar yozish uchun matn yo‘q."
+
+#: backend/apps/learning/drafting.py
+#, python-format
+msgid "Fill in the blank: %(sentence)s"
+msgstr "Bo‘sh joyni to‘ldiring: %(sentence)s"
+
+#: backend/apps/learning/drafting.py
+#, python-format
+msgid "Fill in the number: %(sentence)s"
+msgstr "Sonni yozing: %(sentence)s"
+
+#: backend/apps/learning/drafting.py
+#, python-format
+msgid "Put the steps in their order: %(title)s"
+msgstr "Qadamlarni tartib bilan joylashtiring: %(title)s"
+
+#: backend/apps/learning/drafting.py
+#, python-format
+msgid "Match each term with its meaning: %(title)s"
+msgstr "Har bir atamani ma’nosi bilan moslang: %(title)s"
+
+#: backend/apps/learning/grading.py
+msgid "The question has no answer part."
+msgstr "Savolning javob qismi to‘ldirilmagan."
+
+#: backend/apps/learning/grading.py
+msgid "Write something here."
+msgstr "Bu yerga matn yozing."
+
+#: backend/apps/learning/grading.py backend/apps/recognition/services.py
+#, python-format
+msgid "Keep it under %(max)s characters."
+msgstr "Matn %(max)s belgidan oshmasin."
+
+#: backend/apps/learning/grading.py
+#, python-format
+msgid "How many: %(min)s–%(max)s."
+msgstr "Soni: %(min)s–%(max)s."
+
+#: backend/apps/learning/grading.py
+msgid "Use letters and digits for the id."
+msgstr "Identifikatorda faqat harf va raqam bo‘lsin."
+
+#: backend/apps/learning/grading.py
+msgid "Two of them have the same id."
+msgstr "Ikkitasining identifikatori bir xil."
+
+#: backend/apps/learning/grading.py
+msgid "Two of them say the same thing."
+msgstr "Ikkitasida bir xil matn yozilgan."
+
+#: backend/apps/learning/grading.py
+msgid "Add the answer options."
+msgstr "Javob variantlarini qo‘shing."
+
+#: backend/apps/learning/grading.py
+msgid "Mark exactly one option as right."
+msgstr "Faqat bitta variantni to‘g‘ri deb belgilang."
+
+#: backend/apps/learning/grading.py
+msgid "Mark at least one option as right."
+msgstr "Kamida bitta variantni to‘g‘ri deb belgilang."
+
+#: backend/apps/learning/grading.py
+msgid "Say whether the statement is true or false."
+msgstr "Gap to‘g‘ri yoki noto‘g‘riligini belgilang."
+
+#: backend/apps/learning/grading.py
+msgid "Add the steps in their right order."
+msgstr "Qadamlarni to‘g‘ri tartibda qo‘shing."
+
+#: backend/apps/learning/grading.py
+msgid "Add the pairs to match."
+msgstr "Moslashtiriladigan juftliklarni qo‘shing."
+
+#: backend/apps/learning/grading.py
+msgid "Add at least one accepted answer."
+msgstr "Kamida bitta qabul qilinadigan javob qo‘shing."
+
+#: backend/apps/learning/grading.py
+#, python-format
+msgid "At most %(max)s accepted answers."
+msgstr "Qabul qilinadigan javoblar: ko‘pi bilan %(max)s."
+
+#: backend/apps/learning/grading.py
+msgid "An accepted answer needs letters or digits."
+msgstr "Qabul qilinadigan javobda harf yoki raqam bo‘lishi kerak."
+
+#: backend/apps/learning/grading.py
+msgid "Enter the right number."
+msgstr "To‘g‘ri sonni kiriting."
+
+#: backend/apps/learning/grading.py
+msgid "The tolerance is 0 or more."
+msgstr "Ruxsat etilgan farq 0 yoki undan katta bo‘ladi."
+
+#: backend/apps/learning/hooks_courses.py
+msgid "New training given to you"
+msgstr "Sizga berilgan yangi o‘qitish"
+
+#: backend/apps/learning/hooks_courses.py
+msgid "Training due soon"
+msgstr "Muddati yaqin o‘qitish"
+
+#: backend/apps/learning/hooks_courses.py
+msgid "Training that is late"
+msgstr "Muddati o‘tgan o‘qitish"
+
+#: backend/apps/learning/hooks_courses.py
+msgid "People late with their training"
+msgstr "O‘qitishni kechiktirayotgan xodimlar"
+
+#: backend/apps/learning/hooks_courses.py
+msgid "Certificates of finished courses"
+msgstr "Tugatilgan kurslar sertifikatlari"
+
+#: backend/apps/learning/hooks_quizzes.py
+msgid "The question of the day"
+msgstr "Kun savoli"
+
+#: backend/apps/learning/hooks_quizzes.py
+msgid "A regular check to answer"
+msgstr "Javob berish kerak bo‘lgan muntazam tekshiruv"
+
+#: backend/apps/learning/hooks_quizzes.py
+msgid "A regular check still to answer"
+msgstr "Hali javob berilmagan muntazam tekshiruv"
+
+#: backend/apps/learning/hooks_quizzes.py
+msgid "Results of a regular check"
+msgstr "Muntazam tekshiruv natijalari"
+
+#: backend/apps/learning/hooks_quizzes.py
+msgid "The tutor's weekly training report"
+msgstr "Ustozning haftalik o‘qitish hisoboti"
+
+#: backend/apps/learning/hooks_quizzes.py
+msgid "A lesson that helps after a hard test"
+msgstr "Qiyin testdan keyin yordam beradigan dars"
+
+#: backend/apps/learning/lessons.py
+msgid "Paste a YouTube link: a watch, youtu.be, shorts or embed address."
+msgstr ""
+"YouTube havolasini qo‘ying: watch, youtu.be, shorts yoki embed manzili."
+
+#: backend/apps/learning/lessons.py
+msgid "These notes are too long. Put the text on a knowledge base page."
+msgstr "Izoh juda uzun. Matnni bilimlar bazasidagi sahifaga joylang."
+
+#: backend/apps/learning/lessons.py
+msgid "Pick a video of this company."
+msgstr "Shu kompaniyaning videosini tanlang."
+
+#: backend/apps/learning/lessons.py
+msgid "This video couldn't be processed. Upload it again."
+msgstr "Bu videoni qayta ishlab bo‘lmadi. Uni qaytadan yuklang."
+
+#: backend/apps/learning/lessons.py
+msgid "Pick an uploaded video or a YouTube link."
+msgstr "Yuklangan videoni yoki YouTube havolasini tanlang."
+
+#: backend/apps/learning/lessons.py
+msgid "Pick who the lesson is for: everyone or some positions."
+msgstr "Dars kim uchunligini tanlang: hamma yoki ayrim lavozimlar."
+
+#: backend/apps/learning/lessons.py
+msgid "Add the YouTube link first."
+msgstr "Avval YouTube havolasini qo‘shing."
+
+#: backend/apps/learning/lessons.py
+msgid "Upload the video first."
+msgstr "Avval videoni yuklang."
+
+#: backend/apps/learning/lessons.py
+msgid "Wait until the video has finished uploading."
+msgstr "Video yuklanib bo‘lguncha kuting."
+
+#: backend/apps/learning/lessons.py
+msgid "This lesson is archived. Restore it first."
+msgstr "Bu dars arxivda. Avval uni qaytaring."
+
+#: backend/apps/learning/lessons.py
+msgid "A course uses this lesson. Archive it instead."
+msgstr "Bu dars kursda ishlatilgan. O‘chirish o‘rniga uni arxivlang."
+
+#: backend/apps/learning/media.py
+msgid "This file is empty."
+msgstr "Bu fayl bo‘sh."
+
+#: backend/apps/learning/media.py
+msgid "A video can be at most 2 GB."
+msgstr "Video hajmi ko‘pi bilan 2 GB bo‘lishi mumkin."
+
+#: backend/apps/learning/media.py
+#, python-format
+msgid ""
+"There isn't room for this video: %(used)s of %(limit)s are used. Delete "
+"videos you don't need or raise the limit in the training settings."
+msgstr ""
+"Bu video uchun joy yetarli emas: band — %(used)s, chegara — %(limit)s. "
+"Keraksiz videolarni o‘chiring yoki o‘qitish sozlamalarida chegarani oshiring."
+
+#: backend/apps/learning/media.py
+msgid "This piece is empty."
+msgstr "Bu qism bo‘sh."
+
+#: backend/apps/learning/media.py
+msgid "Send at most 8 MB at a time."
+msgstr "Bir martada ko‘pi bilan 8 MB yuboring."
+
+#: backend/apps/learning/media.py
+msgid "This upload is finished."
+msgstr "Bu yuklash tugagan."
+
+#: backend/apps/learning/media.py
+msgid "This upload has expired. Start it again."
+msgstr "Bu yuklash muddati o‘tgan. Qaytadan boshlang."
+
+#: backend/apps/learning/media.py
+#, python-format
+msgid "Continue the upload from byte %(offset)d."
+msgstr "Yuklashni davom ettiring, boshlanish bayti: %(offset)d."
+
+#: backend/apps/learning/media.py
+msgid "This is more than the size given when the upload started."
+msgstr "Bu yuklash boshida aytilgan hajmdan ko‘p."
+
+#: backend/apps/learning/media.py
+#, python-format
+msgid "The upload isn't complete: %(received)s of %(size)s arrived."
+msgstr "Yuklash tugallanmagan: keldi — %(received)s, kerak — %(size)s."
+
+#: backend/apps/learning/media.py
+msgid "A lesson uses this video. Pick another video for it first."
+msgstr "Bu video darsda ishlatilgan. Avval darsga boshqa video tanlang."
+
+#: backend/apps/learning/media.py
+msgid "The upload isn't complete. Upload the video again."
+msgstr "Yuklash tugallanmagan. Videoni qaytadan yuklang."
+
+#: backend/apps/learning/media.py
+msgid ""
+"Videos of this type can't be used. Upload an MP4, MOV, WebM or MKV file."
+msgstr ""
+"Bu turdagi videolardan foydalanib bo‘lmaydi. MP4, MOV, WebM yoki MKV fayl "
+"yuklang."
+
+#: backend/apps/learning/media.py
+msgid "This file isn't a video we can read."
+msgstr "Bu fayl biz o‘qiy oladigan video emas."
+
+#: backend/apps/learning/media.py
+msgid "Videos can't be processed on this server yet."
+msgstr "Bu serverda hozircha videolarni qayta ishlab bo‘lmaydi."
+
+#: backend/apps/learning/media.py
+msgid ""
+"This video carries subtitles or attached files. Export it again with just "
+"the picture and the sound."
+msgstr ""
+"Bu videoda subtitrlar yoki biriktirilgan fayllar bor. Uni faqat tasvir va "
+"ovoz bilan qaytadan eksport qiling."
+
+#: backend/apps/learning/media.py
+msgid "This file has no picture, only sound."
+msgstr "Bu faylda tasvir yo‘q, faqat ovoz bor."
+
+#: backend/apps/learning/media.py
+msgid "We couldn't tell how long this video is."
+msgstr "Video davomiyligini aniqlab bo‘lmadi."
+
+#: backend/apps/learning/media.py
+msgid "A video can be at most 3 hours long."
+msgstr "Video ko‘pi bilan 3 soat bo‘lishi mumkin."
+
+#: backend/apps/learning/media.py
+msgid "Making the video took too long. Try a shorter or smaller file."
+msgstr ""
+"Videoni tayyorlash juda uzoq davom etdi. Qisqaroq yoki kichikroq fayl "
+"yuklang."
+
+#: backend/apps/learning/media.py
+msgid "The video couldn't be converted. Export it again as MP4."
+msgstr ""
+"Videoni o‘zgartirib bo‘lmadi. Uni qaytadan MP4 sifatida eksport qiling."
 
 #: backend/apps/learning/models.py
 msgid "Published"
@@ -12815,6 +13651,10 @@ msgid "Shown once the person has answered."
 msgstr "Xodim javob bergandan keyin ko‘rsatiladi."
 
 #: backend/apps/learning/models.py
+msgid "The job that wrote it from a page or a lesson."
+msgstr "Uni sahifa yoki darsdan yozgan vazifa."
+
+#: backend/apps/learning/models.py
 msgid "The same questions every time"
 msgstr "Har safar bir xil savollar"
 
@@ -12896,12 +13736,23 @@ msgid "Renewal"
 msgstr "Qayta o‘qish"
 
 #: backend/apps/learning/models.py
+msgid "The certificate as a PDF, made once the course is finished."
+msgstr "Kurs tugagach tayyorlanadigan PDF sertifikat."
+
+#: backend/apps/learning/models.py
 msgid "When the renewal is due (courses that renew)."
 msgstr "Qayta o‘qish muddati (qayta o‘tiladigan kurslar uchun)."
 
 #: backend/apps/learning/models.py
 msgid "Where to resume, in seconds."
 msgstr "Qayerdan davom ettirish, soniyalarda."
+
+#: backend/apps/learning/models.py
+msgid ""
+"Seconds watched per company day, the last 60 days: {YYYY-MM-DD: seconds}."
+msgstr ""
+"Kompaniya kunlari bo‘yicha ko‘rilgan soniyalar, so‘nggi 60 kun: {YYYY-MM-DD: "
+"soniya}."
 
 #: backend/apps/learning/models.py
 msgid "Paused"
@@ -12916,6 +13767,14 @@ msgid "1–28 (monthly checks)."
 msgstr "1–28 (oylik tekshiruvlar uchun)."
 
 #: backend/apps/learning/models.py
+msgid "When the reminder at half time went out."
+msgstr "Muddatning yarmida eslatma qachon yuborilgani."
+
+#: backend/apps/learning/models.py
+msgid "When the reminder two hours before the end went out."
+msgstr "Tugashidan ikki soat oldingi eslatma qachon yuborilgani."
+
+#: backend/apps/learning/models.py
 msgid "Graded"
 msgstr "Baholangan"
 
@@ -12928,6 +13787,22 @@ msgid "Abandoned"
 msgstr "Tashlab ketilgan"
 
 #: backend/apps/learning/models.py
+msgid "A manager trying the quiz: never counts in results, skills or points."
+msgstr ""
+"Rahbar testni sinab ko‘rmoqda: natijalar, ko‘nikmalar va ballarga "
+"qo‘shilmaydi."
+
+#: backend/apps/learning/models.py
+msgid ""
+"A manager let the person start again: no longer counts against the limit."
+msgstr ""
+"Rahbar qaytadan boshlashga ruxsat berdi: urinishlar chegarasiga kirmaydi."
+
+#: backend/apps/learning/models.py
+msgid "Points it earned (empty while recognition is off)."
+msgstr "Olingan ballar (rag‘batlantirish o‘chiq bo‘lsa, bo‘sh)."
+
+#: backend/apps/learning/models.py
 msgid "Option ids in the order shown."
 msgstr "Variantlar identifikatorlari ko‘rsatilgan tartibda."
 
@@ -12935,13 +13810,13 @@ msgstr "Variantlar identifikatorlari ko‘rsatilgan tartibda."
 msgid "Regular check"
 msgstr "Muntazam tekshiruv"
 
-#: backend/apps/learning/models.py backend/apps/recognition/models.py
-msgid "Question of the day"
-msgstr "Kun savoli"
-
 #: backend/apps/learning/models.py
 msgid "Claude"
 msgstr "Claude"
+
+#: backend/apps/learning/models.py
+msgid "Questions left out: not valid, or a number not in the text."
+msgstr "Tashlab ketilgan savollar: noto‘g‘ri yoki matnda yo‘q son bor."
 
 #: backend/apps/learning/models.py
 msgid "Assign a course"
@@ -12959,7 +13834,7 @@ msgstr "Dars yetishmayapti"
 msgid "Could coach others"
 msgstr "Boshqalarga o‘rgata oladi"
 
-#: backend/apps/learning/models.py
+#: backend/apps/learning/models.py backend/apps/recognition/bot_messages.py
 msgid "Say thanks"
 msgstr "Rahmat aytish"
 
@@ -12971,9 +13846,420 @@ msgstr "Majburiy o‘qishni kechiktirgan"
 msgid "Resolved"
 msgstr "Hal bo‘ldi"
 
+#: backend/apps/learning/notify_courses.py
+#, python-format
+msgid "%(course)s, due %(date)s"
+msgstr "%(course)s, muddat: %(date)s"
+
+#: backend/apps/learning/notify_courses.py
+#, python-format
+msgid "New training: %(course)s"
+msgstr "Yangi o‘qitish: %(course)s"
+
+#: backend/apps/learning/notify_courses.py
+#, python-format
+msgid "New training: %(count)s course"
+msgid_plural "New training: %(count)s courses"
+msgstr[0] "Yangi o‘qitish, kurslar: %(count)s"
+
+#: backend/apps/learning/notify_courses.py
+msgid "Open it in the app when you have a moment."
+msgstr "Bo‘sh vaqtingizda ilovada oching."
+
+#: backend/apps/learning/notify_courses.py
+#, python-format
+msgid "Finish it by %(date)s."
+msgstr "Tugatish muddati: %(date)s."
+
+#: backend/apps/learning/notify_courses.py
+#, python-format
+msgid "Training due %(date)s: %(course)s"
+msgstr "O‘qitish muddati %(date)s: %(course)s"
+
+#: backend/apps/learning/notify_courses.py
+#, python-format
+msgid "%(count)s training is due soon"
+msgid_plural "%(count)s trainings are due soon"
+msgstr[0] "Muddati yaqin kurslar: %(count)s"
+
+#: backend/apps/learning/notify_courses.py
+#, python-format
+msgid "Done: %(done)s of %(total)s steps."
+msgstr "Bajarilgan qadamlar: %(done)s / %(total)s."
+
+#: backend/apps/learning/notify_courses.py
+#, python-format
+msgid "Training is late: %(course)s"
+msgstr "O‘qitish muddati o‘tdi: %(course)s"
+
+#: backend/apps/learning/notify_courses.py
+#, python-format
+msgid "%(count)s training is late"
+msgid_plural "%(count)s trainings are late"
+msgstr[0] "Muddati o‘tgan kurslar: %(count)s"
+
+#: backend/apps/learning/notify_courses.py
+#, python-format
+msgid "It was due %(date)s. Finish it as soon as you can."
+msgstr "Muddat %(date)s edi. Imkon qadar tezroq tugating."
+
+#: backend/apps/learning/notify_courses.py
+#, python-format
+msgid "%(course)s, was due %(date)s"
+msgstr "%(course)s, muddat %(date)s edi"
+
+#: backend/apps/learning/notify_courses.py
+#, python-format
+msgid "%(count)s person is late with training"
+msgid_plural "%(count)s people are late with training"
+msgstr[0] "O‘qitishni kechiktirayotganlar: %(count)s kishi"
+
+#: backend/apps/learning/notify_courses.py
+#, python-format
+msgid "%(name)s: %(course)s, %(days)s day late"
+msgid_plural "%(name)s: %(course)s, %(days)s days late"
+msgstr[0] "%(name)s: %(course)s, kechikish: %(days)s kun"
+
+#: backend/apps/learning/notify_courses.py
+#, python-format
+msgid "A reminder about your training: %(course)s"
+msgstr "O‘qitish haqida eslatma: %(course)s"
+
+#: backend/apps/learning/notify_courses.py
+#, python-format
+msgid "A reminder about %(count)s training"
+msgid_plural "A reminder about %(count)s trainings"
+msgstr[0] "O‘qitish haqida eslatma, kurslar: %(count)s"
+
+#: backend/apps/learning/notify_courses.py
+#, python-format
+msgid "Certificate ready: %(course)s"
+msgstr "Sertifikat tayyor: %(course)s"
+
+#: backend/apps/learning/notify_courses.py
+#, python-format
+msgid "Well done, you finished the course. Certificate number: %(number)s."
+msgstr "Barakalla, kursni tugatdingiz. Sertifikat raqami: %(number)s."
+
+#: backend/apps/learning/notify_quizzes.py
+#, python-format
+msgid "Regular check: %(title)s"
+msgstr "Muntazam tekshiruv: %(title)s"
+
+#: backend/apps/learning/notify_quizzes.py
+#, python-format
+msgid "%(count)s question, to answer by %(due)s."
+msgid_plural "%(count)s questions, to answer by %(due)s."
+msgstr[0] "Savollar soni: %(count)s. Javob berish muddati: %(due)s."
+
+#: backend/apps/learning/notify_quizzes.py
+#, python-format
+msgid "Two hours left: answer by %(due)s."
+msgstr "Ikki soat qoldi. Javob berish muddati: %(due)s."
+
+#: backend/apps/learning/notify_quizzes.py
+#, python-format
+msgid "Half the time is gone: answer by %(due)s."
+msgstr "Vaqtning yarmi o‘tdi. Javob berish muddati: %(due)s."
+
+#: backend/apps/learning/notify_quizzes.py
+#, python-format
+msgid "Reminder: %(title)s"
+msgstr "Eslatma: %(title)s"
+
+#: backend/apps/learning/notify_quizzes.py
+#, python-format
+msgid "Answered: %(done)s of %(people)s. Passed: %(passed)s."
+msgstr "Javob berdi: %(done)s / %(people)s. O‘tdi: %(passed)s."
+
+#: backend/apps/learning/notify_quizzes.py
+#, python-format
+msgid "Hardest question: «%(text)s» (%(percent)s %% right)."
+msgstr "Eng qiyin savol: «%(text)s» (to‘g‘ri javoblar: %(percent)s %%)."
+
+#: backend/apps/learning/notify_quizzes.py
+#, python-format
+msgid "%(names)s and %(count)s more"
+msgid_plural "%(names)s and %(count)s more"
+msgstr[0] "%(names)s va yana %(count)s kishi"
+
+#: backend/apps/learning/notify_quizzes.py
+#, python-format
+msgid "Didn't answer: %(names)s."
+msgstr "Javob bermaganlar: %(names)s."
+
+#: backend/apps/learning/notify_quizzes.py
+#, python-format
+msgid "Check results: %(title)s"
+msgstr "Tekshiruv natijalari: %(title)s"
+
+#: backend/apps/learning/notify_quizzes.py
+#, python-format
+msgid ""
+"Mandatory training: %(done)s of %(people)s people finished, %(late)s late."
+msgstr ""
+"Majburiy o‘qitish: yakunlaganlar %(done)s / %(people)s, kechikkanlar: "
+"%(late)s."
+
+#: backend/apps/learning/notify_quizzes.py
+#, python-format
+msgid "Late: %(names)s."
+msgstr "Kechikkanlar: %(names)s."
+
+#: backend/apps/learning/notify_quizzes.py
+#, python-format
+msgid "This week: %(count)s test, %(average)s %% on average."
+msgid_plural "This week: %(count)s tests, %(average)s %% on average."
+msgstr[0] "Bu hafta testlar soni: %(count)s, o‘rtacha natija: %(average)s %%."
+
+#: backend/apps/learning/notify_quizzes.py
+msgid "No tests were taken this week."
+msgstr "Bu hafta test topshirilmadi."
+
+#: backend/apps/learning/notify_quizzes.py
+#, python-format
+msgid "Weakest topic: %(topic)s (%(average)s %%)."
+msgstr "Eng sust mavzu: %(topic)s (%(average)s %%)."
+
+#: backend/apps/learning/notify_quizzes.py
+#, python-format
+msgid "Most points this week: %(names)s."
+msgstr "Bu hafta eng ko‘p ball to‘plaganlar: %(names)s."
+
+#: backend/apps/learning/notify_quizzes.py
+msgid "late with training"
+msgstr "o‘qitishni kechiktirmoqda"
+
+#: backend/apps/learning/notify_quizzes.py
+#, python-format
+msgid "Needs help: %(names)s."
+msgstr "Yordam kerak: %(names)s."
+
+#: backend/apps/learning/notify_quizzes.py
+#, python-format
+msgid "%(count)s suggestion waits for you on the tutor's page."
+msgid_plural "%(count)s suggestions wait for you on the tutor's page."
+msgstr[0] "Ustoz sahifasida sizni kutayotgan takliflar: %(count)s."
+
+#: backend/apps/learning/notify_quizzes.py
+#, python-format
+msgid "Yesterday's test on %(topic)s was hard"
+msgstr "Kechagi test qiyin bo‘ldi. Mavzu: %(topic)s"
+
+#: backend/apps/learning/notify_quizzes.py
+#, python-format
+msgid "This lesson helps: %(lesson)s."
+msgstr "Bu dars yordam beradi: %(lesson)s."
+
+#: backend/apps/learning/owner_api_courses.py
+msgid "Give the offset of this piece."
+msgstr "Bu qismning boshlanish o‘rnini (offset) bering."
+
+#: backend/apps/learning/progress.py
+msgid "This video is still being prepared. Try again in a few minutes."
+msgstr "Video hali tayyorlanmoqda. Bir necha daqiqadan keyin urinib ko‘ring."
+
+#: backend/apps/learning/progress.py
+msgid "This lesson has no video to watch yet."
+msgstr "Bu darsda hozircha ko‘rish uchun video yo‘q."
+
+#: backend/apps/learning/quizzes.py
+#, python-format
+msgid "Keep the explanation under %(max)s characters."
+msgstr "Izoh: ko‘pi bilan %(max)s belgi."
+
+#: backend/apps/learning/quizzes.py
+msgid "A question is worth 1–10 points."
+msgstr "Savol bali: 1–10."
+
+#: backend/apps/learning/quizzes.py
+msgid "Upload the picture again."
+msgstr "Rasmni qayta yuklang."
+
+#: backend/apps/learning/quizzes.py
+msgid "Pick a lesson."
+msgstr "Darsni tanlang."
+
+#: backend/apps/learning/quizzes.py
+msgid "Pick a page."
+msgstr "Sahifani tanlang."
+
+#: backend/apps/learning/quizzes.py
+msgid "A new question is a draft or in use."
+msgstr "Yangi savol qoralama yoki faol bo‘ladi."
+
+#: backend/apps/learning/quizzes.py
+msgid "People have answered this question: make a new one instead."
+msgstr "Bu savolga javob berishgan: uning o‘rniga yangi savol yarating."
+
+#: backend/apps/learning/quizzes.py
+msgid "People were asked this question: archive it instead."
+msgstr "Bu savol berilgan: o‘chirish o‘rniga uni arxivlang."
+
+#: backend/apps/learning/quizzes.py
+msgid "Give the quiz a name."
+msgstr "Testga nom bering."
+
+#: backend/apps/learning/quizzes.py
+#, python-format
+msgid "Keep the description under %(max)s characters."
+msgstr "Tavsif: ko‘pi bilan %(max)s belgi."
+
+#: backend/apps/learning/quizzes.py
+msgid "Pick fixed or random questions."
+msgstr "Savollar doimiy ro‘yxatdanmi yoki tasodifiymi, tanlang."
+
+#: backend/apps/learning/quizzes.py
+msgid "Ask 1–50 questions."
+msgstr "Savollar soni: 1–50."
+
+#: backend/apps/learning/quizzes.py
+msgid "A time limit is 30 seconds to 4 hours, or none."
+msgstr "Vaqt chegarasi: 30 soniyadan 4 soatgacha yoki cheklovsiz."
+
+#: backend/apps/learning/quizzes.py
+msgid "The pass mark is 1–100 %."
+msgstr "O‘tish bali: 1–100 %."
+
+#: backend/apps/learning/quizzes.py
+msgid "Allow 1–20 attempts, or any."
+msgstr "Urinishlar soni: 1–20 yoki cheklovsiz."
+
+#: backend/apps/learning/quizzes.py
+msgid "The wait before another try is at most 30 days."
+msgstr "Keyingi urinishgacha kutish 30 kundan oshmaydi."
+
+#: backend/apps/learning/quizzes.py
+msgid "Pick when people see the right answers."
+msgstr "To‘g‘ri javoblar qachon ko‘rsatilishini tanlang."
+
+#: backend/apps/learning/quizzes.py
+msgid "Pick questions of this company that aren't archived."
+msgstr "Shu kompaniyaning arxivlanmagan savollarini tanlang."
+
+#: backend/apps/learning/quizzes.py
+msgid "A published quiz needs at least one question in use."
+msgstr "E’lon qilingan testda kamida bitta faol savol bo‘lishi kerak."
+
+#: backend/apps/learning/quizzes.py
+msgid "Add at least one question in use to the list first."
+msgstr "Avval ro‘yxatga kamida bitta faol savol qo‘shing."
+
+#: backend/apps/learning/quizzes.py
+msgid "Pick topics with questions in use, or add questions to the list."
+msgstr "Faol savollari bor mavzularni tanlang yoki ro‘yxatga savol qo‘shing."
+
+#: backend/apps/learning/quizzes.py
+msgid "This quiz was taken or is in a course or a check: archive it."
+msgstr "Bu test topshirilgan yoki kurs yo tekshiruvda bor: uni arxivlang."
+
 #: backend/apps/learning/services.py
 msgid "Only people who manage training can do this."
 msgstr "Buni faqat o‘qitishni boshqaradiganlar qila oladi."
+
+#: backend/apps/learning/suggestions.py
+#, python-format
+msgid ""
+"%(name)s is weak in this topic: %(topic)s (%(score)s %%). Assign "
+"«%(course)s»."
+msgstr ""
+"Sust mavzu: %(topic)s (%(score)s %%). Xodim: %(name)s. «%(course)s» kursini "
+"biriktiring."
+
+#: backend/apps/learning/suggestions.py
+#, python-format
+msgid ""
+"%(count)s person is weak in a topic nothing teaches yet: %(topic)s. Add a "
+"lesson."
+msgid_plural ""
+"%(count)s people are weak in a topic nothing teaches yet: %(topic)s. Add a "
+"lesson."
+msgstr[0] ""
+"Hali materiali yo‘q mavzuda sust xodimlar soni: %(count)s. Mavzu: %(topic)s. "
+"Dars qo‘shing."
+
+#: backend/apps/learning/suggestions.py
+#, python-format
+msgid "%(name)s is %(days)s day late with «%(course)s»."
+msgid_plural "%(name)s is %(days)s days late with «%(course)s»."
+msgstr[0] ""
+"%(name)s «%(course)s» kursini kechiktirmoqda. Kechikish, kun: %(days)s."
+
+#: backend/apps/learning/suggestions.py
+#, python-format
+msgid ""
+"%(name)s knows %(topic)s well (%(score)s %%) and could coach %(count)s "
+"colleague weak in it."
+msgid_plural ""
+"%(name)s knows %(topic)s well (%(score)s %%) and could coach %(count)s "
+"colleagues weak in it."
+msgstr[0] ""
+"%(name)s bu mavzuni yaxshi biladi: %(topic)s (%(score)s %%). Unda sust "
+"xodimlarga yordam bera oladi (xodimlar soni: %(count)s)."
+
+#: backend/apps/learning/suggestions.py
+#, python-format
+msgid "%(name)s earned %(points)s points this week: say thanks."
+msgstr "%(name)s bu hafta to‘plagan ball: %(points)s. Rahmat ayting."
+
+#: backend/apps/learning/suggestions.py
+msgid "This suggestion was already decided."
+msgstr "Bu taklif bo‘yicha qaror qabul qilingan."
+
+#: backend/apps/learning/suggestions.py
+msgid "This suggestion has nothing to assign."
+msgstr "Bu taklifda biriktiriladigan kurs yo‘q."
+
+#: backend/apps/learning/suggestions.py
+msgid "Nothing is left to assign."
+msgstr "Biriktiriladigan narsa qolmadi."
+
+#: backend/apps/learning/suggestions.py
+#, python-format
+msgid "Assigned %(count)s course."
+msgid_plural "Assigned %(count)s courses."
+msgstr[0] "Biriktirilgan kurslar: %(count)s."
+
+#: backend/apps/learning/templates/learning/certificate.html
+msgid "This certifies that"
+msgstr "Ushbu sertifikat shuni tasdiqlaydiki,"
+
+#: backend/apps/learning/templates/learning/certificate.html
+msgid "has completed the course"
+msgstr "quyidagi kursni muvaffaqiyatli tamomladi:"
+
+#: backend/apps/learning/templates/learning/certificate.html
+msgid "Completed on"
+msgstr "Tugatilgan sana"
+
+#: backend/apps/learning/templates/learning/certificate.html
+msgid "Certificate number"
+msgstr "Sertifikat raqami"
+
+#: backend/apps/learning/templates/learning/certificate.html
+msgid "Valid until"
+msgstr "Amal qilish muddati"
+
+#: backend/apps/learning/templates/learning/certificate.html
+msgid "Stamp"
+msgstr "Muhr"
+
+#: backend/apps/learning/transcripts.py
+msgid "Upload the video first and wait until it is ready."
+msgstr "Avval videoni yuklang va tayyor bo‘lishini kuting."
+
+#: backend/apps/learning/transcripts.py
+msgid "Videos longer than an hour aren't written down."
+msgstr "Bir soatdan uzun videolar matnga o‘girilmaydi."
+
+#: backend/apps/learning/transcripts.py
+msgid "Turn on AI in the settings to write down videos."
+msgstr ""
+"Videolarni matnga o‘girish uchun sozlamalarda sun’iy intellektni yoqing."
+
+#: backend/apps/learning/transcripts.py
+msgid "No speech service is set up on this server."
+msgstr "Bu serverda nutqni tanish xizmati sozlanmagan."
 
 #: backend/apps/lifecycle/ai_tools.py
 msgid ""
@@ -13612,10 +14898,6 @@ msgstr "standart"
 #, python-format
 msgid "Now working in <b>%(company)s</b>."
 msgstr "Endi <b>%(company)s</b> kompaniyasida ishlayapsiz."
-
-#: backend/apps/members/department_api.py
-msgid "Pick people of this company."
-msgstr "Shu kompaniyadagi xodimlarni tanlang."
 
 #: backend/apps/members/departments.py
 #, python-format
@@ -14263,8 +15545,8 @@ msgstr ""
 
 #: backend/apps/members/providers.py backend/apps/payroll/providers.py
 #: backend/apps/payroll/templates/payroll/payslip.html
-#: backend/apps/reports/hooks.py backend/apps/tasks/hooks.py
-#: backend/apps/timeoff/providers.py
+#: backend/apps/recognition/providers.py backend/apps/reports/hooks.py
+#: backend/apps/tasks/hooks.py backend/apps/timeoff/providers.py
 msgid "Position"
 msgstr "Lavozim"
 
@@ -17047,6 +18329,159 @@ msgstr "1 kundan 90 kungacha."
 msgid "Between 1 and 100 percent."
 msgstr "1 foizdan 100 foizgacha."
 
+#: backend/apps/recognition/ai_tools.py
+msgid ""
+"The leaderboard: who has the most points this week, this month or all time "
+"(all points or learning only), with their level"
+msgstr ""
+"Reyting: bu hafta, bu oy yoki barcha vaqt davomida kimda eng ko‘p ball bor "
+"(barcha ballar yoki faqat o‘qitish), darajasi bilan"
+
+#: backend/apps/recognition/ai_tools.py
+msgid ""
+"One person's recognition: points (all time, this week, this month), level, "
+"learning streak, badges, thanks received and given, the latest points"
+msgstr ""
+"Bir xodimning rag‘batlari: ballar (barcha vaqt, bu hafta, bu oy), daraja, "
+"ketma-ket o‘qish kunlari, nishonlar, olingan va aytilgan rahmatlar, so‘nggi "
+"ballar"
+
+#: backend/apps/recognition/api.py
+#, python-format
+msgid "Pick one of: %(values)s."
+msgstr "Quyidagilardan birini tanlang: %(values)s."
+
+#: backend/apps/recognition/api.py backend/apps/recognition/services.py
+msgid "Pick a colleague of this company."
+msgstr "Shu kompaniyadagi hamkasbni tanlang."
+
+#: backend/apps/recognition/api.py
+msgid "Pick one of your tasks."
+msgstr "O‘zingizning vazifalaringizdan birini tanlang."
+
+#: backend/apps/recognition/audit_actions.py
+msgid "Changed the recognition settings"
+msgstr "Rag‘batlantirish sozlamalarini o‘zgartirdi"
+
+#: backend/apps/recognition/audit_actions.py
+msgid "Corrected someone's points"
+msgstr "Xodimning ballarini tuzatdi"
+
+#: backend/apps/recognition/audit_actions.py
+msgid "Hid a thank-you"
+msgstr "Rahmatni yashirdi"
+
+#: backend/apps/recognition/bot_messages.py
+msgid "great teamwork"
+msgstr "a’lo jamoaviy ish"
+
+#: backend/apps/recognition/bot_messages.py
+msgid "quick help"
+msgstr "tezkor yordam"
+
+#: backend/apps/recognition/bot_messages.py
+msgid "careful work"
+msgstr "puxta ish"
+
+#: backend/apps/recognition/bot_messages.py
+msgid "helping a customer"
+msgstr "xaridorga yordam"
+
+#: backend/apps/recognition/bot_messages.py
+msgid "star of the day"
+msgstr "kun yulduzi"
+
+#: backend/apps/recognition/bot_messages.py
+#, python-format
+msgid "%(name)s thanked you."
+msgstr "%(name)s sizga rahmat aytdi."
+
+#: backend/apps/recognition/bot_messages.py
+#, python-format
+msgid "%(name)s thanked you: %(reason)s."
+msgstr "%(name)s sizga rahmat aytdi: %(reason)s."
+
+#: backend/apps/recognition/bot_messages.py
+#, python-format
+msgid "+%(count)s point"
+msgid_plural "+%(count)s points"
+msgstr[0] "+%(count)s ball"
+
+#: backend/apps/recognition/bot_messages.py
+msgid "Say thanks back"
+msgstr "Javoban rahmat aytish"
+
+#: backend/apps/recognition/bot_messages.py
+msgid "Thanks between colleagues aren't switched on in your company."
+msgstr "Kompaniyangizda hamkasblar o‘rtasidagi rahmatlar yoqilmagan."
+
+#: backend/apps/recognition/bot_messages.py
+msgid "Thank a colleague for their help: pick them, a reason and a few words."
+msgstr ""
+"Hamkasbingizga yordami uchun rahmat ayting: uni, sababini tanlang va bir-"
+"ikki so‘z yozing."
+
+#: backend/apps/recognition/bot_messages.py
+msgid "You've used today's thanks. More tomorrow."
+msgstr "Bugungi rahmatlaringiz tugadi. Ertaga yana bo‘ladi."
+
+#: backend/apps/recognition/bot_messages.py
+#, python-format
+msgid "You can thank %(count)s more colleague today."
+msgid_plural "You can thank %(count)s more colleagues today."
+msgstr[0] "Bugun yana rahmat aytish mumkin bo‘lgan hamkasblar soni: %(count)s."
+
+#: backend/apps/recognition/bot_messages.py
+msgid "Open the app from the menu button to send it."
+msgstr "Yuborish uchun ilovani menyu tugmasidan oching."
+
+#: backend/apps/recognition/bot_messages.py
+#, python-format
+msgid "New level: %(name)s"
+msgstr "Yangi daraja: %(name)s"
+
+#: backend/apps/recognition/bot_messages.py
+#, python-format
+msgid "%(count)s point to the next level."
+msgid_plural "%(count)s points to the next level."
+msgstr[0] "Keyingi darajagacha: %(count)s ball."
+
+#: backend/apps/recognition/bot_messages.py
+#, python-format
+msgid "New badge: %(names)s"
+msgid_plural "New badges: %(names)s"
+msgstr[0] "Yangi nishon: %(names)s"
+
+#: backend/apps/recognition/groups.py
+msgid "Thanks between colleagues"
+msgstr "Hamkasblar o‘rtasida rahmat"
+
+#: backend/apps/recognition/groups.py
+#, python-format
+msgid "To: %(name)s"
+msgstr "Kimga: %(name)s"
+
+#: backend/apps/recognition/groups.py backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "From: %(name)s"
+msgstr "Kimdan: %(name)s"
+
+#: backend/apps/recognition/hooks.py
+msgid "Leaderboard"
+msgstr "Reyting"
+
+#: backend/apps/recognition/hooks.py
+msgid "Thanks from a colleague"
+msgstr "Hamkasbdan rahmat"
+
+#: backend/apps/recognition/hooks.py
+msgid "A new level reached"
+msgstr "Yangi darajaga erishildi"
+
+#: backend/apps/recognition/hooks.py
+msgid "A new badge earned"
+msgstr "Yangi nishon olindi"
+
 #: backend/apps/recognition/models.py
 msgid "The whole company"
 msgstr "Butun kompaniya"
@@ -17067,7 +18502,7 @@ msgstr "O‘z vaqtida bajarilgan vazifalar ham ball beradi."
 msgid "Points per reason, where they differ from the defaults."
 msgstr "Har bir sabab uchun ballar, standartdan farq qilsa."
 
-#: backend/apps/recognition/models.py
+#: backend/apps/recognition/models.py backend/apps/recognition/rules.py
 msgid "Lesson watched"
 msgstr "Dars ko‘rildi"
 
@@ -17083,7 +18518,7 @@ msgstr "Test topshirildi"
 msgid "Perfect score"
 msgstr "A’lo natija"
 
-#: backend/apps/recognition/models.py
+#: backend/apps/recognition/models.py backend/apps/recognition/rules.py
 msgid "Course finished"
 msgstr "Kurs tugatildi"
 
@@ -17095,11 +18530,11 @@ msgstr "Ketma-ket kunlar"
 msgid "Badge"
 msgstr "Nishon"
 
-#: backend/apps/recognition/models.py
+#: backend/apps/recognition/models.py backend/apps/recognition/rules.py
 msgid "Kudos received"
 msgstr "Rahmat olindi"
 
-#: backend/apps/recognition/models.py
+#: backend/apps/recognition/models.py backend/apps/recognition/rules.py
 msgid "Task done on time"
 msgstr "Vazifa o‘z vaqtida bajarildi"
 
@@ -17110,6 +18545,14 @@ msgstr "Tuzatish"
 #: backend/apps/recognition/models.py
 msgid "When the person saw the celebration in the app."
 msgstr "Xodim ilovada tabrikni ko‘rgan vaqt."
+
+#: backend/apps/recognition/models.py
+msgid "When the bot told the person (one message a minute)."
+msgstr "Bot xodimga qachon xabar bergani (daqiqasiga bitta xabar)."
+
+#: backend/apps/recognition/models.py
+msgid "The first day of the current run."
+msgstr "Joriy seriyaning birinchi kuni."
 
 #: backend/apps/recognition/models.py
 msgid "Thank you"
@@ -17134,6 +18577,152 @@ msgstr "Xaridorga yordam berdi"
 #: backend/apps/recognition/models.py
 msgid "Star of the day"
 msgstr "Kun yulduzi"
+
+#: backend/apps/recognition/owner_api.py
+msgid "Pick week, month or all."
+msgstr "Hafta, oy yoki barcha vaqtni tanlang."
+
+#: backend/apps/recognition/owner_api.py
+msgid "Pick all or learning."
+msgstr "Hammasini yoki faqat o‘qitishni tanlang."
+
+#: backend/apps/recognition/owner_api.py
+msgid "Give a moment as ISO 8601."
+msgstr "Vaqtni ISO 8601 ko‘rinishida kiriting."
+
+#: backend/apps/recognition/providers.py
+msgid "Points"
+msgstr "Ballar"
+
+#: backend/apps/recognition/providers.py
+msgid "Level"
+msgstr "Daraja"
+
+#: backend/apps/recognition/providers.py
+msgid "Level name"
+msgstr "Daraja nomi"
+
+#: backend/apps/recognition/providers.py
+#, python-format
+msgid "Thanked %(name)s: %(reason)s"
+msgstr "Rahmat aytdi. Kimga: %(name)s. %(reason)s"
+
+#: backend/apps/recognition/rules.py
+msgid "Page read in a course"
+msgstr "Kursdagi sahifa o‘qildi"
+
+#: backend/apps/recognition/rules.py
+msgid "Quiz passed (first time)"
+msgstr "Testdan o‘tildi (birinchi marta)"
+
+#: backend/apps/recognition/rules.py
+msgid "Quiz with 100%"
+msgstr "100% natijali test"
+
+#: backend/apps/recognition/rules.py
+msgid "Question of the day, right"
+msgstr "Kun savoli, to‘g‘ri javob"
+
+#: backend/apps/recognition/rules.py
+msgid "Question of the day, tried"
+msgstr "Kun savoli, urinish"
+
+#: backend/apps/recognition/rules.py
+msgid "Regular check passed"
+msgstr "Muntazam tekshiruvdan o‘tildi"
+
+#: backend/apps/recognition/rules.py
+msgid "7 days in a row"
+msgstr "7 kun ketma-ket"
+
+#: backend/apps/recognition/rules.py
+msgid "30 days in a row"
+msgstr "30 kun ketma-ket"
+
+#: backend/apps/recognition/rules.py
+msgid "100 days in a row"
+msgstr "100 kun ketma-ket"
+
+#: backend/apps/recognition/rules.py
+msgid "Badge earned"
+msgstr "Nishon olindi"
+
+#: backend/apps/recognition/services.py
+msgid "Only owners change points, kudos and recognition settings."
+msgstr ""
+"Ballar, rahmatlar va rag‘batlantirish sozlamalarini faqat egalar "
+"o‘zgartiradi."
+
+#: backend/apps/recognition/services.py
+msgid "Recognition isn't switched on in this company."
+msgstr "Bu kompaniyada rag‘batlantirish yoqilmagan."
+
+#: backend/apps/recognition/services.py
+msgid "Points are switched off in this company."
+msgstr "Bu kompaniyada ballar o‘chirilgan."
+
+#: backend/apps/recognition/services.py
+msgid "Give a whole number of points, above or below zero."
+msgstr "Ballni butun son bilan kiriting: noldan katta yoki kichik."
+
+#: backend/apps/recognition/services.py
+#, python-format
+msgid "A correction is at most %(max)s points either way."
+msgstr "Bitta tuzatish ikki tomonga ham ko‘pi bilan %(max)s ball."
+
+#: backend/apps/recognition/services.py
+msgid "Say why: the person sees the note next to the points."
+msgstr "Sababini yozing: xodim izohni ballar yonida ko‘radi."
+
+#: backend/apps/recognition/services.py
+#, python-format
+msgid "Keep the note under %(max)s characters."
+msgstr "Izoh %(max)s belgidan oshmasin."
+
+#: backend/apps/recognition/services.py
+msgid "Thanks between colleagues aren't switched on in this company."
+msgstr "Bu kompaniyada hamkasblar o‘rtasidagi rahmatlar yoqilmagan."
+
+#: backend/apps/recognition/services.py
+msgid "Only people working here can thank colleagues."
+msgstr "Hamkasblarga faqat shu yerda ishlaydiganlar rahmat ayta oladi."
+
+#: backend/apps/recognition/services.py
+msgid "You can't thank yourself. Pick a colleague."
+msgstr "O‘zingizga rahmat ayta olmaysiz. Hamkasbni tanlang."
+
+#: backend/apps/recognition/services.py
+#, python-format
+msgid "%(name)s isn't working here now."
+msgstr "Hozir bu yerda ishlamaydi: %(name)s."
+
+#: backend/apps/recognition/services.py
+msgid "Pick what you thank them for."
+msgstr "Nima uchun rahmat aytayotganingizni tanlang."
+
+#: backend/apps/recognition/services.py
+msgid "Pick a task of this company."
+msgstr "Shu kompaniyadagi vazifani tanlang."
+
+#: backend/apps/recognition/services.py
+#, python-format
+msgid "You can thank %(count)s colleague a day. More tomorrow."
+msgid_plural "You can thank %(count)s colleagues a day. More tomorrow."
+msgstr[0] ""
+"Kuniga rahmat aytish mumkin bo‘lgan hamkasblar soni: %(count)s. Ertaga yana."
+
+#: backend/apps/recognition/services.py
+#, python-format
+msgid "Points are whole numbers from 0 to %(max)s."
+msgstr "Ballar butun son bo‘ladi, eng kami 0, eng ko‘pi %(max)s."
+
+#: backend/apps/recognition/services.py
+msgid "Allow from 1 to 20 thanks a day."
+msgstr "Kuniga 1–20 ta rahmatga ruxsat bering."
+
+#: backend/apps/recognition/services.py
+msgid "Pick the whole company or their branch."
+msgstr "Butun kompaniyani yoki o‘z filialini tanlang."
 
 #: backend/apps/reminders/api.py backend/apps/reminders/services.py
 msgid "The company's default policy can't be deleted."
@@ -19823,11 +21412,6 @@ msgstr "Keyingi eslatma: %(time)s"
 #, python-format
 msgid "Reward: +%(amount)s"
 msgstr "Mukofot: +%(amount)s"
-
-#: backend/apps/tasks/bot_messages.py
-#, python-format
-msgid "From: %(name)s"
-msgstr "Kimdan: %(name)s"
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format

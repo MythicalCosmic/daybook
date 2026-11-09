@@ -3,7 +3,7 @@
  * Knowledge base home: what the shelves hold, which pages people still have to confirm (managers
  * can remind them in one click), the spaces, and what changed lately.
  */
-import { Archive, BellRing, BookOpen, CircleCheckBig, FilePen, FilePlus2, FolderPlus, Layers, Library, Search, Settings, Users } from "@lucide/vue";
+import { Archive, BellRing, BookOpen, CircleCheckBig, FilePen, FilePlus2, FolderPlus, Layers, Library, Search, Settings, Tags, Users } from "@lucide/vue";
 import { refDebounced } from "@vueuse/core";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
@@ -97,6 +97,7 @@ useHotkey("n", () => canManage.value && void router.push(`${base.value}/new`), {
     <PageHeader :title="t('knowledge.title')" :description="t('knowledge.description')">
       <template v-if="canManage" #actions>
         <IconButton :icon="Archive" :label="t('knowledge.archive.title')" variant="ghost" @click="patchQuery(router, { archive: '1' }, true)" />
+        <IconButton :icon="Tags" :label="t('knowledge.topics.title')" variant="ghost" :to="`${base}/topics`" />
         <IconButton :icon="Settings" :label="t('knowledge.settings.title')" variant="ghost" @click="settingsOpen = true" />
         <UiButton :icon="FolderPlus" @click="creatingSpace = true">{{ t("knowledge.space.newTitle") }}</UiButton>
         <UiButton variant="primary" :icon="FilePlus2" :to="`${base}/new`" kbd="N">{{ t("knowledge.newPage") }}</UiButton>

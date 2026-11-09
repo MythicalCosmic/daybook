@@ -98,8 +98,10 @@ def test_the_settings_merge_the_real_apps():
     ]
     assert settings.CELERY_TASK_ROUTES == {
         "apps.ai.tasks.*": {"queue": "ai"},
-        # Lesson videos on their own worker (docs/PLAN-LEARNING.md §5), drafting with the AI jobs.
+        # Lesson videos on their own worker (docs/PLAN-LEARNING.md §5), transcripts and drafting
+        # with the AI jobs.
         "apps.learning.tasks.process_video": {"queue": "media"},
+        "apps.learning.tasks.transcribe_lesson": {"queue": "ai"},
         "apps.learning.tasks.draft_questions": {"queue": "ai"},
     }
 

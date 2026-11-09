@@ -53,6 +53,7 @@ import LinkDialog from "../components/LinkDialog.vue";
 import MoveDialog from "../components/MoveDialog.vue";
 import PageBody from "../components/PageBody.vue";
 import ReadersDrawer from "../components/ReadersDrawer.vue";
+import { useViewReport } from "../views";
 
 const { t } = useI18n();
 const fmt = useFormat();
@@ -68,6 +69,8 @@ const pageId = computed(() => Number(route.params.pageId));
 const query = usePage(pageId);
 const page = computed(() => query.data.value ?? null);
 usePageTitle(() => page.value?.title);
+// Who read what (PLAN-LEARNING §4.1): this person's reading of a published page.
+useViewReport(() => (page.value?.published && !page.value.archived ? page.value.id : null));
 const skeleton = useDelayedPending(computed(() => query.isPending.value));
 const canEdit = computed(() => !!page.value?.can_edit);
 const showReaders = computed(() => canEdit.value && !!page.value?.published && !!page.value.require_ack && !page.value.archived);

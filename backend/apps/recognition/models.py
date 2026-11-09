@@ -100,12 +100,35 @@ class BadgeAward(TenantModel):
     seen_at = models.DateTimeField(
         null=True, blank=True, help_text=_("When the person saw the celebration in the app.")
     )
+    notified_at = models.DateTimeField(
+        null=True, blank=True, help_text=_("When the bot told the person (one message a minute).")
+    )
 
     class Meta:
         ordering = ["-awarded_at"]
         constraints = [
             models.UniqueConstraint(
                 fields=["membership", "badge", "ref"], name="recognition_unique_badge"
+            )
+        ]
+
+
+class LevelUp(TenantModel):
+    """`membership` reached level `number` (of `apps.recognition.rules.LEVELS`) for the first
+    time: once per person and level, whatever their points do later. The app celebrates it
+    (`seen_at`), the bot tells them (`notified_at`)."""
+
+    membership = models.ForeignKey(Membership, on_delete=models.CASCADE, related_name="level_ups")
+    number = models.PositiveSmallIntegerField()
+    reached_at = models.DateTimeField()
+    seen_at = models.DateTimeField(null=True, blank=True)
+    notified_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-number"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["membership", "number"], name="recognition_unique_level_up"
             )
         ]
 
@@ -119,6 +142,9 @@ class Streak(TenantModel):
     current = models.PositiveSmallIntegerField(default=0)
     best = models.PositiveSmallIntegerField(default=0)
     last_day = models.DateField(null=True, blank=True)
+    started_on = models.DateField(
+        null=True, blank=True, help_text=_("The first day of the current run.")
+    )
 
     class Meta:
         constraints = [

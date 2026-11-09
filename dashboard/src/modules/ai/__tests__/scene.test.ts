@@ -199,6 +199,11 @@ describe("AgentScene", () => {
     expect(wrapper.get("[data-testid=scene-cat-says]").text()).toBe("Mrr!");
     expect(wrapper.find(".sc-cat-sleep").exists()).toBe(false);
     expect(wrapper.get("[data-testid=scene-prop]").attributes("data-prop")).toBe("photo");
+    await wrapper.setProps({ variant: "tutor" });
+    expect(wrapper.get("[data-testid=scene-prop]").attributes("data-prop")).toBe("tutor");
+    expect(wrapper.find(".sc-chalk").exists()).toBe(true);
+    expect(wrapper.get("[data-testid=ai-buddy]").attributes("data-variant")).toBe("tutor");
+    await wrapper.setProps({ variant: "photo_checker" });
     await wrapper.setProps({ night: true });
     expect(wrapper.find(".sc-cat-sleep").exists()).toBe(true);
     wrapper.unmount();
