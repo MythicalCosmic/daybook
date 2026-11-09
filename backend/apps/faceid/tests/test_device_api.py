@@ -187,3 +187,58 @@ def test_the_command_adds_lists_and_switches_the_module_on(staff, chilonzor, set
     out = StringIO()
     call_command("faceid_device", "list", "--company", company.pk, stdout=out)
     assert "Kirish" in out.getvalue() and "never" in out.getvalue()
+
+
+def test_the_command_purges_a_companys_scans_received_before_a_time(
+    device, staff, freeze, django_capture_on_commit_callbacks
+):
+    """The cleanup after a terminal's history was taken for live scans: the scans received
+    before the time go, with their snapshots and the Face ID notifications about them; the
+    attendance they made stays (it's listed, to check on the timesheet)."""
+    from io import StringIO
+
+    from django.core.management import call_command
+
+    from apps.attendance.models import AttendanceRecord
+    from apps.inbox.models import Notification
+
+    client = Client()
+    freeze(local(DAY, 9, 0))
+    content_type, body = hik.multipart(
+        hik.event(serial=1, at="2026-10-21T08:59:30+05:00"), picture=hik.jpeg()
+    )
+    with django_capture_on_commit_callbacks(execute=True):
+        client.post(url(device), data=body, content_type=content_type)
+    old = FaceEvent.objects.get()
+    storage, photo = old.photo.storage, old.photo.name
+    assert photo and storage.exists(photo) and old.record_id is not None
+    notices = Notification.objects.filter(kind="faceid.scan", target_id=old.pk).count()
+    assert notices >= 1  # one per manager who sees Chilonzor
+    freeze(local(DAY, 11, 0))
+    later = hik.event(serial=2, number="13", name="Vali", at="2026-10-21T10:59:40+05:00")
+    with django_capture_on_commit_callbacks(execute=True):
+        client.post(url(device), json.dumps(later).encode(), content_type="application/json")
+    kept = FaceEvent.objects.get(serial_no=2)
+    company = device.company
+
+    def purge(*args):
+        out = StringIO()
+        call_command("faceid_device", "purge", "--company", company.pk, *args, stdout=out)
+        return out.getvalue()
+
+    text = purge("--before", "2026-10-21T10:00", "--dry-run")
+    assert f"Would delete 1 scans, 1 snapshots and {notices} notifications" in text, text
+    assert FaceEvent.objects.count() == 2
+
+    text = purge("--before", "2026-10-21T10:00")
+    assert f"Deleted 1 scans, 1 snapshots and {notices} notifications" in text, text
+    assert "Attendance records those scans made or changed (kept" in text
+    assert list(FaceEvent.objects.all()) == [kept]
+    assert not storage.exists(photo)
+    assert not Notification.objects.filter(target_type="faceevent", target_id=old.pk).exists()
+    assert Notification.objects.filter(target_type="faceevent", target_id=kept.pk).exists()
+    assert AttendanceRecord.objects.filter(pk=old.record_id).exists()
+
+    freeze(local(DAY, 11, 5))
+    assert "Deleted 1 scans" in purge()
+    assert not FaceEvent.objects.exists()
