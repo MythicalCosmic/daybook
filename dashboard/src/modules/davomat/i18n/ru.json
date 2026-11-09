@@ -667,5 +667,8 @@
   "davomat.overview.feed.filter.all": "Все",
   "davomat.overview.feed.filter.late": "Опоздания",
   "davomat.overview.feed.filter.unknown": "Неизвестные лица",
-  "davomat.overview.feed.filter.none": "Сегодня таких отметок нет."
+  "davomat.overview.feed.filter.none": "Сегодня таких отметок нет.",
+  "davomat.setup.org.code": "Код настройки",
+  "davomat.setup.org.codeHint": "Код, который установщик вывел на сервере",
+  "davomat.setup.org.codeWrong": "Неверный код настройки. Введите код, который вывел установщик."
 }

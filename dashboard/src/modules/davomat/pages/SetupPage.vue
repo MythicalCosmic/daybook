@@ -5,7 +5,7 @@
  * done: signed in, with "Add your first terminal" as the next thing to do. The language picked in
  * step one switches the wizard at once.
  */
-import { ArrowLeft, ArrowRight, Building2, Languages, PartyPopper, ScanFace, Send, UserRound, Users } from "@lucide/vue";
+import { ArrowLeft, ArrowRight, Building2, KeyRound, Languages, PartyPopper, ScanFace, Send, UserRound, Users } from "@lucide/vue";
 import { computed, nextTick, onMounted, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
@@ -46,6 +46,8 @@ const completed = computed(() => (step.value === "admin" ? ["organization"] : st
 
 const detected = browserZone();
 const org = reactive({
+  /** The code the installer printed, when the install has one. */
+  code: "",
   name: "",
   timezone: detected && MAIN_ZONES.some((z) => z.zone === detected) ? detected : DEFAULT_ZONE,
   language: currentLanguage() as Language,
@@ -73,6 +75,9 @@ watch(
   },
 );
 
+/** The install has a setup code (D3's installer prints it): step one asks for it first. */
+const codeRequired = computed(() => editionInfo.value.setup_token_required);
+const codeInput = ref<InstanceType<typeof TextInput> | null>(null);
 const nameInput = ref<InstanceType<typeof TextInput> | null>(null);
 const firstInput = ref<InstanceType<typeof TextInput> | null>(null);
 onMounted(() => {
@@ -82,7 +87,7 @@ onMounted(() => {
     else void router.replace("/login");
     return;
   }
-  void nextTick(() => nameInput.value?.focus());
+  void nextTick(() => (codeRequired.value ? codeInput : nameInput).value?.focus());
 });
 
 function clearErrors(): void {
@@ -90,9 +95,10 @@ function clearErrors(): void {
 }
 
 function validateOrganization(): boolean {
+  errors.setup_token = codeRequired.value && !org.code.trim() ? t("common.form.required") : undefined;
   errors.organization = org.name.trim() ? (org.name.trim().length > 200 ? t("common.form.tooLong") : undefined) : t("common.form.required");
   errors.timezone = org.timezone ? undefined : t("common.form.required");
-  return !errors.organization && !errors.timezone;
+  return !errors.setup_token && !errors.organization && !errors.timezone;
 }
 
 function validateAdmin(): boolean {
@@ -104,7 +110,7 @@ function validateAdmin(): boolean {
 }
 
 async function next(): Promise<void> {
-  if (!validateOrganization()) return void nameInput.value?.focus();
+  if (!validateOrganization()) return void (errors.setup_token ? codeInput : nameInput).value?.focus();
   step.value = "admin";
   await nextTick();
   firstInput.value?.focus();
@@ -141,6 +147,8 @@ async function create(): Promise<void> {
       timezone: org.timezone,
       language: org.language,
       admin: { username: admin.username.trim(), password: admin.password, first_name: admin.first_name.trim(), last_name: admin.last_name.trim() },
+      // Only when the install has a code: without one the request is as before.
+      ...(codeRequired.value ? { setup_token: org.code.trim() } : {}),
     });
     rememberSession(true);
     session.setAccess(access);
@@ -148,7 +156,13 @@ async function create(): Promise<void> {
     await refreshEdition();
     step.value = "done";
   } catch (error) {
-    if (isApiError(error) && (error.status === 403 || error.status === 409 || error.status === 404)) {
+    if (isApiError(error) && error.status === 403 && error.code === "setup_token") {
+      // A wrong setup code: back to it, with everything typed kept.
+      errors.setup_token = t("davomat.setup.org.codeWrong");
+      step.value = "organization";
+      await nextTick();
+      codeInput.value?.select();
+    } else if (isApiError(error) && (error.status === 409 || error.status === 404)) {
       taken.value = true;
     } else if (isApiError(error) && error.status === 400 && applyServerErrors(error.body)) {
       if (errors.organization || errors.timezone) step.value = "organization";
@@ -201,6 +215,20 @@ const organizationName = computed(() => editionInfo.value.organization?.name ?? 
               <h2 class="text-lg font-semibold tracking-[-0.01em] text-fg">{{ t("davomat.setup.org.title") }}</h2>
               <p class="mt-1 text-base text-muted">{{ t("davomat.setup.org.hint") }}</p>
             </div>
+            <FormField v-if="codeRequired" :label="t('davomat.setup.org.code')" :hint="errors.setup_token ? undefined : t('davomat.setup.org.codeHint')" :error="errors.setup_token" required>
+              <TextInput
+                ref="codeInput"
+                v-model="org.code"
+                size="lg"
+                :icon="KeyRound"
+                mono
+                autocomplete="off"
+                autocapitalize="none"
+                spellcheck="false"
+                :invalid="!!errors.setup_token"
+                data-testid="setup-code"
+              />
+            </FormField>
             <FormField :label="t('davomat.setup.org.name')" :error="errors.organization" required>
               <TextInput ref="nameInput" v-model="org.name" size="lg" :icon="Building2" :placeholder="t('davomat.setup.org.namePlaceholder')" :maxlength="200" autocomplete="organization" data-testid="setup-name" />
             </FormField>

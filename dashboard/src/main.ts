@@ -10,7 +10,7 @@ import App from "./app/App.vue";
 import { installProviders } from "./app/providers";
 import { createAppRouter } from "./app/router";
 import { applyBrand } from "./core/brand";
-import { loadEdition } from "./core/edition";
+import { DAYBOOK_INFO, loadEdition, rememberedEdition } from "./core/edition";
 import { applyEdition, registerDevModules, type DashboardModule } from "./core/modules";
 import { endForgottenSession } from "./core/remember";
 import { currentLanguage, isLanguage, loadLanguage, setLanguage } from "./i18n";
@@ -31,8 +31,13 @@ async function start(): Promise<void> {
   }
 
   // The edition comes first (core/edition.ts): only its modules are registered, so the router,
-  // the sidebar and the dictionaries below are built from them.
-  const [info] = await Promise.all([loadEdition(), detectTelegram()]);
+  // the sidebar and the dictionaries below are built from them. A browser that already knows this
+  // server is Daybook doesn't wait for the answer (Daybook starts as fast as before); should the
+  // server say otherwise, the page starts again in that edition.
+  const asking = loadEdition();
+  const knownDaybook = rememberedEdition() === "daybook";
+  const [info] = await Promise.all([knownDaybook ? Promise.resolve(DAYBOOK_INFO) : asking, detectTelegram()]);
+  if (knownDaybook) void asking.then((answer) => answer.edition !== "daybook" && window.location.reload());
   applyEdition(info.edition);
   if (stubs && info.edition === "daybook") registerDevModules(stubs);
   applyBrand();

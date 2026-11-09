@@ -667,5 +667,8 @@
   "davomat.overview.feed.filter.all": "All",
   "davomat.overview.feed.filter.late": "Late",
   "davomat.overview.feed.filter.unknown": "Unknown faces",
-  "davomat.overview.feed.filter.none": "Nothing of this kind today."
+  "davomat.overview.feed.filter.none": "Nothing of this kind today.",
+  "davomat.setup.org.code": "Setup code",
+  "davomat.setup.org.codeHint": "The code the installer printed on the server",
+  "davomat.setup.org.codeWrong": "This setup code is wrong. Use the one the installer printed."
 }

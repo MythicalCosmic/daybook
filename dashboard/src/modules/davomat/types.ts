@@ -27,6 +27,8 @@ export type SetupInput = {
   timezone: string;
   language: Language;
   admin: SetupAdmin;
+  /** The code the installer printed, when the install has one (`setup_token_required`). */
+  setup_token?: string;
 }
 
 // Users (§1.3) ---------------------------------------------------------------------------------

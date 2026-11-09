@@ -33,6 +33,11 @@ export interface EditionInfo {
   organization: { name: string; logo_url: string | null } | null;
   /** No organization yet: every page opens the first-run setup wizard. */
   needs_setup: boolean;
+  /**
+   * The install has a setup code (`DAVOMAT_SETUP_TOKEN`, printed by the installer): the wizard asks
+   * for it and sends it with the setup.
+   */
+  setup_token_required: boolean;
   default_language: Language;
   languages: Language[];
   telegram: { configured: boolean; bot_username: string | null };
@@ -43,6 +48,7 @@ export const DAYBOOK_INFO: EditionInfo = {
   product: "Daybook",
   organization: null,
   needs_setup: false,
+  setup_token_required: false,
   default_language: "uz",
   languages: [...LANGUAGES],
   telegram: { configured: false, bot_username: null },
@@ -78,6 +84,7 @@ export function normalizeEdition(raw: unknown): EditionInfo {
     product: typeof body.product === "string" && body.product.trim() ? body.product : edition === "davomat" ? "Davomat" : "Daybook",
     organization,
     needs_setup: edition === "davomat" && body.needs_setup === true,
+    setup_token_required: edition === "davomat" && body.needs_setup === true && body.setup_token_required === true,
     default_language: (LANGUAGES as readonly string[]).includes(body.default_language as string) ? (body.default_language as Language) : "uz",
     languages: languages.length ? languages : [...LANGUAGES],
     telegram: { configured: telegram?.configured === true, bot_username: typeof telegram?.bot_username === "string" ? telegram.bot_username : null },

@@ -667,5 +667,8 @@
   "davomat.overview.feed.filter.all": "Hammasi",
   "davomat.overview.feed.filter.late": "Kechikkanlar",
   "davomat.overview.feed.filter.unknown": "Noma’lum yuzlar",
-  "davomat.overview.feed.filter.none": "Bugun bunday skan yo‘q."
+  "davomat.overview.feed.filter.none": "Bugun bunday skan yo‘q.",
+  "davomat.setup.org.code": "Sozlash kodi",
+  "davomat.setup.org.codeHint": "O‘rnatuvchi serverda chiqarib bergan kod",
+  "davomat.setup.org.codeWrong": "Sozlash kodi noto‘g‘ri. O‘rnatuvchi chiqarib bergan kodni kiriting."
 }

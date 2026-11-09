@@ -52,6 +52,10 @@ describe("what the server says", () => {
     const info = normalizeEdition({ ...DAVOMAT, languages: ["uz", "xx"], default_language: "de", organization: { name: "N", logo_url: "" } });
     expect(info).toMatchObject({ edition: "davomat", product: "Davomat", default_language: "uz", languages: ["uz"], organization: { name: "N", logo_url: null } });
     expect(normalizeEdition({ edition: "davomat", needs_setup: true }).needs_setup).toBe(true);
+    // The setup code matters only while the wizard can still run.
+    expect(normalizeEdition({ edition: "davomat", needs_setup: true }).setup_token_required).toBe(false);
+    expect(normalizeEdition({ edition: "davomat", needs_setup: true, setup_token_required: true }).setup_token_required).toBe(true);
+    expect(normalizeEdition({ edition: "davomat", needs_setup: false, setup_token_required: true }).setup_token_required).toBe(false);
   });
 
   it("loads once at startup and is remembered in this browser", async () => {

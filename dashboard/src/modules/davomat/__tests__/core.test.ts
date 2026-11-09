@@ -224,6 +224,8 @@ describe("setup wizard", () => {
       "GET edition/": () => json({ edition: "davomat", product: "Davomat", organization: { name: "Namuna MChJ", logo_url: null }, needs_setup: false }),
     });
     const { wrapper, session } = await mountSetup();
+    // An install without a setup code: no field for it, and nothing about it in the request.
+    expect(wrapper.find("[data-testid=setup-code]").exists()).toBe(false);
     await fillAdmin(wrapper);
     // The username follows the name until it is typed.
     expect((wrapper.get("input[data-testid=setup-username]").element as HTMLInputElement).value).toBe("aziza.rahimova");
@@ -236,6 +238,7 @@ describe("setup wizard", () => {
       language: "en",
       admin: { username: "aziza.rahimova", password: "kitob-qalam-7", first_name: "Aziza", last_name: "Rahimova" },
     });
+    expect(setup.body).not.toHaveProperty("setup_token");
     expect(session.accessToken).toBe("tok");
     expect(editionInfo.value.needs_setup).toBe(false);
     expect(wrapper.find("[data-testid=setup-done]").exists()).toBe(true);
@@ -258,12 +261,46 @@ describe("setup wizard", () => {
   });
 
   it("says so when someone set the server up already", async () => {
-    stubApi({ "POST edition/setup/": () => json({ detail: "Already set up." }, 403) });
+    stubApi({ "POST edition/setup/": () => json({ detail: "The organization is already set up. Sign in instead.", code: "setup_done" }, 409) });
     const { wrapper } = await mountSetup();
     await fillAdmin(wrapper);
     await wrapper.get("[data-testid=setup-admin]").trigger("submit");
     await flushPromises();
     expect(wrapper.find("[data-testid=setup-taken]").exists()).toBe(true);
+  });
+
+  it("asks for the installer's setup code when the install has one, sends it, and keeps the form on a wrong one", async () => {
+    setEditionInfo(normalizeEdition({ edition: "davomat", product: "Davomat", organization: null, needs_setup: true, setup_token_required: true }));
+    let right = false;
+    const calls = stubApi({
+      "POST edition/setup/": () => (right ? json({ access: "tok" }, 201) : json({ detail: "This setup code is wrong.", code: "setup_token" }, 403)),
+      "GET me/": () => json(me([company({ id: 1, name: "Namuna MChJ" })])),
+      "GET edition/": () => json({ edition: "davomat", product: "Davomat", organization: { name: "Namuna MChJ", logo_url: null }, needs_setup: false }),
+    });
+    const { wrapper } = await mountSetup();
+    // Needed before going on.
+    await wrapper.get("input[data-testid=setup-name]").setValue("Namuna MChJ");
+    await wrapper.get("[data-testid=setup-organization]").trigger("submit");
+    await flushPromises();
+    expect(wrapper.find("[data-testid=setup-admin]").exists()).toBe(false);
+    await wrapper.get("input[data-testid=setup-code]").setValue("WRONG-CODE");
+    await fillAdmin(wrapper);
+    await wrapper.get("[data-testid=setup-admin]").trigger("submit");
+    await flushPromises();
+    expect(calls.find((call) => call.url.endsWith("/owner/edition/setup/"))!.body).toMatchObject({ organization: "Namuna MChJ", setup_token: "WRONG-CODE" });
+    // Back on the first step, the message on the code, everything typed kept.
+    expect(wrapper.find("[data-testid=setup-organization]").exists()).toBe(true);
+    expect(wrapper.text()).toContain(en["davomat.setup.org.codeWrong"]);
+    expect((wrapper.get("input[data-testid=setup-name]").element as HTMLInputElement).value).toBe("Namuna MChJ");
+    right = true;
+    await wrapper.get("input[data-testid=setup-code]").setValue(" Kd7-Q2pX ");
+    await wrapper.get("[data-testid=setup-organization]").trigger("submit");
+    await flushPromises();
+    expect((wrapper.get("input[data-testid=setup-first]").element as HTMLInputElement).value).toBe("Aziza");
+    await wrapper.get("[data-testid=setup-admin]").trigger("submit");
+    await flushPromises();
+    expect(calls.filter((call) => call.url.endsWith("/owner/edition/setup/"))[1]!.body).toMatchObject({ setup_token: "Kd7-Q2pX" });
+    expect(wrapper.find("[data-testid=setup-done]").exists()).toBe(true);
   });
 });
 
