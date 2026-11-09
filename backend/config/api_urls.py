@@ -79,6 +79,7 @@ OWNER_APPS = (
     "agenda",
     "crm",
     "assets",
+    "davomat",
 )
 
 

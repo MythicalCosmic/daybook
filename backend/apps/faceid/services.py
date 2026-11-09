@@ -359,6 +359,8 @@ def _person(event, device, item, settings, *, quiet: bool, simulated: bool, phot
     member = link.membership if link is not None else None
     if member is None and event.number_key:
         member = _link_by_name(company, item.employee_no, item.name)
+        if member is None:
+            member = _unknown_number(company, device, item)
         if member is not None:
             event.flags.append(Flag.AUTO_LINKED)
     if member is None:
@@ -537,6 +539,27 @@ def _link_by_name(company, employee_no: str, name: str) -> Membership | None:
     )
     transaction.on_commit(lambda: pulse.bump(company.pk, PULSE_UNLINKED))
     return Membership.objects.select_related("company", "user").get(pk=member.pk)
+
+
+# Whom a number nobody has (no link, no name match) belongs to: other apps may say, by making
+# the person (the Davomat edition's `auto_create_employees`). A handler gets
+# `(company, device, employee_no, name)`, links the number itself and returns the membership,
+# or None to leave the scan unlinked. Without handlers nothing changes.
+_UNKNOWN_NUMBER_HANDLERS: list = []
+
+
+def register_unknown_number(handler) -> None:
+    """Ask `handler` about every number nobody has, before its scan stays unlinked."""
+    if handler not in _UNKNOWN_NUMBER_HANDLERS:
+        _UNKNOWN_NUMBER_HANDLERS.append(handler)
+
+
+def _unknown_number(company, device: FaceDevice, item) -> Membership | None:
+    for handler in _UNKNOWN_NUMBER_HANDLERS:
+        member = handler(company, device, item.employee_no, item.name)
+        if member is not None:
+            return member
+    return None
 
 
 def _tell_unlinked(event: FaceEvent) -> None:
