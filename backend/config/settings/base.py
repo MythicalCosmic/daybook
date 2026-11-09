@@ -313,6 +313,8 @@ SPECTACULAR_SETTINGS = {
             "RepeatEnum": "apps.tasks.models.Repeat",
             "TaskMoveEnum": ["todo", "in_progress", "review", "returned", "done"],
             "TimeOffStatusEnum": "apps.timeoff.models.TimeOff.Status",
+            # Kept by name: recognition's leaderboard has a "period" of its own.
+            "PeriodEnum": "apps.reports.periods.Period",
             # Currencies with their names, and the bare codes some write serializers accept.
             "CurrencyEnum": "apps.core.money.Currency",
             "CurrencyCodeEnum": ["UZS", "USD"],

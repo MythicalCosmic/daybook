@@ -174,7 +174,10 @@ class LearningTopicRefSerializer(serializers.Serializer):
     color = serializers.CharField(allow_blank=True)
 
 
-class LearningRefSerializer(serializers.Serializer):
+class LearningTitleRefSerializer(serializers.Serializer):
+    """A lesson, page, quiz or course as `{id, title}` (the courses' serializers have their own
+    `LearningRef`, `{id, name}`: the schema's components need different names)."""
+
     id = serializers.IntegerField()
     title = serializers.CharField()
 
@@ -204,8 +207,8 @@ class LearningQuestionSerializer(serializers.Serializer):
     points = serializers.IntegerField()
     state = serializers.ChoiceField(Question.State.choices)
     source = serializers.ChoiceField(Question.Source.choices)
-    lesson = LearningRefSerializer(allow_null=True)
-    page = LearningRefSerializer(allow_null=True)
+    lesson = LearningTitleRefSerializer(allow_null=True)
+    page = LearningTitleRefSerializer(allow_null=True)
     draft_job_id = serializers.IntegerField(allow_null=True)
     answered = serializers.IntegerField()
     correct = serializers.IntegerField()
@@ -353,7 +356,7 @@ class LearningResetSerializer(serializers.Serializer):
 
 class LearningOwnerAttemptSerializer(LearningAttemptResultSerializer):
     member = LearningPersonSerializer()
-    quiz = LearningRefSerializer()
+    quiz = LearningTitleRefSerializer()
     number = serializers.IntegerField()
     started_at = serializers.DateTimeField()
     finished_at = serializers.DateTimeField(allow_null=True)
@@ -373,7 +376,7 @@ class LearningRoundSerializer(serializers.Serializer):
 class LearningCheckSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     title = serializers.CharField()
-    quiz = LearningRefSerializer()
+    quiz = LearningTitleRefSerializer()
     state = serializers.CharField()
     every = serializers.CharField()
     weekday = serializers.IntegerField(allow_null=True)
@@ -458,7 +461,7 @@ class LearningPersonTopicSerializer(LearningSkillCellSerializer):
 
 class LearningPersonAttemptSerializer(serializers.Serializer):
     id = serializers.IntegerField()
-    quiz = LearningRefSerializer()
+    quiz = LearningTitleRefSerializer()
     state = serializers.ChoiceField(Attempt.State.choices)
     percent = serializers.IntegerField(allow_null=True)
     passed = serializers.BooleanField(allow_null=True)
@@ -485,7 +488,7 @@ class LearningSuggestionSerializer(serializers.Serializer):
     state = serializers.CharField()
     member = LearningPersonSerializer(allow_null=True)
     topic = LearningTopicRefSerializer(allow_null=True)
-    course = LearningRefSerializer(allow_null=True)
+    course = LearningTitleRefSerializer(allow_null=True)
     score = serializers.IntegerField(allow_null=True)
     params = serializers.JSONField()
     text = serializers.CharField(help_text="Worded now, in the reader's language.")
@@ -497,8 +500,8 @@ class LearningDraftJobSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     state = serializers.CharField()
     engine = serializers.CharField()
-    page = LearningRefSerializer(allow_null=True)
-    lesson = LearningRefSerializer(allow_null=True)
+    page = LearningTitleRefSerializer(allow_null=True)
+    lesson = LearningTitleRefSerializer(allow_null=True)
     topic = LearningTopicRefSerializer(allow_null=True)
     count = serializers.IntegerField()
     kinds = serializers.ListField(child=serializers.CharField())
