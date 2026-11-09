@@ -181,11 +181,11 @@ export function getMemberMonth(companyId: number, memberId: number, month: strin
   return http.get<MemberMonth>(path(companyId, `members/${memberId}/`), { month }, { signal });
 }
 
-/** The query of a report: empty filters are left out. */
+/** The query of a report: a preset or the days, the comparison, and the filters (empty ones left out). */
 function reportQuery(params: ReportParams) {
   return {
-    from: params.from,
-    to: params.to,
+    ...(params.preset ? { preset: params.preset } : { from: params.from, to: params.to }),
+    compare: params.compare,
     branch: params.branch?.length ? params.branch : undefined,
     department: params.department?.length ? params.department : undefined,
   };

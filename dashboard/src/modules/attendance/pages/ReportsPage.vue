@@ -64,7 +64,7 @@ const { isPhone } = useBreakpoints();
 
 // ─── Period and filters ─────────────────────────────────────────────────────
 
-const period = useRangeState({ preset: "month" });
+const period = useRangeState({ preset: "month", compare: "prev" });
 const branches = useRouteState("branch", rs.numberList());
 const departments = useRouteState("department", rs.numberList());
 const view = useRouteState<View>("view", rs.enum(VIEWS, "people"));
@@ -72,8 +72,15 @@ const view = useRouteState<View>("view", rs.enum(VIEWS, "people"));
 const params = computed<ReportParams>(() => ({
   from: period.value.range.from,
   to: period.value.range.to,
+  // A preset goes to the server as one, so "this month" compares with the same days last month.
+  preset: period.value.preset === "custom" ? undefined : period.value.preset,
   branch: branches.value,
   department: departments.value,
+}));
+// Only the summary's totals feed the KPIs' change.
+const summaryParams = computed<ReportParams>(() => ({
+  ...params.value,
+  compare: period.value.compare === "none" ? undefined : period.value.compare,
 }));
 
 const scoped = useScopedBranches();
@@ -84,13 +91,18 @@ const filtered = computed(() => branches.value.length > 0 || departments.value.l
 
 // ─── Reports ────────────────────────────────────────────────────────────────
 
-const people = useReport("summary", params);
+const people = useReport("summary", summaryParams);
 const trend = useReport("trend", params);
 const ranking = useReport("punctuality", params);
 const byDepartment = useReport("departments", params, () => view.value === "departments");
 const byBranch = useReport("branches", params, () => view.value === "branches");
 
 const totals = computed(() => people.data.value?.totals ?? null);
+// The period compared with, when it had anyone in it (an empty one would only show dashes).
+const previous = computed(() => {
+  const before = people.data.value?.previous;
+  return before && before.people > 0 ? before : null;
+});
 const countedUntil = computed(() => people.data.value?.counted_until ?? null);
 const today = computed(() => people.data.value?.today ?? trend.data.value?.today ?? "");
 const isEmpty = computed(() => !!totals.value && totals.value.people === 0);
@@ -112,6 +124,8 @@ const kpis = computed(() => {
       ...failed,
       label: t("attendance.reports.kpi.attendance"),
       value: sum?.attendance_percent ?? null,
+      previous: previous.value?.attendance_percent ?? undefined,
+      points: true,
       format: "percent" as const,
       hint: sum ? t("attendance.reports.kpi.attendanceHint", { n: sum.days_scheduled }, sum.days_scheduled) : undefined,
       spark: past.value.map((day) => {
@@ -125,6 +139,8 @@ const kpis = computed(() => {
       ...failed,
       label: t("attendance.reports.kpi.punctuality"),
       value: sum?.punctuality_percent ?? null,
+      previous: previous.value?.punctuality_percent ?? undefined,
+      points: true,
       format: "percent" as const,
       hint: sum?.arrivals ? t("attendance.reports.kpi.punctualityHint", { on: sum.on_time, all: sum.arrivals }) : undefined,
       spark: past.value.map((day) => day.punctuality_percent),
@@ -134,6 +150,7 @@ const kpis = computed(() => {
       ...failed,
       label: t("attendance.reports.kpi.late"),
       value: sum?.late_count ?? null,
+      previous: previous.value?.late_count ?? undefined,
       inverse: true,
       hint: sum?.late_minutes ? t("attendance.reports.kpi.lateHint", { d: fmt.duration(sum.late_minutes) }) : undefined,
       spark: past.value.map((day) => day.late),
@@ -144,6 +161,7 @@ const kpis = computed(() => {
       ...failed,
       label: t("attendance.reports.kpi.absent"),
       value: sum?.days_absent ?? null,
+      previous: previous.value?.days_absent ?? undefined,
       inverse: true,
       hint: sum?.days_leave ? t("attendance.reports.kpi.absentHint", { n: sum.days_leave }, sum.days_leave) : undefined,
       spark: past.value.map((day) => day.absent),
@@ -154,6 +172,7 @@ const kpis = computed(() => {
       ...failed,
       label: t("attendance.reports.kpi.hours"),
       value: sum?.worked_minutes ?? null,
+      previous: previous.value?.worked_minutes ?? undefined,
       format: "duration" as const,
       hint: sum?.overtime_minutes ? t("attendance.reports.kpi.overtimeHint", { d: fmt.duration(sum.overtime_minutes) }) : undefined,
       spark: past.value.map((day) => day.worked_minutes),
@@ -312,7 +331,7 @@ const schedulesLink = computed(() => (company.can("attendance.manage") ? `/c/${c
     </AttendanceHeader>
 
     <div class="flex flex-wrap items-center gap-2" data-report-filters>
-      <DateRangePicker v-model="period" :compare="false" class="max-sm:w-full" />
+      <DateRangePicker v-model="period" compare class="max-sm:w-full" />
       <div v-if="scoped.length > 1" class="w-full sm:w-[240px]">
         <BranchPicker v-model="branches" multiple :placeholder="t('attendance.allBranches')" />
       </div>
