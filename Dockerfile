@@ -44,6 +44,8 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 COPY backend ./backend
 COPY employee_bot ./employee_bot
 COPY owner_bot ./owner_bot
+# The Davomat edition's bot (docker-compose.davomat.yml runs python -m davomat_bot from /app).
+COPY davomat_bot ./davomat_bot
 COPY --from=miniapp /miniapp/dist ./miniapp/dist
 COPY --from=dashboard /dashboard/dist ./dashboard/dist
 # Pre-compressed copies next to each file; WhiteNoise serves them to browsers that accept them.
