@@ -264,6 +264,7 @@ def test_every_installed_tool_follows_the_rules(monkeypatch, real_tools):
         for config in apps.get_app_configs()
         if config.name.startswith("apps.")
     ]
+
     # An app may split its tools into `ai_tools_<part>.py` modules its `ai_tools` imports
     # (learning: courses and quizzes); they count as the app's.
     def writes(spec) -> bool:

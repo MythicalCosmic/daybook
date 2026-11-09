@@ -112,7 +112,7 @@ function useResource<T>(
   resource: string,
   params: MaybeRefOrGetter<Record<string, unknown>>,
   fetcher: (cid: number, params: Record<string, unknown>, signal: AbortSignal) => Promise<T>,
-  options: { enabled?: MaybeRefOrGetter<boolean>; keepPrevious?: boolean; staleTime?: number; refetchInterval?: MaybeRefOrGetter<number | false> } = {},
+  options: { enabled?: MaybeRefOrGetter<boolean>; keepPrevious?: boolean; staleTime?: number; refetchInterval?: (data: T | undefined) => number | false } = {},
 ) {
   const cid = useCompanyId();
   return useQuery({
@@ -121,7 +121,8 @@ function useResource<T>(
     enabled: computed(() => cid.value > 0 && (options.enabled === undefined || toValue(options.enabled))),
     placeholderData: options.keepPrevious ? keepPreviousData : undefined,
     staleTime: options.staleTime ?? 20_000,
-    refetchInterval: computed(() => (options.refetchInterval === undefined ? false : toValue(options.refetchInterval))),
+    // Asked after each fetch, with what came back (never while the page is still being set up).
+    refetchInterval: options.refetchInterval ? (query) => options.refetchInterval!(query.state.data) : false,
   });
 }
 
@@ -147,8 +148,13 @@ export const usePersonSkills = (member: MaybeRefOrGetter<number>) =>
   useResource("person", () => ({ member: toValue(member) }), (cid, p) => quizzesApi.personSkills(cid, Number(p.member)), { enabled: () => toValue(member) > 0 });
 export const useSuggestions = (params: MaybeRefOrGetter<Query> = {}) => useResource("suggestions", () => ({ ...toValue(params) }), (cid, p) => quizzesApi.suggestions(cid, p as Query));
 export const useDrafts = () => useResource("drafts", {}, (cid) => quizzesApi.drafts(cid));
-export const useDraft = (id: MaybeRefOrGetter<number | null>, poll: MaybeRefOrGetter<number | false> = false) =>
-  useResource("draft", () => ({ id: toValue(id) }), (cid, p) => quizzesApi.draft(cid, Number(p.id)), { enabled: () => !!toValue(id), refetchInterval: poll, staleTime: 0 });
+/** A drafting job, asked again every 2 s while it is queued or running. */
+export const useDraft = (id: MaybeRefOrGetter<number | null>) =>
+  useResource("draft", () => ({ id: toValue(id) }), (cid, p) => quizzesApi.draft(cid, Number(p.id)), {
+    enabled: () => !!toValue(id),
+    refetchInterval: (job) => (job && (job.state === "queued" || job.state === "running") ? 2000 : false),
+    staleTime: 0,
+  });
 export const useDaily = (enabled: MaybeRefOrGetter<boolean> = true) => useResource("daily", {}, (cid) => quizzesApi.daily(cid), { enabled });
 export const useTutor = () => useResource("tutor", {}, (cid) => quizzesApi.tutor(cid), { staleTime: 30_000 });
 export const useConversations = (enabled: MaybeRefOrGetter<boolean> = true) => useResource("conversations", {}, (cid) => quizzesApi.conversations(cid), { enabled });

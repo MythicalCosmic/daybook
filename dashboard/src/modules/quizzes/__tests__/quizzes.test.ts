@@ -16,7 +16,8 @@ import ru from "../i18n/ru.json";
 import uz from "../i18n/uz.json";
 import module from "../index";
 import { band, blankDraft, dataOf, draftOf, moved, normalize, percent, previewOf, scheduleText, serverProblems, validate, type Draft } from "../lib";
-import type { Question, QuestionPlay } from "../types";
+import QuestionsPage from "../pages/QuestionsPage.vue";
+import type { DraftJobDetail, Question, QuestionPlay } from "../types";
 
 interface Call {
   method: string;
@@ -253,6 +254,51 @@ describe("bands, schedules and wording", () => {
     expect([1, 2, 11].map((n) => plural("quizzes.checks.within", n))).toEqual(["1 час на ответ", "2 часа на ответ", "11 часов на ответ"]);
     await setLanguage("uz");
     expect([1, 5].map((n) => plural("quizzes.bank.changed", n))).toEqual(["1 ta savol o‘zgartirildi", "5 ta savol o‘zgartirildi"]);
+  });
+});
+
+describe("the bank", () => {
+  function job(state: DraftJobDetail["state"], made = 0): DraftJobDetail {
+    return {
+      id: 5,
+      state,
+      engine: "claude",
+      page: { id: 8, title: "Sovuq zanjir" },
+      lesson: null,
+      topic: null,
+      count: 3,
+      kinds: [],
+      difficulty: "",
+      made,
+      dropped: state === "done" ? 1 : 0,
+      error: "",
+      created_at: "2026-11-09T09:00:00+05:00",
+      finished_at: null,
+      questions: [],
+    };
+  }
+
+  it("follows a drafting job from the link until its drafts are written", async () => {
+    let asked = 0;
+    const calls = stubApi({
+      "GET learning/questions/": () => json({ count: 1, next: null, previous: null, results: [question({ state: "draft", source: "ai", draft_job_id: 5 })] }),
+      "GET knowledge/topics/": () => json([]),
+      "GET learning/drafts/5/": () => {
+        asked += 1;
+        return json(asked === 1 ? job("running") : job("done", 2));
+      },
+    });
+    const app = await testApp("/c/1/learning/questions?job=5");
+    const { wrapper } = mountWithProviders(QuestionsPage, { plugins: app.plugins });
+    await flushPromises();
+    expect(document.body.querySelector('[data-testid="draft-job"]')?.textContent).toContain("Writing questions from «Sovuq zanjir»");
+    expect(calls.find((call) => call.url.includes("learning/questions/"))!.url).toContain("draft_job=5");
+    await app.client.refetchQueries({ queryKey: [1, "quizzes", "draft"] });
+    await flushPromises();
+    const done = document.body.querySelector('[data-testid="draft-job"]')?.textContent ?? "";
+    expect(done).toContain("2 drafts written from «Sovuq zanjir».");
+    expect(done).toContain("1 left out (not in the text).");
+    wrapper.unmount();
   });
 });
 

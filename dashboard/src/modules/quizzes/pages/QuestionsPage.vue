@@ -63,10 +63,7 @@ const filtered = computed(() => !!(search.value || topic.value || kind.value || 
 
 // A drafting job: its progress, then its drafts.
 const jobId = computed(() => (job.value ? Number(job.value) : null));
-const draftJob = useDraft(jobId, () => {
-  const found = jobDetail.value;
-  return found && (found.state === "queued" || found.state === "running") ? 2000 : false;
-});
+const draftJob = useDraft(jobId);
 const jobDetail = computed(() => draftJob.data.value ?? null);
 watch(
   () => jobDetail.value?.state,
