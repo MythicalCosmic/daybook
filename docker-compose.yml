@@ -37,11 +37,13 @@ x-app: &app
       condition: service_healthy
     redis:
       condition: service_healthy
-  # Every service sees both upload folders: public proof photos and logos, and the private
-  # files (receipts, documents, exports, PDFs) that only signed links serve.
+  # Every service sees the upload folders: public proof photos and logos, the private files
+  # (receipts, documents, exports, PDFs) that only signed links serve, and lesson videos (private
+  # too, in a volume of their own: big, and left out of the daily backup).
   volumes:
     - media:/app/backend/media
     - private_media:/app/backend/private_media
+    - learning_media:/app/backend/learning_media
   logging: *logging
   restart: unless-stopped
   profiles: ["app"]
@@ -110,11 +112,12 @@ services:
 
   # Notifications, group posts, exports and everything else except AI calls. Most jobs wait
   # on Telegram, so more processes than the default; each takes one job at a time
-  # (prefetch 1), so a long export never holds reminders queued behind it.
+  # (prefetch 1), so a long export never holds reminders queued behind it. Here it also makes
+  # lesson videos ("media"); production gives those a worker of their own (media-worker).
   worker:
     <<: *app
     command: >-
-      sh -c "exec celery -A config worker -Q celery,default -l info
+      sh -c "exec celery -A config worker -Q $${CELERY_QUEUES:-celery,default,media} -l info
       --concurrency $${CELERY_CONCURRENCY:-8} --prefetch-multiplier $${CELERY_PREFETCH:-1}
       --max-tasks-per-child $${CELERY_MAX_TASKS_PER_CHILD:-1000}"
 
@@ -176,3 +179,4 @@ volumes:
   redisdata:
   media:
   private_media:
+  learning_media:

@@ -21,14 +21,18 @@ from whitenoise.middleware import WhiteNoiseMiddleware
 VITE_ASSET = re.compile(r"^/(app|dashboard)/assets/.+-[A-Za-z0-9_-]{8}\.\w+$")
 
 # Telegram Web runs the dashboard in an iframe on web.telegram.org: frame-ancestors allows
-# exactly that, instead of X-Frame-Options (which can't name an origin).
+# exactly that, instead of X-Frame-Options (which can't name an origin). A lesson's preview plays
+# its video (signed same-origin links) or a YouTube link through the privacy-enhanced player
+# (docs/PLAN-LEARNING.md §5); PdfPreview frames signed PDFs of the same origin.
 DASHBOARD_CSP = "; ".join(
     (
         "default-src 'self'",
-        "img-src 'self' data: blob: https://*.tile.openstreetmap.org",
+        "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://i.ytimg.com",
+        "media-src 'self' blob:",
         "connect-src 'self'",
         "style-src 'self' 'unsafe-inline'",
-        "script-src 'self' https://telegram.org",
+        "script-src 'self' https://telegram.org https://www.youtube.com",
+        "frame-src 'self' https://www.youtube-nocookie.com",
         "frame-ancestors https://web.telegram.org",
         "base-uri 'none'",
         "form-action 'self'",
