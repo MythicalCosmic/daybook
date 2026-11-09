@@ -10,6 +10,7 @@ import { json } from "@/test/fixtures";
 import { mountWithProviders, testApp } from "@/test/plugins";
 
 import { createDevice, createLink, faceKeys, ignoreNumber, listPeople, listScans, regenerate, saveSettings, simulate } from "../api";
+import HistoryNote from "../components/HistoryNote.vue";
 import ScanItem from "../components/ScanItem.vue";
 import en from "../i18n/en.json";
 import ru from "../i18n/ru.json";
@@ -168,6 +169,28 @@ describe("ScanItem", () => {
     const app = await testApp("/c/1/faceid");
     const { wrapper } = mountWithProviders(ScanItem, { props: { scan: scan({ kind: "stranger", action: "stranger", member: null, name_on_device: "", employee_no: "", record: null }) }, plugins: app.plugins });
     expect(wrapper.text()).toContain("Unknown face");
+  });
+});
+
+describe("HistoryNote", () => {
+  const history = { skipped: 40600, until: "2026-11-07T15:02:11+05:00", active: true, clock_hides: false };
+
+  it("says the terminal sends its old history first, with the count so far", async () => {
+    const app = await testApp("/c/1/faceid");
+    const { wrapper } = mountWithProviders(HistoryNote, { props: { history }, plugins: app.plugins });
+    expect(wrapper.text()).toContain("sending its old history first; live scans start when it's done");
+    expect(wrapper.text()).toMatch(/Old scans skipped so far: 40.600 \(newest: 7 Nov 2026\)/);
+  });
+
+  it("is a quiet line once it stopped, a clock warning when the clock hides live scans, nothing before", async () => {
+    const app = await testApp("/c/1/faceid");
+    const done = mountWithProviders(HistoryNote, { props: { history: { ...history, active: false } }, plugins: app.plugins });
+    expect(done.wrapper.text()).toContain("Only live scans are kept.");
+    const clock = mountWithProviders(HistoryNote, { props: { history: { ...history, clock_hides: true } }, plugins: app.plugins });
+    expect(clock.wrapper.text()).toContain("Set its date and time");
+    expect(clock.wrapper.text()).not.toContain("sending its old history");
+    const none = mountWithProviders(HistoryNote, { props: { history: { skipped: 0, until: null, active: false, clock_hides: false } }, plugins: app.plugins });
+    expect(none.wrapper.text()).toBe("");
   });
 });
 
