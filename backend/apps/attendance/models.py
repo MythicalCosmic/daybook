@@ -11,6 +11,8 @@ Shifts generated from a person's schedule are published at once, because assigni
 schedule was the decision.
 """
 
+import secrets
+
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
@@ -95,6 +97,32 @@ class AttendanceSettings(TimeStampedModel):
     )
     overtime_after_minutes = minutes_field(
         15, maximum=240, help_text=_("Extra time shorter than this isn't overtime.")
+    )
+    # Face ID terminals (FaceDevice): what a recognised face sets off.
+    face_notify_employee = models.BooleanField(
+        default=True,
+        help_text=_("People get a bot message when the terminal checks them in or out."),
+    )
+    face_group_posts = models.BooleanField(
+        default=False,
+        help_text=_("Each arrival at a terminal is posted in the branch's attendance groups."),
+    )
+    face_group_photos = models.BooleanField(
+        default=False, help_text=_("Those group posts carry the terminal's snapshot.")
+    )
+    face_alert_strangers = models.BooleanField(
+        default=False,
+        help_text=_("An unknown face alerts the branch's managers, at most every 10 minutes."),
+    )
+    face_repeat_minutes = models.PositiveSmallIntegerField(
+        default=2,
+        validators=[MinValueValidator(1), MaxValueValidator(60)],
+        help_text=_("A second scan this soon after the last one changes nothing."),
+    )
+    face_photo_days = models.PositiveSmallIntegerField(
+        default=30,
+        validators=[MaxValueValidator(365)],
+        help_text=_("Terminal snapshots are deleted after this many days. 0: none are kept."),
     )
 
     class Meta:
@@ -392,6 +420,7 @@ class AttendanceRecord(TenantModel):
         BOT = "bot", _("Bot")
         MANUAL = "manual", _("Manager")
         SYSTEM = "system", _("System")
+        FACE = "face", _("Face ID terminal")
 
     class Overtime(models.TextChoices):
         NONE = "none", _("None")
@@ -406,6 +435,8 @@ class AttendanceRecord(TenantModel):
         UNSCHEDULED = "unscheduled", _("No shift planned")
         AUTO_CLOSED = "auto_closed", _("Check-out forgotten")
         EDITED = "edited", _("Edited by a manager")
+        OTHER_BRANCH = "other_branch", _("At another branch")
+        MISSED_ENTRY = "missed_entry", _("Came in without a scan")
 
     ATTENDED = (Status.OPEN, Status.CLOSED, Status.AUTO_CLOSED)
 
@@ -540,3 +571,194 @@ class JobMark(TenantModel):
 
     def __str__(self):
         return self.key
+
+
+# Face ID terminals -------------------------------------------------------------------------
+
+
+def new_device_token() -> str:
+    """The secret in a terminal's URL path: 24 URL-safe characters (144 random bits)."""
+    return secrets.token_urlsafe(18)
+
+
+class FaceDevice(TenantModel):
+    """A face recognition terminal at a branch's staff door (Hikvision MinMoe and the like).
+
+    The terminal recognises people itself, against its own list (Employee No, name, face, finger,
+    card), and posts every event to `/api/v1/devices/hik/<token>/` (`apps.attendance.device_api`).
+    Faces and templates stay on the terminal: only events and snapshots reach us. What the
+    terminal says about itself (address, model, clock) is learned from its requests."""
+
+    class Direction(models.TextChoices):
+        IN = "in", _("Entrance: every scan checks in")
+        OUT = "out", _("Exit: every scan checks out")
+        TOGGLE = "toggle", _("One door: in, then out")
+
+    class Vendor(models.TextChoices):
+        HIKVISION = "hikvision", _("Hikvision")
+
+    name = models.CharField(max_length=80)
+    branch = models.ForeignKey(Branch, on_delete=models.PROTECT, related_name="face_devices")
+    direction = models.CharField(
+        max_length=6,
+        choices=Direction.choices,
+        default=Direction.TOGGLE,
+        help_text=_("One door: no open check-in means in, otherwise out."),
+    )
+    token = models.CharField(max_length=40, unique=True, default=new_device_token)
+    vendor = models.CharField(max_length=12, choices=Vendor.choices, default=Vendor.HIKVISION)
+    enabled = models.BooleanField(default=True)
+    mac = models.CharField(max_length=32, blank=True)
+    serial = models.CharField(max_length=64, blank=True)
+    ip = models.CharField(max_length=45, blank=True, help_text=_("The address it reports."))
+    model = models.CharField(max_length=64, blank=True)
+    last_event_at = models.DateTimeField(null=True, blank=True)
+    last_seen_at = models.DateTimeField(
+        null=True, blank=True, help_text=_("Any request, heartbeats included.")
+    )
+    clock_offset_s = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text=_("How far the terminal's clock is from ours, in seconds (ahead is positive)."),
+    )
+    clock_checked_at = models.DateTimeField(null=True, blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+
+    class Meta:
+        ordering = ["name", "pk"]
+
+    def __str__(self):
+        return self.name
+
+
+class FaceEvent(TenantModel):
+    """One event a terminal posted, and what it did: a check-in or check-out, a repeat scan, a
+    number nobody is linked to, an unknown face, or something logged only."""
+
+    class Kind(models.TextChoices):
+        PERSON = "person", _("Person")
+        STRANGER = "stranger", _("Unknown face")
+        OTHER = "other", _("Other event")
+
+    class Method(models.TextChoices):
+        FACE = "face", _("Face")
+        FINGERPRINT = "fingerprint", _("Fingerprint")
+        CARD = "card", _("Card")
+        OTHER = "other", _("Other")
+
+    class Action(models.TextChoices):
+        CHECKED_IN = "checked_in", _("Checked in")
+        CHECKED_OUT = "checked_out", _("Checked out")
+        REPEAT = "repeat", _("Repeat scan")
+        NOT_LINKED = "not_linked", _("Number not linked")
+        STRANGER = "stranger", _("Unknown face")
+        IGNORED = "ignored", _("Logged only")
+        MODULE_OFF = "module_off", _("Attendance is off")
+
+    class Flag(models.TextChoices):
+        CLOCK_OFF = "clock_off", _("Terminal clock is wrong")
+        DELIVERED_LATE = "delivered_late", _("Arrived late, no messages")
+        AUTO_LINKED = "auto_linked", _("Linked by name")
+        OTHER_BRANCH = "other_branch", _("At another branch")
+        MISSED_ENTRY = "missed_entry", _("Came in without a scan")
+        LATE_CHECK_OUT = "late_check_out", _("Replaced an automatic check-out")
+        ALREADY_IN = "already_in", _("Already checked in")
+        OUT_OF_ORDER = "out_of_order", _("Older than the attendance record")
+        BREAK = "break", _("Break scan")
+        NOT_APPROVED = "not_approved", _("Person not active")
+        IGNORED_NUMBER = "ignored_number", _("Number ignored")
+        REFUSED = "refused", _("Attendance refused it")
+        UNREADABLE = "unreadable", _("Couldn't read the event")
+        ALERTED = "alerted", _("Managers alerted")
+        SIMULATED = "simulated", _("Simulated")
+
+    device = models.ForeignKey(FaceDevice, on_delete=models.CASCADE, related_name="events")
+    received_at = models.DateTimeField()
+    event_at = models.DateTimeField(
+        help_text=_("The terminal's time, or when it arrived if the terminal's clock is wrong.")
+    )
+    device_time = models.DateTimeField(null=True, blank=True)
+    serial_no = models.PositiveBigIntegerField(null=True, blank=True)
+    employee_no = models.CharField(max_length=32, blank=True)
+    name_on_device = models.CharField(max_length=100, blank=True)
+    kind = models.CharField(max_length=8, choices=Kind.choices, default=Kind.OTHER)
+    method = models.CharField(max_length=12, choices=Method.choices, blank=True)
+    verify_mode = models.CharField(max_length=48, blank=True)
+    minor = models.PositiveIntegerField(null=True, blank=True)
+    attendance_status = models.CharField(max_length=16, blank=True)
+    membership = models.ForeignKey(
+        Membership, on_delete=models.SET_NULL, null=True, blank=True, related_name="face_events"
+    )
+    record = models.ForeignKey(
+        AttendanceRecord,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="face_events",
+    )
+    action = models.CharField(max_length=12, choices=Action.choices, default=Action.IGNORED)
+    photo = models.FileField(
+        storage=private_storage, upload_to=private_upload_to("attendance/face"), blank=True
+    )
+    raw = models.JSONField(default=dict, blank=True)
+    flags = ArrayField(
+        models.CharField(max_length=24, choices=Flag.choices), default=list, blank=True
+    )
+
+    class Meta:
+        ordering = ["-event_at", "-pk"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["device", "serial_no"],
+                condition=Q(serial_no__isnull=False),
+                name="attendance_face_event_once",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["company", "-event_at"], name="att_face_company_at"),
+            models.Index(fields=["device", "-event_at"], name="att_face_device_at"),
+            models.Index(fields=["membership", "-event_at"], name="att_face_member_at"),
+        ]
+
+    def __str__(self):
+        return f"{self.device} · {self.get_action_display()}"
+
+
+class FaceLink(TenantModel):
+    """Who a terminal's Employee No is in the company (a person may have several numbers), or a
+    number set aside (`ignored`: a guard, a visitor's card) so it never asks again."""
+
+    employee_no = models.CharField(max_length=32)
+    membership = models.ForeignKey(
+        Membership, on_delete=models.CASCADE, null=True, blank=True, related_name="face_links"
+    )
+    ignored = models.BooleanField(default=False)
+    auto = models.BooleanField(default=False, help_text=_("Linked by the name on the terminal."))
+    linked_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+
+    class Meta:
+        ordering = ["employee_no"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["company", "employee_no"], name="attendance_face_number_once"
+            ),
+            models.CheckConstraint(
+                condition=Q(membership__isnull=False) | Q(ignored=True),
+                name="attendance_face_link_has_person",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.employee_no} · {self.membership or '—'}"
