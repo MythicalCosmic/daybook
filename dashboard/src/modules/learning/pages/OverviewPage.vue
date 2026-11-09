@@ -124,7 +124,10 @@ function openCourse(id: number): void {
                 <ProgressBar class="flex-1" size="sm" :value="course.completed" :max="course.people || 1" tone="auto" />
                 <span class="w-24 text-right text-xs text-muted tabular-nums">{{ t("learning.ofPeople", { done: course.completed, people: course.people }) }}</span>
               </span>
-              <StatusPill v-if="course.overdue" size="sm" tone="danger" variant="plain" :label="t('learning.lateCount', { n: course.overdue }, course.overdue)" />
+              <!-- The late count has a place of its own on every row, so all the bars line up. -->
+              <span class="flex justify-end sm:w-32">
+                <StatusPill v-if="course.overdue" size="sm" tone="danger" variant="plain" :label="t('learning.lateCount', { n: course.overdue }, course.overdue)" />
+              </span>
             </button>
           </li>
         </ul>
