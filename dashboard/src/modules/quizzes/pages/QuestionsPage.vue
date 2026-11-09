@@ -187,11 +187,11 @@ async function bulk(target: QuestionState): Promise<void> {
       <template #toolbar>
         <div class="flex flex-wrap items-center gap-2">
           <TextInput v-model="search" :debounce="300" type="search" size="sm" class="w-full sm:w-60" :placeholder="t('quizzes.bank.search')" clearable />
-          <SelectBox v-model="topic" size="sm" class="w-44" :options="topicOptions" clearable :placeholder="t('quizzes.bank.anyTopic')" />
-          <SelectBox v-model="kind" size="sm" class="w-44" :options="kindOptions" clearable :placeholder="t('quizzes.bank.anyKind')" />
-          <SelectBox v-model="difficulty" size="sm" class="w-32" :options="difficultyOptions" clearable :placeholder="t('quizzes.bank.anyDifficulty')" />
-          <SelectBox v-model="state" size="sm" class="w-32" :options="stateOptions" clearable :placeholder="t('quizzes.bank.anyState')" />
-          <SelectBox v-model="source" size="sm" class="w-40" :options="sourceOptions" clearable :placeholder="t('quizzes.bank.anySource')" />
+          <SelectBox v-model="topic" size="sm" class="w-[calc(50%-0.25rem)] sm:w-44" :options="topicOptions" clearable :placeholder="t('quizzes.bank.anyTopic')" />
+          <SelectBox v-model="kind" size="sm" class="w-[calc(50%-0.25rem)] sm:w-44" :options="kindOptions" clearable :placeholder="t('quizzes.bank.anyKind')" />
+          <SelectBox v-model="difficulty" size="sm" class="w-[calc(50%-0.25rem)] sm:w-32" :options="difficultyOptions" clearable :placeholder="t('quizzes.bank.anyDifficulty')" />
+          <SelectBox v-model="state" size="sm" class="w-[calc(50%-0.25rem)] sm:w-32" :options="stateOptions" clearable :placeholder="t('quizzes.bank.anyState')" />
+          <SelectBox v-model="source" size="sm" class="w-[calc(50%-0.25rem)] sm:w-40" :options="sourceOptions" clearable :placeholder="t('quizzes.bank.anySource')" />
         </div>
       </template>
       <template #cell-text="{ row }">

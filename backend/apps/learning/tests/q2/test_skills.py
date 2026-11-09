@@ -109,9 +109,10 @@ def test_the_matrix_people_topics_and_averages(pharmacy, staff):
     answers(staff, cold, [0, 0, 1])  # 39: weak
     answers(madina, cold, [1, 1, 1])  # 100: strong
     answers(madina, rx, [1])  # unrated
+    person(pharmacy, first_name="Aziz", last_name="Bobojonov")  # no answers yet: after the rest
     found = skills.matrix(pharmacy, branch_ids=None)
     names = [str(row["member"]) for row in found["people"]]
-    assert names == ["Alisher Valiyev", "Madina Saidova"]
+    assert names == ["Alisher Valiyev", "Madina Saidova", "Aziz Bobojonov"]
     columns = {column["topic"].name: column for column in found["topics"]}
     assert (columns["Sovuq zanjir"]["average"], columns["Sovuq zanjir"]["rated"]) == (70, 2)
     assert (columns["Sovuq zanjir"]["weak"], columns["Sovuq zanjir"]["strong"]) == (1, 1)

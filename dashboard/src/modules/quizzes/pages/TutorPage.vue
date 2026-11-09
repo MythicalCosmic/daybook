@@ -100,14 +100,15 @@ const agent = computed(() => tutor.data.value?.agent ?? null);
               <li v-for="row in suggestions.data.value" :key="row.id" class="flex flex-wrap items-start gap-3 px-4 py-3">
                 <UserAvatar v-if="row.member" :name="row.member.name" :src="row.member.photo_url" :size="32" />
                 <span v-else class="grid size-8 shrink-0 place-items-center rounded-full bg-accent-soft text-accent-fg"><component :is="ICONS[row.kind]" :size="16" aria-hidden="true" /></span>
-                <div class="min-w-0 flex-1">
+                <div class="min-w-0 flex-1 basis-48">
                   <p class="text-sm text-fg">{{ row.text }}</p>
                   <p class="mt-0.5 flex flex-wrap items-center gap-1 text-xs text-muted">
                     <StatusPill size="sm" variant="plain" tone="primary" :icon="ICONS[row.kind]" :label="t(`quizzes.suggestionKind.${row.kind}`)" />
                     <span>· {{ fmt.relative(row.created_at) }}</span>
                   </p>
                 </div>
-                <div v-if="canManage" class="flex gap-1">
+                <!-- On a phone the buttons go under the text, lined up with it. -->
+                <div v-if="canManage" class="flex gap-1 max-sm:w-full max-sm:pl-11">
                   <UiButton size="sm" variant="primary" :icon="Check" :loading="deciding === row.id" @click="decide(row, 'accept')">{{ acceptLabel(row) }}</UiButton>
                   <UiButton size="sm" variant="ghost" :icon="X" :aria-label="t('quizzes.tutor.dismiss')" @click="decide(row, 'dismiss')" />
                 </div>

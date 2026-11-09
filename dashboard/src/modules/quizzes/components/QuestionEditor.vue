@@ -151,7 +151,7 @@ async function save(state?: QuestionState): Promise<void> {
 
 <template>
   <UiDrawer v-model:open="open" :title="editing ? t('quizzes.editor.editTitle') : t('quizzes.editor.newTitle')" size="xl">
-    <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+    <div class="grid gap-6 p-5 lg:grid-cols-[minmax(0,1fr)_320px]">
       <div class="flex min-w-0 flex-col gap-4">
         <FormField :label="t('quizzes.editor.kind')" :hint="kindLocked ? t('quizzes.editor.kindLocked') : undefined">
           <SelectBox :model-value="draft.kind" :options="kindOptions" :disabled="kindLocked" data-testid="question-kind" @update:model-value="(value) => setKind(value as QuestionKind | null)" />
@@ -256,7 +256,7 @@ async function save(state?: QuestionState): Promise<void> {
           <TextArea v-model="draft.explanation" :rows="2" autosize :max-rows="6" :maxlength="LIMITS.explanation" />
         </FormField>
 
-        <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
           <FormField :label="t('quizzes.editor.topic')" optional>
             <SelectBox v-model="draft.topic_id" :options="topicOptions" clearable :placeholder="t('quizzes.editor.noTopic')" />
           </FormField>

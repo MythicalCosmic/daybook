@@ -9,6 +9,7 @@ import { i18n, mergeModuleMessages, setLanguage } from "@/i18n";
 import { json } from "@/test/fixtures";
 import { mountWithProviders, testApp } from "@/test/plugins";
 
+import DraftDialog from "../components/DraftDialog.vue";
 import QuestionEditor from "../components/QuestionEditor.vue";
 import QuestionPreview from "../components/QuestionPreview.vue";
 import en from "../i18n/en.json";
@@ -70,6 +71,29 @@ function question(overrides: Partial<Question> = {}): Question {
     ...overrides,
   };
 }
+
+function job(state: DraftJobDetail["state"], made = 0): DraftJobDetail {
+  return {
+    id: 5,
+    state,
+    engine: "claude",
+    page: { id: 8, title: "Sovuq zanjir" },
+    lesson: null,
+    topic: null,
+    count: 3,
+    kinds: [],
+    difficulty: "",
+    made,
+    dropped: state === "done" ? 1 : 0,
+    error: "",
+    created_at: "2026-11-09T09:00:00+05:00",
+    finished_at: null,
+    questions: [],
+  };
+}
+
+
+const buttonCalled = (label: string) => Array.from(document.body.querySelectorAll("button")).find((button) => button.textContent?.trim() === label)!;
 
 const t = (key: string, values: Record<string, unknown> = {}) => i18n.global.t(key, values);
 const plural = (key: string, n: number) => i18n.global.t(key, { n }, n);
@@ -258,26 +282,6 @@ describe("bands, schedules and wording", () => {
 });
 
 describe("the bank", () => {
-  function job(state: DraftJobDetail["state"], made = 0): DraftJobDetail {
-    return {
-      id: 5,
-      state,
-      engine: "claude",
-      page: { id: 8, title: "Sovuq zanjir" },
-      lesson: null,
-      topic: null,
-      count: 3,
-      kinds: [],
-      difficulty: "",
-      made,
-      dropped: state === "done" ? 1 : 0,
-      error: "",
-      created_at: "2026-11-09T09:00:00+05:00",
-      finished_at: null,
-      questions: [],
-    };
-  }
-
   it("follows a drafting job from the link until its drafts are written", async () => {
     let asked = 0;
     const calls = stubApi({
@@ -302,13 +306,35 @@ describe("the bank", () => {
   });
 });
 
+describe("DraftDialog", () => {
+  it("starts a job once a source is picked; Mixed is no difficulty", async () => {
+    const calls = stubApi({
+      "GET knowledge/topics/": () => json([]),
+      "GET knowledge/pages/": () => json({ count: 1, next: null, previous: null, results: [{ id: 8, title: "Sovuq zanjir" }] }),
+      "POST learning/drafts/": () => json(job("queued"), 201),
+    });
+    const app = await testApp("/c/1/learning/questions");
+    const { wrapper, inner } = mountWithProviders(DraftDialog, { props: { open: true }, plugins: app.plugins });
+    await flushPromises();
+    expect(document.body.textContent).toContain("Mixed");
+    expect((document.body.querySelector('[data-testid="draft-start"]') as HTMLButtonElement).disabled).toBe(true);
+    const source = Array.from(document.body.querySelectorAll('[data-testid="draft-sources"] button')).find((button) => button.textContent?.includes("Sovuq zanjir")) as HTMLButtonElement;
+    source.click();
+    await flushPromises();
+    buttonCalled("Write them").click();
+    await flushPromises();
+    expect(calls.find((call) => call.method === "POST")!.body).toEqual({ page_id: 8, lesson_id: null, count: 5, kinds: [], difficulty: "", topic_id: null, engine: "auto" });
+    expect(inner.emitted("created")).toHaveLength(1);
+    wrapper.unmount();
+  });
+});
+
 describe("QuestionEditor", () => {
   function type(element: Element | undefined, value: string): void {
     const input = element as HTMLInputElement | HTMLTextAreaElement;
     input.value = value;
     input.dispatchEvent(new Event("input"));
   }
-  const buttonCalled = (label: string) => Array.from(document.body.querySelectorAll("button")).find((button) => button.textContent?.trim() === label)!;
 
   it("shows what to fix and sends nothing until the question is whole", async () => {
     const calls = stubApi({ "GET knowledge/topics/": () => json([]) });

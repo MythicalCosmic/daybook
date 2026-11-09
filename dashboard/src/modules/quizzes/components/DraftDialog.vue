@@ -77,7 +77,8 @@ const search = useQuery({
 });
 
 const kindOptions = computed(() => KINDS.map((value) => ({ value, label: t(`quizzes.kind.${value}`) })));
-const difficultyOptions = computed(() => [{ value: "", label: t("quizzes.drafts.anyDifficulty") }, ...DIFFICULTIES.map((value) => ({ value, label: t(`quizzes.difficulty.${value}`) }))]);
+// "Mixed" is the empty choice: the select clears to it (an option may not have an empty value).
+const difficultyOptions = computed(() => DIFFICULTIES.map((value) => ({ value, label: t(`quizzes.difficulty.${value}`) })));
 const topicOptions = computed(() => (topics.data.value ?? []).filter((topic) => !topic.archived).map((topic) => ({ value: topic.id, label: topic.name })));
 
 async function start(): Promise<void> {
@@ -139,7 +140,13 @@ async function start(): Promise<void> {
           <NumberInput :model-value="form.count" :min="1" :max="15" @update:model-value="(value) => (form.count = value ?? 5)" />
         </FormField>
         <FormField :label="t('quizzes.drafts.difficulty')">
-          <SelectBox :model-value="form.difficulty" :options="difficultyOptions" @update:model-value="(value) => (form.difficulty = (value as typeof form.difficulty) ?? '')" />
+          <SelectBox
+            :model-value="form.difficulty || null"
+            :options="difficultyOptions"
+            clearable
+            :placeholder="t('quizzes.drafts.anyDifficulty')"
+            @update:model-value="(value) => (form.difficulty = (value as typeof form.difficulty | null) ?? '')"
+          />
         </FormField>
         <FormField :label="t('quizzes.drafts.kinds')" :hint="t('quizzes.drafts.kindsHint')" optional>
           <MultiSelect v-model="form.kinds" :options="kindOptions" :placeholder="t('quizzes.drafts.anyKind')" />

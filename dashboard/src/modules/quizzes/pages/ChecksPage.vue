@@ -178,7 +178,7 @@ function review(attemptId: number | null): void {
           </p>
           <p v-if="row.next_run_at" class="truncate text-xs text-muted">{{ t("quizzes.checks.next", { when: fmt.instant(row.next_run_at) }) }}</p>
         </button>
-        <div v-if="row.last_round" class="flex w-48 flex-col gap-1">
+        <div v-if="row.last_round" class="flex w-full flex-col gap-1 sm:w-60">
           <p class="text-xs text-muted">{{ t("quizzes.checks.lastRound", { done: row.last_round.done, people: row.last_round.people }) }}</p>
           <ProgressBar :value="percent(row.last_round.done, row.last_round.people) ?? 0" :max="100" size="sm" tone="auto" />
         </div>
@@ -233,7 +233,7 @@ function review(attemptId: number | null): void {
     </UiDialog>
 
     <UiDrawer v-model:open="roundsOpen" :title="roundsOf?.title ?? ''" :description="roundsOf ? scheduleText(roundsOf, t) : undefined" size="lg">
-      <div class="flex flex-col gap-4">
+      <div class="flex flex-col gap-4 p-5">
         <div v-if="rounds.isPending.value" class="grid gap-2"><SkeletonBlock v-for="n in 3" :key="n" height="40px" /></div>
         <p v-else-if="!rounds.data.value?.length" class="text-sm text-muted">{{ t("quizzes.checks.noRounds") }}</p>
         <div v-else class="flex flex-wrap gap-2">

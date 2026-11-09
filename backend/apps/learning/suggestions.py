@@ -319,10 +319,10 @@ def text(row: TutorSuggestion) -> str:
     if row.kind == Kind.MENTOR:
         count = params.get("weak", 0)
         return ngettext(
-            "%(name)s knows %(topic)s well (%(score)s %%) and could coach the %(count)s "
-            "person weak in it.",
-            "%(name)s knows %(topic)s well (%(score)s %%) and could coach the %(count)s "
-            "people weak in it.",
+            "%(name)s knows %(topic)s well (%(score)s %%) and could coach %(count)s "
+            "colleague weak in it.",
+            "%(name)s knows %(topic)s well (%(score)s %%) and could coach %(count)s "
+            "colleagues weak in it.",
             count,
         ) % {"name": name, "topic": topic, "score": params.get("score", 0), "count": count}
     if row.kind == Kind.PRAISE:

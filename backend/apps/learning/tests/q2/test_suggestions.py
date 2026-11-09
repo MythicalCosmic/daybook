@@ -94,7 +94,7 @@ def test_strong_where_others_are_weak_could_coach(pharmacy, staff, covering):
     )
     assert (
         suggestions.text(mentor)
-        == "Madina Saidova knows Sovuq zanjir well (100 %) and could coach the 1 person weak in it."
+        == "Madina Saidova knows Sovuq zanjir well (100 %) and could coach 1 colleague weak in it."
     )
 
 

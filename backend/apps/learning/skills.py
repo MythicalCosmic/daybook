@@ -148,7 +148,7 @@ def matrix(
 ) -> dict:
     """The skill matrix: `topics` (live ones, each with its average over the people rated in
     it) and `people` (each with a cell per topic). `sort_topic`: that topic's weakest first
-    (unrated last); else by name."""
+    (unrated last); else the people with answers first, each part by name."""
     topics = list(topic_services.topics(company))
     if topic_ids:
         topics = [topic for topic in topics if topic.pk in set(topic_ids)]
@@ -190,6 +190,8 @@ def matrix(
                 row["cells"][sort_topic]["score"] or 0,
             )
         )
+    else:
+        rows.sort(key=lambda row: row["answers"] == 0)  # stable: the names stay in order
     return {"topics": columns, "people": rows}
 
 

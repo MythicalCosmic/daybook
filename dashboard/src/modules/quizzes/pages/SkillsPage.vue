@@ -51,8 +51,8 @@ function toggleSort(topicId: number): void {
   <div>
     <PageHeader :title="t('quizzes.nav.skills')" :description="t('quizzes.skills.description')" />
     <div class="mb-3 flex flex-wrap items-center gap-2">
-      <BranchPicker v-model="branch" clearable size="sm" class="w-48" :placeholder="t('quizzes.skills.anyBranch')" />
-      <PositionPicker v-model="position" clearable size="sm" class="w-48" :placeholder="t('quizzes.skills.anyPosition')" />
+      <BranchPicker v-model="branch" clearable size="sm" class="w-[calc(50%-0.25rem)] sm:w-48" :placeholder="t('quizzes.skills.anyBranch')" />
+      <PositionPicker v-model="position" clearable size="sm" class="w-[calc(50%-0.25rem)] sm:w-48" :placeholder="t('quizzes.skills.anyPosition')" />
       <span class="ml-auto flex flex-wrap items-center gap-2 text-xs text-muted">
         <span v-for="key in ['weak', 'ok', 'strong', 'unrated'] as const" :key="key" class="inline-flex items-center gap-1">
           <span class="inline-block size-3 rounded-sm" :class="BAND_CELL[key]" aria-hidden="true" />{{ t(`quizzes.band.${key}`) }}
@@ -81,7 +81,7 @@ function toggleSort(topicId: number): void {
         </thead>
         <tbody>
           <tr v-for="row in people" :key="row.member.id" class="group">
-            <td class="sticky left-0 z-10 border-t border-line bg-surface px-4 py-2 group-hover:bg-surface-2">
+            <td class="sticky left-0 z-10 max-w-[10.5rem] border-t border-line bg-surface px-3 py-2 group-hover:bg-surface-2 sm:max-w-none sm:px-4">
               <RouterLink :to="`/c/${company.currentId}/learning/people/${row.member.id}`" class="flex min-w-0 items-center gap-2 hover:underline">
                 <UserAvatar :name="row.member.name" :src="row.member.photo_url" :size="28" />
                 <span class="min-w-0">
