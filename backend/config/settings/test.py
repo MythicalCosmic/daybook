@@ -48,6 +48,9 @@ DASHBOARD_DEV_LOGIN = False
 DASHBOARD_URL = ""
 SCHEMA_AUDIENCE = ""
 COMPANY_SIGNUP = "code"
+# Daybook unless a test says otherwise (`settings.EDITION = "davomat"`), whatever .env says.
+EDITION = "daybook"
+DAVOMAT_SETUP_TOKEN = ""
 
 # Fixed keys, never used outside tests.
 FIELD_ENCRYPTION_KEY = "o9Dz7N2qHkqmC1bG4WbC0yQ8yC8kq2ZqN8bq0bJXwUo="
