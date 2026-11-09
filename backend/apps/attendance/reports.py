@@ -435,10 +435,29 @@ def kpis(kind: str, data: dict) -> list[tuple[str, str]]:
     return shown
 
 
+# On paper a person's position, department and branch go on a second line under their name, so
+# every figure fits the page's width.
+PDF_UNDER_NAME = {
+    "summary": ("position", "department", "branch"),
+    "punctuality": ("position", "department"),
+}
+
+
 def pdf(kind: str, data: dict, *, company: Company, ask: Ask, language: str) -> bytes:
     with translation.override(language):
-        columns = COLUMNS[kind]
+        under = PDF_UNDER_NAME.get(kind, ())
+        columns = [column for column in COLUMNS[kind] if column.key not in under]
+        keys = [column.key for column in columns]
+        # The cell that names the row: the person, else the first column.
+        lead = keys.index("person") if "person" in keys else 0
         rows, totals = table(kind, data)
+        cells = []
+        for row in rows:
+            line = _cells(columns, row)
+            line[lead]["lead"] = True
+            if under:
+                line[lead]["sub"] = " · ".join(str(row[key]) for key in under if row.get(key))
+            cells.append(line)
         context = {
             "company": company,
             "title": str(LABELS[kind]),
@@ -451,7 +470,7 @@ def pdf(kind: str, data: dict, *, company: Company, ask: Ask, language: str) -> 
                 {"label": str(column.label), "numeric": column.kind == "number"}
                 for column in columns
             ],
-            "rows": [_cells(columns, row) for row in rows],
+            "rows": cells,
             "totals": _cells(columns, totals, blank="") if totals and rows else None,
             "empty": not rows,
         }

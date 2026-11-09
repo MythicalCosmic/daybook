@@ -10,10 +10,12 @@
 .kpi .label { font-size: 7.5pt; color: #6b6b6b; text-transform: uppercase; letter-spacing: 0.02em; }
 .kpi .value { font-size: 14pt; font-weight: 700; margin-top: 0.6mm; font-variant-numeric: tabular-nums; }
 .report table { font-size: 8pt; }
-.report th, .report td { padding: 1.5mm 1.6mm; }
-.report th { vertical-align: bottom; }
+.report th, .report td { padding: 1.5mm 1.4mm; }
+.report th, .report th.num { vertical-align: bottom; white-space: normal; hyphens: auto; font-size: 7.5pt; }
 .report tbody tr:nth-child(even) td { background: #f7f8fa; }
-.report td.first { font-weight: 700; }
+.report td.first { font-weight: 700; min-width: 34mm; }
+.report td.first .sub { font-weight: 400; color: #6b6b6b; font-size: 7pt; margin-top: 0.4mm; }
+.report tr.total td { font-weight: 700; background: none; border-bottom: none; border-top: 0.8pt solid #1c1c1c; }
 .empty { color: #6b6b6b; font-style: italic; margin-top: 6mm; }
 .note { font-size: 7.5pt; color: #6b6b6b; margin-top: 2mm; }
 {% endblock %}
@@ -41,14 +43,13 @@
     </thead>
     <tbody>
       {% for row in rows %}
-      <tr>{% for cell in row %}<td class="{% if forloop.first %}first{% endif %}{% if cell.num %} num{% endif %}">{{ cell.text }}</td>{% endfor %}</tr>
+      <tr>{% for cell in row %}<td class="{% if cell.lead %}first{% endif %}{% if cell.num %} num{% endif %}">{{ cell.text }}{% if cell.sub %}<div class="sub">{{ cell.sub }}</div>{% endif %}</td>{% endfor %}</tr>
       {% endfor %}
+      {# The totals once, after the last row (a tfoot would repeat on every page). #}
+      {% if totals %}
+      <tr class="total">{% for cell in totals %}<td{% if cell.num %} class="num"{% endif %}>{{ cell.text }}</td>{% endfor %}</tr>
+      {% endif %}
     </tbody>
-    {% if totals %}
-    <tfoot>
-      <tr>{% for cell in totals %}<td{% if cell.num %} class="num"{% endif %}>{{ cell.text }}</td>{% endfor %}</tr>
-    </tfoot>
-    {% endif %}
   </table>
   <p class="note">{% translate "Hours and percentages have one decimal. Absences count once a day is over; a day without a planned shift is never an absence." %}</p>
 </section>
