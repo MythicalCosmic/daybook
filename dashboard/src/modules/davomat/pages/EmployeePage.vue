@@ -23,6 +23,7 @@ import UiButton from "@/components/UiButton.vue";
 import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
 import UserAvatar from "@/components/UserAvatar.vue";
+import { formatPhone } from "@/lib/format";
 import { useFormat } from "@/lib/useFormat";
 import { usePageTitle } from "@/lib/usePageTitle";
 import { useCan } from "@/lib/usePermission";
@@ -75,7 +76,7 @@ const facts = computed<Fact[]>(() => {
   const where = branchNames(row.branch_ids, company.current?.branches ?? []);
   return [
     { id: "branches", label: t("davomat.employee.fact.branches"), value: where.join(", ") || "—" },
-    { id: "phone", label: t("davomat.employee.fact.phone"), value: row.phone || "—", href: row.phone ? `tel:${row.phone.replace(/[^\d+]/g, "")}` : undefined },
+    { id: "phone", label: t("davomat.employee.fact.phone"), value: formatPhone(row.phone) || "—", href: row.phone ? `tel:${row.phone.replace(/[^\d+]/g, "")}` : undefined },
     { id: "hired", label: t("davomat.employee.fact.hired"), value: row.hire_date ? fmt.day(row.hire_date) : "—" },
     { id: "schedule", label: t("davomat.employee.fact.schedule"), value: row.schedule?.name ?? t("davomat.employee.fact.noSchedule") },
   ];

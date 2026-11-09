@@ -110,9 +110,20 @@ export function isImportColumn(value: string): value is ImportColumn {
   return (IMPORT_COLUMNS as readonly string[]).includes(value);
 }
 
-export function importTemplate(example: readonly string[]): string {
+/**
+ * The template's header words, in the person's language: words the server's import knows in any
+ * language (`apps/davomat/importing.py` SYNONYMS, matched without case and spaces), so the file
+ * comes back in whatever language it was made.
+ */
+export const IMPORT_HEADERS: Record<"uz" | "ru" | "en", Record<ImportColumn, string>> = {
+  en: { first_name: "First name", last_name: "Last name", phone: "Phone", position: "Position", department: "Department", branch: "Branch", face_number: "Face ID number", hire_date: "Hire date" },
+  uz: { first_name: "Ism", last_name: "Familiya", phone: "Telefon", position: "Lavozim", department: "Bo‘lim", branch: "Filial", face_number: "Face ID raqami", hire_date: "Ishga kirgan sana" },
+  ru: { first_name: "Имя", last_name: "Фамилия", phone: "Телефон", position: "Должность", department: "Отдел", branch: "Филиал", face_number: "Номер Face ID", hire_date: "Дата приема" },
+};
+
+export function importTemplate(example: readonly string[], language: "uz" | "ru" | "en" = "en"): string {
   const quote = (value: string) => (/[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value);
-  return `﻿${IMPORT_COLUMNS.join(",")}\n${example.map(quote).join(",")}\n`;
+  return `﻿${IMPORT_COLUMNS.map((column) => IMPORT_HEADERS[language][column]).join(",")}\n${example.map(quote).join(",")}\n`;
 }
 
 // ─── The photo cropper's arithmetic (frame pixels; the image's top-left corner at x, y) ────────

@@ -8,6 +8,7 @@ import {
   coverScale,
   FACE_NUMBER,
   hoursOf,
+  IMPORT_HEADERS,
   importTemplate,
   IMPORT_COLUMNS,
   initials,
@@ -65,10 +66,12 @@ describe("months", () => {
 });
 
 describe("the import template", () => {
-  it("has the columns the server reads and quotes what needs it", () => {
+  it("has the columns the server reads, in the person's language, and quotes what needs it", () => {
     const csv = importTemplate(["Aziza", "Karimova", "+998", "Sales, North", "", "", "00000002"]);
     const [header, row] = csv.replace("﻿", "").trim().split("\n");
-    expect(header).toBe(IMPORT_COLUMNS.join(","));
+    expect(header).toBe("First name,Last name,Phone,Position,Department,Branch,Face ID number,Hire date");
+    expect(importTemplate([], "uz").split("\n")[0]).toBe("﻿Ism,Familiya,Telefon,Lavozim,Bo‘lim,Filial,Face ID raqami,Ishga kirgan sana");
+    expect(Object.keys(IMPORT_HEADERS.ru)).toEqual([...IMPORT_COLUMNS]);
     expect(row).toBe('Aziza,Karimova,+998,"Sales, North",,,00000002');
     expect(csv.startsWith("﻿")).toBe(true);
   });

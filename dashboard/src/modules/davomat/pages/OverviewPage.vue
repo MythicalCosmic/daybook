@@ -40,7 +40,7 @@ const canAddPeople = useCan("members.manage");
 const branches = computed(() => company.current?.branches ?? []);
 const filter = computed<number[]>({ get: () => company.branchFilter, set: (ids) => company.setBranchFilter(ids) });
 
-const board = useBoard(filter);
+const board = useBoard(filter, today);
 const status = useTerminalStatus();
 const scans = useTodayScans(computed(() => ({ date: today.value, branch: filter.value })));
 
@@ -210,7 +210,7 @@ const clock = computed(() => fmt.instant(new Date(now.value), "time"));
         :retry="() => scans.refetch()"
       />
       <div class="order-1 flex min-w-0 flex-col gap-5 md:gap-6 lg:order-2">
-        <AttentionList :rows="attention" :title="attentionTitle" :loading="boardLoading" :attendance-link="attendanceLink" />
+        <AttentionList :rows="attention" :title="attentionTitle" :photos="photos" :loading="boardLoading" :attendance-link="attendanceLink" />
         <HereNow :rows="inside" :photos="photos" :loading="boardLoading" />
       </div>
     </div>

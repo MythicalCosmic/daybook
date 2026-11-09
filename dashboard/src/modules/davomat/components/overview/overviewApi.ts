@@ -100,17 +100,18 @@ const MODULE = "davomat";
 /** A status colour: a face's ring, a chip. */
 export type FaceTone = "success" | "warning" | "danger" | "info" | "primary" | "neutral";
 
-export const getBoard = (cid: number, branch: number[], signal?: AbortSignal) =>
-  http.get<Board>(ownerPath(cid, "attendance/board/"), { branch: branch.length ? branch : undefined }, { signal });
+export const getBoard = (cid: number, branch: number[], signal?: AbortSignal, date?: string) =>
+  http.get<Board>(ownerPath(cid, "attendance/board/"), { branch: branch.length ? branch : undefined, date }, { signal });
 export const getTerminalStatus = (cid: number, signal?: AbortSignal) => http.get<TerminalStatus>(ownerPath(cid, "faceid/status/"), undefined, { signal });
 export const getScans = (cid: number, params: { date?: string; branch?: number[]; member?: number; page_size?: number }, signal?: AbortSignal) =>
   http.get<Page<Scan>>(ownerPath(cid, "faceid/events/"), { ...params, branch: params.branch?.length ? params.branch : undefined }, { signal });
 
-export function useBoard(branch: MaybeRefOrGetter<number[]>) {
+/** The day board; `date` (company-local) keeps it on the same day as the feed beside it. */
+export function useBoard(branch: MaybeRefOrGetter<number[]>, date: MaybeRefOrGetter<string | undefined> = undefined) {
   const cid = useCompanyId();
   return useQuery({
-    queryKey: computed(() => qk(cid.value, MODULE, "board", { branch: toValue(branch) })),
-    queryFn: ({ signal }) => getBoard(cid.value, toValue(branch), signal),
+    queryKey: computed(() => qk(cid.value, MODULE, "board", { branch: toValue(branch), date: toValue(date) })),
+    queryFn: ({ signal }) => getBoard(cid.value, toValue(branch), signal, toValue(date)),
     enabled: computed(() => cid.value > 0),
     placeholderData: keepPreviousData,
     refetchInterval: 30_000,

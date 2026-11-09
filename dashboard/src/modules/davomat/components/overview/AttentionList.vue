@@ -13,7 +13,8 @@ import { useCompanyStore } from "@/stores/company";
 import FaceThumb from "./FaceThumb.vue";
 import type { BoardRow, FaceTone } from "./overviewApi";
 
-const props = withDefaults(defineProps<{ rows: BoardRow[]; title: string; loading?: boolean; limit?: number; attendanceLink?: string | null }>(), {
+const props = withDefaults(defineProps<{ rows: BoardRow[]; title: string; photos?: Map<number, string>; loading?: boolean; limit?: number; attendanceLink?: string | null }>(), {
+  photos: () => new Map(),
   loading: false,
   limit: 7,
   attendanceLink: null,
@@ -60,7 +61,7 @@ const link = (row: BoardRow) => `/c/${company.currentId}/team/${row.member.id}`;
     <ul v-else class="flex flex-col p-1.5">
       <li v-for="item in shown" :key="item.row.member.id">
         <RouterLink :to="link(item.row)" class="pressable flex items-center gap-3 rounded-[12px] px-2.5 py-2 hover:bg-highlight">
-          <FaceThumb :src="item.row.member.photo_url" :name="item.row.member.name" :size="34" :tone="item.chip.tone" />
+          <FaceThumb :src="item.row.member.photo_url ?? photos.get(item.row.member.id)" :name="item.row.member.name" :size="34" :tone="item.chip.tone" />
           <span class="min-w-0 flex-1">
             <span class="block truncate text-sm font-semibold text-fg">{{ item.row.member.name }}</span>
             <span class="block truncate text-xs text-muted">

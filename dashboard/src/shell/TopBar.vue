@@ -74,6 +74,8 @@ function rowOf(module: DashboardModule, path: string, base: string): NavRowSpec 
   return best?.row ?? rows[0] ?? { key: module.id, title: module.title, group: module.group, items: moduleNavItems(module) };
 }
 
+const davomat = isDavomat();
+
 const crumbs = computed<Crumb[]>(() => {
   const module = findModule(route.matched.map((r) => r.meta.module).find(Boolean));
   if (!module) {
@@ -84,7 +86,8 @@ const crumbs = computed<Crumb[]>(() => {
   const base = `/c/${Array.isArray(companyId) ? companyId[0] : companyId}`;
   const row = rowOf(module, route.path, base);
   const first = row.items[0];
-  const list: Crumb[] = [{ label: t(`shell.group.${row.group}`) }];
+  // Davomat's sidebar has no group headings: its crumbs start at the row (Team › Departments).
+  const list: Crumb[] = davomat ? [] : [{ label: t(`shell.group.${row.group}`) }];
   const moduleTitle = t(row.title);
   list.push({ label: moduleTitle, to: first ? `${base}/${first.to}`.replace(/\/$/, "") : base });
   const pageTitle = [...route.matched].reverse().find((r) => r.meta.title)?.meta.title;
@@ -92,11 +95,10 @@ const crumbs = computed<Crumb[]>(() => {
   const named = pageTitleFor(route);
   if (named) list.push({ label: named });
   else if (pageTitle && t(pageTitle) !== moduleTitle) list.push({ label: t(pageTitle) });
-  return row.group === "overview" ? list.slice(1) : list;
+  return row.group === "overview" && !davomat ? list.slice(1) : list;
 });
 
 const user = computed(() => session.me?.user ?? null);
-const davomat = isDavomat();
 const hasSessionsPage = computed(() => {
   const id = route.params.companyId;
   if (!id || davomat) return false;

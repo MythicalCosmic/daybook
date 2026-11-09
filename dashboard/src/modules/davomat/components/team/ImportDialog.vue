@@ -26,7 +26,7 @@ import { useImport } from "./teamApi";
 
 const open = defineModel<boolean>("open", { default: false });
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const fmt = useFormat();
 const refresh = useRefresh();
 const run = useImport();
@@ -109,7 +109,8 @@ function template(): void {
     "00000002",
     "2025-03-01",
   ];
-  saveBlob(new Blob([importTemplate(example)], { type: "text/csv;charset=utf-8" }), "employees-template.csv");
+  const language = locale.value === "ru" || locale.value === "en" ? locale.value : "uz";
+  saveBlob(new Blob([importTemplate(example, language)], { type: "text/csv;charset=utf-8" }), "employees-template.csv");
 }
 
 const columnLabels = computed(() => IMPORT_COLUMNS.map((column) => t(`davomat.team.import.column.${column}`)));

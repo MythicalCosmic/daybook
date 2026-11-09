@@ -22,6 +22,7 @@ import UiBadge from "@/components/UiBadge.vue";
 import UiButton from "@/components/UiButton.vue";
 import { useDataTable } from "@/components/useDataTable";
 import UserAvatar from "@/components/UserAvatar.vue";
+import { formatPhone } from "@/lib/format";
 import { useFormat } from "@/lib/useFormat";
 import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useCan } from "@/lib/usePermission";
@@ -212,7 +213,7 @@ async function exportList(): Promise<void> {
             <span v-if="row.source === 'terminal' && row.status === 'active'" class="flex items-center gap-1 truncate text-xs font-medium text-info" :title="t('davomat.team.fromTerminalHint')" data-from-terminal
               ><ScanFace :size="12" class="shrink-0" aria-hidden="true" />{{ t("davomat.team.fromTerminal") }}</span
             >
-            <span v-else class="block truncate text-xs tabular-nums text-muted">{{ row.phone || (row.is_user ? t("davomat.team.alsoUser") : "") }}</span>
+            <span v-else class="block truncate text-xs tabular-nums text-muted">{{ formatPhone(row.phone) || (row.is_user ? t("davomat.team.alsoUser") : "") }}</span>
           </span>
         </div>
       </template>
