@@ -16,6 +16,12 @@ export const routes: RouteRecordRaw[] = [
     ],
   },
   {
+    path: "knowledge/topics",
+    name: "knowledge.topics",
+    component: () => import("./pages/TopicsPage.vue"),
+    meta: { title: "knowledge.topics.title", perm: ["knowledge.manage", "learning.manage"] },
+  },
+  {
     path: "knowledge/new",
     name: "knowledge.new",
     component: () => import("./pages/PageEditor.vue"),

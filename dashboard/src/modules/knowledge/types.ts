@@ -71,6 +71,10 @@ export interface PageRow {
   updated_at: string;
   updated_by: KbPerson | null;
   excerpt: string;
+  /** Topics the page is about (docs/PLAN-LEARNING.md §2.5). */
+  topics?: { id: number; name: string; color: string }[];
+  /** People who opened it (managers' lists only), else null. */
+  opened?: number | null;
   /** Who read the current version, out of the people it is for (managers only, published pages). */
   read: ReadCount | null;
 }
@@ -113,6 +117,7 @@ export interface PageCreateInput {
   require_ack?: boolean;
   publish?: boolean;
   notify?: boolean;
+  topic_ids?: number[];
 }
 
 export interface PageSaveInput {
@@ -124,6 +129,7 @@ export interface PageSaveInput {
   base_version?: number | null;
   reread?: boolean;
   notify?: boolean;
+  topic_ids?: number[];
 }
 
 export interface PageVersion {
@@ -142,15 +148,27 @@ export interface PageVersionDetail extends PageVersion {
 
 export type ReaderStatus = "read" | "outdated" | "unread";
 
+/** How someone read a page (docs/PLAN-LEARNING.md §4.1): visits, time, how far down. */
+export interface ReaderView {
+  opened: boolean;
+  visits: number;
+  seconds: number;
+  scrolled: number;
+  version: number | null;
+  first_at: string | null;
+  last_at: string | null;
+}
+
 export interface Reader {
   member: KbPerson & { position: string | null; branch: string | null };
   status: ReaderStatus;
   version: number | null;
   at: string | null;
+  view?: ReaderView;
 }
 
 export interface Readers {
-  counts: Record<ReaderStatus, number>;
+  counts: Record<ReaderStatus, number> & { opened?: number };
   results: Reader[];
 }
 
