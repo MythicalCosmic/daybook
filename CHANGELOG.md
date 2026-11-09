@@ -15,6 +15,14 @@
   group posts, how long snapshots are kept.
 - **The managers' summary of the day** in Telegram at the evening report time: who came, who was
   late and by how much, who is missing without leave, who is still in.
+- **Attendance › Today** shows who is in the building now as faces, and the latest scans; the
+  timesheet exports as form **T-13** too.
+
+### Fixes
+- A terminal connected for the first time sends its whole stored history first (years of
+  scans): those scans are now skipped quietly (nothing stored, no attendance, no messages) and the
+  terminal's page shows how many; a scan that arrives late keeps its own time and sends nothing.
+- Terminals whose firmware starts HTTPS without naming the site get the site's certificate.
 
 ## 0.5.1 — 2026-11-09
 

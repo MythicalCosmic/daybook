@@ -5,6 +5,7 @@
  * permissions. Pages and the API load on first use.
  */
 import { ScanFace, UserPlus } from "@lucide/vue";
+import { defineAsyncComponent } from "vue";
 
 import { defineModule } from "@/core/modules";
 import { counter } from "@/core/pulse";
@@ -49,6 +50,9 @@ export default defineModule({
   ],
   deepLinks: {
     faceid: () => "faceid",
+  },
+  extensions: {
+    "attendance.today.faces": [defineAsyncComponent(() => import("./components/TodayFacePanel.vue"))],
   },
   messages: (language) => import(`./i18n/${language}.json`),
 });

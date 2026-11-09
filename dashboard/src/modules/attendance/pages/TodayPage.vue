@@ -13,6 +13,7 @@ import DatePicker from "@/components/DatePicker.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import ExportButton from "@/components/ExportButton.vue";
+import ExtensionSlot from "@/components/ExtensionSlot.vue";
 import IconButton from "@/components/IconButton.vue";
 import KpiStrip from "@/components/KpiStrip.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
@@ -38,7 +39,6 @@ const MapView = defineAsyncComponent(() => import("@/components/MapView.vue"));
 const PersonMonth = defineAsyncComponent(() => import("../components/PersonMonth.vue"));
 const SettingsForm = defineAsyncComponent(() => import("../components/SettingsForm.vue"));
 // Loaded only for companies that run Face ID.
-const TodayFacePanel = defineAsyncComponent(() => import("@/modules/faceid/components/TodayFacePanel.vue"));
 
 const { t } = useI18n();
 const fmt = useFormat();
@@ -186,7 +186,7 @@ const columnLabel = (state: BoardState) => t(`attendance.state.${state}`);
       <KpiStrip v-if="data.people.length && !unplanned" :items="kpis" :columns="5" phone="compact" />
 
       <!-- Face ID terminals (their own module): who is in the building now, as faces, and the latest scans. -->
-      <TodayFacePanel v-if="isToday && company.enabled('face_id')" />
+      <ExtensionSlot v-if="isToday" name="attendance.today.faces" :context="{ companyId: company.current?.id }" />
 
       <EmptyState
         v-if="!data.people.length || unplanned"

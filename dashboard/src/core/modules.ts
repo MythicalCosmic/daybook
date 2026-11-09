@@ -138,6 +138,8 @@ export const EXTENSION_POINTS = [
   "learning.person.panels",
   /** Learning's overview, after compliance: the tutor's suggestions and weakest topics (Q2), the top learners (R) (context: companyId). */
   "learning.overview.cards",
+  /** Attendance › Today, under the numbers: Face ID's who is in the building now and the latest scans (context: companyId). */
+  "attendance.today.faces",
 ] as const;
 
 export type ExtensionPoint = (typeof EXTENSION_POINTS)[number];
