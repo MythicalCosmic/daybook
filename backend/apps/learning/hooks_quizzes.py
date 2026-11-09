@@ -4,6 +4,7 @@ Imported by `hooks.py`; register a function only once it exists (inbox kinds and
 pulse keys, search, streams, file checks, setup steps, company facts, signal receivers).
 """
 
+from django.db.models.signals import pre_delete
 from django.utils.translation import gettext_lazy as _
 
 from apps.audit import registry as audit_registry
@@ -11,7 +12,9 @@ from apps.console import registry
 from apps.console.perms import AnyOf
 from apps.core.files import register_file_check
 from apps.inbox.registry import register_action, register_kind
+from apps.knowledge.models import Topic
 from apps.learning import checks, daily, notify_quizzes, quizzes, suggestions
+from apps.learning.models import Course
 from apps.members.permissions import Perm
 
 FEATURE = "learning"
@@ -26,6 +29,15 @@ registry.register_pulse(suggestions.PULSE_KEY, perm=READ, count=None, feature=FE
 
 for model_name in ("question", "quiz", "regularcheck", "tutorsuggestion"):
     audit_registry.register_target(model_name, Perm.LEARNING_MANAGE)
+
+# A topic or a course that is deleted resolves its open suggestions (kept, as done) before
+# their links are emptied.
+for target in (Topic, Course):
+    pre_delete.connect(
+        suggestions.resolve_removed,
+        sender=target,
+        dispatch_uid=f"learning.suggestions.removed.{target.__name__.lower()}",
+    )
 
 # The bot's own message (apps.learning.daily): no notification row; the kind lets a person turn
 # the Telegram copy off in their notification settings (the app's card stays).

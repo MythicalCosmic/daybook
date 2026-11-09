@@ -353,6 +353,18 @@ def _decide(row: TutorSuggestion, state: str, action: str, by: Membership | None
     transaction.on_commit(lambda: pulse.bump(company_id, PULSE_KEY))
 
 
+def resolve_removed(sender, instance, **kwargs) -> None:
+    """`pre_delete` of a topic or a course: its open suggestions are resolved first (their
+    reason went), so emptying their link never makes two open ones alike: one open suggestion
+    per person, kind, topic and course, and the constraint counts two empty links as equal (a
+    reset of the demo deleted the topics and met it)."""
+    field = "course" if sender is Course else "topic"
+    now = timezone.now()
+    TutorSuggestion.objects.filter(**{field: instance}, state=OPEN).update(
+        state=State.DONE, decided_at=now, updated_at=now
+    )
+
+
 @transaction.atomic
 def accept(row: TutorSuggestion, *, by: Membership | None) -> TutorSuggestion:
     """Take the suggestion: an `assign` one assigns its course (Q1's `assign`, source tutor);

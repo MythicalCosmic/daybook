@@ -6,8 +6,9 @@ from datetime import timedelta
 import pytest
 from django.utils import timezone
 
+from apps.knowledge.models import Topic
 from apps.learning import queries, suggestions
-from apps.learning.models import AnswerLog, TutorSuggestion
+from apps.learning.models import AnswerLog, Course, TutorSuggestion
 from apps.learning.queries import Compliance, LatePerson
 from apps.learning.tests.factories import CourseFactory
 from apps.learning.tests.q2.fixtures import person, question, topic
@@ -48,6 +49,26 @@ def covering(monkeypatch):
         queries, "courses_for_topic", lambda company, topic_id: found.get(topic_id, [])
     )
     return found
+
+
+def test_a_deleted_topic_or_course_resolves_its_open_suggestions(pharmacy, staff):
+    """Deleting a topic or a course empties the suggestions' link; two open ones of one person
+    would then be alike under the one-open-suggestion constraint (empty links count as equal),
+    as the demo's reset found. They are resolved first and kept."""
+    cold, rx = topic(pharmacy), topic(pharmacy, "Retseptli dorilar")
+    first, second = CourseFactory(company=pharmacy), CourseFactory(company=pharmacy)
+    for row, course in ((cold, None), (rx, None), (cold, first), (cold, second)):
+        TutorSuggestion.objects.create(
+            company=pharmacy, membership=staff, kind="assign", topic=row, course=course
+        )
+    Course.objects.filter(pk__in=[first.pk, second.pk]).delete()
+    assert kinds(pharmacy) == {
+        (staff.pk, "assign", cold.pk, None),
+        (staff.pk, "assign", rx.pk, None),
+    }
+    Topic.objects.filter(pk__in=[cold.pk, rx.pk]).delete()
+    assert kinds(pharmacy) == set()
+    assert TutorSuggestion.objects.filter(state="done", decided_at__isnull=False).count() == 4
 
 
 def test_weak_in_a_covered_topic_assign_the_course(pharmacy, staff, covering):
