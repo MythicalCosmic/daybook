@@ -29,6 +29,17 @@ export type ScanKind = "person" | "stranger" | "other";
 export type ScanMethod = "face" | "fingerprint" | "card" | "other" | "";
 export type TelegramMode = "off" | "arrivals" | "every_scan";
 
+/** The stored history a terminal uploads when first pointed at Daybook: skipped, only counted. */
+export interface DeviceHistory {
+  skipped: number;
+  /** The newest skipped scan's time. */
+  until: string | null;
+  /** Old scans are still coming; live scans start after them. */
+  active: boolean;
+  /** The terminal's clock is so far behind that its live scans look old too (and are skipped). */
+  clock_hides: boolean;
+}
+
 export interface Device {
   id: number;
   name: string;
@@ -49,6 +60,7 @@ export interface Device {
   /** Scans per hour today, 0–23. */
   hourly: number[];
   last_scan: { at: string; name: string; action: ScanAction } | null;
+  history: DeviceHistory;
   created_at: string;
 }
 
@@ -67,7 +79,9 @@ export interface Setup {
   http: { port: number; url: string };
   https: { port: number; url: string };
   last_event_at: string | null;
+  last_seen_at: string | null;
   last_test_at: string | null;
+  history: DeviceHistory;
 }
 
 export interface RecordBrief {

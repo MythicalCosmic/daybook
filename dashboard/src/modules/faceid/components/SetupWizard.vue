@@ -7,7 +7,7 @@
  * event arrives (the setup values are polled). "Simulate a face" shows the whole flow before the
  * terminal is set up; it never counts. Opened for an existing terminal, it starts at step 2.
  */
-import { Check, CircleCheck, Copy, FlaskConical, ScanFace } from "@lucide/vue";
+import { Check, CircleCheck, Copy, FlaskConical, History, ScanFace } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -22,8 +22,11 @@ import { toast } from "@/components/useToast";
 import WizardSteps from "@/components/WizardSteps.vue";
 import { useCompanyId } from "@/stores/company";
 
+import { useFormat } from "@/lib/useFormat";
+
 import { createDevice, simulate, useRefresh, useSetup } from "../api";
 import type { Device, Direction } from "../types";
+import HistoryNote from "./HistoryNote.vue";
 
 const open = defineModel<boolean>("open", { default: false });
 const props = withDefaults(defineProps<{ device?: Device | null }>(), { device: null });
@@ -61,6 +64,14 @@ watch(
 const waiting = computed(() => open.value && step.value === "first");
 const setup = useSetup(deviceId, waiting);
 const connected = computed(() => !!setup.data.value?.last_event_at);
+// The terminal reached us but sends its stored history first: live scans come after it.
+const history = computed(() => setup.data.value?.history);
+const historyComing = computed(() => !!history.value?.active && !history.value.clock_hides);
+const fmt = useFormat();
+const historyCounts = computed(() => ({
+  n: fmt.number(history.value?.skipped ?? 0),
+  date: history.value?.until ? fmt.instant(history.value.until, "date") : "—",
+}));
 watch(connected, (value, before) => {
   if (value && !before && waiting.value) refresh();
 });
@@ -201,12 +212,19 @@ const fields = computed(() => {
             <p class="text-lg font-semibold text-fg">{{ t("faceid.wizard.connected") }}</p>
             <p class="max-w-sm text-sm text-muted">{{ t("faceid.wizard.connectedBody") }}</p>
           </div>
+          <div v-else-if="historyComing" key="history" class="flex flex-col items-center gap-3">
+            <span class="faceid-wait relative grid size-20 place-items-center rounded-full bg-info-soft text-info"><History :size="36" /></span>
+            <p class="text-lg font-semibold text-fg">{{ t("faceid.wizard.history") }}</p>
+            <p class="max-w-sm text-sm text-muted">{{ t("faceid.history.sending") }}</p>
+            <p class="text-sm font-medium tabular-nums text-fg" aria-live="polite">{{ t("faceid.history.skipped", historyCounts) }}</p>
+          </div>
           <div v-else key="wait" class="flex flex-col items-center gap-3">
             <span class="faceid-wait relative grid size-20 place-items-center rounded-full bg-accent-soft text-accent-fg"><ScanFace :size="36" /></span>
             <p class="text-lg font-semibold text-fg">{{ t("faceid.wizard.waiting") }}</p>
             <p class="max-w-sm text-sm text-muted">{{ t("faceid.wizard.waitingBody") }}</p>
           </div>
         </Transition>
+        <HistoryNote v-if="history && !historyComing" class="max-w-md" :history="history" />
         <div v-if="tested && !connected" class="flex items-center gap-2 rounded-[10px] bg-info-soft px-3 py-2 text-sm text-info">
           <FlaskConical :size="15" aria-hidden="true" />
           <span>{{ t("faceid.wizard.tested") }}</span>

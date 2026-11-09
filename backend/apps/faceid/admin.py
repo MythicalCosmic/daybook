@@ -54,6 +54,9 @@ class FaceDeviceAdmin(admin.ModelAdmin):
         "last_event_at",
         "clock_offset_s",
         "clock_checked_at",
+        "history_skipped",
+        "history_until",
+        "history_seen_at",
         "created_by",
         "created_at",
     )
@@ -76,6 +79,9 @@ class FaceDeviceAdmin(admin.ModelAdmin):
                     "last_event_at",
                     "clock_offset_s",
                     "clock_checked_at",
+                    "history_skipped",
+                    "history_until",
+                    "history_seen_at",
                     "created_by",
                     "created_at",
                 )
