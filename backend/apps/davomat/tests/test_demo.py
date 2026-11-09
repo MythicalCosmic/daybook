@@ -1,6 +1,6 @@
 """The Davomat demo (`manage.py davomat_demo`, apps/davomat/demo.py)."""
 
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timedelta
 from io import StringIO
 from zoneinfo import ZoneInfo
 
@@ -89,3 +89,43 @@ def test_the_command_never_removes_a_real_organization(org):
         call_command("davomat_demo", "--reset", stdout=StringIO())
 
     assert Company.objects.get() == org.company
+
+
+def test_a_live_demo_fills_in_as_the_morning_goes(davomat, monkeypatch):
+    early = datetime.combine(NOW.date(), time(8, 30), tzinfo=TZ)
+    with demo_time.quiet():
+        built = demo.build(early, live=True)
+    company = built.company
+    today = FaceEvent.objects.filter(company=company, event_at__gte=early - timedelta(hours=3))
+    assert not today.exists()  # nothing of this morning yet
+    assert not Membership.objects.filter(company=company, first_name="Ravshan").exists()
+    waiting = len(built.pending)
+    assert waiting > 30 and [row[0] for row in built.pending] == sorted(
+        row[0] for row in built.pending
+    )
+
+    clock = [early]
+    monkeypatch.setattr("django.utils.timezone.now", lambda: clock[-1])
+
+    def sleep(seconds):
+        clock.append(clock[-1] + timedelta(seconds=seconds))
+
+    lines = []
+    with demo_time.quiet():
+        assert demo.run_live(built, say=lines.append, sleep=sleep) == waiting
+
+    assert today.count() == waiting and len(lines) == waiting
+    assert lines[0].startswith("08:") and "Bosh ofis" in lines[0]
+    # The newcomer came today and the terminal made him an employee.
+    newcomer = Membership.objects.get(company=company, first_name="Ravshan")
+    assert Employee.objects.get(membership=newcomer).source == Employee.Source.TERMINAL
+    # By the evening everyone has left but the newcomer (he never scans out); the terminals
+    # kept their heartbeat.
+    people = list(queries.employees(company, branch_ids=None))
+    found = queries.today_states(company, people, clock[-1])
+    still_in = [p.first_name for p in people if (found.get(p.pk) or {}).get("state") == "in"]
+    assert "out" in {state["state"] for state in found.values() if state}
+    assert still_in in ([], ["Ravshan"])
+    assert set(
+        FaceDevice.objects.filter(company=company).values_list("last_heartbeat_at", flat=True)
+    ) == {clock[-1]}

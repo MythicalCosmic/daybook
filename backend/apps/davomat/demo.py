@@ -5,15 +5,22 @@ so attendance, the live feed and the reports all have data. This morning a newco
 terminal knows but nobody added (number 00000016, "Ravshan") becomes an employee by himself
 (`auto_create_employees`), and an unknown face tries the door.
 
+`live=True` (`davomat_demo --live`) keeps today's scans still to come, and `run_live` posts each
+one when its moment comes, with a heartbeat from both terminals every minute: a demo built before
+work starts fills in as the morning goes, the way real terminals would make it.
+
 No `seed` here: Daybook's `seed_demo` leaves this module alone.
 """
 
 from __future__ import annotations
 
 import random
+import time as clock_time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta
 
+from django.db import close_old_connections, connection
 from django.utils import timezone
 
 from apps.attendance import clock
@@ -81,10 +88,21 @@ class Built:
     scanning: list[tuple] = field(default_factory=list)
     scans: int = 0
     notes: list[str] = field(default_factory=list)
+    # live: today's scans still to come, (moment, branch name, number, name on the terminal),
+    # in time order, and each terminal's next serial numbers.
+    pending: list[tuple] = field(default_factory=list)
+    serials: dict = field(default_factory=dict)
 
 
-def build(now: datetime | None = None, *, username: str = "admin", password: str = PASSWORD):
-    """The whole demo, as of `now`; the organization must not exist yet."""
+def build(
+    now: datetime | None = None,
+    *,
+    username: str = "admin",
+    password: str = PASSWORD,
+    live: bool = False,
+):
+    """The whole demo, as of `now`; the organization must not exist yet. `live`: today's scans
+    after `now` wait in `pending` for `run_live` (otherwise they never happen)."""
     now = now or timezone.now()
     with demo_time.moment(now - timedelta(days=40)):
         owner = services.setup_organization(
@@ -162,7 +180,7 @@ def build(now: datetime | None = None, *, username: str = "admin", password: str
         timeoff.record_time_off(
             people[4], by=owner, first_day=today, last_day=today + timedelta(days=2), reason="To‘y"
         )
-    _scan_the_week(built, today, now)
+    _scan_the_week(built, today, now, live=live)
     with demo_time.moment(now):
         attendance.auto_close(company, now)
         attendance.mark_absences(company, now)
@@ -241,18 +259,62 @@ def _finish_terminals(devices: dict[str, FaceDevice], now: datetime) -> None:
     )
 
 
-def _post(built: Built, device: FaceDevice, number: str, name: str, at: datetime, serial: int):
-    """One scan, as the terminal posts it, handled by Face ID as it arrives a second later."""
+def _post(
+    built: Built,
+    device: FaceDevice,
+    number: str,
+    name: str,
+    at: datetime,
+    serial: int,
+    *,
+    live: bool = False,
+):
+    """One scan, as the terminal posts it, handled by Face ID as it arrives a second later
+    (`live`: now, on the real clock, with everything a scan sets off)."""
     data = hikvision_sample.event_json(device, number=number, name=name, serial=serial, at=at)
     if not number:
         data["AccessControllerEvent"].pop("employeeNoString")
         data["AccessControllerEvent"]["subEventType"] = 76  # an unknown face
     picture = hikvision_sample.silhouette(f"namuna:{number or 'stranger'}")
     content_type, body = hikvision_sample.multipart(data, picture)
-    arrived = at + timedelta(seconds=1)
-    with demo_time.moment(arrived):
-        faceid.receive(device, hikvision.parse(content_type, body), received_at=arrived)
+    if live:
+        device.refresh_from_db()
+        faceid.receive(device, hikvision.parse(content_type, body))
+    else:
+        arrived = at + timedelta(seconds=1)
+        with demo_time.moment(arrived):
+            faceid.receive(device, hikvision.parse(content_type, body), received_at=arrived)
     built.scans += 1
+
+
+def run_live(
+    built: Built,
+    *,
+    say: Callable[[str], None] = lambda text: None,
+    sleep: Callable[[float], None] = clock_time.sleep,
+) -> int:
+    """Today's scans still to come (`build(live=True)`), each when its moment comes; both
+    terminals send a heartbeat every minute meanwhile, so they show online. Returns the number
+    posted. Outside any transaction: each scan reaches the board as it happens."""
+    posted = 0
+    for at, where, number, shown in built.pending:
+        while (left := (at - timezone.now()).total_seconds()) > 0:
+            _heartbeat(built.devices)
+            sleep(min(left, 60))
+        if not connection.in_atomic_block:  # hours apart: a fresh connection if it dropped
+            close_old_connections()
+        _heartbeat(built.devices)
+        _post(built, built.devices[where], number, shown, at, next(built.serials[where]), live=True)
+        posted += 1
+        say(f"{clock.hhmm(built.company, at)} {where}: {shown or '(unknown face)'}")
+    return posted
+
+
+def _heartbeat(devices: dict[str, FaceDevice]) -> None:
+    now = timezone.now()
+    FaceDevice.objects.filter(pk__in=[device.pk for device in devices.values()]).update(
+        last_seen_at=now, last_heartbeat_at=now, clock_checked_at=now
+    )
 
 
 def _newcomer_day(company: Company, today: date, now: datetime) -> date:
@@ -263,11 +325,12 @@ def _newcomer_day(company: Company, today: date, now: datetime) -> date:
     return day - timedelta(days=1) if day.weekday() == 6 else day
 
 
-def _scan_the_week(built: Built, today: date, now: datetime) -> None:
+def _scan_the_week(built: Built, today: date, now: datetime, *, live: bool = False) -> None:
     """Each workday this past week and this morning: everyone in between 08:35 and 09:15 (a
     few late), out after 18:00; someone off sick now and then, someone who forgot to scan out.
     Each morning starts the way the nightly jobs leave it: forgotten check-outs closed and
-    missed shifts marked absent."""
+    missed shifts marked absent. `live`: today's moments after `now` go to `built.pending`, and
+    the newcomer comes today whatever the time."""
     company = built.company
     luck = random.Random(2026)
     serials = {
@@ -276,11 +339,12 @@ def _scan_the_week(built: Built, today: date, now: datetime) -> None:
     }
     for number, day in enumerate(today - timedelta(days=back) for back in range(DAYS_BACK, -1, -1)):
         morning = clock.at(company, day, time(6, 0))
-        if morning >= now:
+        if morning >= now and not (live and day == today):
             break
-        with demo_time.moment(morning):
-            attendance.auto_close(company, morning)
-            attendance.mark_absences(company, morning)
+        if morning < now:  # a live day still to start is left to the nightly jobs
+            with demo_time.moment(morning):
+                attendance.auto_close(company, morning)
+                attendance.mark_absences(company, morning)
         if day.weekday() == 6:
             continue  # Sunday
         moments = []
@@ -296,7 +360,7 @@ def _scan_the_week(built: Built, today: date, now: datetime) -> None:
             moments.append((came, where, terminal_number, shown))
             if not (day == today - timedelta(days=1) and index == 9):  # Nodir forgot
                 moments.append((went, where, terminal_number, shown))
-        if day == _newcomer_day(company, today, now):
+        if day == (today if live else _newcomer_day(company, today, now)):
             # The newcomer the terminal knows, twice; an unknown face at the branch.
             newcomer, name = NEWCOMER
             moments.append((clock.at(company, day, time(8, 47)), OFFICE, newcomer, name))
@@ -305,3 +369,6 @@ def _scan_the_week(built: Built, today: date, now: datetime) -> None:
         for at, where, terminal_number, shown in sorted(moments, key=lambda row: row[0]):
             if at < now:
                 _post(built, built.devices[where], terminal_number, shown, at, next(serials[where]))
+            elif live:
+                built.pending.append((at, where, terminal_number, shown))
+    built.serials = serials

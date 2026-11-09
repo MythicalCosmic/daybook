@@ -3,6 +3,7 @@ screenshots and demos, in a Davomat install that has no organization yet.
 
     EDITION=davomat manage.py davomat_demo [--admin-username admin] [--admin-password …]
     EDITION=davomat manage.py davomat_demo --reset      # replace an earlier Namuna MChJ
+    EDITION=davomat manage.py davomat_demo --reset --live   # then today's scans as they come
 
 `--reset` removes only the demo's own organization (by its name), never a real one.
 """
@@ -35,8 +36,13 @@ class Command(BaseCommand):
         parser.add_argument(
             "--reset", action="store_true", help="Replace an earlier Namuna MChJ demo."
         )
+        parser.add_argument(
+            "--live",
+            action="store_true",
+            help="Then post today's scans still to come, each at its time (runs until the last).",
+        )
 
-    def handle(self, *args, admin_username, admin_password, reset, **options):
+    def handle(self, *args, admin_username, admin_password, reset, live=False, **options):
         if not conf.is_on():
             raise CommandError("Set EDITION=davomat first: this demo is the Davomat edition's.")
         password = admin_password or os.environ.get(PASSWORD_ENV, "") or demo.PASSWORD
@@ -53,7 +59,7 @@ class Command(BaseCommand):
                 if existing is not None:
                     self._remove(existing)
                 with demo_time.run_hooks():
-                    built = demo.build(username=admin_username, password=password)
+                    built = demo.build(username=admin_username, password=password, live=live)
         except FieldError as exc:
             raise CommandError(f"{exc.field}: {' '.join(exc.messages)}") from exc
         self.stdout.write(
@@ -65,6 +71,14 @@ class Command(BaseCommand):
             )
         )
         self.stdout.write(f"Sign in as {built.owner.user.username} or nodira, password {password}")
+        if live:
+            self._say(f"Live: {len(built.pending)} scans still to come today, each at its time.")
+            posted = demo.run_live(built, say=self._say)
+            self._say(f"Live: the day is done ({posted} scans).")
+
+    def _say(self, text: str) -> None:
+        self.stdout.write(text)
+        self.stdout.flush()
 
     def _remove(self, company: Company) -> None:
         """The demo organization with every row it has, and the accounts only it had."""
