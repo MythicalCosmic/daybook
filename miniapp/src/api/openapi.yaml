@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: 911 Trello API
-  version: 0.5.0
+  version: 0.5.2
   description: API for the employee mini app and the owner dashboard.
 paths:
   /api/v1/auth/telegram/:
@@ -1585,6 +1585,43 @@ paths:
               schema:
                 $ref: '#/components/schemas/KnowledgeEmployeeAck'
           description: ''
+  /api/v1/companies/{company_id}/knowledge/pages/{id}/view/:
+    post:
+      operationId: v1_companies_knowledge_pages_view_create
+      description: |-
+        The reader reports while the page is in front of me: on open, every 15 s, on leaving
+        (docs/PLAN-LEARNING.md §4.1). Nobody else ever sees my views but managers of the page.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KnowledgeViewReportRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/KnowledgeViewReportRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/KnowledgeViewReportRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/companies/{company_id}/knowledge/search/:
     get:
       operationId: v1_companies_knowledge_search_list
@@ -1638,6 +1675,436 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/KnowledgeSpaceTree'
+          description: ''
+  /api/v1/companies/{company_id}/learning/:
+    get:
+      operationId: learning_home
+      description: 'My training: what is open (soonest due first), the newest finished,
+        what I may start.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningHome'
+          description: ''
+  /api/v1/companies/{company_id}/learning/assignments/{id}/certificate/:
+    get:
+      operationId: learning_certificate
+      description: My certificate of a finished course, as a PDF (also while my access
+        is paused).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+          description: ''
+  /api/v1/companies/{company_id}/learning/attempts/{id}/:
+    get:
+      operationId: v1_companies_learning_attempts_retrieve
+      description: AttemptPlay while in progress (it has `questions`), AttemptResult
+        once graded (it has `state`). Reading an attempt past its time limit grades
+        it.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningAttemptView'
+          description: ''
+  /api/v1/companies/{company_id}/learning/attempts/{id}/answers/:
+    put:
+      operationId: v1_companies_learning_attempts_answers_update
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LearningSaveAnswerRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LearningSaveAnswerRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LearningSaveAnswerRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/companies/{company_id}/learning/attempts/{id}/finish/:
+    post:
+      operationId: v1_companies_learning_attempts_finish_create
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningAttemptResult'
+          description: ''
+  /api/v1/companies/{company_id}/learning/checks/:
+    get:
+      operationId: v1_companies_learning_checks_list
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LearningCheckCard'
+          description: ''
+  /api/v1/companies/{company_id}/learning/courses/{id}/:
+    get:
+      operationId: learning_course
+      description: 'A course with my steps: done, locked (sequential courses) or open.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningCourseDetail'
+          description: ''
+  /api/v1/companies/{company_id}/learning/courses/{id}/start/:
+    post:
+      operationId: learning_course_start
+      description: Start a course meant for me (or carry on with the one I have).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningAssignmentCard'
+          description: ''
+  /api/v1/companies/{company_id}/learning/daily/:
+    get:
+      operationId: v1_companies_learning_daily_retrieve
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningDaily'
+          description: ''
+  /api/v1/companies/{company_id}/learning/daily/{id}/answer/:
+    post:
+      operationId: v1_companies_learning_daily_answer_create
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LearningDailyAnswerRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LearningDailyAnswerRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LearningDailyAnswerRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningDailyOutcome'
+          description: ''
+  /api/v1/companies/{company_id}/learning/lessons/{id}/:
+    get:
+      operationId: learning_lesson
+      description: |-
+        A lesson to watch: the signed MP4 and poster (6 hours) or the YouTube id, the notes,
+        my progress and, inside a course (`?course=`), its next step.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: course
+        schema:
+          type: integer
+        description: The course it is watched in.
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningLessonPlay'
+          description: ''
+  /api/v1/companies/{company_id}/learning/lessons/{id}/progress/:
+    post:
+      operationId: learning_lesson_progress
+      description: 'The player''s report: every 10 s while playing, on pause, on seek,
+        on leaving.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LearningProgressReportRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LearningProgressReportRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LearningProgressReportRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningProgressResult'
+          description: ''
+  /api/v1/companies/{company_id}/learning/quizzes/{id}/:
+    get:
+      operationId: v1_companies_learning_quizzes_retrieve
+      parameters:
+      - in: query
+        name: assignment
+        schema:
+          type: integer
+        description: The assignment it is taken for.
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: entry
+        schema:
+          type: integer
+        description: The check entry it answers.
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningQuizIntro'
+          description: ''
+  /api/v1/companies/{company_id}/learning/quizzes/{id}/attempts/:
+    post:
+      operationId: v1_companies_learning_quizzes_attempts_create
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LearningStartAttemptRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LearningStartAttemptRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LearningStartAttemptRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningAttemptPlay'
+          description: ''
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningAttemptPlay'
           description: ''
   /api/v1/companies/{company_id}/lifecycle/records/:
     get:
@@ -2517,6 +2984,183 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProjectsTimeEntry'
           description: ''
+        '204':
+          description: No response body
+  /api/v1/companies/{company_id}/recognition/kudos/:
+    get:
+      operationId: recognition_kudos_list
+      parameters:
+      - in: query
+        name: box
+        schema:
+          type: string
+          enum:
+          - given
+          - received
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RecognitionKudos'
+          description: ''
+    post:
+      operationId: recognition_kudos_send
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecognitionSendKudosRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RecognitionSendKudosRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RecognitionSendKudosRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecognitionKudos'
+          description: ''
+  /api/v1/companies/{company_id}/recognition/kudos/colleagues/:
+    get:
+      operationId: recognition_kudos_colleagues
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: include
+        schema:
+          type: integer
+        description: A colleague to list first (to thank them back).
+      - in: query
+        name: q
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecognitionColleagues'
+          description: ''
+  /api/v1/companies/{company_id}/recognition/leaderboard/:
+    get:
+      operationId: recognition_leaderboard
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: period
+        schema:
+          type: string
+          enum:
+          - all
+          - month
+          - week
+      - in: query
+        name: scope
+        schema:
+          type: string
+          enum:
+          - branch
+          - company
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecognitionStaffBoard'
+          description: ''
+  /api/v1/companies/{company_id}/recognition/me/:
+    get:
+      operationId: recognition_me
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecognitionMe'
+          description: ''
+  /api/v1/companies/{company_id}/recognition/seen/:
+    post:
+      operationId: recognition_seen
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecognitionSeenRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RecognitionSeenRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RecognitionSeenRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
         '204':
           description: No response body
   /api/v1/companies/{company_id}/reminder-policies/:
@@ -6117,6 +6761,8 @@ components:
       - unscheduled
       - auto_closed
       - edited
+      - other_branch
+      - missed_entry
       type: string
       description: |-
         * `outside_geofence` - Outside the branch
@@ -6125,6 +6771,8 @@ components:
         * `unscheduled` - No shift planned
         * `auto_closed` - Check-out forgotten
         * `edited` - Edited by a manager
+        * `other_branch` - At another branch
+        * `missed_entry` - Came in without a scan
     AttendanceRecordStatusEnum:
       enum:
       - open
@@ -6834,6 +7482,7 @@ components:
       - recognition
       - assets
       - learning
+      - face_id
       type: string
       description: |-
         * `finance` - Finance
@@ -6846,6 +7495,7 @@ components:
         * `recognition` - Recognition
         * `assets` - Assets and equipment
         * `learning` - Training and quizzes
+        * `face_id` - Face ID terminals
     Company:
       type: object
       properties:
@@ -8908,6 +9558,16 @@ components:
           - $ref: '#/components/schemas/KnowledgeReadCount'
           nullable: true
           readOnly: true
+        topics:
+          type: array
+          items:
+            $ref: '#/components/schemas/KnowledgeTopicRef'
+          readOnly: true
+        opened:
+          type: integer
+          nullable: true
+          description: People who opened it (managers' lists only).
+          readOnly: true
         body:
           type: string
           readOnly: true
@@ -8960,10 +9620,12 @@ components:
       - id
       - links
       - my_ack
+      - opened
       - parent_id
       - read
       - space
       - title
+      - topics
       - updated_at
       - updated_by
     KnowledgePageRow:
@@ -9024,14 +9686,26 @@ components:
           - $ref: '#/components/schemas/KnowledgeReadCount'
           nullable: true
           readOnly: true
+        topics:
+          type: array
+          items:
+            $ref: '#/components/schemas/KnowledgeTopicRef'
+          readOnly: true
+        opened:
+          type: integer
+          nullable: true
+          description: People who opened it (managers' lists only).
+          readOnly: true
       required:
       - archived
       - excerpt
       - id
+      - opened
       - parent_id
       - read
       - space
       - title
+      - topics
       - updated_at
       - updated_by
     KnowledgePerson:
@@ -9161,6 +9835,19 @@ components:
       required:
       - pages
       - space
+    KnowledgeTopicRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        color:
+          type: string
+      required:
+      - color
+      - id
+      - name
     KnowledgeTreeNode:
       type: object
       properties:
@@ -9189,6 +9876,29 @@ components:
       - published
       - require_ack
       - title
+    KnowledgeViewReportRequest:
+      type: object
+      properties:
+        session:
+          type: string
+          minLength: 1
+          description: A random id per opening.
+          maxLength: 40
+        seconds:
+          type: number
+          format: double
+          minimum: 0
+          default: 0.0
+          description: Seconds in front since the last report.
+        scrolled:
+          type: number
+          format: double
+          maximum: 100
+          minimum: 0
+          default: 0.0
+          description: How far down, percent.
+      required:
+      - session
     LanguageEnum:
       enum:
       - uz
@@ -9199,6 +9909,810 @@ components:
         * `uz` - O‘zbekcha
         * `ru` - Русский
         * `en` - English
+    LearningAssignmentCard:
+      type: object
+      properties:
+        id:
+          type: integer
+        state:
+          $ref: '#/components/schemas/LearningAssignmentStateEnum'
+        percent:
+          type: integer
+        steps_done:
+          type: integer
+        steps_total:
+          type: integer
+        due_at:
+          type: string
+          format: date-time
+          nullable: true
+        late:
+          type: boolean
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        certificate_url:
+          type: string
+          nullable: true
+          description: A signed link to the certificate PDF.
+        course:
+          $ref: '#/components/schemas/LearningCourseCard'
+      required:
+      - certificate_url
+      - completed_at
+      - course
+      - due_at
+      - id
+      - late
+      - percent
+      - state
+      - steps_done
+      - steps_total
+    LearningAssignmentStateEnum:
+      enum:
+      - assigned
+      - in_progress
+      - completed
+      - exempt
+      - cancelled
+      type: string
+      description: |-
+        * `assigned` - Not started
+        * `in_progress` - In progress
+        * `completed` - Completed
+        * `exempt` - Exempt
+        * `cancelled` - Cancelled
+    LearningAttemptPlay:
+      type: object
+      properties:
+        id:
+          type: integer
+        quiz:
+          $ref: '#/components/schemas/LearningAttemptQuiz'
+        number:
+          type: integer
+        started_at:
+          type: string
+          format: date-time
+        deadline_at:
+          type: string
+          format: date-time
+          nullable: true
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/LearningQuestionPlay'
+        answers:
+          type: object
+          additionalProperties: {}
+          description: Question id -> the answer saved so far.
+      required:
+      - answers
+      - deadline_at
+      - id
+      - number
+      - questions
+      - quiz
+      - started_at
+    LearningAttemptQuiz:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        emoji:
+          type: string
+        pass_percent:
+          type: integer
+      required:
+      - emoji
+      - id
+      - pass_percent
+      - title
+    LearningAttemptResult:
+      type: object
+      properties:
+        id:
+          type: integer
+        state:
+          $ref: '#/components/schemas/LearningAttemptStateEnum'
+        score:
+          type: number
+          format: double
+        max_score:
+          type: number
+          format: double
+        percent:
+          type: integer
+        passed:
+          type: boolean
+        points:
+          type: integer
+          nullable: true
+          description: Null while recognition is off.
+        retry_at:
+          type: string
+          format: date-time
+          nullable: true
+        course_step_done:
+          type: boolean
+        review:
+          type: array
+          items:
+            $ref: '#/components/schemas/LearningReviewItem'
+          nullable: true
+          description: Null when the quiz never shows a review.
+      required:
+      - course_step_done
+      - id
+      - max_score
+      - passed
+      - percent
+      - points
+      - retry_at
+      - review
+      - score
+      - state
+    LearningAttemptStateEnum:
+      enum:
+      - in_progress
+      - finished
+      - expired
+      - abandoned
+      type: string
+      description: |-
+        * `in_progress` - In progress
+        * `finished` - Graded
+        * `expired` - Time ran out
+        * `abandoned` - Abandoned
+    LearningAttemptView:
+      oneOf:
+      - $ref: '#/components/schemas/LearningAttemptPlay'
+      - $ref: '#/components/schemas/LearningAttemptResult'
+    LearningCheckCard:
+      type: object
+      properties:
+        entry_id:
+          type: integer
+        title:
+          type: string
+        quiz_id:
+          type: integer
+        due_at:
+          type: string
+          format: date-time
+        done:
+          type: boolean
+        passed:
+          type: boolean
+          nullable: true
+      required:
+      - done
+      - due_at
+      - entry_id
+      - passed
+      - quiz_id
+      - title
+    LearningCourseCard:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        emoji:
+          type: string
+        color:
+          type: string
+        description:
+          type: string
+        mandatory:
+          type: boolean
+        steps:
+          type: integer
+          description: How many steps.
+        minutes:
+          type: integer
+          description: About how long the course takes.
+      required:
+      - color
+      - description
+      - emoji
+      - id
+      - mandatory
+      - minutes
+      - steps
+      - title
+    LearningCourseDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        emoji:
+          type: string
+        color:
+          type: string
+        description:
+          type: string
+        mandatory:
+          type: boolean
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/LearningStep'
+        minutes:
+          type: integer
+          description: About how long the course takes.
+        sequential:
+          type: boolean
+        certificate:
+          type: boolean
+        assignment:
+          allOf:
+          - $ref: '#/components/schemas/LearningAssignmentCard'
+          nullable: true
+        can_start:
+          type: boolean
+      required:
+      - assignment
+      - can_start
+      - certificate
+      - color
+      - description
+      - emoji
+      - id
+      - mandatory
+      - minutes
+      - sequential
+      - steps
+      - title
+    LearningDaily:
+      type: object
+      properties:
+        daily:
+          allOf:
+          - $ref: '#/components/schemas/LearningDailyCard'
+          nullable: true
+        streak:
+          type: integer
+          nullable: true
+      required:
+      - daily
+      - streak
+    LearningDailyAnswerRequest:
+      type: object
+      properties:
+        answer:
+          description: 'The answer in its kind''s shape, in the ids shown: single
+            {option}, multi {options: []}, true_false {value: bool}, order {order:
+            []}, match {pairs: {left id: right id}}, text {text}, number {value}.'
+      required:
+      - answer
+    LearningDailyCard:
+      type: object
+      properties:
+        id:
+          type: integer
+        day:
+          type: string
+          format: date
+        question:
+          $ref: '#/components/schemas/LearningQuestionPlay'
+        answered:
+          type: boolean
+        correct:
+          type: boolean
+          nullable: true
+        answer:
+          nullable: true
+        right_answer:
+          nullable: true
+        explanation:
+          type: string
+          nullable: true
+      required:
+      - answer
+      - answered
+      - correct
+      - day
+      - explanation
+      - id
+      - question
+      - right_answer
+    LearningDailyOutcome:
+      type: object
+      properties:
+        correct:
+          type: boolean
+        share:
+          type: number
+          format: double
+        right_answer: {}
+        explanation:
+          type: string
+        points:
+          type: integer
+          nullable: true
+        streak:
+          type: integer
+          nullable: true
+      required:
+      - correct
+      - explanation
+      - points
+      - right_answer
+      - share
+      - streak
+    LearningHome:
+      type: object
+      properties:
+        todo:
+          type: array
+          items:
+            $ref: '#/components/schemas/LearningAssignmentCard'
+        done:
+          type: array
+          items:
+            $ref: '#/components/schemas/LearningAssignmentCard'
+          description: The newest 20.
+        catalog:
+          type: array
+          items:
+            $ref: '#/components/schemas/LearningCourseCard'
+        certificates:
+          type: integer
+      required:
+      - catalog
+      - certificates
+      - done
+      - todo
+    LearningLessonPlay:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        emoji:
+          type: string
+        summary:
+          type: string
+        notes_html:
+          type: string
+        source:
+          $ref: '#/components/schemas/LearningLessonSourceEnum'
+        video:
+          allOf:
+          - $ref: '#/components/schemas/LearningVideoLinks'
+          nullable: true
+        youtube_id:
+          type: string
+        duration_seconds:
+          type: integer
+        processing:
+          type: boolean
+        topics:
+          type: array
+          items:
+            $ref: '#/components/schemas/LearningTopicRef'
+        completion_percent:
+          type: integer
+        progress:
+          allOf:
+          - $ref: '#/components/schemas/LearningMyProgress'
+          nullable: true
+        next:
+          allOf:
+          - $ref: '#/components/schemas/LearningNextStep'
+          nullable: true
+      required:
+      - completion_percent
+      - duration_seconds
+      - emoji
+      - id
+      - next
+      - notes_html
+      - processing
+      - progress
+      - source
+      - summary
+      - title
+      - topics
+      - video
+      - youtube_id
+    LearningLessonSourceEnum:
+      enum:
+      - upload
+      - youtube
+      type: string
+      description: |-
+        * `upload` - Uploaded video
+        * `youtube` - YouTube
+    LearningMyProgress:
+      type: object
+      properties:
+        percent:
+          type: integer
+        position:
+          type: integer
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        ranges:
+          type: array
+          items:
+            type: array
+            items:
+              type: integer
+            maxItems: 2
+            minItems: 2
+      required:
+      - completed_at
+      - percent
+      - position
+      - ranges
+    LearningNextStep:
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/LearningStepKindEnum'
+        id:
+          type: integer
+          description: The lesson's, page's or quiz's id.
+        title:
+          type: string
+      required:
+      - id
+      - kind
+      - title
+    LearningPlayOption:
+      type: object
+      properties:
+        id:
+          type: string
+        text:
+          type: string
+      required:
+      - id
+      - text
+    LearningProgressReportRequest:
+      type: object
+      properties:
+        session:
+          type: string
+          minLength: 1
+          description: A random id per opening.
+          maxLength: 40
+        position:
+          type: number
+          format: double
+          minimum: 0
+        duration:
+          type: number
+          format: double
+          minimum: 0
+          default: 0.0
+        ranges:
+          type: array
+          items:
+            type: array
+            items:
+              type: number
+              format: double
+            maxItems: 2
+            minItems: 2
+          description: What was played since the previous report, in media seconds.
+          maxItems: 50
+        playing:
+          type: boolean
+          default: false
+      required:
+      - position
+      - session
+    LearningProgressResult:
+      type: object
+      properties:
+        percent:
+          type: integer
+        position:
+          type: integer
+        completed:
+          type: boolean
+        completed_now:
+          type: boolean
+        points:
+          type: integer
+          nullable: true
+      required:
+      - completed
+      - completed_now
+      - percent
+      - points
+      - position
+    LearningQuestionKindEnum:
+      enum:
+      - single
+      - multi
+      - true_false
+      - order
+      - match
+      - text
+      - number
+      type: string
+      description: |-
+        * `single` - One right answer
+        * `multi` - Several right answers
+        * `true_false` - True or false
+        * `order` - Put in order
+        * `match` - Match pairs
+        * `text` - Type the answer
+        * `number` - Number
+    LearningQuestionPlay:
+      type: object
+      description: 'A question as the person sees it: never the right answer.'
+      properties:
+        id:
+          type: integer
+        kind:
+          $ref: '#/components/schemas/LearningQuestionKindEnum'
+        text:
+          type: string
+        image_url:
+          type: string
+          nullable: true
+        points:
+          type: integer
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/LearningPlayOption'
+          description: single, multi and order (steps shuffled, ids by place).
+        left:
+          type: array
+          items:
+            $ref: '#/components/schemas/LearningPlayOption'
+          description: 'match: the left side as written.'
+        right:
+          type: array
+          items:
+            $ref: '#/components/schemas/LearningPlayOption'
+          description: 'match: the right side shuffled.'
+        unit:
+          type: string
+          nullable: true
+          description: 'number: the unit, if any.'
+      required:
+      - id
+      - image_url
+      - kind
+      - left
+      - options
+      - points
+      - right
+      - text
+      - unit
+    LearningQuizBest:
+      type: object
+      properties:
+        percent:
+          type: integer
+        passed:
+          type: boolean
+      required:
+      - passed
+      - percent
+    LearningQuizIntro:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        emoji:
+          type: string
+        description:
+          type: string
+        questions:
+          type: integer
+          description: How many questions an attempt has.
+        time_limit_seconds:
+          type: integer
+          nullable: true
+        pass_percent:
+          type: integer
+        max_attempts:
+          type: integer
+          nullable: true
+          description: 'Null: any number.'
+        attempts_used:
+          type: integer
+        retry_at:
+          type: string
+          format: date-time
+          nullable: true
+        best:
+          allOf:
+          - $ref: '#/components/schemas/LearningQuizBest'
+          nullable: true
+        in_progress:
+          type: integer
+          nullable: true
+          description: The attempt in progress, resumed by starting.
+        can_start:
+          type: boolean
+        reason:
+          type: string
+          nullable: true
+          description: Why not, in the person's words.
+      required:
+      - attempts_used
+      - best
+      - can_start
+      - description
+      - emoji
+      - id
+      - in_progress
+      - max_attempts
+      - pass_percent
+      - questions
+      - reason
+      - retry_at
+      - time_limit_seconds
+      - title
+    LearningReviewItem:
+      type: object
+      properties:
+        question:
+          $ref: '#/components/schemas/LearningQuestionPlay'
+        answer:
+          nullable: true
+          description: 'The answer in its kind''s shape, in the ids shown: single
+            {option}, multi {options: []}, true_false {value: bool}, order {order:
+            []}, match {pairs: {left id: right id}}, text {text}, number {value}.'
+        correct:
+          type: boolean
+        share:
+          type: number
+          format: double
+          description: Share of the question's points earned, 0 to 1.
+        right_answer:
+          nullable: true
+          description: Null when the quiz doesn't show the answers (yet).
+        explanation:
+          type: string
+          nullable: true
+      required:
+      - answer
+      - correct
+      - explanation
+      - question
+      - right_answer
+      - share
+    LearningSaveAnswerRequest:
+      type: object
+      properties:
+        question:
+          type: integer
+        answer:
+          nullable: true
+          description: 'The answer in its kind''s shape, in the ids shown: single
+            {option}, multi {options: []}, true_false {value: bool}, order {order:
+            []}, match {pairs: {left id: right id}}, text {text}, number {value}.
+            Null clears it.'
+      required:
+      - answer
+      - question
+    LearningStartAttemptRequest:
+      type: object
+      properties:
+        assignment:
+          type: integer
+          nullable: true
+        entry:
+          type: integer
+          nullable: true
+    LearningStep:
+      type: object
+      properties:
+        id:
+          type: integer
+        kind:
+          $ref: '#/components/schemas/LearningStepKindEnum'
+        title:
+          type: string
+        emoji:
+          type: string
+        required:
+          type: boolean
+        done:
+          type: boolean
+        locked:
+          type: boolean
+        done_at:
+          type: string
+          format: date-time
+          nullable: true
+        lesson_id:
+          type: integer
+          nullable: true
+        page_id:
+          type: integer
+          nullable: true
+        quiz_id:
+          type: integer
+          nullable: true
+        minutes:
+          type: integer
+          nullable: true
+        best_percent:
+          type: integer
+          nullable: true
+          description: 'A quiz: the best finished attempt. A lesson: how much of it
+            was watched.'
+      required:
+      - best_percent
+      - done
+      - done_at
+      - emoji
+      - id
+      - kind
+      - lesson_id
+      - locked
+      - minutes
+      - page_id
+      - quiz_id
+      - required
+      - title
+    LearningStepKindEnum:
+      enum:
+      - lesson
+      - page
+      - quiz
+      type: string
+      description: |-
+        * `lesson` - Lesson
+        * `page` - Page
+        * `quiz` - Quiz
+    LearningTopicRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        color:
+          type: string
+      required:
+      - color
+      - id
+      - name
+    LearningVideoLinks:
+      type: object
+      properties:
+        url:
+          type: string
+          description: Signed, valid 6 hours.
+        poster_url:
+          type: string
+          nullable: true
+          description: Signed, valid 6 hours.
+        duration_seconds:
+          type: integer
+        width:
+          type: integer
+        height:
+          type: integer
+      required:
+      - duration_seconds
+      - height
+      - poster_url
+      - url
+      - width
     LifecycleExplainRequest:
       type: object
       properties:
@@ -12169,6 +13683,466 @@ components:
           maxLength: 300
       required:
       - readings
+    RecognitionBadge:
+      type: object
+      properties:
+        key:
+          type: string
+        ref:
+          type: string
+          description: The topic id or the month (YYYY-MM), else empty.
+        name:
+          type: string
+        description:
+          type: string
+        icon:
+          type: string
+          description: A lucide icon name.
+        tier:
+          $ref: '#/components/schemas/RecognitionTierEnum'
+        awarded_at:
+          type: string
+          format: date-time
+      required:
+      - awarded_at
+      - description
+      - icon
+      - key
+      - name
+      - ref
+      - tier
+    RecognitionBoardRow:
+      type: object
+      properties:
+        place:
+          type: integer
+        member:
+          $ref: '#/components/schemas/RecognitionPerson'
+        points:
+          type: integer
+        level:
+          $ref: '#/components/schemas/RecognitionLevelRef'
+      required:
+      - level
+      - member
+      - place
+      - points
+    RecognitionCatalogueBadge:
+      type: object
+      properties:
+        key:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          description: How to earn it.
+        icon:
+          type: string
+        tier:
+          $ref: '#/components/schemas/RecognitionTierEnum'
+      required:
+      - description
+      - icon
+      - key
+      - name
+      - tier
+    RecognitionColleague:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        avatar_url:
+          type: string
+          nullable: true
+        position:
+          type: string
+          nullable: true
+        branch:
+          type: string
+          nullable: true
+      required:
+      - avatar_url
+      - branch
+      - id
+      - name
+      - position
+    RecognitionColleagues:
+      type: object
+      properties:
+        per_day:
+          type: integer
+        left:
+          type: integer
+          description: How many more the person may thank today.
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecognitionColleague'
+      required:
+      - left
+      - per_day
+      - results
+    RecognitionHistory:
+      type: object
+      properties:
+        id:
+          type: integer
+        points:
+          type: integer
+        reason:
+          $ref: '#/components/schemas/RecognitionReasonEnum'
+        label:
+          type: string
+        detail:
+          type: string
+          description: 'What it was for: a title, a name, a note.'
+        at:
+          type: string
+          format: date-time
+      required:
+      - at
+      - detail
+      - id
+      - label
+      - points
+      - reason
+    RecognitionKudos:
+      type: object
+      properties:
+        id:
+          type: integer
+        from:
+          $ref: '#/components/schemas/RecognitionPerson'
+        to:
+          $ref: '#/components/schemas/RecognitionPerson'
+        badge:
+          $ref: '#/components/schemas/RecognitionKudosBadgeEnum'
+        badge_label:
+          type: string
+        message:
+          type: string
+        task:
+          allOf:
+          - $ref: '#/components/schemas/RecognitionTaskRef'
+          nullable: true
+        at:
+          type: string
+          format: date-time
+        seen:
+          type: boolean
+        mine:
+          type: boolean
+          description: The viewer sent it.
+      required:
+      - at
+      - badge
+      - badge_label
+      - from
+      - id
+      - message
+      - mine
+      - seen
+      - task
+      - to
+    RecognitionKudosBadgeEnum:
+      enum:
+      - thanks
+      - teamwork
+      - fast
+      - careful
+      - helpful
+      - star
+      type: string
+      description: |-
+        * `thanks` - Thank you
+        * `teamwork` - Great teamwork
+        * `fast` - Quick help
+        * `careful` - Careful work
+        * `helpful` - Helped a customer
+        * `star` - Star of the day
+    RecognitionLevel:
+      type: object
+      properties:
+        number:
+          type: integer
+        name:
+          type: string
+        starts_at:
+          type: integer
+        next_at:
+          type: integer
+          nullable: true
+        next_name:
+          type: string
+          nullable: true
+          description: The next level's name (None at the top).
+      required:
+      - name
+      - next_at
+      - number
+      - starts_at
+    RecognitionLevelRef:
+      type: object
+      properties:
+        number:
+          type: integer
+        name:
+          type: string
+      required:
+      - name
+      - number
+    RecognitionMe:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          description: Points are on in this company.
+        points:
+          type: integer
+        week_points:
+          type: integer
+        level:
+          $ref: '#/components/schemas/RecognitionLevel'
+        streak:
+          type: integer
+        best_streak:
+          type: integer
+        badges:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecognitionBadge'
+        locked:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecognitionCatalogueBadge'
+        recent:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecognitionHistory'
+        unseen:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecognitionUnseen'
+        kudos_enabled:
+          type: boolean
+        kudos_left:
+          type: integer
+        kudos_today:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecognitionKudos'
+        leaderboard:
+          type: boolean
+          description: The person may open the leaderboard.
+      required:
+      - badges
+      - best_streak
+      - enabled
+      - kudos_enabled
+      - kudos_left
+      - kudos_today
+      - leaderboard
+      - level
+      - locked
+      - points
+      - recent
+      - streak
+      - unseen
+      - week_points
+    RecognitionMyPlace:
+      type: object
+      properties:
+        place:
+          type: integer
+          nullable: true
+        points:
+          type: integer
+      required:
+      - place
+      - points
+    RecognitionPeriodEnum:
+      enum:
+      - week
+      - month
+      - all
+      type: string
+      description: |-
+        * `week` - week
+        * `month` - month
+        * `all` - all
+    RecognitionPerson:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        avatar_url:
+          type: string
+          nullable: true
+        position:
+          type: string
+          nullable: true
+      required:
+      - avatar_url
+      - id
+      - name
+      - position
+    RecognitionReasonEnum:
+      enum:
+      - lesson
+      - page
+      - quiz
+      - quiz_perfect
+      - course
+      - daily
+      - check
+      - streak
+      - badge
+      - kudos
+      - task
+      - adjust
+      type: string
+      description: |-
+        * `lesson` - Lesson watched
+        * `page` - Page read
+        * `quiz` - Quiz passed
+        * `quiz_perfect` - Perfect score
+        * `course` - Course finished
+        * `daily` - Question of the day
+        * `check` - Regular check
+        * `streak` - Streak
+        * `badge` - Badge
+        * `kudos` - Kudos received
+        * `task` - Task done on time
+        * `adjust` - Correction
+    RecognitionScopeEnum:
+      enum:
+      - company
+      - branch
+      type: string
+      description: |-
+        * `company` - The whole company
+        * `branch` - Their branch
+    RecognitionSeenRequest:
+      type: object
+      properties:
+        kudos:
+          type: boolean
+          default: false
+          description: Also mark the thanks received as seen.
+    RecognitionSendKudosRequest:
+      type: object
+      properties:
+        to:
+          type: integer
+        badge:
+          allOf:
+          - $ref: '#/components/schemas/RecognitionKudosBadgeEnum'
+          default: thanks
+        message:
+          type: string
+          default: ''
+          maxLength: 200
+        task:
+          type: integer
+          nullable: true
+      required:
+      - to
+    RecognitionStaffBoard:
+      type: object
+      properties:
+        visible:
+          type: boolean
+        period:
+          $ref: '#/components/schemas/RecognitionPeriodEnum'
+        scope:
+          $ref: '#/components/schemas/RecognitionScopeEnum'
+        start:
+          type: string
+          format: date-time
+          nullable: true
+        end:
+          type: string
+          format: date-time
+          nullable: true
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecognitionBoardRow'
+        me:
+          $ref: '#/components/schemas/RecognitionMyPlace'
+      required:
+      - end
+      - me
+      - period
+      - rows
+      - scope
+      - start
+      - visible
+    RecognitionTaskRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+      required:
+      - id
+      - title
+    RecognitionTierEnum:
+      enum:
+      - bronze
+      - silver
+      - gold
+      type: string
+      description: |-
+        * `bronze` - bronze
+        * `silver` - silver
+        * `gold` - gold
+    RecognitionUnseen:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/RecognitionUnseenTypeEnum'
+        name:
+          type: string
+        number:
+          type: integer
+          description: Levels.
+        starts_at:
+          type: integer
+        next_at:
+          type: integer
+          nullable: true
+        key:
+          type: string
+          description: Badges.
+        ref:
+          type: string
+        description:
+          type: string
+        icon:
+          type: string
+        tier:
+          $ref: '#/components/schemas/RecognitionTierEnum'
+        awarded_at:
+          type: string
+          format: date-time
+      required:
+      - name
+      - type
+    RecognitionUnseenTypeEnum:
+      enum:
+      - level
+      - badge
+      type: string
+      description: |-
+        * `level` - level
+        * `badge` - badge
     RecordOut:
       type: object
       properties:

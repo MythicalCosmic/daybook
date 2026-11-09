@@ -835,6 +835,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/companies/{company_id}/knowledge/pages/{id}/view/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description The reader reports while the page is in front of me: on open, every 15 s, on leaving
+         *     (docs/PLAN-LEARNING.md §4.1). Nobody else ever sees my views but managers of the page.
+         */
+        post: operations["v1_companies_knowledge_pages_view_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/companies/{company_id}/knowledge/search/": {
         parameters: {
             query?: never;
@@ -862,6 +882,240 @@ export interface paths {
         get: operations["v1_companies_knowledge_spaces_retrieve"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/learning/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description My training: what is open (soonest due first), the newest finished, what I may start. */
+        get: operations["learning_home"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/learning/assignments/{id}/certificate/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description My certificate of a finished course, as a PDF (also while my access is paused). */
+        get: operations["learning_certificate"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/learning/attempts/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description AttemptPlay while in progress (it has `questions`), AttemptResult once graded (it has `state`). Reading an attempt past its time limit grades it. */
+        get: operations["v1_companies_learning_attempts_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/learning/attempts/{id}/answers/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["v1_companies_learning_attempts_answers_update"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/learning/attempts/{id}/finish/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["v1_companies_learning_attempts_finish_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/learning/checks/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["v1_companies_learning_checks_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/learning/courses/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description A course with my steps: done, locked (sequential courses) or open. */
+        get: operations["learning_course"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/learning/courses/{id}/start/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Start a course meant for me (or carry on with the one I have). */
+        post: operations["learning_course_start"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/learning/daily/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["v1_companies_learning_daily_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/learning/daily/{id}/answer/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["v1_companies_learning_daily_answer_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/learning/lessons/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description A lesson to watch: the signed MP4 and poster (6 hours) or the YouTube id, the notes,
+         *     my progress and, inside a course (`?course=`), its next step.
+         */
+        get: operations["learning_lesson"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/learning/lessons/{id}/progress/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description The player's report: every 10 s while playing, on pause, on seek, on leaving. */
+        post: operations["learning_lesson_progress"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/learning/quizzes/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["v1_companies_learning_quizzes_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/learning/quizzes/{id}/attempts/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["v1_companies_learning_quizzes_attempts_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1316,6 +1570,86 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["v1_companies_projects_timer_stop_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/recognition/kudos/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["recognition_kudos_list"];
+        put?: never;
+        post: operations["recognition_kudos_send"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/recognition/kudos/colleagues/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["recognition_kudos_colleagues"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/recognition/leaderboard/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["recognition_leaderboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/recognition/me/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["recognition_me"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/recognition/seen/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["recognition_seen"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2811,9 +3145,11 @@ export interface components {
          *     * `unscheduled` - No shift planned
          *     * `auto_closed` - Check-out forgotten
          *     * `edited` - Edited by a manager
+         *     * `other_branch` - At another branch
+         *     * `missed_entry` - Came in without a scan
          * @enum {string}
          */
-        AttendanceRecordFlagEnum: "outside_geofence" | "low_accuracy" | "no_location" | "unscheduled" | "auto_closed" | "edited";
+        AttendanceRecordFlagEnum: "outside_geofence" | "low_accuracy" | "no_location" | "unscheduled" | "auto_closed" | "edited" | "other_branch" | "missed_entry";
         /**
          * @description * `open` - Checked in
          *     * `closed` - Checked out
@@ -3105,9 +3441,10 @@ export interface components {
          *     * `recognition` - Recognition
          *     * `assets` - Assets and equipment
          *     * `learning` - Training and quizzes
+         *     * `face_id` - Face ID terminals
          * @enum {string}
          */
-        CompaniesFeatureEnum: "finance" | "sales" | "stock" | "attendance" | "hr" | "payroll" | "ai" | "recognition" | "assets" | "learning";
+        CompaniesFeatureEnum: "finance" | "sales" | "stock" | "attendance" | "hr" | "payroll" | "ai" | "recognition" | "assets" | "learning" | "face_id";
         Company: {
             readonly id: number;
             readonly name: string;
@@ -3967,6 +4304,9 @@ export interface components {
             readonly updated_by: components["schemas"]["KnowledgePerson"] | null;
             readonly excerpt: string;
             readonly read: components["schemas"]["KnowledgeReadCount"] | null;
+            readonly topics: components["schemas"]["KnowledgeTopicRef"][];
+            /** @description People who opened it (managers' lists only). */
+            readonly opened: number | null;
             readonly body: string;
             /** @description Acknowledgements of this version or later count as read. */
             ack_version?: number;
@@ -4000,6 +4340,9 @@ export interface components {
             readonly updated_by: components["schemas"]["KnowledgePerson"] | null;
             readonly excerpt: string;
             readonly read: components["schemas"]["KnowledgeReadCount"] | null;
+            readonly topics: components["schemas"]["KnowledgeTopicRef"][];
+            /** @description People who opened it (managers' lists only). */
+            readonly opened: number | null;
         };
         KnowledgePerson: {
             id: number;
@@ -4047,6 +4390,11 @@ export interface components {
             space: components["schemas"]["KnowledgeSpace"];
             pages: components["schemas"]["KnowledgeTreeNode"][];
         };
+        KnowledgeTopicRef: {
+            id: number;
+            name: string;
+            color: string;
+        };
         KnowledgeTreeNode: {
             id: number;
             title: string;
@@ -4058,6 +4406,22 @@ export interface components {
                 [key: string]: unknown;
             }[];
         };
+        KnowledgeViewReportRequest: {
+            /** @description A random id per opening. */
+            session: string;
+            /**
+             * Format: double
+             * @description Seconds in front since the last report.
+             * @default 0
+             */
+            seconds: number;
+            /**
+             * Format: double
+             * @description How far down, percent.
+             * @default 0
+             */
+            scrolled: number;
+        };
         /**
          * @description * `uz` - O‘zbekcha
          *     * `ru` - Русский
@@ -4065,6 +4429,321 @@ export interface components {
          * @enum {string}
          */
         LanguageEnum: "uz" | "ru" | "en";
+        LearningAssignmentCard: {
+            id: number;
+            state: components["schemas"]["LearningAssignmentStateEnum"];
+            percent: number;
+            steps_done: number;
+            steps_total: number;
+            /** Format: date-time */
+            due_at: string | null;
+            late: boolean;
+            /** Format: date-time */
+            completed_at: string | null;
+            /** @description A signed link to the certificate PDF. */
+            certificate_url: string | null;
+            course: components["schemas"]["LearningCourseCard"];
+        };
+        /**
+         * @description * `assigned` - Not started
+         *     * `in_progress` - In progress
+         *     * `completed` - Completed
+         *     * `exempt` - Exempt
+         *     * `cancelled` - Cancelled
+         * @enum {string}
+         */
+        LearningAssignmentStateEnum: "assigned" | "in_progress" | "completed" | "exempt" | "cancelled";
+        LearningAttemptPlay: {
+            id: number;
+            quiz: components["schemas"]["LearningAttemptQuiz"];
+            number: number;
+            /** Format: date-time */
+            started_at: string;
+            /** Format: date-time */
+            deadline_at: string | null;
+            questions: components["schemas"]["LearningQuestionPlay"][];
+            /** @description Question id -> the answer saved so far. */
+            answers: {
+                [key: string]: unknown;
+            };
+        };
+        LearningAttemptQuiz: {
+            id: number;
+            title: string;
+            emoji: string;
+            pass_percent: number;
+        };
+        LearningAttemptResult: {
+            id: number;
+            state: components["schemas"]["LearningAttemptStateEnum"];
+            /** Format: double */
+            score: number;
+            /** Format: double */
+            max_score: number;
+            percent: number;
+            passed: boolean;
+            /** @description Null while recognition is off. */
+            points: number | null;
+            /** Format: date-time */
+            retry_at: string | null;
+            course_step_done: boolean;
+            /** @description Null when the quiz never shows a review. */
+            review: components["schemas"]["LearningReviewItem"][] | null;
+        };
+        /**
+         * @description * `in_progress` - In progress
+         *     * `finished` - Graded
+         *     * `expired` - Time ran out
+         *     * `abandoned` - Abandoned
+         * @enum {string}
+         */
+        LearningAttemptStateEnum: "in_progress" | "finished" | "expired" | "abandoned";
+        LearningAttemptView: components["schemas"]["LearningAttemptPlay"] | components["schemas"]["LearningAttemptResult"];
+        LearningCheckCard: {
+            entry_id: number;
+            title: string;
+            quiz_id: number;
+            /** Format: date-time */
+            due_at: string;
+            done: boolean;
+            passed: boolean | null;
+        };
+        LearningCourseCard: {
+            id: number;
+            title: string;
+            emoji: string;
+            color: string;
+            description: string;
+            mandatory: boolean;
+            /** @description How many steps. */
+            steps: number;
+            /** @description About how long the course takes. */
+            minutes: number;
+        };
+        LearningCourseDetail: {
+            id: number;
+            title: string;
+            emoji: string;
+            color: string;
+            description: string;
+            mandatory: boolean;
+            steps: components["schemas"]["LearningStep"][];
+            /** @description About how long the course takes. */
+            minutes: number;
+            sequential: boolean;
+            certificate: boolean;
+            assignment: components["schemas"]["LearningAssignmentCard"] | null;
+            can_start: boolean;
+        };
+        LearningDaily: {
+            daily: components["schemas"]["LearningDailyCard"] | null;
+            streak: number | null;
+        };
+        LearningDailyAnswerRequest: {
+            /** @description The answer in its kind's shape, in the ids shown: single {option}, multi {options: []}, true_false {value: bool}, order {order: []}, match {pairs: {left id: right id}}, text {text}, number {value}. */
+            answer: unknown;
+        };
+        LearningDailyCard: {
+            id: number;
+            /** Format: date */
+            day: string;
+            question: components["schemas"]["LearningQuestionPlay"];
+            answered: boolean;
+            correct: boolean | null;
+            answer: unknown;
+            right_answer: unknown;
+            explanation: string | null;
+        };
+        LearningDailyOutcome: {
+            correct: boolean;
+            /** Format: double */
+            share: number;
+            right_answer: unknown;
+            explanation: string;
+            points: number | null;
+            streak: number | null;
+        };
+        LearningHome: {
+            todo: components["schemas"]["LearningAssignmentCard"][];
+            /** @description The newest 20. */
+            done: components["schemas"]["LearningAssignmentCard"][];
+            catalog: components["schemas"]["LearningCourseCard"][];
+            certificates: number;
+        };
+        LearningLessonPlay: {
+            id: number;
+            title: string;
+            emoji: string;
+            summary: string;
+            notes_html: string;
+            source: components["schemas"]["LearningLessonSourceEnum"];
+            video: components["schemas"]["LearningVideoLinks"] | null;
+            youtube_id: string;
+            duration_seconds: number;
+            processing: boolean;
+            topics: components["schemas"]["LearningTopicRef"][];
+            completion_percent: number;
+            progress: components["schemas"]["LearningMyProgress"] | null;
+            next: components["schemas"]["LearningNextStep"] | null;
+        };
+        /**
+         * @description * `upload` - Uploaded video
+         *     * `youtube` - YouTube
+         * @enum {string}
+         */
+        LearningLessonSourceEnum: "upload" | "youtube";
+        LearningMyProgress: {
+            percent: number;
+            position: number;
+            /** Format: date-time */
+            completed_at: string | null;
+            ranges: number[][];
+        };
+        LearningNextStep: {
+            kind: components["schemas"]["LearningStepKindEnum"];
+            /** @description The lesson's, page's or quiz's id. */
+            id: number;
+            title: string;
+        };
+        LearningPlayOption: {
+            id: string;
+            text: string;
+        };
+        LearningProgressReportRequest: {
+            /** @description A random id per opening. */
+            session: string;
+            /** Format: double */
+            position: number;
+            /**
+             * Format: double
+             * @default 0
+             */
+            duration: number;
+            /** @description What was played since the previous report, in media seconds. */
+            ranges?: number[][];
+            /** @default false */
+            playing: boolean;
+        };
+        LearningProgressResult: {
+            percent: number;
+            position: number;
+            completed: boolean;
+            completed_now: boolean;
+            points: number | null;
+        };
+        /**
+         * @description * `single` - One right answer
+         *     * `multi` - Several right answers
+         *     * `true_false` - True or false
+         *     * `order` - Put in order
+         *     * `match` - Match pairs
+         *     * `text` - Type the answer
+         *     * `number` - Number
+         * @enum {string}
+         */
+        LearningQuestionKindEnum: "single" | "multi" | "true_false" | "order" | "match" | "text" | "number";
+        /** @description A question as the person sees it: never the right answer. */
+        LearningQuestionPlay: {
+            id: number;
+            kind: components["schemas"]["LearningQuestionKindEnum"];
+            text: string;
+            image_url: string | null;
+            points: number;
+            /** @description single, multi and order (steps shuffled, ids by place). */
+            options: components["schemas"]["LearningPlayOption"][];
+            /** @description match: the left side as written. */
+            left: components["schemas"]["LearningPlayOption"][];
+            /** @description match: the right side shuffled. */
+            right: components["schemas"]["LearningPlayOption"][];
+            /** @description number: the unit, if any. */
+            unit: string | null;
+        };
+        LearningQuizBest: {
+            percent: number;
+            passed: boolean;
+        };
+        LearningQuizIntro: {
+            id: number;
+            title: string;
+            emoji: string;
+            description: string;
+            /** @description How many questions an attempt has. */
+            questions: number;
+            time_limit_seconds: number | null;
+            pass_percent: number;
+            /** @description Null: any number. */
+            max_attempts: number | null;
+            attempts_used: number;
+            /** Format: date-time */
+            retry_at: string | null;
+            best: components["schemas"]["LearningQuizBest"] | null;
+            /** @description The attempt in progress, resumed by starting. */
+            in_progress: number | null;
+            can_start: boolean;
+            /** @description Why not, in the person's words. */
+            reason: string | null;
+        };
+        LearningReviewItem: {
+            question: components["schemas"]["LearningQuestionPlay"];
+            /** @description The answer in its kind's shape, in the ids shown: single {option}, multi {options: []}, true_false {value: bool}, order {order: []}, match {pairs: {left id: right id}}, text {text}, number {value}. */
+            answer: unknown;
+            correct: boolean;
+            /**
+             * Format: double
+             * @description Share of the question's points earned, 0 to 1.
+             */
+            share: number;
+            /** @description Null when the quiz doesn't show the answers (yet). */
+            right_answer: unknown;
+            explanation: string | null;
+        };
+        LearningSaveAnswerRequest: {
+            question: number;
+            /** @description The answer in its kind's shape, in the ids shown: single {option}, multi {options: []}, true_false {value: bool}, order {order: []}, match {pairs: {left id: right id}}, text {text}, number {value}. Null clears it. */
+            answer: unknown;
+        };
+        LearningStartAttemptRequest: {
+            assignment?: number | null;
+            entry?: number | null;
+        };
+        LearningStep: {
+            id: number;
+            kind: components["schemas"]["LearningStepKindEnum"];
+            title: string;
+            emoji: string;
+            required: boolean;
+            done: boolean;
+            locked: boolean;
+            /** Format: date-time */
+            done_at: string | null;
+            lesson_id: number | null;
+            page_id: number | null;
+            quiz_id: number | null;
+            minutes: number | null;
+            /** @description A quiz: the best finished attempt. A lesson: how much of it was watched. */
+            best_percent: number | null;
+        };
+        /**
+         * @description * `lesson` - Lesson
+         *     * `page` - Page
+         *     * `quiz` - Quiz
+         * @enum {string}
+         */
+        LearningStepKindEnum: "lesson" | "page" | "quiz";
+        LearningTopicRef: {
+            id: number;
+            name: string;
+            color: string;
+        };
+        LearningVideoLinks: {
+            /** @description Signed, valid 6 hours. */
+            url: string;
+            /** @description Signed, valid 6 hours. */
+            poster_url: string | null;
+            duration_seconds: number;
+            width: number;
+            height: number;
+        };
         LifecycleExplainRequest: {
             text: string;
         };
@@ -5281,6 +5960,207 @@ export interface components {
             /** @default  */
             note: string;
         };
+        RecognitionBadge: {
+            key: string;
+            /** @description The topic id or the month (YYYY-MM), else empty. */
+            ref: string;
+            name: string;
+            description: string;
+            /** @description A lucide icon name. */
+            icon: string;
+            tier: components["schemas"]["RecognitionTierEnum"];
+            /** Format: date-time */
+            awarded_at: string;
+        };
+        RecognitionBoardRow: {
+            place: number;
+            member: components["schemas"]["RecognitionPerson"];
+            points: number;
+            level: components["schemas"]["RecognitionLevelRef"];
+        };
+        RecognitionCatalogueBadge: {
+            key: string;
+            name: string;
+            /** @description How to earn it. */
+            description: string;
+            icon: string;
+            tier: components["schemas"]["RecognitionTierEnum"];
+        };
+        RecognitionColleague: {
+            id: number;
+            name: string;
+            avatar_url: string | null;
+            position: string | null;
+            branch: string | null;
+        };
+        RecognitionColleagues: {
+            per_day: number;
+            /** @description How many more the person may thank today. */
+            left: number;
+            results: components["schemas"]["RecognitionColleague"][];
+        };
+        RecognitionHistory: {
+            id: number;
+            points: number;
+            reason: components["schemas"]["RecognitionReasonEnum"];
+            label: string;
+            /** @description What it was for: a title, a name, a note. */
+            detail: string;
+            /** Format: date-time */
+            at: string;
+        };
+        RecognitionKudos: {
+            id: number;
+            from: components["schemas"]["RecognitionPerson"];
+            to: components["schemas"]["RecognitionPerson"];
+            badge: components["schemas"]["RecognitionKudosBadgeEnum"];
+            badge_label: string;
+            message: string;
+            task: components["schemas"]["RecognitionTaskRef"] | null;
+            /** Format: date-time */
+            at: string;
+            seen: boolean;
+            /** @description The viewer sent it. */
+            mine: boolean;
+        };
+        /**
+         * @description * `thanks` - Thank you
+         *     * `teamwork` - Great teamwork
+         *     * `fast` - Quick help
+         *     * `careful` - Careful work
+         *     * `helpful` - Helped a customer
+         *     * `star` - Star of the day
+         * @enum {string}
+         */
+        RecognitionKudosBadgeEnum: "thanks" | "teamwork" | "fast" | "careful" | "helpful" | "star";
+        RecognitionLevel: {
+            number: number;
+            name: string;
+            starts_at: number;
+            next_at: number | null;
+            /** @description The next level's name (None at the top). */
+            next_name?: string | null;
+        };
+        RecognitionLevelRef: {
+            number: number;
+            name: string;
+        };
+        RecognitionMe: {
+            /** @description Points are on in this company. */
+            enabled: boolean;
+            points: number;
+            week_points: number;
+            level: components["schemas"]["RecognitionLevel"];
+            streak: number;
+            best_streak: number;
+            badges: components["schemas"]["RecognitionBadge"][];
+            locked: components["schemas"]["RecognitionCatalogueBadge"][];
+            recent: components["schemas"]["RecognitionHistory"][];
+            unseen: components["schemas"]["RecognitionUnseen"][];
+            kudos_enabled: boolean;
+            kudos_left: number;
+            kudos_today: components["schemas"]["RecognitionKudos"][];
+            /** @description The person may open the leaderboard. */
+            leaderboard: boolean;
+        };
+        RecognitionMyPlace: {
+            place: number | null;
+            points: number;
+        };
+        /**
+         * @description * `week` - week
+         *     * `month` - month
+         *     * `all` - all
+         * @enum {string}
+         */
+        RecognitionPeriodEnum: "week" | "month" | "all";
+        RecognitionPerson: {
+            id: number;
+            name: string;
+            avatar_url: string | null;
+            position: string | null;
+        };
+        /**
+         * @description * `lesson` - Lesson watched
+         *     * `page` - Page read
+         *     * `quiz` - Quiz passed
+         *     * `quiz_perfect` - Perfect score
+         *     * `course` - Course finished
+         *     * `daily` - Question of the day
+         *     * `check` - Regular check
+         *     * `streak` - Streak
+         *     * `badge` - Badge
+         *     * `kudos` - Kudos received
+         *     * `task` - Task done on time
+         *     * `adjust` - Correction
+         * @enum {string}
+         */
+        RecognitionReasonEnum: "lesson" | "page" | "quiz" | "quiz_perfect" | "course" | "daily" | "check" | "streak" | "badge" | "kudos" | "task" | "adjust";
+        /**
+         * @description * `company` - The whole company
+         *     * `branch` - Their branch
+         * @enum {string}
+         */
+        RecognitionScopeEnum: "company" | "branch";
+        RecognitionSeenRequest: {
+            /**
+             * @description Also mark the thanks received as seen.
+             * @default false
+             */
+            kudos: boolean;
+        };
+        RecognitionSendKudosRequest: {
+            to: number;
+            /** @default thanks */
+            badge: components["schemas"]["RecognitionKudosBadgeEnum"];
+            /** @default  */
+            message: string;
+            task?: number | null;
+        };
+        RecognitionStaffBoard: {
+            visible: boolean;
+            period: components["schemas"]["RecognitionPeriodEnum"];
+            scope: components["schemas"]["RecognitionScopeEnum"];
+            /** Format: date-time */
+            start: string | null;
+            /** Format: date-time */
+            end: string | null;
+            rows: components["schemas"]["RecognitionBoardRow"][];
+            me: components["schemas"]["RecognitionMyPlace"];
+        };
+        RecognitionTaskRef: {
+            id: number;
+            title: string;
+        };
+        /**
+         * @description * `bronze` - bronze
+         *     * `silver` - silver
+         *     * `gold` - gold
+         * @enum {string}
+         */
+        RecognitionTierEnum: "bronze" | "silver" | "gold";
+        RecognitionUnseen: {
+            type: components["schemas"]["RecognitionUnseenTypeEnum"];
+            name: string;
+            /** @description Levels. */
+            number?: number;
+            starts_at?: number;
+            next_at?: number | null;
+            /** @description Badges. */
+            key?: string;
+            ref?: string;
+            description?: string;
+            icon?: string;
+            tier?: components["schemas"]["RecognitionTierEnum"];
+            /** Format: date-time */
+            awarded_at?: string;
+        };
+        /**
+         * @description * `level` - level
+         *     * `badge` - badge
+         * @enum {string}
+         */
+        RecognitionUnseenTypeEnum: "level" | "badge";
         RecordOut: {
             id: number;
             member_id: number;
@@ -7215,6 +8095,33 @@ export interface operations {
             };
         };
     };
+    v1_companies_knowledge_pages_view_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KnowledgeViewReportRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["KnowledgeViewReportRequest"];
+                "multipart/form-data": components["schemas"]["KnowledgeViewReportRequest"];
+            };
+        };
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     v1_companies_knowledge_search_list: {
         parameters: {
             query?: {
@@ -7256,6 +8163,350 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["KnowledgeSpaceTree"];
+                };
+            };
+        };
+    };
+    learning_home: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LearningHome"];
+                };
+            };
+        };
+    };
+    learning_certificate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                };
+            };
+        };
+    };
+    v1_companies_learning_attempts_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LearningAttemptView"];
+                };
+            };
+        };
+    };
+    v1_companies_learning_attempts_answers_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LearningSaveAnswerRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["LearningSaveAnswerRequest"];
+                "multipart/form-data": components["schemas"]["LearningSaveAnswerRequest"];
+            };
+        };
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    v1_companies_learning_attempts_finish_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LearningAttemptResult"];
+                };
+            };
+        };
+    };
+    v1_companies_learning_checks_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LearningCheckCard"][];
+                };
+            };
+        };
+    };
+    learning_course: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LearningCourseDetail"];
+                };
+            };
+        };
+    };
+    learning_course_start: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LearningAssignmentCard"];
+                };
+            };
+        };
+    };
+    v1_companies_learning_daily_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LearningDaily"];
+                };
+            };
+        };
+    };
+    v1_companies_learning_daily_answer_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LearningDailyAnswerRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["LearningDailyAnswerRequest"];
+                "multipart/form-data": components["schemas"]["LearningDailyAnswerRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LearningDailyOutcome"];
+                };
+            };
+        };
+    };
+    learning_lesson: {
+        parameters: {
+            query?: {
+                /** @description The course it is watched in. */
+                course?: number;
+            };
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LearningLessonPlay"];
+                };
+            };
+        };
+    };
+    learning_lesson_progress: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LearningProgressReportRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["LearningProgressReportRequest"];
+                "multipart/form-data": components["schemas"]["LearningProgressReportRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LearningProgressResult"];
+                };
+            };
+        };
+    };
+    v1_companies_learning_quizzes_retrieve: {
+        parameters: {
+            query?: {
+                /** @description The assignment it is taken for. */
+                assignment?: number;
+                /** @description The check entry it answers. */
+                entry?: number;
+            };
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LearningQuizIntro"];
+                };
+            };
+        };
+    };
+    v1_companies_learning_quizzes_attempts_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["LearningStartAttemptRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["LearningStartAttemptRequest"];
+                "multipart/form-data": components["schemas"]["LearningStartAttemptRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LearningAttemptPlay"];
+                };
+            };
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LearningAttemptPlay"];
                 };
             };
         };
@@ -7977,6 +9228,152 @@ export interface operations {
                     "application/json": components["schemas"]["ProjectsTimeEntry"];
                 };
             };
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    recognition_kudos_list: {
+        parameters: {
+            query?: {
+                box?: "given" | "received";
+            };
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecognitionKudos"][];
+                };
+            };
+        };
+    };
+    recognition_kudos_send: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecognitionSendKudosRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["RecognitionSendKudosRequest"];
+                "multipart/form-data": components["schemas"]["RecognitionSendKudosRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecognitionKudos"];
+                };
+            };
+        };
+    };
+    recognition_kudos_colleagues: {
+        parameters: {
+            query?: {
+                /** @description A colleague to list first (to thank them back). */
+                include?: number;
+                q?: string;
+            };
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecognitionColleagues"];
+                };
+            };
+        };
+    };
+    recognition_leaderboard: {
+        parameters: {
+            query?: {
+                period?: "all" | "month" | "week";
+                scope?: "branch" | "company";
+            };
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecognitionStaffBoard"];
+                };
+            };
+        };
+    };
+    recognition_me: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecognitionMe"];
+                };
+            };
+        };
+    };
+    recognition_seen: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["RecognitionSeenRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["RecognitionSeenRequest"];
+                "multipart/form-data": components["schemas"]["RecognitionSeenRequest"];
+            };
+        };
+        responses: {
             /** @description No response body */
             204: {
                 headers: {
