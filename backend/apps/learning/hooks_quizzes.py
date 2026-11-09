@@ -11,7 +11,7 @@ from apps.console import registry
 from apps.console.perms import AnyOf
 from apps.core.files import register_file_check
 from apps.inbox.registry import register_kind
-from apps.learning import daily, quizzes
+from apps.learning import checks, daily, notify_quizzes, quizzes
 from apps.members.permissions import Perm
 
 FEATURE = "learning"
@@ -21,8 +21,9 @@ register_file_check(quizzes.IMAGE_CHECK, quizzes.may_open_image)
 
 # Version keys: open dashboards refetch the bank, the quizzes and their results.
 registry.register_pulse(quizzes.PULSE_KEY, perm=READ, count=None, feature=FEATURE)
+registry.register_pulse(checks.PULSE_KEY, perm=READ, count=None, feature=FEATURE)
 
-for model_name in ("question", "quiz"):
+for model_name in ("question", "quiz", "regularcheck"):
     audit_registry.register_target(model_name, Perm.LEARNING_MANAGE)
 
 # The bot's own message (apps.learning.daily): no notification row; the kind lets a person turn
@@ -31,5 +32,23 @@ register_kind(
     daily.KIND,
     label=_("The question of the day"),
     audience="employee",
+    default_telegram=True,
+)
+register_kind(
+    notify_quizzes.CHECK_STARTED,
+    label=_("A regular check to answer"),
+    audience="employee",
+    default_telegram=True,
+)
+register_kind(
+    notify_quizzes.CHECK_REMINDER,
+    label=_("A regular check still to answer"),
+    audience="employee",
+    default_telegram=True,
+)
+register_kind(
+    notify_quizzes.CHECK_RESULTS,
+    label=_("Results of a regular check"),
+    audience="owner",
     default_telegram=True,
 )
