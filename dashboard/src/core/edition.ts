@@ -120,8 +120,9 @@ export async function loadEdition(options: { retries?: number; delayMs?: number 
       return info;
     } catch (error) {
       const status = (error as { status?: number }).status ?? 0;
-      // The endpoint doesn't exist (Daybook before Davomat) or refuses: Daybook, for good.
-      if (status >= 400 && status < 500) {
+      // The endpoint doesn't exist (a Daybook backend from before editions): Daybook, for good.
+      // Anything else (throttled, a server error, offline) says nothing about the edition.
+      if (status === 404) {
         setEditionInfo(DAYBOOK_INFO);
         return DAYBOOK_INFO;
       }

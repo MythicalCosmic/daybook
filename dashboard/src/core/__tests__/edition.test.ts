@@ -73,6 +73,14 @@ describe("what the server says", () => {
     expect((await loadEdition()).edition).toBe("daybook");
   });
 
+  it("stays Davomat when the answer is throttled or fails, rather than showing Daybook's shell", async () => {
+    window.localStorage.setItem("daybook.console.edition", '"davomat"');
+    for (const status of [429, 503]) {
+      vi.stubGlobal("fetch", vi.fn(async () => json({ detail: "Slow down." }, status)));
+      expect((await loadEdition({ retries: 1, delayMs: 1 })).edition).toBe("davomat");
+    }
+  });
+
   it("keeps a Davomat console Davomat when the server can't be reached at startup", async () => {
     window.localStorage.setItem("daybook.console.edition", '"davomat"');
     const fetch = vi.fn(async () => {
