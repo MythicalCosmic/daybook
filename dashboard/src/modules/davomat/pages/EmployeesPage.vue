@@ -210,8 +210,8 @@ async function exportList(): Promise<void> {
           <UserAvatar :name="row.full_name" :src="row.photo_url" :size="36" :status="row.today?.state === 'in' ? 'in' : undefined" />
           <span class="min-w-0">
             <span class="block truncate font-semibold text-fg">{{ row.full_name }}</span>
-            <span v-if="row.source === 'terminal' && row.status === 'active'" class="flex items-center gap-1 truncate text-xs font-medium text-info" :title="t('davomat.team.fromTerminalHint')" data-from-terminal
-              ><ScanFace :size="12" class="shrink-0" aria-hidden="true" />{{ t("davomat.team.fromTerminal") }}</span
+            <span v-if="row.source === 'terminal' && row.status === 'active'" class="flex min-w-0 items-center gap-1 text-xs font-medium text-info" :title="t('davomat.team.fromTerminalHint')" data-from-terminal
+              ><ScanFace :size="12" class="shrink-0" aria-hidden="true" /><span class="truncate">{{ t("davomat.team.fromTerminal") }}</span></span
             >
             <span v-else class="block truncate text-xs tabular-nums text-muted">{{ formatPhone(row.phone) || (row.is_user ? t("davomat.team.alsoUser") : "") }}</span>
           </span>

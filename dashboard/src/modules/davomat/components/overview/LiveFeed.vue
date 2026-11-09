@@ -131,7 +131,7 @@ const allLink = computed(() => `/c/${company.currentId}/faceid`);
 <template>
   <section class="flex min-w-0 flex-col rounded-[18px] border border-line bg-surface" :aria-label="t('davomat.overview.feed.title')">
     <header class="flex items-center gap-3 border-b border-line px-4 py-3.5 md:px-5">
-      <h2 class="text-md font-semibold tracking-[-0.01em] text-fg">{{ t("davomat.overview.feed.title") }}</h2>
+      <h2 class="whitespace-nowrap text-md font-semibold tracking-[-0.01em] text-fg">{{ t("davomat.overview.feed.title") }}</h2>
       <span
         :class="[
           'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors',
@@ -147,15 +147,14 @@ const allLink = computed(() => `/c/${company.currentId}/faceid`);
         <Radio v-else :size="12" aria-hidden="true" />
         {{ offline ? t("davomat.overview.feed.offline") : hovering ? t("davomat.overview.feed.paused") : t("davomat.overview.feed.live") }}
       </span>
-      <SegmentedControl v-if="scans.length" v-model="kind" class="ml-auto hidden lg:flex" size="sm" :options="kinds" :aria-label="t('davomat.overview.feed.filter.label')" data-testid="feed-filter" />
-      <RouterLink :to="allLink" :class="['inline-flex items-center gap-1 rounded-[8px] px-2 py-1 text-sm font-medium text-muted hover:bg-highlight hover:text-fg', scans.length ? 'ml-auto lg:ml-0' : 'ml-auto']">
+      <RouterLink :to="allLink" class="ml-auto inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-[8px] px-2 py-1 text-sm font-medium text-muted hover:bg-highlight hover:text-fg">
         {{ t("davomat.overview.feed.all") }}
         <ArrowUpRight :size="15" aria-hidden="true" />
       </RouterLink>
     </header>
-    <!-- Narrower screens: the filter on its own line. -->
-    <div v-if="scans.length" class="border-b border-line px-3 py-2 lg:hidden">
-      <SegmentedControl v-model="kind" size="sm" :options="kinds" :aria-label="t('davomat.overview.feed.filter.label')" />
+    <!-- The feed's filter on its own line: room for every language's labels and counts. -->
+    <div v-if="scans.length" class="border-b border-line px-3 py-2 md:px-4">
+      <SegmentedControl v-model="kind" size="sm" :options="kinds" :aria-label="t('davomat.overview.feed.filter.label')" data-testid="feed-filter" />
     </div>
 
     <div v-if="loading && !scans.length" class="flex flex-col gap-1 p-2" aria-hidden="true">

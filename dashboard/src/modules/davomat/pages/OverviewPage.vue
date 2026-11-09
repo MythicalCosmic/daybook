@@ -105,7 +105,7 @@ const clock = computed(() => fmt.instant(new Date(now.value), "time"));
       <div class="min-w-0">
         <h1 class="text-[26px] font-bold leading-tight tracking-[-0.025em] text-fg md:text-[30px]">{{ greeting }}</h1>
         <p class="mt-1 flex flex-wrap items-center gap-x-2 text-base text-muted">
-          <span class="capitalize">{{ dateLine }}</span>
+          <span>{{ dateLine }}</span>
           <span aria-hidden="true" class="text-subtle">·</span>
           <span class="inline-flex items-center gap-1 tabular-nums"><Clock3 :size="14" aria-hidden="true" />{{ clock }}</span>
           <template v-if="company.current">
