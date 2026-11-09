@@ -96,7 +96,12 @@ def test_the_settings_merge_the_real_apps():
     assert settings.SPECTACULAR_SETTINGS["PREPROCESSING_HOOKS"] == [
         "apps.core.schema.split_by_audience"
     ]
-    assert settings.CELERY_TASK_ROUTES == {"apps.ai.tasks.*": {"queue": "ai"}}
+    assert settings.CELERY_TASK_ROUTES == {
+        "apps.ai.tasks.*": {"queue": "ai"},
+        # Lesson videos on their own worker (docs/PLAN-LEARNING.md §5), drafting with the AI jobs.
+        "apps.learning.tasks.process_video": {"queue": "media"},
+        "apps.learning.tasks.draft_questions": {"queue": "ai"},
+    }
 
 
 def pascal(label: str) -> str:
