@@ -123,9 +123,10 @@ Manzilni brauzerda oching. Yangi o‘rnatilgan Davomat **sozlash sahifasini** oc
    faqat raqamlardan iborat emas).
 3. **Tayyor**: siz tizimga kirgan bo‘lasiz. Birinchi terminalni qo‘shing (ADMIN.md, 4-bo‘lim).
 
-Sozlash sahifasi faqat bir marta ishlaydi: keyin bu manzil kirish sahifasini ochadi. **Buni
-o‘rnatish skripti tugashi bilanoq bajaring**: shungacha manzilni birinchi bo‘lib ochgan kishi
-tashkilotning egasi bo‘lib qoladi. Bunday daqiqa umuman bo‘lmasligi uchun tashkilotni o‘rnatish
+Sozlash sahifasi faqat bir marta ishlaydi: keyin bu manzil kirish sahifasini ochadi. **O‘rnatish
+skripti sozlash kodini chiqargan bo‘lsa**, sahifa uni so‘raydi: Davomatni faqat skript natijasini
+ko‘rgan kishi sozlay oladi. Kod bo‘lmasa, **buni o‘rnatish skripti tugashi bilanoq bajaring**:
+shungacha manzilni birinchi bo‘lib ochgan kishi tashkilotning egasi bo‘lib qoladi. Bunday daqiqa umuman bo‘lmasligi uchun tashkilotni o‘rnatish
 skriptining `--organization` parametrlari bilan yarating (3-bo‘lim).
 
 ## 5. Nimalar ishlaydi

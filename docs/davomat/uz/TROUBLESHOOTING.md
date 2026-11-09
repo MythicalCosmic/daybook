@@ -109,6 +109,15 @@ olingan yuzlarni o‘chirib yuboradi.
 - **Kimgadir xabar kelmayapti**: u o‘z havolasini ochib, Start tugmasini bosgan va botni bloklamagan
   bo‘lishi kerak; uning sahifasida Telegram ulangan deb ko‘rsatilgan bo‘lishi kerak.
 
+## Sozlash sahifasi kod so‘rayapti
+
+Bu o‘rnatish skripti oxirida chiqargan sozlash kodi. Yo‘qolgan bo‘lsa, u serverdagi sozlamalarda
+ham bor:
+
+```bash
+grep DAVOMAT_SETUP_TOKEN /opt/davomat/.env
+```
+
 ## Unutilgan parol
 
 Yangi parolni administrator Sozlamalar › Foydalanuvchilar va rollar bo‘limida o‘rnatadi. Hech kim

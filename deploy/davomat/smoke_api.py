@@ -193,6 +193,15 @@ def cmd_scan(args) -> dict:
             "last_name": "Admin",
         },
     }
+    # The installer's setup code (DAVOMAT_SETUP_TOKEN), when this version's setup page asks for it.
+    if edition.get("setup_token_required"):
+        check(args.setup_token, "the setup asks for a code and smoke.sh gave none")
+        status, _ = site.owner("POST", "edition/setup/", data=setup, auth=False)
+        check(status == 403, f"a setup without the installer's code must be refused, got {status}")
+        setup["setup_token"] = args.setup_token
+        say("the setup page asks for the installer's code: without it 403")
+    else:
+        say("this version's setup page asks for no code (install.sh dropped it)")
     _, session = site.owner("POST", "edition/setup/", data=setup, auth=False, expect=(200, 201))
     check(session and session.get("access"), f"the setup signs the admin in: {session}")
     status, _ = site.owner("POST", "edition/setup/", data=setup, auth=False)
@@ -353,6 +362,7 @@ def main() -> int:
     parser.add_argument("--http-name", help="plain HTTP to the site's name")
     parser.add_argument("--https-ip", help="HTTPS to the bare address")
     parser.add_argument("--device-host", default="127.0.0.1", help="PUBLIC_DEVICE_HOST")
+    parser.add_argument("--setup-token", default="", help="DAVOMAT_SETUP_TOKEN, if any")
     parser.add_argument("--events", help="smoke_events.py's output")
     parser.add_argument("--state", required=True, help="what scan learned, for the later steps")
     args = parser.parse_args()

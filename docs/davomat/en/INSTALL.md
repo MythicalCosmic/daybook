@@ -116,10 +116,11 @@ Open the address in a browser. A fresh Davomat opens its **setup page**:
    not a common word, not only digits).
 3. **Ready**: you are signed in. Add the first terminal (ADMIN.md, section 4).
 
-The setup page works once: afterwards the address opens the sign-in page. **Do it right after
-the installer finishes**: until then, whoever opens the address first becomes the organization's
-owner. To leave no such moment at all, create the organization with the installer's
-`--organization` options instead (section 3).
+The setup page works once: afterwards the address opens the sign-in page. **If the installer
+printed a setup code**, the page asks for it, so only someone who saw the installer can set
+Davomat up. Without one, **do it right after the installer finishes**: until then, whoever opens
+the address first becomes the organization's owner. To leave no such moment at all, create the
+organization with the installer's `--organization` options instead (section 3).
 
 ## 5. What runs
 

@@ -223,6 +223,13 @@ random_text() {
 
 fernet_key() { head -c 32 /dev/urandom | base64 | tr -d '\n' | tr '+/' '-_'; }
 
+# Eight letters and digits that can't be misread (no 0/O, 1/I), as XXXX-XXXX.
+setup_code() {
+	local text
+	text=$(head -c 512 /dev/urandom | tr -dc 'A-HJ-NP-Z2-9')
+	printf '%s-%s' "${text:0:4}" "${text:4:4}"
+}
+
 choose_address() {
 	step "Where people will open Davomat"
 	local public='' lan choice
@@ -310,6 +317,8 @@ write_env() {
 	env_set "$tmp" POSTGRES_PASSWORD "$(random_text 40)"
 	env_set "$tmp" FIELD_ENCRYPTION_KEY "$(fernet_key)"
 	env_set "$tmp" FIELD_HASH_KEY "$(random_text 50)"
+	# The setup page asks for it, so nobody else can claim the fresh install first (check_setup_code).
+	env_set "$tmp" DAVOMAT_SETUP_TOKEN "$(setup_code)"
 	mv "$tmp" "$ENV_FILE"
 	ok "Wrote $ENV_FILE (mode 600: only its owner reads it). Keep a copy somewhere safe: its keys can't be made again."
 }
@@ -376,6 +385,26 @@ build_image() {
 	ok "Image: $image"
 }
 
+# The setup code works only with a setup page that sends it (the dashboard's own bundle says):
+# on a fresh install whose page doesn't, the code is dropped, or nobody could finish the setup.
+check_setup_code() {
+	[ -n "$(env_get DAVOMAT_SETUP_TOKEN)" ] || return 0
+	[ "$(service_state backend)" = missing ] || return 0
+	if docker run --rm --entrypoint grep "$(image_name)" -rqE 'setup_token([^_a-z]|$)' /app/dashboard/dist \
+		</dev/null 2>/dev/null; then
+		return 0
+	fi
+	env_set "$ENV_FILE" DAVOMAT_SETUP_TOKEN ''
+	warn "This version's setup page asks for no setup code: open it as soon as the installer is done."
+}
+
+# True once the organization exists (the setup page or davomat_init made it).
+org_exists() {
+	[ "$(compose exec -T backend python manage.py shell -c \
+		"from apps.companies.models import Company; print(Company.objects.exists())" </dev/null 2>/dev/null |
+		tail -n 1)" = True ]
+}
+
 start_stack() {
 	step "Starting"
 	compose up -d db redis backend </dev/null
@@ -391,10 +420,7 @@ start_stack() {
 init_organization() {
 	[ -n "$ORG" ] || return 0
 	step "The organization"
-	local exists
-	exists=$(compose exec -T backend python manage.py shell -c \
-		"from apps.companies.models import Company; print(Company.objects.exists())" </dev/null 2>/dev/null | tail -n 1 || true)
-	if [ "$exists" = True ]; then
+	if org_exists; then
 		ok "Already set up: the organization options are ignored."
 		return
 	fi
@@ -435,11 +461,17 @@ verify_site() {
 }
 
 summary() {
-	local url
+	local url code
 	url=$(site_url)
+	code=$(env_get DAVOMAT_SETUP_TOKEN)
 	step "Davomat is running"
 	if [ -n "$ORG" ]; then
 		info "Open ${BOLD}$url/${RESET} and sign in as ${BOLD}$ADMIN_USERNAME${RESET}."
+	elif org_exists; then
+		info "Open ${BOLD}$url/${RESET} and sign in."
+	elif [ -n "$code" ]; then
+		info "Open ${BOLD}$url/${RESET} in a browser to set up your organization."
+		info "The setup page asks for this code: ${BOLD}$code${RESET} (only who sees it can set Davomat up)."
 	else
 		info "Open ${BOLD}$url/${RESET} in a browser to set up your organization."
 		info "Do it now: until the setup is done, whoever opens the address first becomes its owner."
@@ -482,6 +514,7 @@ main() {
 		built=$(docker image inspect -f '{{.Created}}' "$(image_name)")
 		ok "Using $(image_name), built $(date -d "$built" '+%Y-%m-%d %H:%M' 2>/dev/null || echo "$built") (new code: deploy/davomat/update.sh)"
 	fi
+	check_setup_code
 	start_stack
 	init_organization
 	verify_site

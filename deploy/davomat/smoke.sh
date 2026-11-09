@@ -105,6 +105,7 @@ api() {
 	python3 -I "$DAVOMAT_DIR/smoke_api.py" "$1" --site "https://localhost:$HTTPS_PORT" \
 		--http "http://127.0.0.1:$HTTP_PORT" --http-name "http://localhost:$HTTP_PORT" \
 		--https-ip "https://127.0.0.1:$HTTPS_PORT" --device-host 127.0.0.1 \
+		--setup-token "$(env_get DAVOMAT_SETUP_TOKEN)" \
 		--cacert "$WORK/ca.pem" --events "$WORK/events.json" --state "$WORK/state.json"
 }
 api scan

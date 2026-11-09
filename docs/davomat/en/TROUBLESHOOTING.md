@@ -96,6 +96,15 @@ terminal: it starts over, and a factory reset deletes the enrolled faces.
 - **Someone gets no messages**: they must have opened their link and pressed Start, and not have
   blocked the bot; their Telegram is shown as linked on their page.
 
+## The setup page asks for a code
+
+It is the setup code the installer printed at the end. Lost it? It is also in the settings, on
+the server:
+
+```bash
+grep DAVOMAT_SETUP_TOKEN /opt/davomat/.env
+```
+
 ## A lost password
 
 An administrator sets a new one in Settings › Users and roles. When nobody can sign in, on the
