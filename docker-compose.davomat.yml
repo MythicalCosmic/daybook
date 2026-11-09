@@ -191,6 +191,13 @@ services:
     working_dir: /app
     command: python -m davomat_bot
     depends_on: *after-backend
+    # The bot touches a heartbeat file every 10 s, polling or waiting for a token alike.
+    healthcheck:
+      test: ["CMD", "python", "-m", "davomat_bot.health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     stop_grace_period: 20s
 
   # Every night at BACKUP_TIME (in BACKUP_TZ): the database, the photos and the private files into
