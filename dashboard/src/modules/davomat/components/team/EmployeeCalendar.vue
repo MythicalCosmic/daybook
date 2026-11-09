@@ -97,7 +97,7 @@ function codeOf(value: string): CellCode {
         <div v-for="stat in stats" :key="stat.id" class="rounded-[12px] bg-surface-2/70 px-3 py-2.5" :data-stat="stat.id">
           <dt class="text-xs font-medium text-muted">{{ stat.label }}</dt>
           <dd :class="['mt-0.5 text-xl font-semibold leading-7 tabular-nums', stat.tone]">{{ stat.value }}</dd>
-          <dd class="h-4 truncate text-xs tabular-nums text-muted">{{ stat.hint }}</dd>
+          <dd class="min-h-4 text-xs leading-4 tabular-nums text-muted line-clamp-2">{{ stat.hint }}</dd>
         </div>
       </dl>
 
