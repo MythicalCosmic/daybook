@@ -74,6 +74,15 @@ export const STUB_TITLES: Record<string, { title: Triple; pages: Record<string, 
       reviews: ["Reviews", "Оценка", "Baholash"],
     },
   },
+  faceid: {
+    title: ["Face ID", "Face ID", "Yuz orqali kirish"],
+    pages: {
+      live: ["Live feed", "Живая лента", "Jonli lenta"],
+      people: ["People", "Люди", "Odamlar"],
+      terminals: ["Terminals", "Терминалы", "Terminallar"],
+      settings: ["Settings", "Настройки", "Sozlamalar"],
+    },
+  },
   learning: {
     title: ["Training", "Обучение", "O‘qitish"],
     pages: {
