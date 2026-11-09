@@ -129,9 +129,9 @@ Settings › **Users and roles**: who signs in, and what they may do.
 | Manager | attendance, employees and reports of **their locations** |
 | Viewer | look only: attendance, employees and reports |
 
-Add a user with a username, a password and a role (and locations for a manager). **Reset
-password** sets a new one; **Deactivate** stops the sign-in at once (their history stays). Each
-user sees when they last signed in.
+Add a user with a username, a password and a role (and locations for a manager). **Set a new
+password** gives them a new one; **Deactivate** stops the sign-in at once (their history stays).
+The list shows when each user last signed in.
 
 ## 7. The Telegram bot
 
@@ -164,18 +164,19 @@ photos are kept (snapshots are deleted after that many days; 0 keeps none).
 
 Attendance holds the rules and the day-to-day:
 
-- **Schedules and shifts**: when each person is expected; lateness and early leaving count
-  against them.
-- **Board**: today, live; **Records**: every check-in and check-out, with corrections (a forgotten
-  check-out, a wrong scan) that are kept with who made them.
-- **Leave**: approved leave counts as such, not as absence.
+- **Today**: who is in now, who is late and by how much, who isn't in yet.
+- **Schedules** and **Roster**: when each person is expected (their shifts); lateness and early
+  leaving are measured against them. **Swaps**: shifts people trade or leave open.
+- **Corrections**: a forgotten check-out or a wrong scan, fixed by a manager and kept with who
+  fixed it; overtime waiting for approval.
 - **Timesheet**: the month, in Excel (including the T-13 form).
 
-A scan within a few minutes of the person's last one changes nothing (a repeat).
+Approved leave counts as leave, not as absence. A scan within a few minutes of the person's last
+one changes nothing (a repeat).
 
 ## 9. Reports
 
-Reports: pick the period (this month by default), a location and a department:
+Attendance › **Reports**: pick the period (this month by default), a location and a department:
 
 - per person: days scheduled, present, absent, on leave; hours worked; late count and minutes;
   early leaves; overtime; punctuality;

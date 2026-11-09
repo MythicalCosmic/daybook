@@ -101,7 +101,7 @@ bash deploy/davomat/install.sh --yes --domain davomat.example.uz \
 | `--http-only` | plain HTTP, for a trial on the computer itself at `http://localhost` |
 | `--device-host HOST` | the address terminals post to (default: the server's public IP) |
 | `--http-port N`, `--https-port N` | other ports than 80 and 443 (terminals and certificates need 80) |
-| `--organization`, `--admin-username`, `--admin-password`, `--timezone`, `--language` | create the organization now (`manage.py davomat_init`) |
+| `--organization`, `--admin-username`, `--admin-password`, `--admin-first-name`, `--admin-last-name`, `--timezone`, `--language` | create the organization now (`manage.py davomat_init`) |
 | `--image FILE` | use a prebuilt image instead of building one (section 8) |
 | `--no-start` | write `.env` and stop |
 | `-y`, `--yes` | no questions: the defaults, and Docker installed when missing |
@@ -263,3 +263,19 @@ bash deploy/davomat/update.sh --from /root/davomat.tar.gz --image /root/davomat-
   password (a new code is one click on the terminal's page).
 - Once HTTPS works, `DJANGO_SECURE_HSTS_SECONDS=31536000` in `.env` and
   `bash deploy/davomat/update.sh --here` make browsers insist on HTTPS.
+
+## 10. Trying it on one computer
+
+`deploy/davomat/demo.sh` runs the whole stack on a laptop or a desktop with Docker (no root), as
+a project of its own with its own data, at `http://localhost:18080`, filled with an example
+organization (sign in as `admin`, password `Namuna-2026`):
+
+```bash
+bash deploy/davomat/demo.sh up        # build the image if needed, start, add the example data
+bash deploy/davomat/demo.sh down      # stop it (the data stays; up starts it again)
+bash deploy/davomat/demo.sh wipe      # stop it and delete its data
+```
+
+`up --no-seed` starts without the example data (the setup page opens), `up --lan` lets a terminal
+on the same network post to it (port 18080 on the terminal), `rebuild` takes new code, `seed`
+replaces the example data. It never touches a real installation on the same computer.
