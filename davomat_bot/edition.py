@@ -40,6 +40,13 @@ def token_version() -> str | None:
         return None
 
 
+def mark_refused() -> None:
+    """Telegram refuses the stored token (revoked in BotFather): the Telegram settings say so."""
+    company = organization()
+    if company is not None and settings.EDITION == "davomat":
+        davomat_services.mark_bot_refused(company)
+
+
 def claim_link(code: str, *, telegram_id: int, username: str, first_name: str) -> Membership:
     """Links this Telegram account to the person a one-time link was made for. Raises
     `apps.davomat.services.LinkRefused` (a DomainError with the message to show) when the code is

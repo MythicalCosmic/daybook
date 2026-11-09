@@ -1,5 +1,6 @@
 """A Bot whose session records every Bot API call instead of sending it."""
 
+import asyncio
 from datetime import datetime
 from typing import Any
 
@@ -7,10 +8,12 @@ from aiogram import Bot
 from aiogram.client.default import DefaultBotProperties
 from aiogram.client.session.base import BaseSession
 from aiogram.enums import ParseMode
+from aiogram.exceptions import TelegramUnauthorizedError
 from aiogram.methods import (
     AnswerCallbackQuery,
     EditMessageText,
     GetMe,
+    GetUpdates,
     SendMessage,
     TelegramMethod,
 )
@@ -27,6 +30,8 @@ class MockedSession(BaseSession):
         self.requests: list[TelegramMethod[Any]] = []
         # What Telegram would refuse (apps.notifications.tests.telegram_checks).
         self.problems: list[str] = []
+        # A token revoked in BotFather: every call is refused.
+        self.refuse = False
 
     async def make_request(
         self,
@@ -38,6 +43,11 @@ class MockedSession(BaseSession):
             f"{type(method).__name__}: {problem}" for problem in method_problems(method)
         ]
         self.requests.append(method)
+        if self.refuse:
+            raise TelegramUnauthorizedError(method=method, message="Unauthorized")
+        if isinstance(method, GetUpdates):
+            await asyncio.sleep(0.02)  # a long poll that brings nothing
+            return []
         if isinstance(method, SendMessage | EditMessageText):
             return Message(
                 message_id=len(self.requests),
