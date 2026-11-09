@@ -41,6 +41,19 @@ def sees_attendance(member: Membership | None) -> bool:
     )
 
 
+# `/report` sends the report by person: what an accountant asks for.
+REPORT_KIND = "summary"
+
+
+def may_download(member: Membership | None) -> bool:
+    """`/report`: attendance.view and data.export, as the web app's export asks."""
+    from apps.attendance import reports
+    from apps.exports.registry import get_exporter, may_export
+
+    exporter = get_exporter(reports.EXPORTERS[REPORT_KIND])
+    return sees_attendance(member) and exporter is not None and may_export(member, exporter)
+
+
 def uses_dashboard(member: Membership | None) -> bool:
     return (
         member is not None
@@ -66,6 +79,8 @@ def commands_lines(member: Membership | None) -> list[str]:
     lines = []
     if sees_attendance(member):
         lines.append(_("/today: who is at work, who is late and who isn't in yet"))
+    if may_download(member):
+        lines.append(_("/report: the month's attendance report, Excel or PDF"))
     lines += [
         _("/me: your day and your month"),
         _("/language: change language"),
