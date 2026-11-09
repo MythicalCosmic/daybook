@@ -263,10 +263,11 @@ def create_question(
     state: str = Question.State.ACTIVE,
     source: str = Question.Source.MANUAL,
     draft_job=None,
+    author: Membership | None = None,
     **fields,
 ) -> Question:
     """A question of the bank (`fields`: explanation, topic_id, difficulty, points, image_id,
-    lesson_id, page_id)."""
+    lesson_id, page_id). `author`: who asked for it, when the system writes it (`by` None)."""
     ensure_manager(by)
     unknown = set(fields) - QUESTION_FIELDS
     if unknown:
@@ -281,7 +282,7 @@ def create_question(
         kind=kind,
         state=state,
         source=source,
-        created_by=by,
+        created_by=by or author,
         draft_job=draft_job,
         **values,
     )
