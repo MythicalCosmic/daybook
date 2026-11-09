@@ -607,6 +607,10 @@ class AttendanceReportBaseSerializer(serializers.Serializer):
 
 class AttendanceReportSummarySerializer(AttendanceReportBaseSerializer):
     rows = AttendanceReportPersonSerializer(many=True)
+    compare = serializers.DictField(child=serializers.DateField(), allow_null=True)
+    previous = AttendanceReportTotalsSerializer(
+        allow_null=True, help_text=_("The totals of the period compared with (?compare=).")
+    )
 
 
 class AttendanceReportDepartmentsSerializer(AttendanceReportBaseSerializer):

@@ -4,6 +4,7 @@ import "@/core/modules";
 import { flushPromises } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import DeltaBadge from "@/components/DeltaBadge.vue";
 import { toasts } from "@/components/useToast";
 import { mergeModuleMessages } from "@/i18n";
 import { useSessionStore } from "@/stores/session";
@@ -243,10 +244,37 @@ describe("the module", () => {
 });
 
 describe("ReportsPage", () => {
+  it("shows the change against the period before, and nothing when that period was empty", async () => {
+    const before = { people: 2, ...figures({ days_scheduled: 16, days_present: 14, days_absent: 2, late_count: 5, late_minutes: 80, arrivals: 14, on_time: 9, punctuality_percent: 64.3, attendance_percent: 87.5, worked_minutes: 6900 }) };
+    const compared = reportRoutes({ "GET attendance/reports/summary/": () => json({ ...peopleReport(), compare: { from: "2026-10-01", to: "2026-10-10" }, previous: before }) });
+    const { wrapper } = await openPage("/c/1/attendance/reports", compared);
+    const changes = wrapper.findAllComponents(DeltaBadge).map((badge) => [Number((badge.props("value") as number).toFixed(1)), badge.props("points"), badge.props("inverse")]);
+    // Rates in points; fewer late arrivals and absences are good (inverse); hours in percent.
+    expect(changes).toEqual([
+      [6.3, true, false],
+      [15.7, true, false],
+      [-40, false, true],
+      [-50, false, true],
+      [4.3, false, false],
+    ]);
+    wrapper.unmount();
+
+    const empty = { people: 0, ...figures({ days_scheduled: 0, days_present: 0, days_absent: 0, late_count: 0, arrivals: 0, on_time: 0, worked_minutes: 0, punctuality_percent: null, attendance_percent: null }) };
+    const nothing = reportRoutes({ "GET attendance/reports/summary/": () => json({ ...peopleReport(), compare: { from: "2026-10-01", to: "2026-10-10" }, previous: empty }) });
+    const again = await openPage("/c/1/attendance/reports", nothing);
+    expect(again.wrapper.findAllComponents(DeltaBadge)).toHaveLength(0);
+  });
+
   it("shows this month's strip, trend, ranking and everyone's figures", async () => {
     const { calls, wrapper } = await openPage();
+    // This month goes as a preset, so the server compares it with the same days last month; only
+    // the summary carries the comparison (its totals feed the KPIs' change).
     const summary = calls.find((c) => c.url.includes("/reports/summary/"));
-    expect(summary?.url).toMatch(/from=\d{4}-\d{2}-01&to=\d{4}-\d{2}-\d{2}/);
+    expect(summary?.url).toContain("preset=month");
+    expect(summary?.url).toContain("compare=prev");
+    const trend = calls.find((c) => c.url.includes("/reports/trend/"));
+    expect(trend?.url).toContain("preset=month");
+    expect(trend?.url).not.toContain("compare=");
     const text = document.body.textContent ?? "";
     expect(text).toContain("Attendance rate");
     expect(text).toContain("93.8%");

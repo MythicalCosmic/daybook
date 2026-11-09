@@ -160,3 +160,12 @@ async def test_blocking_and_unblocking_is_recorded(dp, bot, linked):
     await dp.feed_update(bot, updates.unblocked(person))
     user = await User.objects.aget(telegram_id=9012)
     assert user.owner_bot_blocked_at is None and user.owner_bot_started_at is not None
+
+
+async def test_a_button_nobody_knows_still_gets_an_answer(dp, bot, linked):
+    await sync_to_async(linked)("Employee", 9013)
+
+    await dp.feed_update(bot, updates.callback(updates.tg_user(9013), "task:open:12"))
+
+    [answer] = bot.answers()
+    assert answer.text == "This message is too old. Open it again from the menu."

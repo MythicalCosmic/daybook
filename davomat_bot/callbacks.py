@@ -16,6 +16,13 @@ class MeView(CallbackData, prefix="dvm"):
     refresh: int = 1
 
 
+class ReportFile(CallbackData, prefix="dvr"):
+    """`/report`: which period ("month", "last_month") in which format ("xlsx", "pdf")."""
+
+    period: str
+    format: str
+
+
 class PickLanguage(CallbackData, prefix="dvl"):
     """A language picked in the `/language` picker."""
 

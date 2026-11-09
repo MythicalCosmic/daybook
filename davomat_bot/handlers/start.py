@@ -8,11 +8,12 @@ from aiogram import Bot, F, Router
 from aiogram.enums import ChatMemberStatus, ChatType
 from aiogram.filters import Command, CommandObject, CommandStart, StateFilter
 from aiogram.fsm.context import FSMContext
-from aiogram.types import ChatMemberUpdated, Message
+from aiogram.types import CallbackQuery, ChatMemberUpdated, Message
 from asgiref.sync import sync_to_async
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils import timezone, translation
+from django.utils.translation import gettext as _
 
 from apps.accounts.models import User
 from apps.accounts.telegram_chat import language_of
@@ -102,6 +103,13 @@ async def anything_else(message: Message, person: Person) -> None:
     """Text, a command or a file the bot has no use for: the home message, so nobody is left
     without an answer."""
     await home(message, person)
+
+
+@fallback_router.callback_query()
+async def any_other_button(query: CallbackQuery) -> None:
+    """A button no handler knows (from an old message, or another module's): an answer rather
+    than a spinner that never stops."""
+    await query.answer(_("This message is too old. Open it again from the menu."))
 
 
 @router.my_chat_member(F.chat.type == ChatType.PRIVATE)

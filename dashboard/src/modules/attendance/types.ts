@@ -445,6 +445,9 @@ export interface BranchReportRow extends ReportFigures {
 
 export interface PeopleReport extends ReportBase {
   rows: PersonReportRow[];
+  /** With `compare`: the period compared with and its totals (the KPIs' change). */
+  compare?: { from: string; to: string } | null;
+  previous?: ReportTotals | null;
 }
 
 export interface DepartmentReport extends ReportBase {
@@ -504,8 +507,13 @@ export interface ReportOf {
 
 /** Company-local days, both included; branches within the caller's scope; departments with the ones below them. */
 export interface ReportParams {
+  /** The period's days (also when a preset is sent, for names and labels). */
   from: string;
   to: string;
+  /** A preset ("month"…) is sent instead of from/to, so the server compares like with like. */
+  preset?: string;
+  /** The summary's `previous` totals: the period before, or the same days a year before. */
+  compare?: "prev" | "year";
   branch?: number[];
   department?: number[];
 }

@@ -49,6 +49,9 @@ def private_commands(*, manager: bool = True) -> list[BotCommand]:
     commands = [BotCommand(command="me", description=_("My day and month"))]
     if manager:
         commands.append(BotCommand(command="today", description=_("Who is at work today")))
+        commands.append(
+            BotCommand(command="report", description=_("Attendance report, Excel or PDF"))
+        )
     commands += [
         BotCommand(command="language", description=_("Change language")),
         BotCommand(command="help", description=_("Help")),

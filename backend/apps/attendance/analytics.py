@@ -353,7 +353,7 @@ def summary(report: Report) -> dict:
         {"employee": employee(member), **per_person[pk].as_dict()}
         for pk, member in report.people.items()
     ]
-    return {**report.period.as_dict(), "rows": rows, "totals": _totals(report)}
+    return {**report.period.as_dict(), "rows": rows, "totals": totals(report)}
 
 
 def departments(report: Report) -> dict:
@@ -367,7 +367,7 @@ def departments(report: Report) -> dict:
         rows.append(_group_row("department", ref, groups[department.pk]))
     if None in groups:
         rows.append(_group_row("department", None, groups[None]))
-    return {**report.period.as_dict(), "rows": rows, "totals": _totals(report)}
+    return {**report.period.as_dict(), "rows": rows, "totals": totals(report)}
 
 
 def branches(report: Report) -> dict:
@@ -387,7 +387,7 @@ def branches(report: Report) -> dict:
     ]
     if None in groups:
         rows.append(_group_row("branch", None, groups[None]))
-    return {**report.period.as_dict(), "rows": rows, "totals": _totals(report)}
+    return {**report.period.as_dict(), "rows": rows, "totals": totals(report)}
 
 
 def trend(report: Report) -> dict:
@@ -415,7 +415,7 @@ def trend(report: Report) -> dict:
                     "punctuality_percent": figures.punctuality_percent,
                 }
             )
-    return {**report.period.as_dict(), "days": days, "totals": _totals(report)}
+    return {**report.period.as_dict(), "days": days, "totals": totals(report)}
 
 
 def punctuality(report: Report) -> dict:
@@ -456,12 +456,11 @@ def punctuality(report: Report) -> dict:
                 "days_present": figures.days_present,
             }
         )
-    totals = report.figures()
     return {
         **report.period.as_dict(),
-        "average": totals.punctuality_percent,
+        "average": report.figures().punctuality_percent,
         "rows": rows,
-        "totals": _totals(report),
+        "totals": totals(report),
     }
 
 
@@ -469,7 +468,8 @@ def _group_row(name: str, ref: dict | None, figures: Figures) -> dict:
     return {name: ref, "people": len(figures.members), **figures.as_dict()}
 
 
-def _totals(report: Report) -> dict:
+def totals(report: Report) -> dict:
+    """The totals row: every figure over the whole report, and how many people."""
     figures = report.figures()
     return {"people": len(figures.members), **figures.as_dict()}
 

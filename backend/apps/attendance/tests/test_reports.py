@@ -76,6 +76,26 @@ def test_the_ranking_and_the_trend(owner_api, week):
     assert [day["present"] for day in trend["days"]] == [4, 4, 1, 1, 1]
 
 
+def test_the_summary_compares_with_the_period_before(owner_api, week):
+    client = owner_api(week.manager)
+    company = week.ali.company
+
+    # Thursday and Friday against Tuesday and Wednesday.
+    data = client.get(
+        url(company, "summary"), {"from": "2026-10-22", "to": "2026-10-23", "compare": "prev"}
+    ).json()
+
+    assert data["compare"] == {"from": "2026-10-20", "to": "2026-10-21"}
+    previous = data["previous"]
+    assert (previous["days_scheduled"], previous["days_present"]) == (6, 5)
+    assert (previous["days_absent"], previous["late_count"], previous["people"]) == (2, 2, 4)
+    # Without a comparison the keys say so; other reports never carry them.
+    plain = client.get(url(company, "summary"), PERIOD).json()
+    assert plain["compare"] is None and plain["previous"] is None
+    trend = client.get(url(company, "trend"), {**PERIOD, "compare": "prev"}).json()
+    assert "previous" not in trend
+
+
 def test_this_month_by_default(owner_api, week):
     data = owner_api(week.manager).get(url(week.ali.company, "summary")).json()
 

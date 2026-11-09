@@ -119,16 +119,17 @@ def _today(member: Membership, *, branch_id: int, now: datetime | None) -> BotMe
         lines += ["", _("Nobody is expected and nobody has come in yet today.")]
 
     if not picked and len(board["branches"]) > 1:
-        lines += ["", f"<b>{html.quote(_('Branches'))}</b>"]
-        for card in board["branches"]:
-            if card["rostered"] or card["checked_in"]:
-                count = (
-                    _("%(came)d of %(rostered)d")
-                    % {"came": card["checked_in"], "rostered": card["rostered"]}
-                    if card["rostered"]
-                    else str(card["checked_in"])
-                )
-                lines.append(f"    {html.quote(card['name'])} — {count}")
+        busy = [card for card in board["branches"] if card["rostered"] or card["checked_in"]]
+        if busy:
+            lines += ["", f"<b>{html.quote(_('Branches'))}</b>"]
+        for card in busy:
+            count = (
+                _("%(came)d of %(rostered)d")
+                % {"came": card["checked_in"], "rostered": card["rostered"]}
+                if card["rostered"]
+                else str(card["checked_in"])
+            )
+            lines.append(f"    {html.quote(card['name'])} — {count}")
     return "\n".join(lines), _today_keyboard(member, visible, picked)
 
 

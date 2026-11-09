@@ -902,6 +902,12 @@ REPORT_PARAMETERS = [
     OpenApiParameter("from", str, description="First day, YYYY-MM-DD."),
     OpenApiParameter("to", str, description="Last day, YYYY-MM-DD (today by default)."),
     OpenApiParameter("preset", str, description="Instead of from/to; this month by default."),
+    OpenApiParameter(
+        "compare",
+        str,
+        enum=["none", "prev", "year"],
+        description="The summary's `previous` totals: the period before, or a year before.",
+    ),
     BRANCH_PARAM,
     OpenApiParameter(
         "department", int, many=True, description="Department ids (with those below them)."
@@ -959,8 +965,30 @@ class ReportView(ModuleOn, Scoped, RangeMixin, OwnerAPIView):
                 raise PermissionDenied(_("You don't have permission to export this."))
         data = reports.build(self.company, self.kind, ask)
         if wanted == "json":
+            if self.kind == "summary":
+                data |= self.previous(ask)
             return Response(data)
         return self.file(wanted, data, ask)
+
+    def previous(self, ask: reports.Ask) -> dict:
+        """`?compare=prev|year`: the totals of the period compared with, for the KPIs' change."""
+        period = self.range
+        if not period.has_compare:
+            return {"compare": None, "previous": None}
+        before = analytics.build(
+            self.company,
+            period.compare_start,
+            period.compare_end,
+            branch_ids=ask.branch_ids,
+            department_ids=ask.department_ids,
+        )
+        return {
+            "compare": {
+                "from": period.compare_start.isoformat(),
+                "to": period.compare_end.isoformat(),
+            },
+            "previous": analytics.totals(before),
+        }
 
     def file(self, wanted: str, data: dict, ask: reports.Ask) -> HttpResponse:
         if wanted == "xlsx":
