@@ -546,3 +546,105 @@ class CandidateSerializer(serializers.Serializer):
 
 class OpenShiftSerializer(ShiftOutSerializer):
     claimed = serializers.BooleanField()
+
+
+# Reports (docs/DAVOMAT.md §1.6) -------------------------------------------------------------
+
+
+class AttendanceReportEmployeeSerializer(serializers.Serializer):
+    id = serializers.IntegerField(help_text=_("The membership id."))
+    name = serializers.CharField()
+    photo_url = serializers.CharField(allow_null=True)
+    position = RefSerializer(allow_null=True)
+    department = RefSerializer(allow_null=True)
+    branch = RefSerializer(allow_null=True, help_text=_("The home branch."))
+
+
+class AttendanceReportFiguresSerializer(serializers.Serializer):
+    days_scheduled = serializers.IntegerField(help_text=_("Days with a planned shift."))
+    days_present = serializers.IntegerField()
+    days_absent = serializers.IntegerField()
+    days_leave = serializers.IntegerField()
+    days_excused = serializers.IntegerField()
+    worked_minutes = serializers.IntegerField()
+    late_count = serializers.IntegerField()
+    late_minutes = serializers.IntegerField()
+    early_leave_count = serializers.IntegerField()
+    early_leave_minutes = serializers.IntegerField()
+    overtime_minutes = serializers.IntegerField()
+    arrivals = serializers.IntegerField(help_text=_("Check-ins for a shift."))
+    on_time = serializers.IntegerField()
+    punctuality_percent = serializers.FloatField(allow_null=True)
+    attendance_percent = serializers.FloatField(allow_null=True)
+
+
+class AttendanceReportTotalsSerializer(AttendanceReportFiguresSerializer):
+    people = serializers.IntegerField()
+
+
+class AttendanceReportPersonSerializer(AttendanceReportFiguresSerializer):
+    employee = AttendanceReportEmployeeSerializer()
+
+
+class AttendanceReportDepartmentSerializer(AttendanceReportFiguresSerializer):
+    department = RefSerializer(allow_null=True)
+    people = serializers.IntegerField()
+
+
+class AttendanceReportBranchSerializer(AttendanceReportFiguresSerializer):
+    branch = BranchRefSerializer(allow_null=True)
+    people = serializers.IntegerField()
+
+
+class AttendanceReportBaseSerializer(serializers.Serializer):
+    range = serializers.DictField(child=serializers.DateField())
+    counted_until = serializers.DateField(
+        allow_null=True, help_text=_("The last day counted: the end, or today.")
+    )
+    today = serializers.DateField()
+    totals = AttendanceReportTotalsSerializer()
+
+
+class AttendanceReportSummarySerializer(AttendanceReportBaseSerializer):
+    rows = AttendanceReportPersonSerializer(many=True)
+
+
+class AttendanceReportDepartmentsSerializer(AttendanceReportBaseSerializer):
+    rows = AttendanceReportDepartmentSerializer(many=True)
+
+
+class AttendanceReportBranchesSerializer(AttendanceReportBaseSerializer):
+    rows = AttendanceReportBranchSerializer(many=True)
+
+
+class AttendanceReportDaySerializer(serializers.Serializer):
+    date = serializers.DateField()
+    scheduled = serializers.IntegerField()
+    present = serializers.IntegerField()
+    late = serializers.IntegerField()
+    absent = serializers.IntegerField()
+    leave = serializers.IntegerField()
+    excused = serializers.IntegerField()
+    worked_minutes = serializers.IntegerField()
+    punctuality_percent = serializers.FloatField(allow_null=True)
+
+
+class AttendanceReportTrendSerializer(AttendanceReportBaseSerializer):
+    days = AttendanceReportDaySerializer(many=True)
+
+
+class AttendanceReportRankSerializer(serializers.Serializer):
+    rank = serializers.IntegerField()
+    employee = AttendanceReportEmployeeSerializer()
+    punctuality_percent = serializers.FloatField(allow_null=True)
+    arrivals = serializers.IntegerField()
+    on_time = serializers.IntegerField()
+    late_count = serializers.IntegerField()
+    late_minutes = serializers.IntegerField()
+    average_late_minutes = serializers.IntegerField()
+    days_present = serializers.IntegerField()
+
+
+class AttendanceReportPunctualitySerializer(AttendanceReportBaseSerializer):
+    average = serializers.FloatField(allow_null=True)
+    rows = AttendanceReportRankSerializer(many=True)
