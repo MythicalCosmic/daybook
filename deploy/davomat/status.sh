@@ -28,6 +28,16 @@ for service in caddy backend worker beat bot backup db redis; do
 	state=$(service_state "$service")
 	case $state in
 	healthy | running) ok "$(printf '%-8s %s' "$service" "$state")" ;;
+	starting)
+		# Just started: its first health check is still to come (the backend's first start,
+		# migrations included, may take minutes).
+		up=$(up_seconds "$service")
+		if [ "$up" -lt 900 ]; then
+			info "$(printf '%-8s starting (up %s s; run status.sh again in a minute)' "$service" "$up")"
+		else
+			problem "$(printf '%-8s starting for %s min' "$service" $((up / 60)))"
+		fi
+		;;
 	*) problem "$(printf '%-8s %s' "$service" "$state")" ;;
 	esac
 done
@@ -57,12 +67,26 @@ if [ "$(env_get CADDYFILE Caddyfile)" != Caddyfile.http ] && command -v openssl 
 fi
 
 step "Worker and bot"
+worker_pings() {
+	compose exec -T worker sh -c 'celery -A config inspect ping --timeout 10 -d "celery@$(hostname)"' \
+		</dev/null >/dev/null 2>&1
+}
 if [ "$(service_state worker)" = running ]; then
-	if compose exec -T worker sh -c 'celery -A config inspect ping --timeout 10 -d "celery@$(hostname)"' \
-		</dev/null >/dev/null 2>&1; then
+	# A worker that has just started takes a few seconds before it answers.
+	tries=1
+	[ "$(up_seconds worker)" -ge 60 ] || tries=4
+	answered=0
+	for _ in $(seq "$tries"); do
+		if worker_pings; then
+			answered=1
+			break
+		fi
+		[ "$tries" = 1 ] || sleep 10
+	done
+	if [ "$answered" = 1 ]; then
 		ok "worker answers"
 	else
-		problem "worker doesn't answer a ping (busy, or stuck: compose logs worker)"
+		problem "worker doesn't answer a ping (busy, or stuck: docker compose logs worker)"
 	fi
 fi
 compose logs --no-color --no-log-prefix --tail 3 bot </dev/null 2>/dev/null | cut -c1-160 | sed 's/^/    bot: /'

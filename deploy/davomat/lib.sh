@@ -144,6 +144,48 @@ service_state() {
 		"$id" 2>/dev/null || echo missing
 }
 
+# up_seconds SERVICE: how long its container has been running (0 when it isn't).
+up_seconds() {
+	local id started
+	id=$(compose ps -q "$1" </dev/null 2>/dev/null | head -n 1)
+	[ -n "$id" ] || {
+		echo 0
+		return
+	}
+	started=$(docker inspect -f '{{.State.StartedAt}}' "$id" 2>/dev/null) || {
+		echo 0
+		return
+	}
+	echo $(($(date +%s) - $(date -d "$started" +%s 2>/dev/null || date +%s)))
+}
+
+# wait_up SERVICE… [seconds each]: each one healthy (its first health check can take half a
+# minute) or, without a health check, running. Fails on anything else.
+wait_up() {
+	local service state deadline timeout=120
+	for service in "$@"; do
+		deadline=$((SECONDS + timeout))
+		while :; do
+			state=$(service_state "$service")
+			case $state in
+			healthy | running) break ;;
+			starting) ;;
+			*)
+				warn "$service: $state"
+				compose logs --no-color --tail 20 "$service" </dev/null >&2 || true
+				return 1
+				;;
+			esac
+			if [ "$SECONDS" -ge "$deadline" ]; then
+				warn "$service: still $state after $timeout s"
+				return 1
+			fi
+			sleep 3
+		done
+		ok "$service: $state"
+	done
+}
+
 restart_count() {
 	local id
 	id=$(compose ps -aq "$1" </dev/null 2>/dev/null | head -n 1)

@@ -27,7 +27,7 @@ Where people open Davomat (asked when not given):
 
 The organization (otherwise the browser's setup page asks):
   --organization NAME --admin-username NAME --admin-password PASSWORD
-  [--timezone Asia/Tashkent] [--language uz|ru|en]
+  [--admin-first-name NAME] [--admin-last-name NAME] [--timezone Asia/Tashkent] [--language uz|ru|en]
 
 Other:
   --image FILE           load a prebuilt image (docker save davomat:latest | gzip > FILE)
@@ -42,7 +42,7 @@ EOF
 
 DOMAIN_ARG='' MODE='' LAN_ADDRESS='' DEVICE_HOST_ARG='' HTTP_PORT_ARG='' HTTPS_PORT_ARG=''
 LISTEN_LOCAL=0 IMAGE_FILE='' NO_START=0 YES=0
-ORG='' ADMIN_USERNAME='' ADMIN_PASSWORD='' ORG_TIMEZONE='' ORG_LANGUAGE=''
+ORG='' ADMIN_USERNAME='' ADMIN_PASSWORD='' ADMIN_FIRST_NAME='' ADMIN_LAST_NAME='' ORG_TIMEZONE='' ORG_LANGUAGE=''
 
 need_value() { [ $# -ge 2 ] && [ -n "$2" ] || die "$1 needs a value (see --help)."; }
 
@@ -63,6 +63,8 @@ parse_args() {
 		--organization) need_value "$@"; ORG=$2; shift 2 ;;
 		--admin-username) need_value "$@"; ADMIN_USERNAME=$2; shift 2 ;;
 		--admin-password) need_value "$@"; ADMIN_PASSWORD=$2; shift 2 ;;
+		--admin-first-name) need_value "$@"; ADMIN_FIRST_NAME=$2; shift 2 ;;
+		--admin-last-name) need_value "$@"; ADMIN_LAST_NAME=$2; shift 2 ;;
 		--timezone) need_value "$@"; ORG_TIMEZONE=$2; shift 2 ;;
 		--language) need_value "$@"; ORG_LANGUAGE=$2; shift 2 ;;
 		--image) need_value "$@"; IMAGE_FILE=$2; shift 2 ;;
@@ -396,10 +398,15 @@ init_organization() {
 		ok "Already set up: the organization options are ignored."
 		return
 	fi
-	local args=(--organization "$ORG" --admin-username "$ADMIN_USERNAME" --admin-password "$ADMIN_PASSWORD")
+	local args=(--organization "$ORG" --admin-username "$ADMIN_USERNAME")
 	[ -z "$ORG_TIMEZONE" ] || args+=(--timezone "$ORG_TIMEZONE")
 	[ -z "$ORG_LANGUAGE" ] || args+=(--language "$ORG_LANGUAGE")
-	compose exec -T backend python manage.py davomat_init "${args[@]}" </dev/null ||
+	[ -z "$ADMIN_FIRST_NAME" ] || args+=(--admin-first-name "$ADMIN_FIRST_NAME")
+	[ -z "$ADMIN_LAST_NAME" ] || args+=(--admin-last-name "$ADMIN_LAST_NAME")
+	# The password travels in the environment (-e NAME takes it from this one), never in a
+	# command line another user could list.
+	DAVOMAT_ADMIN_PASSWORD=$ADMIN_PASSWORD compose exec -T -e DAVOMAT_ADMIN_PASSWORD backend \
+		python manage.py davomat_init "${args[@]}" </dev/null ||
 		die "Setting up the organization failed (above). The browser's setup page can do it instead."
 	ok "$ORG is set up; sign in as $ADMIN_USERNAME."
 }

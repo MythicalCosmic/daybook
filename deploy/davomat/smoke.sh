@@ -93,23 +93,9 @@ locked docker compose -p "$PROJECT" -f "$COMPOSE_YML" --env-file "$ENV_FILE" bui
 # The installer again: it keeps the settings, uses the image and starts everything.
 bash "$DAVOMAT_DIR/install.sh" --yes
 
+SERVICES=(caddy backend worker beat bot backup db redis)
 step "Every service is up"
-# Healthy where the service has a health check (its first one may take half a minute), running
-# otherwise.
-for service in caddy backend worker beat bot backup db redis; do
-	deadline=$((SECONDS + 120))
-	while :; do
-		state=$(service_state "$service")
-		case $state in
-		healthy | running) break ;;
-		starting) ;;
-		*) die "$service: $state: $(compose logs --no-color --tail 20 "$service" </dev/null 2>&1)" ;;
-		esac
-		[ "$SECONDS" -lt "$deadline" ] || die "$service: still $state after 120 s"
-		sleep 3
-	done
-	ok "$service: $state"
-done
+wait_up "${SERVICES[@]}" || die "Not every service came up (above)."
 
 step "Setup, a terminal and its events"
 docker run --rm -v "$DAVOMAT_DIR:/davomat:ro" --entrypoint python "$(image_name)" \
@@ -154,12 +140,14 @@ api change
 bash "$DAVOMAT_DIR/restore.sh" "$backup" --yes
 as_root_in_docker "chown -R $(id -u):$(id -g) /work/backups"
 api restored
+wait_up "${SERVICES[@]}" >/dev/null || die "Not every service came back after the restore."
 
 step "status.sh"
 if bash "$DAVOMAT_DIR/status.sh"; then ok "status.sh: all good"; else die "status.sh found problems (above)."; fi
 
 step "update.sh --here (rebuild and restart)"
 locked bash "$DAVOMAT_DIR/update.sh" --here --no-backup
+wait_up "${SERVICES[@]}" >/dev/null || die "Not every service came back after the update."
 api restored
 
 step "Smoke test passed in $(((SECONDS - started) / 60)) min $(((SECONDS - started) % 60)) s"
