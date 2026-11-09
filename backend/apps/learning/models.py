@@ -425,6 +425,12 @@ class Assignment(TenantModel):
     overdue_notices = models.PositiveSmallIntegerField(default=0)
     escalated_at = models.DateTimeField(null=True, blank=True)
     certificate_no = models.CharField(max_length=24, blank=True)
+    certificate_file = models.FileField(
+        storage=private_storage,
+        upload_to=private_upload_to("certificates"),
+        blank=True,
+        help_text=_("The certificate as a PDF, made once the course is finished."),
+    )
     expires_at = models.DateTimeField(
         null=True, blank=True, help_text=_("When the renewal is due (courses that renew).")
     )

@@ -9,15 +9,21 @@ def process_video(video_id: int) -> str:
 
 
 def sync_audiences() -> int:
-    return 0  # Q1: apps.learning.courses
+    from apps.learning import courses
+
+    return courses.sync_audiences()
 
 
 def send_reminders() -> int:
-    return 0  # Q1: apps.learning.reminders
+    from apps.learning import reminders
+
+    return reminders.send_reminders()
 
 
 def renew_due() -> int:
-    return 0  # Q1: apps.learning.courses
+    from apps.learning import courses
+
+    return courses.renew_due()
 
 
 def clean_uploads() -> int:

@@ -24,7 +24,7 @@ from django.db.models import F, Q, QuerySet
 from django.utils import timezone
 
 from apps.learning import conf
-from apps.learning.models import LIVE, Assignment, Course, Lesson, Status, Video
+from apps.learning.models import LIVE, Assignment, Course, CourseStep, Lesson, Status, Video
 from apps.members import scope
 from apps.members.models import Membership
 from apps.members.permissions import Perm
@@ -254,6 +254,40 @@ def lessons_for_topic(company, topic_id: int) -> list[Lesson]:
     """Published lessons of `topic_id`, the shortest first."""
     lessons = Lesson.objects.filter(company=company).filter(LIVE).filter(topics=topic_id)
     return list(watchable(lessons).distinct().order_by("duration_seconds", "pk"))
+
+
+@dataclass(frozen=True)
+class StepState:
+    step: CourseStep
+    done: bool
+    done_at: datetime | None
+    locked: bool
+
+
+def step_states(
+    course: Course, member: Membership, assignment: Assignment | None
+) -> list[StepState]:
+    """Each step of `course` for `member` in order: done (within `assignment`) and locked (a
+    sequential course opens a step once every required step before it is done)."""
+    steps = list(course.steps.select_related("lesson__video", "page", "quiz"))
+    done: dict[int, datetime] = {}
+    if assignment is not None:
+        done = {row.step_id: row.done_at for row in assignment.completions.all()}
+    states = []
+    blocked = False
+    for step in steps:
+        finished = step.pk in done
+        states.append(
+            StepState(
+                step=step,
+                done=finished,
+                done_at=done.get(step.pk),
+                locked=course.sequential and blocked and not finished,
+            )
+        )
+        if step.required and not finished:
+            blocked = True
+    return states
 
 
 def can_open_lesson(member: Membership, lesson: Lesson) -> bool:
