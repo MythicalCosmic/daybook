@@ -55,7 +55,7 @@ MAX_TOKENS = 8000
 BLANK = "____"
 Kind = Question.Kind
 # A line of a list: "1. ", "2) ", "• ", "- ", "[ ] ".
-LIST_MARK = re.compile(r"^\s*(?:\d{1,2}[.)]|[•\-*–]|\[[ x]\]|[☐☑])\s+")
+LIST_MARK = re.compile(r"^\s*(?:\d{1,2}[.)]|[•\-*–]|\[[ x]\]|[\u2610\u2611])\s+")
 # A term line: a short term, a spaced dash, what it means.
 TERM_LINE = re.compile(r"^(?P<term>[^–—:]{2,40}?)\s+[–—-]\s+(?P<meaning>[^–—]{3,200})$")
 NUMBER = r"[+−-]?\d+(?:[.,]\d+)?"
