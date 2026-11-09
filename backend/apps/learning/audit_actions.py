@@ -17,6 +17,7 @@ class CourseAction(models.TextChoices):
     LESSON_PUBLISHED = "learning.lesson_published", _("Published a lesson")
     LESSON_ARCHIVED = "learning.lesson_archived", _("Archived a lesson")
     LESSON_DELETED = "learning.lesson_deleted", _("Deleted a lesson")
+    TRANSCRIPT_REQUESTED = "learning.transcript_requested", _("Had a lesson's video written down")
     COURSE_CREATED = "learning.course_created", _("Added a course")
     COURSE_CHANGED = "learning.course_changed", _("Changed a course")
     COURSE_PUBLISHED = "learning.course_published", _("Published a course")

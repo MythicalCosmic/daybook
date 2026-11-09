@@ -169,6 +169,7 @@ CELERY_TIMEZONE = TIME_ZONE
 CELERY_TASK_ROUTES = {
     "apps.ai.tasks.*": {"queue": "ai"},
     "apps.learning.tasks.process_video": {"queue": "media"},
+    "apps.learning.tasks.transcribe_lesson": {"queue": "ai"},
     "apps.learning.tasks.draft_questions": {"queue": "ai"},
 }
 CELERY_BEAT_SCHEDULE = {

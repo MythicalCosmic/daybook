@@ -30,3 +30,9 @@ def clean_uploads() -> int:
     from apps.learning import media
 
     return media.clean_uploads()
+
+
+def transcribe_piece(lesson_id: int, job: str, piece: int, *, last_try: bool) -> str:
+    from apps.learning import transcripts
+
+    return transcripts.run_piece(lesson_id, job, piece, last_try=last_try)

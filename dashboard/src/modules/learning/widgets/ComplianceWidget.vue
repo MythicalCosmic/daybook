@@ -44,12 +44,14 @@ const late = computed(() => (data.value?.late ?? []).slice(0, 3));
       <div class="min-w-0 flex-1 text-sm">
         <p class="text-muted">{{ t("learning.overview.complianceBody", { done: data.compliance.completed, people: data.compliance.people }) }}</p>
         <p v-if="!late.length" class="text-success">{{ t("learning.overview.nobodyLate") }}</p>
-        <ul v-else class="mt-0.5 flex flex-col">
-          <li v-for="row in late" :key="`${row.member.id}-${row.course.id}`" class="flex min-w-0 items-baseline gap-2">
-            <RouterLink :to="`/c/${props.companyId}/learning/people/${row.member.id}`" :title="row.course.title" class="min-w-0 truncate text-fg hover:underline">
+        <ul v-else class="mt-1.5 flex flex-col gap-1.5">
+          <li v-for="row in late" :key="`${row.member.id}-${row.course.id}`" class="min-w-0">
+            <RouterLink :to="`/c/${props.companyId}/learning/people/${row.member.id}`" class="block truncate text-fg hover:underline">
               {{ row.member.name }}
             </RouterLink>
-            <span class="shrink-0 text-xs text-danger tabular-nums">{{ t("learning.daysLate", { n: row.days_late }, row.days_late) }}</span>
+            <span class="block truncate text-xs text-muted">
+              <span class="text-danger tabular-nums">{{ t("learning.daysLate", { n: row.days_late }, row.days_late) }}</span> · {{ row.course.title }}
+            </span>
           </li>
         </ul>
       </div>

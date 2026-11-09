@@ -69,6 +69,9 @@ export const learningApi = {
   updateLesson: (cid: number, id: number, input: LessonInput) => http.patch<LessonDetail>(path(cid, `lessons/${id}/`), input),
   lessonAction: (cid: number, id: number, action: "publish" | "archive" | "restore") => http.post<LessonDetail>(path(cid, `lessons/${id}/${action}/`)),
   deleteLesson: (cid: number, id: number) => http.delete(path(cid, `lessons/${id}/`)),
+  /** Write down what is said in the uploaded video (a running job is left alone). */
+  transcribe: (cid: number, id: number) => http.post<LessonDetail>(path(cid, `lessons/${id}/transcribe/`)),
+  stopTranscribing: (cid: number, id: number) => http.delete<LessonDetail>(path(cid, `lessons/${id}/transcribe/`)),
   viewers: (cid: number, id: number, state?: ViewerState | null) => http.get<Viewers>(path(cid, `lessons/${id}/viewers/`), { state: state ?? undefined }),
 
   video: (cid: number, id: number) => http.get<Video>(path(cid, `videos/${id}/`)),

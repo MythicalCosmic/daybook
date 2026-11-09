@@ -12,7 +12,7 @@ from datetime import datetime
 
 from rest_framework import serializers
 
-from apps.learning import certificates, conf, lessons, media, queries
+from apps.learning import certificates, conf, lessons, media, queries, transcripts
 from apps.learning.models import (
     Assignment,
     Course,
@@ -653,12 +653,35 @@ class LearningOwnerLessonRowSerializer(serializers.Serializer):
         ref_name = "LearningOwnerLessonRow"
 
 
+class LearningTranscriptionSerializer(serializers.Serializer):
+    """Writing down the uploaded video (transcripts.py): a job running or failed lately, and
+    why it can't start now ("" when it can)."""
+
+    state = serializers.ChoiceField(choices=["", transcripts.WORKING, transcripts.FAILED])
+    done = serializers.IntegerField()
+    total = serializers.IntegerField()
+    error = serializers.CharField(help_text="The failure's code: no_video, no_sound, …")
+    unavailable = serializers.ChoiceField(
+        choices=[
+            "",
+            transcripts.NO_VIDEO,
+            transcripts.TOO_LONG,
+            transcripts.AI_OFF,
+            transcripts.NO_SPEECH,
+        ]
+    )
+
+    class Meta:
+        ref_name = "LearningTranscription"
+
+
 class LearningOwnerLessonSerializer(LearningOwnerLessonRowSerializer):
     summary = serializers.CharField()
     notes = serializers.CharField()
     youtube_id = serializers.CharField()
     video = LearningVideoSerializer(allow_null=True)
     transcript = serializers.CharField()
+    transcription = LearningTranscriptionSerializer()
     audience_all = serializers.BooleanField()
     positions = LearningRefSerializer(many=True)
     archived_at = serializers.DateTimeField(allow_null=True)
@@ -915,6 +938,7 @@ def owner_lesson(lesson: Lesson, viewers: dict, *, user) -> dict:
         "youtube_id": lesson.youtube_id,
         "video": video_json(lesson.video, user=user) if lesson.video_id else None,
         "transcript": lesson.transcript,
+        "transcription": transcripts.describe(lesson),
         "audience_all": lesson.audience_all,
         "positions": [{"id": row.pk, "name": row.name} for row in lesson.positions.all()],
         "archived_at": lesson.archived_at,

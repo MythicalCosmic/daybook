@@ -45,8 +45,11 @@ def manager(company, member, *, branches=None, **kwargs):
     return person
 
 
-def make_mp4(path: Path, *, seconds: int = 2, size: str = "320x240", rate: int = 10) -> Path:
-    """A real little video with sound (ffmpeg's test pattern and a tone)."""
+def make_mp4(
+    path: Path, *, seconds: int = 2, size: str = "320x240", rate: int = 10, sound: bool = True
+) -> Path:
+    """A real little video with sound (ffmpeg's test pattern and a tone), or without."""
+    tone = ["-f", "lavfi", "-i", f"sine=duration={seconds}"] if sound else []
     subprocess.run(
         [
             "ffmpeg",
@@ -59,18 +62,14 @@ def make_mp4(path: Path, *, seconds: int = 2, size: str = "320x240", rate: int =
             "lavfi",
             "-i",
             f"testsrc=duration={seconds}:size={size}:rate={rate}",
-            "-f",
-            "lavfi",
-            "-i",
-            f"sine=duration={seconds}",
+            *tone,
             "-c:v",
             "libx264",
             "-preset",
             "ultrafast",
             "-pix_fmt",
             "yuv420p",
-            "-c:a",
-            "aac",
+            *(["-c:a", "aac"] if sound else ["-an"]),
             "-shortest",
             str(path),
         ],

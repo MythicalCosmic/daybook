@@ -16,6 +16,9 @@ shell. The client's name and type are never trusted: the stored names are the se
 
 **Cleanup** (`clean_uploads`, daily): uploads nobody finished within a day, and videos no lesson
 has used for a week, go with their files.
+
+**Sound for transcripts** (`audio_piece`, from `transcripts.py` on the ai queue): a stretch of our
+own MP4's first sound stream as mono 16 kHz Opus, through the same hardened input as above.
 """
 
 from __future__ import annotations
@@ -26,6 +29,7 @@ import math
 import os
 import shutil
 import subprocess
+import tempfile
 from dataclasses import dataclass
 from datetime import timedelta
 from pathlib import Path
@@ -561,6 +565,75 @@ def poster_bytes(video_path: Path, *, at: float) -> bytes | None:
             return data
     target.unlink(missing_ok=True)
     return None
+
+
+# Sound for transcripts ------------------------------------------------------------------
+
+PIECE_TIMEOUT = 120
+
+
+def has_sound(video_path: Path) -> bool:
+    """Whether our own MP4 carries a sound stream (ProcessingFailed when it can't be read)."""
+    info = probe(video_path, "mov")
+    return any(stream.get("codec_type") == "audio" for stream in info.get("streams") or [])
+
+
+def audio_piece_args(video_path: Path, target: Path, *, start: int, seconds: int) -> list[str]:
+    """`seconds` of the MP4's first sound stream from `start`, as mono 16 kHz Opus (speech
+    needs no more): no picture, subtitles, data, metadata or chapters."""
+    return [
+        *_nice(),
+        _binary("ffmpeg"),
+        "-nostdin",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-y",
+        "-ss",
+        str(int(start)),
+        "-t",
+        str(int(seconds)),
+        *_input("mov", video_path),
+        "-map",
+        "0:a:0",
+        "-vn",
+        "-sn",
+        "-dn",
+        "-map_metadata",
+        "-1",
+        "-map_chapters",
+        "-1",
+        "-ac",
+        "1",
+        "-ar",
+        "16000",
+        "-c:a",
+        "libopus",
+        "-b:a",
+        "24k",
+        "-application",
+        "voip",
+        "-f",
+        "ogg",
+        f"file:{target}",
+    ]
+
+
+def audio_piece(video_path: Path, *, start: int, seconds: int) -> bytes:
+    """The stretch's Ogg/Opus bytes, written in a temporary folder and read back.
+    ProcessingFailed when ffmpeg can't make it."""
+    with tempfile.TemporaryDirectory(prefix="learning-sound-") as folder:
+        target = Path(folder) / "piece.ogg"
+        try:
+            result = _run(
+                audio_piece_args(video_path, target, start=start, seconds=seconds),
+                timeout=PIECE_TIMEOUT,
+            )
+        except subprocess.TimeoutExpired:
+            raise ProcessingFailed(_("This file isn't a video we can read.")) from None
+        if result.returncode != 0:
+            raise ProcessingFailed(_("This file isn't a video we can read."))
+        return target.read_bytes() if target.exists() else b""
 
 
 def process_video(video_id: int) -> str:

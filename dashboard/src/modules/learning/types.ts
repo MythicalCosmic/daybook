@@ -179,12 +179,26 @@ export interface LessonRow {
   published_at: string | null;
 }
 
+/** Why a video can't be written down now ("" when it can). */
+export type TranscriptionBlock = "" | "no_video" | "too_long" | "ai_off" | "no_speech";
+
+/** Writing the uploaded video down (the speech service, a piece at a time). */
+export interface Transcription {
+  state: "" | "working" | "failed";
+  done: number;
+  total: number;
+  /** The failure's code: no_video, no_sound, nothing_heard, audio_unreadable, speech_unavailable, … */
+  error: string;
+  unavailable: TranscriptionBlock;
+}
+
 export interface LessonDetail extends LessonRow {
   summary: string;
   notes: string;
   youtube_id: string;
   video: Video | null;
   transcript: string;
+  transcription: Transcription;
   audience_all: boolean;
   positions: Ref[];
   archived_at: string | null;

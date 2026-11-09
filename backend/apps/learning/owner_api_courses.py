@@ -33,7 +33,7 @@ from rest_framework.response import Response
 
 from apps.console.base import AnyOf, OwnerAPIView, OwnerViewSet
 from apps.knowledge.models import Page
-from apps.learning import certificates, conf, courses, lessons, media, queries
+from apps.learning import certificates, conf, courses, lessons, media, queries, transcripts
 from apps.learning.api_courses import _steps
 from apps.learning.models import Assignment, Course, CourseStep, Lesson, Quiz, Status, Video
 from apps.learning.serializers_courses import (
@@ -411,6 +411,7 @@ class LessonViewSet(LearningOn, Scope, OwnerViewSet):
         "publish": MANAGE,
         "archive": MANAGE,
         "restore": MANAGE,
+        "transcribe": MANAGE,
     }
 
     def get_queryset(self):
@@ -503,6 +504,31 @@ class LessonViewSet(LearningOn, Scope, OwnerViewSet):
     @action(detail=True, methods=["post"])
     def restore(self, request, company_id, pk):
         lessons.restore_lesson(self.lesson(pk), by=self.membership)
+        return self.shown(pk)
+
+    @extend_schema(
+        methods=["POST"],
+        request=None,
+        responses=LearningOwnerLessonSerializer,
+        description=(
+            "Write down what is said in the uploaded video (the speech service, a piece at a "
+            "time on the ai queue); a running job is left alone. 400 when it can't start "
+            "(`transcription.unavailable` says why)."
+        ),
+    )
+    @extend_schema(
+        methods=["DELETE"],
+        request=None,
+        responses=LearningOwnerLessonSerializer,
+        description="Stop writing it down, or forget a failed attempt.",
+    )
+    @action(detail=True, methods=["post", "delete"])
+    def transcribe(self, request, company_id, pk):
+        lesson = self.lesson(pk)
+        if request.method == "DELETE":
+            transcripts.stop(lesson, by=self.membership)
+        else:
+            transcripts.start(lesson, by=self.membership)
         return self.shown(pk)
 
     @extend_schema(

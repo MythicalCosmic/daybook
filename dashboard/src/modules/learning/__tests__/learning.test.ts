@@ -347,11 +347,31 @@ const lessonDetail = (): LessonDetail => ({
   youtube_id: "dQw4w9WgXcQ",
   video: null,
   transcript: "",
+  transcription: { state: "", done: 0, total: 0, error: "", unavailable: "" },
   audience_all: true,
   positions: [],
   archived_at: null,
   courses: [{ id: 2, name: "Sovuq zanjir" }],
 });
+
+const readyVideo: Video = {
+  id: 4,
+  state: "ready",
+  error: "",
+  original_name: "dars.mp4",
+  original_bytes: 0,
+  received_bytes: 0,
+  chunk_bytes: 0,
+  size_bytes: 1_000_000,
+  duration_seconds: 95,
+  width: 640,
+  height: 360,
+  url: "/api/v1/files/v/",
+  poster_url: null,
+  upload_expires_at: null,
+  created_at: "2026-11-09T10:00:00Z",
+  lessons: [],
+};
 
 describe("a lesson", () => {
   it("previews its YouTube video and shows who watched what", async () => {
@@ -375,6 +395,56 @@ describe("a lesson", () => {
     expect(wrapper.text()).toContain(en["learning.watched.never"]);
     const strip = wrapper.find('[role="img"]');
     expect(strip.findAll("span")).toHaveLength(2);
+  });
+
+  it("writes its uploaded video down, shows how far it got and stops", async () => {
+    let shown: LessonDetail = { ...lessonDetail(), source: "upload", youtube_id: "", video: readyVideo, video_state: "ready" };
+    const calls = stub({
+      "GET learning/lessons/5/": () => json(shown),
+      "GET knowledge/topics/": () => json([]),
+      "POST learning/lessons/5/transcribe/": () => {
+        shown = { ...shown, transcription: { state: "working", done: 1, total: 4, error: "", unavailable: "" } };
+        return json(shown);
+      },
+      "DELETE learning/lessons/5/transcribe/": () => {
+        shown = { ...shown, transcription: { state: "", done: 0, total: 0, error: "", unavailable: "" } };
+        return json(shown);
+      },
+    });
+    const app = await pageApp("/c/1/learning/lessons/5");
+    const { wrapper } = mountWithProviders(LessonPage, { plugins: app.plugins });
+    await settle();
+    const button = (label: string) => wrapper.findAll("button").find((found) => found.text().includes(label));
+    await button(en["learning.transcript.write"])!.trigger("click");
+    await settle();
+    expect(calls.some((call) => call.method === "POST" && call.path === "learning/lessons/5/transcribe/")).toBe(true);
+    expect(wrapper.text()).toContain("Writing down what is said: 1 of 4");
+    expect(wrapper.find('[data-testid="lesson-transcript"] textarea').attributes("disabled")).toBeDefined();
+
+    await button(en["learning.transcript.stop"])!.trigger("click");
+    await settle();
+    expect(calls.some((call) => call.method === "DELETE" && call.path === "learning/lessons/5/transcribe/")).toBe(true);
+    expect(button(en["learning.transcript.write"])!.attributes("disabled")).toBeUndefined();
+  });
+
+  it("says why a video can't be written down, or why it failed", async () => {
+    const failed: LessonDetail = {
+      ...lessonDetail(),
+      source: "upload",
+      youtube_id: "",
+      video: readyVideo,
+      video_state: "ready",
+      transcription: { state: "failed", done: 0, total: 4, error: "no_sound", unavailable: "ai_off" },
+    };
+    stub({ "GET learning/lessons/5/": () => json(failed), "GET knowledge/topics/": () => json([]) });
+    const app = await pageApp("/c/1/learning/lessons/5");
+    const { wrapper } = mountWithProviders(LessonPage, { plugins: app.plugins });
+    await settle();
+    const text = wrapper.text();
+    expect(text).toContain(en["learning.transcript.failed.no_sound"]);
+    expect(text).toContain(en["learning.transcript.unavailable.ai_off"]);
+    const write = wrapper.findAll("button").find((found) => found.text().includes(en["learning.transcript.write"]));
+    expect(write!.attributes("disabled")).toBeDefined();
   });
 });
 

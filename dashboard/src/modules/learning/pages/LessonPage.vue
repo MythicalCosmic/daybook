@@ -6,7 +6,7 @@
  * (docs/PLAN-LEARNING.md §4.2): everyone it is for, never opened, watching (with the parts they
  * really played) or watched, the time spent, the sessions and when.
  */
-import { Archive, Eye, MonitorPlay, RotateCcw, Send, Trash2, Video as VideoIcon } from "@lucide/vue";
+import { Archive, AudioLines, Eye, MonitorPlay, RotateCcw, Send, Trash2, Video as VideoIcon, X } from "@lucide/vue";
 import { computed, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
@@ -25,6 +25,7 @@ import RelativeTime from "@/components/RelativeTime.vue";
 import SegmentedControl from "@/components/SegmentedControl.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import StatusPill from "@/components/StatusPill.vue";
+import TextArea from "@/components/TextArea.vue";
 import TextInput from "@/components/TextInput.vue";
 import UiButton from "@/components/UiButton.vue";
 import { useConfirm } from "@/components/useConfirm";
@@ -47,13 +48,13 @@ const refresh = useRefresh();
 const confirm = useConfirm();
 
 const id = computed(() => Number(route.params.lessonId));
-// While its video is being made, look again every few seconds.
+// While its video is being made or written down, look again every few seconds.
 const making = ref(false);
 const lesson = useLesson(id, () => (making.value ? 4000 : false));
 const data = computed<LessonDetail | undefined>(() => lesson.data.value);
 watch(
-  () => data.value?.video?.state,
-  (state) => (making.value = state === "uploading" || state === "processing"),
+  () => [data.value?.video?.state, data.value?.transcription.state] as const,
+  ([video, words]) => (making.value = video === "uploading" || video === "processing" || words === "working"),
   { immediate: true },
 );
 const canManage = computed(() => company.can("learning.manage"));
@@ -75,7 +76,10 @@ const form = reactive({
   topic_ids: [] as number[],
   audience: "all" as "all" | "positions",
   position_ids: [] as number[],
+  transcript: "",
 });
+// The transcript as the server last had it: one written down meanwhile replaces an untouched one.
+let loadedTranscript = "";
 watch(
   () => data.value?.id,
   () => {
@@ -91,9 +95,19 @@ watch(
       topic_ids: value.topics.map((row) => row.id),
       audience: value.audience_all ? "all" : "positions",
       position_ids: value.positions.map((row) => row.id),
+      transcript: value.transcript,
     });
+    loadedTranscript = value.transcript;
   },
   { immediate: true },
+);
+watch(
+  () => data.value?.transcript,
+  (value) => {
+    if (value === undefined || value === loadedTranscript) return;
+    if (form.transcript === loadedTranscript) form.transcript = value;
+    loadedTranscript = value;
+  },
 );
 const sources = computed(() => [
   { value: "upload" as const, label: t("learning.lesson.upload"), icon: VideoIcon },
@@ -134,6 +148,8 @@ async function save(): Promise<void> {
     position_ids: form.audience === "all" ? [] : form.position_ids,
   };
   if (form.source === "youtube") input.youtube = form.youtube.trim();
+  // Only a changed transcript is sent, so saving never undoes one just written down.
+  if (form.transcript !== loadedTranscript) input.transcript = form.transcript;
   try {
     await learningApi.updateLesson(cid.value, id.value, input);
     toast.success(t("learning.saved"));
@@ -148,6 +164,49 @@ async function uploaded(video: Video): Promise<void> {
   toast.success(t("learning.upload.done"));
   refresh();
 }
+
+// The transcript, written down from the uploaded video ------------------------------------------
+
+const job = computed(() => data.value?.transcription ?? { state: "" as const, done: 0, total: 0, error: "", unavailable: "" as const });
+const BLOCKS = new Set(["no_video", "too_long", "ai_off", "no_speech"]);
+const FAILURES = new Set(["no_video", "no_sound", "nothing_heard", "audio_unreadable", "speech_unavailable"]);
+const failure = computed(() => {
+  const code = job.value.error;
+  if (code !== "no_video" && BLOCKS.has(code)) return t(`learning.transcript.unavailable.${code}`);
+  return t(FAILURES.has(code) ? `learning.transcript.failed.${code}` : "learning.transcript.failed.other");
+});
+const starting = ref(false);
+async function transcribe(): Promise<void> {
+  if (form.transcript.trim() || data.value?.transcript.trim()) {
+    const ok = await confirm({
+      title: t("learning.transcript.replaceTitle"),
+      message: t("learning.transcript.replaceBody"),
+      confirmLabel: t("learning.transcript.write"),
+    });
+    if (!ok) return;
+  }
+  starting.value = true;
+  try {
+    await learningApi.transcribe(cid.value, id.value);
+    refresh();
+  } finally {
+    starting.value = false;
+  }
+}
+async function stopTranscribing(): Promise<void> {
+  await learningApi.stopTranscribing(cid.value, id.value);
+  refresh();
+}
+// "Written down" once, when a job ends with new text (not when someone stops it).
+let heardBefore: string | null = null;
+watch(
+  () => [data.value?.transcription.state, data.value?.transcript] as const,
+  ([state, text], [was]) => {
+    if (state === "working") heardBefore ??= text ?? "";
+    else if (was === "working" && heardBefore !== null && text !== heardBefore) toast.success(t("learning.transcript.done"));
+    if (state !== "working") heardBefore = null;
+  },
+);
 
 async function act(action: "publish" | "archive" | "restore"): Promise<void> {
   await learningApi.lessonAction(cid.value, id.value, action);
@@ -226,6 +285,33 @@ const viewerOptions = computed(() => {
 
           <FormField :label="t('learning.lesson.notes')" :hint="t('learning.lesson.notesHint')">
             <ExtensionSlot name="learning.lesson.notes" as="none" :context="notesContext" />
+          </FormField>
+          <FormField :label="t('learning.transcript.label')" :hint="t('learning.transcript.hint')" optional>
+            <div class="flex min-w-0 flex-col gap-2" data-testid="lesson-transcript">
+              <template v-if="canManage && form.source === 'upload' && data.source === 'upload' && data.video">
+                <InlineAlert v-if="job.state === 'working'" size="sm" :title="t('learning.transcript.working', { done: job.done, total: job.total })">
+                  <p class="text-sm text-muted">{{ t("learning.transcript.workingHint") }}</p>
+                  <UiButton class="mt-2" size="sm" variant="secondary" :icon="X" @click="stopTranscribing">{{ t("learning.transcript.stop") }}</UiButton>
+                </InlineAlert>
+                <template v-else>
+                  <InlineAlert v-if="job.state === 'failed'" size="sm" tone="danger" :title="failure" />
+                  <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <UiButton size="sm" variant="secondary" :icon="AudioLines" :disabled="!!job.unavailable" :loading="starting" @click="transcribe">
+                      {{ t("learning.transcript.write") }}
+                    </UiButton>
+                    <span v-if="job.unavailable" class="text-xs text-muted">{{ t(`learning.transcript.unavailable.${job.unavailable}`) }}</span>
+                  </div>
+                </template>
+              </template>
+              <TextArea
+                v-model="form.transcript"
+                :rows="4"
+                :max-rows="16"
+                :maxlength="200000"
+                :disabled="!canManage || job.state === 'working'"
+                :placeholder="t(form.source === 'upload' ? 'learning.transcript.placeholder' : 'learning.transcript.placeholderTyped')"
+              />
+            </div>
           </FormField>
           <FormField :label="t('learning.lesson.topics')" :hint="t('learning.lesson.topicsHint')" optional>
             <MultiSelect v-model="form.topic_ids" :options="topicOptions" :placeholder="t('learning.lesson.pickTopics')" display="chips" :disabled="!canManage" />

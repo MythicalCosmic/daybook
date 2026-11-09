@@ -2,7 +2,8 @@
 
 Thin wrappers: services import this module to queue jobs, so it never imports `services`; the
 work lives in `schedule_courses.py` (Q1) and `schedule_quizzes.py` (Q2), which both can import.
-`process_video` runs on the "media" queue (its own worker, ffmpeg); `draft_questions` on "ai".
+`process_video` runs on the "media" queue (its own worker, ffmpeg); `transcribe_lesson` and
+`draft_questions` on "ai".
 """
 
 from celery import shared_task
@@ -36,6 +37,23 @@ def renew_due() -> int:
 @shared_task
 def clean_uploads() -> int:
     return schedule_courses.clean_uploads()
+
+
+# The speech service answers 503 while it loads its models: the piece tries again this often.
+TRANSCRIBE_RETRIES = 5
+TRANSCRIBE_RETRY_SECONDS = 20
+
+
+@shared_task(bind=True, queue="ai", max_retries=TRANSCRIBE_RETRIES)
+def transcribe_lesson(self, lesson_id: int, job: str, piece: int) -> str:
+    """One piece of a lesson video's sound to the speech service, then the next
+    (`transcripts.py`)."""
+    outcome = schedule_courses.transcribe_piece(
+        lesson_id, job, piece, last_try=self.request.retries >= TRANSCRIBE_RETRIES
+    )
+    if outcome == "busy":
+        raise self.retry(countdown=TRANSCRIBE_RETRY_SECONDS)
+    return outcome
 
 
 # Q2 ---------------------------------------------------------------------------------------
