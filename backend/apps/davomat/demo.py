@@ -100,9 +100,11 @@ def build(
     username: str = "admin",
     password: str = PASSWORD,
     live: bool = False,
+    days_back: int = DAYS_BACK,
 ):
-    """The whole demo, as of `now`; the organization must not exist yet. `live`: today's scans
-    after `now` wait in `pending` for `run_live` (otherwise they never happen)."""
+    """The whole demo, as of `now`; the organization must not exist yet, with `days_back` days
+    of scans before today (the command makes a month of them, for the reports). `live`: today's
+    scans after `now` wait in `pending` for `run_live` (otherwise they never happen)."""
     now = now or timezone.now()
     with demo_time.moment(now - timedelta(days=40)):
         owner = services.setup_organization(
@@ -170,9 +172,10 @@ def build(
             services.add_face_number(user, by=owner, number=number)
             scanning.append((user, number, shown, where))
         ids = [row[0].pk for row in scanning]
-        start = today - timedelta(days=DAYS_BACK + 1)
+        # The roster starts the first day of scans (a day before it, everyone looked absent).
+        start = today - timedelta(days=days_back)
         attendance.assign_schedule(company, schedule, ids, by=owner, effective_from=start)
-        attendance.generate_shifts(company, start=start, days=DAYS_BACK + 1, member_ids=ids)
+        attendance.generate_shifts(company, start=start, days=days_back + 1, member_ids=ids)
     devices = _terminals(company, branches, now)
     built = Built(company, owner, manager, people, devices, scanning)
     # Oydin is on leave from today (a family wedding); her shifts say so.
@@ -180,7 +183,7 @@ def build(
         timeoff.record_time_off(
             people[4], by=owner, first_day=today, last_day=today + timedelta(days=2), reason="To‘y"
         )
-    _scan_the_week(built, today, now, live=live)
+    _scan_the_week(built, today, now, live=live, days_back=days_back)
     with demo_time.moment(now):
         attendance.auto_close(company, now)
         attendance.mark_absences(company, now)
@@ -325,7 +328,9 @@ def _newcomer_day(company: Company, today: date, now: datetime) -> date:
     return day - timedelta(days=1) if day.weekday() == 6 else day
 
 
-def _scan_the_week(built: Built, today: date, now: datetime, *, live: bool = False) -> None:
+def _scan_the_week(
+    built: Built, today: date, now: datetime, *, live: bool = False, days_back: int = DAYS_BACK
+) -> None:
     """Each workday this past week and this morning: everyone in between 08:35 and 09:15 (a
     few late), out after 18:00; someone off sick now and then, someone who forgot to scan out.
     Each morning starts the way the nightly jobs leave it: forgotten check-outs closed and
@@ -337,7 +342,7 @@ def _scan_the_week(built: Built, today: date, now: datetime, *, live: bool = Fal
         where: iter(range(41000 * (n + 1), 41000 * (n + 2)))
         for n, where in enumerate(built.devices)
     }
-    for number, day in enumerate(today - timedelta(days=back) for back in range(DAYS_BACK, -1, -1)):
+    for number, day in enumerate(today - timedelta(days=back) for back in range(days_back, -1, -1)):
         morning = clock.at(company, day, time(6, 0))
         if morning >= now and not (live and day == today):
             break

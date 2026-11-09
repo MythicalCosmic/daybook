@@ -147,7 +147,8 @@ async def test_help_and_anything_else(dp, bot, linked):
 async def test_before_setup_the_bot_says_so(dp, bot, db):
     await dp.feed_update(bot, updates.message(updates.tg_user(9011), "/start"))
 
-    assert "isn't set up yet" in bot.sent()[0].text
+    # In Uzbek, the edition's language until an organization picks its own.
+    assert "hali sozlanmagan" in bot.sent()[0].text
 
 
 async def test_blocking_and_unblocking_is_recorded(dp, bot, linked):

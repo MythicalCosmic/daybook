@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-10 02:07+0500\n"
+"POT-Creation-Date: 2026-11-10 02:25+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -5149,6 +5149,10 @@ msgid "The last day counted: the end, or today."
 msgstr "Последний учтённый день: конец периода или сегодня."
 
 #: backend/apps/attendance/serializers.py
+msgid "The totals of the period compared with (?compare=)."
+msgstr "Итоги периода, с которым идёт сравнение (?compare=)."
+
+#: backend/apps/attendance/serializers.py
 msgid "Present of those expected."
 msgstr "Пришли из ожидаемых."
 
@@ -6133,7 +6137,7 @@ msgstr "В этом виде слишком много данных, его не
 msgid "You already have a view with this name here."
 msgstr "У вас здесь уже есть вид с таким названием."
 
-#: backend/apps/core/bot_runtime.py
+#: backend/apps/core/bot_runtime.py davomat_bot/handlers/start.py
 msgid "This message is too old. Open it again from the menu."
 msgstr "Это сообщение устарело. Откройте его заново из меню."
 
@@ -19689,11 +19693,11 @@ msgstr "Эта неделя"
 msgid "Last week"
 msgstr "Прошлая неделя"
 
-#: backend/apps/reports/periods.py
+#: backend/apps/reports/periods.py davomat_bot/handlers/report.py
 msgid "This month"
 msgstr "Этот месяц"
 
-#: backend/apps/reports/periods.py
+#: backend/apps/reports/periods.py davomat_bot/handlers/report.py
 msgid "Last month"
 msgstr "Прошлый месяц"
 
@@ -24096,6 +24100,10 @@ msgid "/today: who is at work, who is late and who isn't in yet"
 msgstr "/today: кто на работе, кто опоздал и кто ещё не пришёл"
 
 #: davomat_bot/bot_messages.py
+msgid "/report: the month's attendance report, Excel or PDF"
+msgstr "/report: отчёт по посещаемости за месяц, Excel или PDF"
+
+#: davomat_bot/bot_messages.py
 msgid "/me: your day and your month"
 msgstr "/me: ваш день и месяц"
 
@@ -24184,6 +24192,42 @@ msgstr "Мой день и месяц"
 #: davomat_bot/commands.py
 msgid "Who is at work today"
 msgstr "Кто сегодня на работе"
+
+#: davomat_bot/commands.py
+msgid "Attendance report, Excel or PDF"
+msgstr "Отчёт по посещаемости, Excel или PDF"
+
+#: davomat_bot/handlers/nudges.py
+msgid ""
+"Here you check in and out at the terminal: it records you when it sees your "
+"face."
+msgstr "Здесь приход и уход отмечает терминал: он узнаёт вас в лицо."
+
+#: davomat_bot/handlers/nudges.py
+#: employee_bot/bot/handlers/features/attendance.py
+msgid "This shift isn't yours any more."
+msgstr "Эта смена больше не ваша."
+
+#: davomat_bot/handlers/nudges.py
+#: employee_bot/bot/handlers/features/attendance.py
+msgid "You're already checked out."
+msgstr "Вы уже отметили уход."
+
+#: davomat_bot/handlers/report.py
+msgid ""
+"<b>Attendance report</b>\n"
+"By person, in your branches. Which one?"
+msgstr ""
+"<b>Отчёт по посещаемости</b>\n"
+"По сотрудникам, в ваших филиалах. Какой нужен?"
+
+#: davomat_bot/handlers/report.py
+msgid "Downloading reports needs the export permission. Your own month: /me"
+msgstr "Чтобы скачивать отчёты, нужно право на экспорт. Ваш месяц: /me"
+
+#: davomat_bot/handlers/report.py
+msgid "Here it is"
+msgstr "Готово"
 
 #: davomat_bot/handlers/today.py
 msgid "Updated"
@@ -24374,14 +24418,6 @@ msgstr ""
 #, python-format
 msgid "Tap «%(button)s» below to share where you are."
 msgstr "Нажмите «%(button)s» ниже, чтобы отправить своё местоположение."
-
-#: employee_bot/bot/handlers/features/attendance.py
-msgid "This shift isn't yours any more."
-msgstr "Эта смена больше не ваша."
-
-#: employee_bot/bot/handlers/features/attendance.py
-msgid "You're already checked out."
-msgstr "Вы уже отметили уход."
 
 #: employee_bot/bot/handlers/features/knowledge.py
 msgid "This page has changed. Here is the new version."

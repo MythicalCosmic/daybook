@@ -37,12 +37,20 @@ class Command(BaseCommand):
             "--reset", action="store_true", help="Replace an earlier Namuna MChJ demo."
         )
         parser.add_argument(
+            "--days",
+            type=int,
+            default=30,
+            choices=range(1, 31),
+            metavar="1-30",
+            help="Days of scans before today (default 30: a month for the reports).",
+        )
+        parser.add_argument(
             "--live",
             action="store_true",
             help="Then post today's scans still to come, each at its time (runs until the last).",
         )
 
-    def handle(self, *args, admin_username, admin_password, reset, live=False, **options):
+    def handle(self, *args, admin_username, admin_password, reset, live=False, days=30, **options):
         if not conf.is_on():
             raise CommandError("Set EDITION=davomat first: this demo is the Davomat edition's.")
         password = admin_password or os.environ.get(PASSWORD_ENV, "") or demo.PASSWORD
@@ -59,7 +67,9 @@ class Command(BaseCommand):
                 if existing is not None:
                     self._remove(existing)
                 with demo_time.run_hooks():
-                    built = demo.build(username=admin_username, password=password, live=live)
+                    built = demo.build(
+                        username=admin_username, password=password, live=live, days_back=days
+                    )
         except FieldError as exc:
             raise CommandError(f"{exc.field}: {' '.join(exc.messages)}") from exc
         self.stdout.write(

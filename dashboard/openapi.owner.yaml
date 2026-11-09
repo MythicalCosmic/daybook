@@ -122,6 +122,63 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/owner/auth/password/:
+    post:
+      operationId: auth_password_create
+      description: |-
+        Sign in with a username and password (both editions). Five wrong passwords for one
+        username from one address lock it for 15 minutes (429).
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DavomatPasswordLoginRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DavomatPasswordLoginRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DavomatPasswordLoginRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          description: 'Signed in: {access} and the refresh cookie.'
+        '400':
+          description: '{"detail": "Wrong username or password."}'
+        '403':
+          description: The account may not use the web app.
+        '429':
+          description: Locked for a while after wrong passwords.
+  /api/v1/owner/auth/password/change/:
+    post:
+      operationId: auth_password_change_create
+      description: 'Change your own password: every other browser of yours is signed
+        out.'
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DavomatPasswordChangeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DavomatPasswordChangeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DavomatPasswordChangeRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+        '400':
+          description: '{current|new: [messages]}'
   /api/v1/owner/auth/refresh/:
     post:
       operationId: auth_refresh_create
@@ -3309,6 +3366,394 @@ paths:
               schema:
                 $ref: '#/components/schemas/RecordRow'
           description: ''
+  /api/v1/owner/companies/{company_id}/attendance/reports/branches/:
+    get:
+      operationId: companies_attendance_reports_branches_retrieve
+      description: The same figures per branch, where the days happened.
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: array
+          items:
+            type: integer
+        description: Branch ids (within your scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: compare
+        schema:
+          type: string
+          enum:
+          - none
+          - prev
+          - year
+        description: 'The summary''s `previous` totals: the period before, or a year
+          before.'
+      - in: query
+        name: department
+        schema:
+          type: array
+          items:
+            type: integer
+        description: Department ids (with those below them).
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - json
+          - pdf
+          - xlsx
+        description: 'xlsx or pdf: the report as a file (needs data.export).'
+      - in: query
+        name: from
+        schema:
+          type: string
+        description: First day, YYYY-MM-DD.
+      - in: query
+        name: preset
+        schema:
+          type: string
+        description: Instead of from/to; this month by default.
+      - in: query
+        name: to
+        schema:
+          type: string
+        description: Last day, YYYY-MM-DD (today by default).
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceReportBranches'
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+          description: ''
+  /api/v1/owner/companies/{company_id}/attendance/reports/departments/:
+    get:
+      operationId: companies_attendance_reports_departments_retrieve
+      description: The same figures per department (people without one in their own
+        row).
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: array
+          items:
+            type: integer
+        description: Branch ids (within your scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: compare
+        schema:
+          type: string
+          enum:
+          - none
+          - prev
+          - year
+        description: 'The summary''s `previous` totals: the period before, or a year
+          before.'
+      - in: query
+        name: department
+        schema:
+          type: array
+          items:
+            type: integer
+        description: Department ids (with those below them).
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - json
+          - pdf
+          - xlsx
+        description: 'xlsx or pdf: the report as a file (needs data.export).'
+      - in: query
+        name: from
+        schema:
+          type: string
+        description: First day, YYYY-MM-DD.
+      - in: query
+        name: preset
+        schema:
+          type: string
+        description: Instead of from/to; this month by default.
+      - in: query
+        name: to
+        schema:
+          type: string
+        description: Last day, YYYY-MM-DD (today by default).
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceReportDepartments'
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+          description: ''
+  /api/v1/owner/companies/{company_id}/attendance/reports/punctuality/:
+    get:
+      operationId: companies_attendance_reports_punctuality_retrieve
+      description: People who checked in for a shift, the most punctual first.
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: array
+          items:
+            type: integer
+        description: Branch ids (within your scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: compare
+        schema:
+          type: string
+          enum:
+          - none
+          - prev
+          - year
+        description: 'The summary''s `previous` totals: the period before, or a year
+          before.'
+      - in: query
+        name: department
+        schema:
+          type: array
+          items:
+            type: integer
+        description: Department ids (with those below them).
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - json
+          - pdf
+          - xlsx
+        description: 'xlsx or pdf: the report as a file (needs data.export).'
+      - in: query
+        name: from
+        schema:
+          type: string
+        description: First day, YYYY-MM-DD.
+      - in: query
+        name: preset
+        schema:
+          type: string
+        description: Instead of from/to; this month by default.
+      - in: query
+        name: to
+        schema:
+          type: string
+        description: Last day, YYYY-MM-DD (today by default).
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceReportPunctuality'
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+          description: ''
+  /api/v1/owner/companies/{company_id}/attendance/reports/summary/:
+    get:
+      operationId: companies_attendance_reports_summary_retrieve
+      description: |-
+        Per person: days planned, present, absent and on leave, hours, lateness, early leaves,
+        overtime, punctuality and attendance rates, with the totals.
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: array
+          items:
+            type: integer
+        description: Branch ids (within your scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: compare
+        schema:
+          type: string
+          enum:
+          - none
+          - prev
+          - year
+        description: 'The summary''s `previous` totals: the period before, or a year
+          before.'
+      - in: query
+        name: department
+        schema:
+          type: array
+          items:
+            type: integer
+        description: Department ids (with those below them).
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - json
+          - pdf
+          - xlsx
+        description: 'xlsx or pdf: the report as a file (needs data.export).'
+      - in: query
+        name: from
+        schema:
+          type: string
+        description: First day, YYYY-MM-DD.
+      - in: query
+        name: preset
+        schema:
+          type: string
+        description: Instead of from/to; this month by default.
+      - in: query
+        name: to
+        schema:
+          type: string
+        description: Last day, YYYY-MM-DD (today by default).
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceReportSummary'
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+          description: ''
+  /api/v1/owner/companies/{company_id}/attendance/reports/trend/:
+    get:
+      operationId: companies_attendance_reports_trend_retrieve
+      description: 'Per day: people planned, present, late, absent and on leave.'
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: array
+          items:
+            type: integer
+        description: Branch ids (within your scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: compare
+        schema:
+          type: string
+          enum:
+          - none
+          - prev
+          - year
+        description: 'The summary''s `previous` totals: the period before, or a year
+          before.'
+      - in: query
+        name: department
+        schema:
+          type: array
+          items:
+            type: integer
+        description: Department ids (with those below them).
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - json
+          - pdf
+          - xlsx
+        description: 'xlsx or pdf: the report as a file (needs data.export).'
+      - in: query
+        name: from
+        schema:
+          type: string
+        description: First day, YYYY-MM-DD.
+      - in: query
+        name: preset
+        schema:
+          type: string
+        description: Instead of from/to; this month by default.
+      - in: query
+        name: to
+        schema:
+          type: string
+        description: Last day, YYYY-MM-DD (today by default).
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceReportTrend'
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+          description: ''
   /api/v1/owner/companies/{company_id}/attendance/roster/:
     get:
       operationId: companies_attendance_roster_retrieve
@@ -4982,6 +5427,60 @@ paths:
                 items:
                   $ref: '#/components/schemas/AgendaSource'
           description: ''
+  /api/v1/owner/companies/{company_id}/davomat/settings/:
+    get:
+      operationId: companies_davomat_settings_retrieve
+      description: 'Davomat''s company endpoints don''t exist in Daybook: 404 before
+        anything else answers.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DavomatSettings'
+          description: ''
+    patch:
+      operationId: companies_davomat_settings_partial_update
+      description: 'Davomat''s company endpoints don''t exist in Daybook: 404 before
+        anything else answers.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDavomatSettingsRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedDavomatSettingsRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDavomatSettingsRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DavomatSettings'
+          description: ''
   /api/v1/owner/companies/{company_id}/departments/:
     get:
       operationId: companies_departments_list
@@ -5140,6 +5639,553 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Department'
+          description: ''
+  /api/v1/owner/companies/{company_id}/employees/:
+    get:
+      operationId: companies_employees_list
+      description: The people who scan at the terminals.
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: department
+        schema:
+          type: integer
+      - in: query
+        name: face
+        schema:
+          type: boolean
+        description: Has face numbers (true) or none (false).
+      - in: query
+        name: linked
+        schema:
+          type: boolean
+        description: Telegram linked (true) or not (false).
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: position
+        schema:
+          type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Name, phone or face number.
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - active
+          - left
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDavomatEmployeeList'
+          description: ''
+    post:
+      operationId: companies_employees_create
+      description: The people who scan at the terminals.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DavomatEmployeeWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DavomatEmployeeWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DavomatEmployeeWriteRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DavomatEmployee'
+          description: ''
+  /api/v1/owner/companies/{company_id}/employees/{id}/:
+    get:
+      operationId: companies_employees_retrieve
+      description: The people who scan at the terminals.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DavomatEmployee'
+          description: ''
+    patch:
+      operationId: companies_employees_partial_update
+      description: The people who scan at the terminals.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDavomatEmployeeWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedDavomatEmployeeWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDavomatEmployeeWriteRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DavomatEmployee'
+          description: ''
+  /api/v1/owner/companies/{company_id}/employees/{id}/face-numbers/:
+    post:
+      operationId: companies_employees_face_numbers_create
+      description: Link one more terminal number to them.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DavomatFaceNumberRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DavomatFaceNumberRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DavomatFaceNumberRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DavomatEmployee'
+          description: ''
+  /api/v1/owner/companies/{company_id}/employees/{id}/face-numbers/{number}/:
+    delete:
+      operationId: companies_employees_face_numbers_destroy
+      description: Unlink one of their terminal numbers.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: number
+        schema:
+          type: string
+          pattern: ^[^/]+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/employees/{id}/leave/:
+    post:
+      operationId: companies_employees_leave_create
+      description: They left on `left_on` (today if empty).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DavomatLeaveRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DavomatLeaveRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DavomatLeaveRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DavomatEmployee'
+          description: ''
+  /api/v1/owner/companies/{company_id}/employees/{id}/photo/:
+    post:
+      operationId: companies_employees_photo_create
+      description: Their photo (re-encoded on the server), or DELETE to remove it.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DavomatPhotoRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DavomatEmployee'
+          description: ''
+    delete:
+      operationId: companies_employees_photo_destroy
+      description: Their photo (re-encoded on the server), or DELETE to remove it.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/employees/{id}/photo/from-scan/:
+    post:
+      operationId: companies_employees_photo_from_scan_create
+      description: Their latest terminal snapshot becomes their photo (400 when there
+        is none).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DavomatEmployee'
+          description: ''
+  /api/v1/owner/companies/{company_id}/employees/{id}/return/:
+    post:
+      operationId: companies_employees_return_create
+      description: Someone who left comes back, hired again on `hire_date` (today
+        if empty).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DavomatReturnRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DavomatReturnRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DavomatReturnRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DavomatEmployee'
+          description: ''
+  /api/v1/owner/companies/{company_id}/employees/{id}/telegram-link/:
+    post:
+      operationId: companies_employees_telegram_link_create
+      description: A one-time link (24 hours) for their Telegram, or DELETE to unlink
+        it.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DavomatTelegramLink'
+          description: ''
+    delete:
+      operationId: companies_employees_telegram_link_destroy
+      description: A one-time link (24 hours) for their Telegram, or DELETE to unlink
+        it.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/employees/export/:
+    get:
+      operationId: companies_employees_export_retrieve
+      description: |-
+        The employees (with the list's filters) as a spreadsheet, in the columns the import
+        reads.
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: department
+        schema:
+          type: integer
+      - in: query
+        name: face
+        schema:
+          type: boolean
+        description: Has face numbers (true) or none (false).
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - csv
+          - xlsx
+        description: xlsx if empty.
+      - in: query
+        name: linked
+        schema:
+          type: boolean
+        description: Telegram linked (true) or not (false).
+      - in: query
+        name: position
+        schema:
+          type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Name, phone or face number.
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - active
+          - left
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+            text/csv:
+              schema:
+                type: string
+                format: binary
+          description: ''
+  /api/v1/owner/companies/{company_id}/employees/import/:
+    post:
+      operationId: companies_employees_import_create
+      description: |-
+        Employees from an XLSX or CSV file (first name, last name, phone, position,
+        department, branch, face number, hire date): a face number someone has updates them,
+        the rest are added. `?dry_run=1` changes nothing.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: dry_run
+        schema:
+          type: boolean
+        description: Only say what would happen.
+      tags:
+      - companies
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DavomatImportUploadRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DavomatImportResult'
           description: ''
   /api/v1/owner/companies/{company_id}/exports/:
     get:
@@ -28452,6 +29498,104 @@ paths:
               schema:
                 $ref: '#/components/schemas/TaskSummary'
           description: ''
+  /api/v1/owner/companies/{company_id}/telegram/:
+    get:
+      operationId: companies_telegram_retrieve
+      description: |-
+        The organization's own bot: PUT a BotFather token (checked with Telegram first, kept
+        encrypted, never shown again), DELETE to disconnect it.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DavomatTelegram'
+          description: ''
+    put:
+      operationId: companies_telegram_update
+      description: |-
+        The organization's own bot: PUT a BotFather token (checked with Telegram first, kept
+        encrypted, never shown again), DELETE to disconnect it.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DavomatTelegramRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DavomatTelegramRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DavomatTelegramRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DavomatTelegram'
+          description: ''
+    delete:
+      operationId: companies_telegram_destroy
+      description: |-
+        The organization's own bot: PUT a BotFather token (checked with Telegram first, kept
+        encrypted, never shown again), DELETE to disconnect it.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/telegram/test/:
+    post:
+      operationId: companies_telegram_test_create
+      description: A test message from the bot to you (your Telegram must be linked).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DavomatSent'
+          description: ''
+        '400':
+          description: No response body
   /api/v1/owner/companies/{company_id}/time-off/:
     get:
       operationId: companies_time_off_list
@@ -28745,6 +29889,352 @@ paths:
               schema:
                 $ref: '#/components/schemas/TimeoffStats'
           description: ''
+  /api/v1/owner/companies/{company_id}/users/:
+    get:
+      operationId: companies_users_list
+      description: The people who sign in to the web app.
+      parameters:
+      - in: query
+        name: active
+        schema:
+          type: boolean
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: kind
+        schema:
+          type: string
+          enum:
+          - admin
+          - manager
+          - owner
+          - viewer
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Name or username.
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDavomatUserList'
+          description: ''
+    post:
+      operationId: companies_users_create
+      description: The people who sign in to the web app.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DavomatUserCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DavomatUserCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DavomatUserCreateRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DavomatUser'
+          description: ''
+  /api/v1/owner/companies/{company_id}/users/{id}/:
+    get:
+      operationId: companies_users_retrieve
+      description: The people who sign in to the web app.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DavomatUser'
+          description: ''
+    patch:
+      operationId: companies_users_partial_update
+      description: The people who sign in to the web app.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDavomatUserUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedDavomatUserUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDavomatUserUpdateRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DavomatUser'
+          description: ''
+    delete:
+      operationId: companies_users_destroy
+      description: Switch the user off (nothing is deleted; `activate/` brings them
+        back).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/users/{id}/activate/:
+    post:
+      operationId: companies_users_activate_create
+      description: The people who sign in to the web app.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DavomatUser'
+          description: ''
+  /api/v1/owner/companies/{company_id}/users/{id}/deactivate/:
+    post:
+      operationId: companies_users_deactivate_create
+      description: The people who sign in to the web app.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DavomatUser'
+          description: ''
+  /api/v1/owner/companies/{company_id}/users/{id}/password/:
+    post:
+      operationId: companies_users_password_create
+      description: 'Give the user a new password: their sessions end (yours stays,
+        for your own).'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DavomatPasswordSetRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DavomatPasswordSetRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DavomatPasswordSetRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/users/{id}/telegram-link/:
+    post:
+      operationId: companies_users_telegram_link_create
+      description: |-
+        A one-time link for the user's Telegram (yourself, or anyone with roles.manage), or
+        DELETE to unlink it.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DavomatTelegramLink'
+          description: ''
+    delete:
+      operationId: companies_users_telegram_link_destroy
+      description: |-
+        A one-time link for the user's Telegram (yourself, or anyone with roles.manage), or
+        DELETE to unlink it.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/users/roles/:
+    get:
+      operationId: companies_users_roles_list
+      description: The roles a user can be given, strongest first.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDavomatRoleList'
+          description: ''
   /api/v1/owner/companies/new/:
     get:
       operationId: companies_new_retrieve
@@ -28762,6 +30252,52 @@ paths:
               schema:
                 $ref: '#/components/schemas/NewCompanyInfo'
           description: ''
+  /api/v1/owner/edition/:
+    get:
+      operationId: edition_retrieve
+      description: |-
+        Which product this install is, its organization, and whether it still needs setting
+        up. Public: the sign-in page reads it.
+      tags:
+      - edition
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DavomatEdition'
+          description: ''
+  /api/v1/owner/edition/setup/:
+    post:
+      operationId: edition_setup_create
+      description: |-
+        The first run: the organization and its owner, signed in at once. Only while no
+        organization exists (409 afterwards).
+      tags:
+      - edition
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DavomatSetupRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DavomatSetupRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DavomatSetupRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '201':
+          description: 'Signed in: {access} and the refresh cookie.'
+        '403':
+          description: 'A wrong setup code (code: setup_token).'
+        '409':
+          description: The organization exists already.
   /api/v1/owner/me/:
     get:
       operationId: me_retrieve
@@ -33179,6 +34715,508 @@ components:
       required:
       - id
       - name
+    AttendanceReportBranch:
+      type: object
+      properties:
+        days_scheduled:
+          type: integer
+          description: Days with a planned shift.
+        days_present:
+          type: integer
+        days_absent:
+          type: integer
+        days_leave:
+          type: integer
+        days_excused:
+          type: integer
+        worked_minutes:
+          type: integer
+        late_count:
+          type: integer
+        late_minutes:
+          type: integer
+        early_leave_count:
+          type: integer
+        early_leave_minutes:
+          type: integer
+        overtime_minutes:
+          type: integer
+        arrivals:
+          type: integer
+          description: Check-ins for a shift.
+        on_time:
+          type: integer
+        punctuality_percent:
+          type: number
+          format: double
+          nullable: true
+        attendance_percent:
+          type: number
+          format: double
+          nullable: true
+        branch:
+          allOf:
+          - $ref: '#/components/schemas/AttendanceBranchRef'
+          nullable: true
+        people:
+          type: integer
+      required:
+      - arrivals
+      - attendance_percent
+      - branch
+      - days_absent
+      - days_excused
+      - days_leave
+      - days_present
+      - days_scheduled
+      - early_leave_count
+      - early_leave_minutes
+      - late_count
+      - late_minutes
+      - on_time
+      - overtime_minutes
+      - people
+      - punctuality_percent
+      - worked_minutes
+    AttendanceReportBranches:
+      type: object
+      properties:
+        range:
+          type: object
+          additionalProperties:
+            type: string
+            format: date
+        counted_until:
+          type: string
+          format: date
+          nullable: true
+          description: 'The last day counted: the end, or today.'
+        today:
+          type: string
+          format: date
+        totals:
+          $ref: '#/components/schemas/AttendanceReportTotals'
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttendanceReportBranch'
+      required:
+      - counted_until
+      - range
+      - rows
+      - today
+      - totals
+    AttendanceReportDay:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        scheduled:
+          type: integer
+        present:
+          type: integer
+        expected_present:
+          type: integer
+          description: Present of those expected.
+        late:
+          type: integer
+        absent:
+          type: integer
+        leave:
+          type: integer
+        excused:
+          type: integer
+        worked_minutes:
+          type: integer
+        punctuality_percent:
+          type: number
+          format: double
+          nullable: true
+      required:
+      - absent
+      - date
+      - excused
+      - expected_present
+      - late
+      - leave
+      - present
+      - punctuality_percent
+      - scheduled
+      - worked_minutes
+    AttendanceReportDepartment:
+      type: object
+      properties:
+        days_scheduled:
+          type: integer
+          description: Days with a planned shift.
+        days_present:
+          type: integer
+        days_absent:
+          type: integer
+        days_leave:
+          type: integer
+        days_excused:
+          type: integer
+        worked_minutes:
+          type: integer
+        late_count:
+          type: integer
+        late_minutes:
+          type: integer
+        early_leave_count:
+          type: integer
+        early_leave_minutes:
+          type: integer
+        overtime_minutes:
+          type: integer
+        arrivals:
+          type: integer
+          description: Check-ins for a shift.
+        on_time:
+          type: integer
+        punctuality_percent:
+          type: number
+          format: double
+          nullable: true
+        attendance_percent:
+          type: number
+          format: double
+          nullable: true
+        department:
+          allOf:
+          - $ref: '#/components/schemas/AttendanceRef'
+          nullable: true
+        people:
+          type: integer
+      required:
+      - arrivals
+      - attendance_percent
+      - days_absent
+      - days_excused
+      - days_leave
+      - days_present
+      - days_scheduled
+      - department
+      - early_leave_count
+      - early_leave_minutes
+      - late_count
+      - late_minutes
+      - on_time
+      - overtime_minutes
+      - people
+      - punctuality_percent
+      - worked_minutes
+    AttendanceReportDepartments:
+      type: object
+      properties:
+        range:
+          type: object
+          additionalProperties:
+            type: string
+            format: date
+        counted_until:
+          type: string
+          format: date
+          nullable: true
+          description: 'The last day counted: the end, or today.'
+        today:
+          type: string
+          format: date
+        totals:
+          $ref: '#/components/schemas/AttendanceReportTotals'
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttendanceReportDepartment'
+      required:
+      - counted_until
+      - range
+      - rows
+      - today
+      - totals
+    AttendanceReportEmployee:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: The membership id.
+        name:
+          type: string
+        photo_url:
+          type: string
+          nullable: true
+        position:
+          allOf:
+          - $ref: '#/components/schemas/AttendanceRef'
+          nullable: true
+        department:
+          allOf:
+          - $ref: '#/components/schemas/AttendanceRef'
+          nullable: true
+        branch:
+          allOf:
+          - $ref: '#/components/schemas/AttendanceRef'
+          nullable: true
+          description: The home branch.
+      required:
+      - branch
+      - department
+      - id
+      - name
+      - photo_url
+      - position
+    AttendanceReportPerson:
+      type: object
+      properties:
+        days_scheduled:
+          type: integer
+          description: Days with a planned shift.
+        days_present:
+          type: integer
+        days_absent:
+          type: integer
+        days_leave:
+          type: integer
+        days_excused:
+          type: integer
+        worked_minutes:
+          type: integer
+        late_count:
+          type: integer
+        late_minutes:
+          type: integer
+        early_leave_count:
+          type: integer
+        early_leave_minutes:
+          type: integer
+        overtime_minutes:
+          type: integer
+        arrivals:
+          type: integer
+          description: Check-ins for a shift.
+        on_time:
+          type: integer
+        punctuality_percent:
+          type: number
+          format: double
+          nullable: true
+        attendance_percent:
+          type: number
+          format: double
+          nullable: true
+        employee:
+          $ref: '#/components/schemas/AttendanceReportEmployee'
+      required:
+      - arrivals
+      - attendance_percent
+      - days_absent
+      - days_excused
+      - days_leave
+      - days_present
+      - days_scheduled
+      - early_leave_count
+      - early_leave_minutes
+      - employee
+      - late_count
+      - late_minutes
+      - on_time
+      - overtime_minutes
+      - punctuality_percent
+      - worked_minutes
+    AttendanceReportPunctuality:
+      type: object
+      properties:
+        range:
+          type: object
+          additionalProperties:
+            type: string
+            format: date
+        counted_until:
+          type: string
+          format: date
+          nullable: true
+          description: 'The last day counted: the end, or today.'
+        today:
+          type: string
+          format: date
+        totals:
+          $ref: '#/components/schemas/AttendanceReportTotals'
+        average:
+          type: number
+          format: double
+          nullable: true
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttendanceReportRank'
+      required:
+      - average
+      - counted_until
+      - range
+      - rows
+      - today
+      - totals
+    AttendanceReportRank:
+      type: object
+      properties:
+        rank:
+          type: integer
+        employee:
+          $ref: '#/components/schemas/AttendanceReportEmployee'
+        punctuality_percent:
+          type: number
+          format: double
+          nullable: true
+        arrivals:
+          type: integer
+        on_time:
+          type: integer
+        late_count:
+          type: integer
+        late_minutes:
+          type: integer
+        average_late_minutes:
+          type: integer
+        days_present:
+          type: integer
+      required:
+      - arrivals
+      - average_late_minutes
+      - days_present
+      - employee
+      - late_count
+      - late_minutes
+      - on_time
+      - punctuality_percent
+      - rank
+    AttendanceReportSummary:
+      type: object
+      properties:
+        range:
+          type: object
+          additionalProperties:
+            type: string
+            format: date
+        counted_until:
+          type: string
+          format: date
+          nullable: true
+          description: 'The last day counted: the end, or today.'
+        today:
+          type: string
+          format: date
+        totals:
+          $ref: '#/components/schemas/AttendanceReportTotals'
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttendanceReportPerson'
+        compare:
+          type: object
+          additionalProperties:
+            type: string
+            format: date
+          nullable: true
+        previous:
+          allOf:
+          - $ref: '#/components/schemas/AttendanceReportTotals'
+          nullable: true
+          description: The totals of the period compared with (?compare=).
+      required:
+      - compare
+      - counted_until
+      - previous
+      - range
+      - rows
+      - today
+      - totals
+    AttendanceReportTotals:
+      type: object
+      properties:
+        days_scheduled:
+          type: integer
+          description: Days with a planned shift.
+        days_present:
+          type: integer
+        days_absent:
+          type: integer
+        days_leave:
+          type: integer
+        days_excused:
+          type: integer
+        worked_minutes:
+          type: integer
+        late_count:
+          type: integer
+        late_minutes:
+          type: integer
+        early_leave_count:
+          type: integer
+        early_leave_minutes:
+          type: integer
+        overtime_minutes:
+          type: integer
+        arrivals:
+          type: integer
+          description: Check-ins for a shift.
+        on_time:
+          type: integer
+        punctuality_percent:
+          type: number
+          format: double
+          nullable: true
+        attendance_percent:
+          type: number
+          format: double
+          nullable: true
+        people:
+          type: integer
+      required:
+      - arrivals
+      - attendance_percent
+      - days_absent
+      - days_excused
+      - days_leave
+      - days_present
+      - days_scheduled
+      - early_leave_count
+      - early_leave_minutes
+      - late_count
+      - late_minutes
+      - on_time
+      - overtime_minutes
+      - people
+      - punctuality_percent
+      - worked_minutes
+    AttendanceReportTrend:
+      type: object
+      properties:
+        range:
+          type: object
+          additionalProperties:
+            type: string
+            format: date
+        counted_until:
+          type: string
+          format: date
+          nullable: true
+          description: 'The last day counted: the end, or today.'
+        today:
+          type: string
+          format: date
+        totals:
+          $ref: '#/components/schemas/AttendanceReportTotals'
+        days:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttendanceReportDay'
+      required:
+      - counted_until
+      - days
+      - range
+      - today
+      - totals
     AttendanceScheduleKindEnum:
       enum:
       - weekly
@@ -34986,6 +37024,615 @@ components:
       - refunds
       - sales
       - shifts
+    DavomatBotStatusEnum:
+      enum:
+      - ok
+      - invalid
+      - not_set
+      type: string
+      description: |-
+        * `ok` - Connected
+        * `invalid` - Telegram refuses the token
+        * `not_set` - Not connected
+    DavomatEdition:
+      type: object
+      properties:
+        edition:
+          $ref: '#/components/schemas/DavomatEditionEnum'
+        product:
+          type: string
+          description: '"Davomat", or the name set in Settings.'
+        organization:
+          allOf:
+          - $ref: '#/components/schemas/DavomatOrganization'
+          nullable: true
+        needs_setup:
+          type: boolean
+          description: 'No organization yet: show the setup.'
+        setup_token_required:
+          type: boolean
+          description: The setup asks for the code the installer printed.
+        default_language:
+          $ref: '#/components/schemas/DefaultLanguageEnum'
+        languages:
+          type: array
+          items:
+            type: string
+          description: 'The languages offered: ["uz", "ru", "en"].'
+        telegram:
+          $ref: '#/components/schemas/DavomatEditionTelegram'
+      required:
+      - default_language
+      - edition
+      - languages
+      - needs_setup
+      - organization
+      - product
+      - setup_token_required
+      - telegram
+    DavomatEditionEnum:
+      enum:
+      - davomat
+      - daybook
+      type: string
+      description: |-
+        * `davomat` - davomat
+        * `daybook` - daybook
+    DavomatEditionTelegram:
+      type: object
+      properties:
+        configured:
+          type: boolean
+        bot_username:
+          type: string
+          nullable: true
+      required:
+      - bot_username
+      - configured
+    DavomatEmployee:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: The membership id.
+        first_name:
+          type: string
+        last_name:
+          type: string
+        full_name:
+          type: string
+        photo_url:
+          type: string
+          nullable: true
+        phone:
+          type: string
+        position:
+          allOf:
+          - $ref: '#/components/schemas/DavomatNamed'
+          nullable: true
+        department:
+          allOf:
+          - $ref: '#/components/schemas/DavomatNamed'
+          nullable: true
+        branch_ids:
+          type: array
+          items:
+            type: integer
+        face_numbers:
+          type: array
+          items:
+            type: string
+        status:
+          $ref: '#/components/schemas/DavomatEmployeeStatusEnum'
+        hire_date:
+          type: string
+          format: date
+          nullable: true
+        left_on:
+          type: string
+          format: date
+          nullable: true
+        schedule:
+          allOf:
+          - $ref: '#/components/schemas/DavomatNamed'
+          nullable: true
+        telegram_linked:
+          type: boolean
+        is_user:
+          type: boolean
+          description: Signs in to the web app too.
+        source:
+          $ref: '#/components/schemas/DavomatEmployeeSourceEnum'
+        today:
+          allOf:
+          - $ref: '#/components/schemas/DavomatToday'
+          nullable: true
+      required:
+      - branch_ids
+      - department
+      - face_numbers
+      - first_name
+      - full_name
+      - hire_date
+      - id
+      - is_user
+      - last_name
+      - left_on
+      - phone
+      - photo_url
+      - position
+      - schedule
+      - source
+      - status
+      - telegram_linked
+      - today
+    DavomatEmployeeSourceEnum:
+      enum:
+      - manual
+      - import
+      - terminal
+      type: string
+      description: |-
+        * `manual` - manual
+        * `import` - import
+        * `terminal` - terminal
+    DavomatEmployeeStatusEnum:
+      enum:
+      - active
+      - left
+      type: string
+      description: |-
+        * `active` - active
+        * `left` - left
+    DavomatEmployeeWriteRequest:
+      type: object
+      properties:
+        first_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        last_name:
+          type: string
+          maxLength: 100
+        phone:
+          type: string
+          maxLength: 32
+        position_id:
+          type: integer
+          nullable: true
+        department_id:
+          type: integer
+          nullable: true
+        branch_ids:
+          type: array
+          items:
+            type: integer
+        hire_date:
+          type: string
+          format: date
+          nullable: true
+        schedule_id:
+          type: integer
+          nullable: true
+        face_numbers:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 32
+          maxItems: 20
+      required:
+      - first_name
+    DavomatFaceNumberRequest:
+      type: object
+      properties:
+        number:
+          type: string
+          minLength: 1
+          description: 'As the terminal shows it: "00000002".'
+          maxLength: 32
+      required:
+      - number
+    DavomatImportResult:
+      type: object
+      properties:
+        dry_run:
+          type: boolean
+        columns:
+          type: array
+          items:
+            type: string
+        mapping:
+          type: object
+          additionalProperties:
+            type: string
+          description: '{column header: field}'
+        created:
+          type: integer
+        updated:
+          type: integer
+        skipped:
+          type: integer
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/DavomatImportRow'
+          description: At most 500.
+      required:
+      - columns
+      - created
+      - dry_run
+      - mapping
+      - rows
+      - skipped
+      - updated
+    DavomatImportRow:
+      type: object
+      properties:
+        row:
+          type: integer
+          description: The row number in the file (the header is 1).
+        action:
+          $ref: '#/components/schemas/InventoryImportActionEnum'
+        name:
+          type: string
+        employee_id:
+          type: integer
+          nullable: true
+        errors:
+          type: array
+          items:
+            type: string
+      required:
+      - action
+      - employee_id
+      - errors
+      - name
+      - row
+    DavomatImportUploadRequest:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+          description: XLSX or CSV.
+      required:
+      - file
+    DavomatLeaveRequest:
+      type: object
+      properties:
+        left_on:
+          type: string
+          format: date
+          nullable: true
+          description: Today if empty.
+    DavomatNamed:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
+    DavomatOrganization:
+      type: object
+      properties:
+        name:
+          type: string
+        logo_url:
+          type: string
+          nullable: true
+      required:
+      - logo_url
+      - name
+    DavomatPasswordChangeRequest:
+      type: object
+      properties:
+        current:
+          type: string
+          description: Not needed by someone who never had a password.
+          maxLength: 128
+        new:
+          type: string
+          minLength: 1
+          maxLength: 128
+      required:
+      - new
+    DavomatPasswordLoginRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+          maxLength: 150
+        password:
+          type: string
+          minLength: 1
+          maxLength: 128
+      required:
+      - password
+      - username
+    DavomatPasswordSetRequest:
+      type: object
+      properties:
+        password:
+          type: string
+          minLength: 1
+          maxLength: 128
+      required:
+      - password
+    DavomatPhotoRequest:
+      type: object
+      properties:
+        photo:
+          type: string
+          format: binary
+      required:
+      - photo
+    DavomatReturnRequest:
+      type: object
+      properties:
+        hire_date:
+          type: string
+          format: date
+          nullable: true
+          description: Today if empty.
+    DavomatRole:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        kind:
+          $ref: '#/components/schemas/DavomatRoleKindEnum'
+      required:
+      - id
+      - kind
+      - name
+    DavomatRoleKindEnum:
+      enum:
+      - owner
+      - admin
+      - manager
+      - viewer
+      type: string
+      description: |-
+        * `owner` - owner
+        * `admin` - admin
+        * `manager` - manager
+        * `viewer` - viewer
+    DavomatSent:
+      type: object
+      properties:
+        sent:
+          type: boolean
+      required:
+      - sent
+    DavomatSettings:
+      type: object
+      properties:
+        product_name:
+          type: string
+          maxLength: 60
+        auto_create_employees:
+          type: boolean
+    DavomatSetupAdminRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+          maxLength: 150
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+          maxLength: 128
+        first_name:
+          type: string
+          maxLength: 100
+        last_name:
+          type: string
+          maxLength: 100
+      required:
+      - password
+      - username
+    DavomatSetupRequest:
+      type: object
+      properties:
+        organization:
+          type: string
+          minLength: 1
+          maxLength: 200
+        timezone:
+          type: string
+          minLength: 1
+          default: Asia/Tashkent
+          maxLength: 64
+        language:
+          allOf:
+          - $ref: '#/components/schemas/LanguageEnum'
+          default: uz
+        admin:
+          $ref: '#/components/schemas/DavomatSetupAdminRequest'
+        setup_token:
+          type: string
+          description: The code the installer printed, when `setup_token_required`.
+          maxLength: 200
+      required:
+      - admin
+      - organization
+    DavomatTelegram:
+      type: object
+      properties:
+        configured:
+          type: boolean
+          readOnly: true
+        bot_username:
+          type: string
+          readOnly: true
+          nullable: true
+        bot_name:
+          type: string
+          readOnly: true
+          nullable: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/DavomatBotStatusEnum'
+          readOnly: true
+        checked_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+      required:
+      - bot_name
+      - bot_username
+      - checked_at
+      - configured
+      - status
+    DavomatTelegramLink:
+      type: object
+      properties:
+        url:
+          type: string
+          description: https://t.me/<bot>?start=link_<code>
+        code:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+      required:
+      - code
+      - expires_at
+      - url
+    DavomatTelegramRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          writeOnly: true
+          minLength: 1
+          description: From BotFather.
+          maxLength: 200
+      required:
+      - token
+    DavomatToday:
+      type: object
+      properties:
+        state:
+          $ref: '#/components/schemas/DavomatTodayStateEnum'
+        since:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - since
+      - state
+    DavomatTodayStateEnum:
+      enum:
+      - in
+      - out
+      - not_in
+      - 'off'
+      - leave
+      type: string
+      description: |-
+        * `in` - in
+        * `out` - out
+        * `not_in` - not_in
+        * `off` - off
+        * `leave` - leave
+    DavomatUser:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: The membership id.
+        username:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+        role:
+          allOf:
+          - $ref: '#/components/schemas/DavomatRole'
+          nullable: true
+        branch_ids:
+          type: array
+          items:
+            type: integer
+        is_active:
+          type: boolean
+          description: May sign in.
+        last_login:
+          type: string
+          format: date-time
+          nullable: true
+        telegram_linked:
+          type: boolean
+        is_employee:
+          type: boolean
+          description: Scans at the terminals too.
+        is_self:
+          type: boolean
+          description: The user asking.
+      required:
+      - branch_ids
+      - first_name
+      - id
+      - is_active
+      - is_employee
+      - is_self
+      - last_login
+      - last_name
+      - role
+      - telegram_linked
+      - username
+    DavomatUserCreateRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+          maxLength: 150
+        password:
+          type: string
+          minLength: 1
+          maxLength: 128
+        first_name:
+          type: string
+          maxLength: 100
+        last_name:
+          type: string
+          maxLength: 100
+        role_id:
+          type: integer
+          description: A role of `users/roles/`.
+        role:
+          allOf:
+          - $ref: '#/components/schemas/DavomatRoleKindEnum'
+          description: |-
+            Or the role's kind instead of its id.
+
+            * `owner` - owner
+            * `admin` - admin
+            * `manager` - manager
+            * `viewer` - viewer
+        branch_ids:
+          type: array
+          items:
+            type: integer
+        employee_id:
+          type: integer
+          description: Give this employee a sign-in instead of adding someone.
+      required:
+      - password
+      - username
     Debt:
       type: object
       properties:
@@ -48197,6 +50844,75 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Daily'
+    PaginatedDavomatEmployeeList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DavomatEmployee'
+    PaginatedDavomatRoleList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DavomatRole'
+    PaginatedDavomatUserList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DavomatUser'
     PaginatedDebtList:
       type: object
       required:
@@ -49845,6 +52561,77 @@ components:
             minLength: 1
             maxLength: 32
         is_active:
+          type: boolean
+    PatchedDavomatEmployeeWriteRequest:
+      type: object
+      properties:
+        first_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        last_name:
+          type: string
+          maxLength: 100
+        phone:
+          type: string
+          maxLength: 32
+        position_id:
+          type: integer
+          nullable: true
+        department_id:
+          type: integer
+          nullable: true
+        branch_ids:
+          type: array
+          items:
+            type: integer
+        hire_date:
+          type: string
+          format: date
+          nullable: true
+        schedule_id:
+          type: integer
+          nullable: true
+        face_numbers:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 32
+          maxItems: 20
+    PatchedDavomatSettingsRequest:
+      type: object
+      properties:
+        product_name:
+          type: string
+          maxLength: 60
+        auto_create_employees:
+          type: boolean
+    PatchedDavomatUserUpdateRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+          maxLength: 150
+        first_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        last_name:
+          type: string
+          maxLength: 100
+        role_id:
+          type: integer
+        role:
+          $ref: '#/components/schemas/DavomatRoleKindEnum'
+        branch_ids:
+          type: array
+          items:
+            type: integer
+        is_active:
+          type: boolean
+        is_employee:
           type: boolean
     PatchedDebtUpdateRequest:
       type: object

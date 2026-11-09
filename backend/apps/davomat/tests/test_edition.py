@@ -133,12 +133,14 @@ def test_setup_gives_the_four_roles_and_the_employee_one(client, davomat):
         "members.manage",
         "members.approve",
         "reports.view",
+        "data.export",
         "dashboard.access",
     }
     assert set(kinds["viewer"].permissions) == {
         "attendance.view",
         "members.view",
         "reports.view",
+        "data.export",
         "dashboard.access",
     }
     assert kinds["employee"].permissions == [] and kinds["employee"].is_default

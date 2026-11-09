@@ -6,6 +6,8 @@
 #   bash deploy/davomat/demo.sh up [--port 18080] [--lan] [--no-seed]
 #                                       build the image if needed, start, add the example data
 #   bash deploy/davomat/demo.sh seed      the example organization again (replaces the earlier one)
+#   bash deploy/davomat/demo.sh live      the same, then today's scans as their moments come, so the
+#                                       board fills in as the morning goes (runs until evening; Ctrl+C)
 #   bash deploy/davomat/demo.sh rebuild   new code: rebuild and restart (update.sh --here)
 #   bash deploy/davomat/demo.sh status | logs [service] | down (the data stays) | wipe (deleted)
 # --lan also listens on this computer's network address, so a terminal on the same network can
@@ -72,6 +74,11 @@ seed)
 	need_env
 	seed
 	;;
+live)
+	need_env
+	step "The example organization, then today's scans as they come (Ctrl+C stops them)"
+	compose exec -T backend python manage.py davomat_demo --reset --live </dev/null
+	;;
 rebuild)
 	need_env
 	bash "$DAVOMAT_DIR/update.sh" --here --no-backup
@@ -101,6 +108,6 @@ wipe)
 	header_help "$0"
 	;;
 *)
-	die "Unknown command: $command (up, seed, rebuild, status, logs, down, wipe)"
+	die "Unknown command: $command (up, seed, live, rebuild, status, logs, down, wipe)"
 	;;
 esac

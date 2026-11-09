@@ -88,9 +88,18 @@ MANAGER_PERMS = (
     Perm.MEMBERS_MANAGE,
     Perm.MEMBERS_APPROVE,
     Perm.REPORTS_VIEW,
+    Perm.DATA_EXPORT,
     Perm.DASHBOARD_ACCESS,
 )
-VIEWER_PERMS = (Perm.ATTENDANCE_VIEW, Perm.MEMBERS_VIEW, Perm.REPORTS_VIEW, Perm.DASHBOARD_ACCESS)
+# Exports (reports, the timesheet, the employee list) keep to the person's branches, like
+# everything else they see: a manager or a viewer (an accountant) takes their own as Excel or PDF.
+VIEWER_PERMS = (
+    Perm.ATTENDANCE_VIEW,
+    Perm.MEMBERS_VIEW,
+    Perm.REPORTS_VIEW,
+    Perm.DATA_EXPORT,
+    Perm.DASHBOARD_ACCESS,
+)
 MODULES = (Feature.ATTENDANCE, Feature.FACE_ID)
 SETUP_LOCK = 7_302_611  # pg_advisory_xact_lock key: one first-run setup at a time
 

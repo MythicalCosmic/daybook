@@ -132,6 +132,7 @@ export const CATALOG: readonly CatalogEntry[] = [
     pages: [
       { id: "today", to: "attendance" },
       { id: "timesheet", to: "attendance/timesheet" },
+      { id: "reports", to: "attendance/reports" },
       { id: "roster", to: "attendance/roster" },
       { id: "schedules", to: "attendance/schedules", perm: "attendance.manage" },
       { id: "swaps", to: "attendance/swaps", perm: "attendance.manage", badge: "attendance.swaps" },

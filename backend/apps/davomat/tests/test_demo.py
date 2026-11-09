@@ -74,10 +74,10 @@ def test_the_command_fills_an_empty_install_and_resets_only_itself(davomat, monk
     monkeypatch.setattr("django.utils.timezone.now", lambda: NOW)
     out = StringIO()
 
-    call_command("davomat_demo", stdout=out)
+    call_command("davomat_demo", "--days", "2", stdout=out)
     with pytest.raises(CommandError, match="--reset"):
         call_command("davomat_demo", stdout=StringIO())
-    call_command("davomat_demo", "--reset", stdout=StringIO())
+    call_command("davomat_demo", "--reset", "--days", "2", stdout=StringIO())
 
     assert "Namuna MChJ: 18 employees, 2 terminals" in out.getvalue()
     assert Company.objects.count() == 1
