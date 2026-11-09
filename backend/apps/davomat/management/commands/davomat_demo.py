@@ -17,7 +17,7 @@ from django.utils import translation
 from apps.accounts.models import User
 from apps.companies.models import Company
 from apps.core import demo_time
-from apps.davomat import conf, demo
+from apps.davomat import conf, demo, queries
 from apps.davomat.passwords import FieldError
 from apps.faceid.models import FaceEvent
 
@@ -58,7 +58,8 @@ class Command(BaseCommand):
             raise CommandError(f"{exc.field}: {' '.join(exc.messages)}") from exc
         self.stdout.write(
             self.style.SUCCESS(
-                f"{built.company.name}: {len(built.employees) + 1} employees, "
+                f"{built.company.name}: "
+                f"{queries.employees(built.company, branch_ids=None).count()} employees, "
                 f"{len(built.devices)} terminals, {built.scans} scans "
                 f"({FaceEvent.objects.filter(company=built.company).count()} kept)."
             )

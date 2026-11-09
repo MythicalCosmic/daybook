@@ -241,6 +241,14 @@ def _post(built: Built, device: FaceDevice, number: str, name: str, at: datetime
     built.scans += 1
 
 
+def _newcomer_day(company: Company, today: date, now: datetime) -> date:
+    """This morning, once it is past 08:52; before that, the last workday's."""
+    if clock.at(company, today, time(8, 52)) < now:
+        return today
+    day = today - timedelta(days=1)
+    return day - timedelta(days=1) if day.weekday() == 6 else day
+
+
 def _scan_the_week(built: Built, today: date, now: datetime) -> None:
     """Each workday this past week and this morning: everyone in between 08:35 and 09:15 (a
     few late), out after 18:00; someone off sick now and then, someone who forgot to scan out.
@@ -276,7 +284,7 @@ def _scan_the_week(built: Built, today: date, now: datetime) -> None:
             moments.append((came, where, terminal_number, shown))
             if not (day == today - timedelta(days=1) and index == 9):  # Nodir forgot
                 moments.append((went, where, terminal_number, shown))
-        if day == today:
+        if day == _newcomer_day(company, today, now):
             # The newcomer the terminal knows, twice; an unknown face at the branch.
             newcomer, name = NEWCOMER
             moments.append((clock.at(company, day, time(8, 47)), OFFICE, newcomer, name))
