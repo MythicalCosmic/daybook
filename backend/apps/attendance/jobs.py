@@ -99,7 +99,8 @@ def shift_nudges(now: datetime | None = None) -> int:
 def nudge_company(company: Company, now: datetime) -> int:
     """Pre-shift reminders (when switched on), "your shift started" after
     `remind_after_minutes`, the no-show alert to managers after `no_show_alert_minutes`,
-    "still working?" an hour after the end, and each branch's morning "who's in" post."""
+    "still working?" an hour after the end (never for a terminal's check-in where terminals
+    record arrivals only), and each branch's morning "who's in" post."""
     settings = conf.get_settings(company)
     pre = timedelta(minutes=settings.pre_shift_reminder_minutes)
     remind = timedelta(minutes=settings.remind_after_minutes)
@@ -136,6 +137,11 @@ def nudge_company(company: Company, now: datetime) -> int:
         shift__ends_at__lte=now - still,
         shift__ends_at__gt=now - timedelta(hours=settings.auto_close_after_hours),
     ).select_related("membership__user", "shift", "company")
+    open_records = list(open_records)
+    face = AttendanceRecord.Source.FACE
+    if any(record.in_source == face for record in open_records) and services.arrivals_only(company):
+        # Terminals that record arrivals only: nobody checks out there, so nobody is asked.
+        open_records = [record for record in open_records if record.in_source != face]
     for record in open_records:
         if notify.mark_once(company.pk, f"still:{record.pk}"):
             sent += notify.ask_still_working(record)

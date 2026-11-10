@@ -28,6 +28,8 @@ export type ScanAction = "checked_in" | "checked_out" | "seen" | "repeat" | "not
 export type ScanKind = "person" | "stranger" | "other";
 export type ScanMethod = "face" | "fingerprint" | "card" | "other" | "";
 export type TelegramMode = "off" | "arrivals" | "every_scan";
+/** How people use a one-door terminal: only when they come (later scans are only seen), or both ways. */
+export type ScanMode = "arrival" | "both";
 
 /** The stored history a terminal uploads when first pointed at Daybook: skipped, only counted. */
 export interface DeviceHistory {
@@ -164,6 +166,7 @@ export interface Status {
 
 export interface FaceIdSettings {
   attendance: boolean;
+  scan_mode: ScanMode;
   telegram: TelegramMode;
   group_posts: boolean;
   group_photos: boolean;

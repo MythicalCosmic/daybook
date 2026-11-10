@@ -42,11 +42,21 @@ Face ID › **Add a terminal**, three steps:
    how it counts scans:
    - *Entrance*: every scan checks in;
    - *Exit*: every scan checks out;
-   - *One door*: in, then out (the usual choice for a single terminal).
+   - *One door*: the usual choice for a single terminal; what its scans mean is set in Face ID ›
+     Settings (below).
 2. **On the terminal**: the values to type into it (below). Copy them from this page: every
    terminal has its own secret code in the URL.
 3. **First scan**: scan a face at the terminal. The page turns green the moment its first event
    arrives. ("Simulate a face" shows how a scan looks without a terminal; it doesn't count.)
+
+**How people use the terminal** (Face ID › Settings) decides what a one-door terminal's scans mean.
+*People scan only when they come* (the default): each person's first scan of the day checks them
+in, and later scans are kept as *Seen*, with their photo, without changing attendance. Leaving
+isn't recorded, so the day closes by itself (at the end of the person's shift; someone without a
+schedule gets no hours counted) and nobody is asked about a forgotten check-out. *People scan when
+they come and when they leave*: the first scan checks in, the next one checks out. Either way the
+next day's first scan is a new arrival, never a departure from the day before; a terminal set as an
+*Entrance* or an *Exit* always does just that.
 
 ### On the terminal's web page
 

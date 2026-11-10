@@ -22,7 +22,8 @@ import uz from "../i18n/uz.json";
 import module from "../index";
 import { actionChip, catchupCommand, clockOf, freshIds, initials, peak, scanName } from "../lib";
 import PeoplePage from "../pages/PeoplePage.vue";
-import type { Device, DeviceHistory, KnownPerson, Scan, Setup } from "../types";
+import SettingsPage from "../pages/SettingsPage.vue";
+import type { Device, DeviceHistory, FaceIdSettings, KnownPerson, Scan, Setup } from "../types";
 
 interface Call {
   method: string;
@@ -173,6 +174,83 @@ describe("ScanItem", () => {
     const app = await testApp("/c/1/faceid");
     const { wrapper } = mountWithProviders(ScanItem, { props: { scan: scan({ kind: "stranger", action: "stranger", member: null, name_on_device: "", employee_no: "", record: null }) }, plugins: app.plugins });
     expect(wrapper.text()).toContain("Unknown face");
+  });
+
+  it("a later scan where people scan only when they come is seen, never Left", async () => {
+    // Tied to the day's open check-in, which has no check-out and no worked time yet.
+    const later = scan({ id: 2, event_at: "2026-11-09T13:04:00+05:00", action: "seen" });
+    expect(actionChip(later)).toEqual({ key: "faceid.action.seen" });
+    const app = await testApp("/c/1/faceid");
+    const { wrapper } = mountWithProviders(ScanItem, { props: { scan: later }, plugins: app.plugins });
+    expect(wrapper.text()).toContain("Seen");
+    expect(wrapper.text()).toContain("13:04");
+    expect(wrapper.text()).not.toContain("Left");
+  });
+});
+
+describe("SettingsPage", () => {
+  const settings: FaceIdSettings = {
+    attendance: true,
+    scan_mode: "arrival",
+    telegram: "arrivals",
+    group_posts: false,
+    group_photos: false,
+    notify_employee: true,
+    alert_strangers: false,
+    repeat_minutes: 2,
+    photo_days: 30,
+  };
+
+  async function open(values: FaceIdSettings) {
+    const calls = stubApi({
+      "GET faceid/settings/": () => json(values),
+      "PATCH faceid/settings/": (call) => json({ ...values, ...(call.body as Partial<FaceIdSettings>) }),
+    });
+    const app = await testApp("/c/1/faceid/settings");
+    const { wrapper } = mountWithProviders(SettingsPage, { plugins: app.plugins });
+    await flushPromises();
+    return { calls, wrapper };
+  }
+
+  it("asks how people use the terminal, each way in a line, and saves only that", async () => {
+    const { calls, wrapper } = await open(settings);
+    const choice = wrapper.get('[data-testid="scan-mode"]');
+    const text = choice.text();
+    expect(text).toContain("How people use the terminal");
+    expect(text).toContain("A terminal set as an entrance or an exit always does just that.");
+    const radios = choice.findAll("[role=radio]");
+    expect(radios.map((radio) => radio.text())).toEqual([
+      "People scan only when they comeThe day's first scan checks in, later scans are only seen. Leaving isn't recorded.",
+      "People scan when they come and when they leaveThe first scan checks in, the next one checks out.",
+    ]);
+    expect(radios.map((radio) => radio.attributes("aria-checked"))).toEqual(["true", "false"]);
+    expect(wrapper.text()).not.toContain("the next one the check-out");
+    // Nobody hears about leaving where leaving isn't recorded.
+    expect(wrapper.text()).toContain('The bot says "You came in: 08:57, Chilonzor."');
+    expect(wrapper.text()).not.toContain("on leaving");
+    expect(wrapper.text()).toContain("Arrivals and every later scan");
+
+    await radios[1]!.trigger("click");
+    expect(wrapper.text()).toContain("and, on leaving, the hours worked.");
+    const save = wrapper.findAll("button").find((button) => button.text() === "Save");
+    await save!.trigger("click");
+    await flushPromises();
+    const patch = calls.find((call) => call.method === "PATCH");
+    expect(patch?.body).toEqual({ scan_mode: "both" });
+    expect(toasts.at(-1)?.title).toBe("Face ID settings saved");
+  });
+
+  it("can't be chosen while scans don't count in attendance", async () => {
+    const { wrapper } = await open({ ...settings, attendance: false, scan_mode: "both" });
+    const radios = wrapper.get('[data-testid="scan-mode"]').findAll("[role=radio]");
+    expect(radios.map((radio) => radio.attributes("aria-checked"))).toEqual(["false", "true"]);
+    expect(radios.every((radio) => radio.attributes("disabled") !== undefined || radio.attributes("data-disabled") !== undefined)).toBe(true);
+  });
+
+  it("has the choice in Uzbek and Russian too", () => {
+    expect(uz["faceid.settings.scanMode.arrival"]).toBe("Xodimlar faqat kelganda skanerlaydi");
+    expect(ru["faceid.settings.scanMode.both"]).toBe("Сотрудники отмечаются при приходе и при уходе");
+    expect([en["faceid.action.seen"], uz["faceid.action.seen"], ru["faceid.action.seen"]]).toEqual(["Seen", "Ko‘rildi", "Отметка"]);
   });
 });
 

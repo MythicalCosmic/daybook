@@ -34,12 +34,26 @@ class FaceIdSettings(TimeStampedModel):
         ARRIVALS = "arrivals", _("Who came: each person's first scan of the day")
         EVERY_SCAN = "every_scan", _("Every scan")
 
+    class ScanMode(models.TextChoices):
+        ARRIVAL = "arrival", _("People scan only when they come")
+        BOTH = "both", _("People scan when they come and when they leave")
+
     company = models.OneToOneField(
         Company, on_delete=models.CASCADE, related_name="faceid_settings"
     )
     attendance = models.BooleanField(
         default=True,
         help_text=_("A linked person's scan checks them in or out (when Attendance is on)."),
+    )
+    # How a one-door terminal's scans count (entrances and exits do what they say either way):
+    # "arrival", the first scan of a work session checks in and later ones are only seen, and
+    # leaving isn't recorded (the day closes quietly); "both", in, then out.
+    scan_mode = models.CharField(
+        max_length=8,
+        choices=ScanMode.choices,
+        default=ScanMode.ARRIVAL,
+        db_default=ScanMode.ARRIVAL,
+        help_text=_("How people use a one-door terminal: only when they come, or both ways."),
     )
     telegram = models.CharField(
         max_length=10,

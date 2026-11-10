@@ -18,7 +18,12 @@ Rules:
 * **Attendance.** When the company runs attendance and `FaceIdSettings.attendance` is on, a linked
   person's scan checks them in or out (`apps.attendance.services.scan`, which applies the
   terminal's direction, repeats, late deliveries and every check-in rule); otherwise the scan is
-  `seen`. A scan within `repeat_minutes` of the person's last scan is a `repeat`.
+  `seen`. A scan within `repeat_minutes` of the person's last scan is a `repeat`. An entrance
+  checks in and an exit checks out; at one door `scan_mode` says how people use it: "arrival"
+  (the default: they scan only when they come; a work session's first scan checks in, later
+  ones are `seen`, nothing is ever checked out and the day closes quietly) or "both" (in, then
+  out). Either way a new work day is never a departure: yesterday's check-in nobody closed is
+  closed first, and today's first scan checks in.
 * **When.** The terminal's date and clock read in the company's timezone (its own offset is often
   a factory one and means nothing); a past time always stands (a delivery after an outage keeps
   its scans' times), only a time more than 10 minutes ahead of ours takes the arrival time
@@ -380,7 +385,7 @@ def _person(event, device, item, settings, *, quiet: bool, simulated: bool, phot
     if not conf.counts_attendance(company, settings):
         event.action = Action.SEEN
         return
-    wants = _direction(device, item)
+    wants = _direction(device, item, settings)
     if wants == "break":
         event.action = Action.IGNORED
         event.flags.append(Flag.BREAK)
@@ -406,6 +411,7 @@ def _person(event, device, item, settings, *, quiet: bool, simulated: bool, phot
     event.action = {
         "checked_in": Action.CHECKED_IN,
         "checked_out": Action.CHECKED_OUT,
+        "seen": Action.SEEN,
         "repeat": Action.REPEAT,
     }.get(result.action, Action.IGNORED)
     event.record_id = result.record.pk if result.record is not None else None
@@ -414,15 +420,19 @@ def _person(event, device, item, settings, *, quiet: bool, simulated: bool, phot
         event.raw = {**event.raw, "refused": result.message}
 
 
-def _direction(device: FaceDevice, item: hikvision.DeviceEvent) -> str:
-    """in · out · toggle · break."""
+def _direction(device: FaceDevice, item: hikvision.DeviceEvent, settings: FaceIdSettings) -> str:
+    """in · out · toggle · arrival · break: an entrance or an exit does what it is; at one door,
+    what the terminal said about the scan (its attendance status), else how people use the
+    terminal (`scan_mode`): "arrival" when they scan only when they come, "toggle" both ways."""
     if item.wants == "break":
         return "break"
     if device.direction == FaceDevice.Direction.IN:
         return "in"
     if device.direction == FaceDevice.Direction.OUT:
         return "out"
-    return item.wants or "toggle"
+    if item.wants:
+        return item.wants
+    return "arrival" if conf.arrivals_only(device.company, settings) else "toggle"
 
 
 def _scanned_recently(member, at, window) -> bool:
@@ -600,6 +610,7 @@ def unlinked_numbers(company, *, device_ids=None):
 DEVICE_FIELDS = ("name", "branch", "direction", "enabled")
 SETTINGS_FIELDS = (
     "attendance",
+    "scan_mode",
     "telegram",
     "group_posts",
     "group_photos",

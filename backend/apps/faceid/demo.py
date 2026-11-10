@@ -11,8 +11,8 @@ from django.core.files.base import ContentFile
 
 from apps.attendance.models import AttendanceRecord
 from apps.core import demo_plan
-from apps.faceid import hikvision, hikvision_sample
-from apps.faceid.models import FaceDevice, FaceEvent, FaceLink
+from apps.faceid import conf, hikvision, hikvision_sample
+from apps.faceid.models import FaceDevice, FaceEvent, FaceIdSettings, FaceLink
 
 Action, Flag, Kind = FaceEvent.Action, FaceEvent.Flag, FaceEvent.Kind
 FACE = AttendanceRecord.Source.FACE
@@ -22,6 +22,11 @@ LOCATION_FLAGS = {"outside_geofence", "low_accuracy", "no_location"}
 def seed(company, people, now) -> None:
     story = demo_plan.Plan(company, people, now)
     branch = story.branches["C"]
+    # Chilonzor's people scan when they come and when they leave: the morning's check-outs came
+    # from the terminal (the default is "arrival": people scan only when they come).
+    row = conf.get_settings(company)
+    row.scan_mode = FaceIdSettings.ScanMode.BOTH
+    row.save(update_fields=["scan_mode", "updated_at"])
     device = FaceDevice.objects.create(
         company=company,
         branch=branch,

@@ -8,7 +8,7 @@ from apps.attendance.models import AttendanceRecord
 from apps.companies.models import Feature
 from apps.core.management.commands.ensure_company_defaults import ensure_company_defaults
 from apps.core.management.commands.seed_demo import Command
-from apps.faceid import demo
+from apps.faceid import conf, demo
 from apps.faceid.models import FaceDevice, FaceEvent, FaceLink
 from apps.faceid.tests.conftest import DAY, local
 from apps.timeoff import demo as timeoff_demo
@@ -44,6 +44,8 @@ def test_the_chilonzor_terminal_and_its_morning(pharmacy):
     events = FaceEvent.objects.filter(company=company)
     actions = set(events.values_list("action", flat=True))
     assert {"checked_in", "repeat", "not_linked", "stranger"} <= actions
+    # Its check-outs came from the terminal too: there, people scan both ways.
+    assert conf.get_settings(company).scan_mode == "both"
     assert all(event.photo for event in events)
     unlinked = events.filter(action="not_linked")
     assert set(unlinked.values_list("employee_no", flat=True)) == {"00000037"}

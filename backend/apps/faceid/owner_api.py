@@ -689,7 +689,8 @@ class LinkViewSet(FaceIdOn, Scoped, mixins.ListModelMixin, mixins.DestroyModelMi
 
 
 class SettingsView(FaceIdOn, OwnerAPIView):
-    """Face ID's settings: attendance, Telegram, groups, alerts, repeats, snapshots."""
+    """Face ID's settings: attendance and how people use the terminal (`scan_mode`), Telegram,
+    groups, alerts, repeats, snapshots."""
 
     perm = MANAGE
 

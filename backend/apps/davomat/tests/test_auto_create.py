@@ -89,7 +89,8 @@ def test_the_next_scan_is_the_same_employee(org, scan):
     later = scan(18, 4, number="2")  # "2" and "00000002" are one number
 
     assert later.membership == first.membership
-    assert later.action == Action.CHECKED_OUT
+    # People scan only when they come (the default): the evening's scan is seen, on the same day.
+    assert later.action == Action.SEEN and later.record_id == first.record_id
     assert Employee.objects.count() == 1
 
 

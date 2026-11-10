@@ -368,6 +368,7 @@ def test_settings(staff, owner_api):
     data = client.get(path).json()
     assert data == {
         "attendance": True,
+        "scan_mode": "arrival",
         "telegram": "arrivals",
         "group_posts": False,
         "group_photos": False,
@@ -380,3 +381,10 @@ def test_settings(staff, owner_api):
     assert response.status_code == 200 and response.json()["telegram"] == "every_scan"
     assert client.patch(path, {"repeat_minutes": 0}, format="json").status_code == 400
     assert AuditLog.objects.filter(action="faceid.settings_changed").exists()
+    response = client.patch(path, {"scan_mode": "both"}, format="json")
+    assert response.status_code == 200 and response.json()["scan_mode"] == "both"
+    log = AuditLog.objects.filter(action="faceid.settings_changed").order_by("-pk").first()
+    assert log.details["changes"] == {"scan_mode": ["arrival", "both"]}
+    assert client.patch(path, {"scan_mode": "sometimes"}, format="json").status_code == 400
+    refused = owner_api(staff.ali).patch(path, {"scan_mode": "arrival"}, format="json")
+    assert refused.status_code == 403

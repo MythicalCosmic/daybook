@@ -2,10 +2,11 @@
 they do to attendance (apps.attendance.services.scan)."""
 
 import json
-from datetime import date, timedelta
+from datetime import date, time, timedelta
 
 import pytest
 
+from apps.attendance import jobs
 from apps.attendance import services as attendance
 from apps.attendance.models import AttendanceRecord
 from apps.attendance.tests.factories import shift_at
@@ -71,6 +72,12 @@ def settings(company, **changes):
     return face.update_settings(company, by=None, **changes)
 
 
+@pytest.fixture
+def both(staff):
+    """People scan when they come and when they leave: one door checks in, then out."""
+    settings(staff.ali.company, scan_mode="both")
+
+
 # The owner's terminal ------------------------------------------------------------------------
 
 
@@ -79,7 +86,8 @@ def test_the_owners_terminal_as_it_really_posts(
 ):
     """Number 00000002 is linked as "2". The wall clock says 07:49:44 with the factory zone
     (+08:00) while it is 08:01 in Tashkent: the offset means nothing; a clock behind is still the
-    scan's time (a past time is never replaced), and the terminal's card says the clock is slow."""
+    scan's time (a past time is never replaced), and the terminal's card says the clock is slow.
+    People there scan only when they come (the default): the evening's scan is only seen."""
     FaceLink.objects.create(company=device.company, employee_no="2", membership=staff.bob)
 
     def post(at, received, serial):
@@ -102,7 +110,9 @@ def test_the_owners_terminal_as_it_really_posts(
     device.refresh_from_db()
     assert device.clock_offset_s == -676  # 11 min 16 s slow: the card warns
     later = post("2026-10-21T18:04:00+08:00", local(DAY, 18, 4), 40586)
-    assert later.action == Action.CHECKED_OUT and later.event_at == local(DAY, 18, 4)
+    assert later.action == Action.SEEN and later.event_at == local(DAY, 18, 4)
+    assert later.record_id == event.record_id
+    assert AttendanceRecord.objects.get(pk=event.record_id).status == AttendanceRecord.Status.OPEN
 
 
 def test_the_five_people_on_the_terminal_link_themselves(staff, device, scan):
@@ -129,7 +139,7 @@ def test_the_five_people_on_the_terminal_link_themselves(staff, device, scan):
 # Attendance ---------------------------------------------------------------------------------
 
 
-def test_one_door_checks_in_then_out(staff, scan, telegram, chilonzor):
+def test_one_door_checks_in_then_out(staff, scan, telegram, chilonzor, both):
     first = scan(8, 57)
     assert first.action == Action.CHECKED_IN
     assert first.membership == staff.ali
@@ -203,6 +213,8 @@ def test_the_terminal_retrying_an_event_counts_it_once(staff, scan):
 
 
 def test_attendance_status_decides_at_a_one_door_terminal(staff, scan):
+    """What the terminal says about a scan (its attendance status) stands, also where people
+    scan only when they come (the default here)."""
     event = scan(13, 0, status="checkOut")
     assert event.action == Action.CHECKED_IN
     assert Flag.MISSED_ENTRY in event.flags
@@ -214,7 +226,10 @@ def test_attendance_status_decides_at_a_one_door_terminal(staff, scan):
     assert scan(18, 0, status="checkOut").action == Action.CHECKED_OUT
 
 
-def test_entrance_and_exit_terminals(staff, device, scan, chilonzor):
+@pytest.mark.parametrize("mode", ["arrival", "both"])
+def test_entrance_and_exit_terminals(staff, device, scan, chilonzor, mode):
+    """An entrance checks in and an exit checks out, however people use one-door terminals."""
+    settings(staff.ali.company, scan_mode=mode)
     exit_door = FaceDevice.objects.create(
         company=chilonzor.company, branch=chilonzor, name="Chiqish", direction="out"
     )
@@ -229,7 +244,9 @@ def test_entrance_and_exit_terminals(staff, device, scan, chilonzor):
     assert record.check_out_at == local(DAY, 18, 4)
 
 
-def test_a_burst_after_an_outage_updates_attendance_quietly(staff, device, scan, telegram, freeze):
+def test_a_burst_after_an_outage_updates_attendance_quietly(
+    staff, device, scan, telegram, freeze, both
+):
     seen_live(device, freeze)
     evening = local(DAY, 21, 30)
     came = scan(8, 57, received=evening)
@@ -243,7 +260,7 @@ def test_a_burst_after_an_outage_updates_attendance_quietly(staff, device, scan,
     assert not Notification.objects.filter(kind="faceid.scan").exists()
 
 
-def test_a_late_check_out_replaces_the_systems_guess(staff, scan, freeze):
+def test_a_late_check_out_replaces_the_systems_guess(staff, scan, freeze, both):
     shift_at(staff.ali, DAY)
     scan(8, 57)
     freeze(local(DAY, 21, 5))
@@ -324,7 +341,7 @@ def test_a_terminal_at_another_branch_than_the_shift(staff, scan, yunusobod, chi
     assert Flag.OTHER_BRANCH in event.flags
 
 
-def test_fingerprint_and_card_passes_count_like_a_face(staff, scan):
+def test_fingerprint_and_card_passes_count_like_a_face(staff, scan, both):
     finger = scan(8, 57, minor=38, mode="fp")
     assert finger.action == Action.CHECKED_IN and finger.method == "fingerprint"
     card = scan(18, 0, minor=1, mode="card")
@@ -336,6 +353,193 @@ def test_someone_suspended_is_not_checked_in(staff, scan):
     staff.ali.save()
     event = scan(8, 57)
     assert event.action == Action.IGNORED and Flag.NOT_APPROVED in event.flags
+
+
+# How people use the terminal (scan_mode), and a new day that is never a departure -------------
+
+TOMORROW = DAY + timedelta(days=1)
+Status, Source, RecordFlag = AttendanceRecord.Status, AttendanceRecord.Source, AttendanceRecord.Flag
+
+
+def test_where_people_scan_only_when_they_come_later_scans_are_seen(staff, scan, telegram):
+    """The default: the first scan checks in; later ones are only seen (kept with the snapshot,
+    tied to the check-in), never a departure, and the person hears only about the check-in."""
+    first = scan(8, 57)
+    assert first.action == Action.CHECKED_IN
+    record = record_of(first)
+    for hour in (13, 18):
+        later = scan(hour, 4)
+        assert later.action == Action.SEEN and later.photo
+        assert later.record_id == record.pk
+    record.refresh_from_db()
+    assert (record.status, record.check_out_at) == (Status.OPEN, None)
+    assert len(records(staff.ali)) == 1
+    assert [text.splitlines()[0] for _chat, text in telegram] == ["You came in: 08:57, Chilonzor."]
+    # "Who came" goes once a day: the check-in.
+    assert Notification.objects.filter(kind="faceid.scan", recipient=staff.manager).count() == 1
+
+
+def test_every_scan_says_who_was_seen(staff, scan):
+    settings(staff.ali.company, telegram="every_scan")
+    scan(8, 57)
+    scan(13, 4)
+    notices = Notification.objects.filter(kind="faceid.scan", recipient=staff.manager)
+    assert list(notices.order_by("pk").values_list("title", "body")) == [
+        ("Ali · 08:57 · Kirish", "Came in."),
+        ("Ali · 13:04 · Kirish", "Chilonzor"),
+    ]
+
+
+def test_the_next_days_first_scan_checks_in_with_yesterday_still_open(staff, scan):
+    """In at 16:43 and never closed: the next morning's scan is that day's check-in. Yesterday
+    closes quietly, without a check-out time nobody recorded (no worked time, as an unscheduled
+    day always closes) and without asking anyone to correct it."""
+    came = scan(16, 43)
+    morning = scan(8, 30, day=TOMORROW)
+    assert morning.action == Action.CHECKED_IN
+    yesterday, today = records(staff.ali)
+    assert (yesterday.pk, today.pk) == (came.record_id, morning.record_id)
+    assert (today.date, today.status) == (TOMORROW, Status.OPEN)
+    assert yesterday.status == Status.CLOSED and yesterday.out_source == Source.SYSTEM
+    assert yesterday.check_out_at == yesterday.check_in_at and yesterday.worked_minutes == 0
+    assert yesterday.flags == [RecordFlag.UNSCHEDULED]
+    assert not Notification.objects.filter(kind="attendance.auto_closed").exists()
+
+
+def test_no_scan_ever_checks_anyone_out(staff, scan):
+    today, tomorrow = shift_at(staff.ali, DAY), shift_at(staff.ali, TOMORROW)
+    moments = [(DAY, 8, 57), (DAY, 12, 30), (DAY, 18, 2), (DAY, 20, 30), (TOMORROW, 8, 50)]
+    moments.append((TOMORROW, 18, 5))
+    actions = [scan(hour, minute, day=day).action for day, hour, minute in moments]
+    assert actions == [Action.CHECKED_IN, *[Action.SEEN] * 3, Action.CHECKED_IN, Action.SEEN]
+    assert not FaceEvent.objects.filter(action=Action.CHECKED_OUT).exists()
+    assert not AttendanceRecord.objects.filter(out_source=Source.FACE).exists()
+    first, second = records(staff.ali)
+    assert (first.shift, second.shift) == (today, tomorrow)
+    # Yesterday's shift closed at its end, quietly.
+    assert (first.status, first.check_out_at, first.flags) == (Status.CLOSED, today.ends_at, [])
+
+
+def test_days_close_quietly_where_people_scan_only_when_they_come(
+    staff, scan, freeze, telegram, django_capture_on_commit_callbacks
+):
+    """No forgotten check-out is flagged and nobody is asked to fix it or whether they are still
+    working: leaving isn't recorded. A shift's day ends at the shift's end (with no overtime to
+    approve from a check-out nobody made); an unscheduled one has no worked time, as always."""
+    shift = shift_at(staff.ali, DAY)  # 09:00 to 18:00, an hour's break
+    scan(8, 20)  # forty minutes early
+    scan(8, 40, number="13", name="Vali")  # no shift today
+    company = staff.ali.company
+    telegram.clear()
+    jobs.nudge_company(company, local(DAY, 19, 5))
+    with django_capture_on_commit_callbacks(execute=True):
+        assert attendance.auto_close(company, local(DAY, 21, 1)) == 1
+        assert attendance.auto_close(company, local(TOMORROW, 0, 41)) == 1
+    ali = AttendanceRecord.objects.get(shift=shift)
+    assert (ali.status, ali.check_out_at, ali.out_source) == (
+        Status.CLOSED,
+        shift.ends_at,
+        Source.SYSTEM,
+    )
+    assert ali.flags == [] and ali.worked_minutes == 9 * 60 + 40 - 60
+    assert (ali.overtime_minutes, ali.overtime_status) == (0, AttendanceRecord.Overtime.NONE)
+    vali = AttendanceRecord.objects.get(membership=staff.vali)
+    assert (vali.status, vali.worked_minutes, vali.flags) == (
+        Status.CLOSED,
+        0,
+        [RecordFlag.UNSCHEDULED],
+    )
+    assert not Notification.objects.filter(kind="attendance.auto_closed").exists()
+    assert telegram == []  # no "still working?"
+
+
+def test_check_ins_made_in_the_app_keep_the_usual_rules(
+    staff, freeze, telegram, django_capture_on_commit_callbacks
+):
+    company = staff.ali.company
+    attendance.update_settings(company, by=None, require_location=False)
+    shift = shift_at(staff.ali, DAY)
+    freeze(local(DAY, 8, 58))
+    attendance.check_in(staff.ali)
+    jobs.nudge_company(company, local(DAY, 19, 5))
+    assert "Still working?" in telegram[0][1]
+    with django_capture_on_commit_callbacks(execute=True):
+        assert attendance.auto_close(company, local(DAY, 21, 1)) == 1
+    record = AttendanceRecord.objects.get(shift=shift)
+    assert record.status == Status.AUTO_CLOSED and RecordFlag.AUTO_CLOSED in record.flags
+    assert Notification.objects.filter(kind="attendance.auto_closed", recipient=staff.ali).exists()
+
+
+def test_back_for_the_evening_shift_is_its_arrival(staff, scan):
+    """A split day: on the way out of the morning shift a scan is only seen; back for the evening
+    shift, it checks in for that one (the morning closes at its end, quietly)."""
+    morning = shift_at(staff.ali, DAY, time(8, 0), time(12, 0), break_minutes=0)
+    evening = shift_at(staff.ali, DAY, time(14, 0), time(18, 0), break_minutes=0)
+    assert scan(7, 58).action == Action.CHECKED_IN
+    assert scan(12, 5).action == Action.SEEN
+    back = scan(13, 52)
+    assert back.action == Action.CHECKED_IN and record_of(back).shift == evening
+    first = AttendanceRecord.objects.get(shift=morning)
+    assert (first.status, first.check_out_at, first.flags) == (Status.CLOSED, morning.ends_at, [])
+
+
+def test_the_owners_case_in_at_16_43_and_a_scan_the_next_morning(staff, scan, telegram, both):
+    """People scan both ways, and someone forgot to on the way out: unscheduled, in at 16:43,
+    then a scan the next morning at 08:30. That is today's check-in, never "Left" after a
+    sixteen-hour stay; yesterday closes the way the system closes a forgotten check-out."""
+    came = scan(16, 43)
+    morning = scan(8, 30, day=TOMORROW)
+    assert morning.action == Action.CHECKED_IN
+    yesterday, today = records(staff.ali)
+    assert (yesterday.pk, today.pk) == (came.record_id, morning.record_id)
+    assert (today.check_in_at, today.status) == (local(TOMORROW, 8, 30), Status.OPEN)
+    assert yesterday.status == Status.AUTO_CLOSED and RecordFlag.AUTO_CLOSED in yesterday.flags
+    assert yesterday.check_out_at == yesterday.check_in_at and yesterday.worked_minutes == 0
+    asked = Notification.objects.filter(kind="attendance.auto_closed", recipient=staff.ali)
+    assert asked.count() == 1
+    assert not any(text.startswith("You left") for _chat, text in telegram)
+    # The evening's scan is that day's departure.
+    assert scan(18, 4, day=TOMORROW).action == Action.CHECKED_OUT
+
+
+def test_a_scan_past_the_shifts_close_is_a_new_arrival(staff, scan, both):
+    """The system closes a forgotten shift three hours after its end (auto_close_after_hours):
+    a scan after that is a new arrival, whether or not the job has run; before it, a departure."""
+    today, tomorrow = shift_at(staff.ali, DAY), shift_at(staff.ali, TOMORROW)
+    scan(8, 57)
+    morning = scan(8, 50, day=TOMORROW)
+    assert morning.action == Action.CHECKED_IN and record_of(morning).shift == tomorrow
+    first = AttendanceRecord.objects.get(shift=today)
+    assert (first.status, first.check_out_at) == (Status.AUTO_CLOSED, today.ends_at)
+    assert RecordFlag.AUTO_CLOSED in first.flags
+    shift_at(staff.vali, DAY)
+    scan(8, 55, number="13", name="Vali")
+    assert scan(20, 59, number="13", name="Vali").action == Action.CHECKED_OUT
+    shift_at(staff.sara, DAY)
+    scan(8, 55, number="21", name="Sara")
+    assert scan(21, 1, number="21", name="Sara").action == Action.CHECKED_IN
+
+
+@pytest.mark.parametrize("mode, action", [("both", Action.CHECKED_OUT), ("arrival", Action.SEEN)])
+def test_a_night_shift_scanned_in_the_morning_is_still_that_night(staff, scan, mode, action):
+    settings(staff.ali.company, scan_mode=mode)
+    night = shift_at(staff.ali, DAY, time(20, 0), time(8, 0))
+    assert scan(19, 55).action == Action.CHECKED_IN
+    assert scan(8, 5, day=TOMORROW).action == action
+    (record,) = records(staff.ali)
+    assert record.shift == night
+    expected = (Status.CLOSED, local(TOMORROW, 8, 5)) if mode == "both" else (Status.OPEN, None)
+    assert (record.status, record.check_out_at) == expected
+
+
+@pytest.mark.parametrize("mode", ["arrival", "both"])
+def test_an_entrance_checks_in_the_next_day_with_yesterday_still_open(staff, device, scan, mode):
+    settings(staff.ali.company, scan_mode=mode)
+    device.direction = FaceDevice.Direction.IN
+    device.save()
+    scan(16, 43)
+    assert scan(8, 30, day=TOMORROW).action == Action.CHECKED_IN  # not "already in"
+    assert [record.date for record in records(staff.ali)] == [DAY, TOMORROW]
 
 
 # Who: links, names, strangers --------------------------------------------------------------

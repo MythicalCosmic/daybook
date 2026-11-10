@@ -1261,14 +1261,37 @@ def check_out_now(membership: Membership, *, source: str = Source.BOT) -> CheckR
 
 @dataclass
 class ScanResult:
-    """What a terminal's scan did: `action` is checked_in · checked_out · repeat · ignored;
-    `flags` say why (other_branch, missed_entry, late_check_out, already_in, out_of_order,
-    refused, not_approved); `message` is a refusal's reason."""
+    """What a terminal's scan did: `action` is checked_in · checked_out · seen · repeat ·
+    ignored; `flags` say why (other_branch, missed_entry, late_check_out, already_in,
+    out_of_order, refused, not_approved); `message` is a refusal's reason."""
 
     action: str
     record: AttendanceRecord | None
     flags: list[str]
     message: str = ""
+
+
+# Who says a company's terminals record arrivals only (apps.faceid's "arrival" scan mode, wired
+# in its hooks): `check(company) -> bool`. Attendance itself never imports Face ID.
+_ARRIVALS_ONLY: list = []
+
+
+def register_arrivals_only(check) -> None:
+    """Ask `check(company)` whether the company's Face ID check-ins record arrivals only: leaving
+    isn't recorded then, so their days close quietly (`closes_quietly`)."""
+    if check not in _ARRIVALS_ONLY:
+        _ARRIVALS_ONLY.append(check)
+
+
+def arrivals_only(company: Company) -> bool:
+    return any(check(company) for check in _ARRIVALS_ONLY)
+
+
+def closes_quietly(record: AttendanceRecord, company: Company) -> bool:
+    """A Face ID check-in of a company whose terminals record arrivals only: there is no
+    check-out to forget, so its day closes without a flag, a correction request or a "still
+    working?". Check-ins made in the app or by a manager keep the usual rules."""
+    return record.in_source == Source.FACE and arrivals_only(company)
 
 
 def scan(
@@ -1284,14 +1307,21 @@ def scan(
 ) -> ScanResult:
     """A face recognition terminal at `branch` verified `membership` at `at`: check them in or out.
 
-    `wants` is the terminal's direction: "in" (an entrance), "out" (an exit) or "toggle" (one
-    door: no open check-in means in, otherwise out). Within `repeat_window` of the person's own
+    `wants` is the terminal's direction: "in" (an entrance), "out" (an exit), "toggle" (one door:
+    no open check-in means in, otherwise out) or "arrival" (one door where people scan only when
+    they come, `_scan_arrival`: a work session's first scan checks in, a later one is `seen` and
+    changes nothing; it never checks anyone out). Within `repeat_window` of the person's own
     check-in or check-out nothing changes (a repeat); a scan older than what is on record changes
-    nothing either (a late delivery after the app was used). An exit scan, or a toggle, while a
-    record the system closed was still open delivers its real check-out; an exit scan after a
-    check-out earlier that shift moves the check-out (the last exit is the check-out); an exit scan
-    without any check-in checks in and is flagged `missed_entry`. Every check-in rule still holds.
-    `quiet`: no messages at all; `notify_person`: the person's own bot message."""
+    nothing either (a late delivery after the app was used).
+
+    A new work day never becomes a departure: an open check-in whose session is over at `at`
+    (`session_over`: yesterday's, never closed) is first closed the way `auto_close` closes it
+    (its person is told as the job would tell them, even for a `quiet` scan), then the scan is
+    the new day's. An exit scan, or a toggle, while a record the system closed was still open
+    delivers its real check-out; an exit scan after a check-out earlier that shift moves the
+    check-out (the last exit is the check-out); an exit scan without any check-in checks in and
+    is flagged `missed_entry`. Every check-in rule still holds. `quiet`: no messages about the
+    scan; `notify_person`: the person's own bot message."""
     _ensure_module(membership.company)
     settings = conf.get_settings(membership.company)
     with transaction.atomic():
@@ -1302,26 +1332,28 @@ def scan(
         )
         if member.status != Membership.Status.APPROVED:
             return ScanResult("ignored", None, ["not_approved"])
+        company = member.company
         current = queries.open_record(member)
-        latest = (
-            AttendanceRecord.objects.filter(membership=member, check_in_at__isnull=False)
-            .select_related("shift", "branch")
-            .order_by("-check_in_at")
-            .first()
-        )
+        latest = _latest_check_in(member)
         touches = _scan_touches(current, latest)
         if any(abs(at - moment) < repeat_window for moment in touches):
             return ScanResult("repeat", current or latest, [])
         if touches and at < max(touches):
             return ScanResult("ignored", current or latest, ["out_of_order"])
+        if current is not None and session_over(current, at, settings, company):
+            _close_stale(current, settings, company)
+            current, latest = None, _latest_check_in(member)
         message = (not quiet) and notify_person
+        if wants == "arrival":
+            records = (current, latest)
+            return _scan_arrival(member, records, at, branch, photo, settings, quiet, message)
         if wants == "in":
             if current is not None:
                 return ScanResult("repeat", current, ["already_in"])
             return _scan_in(member, at, branch, photo, quiet, message)
         if current is not None:
             return _scan_out(member, at, quiet, message)
-        if latest is not None and _open_until_closed(latest, at, settings):
+        if latest is not None and _open_until_closed(latest, at, settings, company):
             return _scan_late_out(latest, at, settings, quiet, message)
         if wants == "out":
             if latest is not None and _same_session(latest, at, settings):
@@ -1330,14 +1362,27 @@ def scan(
         return _scan_in(member, at, branch, photo, quiet, message)
 
 
+def _latest_check_in(member: Membership) -> AttendanceRecord | None:
+    return (
+        AttendanceRecord.objects.filter(membership=member, check_in_at__isnull=False)
+        .select_related("shift", "branch")
+        .order_by("-check_in_at")
+        .first()
+    )
+
+
 def _scan_touches(current, latest) -> list[datetime]:
-    """The person's own check-ins and real check-outs on record."""
+    """The person's own check-ins and real check-outs on record (never the system's guess)."""
     moments = []
     for record in (current, latest):
         if record is None:
             continue
         moments.append(record.check_in_at)
-        if record.check_out_at and record.status == AttendanceRecord.Status.CLOSED:
+        if (
+            record.check_out_at
+            and record.status == AttendanceRecord.Status.CLOSED
+            and record.out_source != Source.SYSTEM
+        ):
             moments.append(record.check_out_at)
     return [moment for moment in moments if moment is not None]
 
@@ -1349,11 +1394,33 @@ def _closes_at(record: AttendanceRecord, settings) -> datetime:
     return record.check_in_at + timedelta(hours=rules.UNSCHEDULED_AUTO_CLOSE_HOURS)
 
 
-def _open_until_closed(record: AttendanceRecord, at: datetime, settings) -> bool:
-    """`record` was still open at `at`; only the system closed it later."""
+def session_over(record: AttendanceRecord, at: datetime, settings, company: Company) -> bool:
+    """Whether `at` is past the work session `record`'s check-in began, so that a terminal's scan
+    then starts a new one. With a shift: past the shift's end plus `auto_close_after_hours` (when
+    `auto_close` closes a forgotten check-out, whether or not it has run yet). Without one: from
+    `rules.DAY_STARTS` on a later local day, once `rules.NEW_DAY_AFTER_HOURS` have passed since
+    the check-in, or 16 hours after it. A night shift (20:00 to 08:00) scanned at 08:05 is still in
+    its session: that scan is its check-out."""
+    if record.shift_id:
+        return at > _closes_at(record, settings)
+    since = at - record.check_in_at
+    if since >= timedelta(hours=rules.UNSCHEDULED_AUTO_CLOSE_HOURS):
+        return True
+    moment = clock.local(company, at)
+    return (
+        moment.date() > clock.local(company, record.check_in_at).date()
+        and moment.time() >= rules.DAY_STARTS
+        and since >= timedelta(hours=rules.NEW_DAY_AFTER_HOURS)
+    )
+
+
+def _open_until_closed(record: AttendanceRecord, at: datetime, settings, company) -> bool:
+    """`record` was still open at `at` (its session wasn't over); only the system closed it
+    later."""
     return (
         record.status == AttendanceRecord.Status.AUTO_CLOSED
-        and record.check_in_at < at <= _closes_at(record, settings)
+        and record.check_in_at < at
+        and not session_over(record, at, settings, company)
     )
 
 
@@ -1366,6 +1433,51 @@ def _same_session(record: AttendanceRecord, at: datetime, settings) -> bool:
     if record.shift_id:
         return at <= _closes_at(record, settings)
     return record.date == clock.local(record.company, at).date()
+
+
+def _close_stale(record: AttendanceRecord, settings, company: Company) -> None:
+    """A check-in nobody closed whose session is over, found by the next session's first scan:
+    closed as `auto_close` closes it (the job may not have run yet), before the scan counts."""
+    if _close_forgotten(record.pk, settings, company) is not None:
+        _bump(company.pk, PULSE_BOARD)
+
+
+def _next_shift_began(member, record: AttendanceRecord, at: datetime, settings) -> bool:
+    """`record`'s shift has ended and `at` belongs to another of the person's shifts, nearer
+    that one's start than the last one's end (a split day: back for the evening shift, not on
+    the way out of the morning one)."""
+    if not record.shift_id or at <= record.shift.ends_at:
+        return False
+    shift = queries.current_shift(member, at, settings=settings)
+    return (
+        shift is not None
+        and shift.pk != record.shift_id
+        and shift.starts_at - at < at - record.shift.ends_at
+    )
+
+
+def _scan_arrival(member, records, at, branch, photo, settings, quiet, message) -> ScanResult:
+    """A one-door terminal where people scan only when they come. A work session's first scan
+    checks in; once the session has a check-in (open, or closed in the app or by a manager), a
+    scan is only `seen`: kept and shown, no attendance change, never a departure. A scan in the
+    window of the person's next shift, once the last one ended, is that shift's arrival.
+    `records`: the open check-in and the latest one."""
+    company = member.company
+    current, latest = records
+    if current is not None and _next_shift_began(member, current, at, settings):
+        _close_stale(current, settings, company)
+        current, latest = None, _latest_check_in(member)
+    arrived = current
+    if (
+        arrived is None
+        and latest is not None
+        and not session_over(latest, at, settings, company)
+        and not _next_shift_began(member, latest, at, settings)
+    ):
+        arrived = latest
+    if arrived is not None:
+        return ScanResult("seen", arrived, [])
+    return _scan_in(member, at, branch, photo, quiet, message)
 
 
 def _scan_in(member, at, branch, photo, quiet, message, *, missed_entry=False) -> ScanResult:
@@ -2161,7 +2273,8 @@ def expire_swaps(now: datetime | None = None) -> int:
 def auto_close(company: Company, now: datetime | None = None) -> int:
     """Close forgotten check-outs: a shift's record `auto_close_after_hours` after the shift
     ends (at the shift's end), an unscheduled one 16 hours after its check-in (with no worked
-    time, so nobody is paid for a guess). Flagged, and the person is asked to correct it."""
+    time, so nobody is paid for a guess). Flagged, and the person is asked to correct it, unless
+    the day closes quietly (`_close_forgotten`)."""
     now = now or timezone.now()
     settings = conf.get_settings(company)
     late = now - timedelta(hours=settings.auto_close_after_hours)
@@ -2177,26 +2290,45 @@ def auto_close(company: Company, now: datetime | None = None) -> int:
     closed = 0
     for record_id in list(stale.values_list("pk", flat=True)):
         with transaction.atomic():
-            record = (
-                AttendanceRecord.objects.select_for_update(of=("self",))
-                .select_related("shift")
-                .filter(pk=record_id, status=AttendanceRecord.Status.OPEN)
-                .first()
-            )
-            if record is None:
-                continue
-            end = record.shift.ends_at if record.shift else record.check_in_at
-            record.check_out_at = max(end, record.check_in_at)
-            record.status = AttendanceRecord.Status.AUTO_CLOSED
-            record.out_source = Source.SYSTEM
-            rules.add_flag(record, Flag.AUTO_CLOSED)
-            rules.compute(record, settings)
-            record.save()
-            transaction.on_commit(lambda pk=record.pk: notify.auto_closed(pk))
-            closed += 1
+            if _close_forgotten(record_id, settings, company) is not None:
+                closed += 1
     if closed:
         _bump(company.pk, PULSE_BOARD)
     return closed
+
+
+def _close_forgotten(record_id: int, settings, company: Company) -> AttendanceRecord | None:
+    """Close a check-in nobody closed, as the system does: at its shift's end, or without a shift
+    at the check-in itself (no worked time, so nobody is paid for a guess). It is flagged as a
+    forgotten check-out and its person is asked to correct it, unless it closes quietly
+    (`closes_quietly`: leaving isn't recorded there): then it is simply closed, with no overtime
+    to approve from a check-out nobody made. Inside a transaction; None when it was no longer
+    open."""
+    record = (
+        AttendanceRecord.objects.select_for_update(of=("self",))
+        .select_related("shift")
+        .filter(pk=record_id, status=AttendanceRecord.Status.OPEN)
+        .first()
+    )
+    if record is None:
+        return None
+    quietly = closes_quietly(record, company)
+    end = record.shift.ends_at if record.shift else record.check_in_at
+    record.check_out_at = max(end, record.check_in_at)
+    record.out_source = Source.SYSTEM
+    if quietly:
+        record.status = AttendanceRecord.Status.CLOSED
+    else:
+        record.status = AttendanceRecord.Status.AUTO_CLOSED
+        rules.add_flag(record, Flag.AUTO_CLOSED)
+    rules.compute(record, settings)
+    if quietly:
+        record.overtime_minutes = 0
+        record.overtime_status = AttendanceRecord.Overtime.NONE
+    record.save()
+    if not quietly:
+        transaction.on_commit(lambda pk=record.pk: notify.auto_closed(pk))
+    return record
 
 
 ABSENCE_LOOKBACK_DAYS = 7
