@@ -97,8 +97,12 @@ services:
       && exec gunicorn -c config/gunicorn.conf.py config.wsgi"
     ports:
       - "127.0.0.1:28000:8000"
+    # Migrations and the company defaults run before gunicorn starts (74 s for 0.6.0's), and the
+    # first requests are slow while 12 workers load: failed checks count only after 5 minutes,
+    # so a long migration never gets the backend called unhealthy and the deploy stopped.
     healthcheck:
       <<: *healthcheck
+      start_period: 300s
       test:
         - CMD
         - python
