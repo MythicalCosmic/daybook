@@ -1,16 +1,18 @@
 <script setup lang="ts">
 /**
- * Face ID › Settings: whether linked people's scans check them in and out (when Attendance is on),
+ * Face ID › Settings: whether linked people's scans count in attendance (when Attendance is on) and
+ * how people use a one-door terminal (only when they come: later scans are only seen; or both ways),
  * what Telegram says (who came, every scan, or nothing), group posts, the person's own message,
  * unknown-face alerts, repeats and how long snapshots are kept. Saves only what changed; the server
  * audits it. Faces never leave the terminal; employees should agree in writing.
  */
-import { ShieldCheck } from "@lucide/vue";
+import { ArrowLeftRight, LogIn, ShieldCheck } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import { unshownFieldError } from "@/api/http";
 import ErrorState from "@/components/ErrorState.vue";
+import FormField from "@/components/FormField.vue";
 import InlineAlert from "@/components/InlineAlert.vue";
 import NumberInput from "@/components/NumberInput.vue";
 import PageHeader from "@/components/PageHeader.vue";
@@ -24,7 +26,7 @@ import { toast } from "@/components/useToast";
 import { useCompanyId, useCompanyStore } from "@/stores/company";
 
 import { saveSettings, useRefresh, useSettings } from "../api";
-import type { FaceIdSettings, TelegramMode } from "../types";
+import type { FaceIdSettings, ScanMode, TelegramMode } from "../types";
 
 const { t } = useI18n();
 const companyId = useCompanyId();
@@ -58,6 +60,10 @@ const attendanceOn = computed(() => company.enabled("attendance"));
 const telegramOptions = computed(() =>
   (["arrivals", "every_scan", "off"] as TelegramMode[]).map((value) => ({ value, label: t(`faceid.settings.telegram.${value}`), description: t(`faceid.settings.telegram.${value}Hint`) })),
 );
+const SCAN_MODE_ICONS = { arrival: LogIn, both: ArrowLeftRight } as const;
+const scanModeOptions = computed(() =>
+  (["arrival", "both"] as ScanMode[]).map((value) => ({ value, label: t(`faceid.settings.scanMode.${value}`), description: t(`faceid.settings.scanMode.${value}Hint`), icon: SCAN_MODE_ICONS[value] })),
+);
 
 async function save(): Promise<void> {
   if (!dirty.value) return;
@@ -87,6 +93,11 @@ async function save(): Promise<void> {
       <PageSection variant="card" flush :heading-level="2" :title="t('faceid.settings.attendanceTitle')" :description="t('faceid.settings.attendanceHint')">
         <div class="flex flex-col divide-y divide-line">
           <ToggleSwitch v-model="draft.attendance" layout="row" class="px-4 py-3 md:px-5" :label="t('faceid.settings.attendance')" :description="attendanceOn ? t('faceid.settings.attendanceOn') : t('faceid.settings.attendanceOff')" />
+          <div class="px-4 py-3 md:px-5" data-testid="scan-mode">
+            <FormField :label="t('faceid.settings.scanMode.title')" :hint="t('faceid.settings.scanMode.hint')" :disabled="!draft.attendance">
+              <RadioCards v-model="draft.scan_mode" :columns="2" :options="scanModeOptions" />
+            </FormField>
+          </div>
           <ToggleSwitch v-model="draft.notify_employee" layout="row" class="px-4 py-3 md:px-5" :disabled="!draft.attendance" :label="t('faceid.settings.notifyEmployee')" :description="t('faceid.settings.notifyEmployeeHint')" />
           <div class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-5">
             <div class="min-w-0 flex-1">
