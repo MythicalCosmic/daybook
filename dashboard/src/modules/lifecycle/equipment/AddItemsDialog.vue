@@ -55,15 +55,31 @@ watch(
 const category = computed(() => list.value.find((row) => row.id === form.value.category) ?? null);
 const device = computed(() => !!category.value && category.value.kind !== "low_value");
 // A new item takes the category's name in the singular feel of the stock ("Xalat"); an empty name follows the category.
-watch(category, (row, before) => {
-  if (!row) return;
-  if (!form.value.name.trim() || form.value.name === before?.name) form.value.name = row.name;
-  if (row.kind !== "low_value") form.value.quantity = 1;
-});
-
 // Numbering goes on from the company's last "<name> №N" (given out or not), as the server does.
 const everything = useStock("all", open);
 const baseName = (name: string) => name.replace(/\s*№\s*\d+\s*$/, "").trim().toLocaleLowerCase();
+
+/** What the category's things are called ("Xalat" for Lab coats): the most common name in it, else the category's own. */
+function usualName(categoryId: number, fallback: string): string {
+  const counts = new Map<string, { name: string; n: number }>();
+  for (const item of everything.data.value ?? []) {
+    if (item.category.id !== categoryId) continue;
+    const name = item.name.replace(/\s*№\s*\d+\s*$/, "").trim();
+    const key = name.toLocaleLowerCase();
+    counts.set(key, { name, n: (counts.get(key)?.n ?? 0) + 1 });
+  }
+  return [...counts.values()].sort((a, b) => b.n - a.n)[0]?.name ?? fallback;
+}
+const suggested = ref<string | null>(null);
+watch([category, () => everything.data.value], ([row], [before]) => {
+  if (!row) return;
+  // A name typed by hand stays; one we suggested follows the category.
+  if (!form.value.name.trim() || form.value.name === suggested.value) {
+    suggested.value = usualName(row.id, row.name);
+    form.value.name = suggested.value;
+  }
+  if (row !== before && row.kind !== "low_value") form.value.quantity = 1;
+});
 const startAt = computed(() => {
   const base = form.value.name.trim().toLocaleLowerCase();
   const taken = (everything.data.value ?? []).filter((item) => baseName(item.name) === base).map((item) => itemIndex(item.name));

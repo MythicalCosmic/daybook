@@ -10,6 +10,7 @@
  * "Move…"; the job change dialog opens filled in. Phones get the same tree as an indented outline.
  */
 import { ChevronDown, ChevronUp, ChevronsDownUp, ChevronsUpDown, Maximize2, Minus, Network, Pencil, Plus, Search } from "@lucide/vue";
+import { useResizeObserver } from "@vueuse/core";
 import { computed, nextTick, onBeforeUnmount, provide, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
@@ -80,9 +81,19 @@ function foldAll(): void {
 }
 
 // ─── Accents: each top part of the tree and everything under it share a colour ──
+// The families start where the tree first branches: a company with one top department (the
+// management) colours the departments under it, each with its own.
 const accents = computed(() => {
   const map = new Map<string, string>();
-  tree.value?.children.forEach((top, index) => {
+  if (!tree.value) return map;
+  const parts = (node: Node) => node.children.filter((child) => child.kind !== "unplaced");
+  let level = tree.value;
+  while (parts(level).length === 1 && parts(parts(level)[0]!).length > 1) {
+    const only = parts(level)[0]!;
+    map.set(only.key, "var(--c-primary)");
+    level = only;
+  }
+  parts(level).forEach((top, index) => {
     for (const node of walk(top)) map.set(node.key, ACCENTS[index % ACCENTS.length]!);
   });
   return map;
@@ -139,29 +150,30 @@ const stage = ref<HTMLElement | null>(null);
 const zoom = ref(1);
 const zoomLabel = computed(() => `${Math.round(zoom.value * 100)}%`);
 const setZoom = (value: number) => (zoom.value = Math.min(1.5, Math.max(0.3, Math.round(value * 100) / 100)));
-function fit(): void {
+/** Zoom so the whole tree shows ("Fit"), or (`widthOnly`, when it opens) so its width does and it
+ * scrolls down: names stay readable. */
+function fit(widthOnly = false): void {
   const box = viewport.value;
   const content = stage.value;
   if (!box || !content) return;
   const rect = content.getBoundingClientRect();
-  const natural = { width: rect.width / zoom.value, height: rect.height / zoom.value };
-  setZoom(fitZoom({ width: box.clientWidth - 48, height: box.clientHeight - 48 }, natural));
+  const natural = { width: rect.width / zoom.value, height: widthOnly ? 1 : rect.height / zoom.value };
+  setZoom(fitZoom({ width: box.clientWidth - 48, height: widthOnly ? 1 : box.clientHeight - 48 }, natural, widthOnly ? 0.5 : 0.3));
   void nextTick(() => {
     if (!viewport.value) return;
     viewport.value.scrollLeft = (viewport.value.scrollWidth - viewport.value.clientWidth) / 2;
     viewport.value.scrollTop = 0;
   });
 }
+// A wide company opens fitted to the page (a small one at its natural size), once the tree has
+// its size: fonts and avatars may still be loading when the data arrives.
 let fitted = false;
-watch([tree, () => isPhone.value], async () => {
-  if (!tree.value || isPhone.value) return;
-  await nextTick();
-  if (!fitted) {
-    fitted = true;
-    // A wide company opens fitted to the page; a small one at its natural size.
-    fit();
-    if (zoom.value > 0.8) setZoom(1);
-  }
+useResizeObserver(stage, (entries) => {
+  const rect = entries[0]?.contentRect;
+  if (fitted || !rect || rect.width < 10 || isPhone.value) return;
+  fitted = true;
+  fit(true);
+  if (zoom.value > 0.9) setZoom(1);
 });
 function onWheel(event: WheelEvent): void {
   if (!event.ctrlKey && !event.metaKey) return;
@@ -388,7 +400,7 @@ function chosen(target: MoveTarget): void {
           <IconButton :icon="Minus" size="sm" variant="ghost" :label="t('lifecycle.org.zoomOut')" @click="setZoom(zoom - 0.1)" />
           <button type="button" class="min-w-[3.25rem] rounded-[6px] px-1 text-xs font-semibold tabular-nums text-muted hover:text-fg" :aria-label="t('lifecycle.org.zoomReset')" @click="setZoom(1)">{{ zoomLabel }}</button>
           <IconButton :icon="Plus" size="sm" variant="ghost" :label="t('lifecycle.org.zoomIn')" @click="setZoom(zoom + 0.1)" />
-          <IconButton :icon="Maximize2" size="sm" variant="ghost" :label="t('lifecycle.org.fit')" data-org-fit @click="fit" />
+          <IconButton :icon="Maximize2" size="sm" variant="ghost" :label="t('lifecycle.org.fit')" data-org-fit @click="fit()" />
         </div>
       </div>
 
@@ -407,8 +419,10 @@ function chosen(target: MoveTarget): void {
         @pointerup="onPointerUp"
         @pointercancel="onPointerUp"
       >
-        <div class="flex min-h-full min-w-full justify-center p-8">
-          <div ref="stage" class="org-stage" :style="{ zoom }">
+        <!-- Centred while it fits; wider than the canvas, it starts at the left and scrolls (a
+             centred flex child would hide its left part). -->
+        <div class="flex min-h-full w-max min-w-full p-8">
+          <div ref="stage" class="org-stage mx-auto" :style="{ zoom }">
             <ul class="org-tree">
               <OrgNode :node="tree" :owners="data.owners" />
             </ul>

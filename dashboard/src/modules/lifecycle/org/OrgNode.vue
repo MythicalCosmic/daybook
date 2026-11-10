@@ -65,6 +65,7 @@ const countLabel = computed(() => {
 });
 const totalLabel = computed(() => {
   const node = props.node;
+  if (isRoot.value) return null; // the root's count is everyone already
   return node.children.length && node.total !== node.count ? t("lifecycle.org.inAll", { n: node.total }, node.total) : null;
 });
 </script>

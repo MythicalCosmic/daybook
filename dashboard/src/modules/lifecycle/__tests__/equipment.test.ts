@@ -5,6 +5,7 @@ import "@/core/modules";
 import { flushPromises } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { CompanyFeature } from "@/core/features";
 import { mergeModuleMessages } from "@/i18n";
 import { useSessionStore } from "@/stores/session";
 import { company, json, me } from "@/test/fixtures";
@@ -223,7 +224,7 @@ const personPage = (): EquipmentPersonPage => ({
   can,
 });
 
-async function mount(component: object, path: string, props: Record<string, unknown> = {}, features = ["hr", "assets", "payroll"]) {
+async function mount(component: object, path: string, props: Record<string, unknown> = {}, features: CompanyFeature[] = ["hr", "assets", "payroll"]) {
   const app = await testApp(path);
   useSessionStore().me = me([company({ features })]);
   const { wrapper } = mountWithProviders(component, { plugins: app.plugins, props });
@@ -322,7 +323,7 @@ describe("Person 360's Equipment tab", () => {
     expect(wrapper.find('[data-tab-item="2"]').text()).toContain(en["lifecycle.equipment.notConfirmed"]);
     const history = wrapper.findAll("[data-history]");
     expect(history.map((row) => row.attributes("data-history"))).toEqual(["7", "6"]);
-    expect(history[0]!.text()).toContain("came back Worn");
+    expect(history[0]!.text()).toContain("came back worn");
     expect(history[1]!.text()).toContain(en["lifecycle.equipment.deduction.status.approved"]);
     expect(wrapper.find("[data-tab-give]").exists()).toBe(true);
   });

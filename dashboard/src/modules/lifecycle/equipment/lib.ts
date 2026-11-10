@@ -3,7 +3,7 @@
  * category, an item's confirmation state, what the return dialog may offer (write-off, a
  * deduction), the forms' checks and their payloads, and the category icons.
  */
-import { Box, IdCard, KeyRound, KeySquare, Monitor, Package, ScanBarcode, Shirt, Smartphone, Tablet } from "@lucide/vue";
+import { AirVent, AppWindow, Armchair, Box, Building2, Car, Cctv, IdCard, KeyRound, KeySquare, Monitor, Package, PaintRoller, Refrigerator, ScanBarcode, Shirt, Smartphone, Tablet, Thermometer } from "@lucide/vue";
 import type { Component } from "vue";
 
 import type { Money } from "@/api/types";
@@ -22,6 +22,16 @@ const ICONS: Record<string, Component> = {
   "scan-barcode": ScanBarcode,
   monitor: Monitor,
   package: Package,
+  // The register's own categories (apps.assets defaults), for what was handed out of them.
+  car: Car,
+  refrigerator: Refrigerator,
+  "air-vent": AirVent,
+  armchair: Armchair,
+  thermometer: Thermometer,
+  cctv: Cctv,
+  "paint-roller": PaintRoller,
+  "building-2": Building2,
+  "app-window": AppWindow,
 };
 
 /** A category's icon (a lucide name from the API), a box when unknown. */

@@ -118,7 +118,7 @@ const outcomeLabel = (row: HistoryItem) =>
               </div>
               <p class="truncate text-xs text-muted">
                 {{ t("lifecycle.equipment.givenOn", { date: fmt.day(row.issued_on, "medium") }) }}
-                <template v-if="row.condition_in"> · {{ t("lifecycle.equipment.history.cameBack", { condition: t(`lifecycle.equipment.condition.${row.condition_in}`) }) }}</template>
+                <template v-if="row.condition_in"> · {{ t("lifecycle.equipment.history.cameBack", { condition: t(`lifecycle.equipment.condition.${row.condition_in}`).toLocaleLowerCase() }) }}</template>
                 <template v-if="row.note_in"> · «{{ row.note_in }}»</template>
               </p>
               <p v-if="row.deduction" class="mt-0.5 text-xs text-info">
