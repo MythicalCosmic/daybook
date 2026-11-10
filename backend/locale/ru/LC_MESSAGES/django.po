@@ -18005,7 +18005,6 @@ msgid "Say whether it came back or was lost."
 msgstr "Укажите, вернули предмет или он утерян."
 
 #: backend/apps/lifecycle/equipment/services.py
-#| msgctxt "payroll"
 msgid "Deduction"
 msgstr "Удержание"
 

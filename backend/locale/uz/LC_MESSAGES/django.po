@@ -17963,7 +17963,6 @@ msgid "Say whether it came back or was lost."
 msgstr "Qaytarildimi yoki yo‘qoldimi, belgilang."
 
 #: backend/apps/lifecycle/equipment/services.py
-#| msgctxt "payroll"
 msgid "Deduction"
 msgstr "Ushlanma"
 
