@@ -184,7 +184,7 @@ describe("api", () => {
     expect(module.nav?.map((item) => item.key)).toEqual(["discipline", "suspensions", "org", "terminations", "changes", "equipment", "reviews"]);
     expect(module.personTabs?.map((tab) => tab.id)).toEqual(["record", "career", "equipment"]);
     expect(Object.keys(module.extensions ?? {})).toEqual(["people.profile.actions", "people.offboard.step"]);
-    expect(module.invalidates).toEqual(["lifecycle", "assets"]);
+    expect(module.invalidates).toEqual(["lifecycle"]);
     expect(lifecycleKeys.records(1, { member: 9 })).toEqual([1, "lifecycle", "records", { member: 9 }]);
   });
 });

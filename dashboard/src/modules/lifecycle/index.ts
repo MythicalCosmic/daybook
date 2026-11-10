@@ -33,8 +33,8 @@ export default defineModule({
     { key: "equipment", title: "lifecycle.nav.equipment", to: "lifecycle/equipment", perm: ["assets.manage", "hr.manage"] },
     { key: "reviews", title: "lifecycle.nav.reviews", to: "lifecycle/reviews", perm: "reviews.manage" },
   ],
-  // "assets": the Equipment page and tab follow the register (a confirmation in the app included).
-  invalidates: ["lifecycle", "assets"],
+  // `lifecycle.equipment` moves with every change in assets too (a confirmation in the app included).
+  invalidates: ["lifecycle"],
   commands: (ctx) => [
     {
       id: "lifecycle.warn",
