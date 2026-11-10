@@ -32,7 +32,14 @@ import { changeFormErrors, changePayload, suggestedChangeDay, type ChangeForm, t
 import { PAY_TYPES, type ChangeInput, type ChangePart, type JobChange } from "../types";
 
 const open = defineModel<boolean>("open", { default: false });
-const props = withDefaults(defineProps<{ member?: { id: number; name: string } | null }>(), { member: null });
+/** `preset`: what a move on the org chart starts with (the parts ticked, the new department or branch, a reason). */
+export interface ChangePreset {
+  parts: ChangePart[];
+  department?: number | null;
+  branch?: number | null;
+  reason?: string;
+}
+const props = withDefaults(defineProps<{ member?: { id: number; name: string } | null; preset?: ChangePreset | null }>(), { member: null, preset: null });
 const emit = defineEmits<{ saved: [change: JobChange] }>();
 
 const { t } = useI18n();
@@ -43,13 +50,13 @@ const today = useCompanyToday();
 const blank = (): ChangeForm => ({
   member: props.member?.id ?? null,
   effective_on: suggestedChangeDay(today.value),
-  parts: [],
+  parts: [...(props.preset?.parts ?? [])],
   position: null,
   branch: null,
   department: null,
   pay_amount: null,
   pay_type: null,
-  reason: "",
+  reason: props.preset?.reason ?? "",
   approve: true,
 });
 const form = ref<ChangeForm>(blank());
@@ -70,14 +77,18 @@ const title = computed(() => {
   const name = props.member?.name || (props.member ? job.value?.member.name : "");
   return name ? t("lifecycle.propose.titleFor", { name }) : t("lifecycle.propose.title");
 });
-// A new person: start from their job today.
-watch(job, (value) => {
-  if (!value) return;
+// A new person: start from their job today (and from what a move on the org chart set).
+function startFrom(value: NonNullable<typeof job.value>): void {
   form.value.position = value.position?.id ?? null;
   form.value.branch = value.home_branch?.id ?? null;
   form.value.department = value.department?.id ?? null;
   form.value.pay_type = value.pay?.pay_type ?? "monthly";
-});
+  const preset = props.preset;
+  if (preset?.department !== undefined) form.value.department = preset.department;
+  if (preset?.branch !== undefined && preset.branch !== null) form.value.branch = preset.branch;
+}
+watch(job, (value) => value && startFrom(value));
+watch(open, (isOpen) => isOpen && job.value && startFrom(job.value));
 
 const PART_ICONS = { position: Briefcase, branch: MapPin, department: Network, pay: Banknote } as const;
 const parts = computed<ChangePart[]>(() => (job.value?.may_change_pay ? ["position", "branch", "department", "pay"] : ["position", "branch", "department"]));

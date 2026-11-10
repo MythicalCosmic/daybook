@@ -172,6 +172,8 @@ export const EXTENSION_POINTS = [
   "learning.lesson.notes",
   /** HR's policy editor, the text: knowledge's editor, without pictures (context: html, editable, placeholder, update). */
   "hr.policy.body",
+  /** The offboarding wizard, inside each step's card: the lifecycle's equipment actions on the assets step (context: stepKey, memberId). */
+  "people.offboard.step",
 ] as const;
 
 export type ExtensionPoint = (typeof EXTENSION_POINTS)[number];

@@ -225,6 +225,39 @@ def may_open_file(user, company_id: int, file_id: int) -> bool:
     return seen is None or (asset.branch_id is not None and asset.branch_id in seen)
 
 
+HANDOUT_READ = AnyOf(Perm.ASSETS_MANAGE, Perm.FINANCE_VIEW, Perm.HR_MANAGE)
+
+
+def may_open_handout(user, company_id: int, assignment_id: int) -> bool:
+    """`assets.handout`: the photos taken when something was given and handed back. The person
+    who got it; whoever may read the register or manage HR, when they see the asset's branch
+    or the person (they share a branch)."""
+    from apps.assets.models import AssetAssignment
+
+    row = (
+        AssetAssignment.objects.filter(company_id=company_id, pk=assignment_id)
+        .select_related("asset", "membership")
+        .first()
+    )
+    if row is None:
+        return False
+    if row.membership.user_id == user.pk:
+        return True
+    viewer = (
+        Membership.objects.filter(
+            company_id=company_id, user=user, status=Membership.Status.APPROVED
+        )
+        .select_related("role", "company")
+        .first()
+    )
+    if viewer is None or not holds(viewer, HANDOUT_READ):
+        return False
+    seen = scope.branch_ids(viewer)
+    if seen is None or (row.asset.branch_id is not None and row.asset.branch_id in seen):
+        return True
+    return row.membership.branches.filter(pk__in=seen).exists()
+
+
 # The Excel register ----------------------------------------------------------------------------
 
 REGISTER_COLUMNS = (

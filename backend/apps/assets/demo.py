@@ -17,6 +17,7 @@ from django.utils import timezone
 
 from apps.assets import posting, services
 from apps.assets.models import Asset, AssetCategory, DepreciationEntry
+from apps.core.demo_time import moment
 
 
 def _months_ago(today: date, months: int, day: int = 10) -> date:
@@ -182,10 +183,17 @@ def seed(company, people, now) -> None:
         (scooter, people["jasur"], "good"),
         (uniform, people["madina"], "new"),
     ):
+        given = today - timedelta(days=40)
         assignment = services.issue(
-            asset, by=owner, membership=person, on=today - timedelta(days=40), condition=condition
+            asset, by=owner, membership=person, on=given, condition=condition
         )
-        if person is not people["jasur"]:
+        # Confirmed in the app that evening; the one thing still waiting is Kamola's new coat
+        # (the lifecycle's equipment demo).
+        evening = timezone.make_aware(
+            timezone.datetime.combine(given, timezone.datetime.min.time().replace(hour=18)),
+            posting.zone_of(company),
+        )
+        with moment(evening):
             services.acknowledge(assignment, by=person)
 
     # Upkeep and its history.

@@ -1,7 +1,7 @@
 /**
  * Routes of the people lifecycle, children of /c/:companyId (plan §13.4): discipline,
- * suspensions, leaving (terminations) and job changes; the org chart, equipment and reviews are
- * calm "coming soon" pages until they are built. Every page loads lazily.
+ * suspensions, the org chart, leaving (terminations), job changes and equipment; reviews are a
+ * calm "coming soon" page until they are built. Every page loads lazily.
  */
 import type { RouteRecordRaw } from "vue-router";
 
@@ -20,7 +20,12 @@ export const routes: RouteRecordRaw[] = [
     component: () => import("./pages/SuspensionsPage.vue"),
     meta: { title: "lifecycle.nav.suspensions", perm: ["hr.suspend", "hr.view"] },
   },
-  { path: "lifecycle/org", name: "lifecycle.org", component: soon, props: { page: "org" }, meta: { title: "lifecycle.nav.org", perm: "hr.view" } },
+  {
+    path: "lifecycle/org",
+    name: "lifecycle.org",
+    component: () => import("./org/OrgChartPage.vue"),
+    meta: { title: "lifecycle.nav.org", perm: ["hr.view", "hr.manage"] },
+  },
   {
     path: "lifecycle/terminations",
     name: "lifecycle.terminations",
@@ -36,8 +41,7 @@ export const routes: RouteRecordRaw[] = [
   {
     path: "lifecycle/equipment",
     name: "lifecycle.equipment",
-    component: soon,
-    props: { page: "equipment" },
+    component: () => import("./equipment/EquipmentPage.vue"),
     meta: { title: "lifecycle.nav.equipment", perm: ["assets.manage", "hr.manage"] },
   },
   { path: "lifecycle/reviews", name: "lifecycle.reviews", component: soon, props: { page: "reviews" }, meta: { title: "lifecycle.nav.reviews", perm: "reviews.manage" } },

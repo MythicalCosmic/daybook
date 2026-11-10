@@ -44,17 +44,36 @@ class MineItemSerializer(serializers.Serializer):
     condition = serializers.CharField()
     note = serializers.CharField()
     acknowledged_at = serializers.DateTimeField(allow_null=True)
-    photo_url = serializers.CharField(allow_null=True)
+    photo_url = serializers.CharField(
+        allow_null=True,
+        help_text="The photo taken when it was given to them, else a photo of the asset.",
+    )
 
     class Meta:
         ref_name = "AssetsMineItem"
 
 
-def item_of(assignment: AssetAssignment, user) -> dict:
+def _photo_url(assignment: AssetAssignment, user) -> str | None:
     asset = assignment.asset
+    if assignment.photo_out:
+        return signed_url(
+            assignment.photo_out,
+            user=user,
+            company_id=asset.company_id,
+            check=f"assets.handout:{assignment.pk}",
+        )
     photo = next(
         (row for row in asset.files.all() if row.kind == AssetFile.Kind.PHOTO and row.file), None
     )
+    if photo is None:
+        return None
+    return signed_url(
+        photo.file, user=user, company_id=asset.company_id, check=f"assets.file:{photo.pk}"
+    )
+
+
+def item_of(assignment: AssetAssignment, user) -> dict:
+    asset = assignment.asset
     return {
         "id": assignment.pk,
         "asset_id": asset.pk,
@@ -69,11 +88,7 @@ def item_of(assignment: AssetAssignment, user) -> dict:
         "condition": assignment.condition_out or asset.condition,
         "note": assignment.note_out,
         "acknowledged_at": assignment.acknowledged_at,
-        "photo_url": signed_url(
-            photo.file, user=user, company_id=asset.company_id, check=f"assets.file:{photo.pk}"
-        )
-        if photo
-        else None,
+        "photo_url": _photo_url(assignment, user),
     }
 
 
