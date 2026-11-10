@@ -26,7 +26,7 @@ from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.utils import timezone
 from django.utils.translation import gettext as _
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_lazy, pgettext_lazy
 
 from apps.audit import services as audit
 from apps.console import pulse
@@ -297,7 +297,7 @@ def cancel(change: JobChange, *, by: Membership, reason: str = "") -> JobChange:
     change.decision_note = " ".join(str(reason or "").split())[:300]
     change.error = ""
     change.save()
-    inbox.settle(change, outcome=gettext_lazy("Cancelled"), by=by, kind=REQUEST_KIND)
+    inbox.settle(change, outcome=pgettext_lazy("job change", "Cancelled"), by=by, kind=REQUEST_KIND)
     _audit(LifecycleAction.CHANGE_CANCELLED, change, by)
     if change.proposed_by_id and change.proposed_by_id != by.pk:
         transaction.on_commit(partial(tasks.notify_change_decided.delay, change.pk))
@@ -311,7 +311,7 @@ def cancel_for_leaver(change: JobChange) -> None:
     change.decision_note = str(_("They left before it took effect."))[:300]
     change.error = ""
     change.save()
-    inbox.settle(change, outcome=gettext_lazy("Cancelled"), kind=REQUEST_KIND)
+    inbox.settle(change, outcome=pgettext_lazy("job change", "Cancelled"), kind=REQUEST_KIND)
     _audit(LifecycleAction.CHANGE_CANCELLED, change, None, left=True)
     bump(change.company_id, queue=True)
 

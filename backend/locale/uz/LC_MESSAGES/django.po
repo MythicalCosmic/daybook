@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-10 11:49+0500\n"
+"POT-Creation-Date: 2026-11-10 17:52+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -415,7 +415,8 @@ msgstr "Takrorlanish tadbir boshlanishidan oldin tugay olmaydi."
 msgid "A reminder can come at most a week before."
 msgstr "Eslatma ko‘pi bilan bir hafta oldin yuborilishi mumkin."
 
-#: backend/apps/agenda/services.py backend/apps/members/join_links.py
+#: backend/apps/agenda/services.py backend/apps/hr/hiring/services.py
+#: backend/apps/lifecycle/job_changes.py backend/apps/members/join_links.py
 #: backend/apps/members/owner_api.py backend/apps/members/services.py
 msgid "Pick a branch of this company."
 msgstr "Shu kompaniyaning filialini tanlang."
@@ -1480,8 +1481,8 @@ msgstr[0] "%(count)s ta vazifa yaratish"
 
 #: backend/apps/ai/bot_messages.py backend/apps/announcements/bot_messages.py
 #: backend/apps/attendance/bot_messages.py backend/apps/finance/bot_messages.py
-#: backend/apps/tasks/bot_messages.py employee_bot/bot/handlers/member/tasks.py
-#: owner_bot/ownerbot/bot_messages.py
+#: backend/apps/hr/hiring/bot.py backend/apps/tasks/bot_messages.py
+#: employee_bot/bot/handlers/member/tasks.py owner_bot/ownerbot/bot_messages.py
 msgid "Cancel"
 msgstr "Bekor qilish"
 
@@ -2055,8 +2056,9 @@ msgstr "Bekor qilindi"
 #: backend/apps/ai/models.py backend/apps/attendance/providers.py
 #: backend/apps/attendance/reports.py backend/apps/attendance/t13.py
 #: backend/apps/faceid/models.py backend/apps/finance/exporters.py
-#: backend/apps/payroll/providers.py backend/apps/projects/hooks.py
-#: backend/apps/sales/models.py backend/apps/timeoff/providers.py
+#: backend/apps/hr/policies/exporters.py backend/apps/payroll/providers.py
+#: backend/apps/projects/hooks.py backend/apps/sales/models.py
+#: backend/apps/timeoff/providers.py
 msgid "Person"
 msgstr "Xodim"
 
@@ -2297,8 +2299,9 @@ msgid "Announcement: %(title)s · %(read)d of %(total)d read"
 msgstr "E’lon: %(title)s · %(total)d kishidan %(read)d tasi o‘qidi"
 
 #: backend/apps/announcements/models.py backend/apps/hr/models.py
-#: backend/apps/inventory/models.py backend/apps/knowledge/providers.py
-#: backend/apps/learning/models.py backend/apps/sales/models.py
+#: backend/apps/hr/policies/queries.py backend/apps/inventory/models.py
+#: backend/apps/knowledge/providers.py backend/apps/learning/models.py
+#: backend/apps/sales/models.py
 msgid "Draft"
 msgstr "Qoralama"
 
@@ -2327,15 +2330,17 @@ msgid "When the author heard who still hadn't read it."
 msgstr "Muallifga kim hali o‘qimagani aytilgan vaqt."
 
 #: backend/apps/announcements/owner_api.py backend/apps/groups/services.py
-#: backend/apps/knowledge/services.py backend/apps/learning/checks.py
-#: backend/apps/learning/courses.py backend/apps/learning/daily.py
-#: backend/apps/learning/lessons.py backend/apps/learning/quizzes.py
+#: backend/apps/hr/policies/services.py backend/apps/knowledge/services.py
+#: backend/apps/learning/checks.py backend/apps/learning/courses.py
+#: backend/apps/learning/daily.py backend/apps/learning/lessons.py
+#: backend/apps/learning/quizzes.py
 msgid "Pick positions of this company."
 msgstr "Shu kompaniyaning lavozimlarini tanlang."
 
 #: backend/apps/announcements/owner_api.py backend/apps/groups/services.py
-#: backend/apps/learning/checks.py backend/apps/learning/courses.py
-#: backend/apps/members/owner_api.py backend/apps/members/services.py
+#: backend/apps/hr/policies/services.py backend/apps/learning/checks.py
+#: backend/apps/learning/courses.py backend/apps/members/owner_api.py
+#: backend/apps/members/services.py
 msgid "Pick branches of this company."
 msgstr "Shu kompaniyaning filiallarini tanlang."
 
@@ -2421,9 +2426,11 @@ msgstr "E’lonning amal qilish muddati u yuborilgandan keyin tugashi kerak."
 #: backend/apps/attendance/services.py backend/apps/console/base.py
 #: backend/apps/davomat/owner_api.py backend/apps/davomat/services.py
 #: backend/apps/finance/api.py backend/apps/finance/claims.py
+#: backend/apps/hr/hiring/services.py backend/apps/hr/policies/services.py
 #: backend/apps/hr/services.py backend/apps/inbox/services.py
 #: backend/apps/inventory/api.py backend/apps/inventory/notify.py
-#: backend/apps/knowledge/owner_api.py backend/apps/lifecycle/services.py
+#: backend/apps/knowledge/owner_api.py backend/apps/lifecycle/job_changes.py
+#: backend/apps/lifecycle/services.py backend/apps/lifecycle/terminations.py
 #: backend/apps/members/departments.py backend/apps/members/join_links.py
 #: backend/apps/members/services.py backend/apps/payroll/runs.py
 #: backend/apps/payroll/services.py backend/apps/sales/handlers.py
@@ -2755,7 +2762,7 @@ msgstr "Konservatsiyada"
 msgid "Disposed of"
 msgstr "Hisobdan chiqarilgan"
 
-#: backend/apps/assets/models.py
+#: backend/apps/assets/models.py backend/apps/hr/models.py
 msgid "New"
 msgstr "Yangi"
 
@@ -2836,7 +2843,7 @@ msgstr "Qo‘shildi"
 msgid "Put into service"
 msgstr "Foydalanishga topshirildi"
 
-#: backend/apps/assets/models.py
+#: backend/apps/assets/models.py backend/apps/hr/models.py
 msgid "Moved"
 msgstr "Ko‘chirildi"
 
@@ -2888,8 +2895,8 @@ msgstr "Muammo xabar qilindi"
 msgid "Found in a count"
 msgstr "Inventarizatsiyada topildi"
 
-#: backend/apps/assets/models.py backend/apps/projects/hooks.py
-#: backend/apps/tasks/feeds.py
+#: backend/apps/assets/models.py backend/apps/hr/models.py
+#: backend/apps/projects/hooks.py backend/apps/tasks/feeds.py
 #: backend/apps/tasks/templates/tasks/readings_journal.html
 msgid "Note"
 msgstr "Izoh"
@@ -2913,8 +2920,9 @@ msgstr "Vosita shu yerga kiritilishidan oldin: Moliyaga yozilmaydi."
 msgid "In progress"
 msgstr "Jarayonda"
 
-#: backend/apps/assets/models.py backend/apps/inventory/models.py
-#: backend/apps/sales/hooks.py backend/apps/sales/models.py
+#: backend/apps/assets/models.py backend/apps/hr/models.py
+#: backend/apps/inventory/models.py backend/apps/sales/hooks.py
+#: backend/apps/sales/models.py
 msgid "Closed"
 msgstr "Yopilgan"
 
@@ -3064,8 +3072,9 @@ msgstr ""
 
 #: backend/apps/assets/owner_api.py backend/apps/assets/services.py
 #: backend/apps/attendance/owner_api.py backend/apps/davomat/owner_api.py
-#: backend/apps/faceid/owner_api.py backend/apps/hr/owner_api.py
-#: backend/apps/inventory/api.py backend/apps/inventory/owner_api.py
+#: backend/apps/faceid/owner_api.py backend/apps/hr/hiring/owner_api.py
+#: backend/apps/hr/owner_api.py backend/apps/inventory/api.py
+#: backend/apps/inventory/owner_api.py
 #: backend/apps/learning/owner_api_courses.py
 #: backend/apps/lifecycle/owner_api.py backend/apps/payroll/owner_api.py
 #: backend/apps/recognition/owner_api.py
@@ -3095,7 +3104,8 @@ msgstr "Bu xarid sizniki emas."
 #: backend/apps/assets/owner_api.py backend/apps/finance/owner_api.py
 #: backend/apps/finance/owner_serializers.py
 #: backend/apps/finance/planning_api.py backend/apps/finance/recurring.py
-#: backend/apps/finance/services.py backend/apps/inventory/owner_api.py
+#: backend/apps/finance/services.py backend/apps/hr/policies/services.py
+#: backend/apps/inventory/owner_api.py
 msgid "Pick a category."
 msgstr "Toifani tanlang."
 
@@ -3196,7 +3206,7 @@ msgstr "Kafolati tugayotganlar: %(count)d"
 msgid "Insurance ending soon: %(count)d"
 msgstr "Sug‘urtasi tugayotganlar: %(count)d"
 
-#: backend/apps/assets/providers.py
+#: backend/apps/assets/providers.py backend/apps/lifecycle/models.py
 msgid "Equipment"
 msgstr "Jihozlar"
 
@@ -3245,7 +3255,8 @@ msgstr "Turi"
 
 #: backend/apps/assets/providers.py backend/apps/attendance/providers.py
 #: backend/apps/attendance/reports.py backend/apps/davomat/importing.py
-#: backend/apps/finance/exporters.py backend/apps/payroll/providers.py
+#: backend/apps/finance/exporters.py backend/apps/hr/policies/exporters.py
+#: backend/apps/payroll/providers.py
 #: backend/apps/payroll/templates/payroll/payslip.html
 #: backend/apps/sales/hooks.py backend/apps/tasks/feeds.py
 #: backend/apps/tasks/hooks.py
@@ -3255,9 +3266,10 @@ msgstr "Filial"
 
 #: backend/apps/assets/providers.py backend/apps/attendance/providers.py
 #: backend/apps/davomat/importing.py backend/apps/finance/exporters.py
-#: backend/apps/inventory/providers.py backend/apps/members/providers.py
-#: backend/apps/payroll/providers.py backend/apps/sales/hooks.py
-#: backend/apps/tasks/hooks.py backend/apps/timeoff/providers.py
+#: backend/apps/hr/policies/exporters.py backend/apps/inventory/providers.py
+#: backend/apps/members/providers.py backend/apps/payroll/providers.py
+#: backend/apps/sales/hooks.py backend/apps/tasks/hooks.py
+#: backend/apps/timeoff/providers.py
 msgid "Status"
 msgstr "Holati"
 
@@ -4408,10 +4420,10 @@ msgid "Planned"
 msgstr "Rejalashtirilgan"
 
 #: backend/apps/attendance/models.py backend/apps/finance/models.py
-#: backend/apps/inbox/bot_messages.py backend/apps/inventory/models.py
-#: backend/apps/learning/models.py backend/apps/projects/models.py
-#: backend/apps/reminders/bot_messages.py backend/apps/sales/models.py
-#: backend/apps/tasks/bot_messages.py
+#: backend/apps/hr/models.py backend/apps/inbox/bot_messages.py
+#: backend/apps/inventory/models.py backend/apps/learning/models.py
+#: backend/apps/projects/models.py backend/apps/reminders/bot_messages.py
+#: backend/apps/sales/models.py backend/apps/tasks/bot_messages.py
 msgid "Open"
 msgstr "Ochish"
 
@@ -4461,7 +4473,8 @@ msgid "Waiting for a colleague"
 msgstr "Hamkasb javobi kutilmoqda"
 
 #: backend/apps/attendance/models.py backend/apps/finance/models.py
-#: backend/apps/inventory/models.py backend/apps/timeoff/models.py
+#: backend/apps/inventory/models.py backend/apps/lifecycle/models.py
+#: backend/apps/timeoff/models.py
 msgid "Waiting for approval"
 msgstr "Tasdiq kutilmoqda"
 
@@ -4469,16 +4482,19 @@ msgstr "Tasdiq kutilmoqda"
 #: backend/apps/finance/models.py backend/apps/inventory/models.py
 #: backend/apps/inventory/providers.py
 #: backend/apps/inventory/templates/inventory/writeoff_act.html
-#: backend/apps/members/models.py backend/apps/members/providers.py
-#: backend/apps/members/services.py backend/apps/signin/models.py
-#: backend/apps/timeoff/models.py backend/apps/timeoff/providers.py
-#: backend/apps/timeoff/services.py
+#: backend/apps/lifecycle/job_changes.py backend/apps/lifecycle/models.py
+#: backend/apps/lifecycle/providers.py backend/apps/members/models.py
+#: backend/apps/members/providers.py backend/apps/members/services.py
+#: backend/apps/signin/models.py backend/apps/timeoff/models.py
+#: backend/apps/timeoff/providers.py backend/apps/timeoff/services.py
 #: employee_bot/bot/handlers/admin/approvals.py
 msgid "Approved"
 msgstr "Tasdiqlangan"
 
 #: backend/apps/attendance/models.py backend/apps/attendance/services.py
-#: backend/apps/finance/models.py backend/apps/members/models.py
+#: backend/apps/finance/models.py backend/apps/hr/models.py
+#: backend/apps/lifecycle/job_changes.py backend/apps/lifecycle/models.py
+#: backend/apps/lifecycle/providers.py backend/apps/members/models.py
 #: backend/apps/members/providers.py backend/apps/members/services.py
 #: backend/apps/timeoff/models.py backend/apps/timeoff/providers.py
 #: backend/apps/timeoff/services.py
@@ -4570,6 +4586,7 @@ msgstr "Kirishda skanerlanmagan"
 
 #: backend/apps/attendance/notify.py backend/apps/attendance/providers.py
 #: backend/apps/finance/claims.py backend/apps/inventory/providers.py
+#: backend/apps/lifecycle/notify.py backend/apps/lifecycle/providers.py
 #: backend/apps/members/bot_messages.py backend/apps/members/notifications.py
 #: backend/apps/members/providers.py backend/apps/payroll/notify.py
 #: backend/apps/payroll/providers.py backend/apps/timeoff/bot_messages.py
@@ -4578,7 +4595,8 @@ msgid "Approve"
 msgstr "Tasdiqlash"
 
 #: backend/apps/attendance/notify.py backend/apps/attendance/providers.py
-#: backend/apps/finance/claims.py backend/apps/members/bot_messages.py
+#: backend/apps/finance/claims.py backend/apps/lifecycle/notify.py
+#: backend/apps/lifecycle/providers.py backend/apps/members/bot_messages.py
 #: backend/apps/members/notifications.py backend/apps/members/providers.py
 #: backend/apps/payroll/notify.py backend/apps/payroll/providers.py
 #: backend/apps/timeoff/bot_messages.py backend/apps/timeoff/notifications.py
@@ -4898,7 +4916,8 @@ msgstr "Sana"
 
 #: backend/apps/attendance/providers.py backend/apps/attendance/reports.py
 #: backend/apps/attendance/t13.py backend/apps/davomat/importing.py
-#: backend/apps/members/providers.py backend/apps/payroll/providers.py
+#: backend/apps/hr/policies/exporters.py backend/apps/members/providers.py
+#: backend/apps/payroll/providers.py
 #: backend/apps/payroll/templates/payroll/payslip.html
 #: backend/apps/recognition/providers.py backend/apps/reports/hooks.py
 #: backend/apps/tasks/hooks.py backend/apps/timeoff/providers.py
@@ -5411,6 +5430,8 @@ msgid "Declined by %(name)s"
 msgstr "%(name)s rad etdi"
 
 #: backend/apps/attendance/services.py backend/apps/learning/models.py
+#: backend/apps/lifecycle/models.py backend/apps/lifecycle/providers.py
+#: backend/apps/lifecycle/terminations.py
 msgid "Declined"
 msgstr "Rad etildi"
 
@@ -5452,7 +5473,8 @@ msgid "The shift changed."
 msgstr "Smena o‘zgardi."
 
 #: backend/apps/attendance/t13.py backend/apps/davomat/importing.py
-#: backend/apps/exports/build.py
+#: backend/apps/exports/build.py backend/apps/hr/hiring/bot.py
+#: backend/apps/hr/hiring/questions.py backend/apps/lifecycle/models.py
 msgid "No"
 msgstr "Yo‘q"
 
@@ -6408,7 +6430,8 @@ msgstr "Raqam foydalanuvchiga tegishli: %(number)s."
 msgid "%(name)s has left: take them back first."
 msgstr "Ishdan ketgan xodim: %(name)s. Avval uni ishga qaytaring."
 
-#: backend/apps/davomat/importing.py backend/apps/members/models.py
+#: backend/apps/davomat/importing.py backend/apps/lifecycle/models.py
+#: backend/apps/lifecycle/terminations.py backend/apps/members/models.py
 #: backend/apps/members/providers.py
 msgid "Left"
 msgstr "Ketgan"
@@ -6419,7 +6442,8 @@ msgid "Active"
 msgstr "Faol"
 
 #: backend/apps/davomat/importing.py backend/apps/exports/build.py
-#: backend/apps/sales/queries.py
+#: backend/apps/hr/hiring/bot.py backend/apps/hr/hiring/questions.py
+#: backend/apps/lifecycle/models.py backend/apps/sales/queries.py
 msgid "Yes"
 msgstr "Ha"
 
@@ -8012,7 +8036,8 @@ msgid "A day like 2026-10-20."
 msgstr "2026-10-20 ko‘rinishidagi sana."
 
 #: backend/apps/finance/filters.py backend/apps/finance/services.py
-#: backend/apps/payroll/runs.py backend/apps/payroll/services.py
+#: backend/apps/lifecycle/job_changes.py backend/apps/payroll/runs.py
+#: backend/apps/payroll/services.py
 msgid "Enter an amount of money."
 msgstr "Pul summasini kiriting."
 
@@ -8954,7 +8979,7 @@ msgstr "Avtomatik to‘lov uchun hisob kerak."
 msgid "An automatic payment needs a fixed amount."
 msgstr "Avtomatik to‘lov uchun aniq summa kerak."
 
-#: backend/apps/finance/recurring.py
+#: backend/apps/finance/recurring.py backend/apps/lifecycle/job_changes.py
 msgid "Pick the day it starts."
 msgstr "Boshlanish kunini tanlang."
 
@@ -10176,6 +10201,569 @@ msgstr "Yana farmatsevtsiz vaqtlar: %(count)d"
 msgid "Add a qualified pharmacist to the roster."
 msgstr "Smenalar jadvaliga malakali farmatsevt qo‘shing."
 
+#: backend/apps/hr/hiring/actions.py
+msgid "Created a vacancy"
+msgstr "Vakansiya yaratdi"
+
+#: backend/apps/hr/hiring/actions.py
+msgid "Changed a vacancy"
+msgstr "Vakansiyani o‘zgartirdi"
+
+#: backend/apps/hr/hiring/actions.py
+msgid "Opened a vacancy to applicants"
+msgstr "Vakansiyani nomzodlar uchun ochdi"
+
+#: backend/apps/hr/hiring/actions.py
+msgid "Paused a vacancy"
+msgstr "Vakansiyani to‘xtatib qo‘ydi"
+
+#: backend/apps/hr/hiring/actions.py
+msgid "Closed a vacancy"
+msgstr "Vakansiyani yopdi"
+
+#: backend/apps/hr/hiring/actions.py
+msgid "Deleted a vacancy"
+msgstr "Vakansiyani o‘chirdi"
+
+#: backend/apps/hr/hiring/actions.py
+msgid "Applied for a vacancy"
+msgstr "Vakansiyaga ariza berdi"
+
+#: backend/apps/hr/hiring/actions.py
+msgid "Moved an applicant to another stage"
+msgstr "Nomzodni boshqa bosqichga o‘tkazdi"
+
+#: backend/apps/hr/hiring/actions.py
+msgid "Turned down an applicant"
+msgstr "Nomzodni rad etdi"
+
+#: backend/apps/hr/hiring/actions.py
+msgid "Hired an applicant"
+msgstr "Nomzodni ishga oldi"
+
+#: backend/apps/hr/hiring/actions.py
+msgid "Added a note about an applicant"
+msgstr "Nomzod haqida izoh qoldirdi"
+
+#: backend/apps/hr/hiring/bot.py
+#, python-format
+msgid "at least %(amount)s"
+msgstr "kamida %(amount)s"
+
+#: backend/apps/hr/hiring/bot.py
+#, python-format
+msgid "up to %(amount)s"
+msgstr "ko‘pi bilan %(amount)s"
+
+#: backend/apps/hr/hiring/bot.py backend/apps/tasks/services.py
+#: owner_bot/ownerbot/invite.py
+#, python-format
+msgid "Branch: %(branch)s"
+msgstr "Filial: %(branch)s"
+
+#: backend/apps/hr/hiring/bot.py
+#, python-format
+msgid "Salary: %(salary)s"
+msgstr "Maosh: %(salary)s"
+
+#: backend/apps/hr/hiring/bot.py
+#, python-format
+msgid "To apply, answer %(count)d question and share your phone number."
+msgid_plural ""
+"To apply, answer %(count)d questions and share your phone number."
+msgstr[0] ""
+"Ariza berish uchun savollarga javob bering (savollar: %(count)d) va telefon "
+"raqamingizni yuboring."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "To apply, give your name and share your phone number."
+msgstr "Ariza berish uchun ismingizni yozing va telefon raqamingizni yuboring."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "Have a photo of your diploma or specialist certificate at hand."
+msgstr "Diplomingiz yoki mutaxassis sertifikatingiz surati tayyor bo‘lsin."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "Apply"
+msgstr "Ariza berish"
+
+#: backend/apps/hr/hiring/bot.py
+#, python-format
+msgid "This vacancy takes applications from %(date)s."
+msgstr "Bu vakansiya arizalarni qabul qilish boshlanadigan sana: %(date)s."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "This vacancy isn't open yet. Try again later."
+msgstr "Bu vakansiya hali ochilmagan. Keyinroq urinib ko‘ring."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "This vacancy is paused for now. Try again in a few days."
+msgstr ""
+"Bu vakansiya hozircha to‘xtatilgan. Bir necha kundan keyin urinib ko‘ring."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "This vacancy is closed. Thank you for your interest."
+msgstr "Bu vakansiya yopilgan. Qiziqishingiz uchun rahmat."
+
+#: backend/apps/hr/hiring/bot.py
+#, python-format
+msgid "You already work here: %(company)s. Ask your manager about this job."
+msgstr ""
+"Siz bu yerda allaqachon ishlaysiz: %(company)s. Bu ish haqida rahbaringizdan "
+"so‘rang."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "You have sent several applications today. Try again tomorrow."
+msgstr "Bugun bir nechta ariza yubordingiz. Ertaga urinib ko‘ring."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "This vacancy link is invalid. Ask the company for a new one."
+msgstr "Bu vakansiya havolasi noto‘g‘ri. Kompaniyadan yangisini so‘rang."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "What is your name? Type your first and last name."
+msgstr "Ismingiz nima? Ism va familiyangizni yozing."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "Or tap your name below if it is right."
+msgstr "Yoki pastdagi ism to‘g‘ri bo‘lsa, uni bosing."
+
+#: backend/apps/hr/hiring/bot.py
+msgid ""
+"Please type your first and last name in letters, for example: Aziza Karimova."
+msgstr "Ism va familiyangizni harflar bilan yozing, masalan: Aziza Karimova."
+
+#: backend/apps/hr/hiring/bot.py
+#, python-format
+msgid "Question %(number)d of %(count)d"
+msgstr "Savol %(number)d / %(count)d"
+
+#: backend/apps/hr/hiring/bot.py
+msgid "Answer with a number."
+msgstr "Raqam bilan javob bering."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "Type your answer."
+msgstr "Javobingizni yozing."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "Skip"
+msgstr "O‘tkazib yuborish"
+
+#: backend/apps/hr/hiring/bot.py
+msgid "Please answer with the buttons above."
+msgstr "Yuqoridagi tugmalar bilan javob bering."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "Please answer with a number, for example: 3."
+msgstr "Raqam bilan javob bering, masalan: 3."
+
+#: backend/apps/hr/hiring/bot.py
+#, python-format
+msgid "Please type your answer in one message, up to %(count)d characters."
+msgstr "Javobingizni bitta xabarda yozing, %(count)d belgigacha."
+
+#: backend/apps/hr/hiring/bot.py
+msgid ""
+"Share your phone number with the button below, so the company can call you."
+msgstr ""
+"Kompaniya sizga qo‘ng‘iroq qila olishi uchun pastdagi tugma bilan telefon "
+"raqamingizni yuboring."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "To stop, send /cancel."
+msgstr "To‘xtatish uchun /cancel yuboring."
+
+#: backend/apps/hr/hiring/bot.py backend/apps/members/bot_messages.py
+msgid "Share my phone number"
+msgstr "Raqamimni ulashish"
+
+#: backend/apps/hr/hiring/bot.py
+msgid "Please tap the button below to share your phone number."
+msgstr "Telefon raqamingizni yuborish uchun pastdagi tugmani bosing."
+
+#: backend/apps/hr/hiring/bot.py backend/apps/members/bot_messages.py
+msgid "Please share your own phone number with the button below."
+msgstr "Iltimos, quyidagi tugma orqali o‘z raqamingizni ulashing."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "Thank you, your phone number is saved."
+msgstr "Rahmat, telefon raqamingiz saqlandi."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "Send a photo of your diploma or specialist certificate."
+msgstr "Diplomingiz yoki mutaxassis sertifikatingiz suratini yuboring."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "No photo at hand? Tap Skip, and bring the document to the interview."
+msgstr ""
+"Surat yo‘qmi? «O‘tkazib yuborish» tugmasini bosing va hujjatni suhbatga olib "
+"keling."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "Please send the document as a photo, or tap Skip."
+msgstr ""
+"Hujjatni surat qilib yuboring yoki «O‘tkazib yuborish» tugmasini bosing."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "<b>Check your application</b>"
+msgstr "<b>Arizangizni tekshiring</b>"
+
+#: backend/apps/hr/hiring/bot.py
+#, python-format
+msgid "Vacancy: %(title)s"
+msgstr "Vakansiya: %(title)s"
+
+#: backend/apps/hr/hiring/bot.py backend/apps/members/bot_messages.py
+#: owner_bot/ownerbot/bot_messages.py
+#, python-format
+msgid "Name: %(name)s"
+msgstr "Ism: %(name)s"
+
+#: backend/apps/hr/hiring/bot.py backend/apps/members/bot_messages.py
+#, python-format
+msgid "Phone: %(phone)s"
+msgstr "Telefon: %(phone)s"
+
+#: backend/apps/hr/hiring/bot.py
+msgid "Document photo: attached"
+msgstr "Hujjat surati: biriktirilgan"
+
+#: backend/apps/hr/hiring/bot.py
+msgid "Document photo: not sent"
+msgstr "Hujjat surati: yuborilmagan"
+
+#: backend/apps/hr/hiring/bot.py
+msgid "Send application"
+msgstr "Arizani yuborish"
+
+#: backend/apps/hr/hiring/bot.py
+msgid "Thank you! Your application is sent."
+msgstr "Rahmat! Arizangiz yuborildi."
+
+#: backend/apps/hr/hiring/bot.py backend/apps/members/bot_messages.py
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "Company: %(company)s"
+msgstr "Kompaniya: %(company)s"
+
+#: backend/apps/hr/hiring/bot.py
+msgid "We'll write to you here as soon as there is news."
+msgstr "Yangilik bo‘lishi bilan shu yerga yozamiz."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "Application cancelled. To apply again, open the vacancy link."
+msgstr ""
+"Ariza bekor qilindi. Qayta ariza berish uchun vakansiya havolasini oching."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "This button is no longer active."
+msgstr "Bu tugma endi ishlamaydi."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "received, waiting to be reviewed"
+msgstr "qabul qilindi, ko‘rib chiqilishini kutmoqda"
+
+#: backend/apps/hr/hiring/bot.py
+msgid "being reviewed"
+msgstr "ko‘rib chiqilmoqda"
+
+#: backend/apps/hr/hiring/bot.py
+msgid "invited to an interview"
+msgstr "suhbatga taklif qilingansiz"
+
+#: backend/apps/hr/hiring/bot.py
+msgid "an offer is being prepared"
+msgstr "siz uchun taklif tayyorlanmoqda"
+
+#: backend/apps/hr/hiring/bot.py
+msgid "hired"
+msgstr "ishga olingansiz"
+
+#: backend/apps/hr/hiring/bot.py
+msgid "not selected this time"
+msgstr "bu safar tanlanmadingiz"
+
+#: backend/apps/hr/hiring/bot.py backend/apps/hr/hiring/services.py
+msgid "You have already applied for this vacancy."
+msgstr "Siz bu vakansiyaga allaqachon ariza bergansiz."
+
+#: backend/apps/hr/hiring/bot.py
+#, python-format
+msgid "Sent: %(date)s"
+msgstr "Yuborilgan sana: %(date)s"
+
+#: backend/apps/hr/hiring/bot.py backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "Status: %(status)s"
+msgstr "Holati: %(status)s"
+
+#: backend/apps/hr/hiring/bot.py
+#, python-format
+msgid "<b>%(company)s</b> invites you to an interview."
+msgstr "<b>%(company)s</b> sizni suhbatga taklif qiladi."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "They will call you to agree on the time."
+msgstr "Vaqtni kelishish uchun sizga qo‘ng‘iroq qilishadi."
+
+#: backend/apps/hr/hiring/bot.py
+#, python-format
+msgid "<b>%(company)s</b> would like to offer you the job."
+msgstr "<b>%(company)s</b> sizga ish taklif qilmoqchi."
+
+#: backend/apps/hr/hiring/bot.py
+#, python-format
+msgid "Thank you for applying to <b>%(company)s</b>."
+msgstr "<b>%(company)s</b> kompaniyasiga ariza berganingiz uchun rahmat."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "This time the company chose another candidate. We wish you success."
+msgstr "Bu safar kompaniya boshqa nomzodni tanladi. Sizga omad tilaymiz."
+
+#: backend/apps/hr/hiring/bot.py
+#, python-format
+msgid "Congratulations! <b>%(company)s</b> is hiring you."
+msgstr "Tabriklaymiz! <b>%(company)s</b> sizni ishga oladi."
+
+#: backend/apps/hr/hiring/bot.py
+#, python-format
+msgid "A message from <b>%(company)s</b> about your application."
+msgstr "<b>%(company)s</b> kompaniyasidan arizangiz bo‘yicha xabar."
+
+#: backend/apps/hr/hiring/bot.py
+#, python-format
+msgid "New applicant: %(name)s"
+msgstr "Yangi nomzod: %(name)s"
+
+#: backend/apps/hr/hiring/bot.py
+msgid "Came through the QR code."
+msgstr "QR kod orqali keldi."
+
+#: backend/apps/hr/hiring/hooks.py
+msgid "New applicants for vacancies"
+msgstr "Vakansiyalarga yangi nomzodlar"
+
+#: backend/apps/hr/hiring/queries.py
+msgid "Any branch"
+msgstr "Istalgan filial"
+
+#: backend/apps/hr/hiring/questions.py
+msgid "Send the questions as a list."
+msgstr "Savollarni ro‘yxat ko‘rinishida yuboring."
+
+#: backend/apps/hr/hiring/questions.py
+#, python-format
+msgid "A vacancy can ask at most %(count)d questions."
+msgstr "Vakansiyada ko‘pi bilan %(count)d ta savol bo‘lishi mumkin."
+
+#: backend/apps/hr/hiring/questions.py
+#, python-format
+msgid "Question %(number)d is not filled in."
+msgstr "Savol %(number)d to‘ldirilmagan."
+
+#: backend/apps/hr/hiring/questions.py
+#, python-format
+msgid "Question %(number)d has no text."
+msgstr "Savol %(number)d: matn yozilmagan."
+
+#: backend/apps/hr/hiring/questions.py
+#, python-format
+msgid "Question %(number)d is longer than %(count)d characters."
+msgstr "Savol %(number)d: uzunligi %(count)d belgidan oshib ketgan."
+
+#: backend/apps/hr/hiring/questions.py
+#, python-format
+msgid "Question %(number)d has an unknown kind."
+msgstr "Savol %(number)d: javob turi noma’lum."
+
+#: backend/apps/hr/hiring/questions.py
+#, python-format
+msgid "Question %(number)d needs at least two options."
+msgstr "Savol %(number)d: kamida ikkita variant kerak."
+
+#: backend/apps/hr/hiring/questions.py
+#, python-format
+msgid "Question %(number)d can have at most %(count)d options."
+msgstr "Savol %(number)d: ko‘pi bilan %(count)d ta variant bo‘lishi mumkin."
+
+#: backend/apps/hr/hiring/questions.py
+#, python-format
+msgid "An option of question %(number)d is longer than %(count)d characters."
+msgstr "Savol %(number)d: variant uzunligi %(count)d belgidan oshib ketgan."
+
+#: backend/apps/hr/hiring/questions.py
+#, python-format
+msgid "Question %(number)d has the same option twice."
+msgstr "Savol %(number)d: bir xil variant ikki marta yozilgan."
+
+#: backend/apps/hr/hiring/services.py
+msgid "Give the vacancy a title."
+msgstr "Vakansiyaga nom bering."
+
+#: backend/apps/hr/hiring/services.py
+msgid "A vacancy can be opened, paused or closed."
+msgstr "Vakansiyani ochish, to‘xtatib turish yoki yopish mumkin."
+
+#: backend/apps/hr/hiring/services.py
+msgid "Only an open vacancy can be paused."
+msgstr "Faqat ochiq vakansiyani to‘xtatib turish mumkin."
+
+#: backend/apps/hr/hiring/services.py
+msgid "People applied for this vacancy. Close it instead."
+msgstr "Bu vakansiyaga ariza berganlar bor. Uning o‘rniga vakansiyani yoping."
+
+#: backend/apps/hr/hiring/services.py
+#, python-format
+msgid "A title can be at most %(count)d characters."
+msgstr "Nom ko‘pi bilan %(count)d belgi bo‘lishi mumkin."
+
+#: backend/apps/hr/hiring/services.py
+#, python-format
+msgid "A description can be at most %(count)d characters."
+msgstr "Tavsif ko‘pi bilan %(count)d belgi bo‘lishi mumkin."
+
+#: backend/apps/hr/hiring/services.py backend/apps/hr/owner_api.py
+#: backend/apps/hr/services.py backend/apps/lifecycle/job_changes.py
+#: backend/apps/members/join_links.py backend/apps/members/owner_api.py
+#: backend/apps/members/services.py
+msgid "Pick a position of this company."
+msgstr "Shu kompaniyadagi lavozimni tanlang."
+
+#: backend/apps/hr/hiring/services.py
+msgid "You can only choose the branches you manage."
+msgstr "Faqat o‘zingiz boshqaradigan filiallarni tanlay olasiz."
+
+#: backend/apps/hr/hiring/services.py
+msgid "Give the salary as a positive amount."
+msgstr "Maoshni musbat summa bilan kiriting."
+
+#: backend/apps/hr/hiring/services.py backend/apps/members/join_links.py
+msgid "Choose one of your branches."
+msgstr "O‘z filiallaringizdan birini tanlang."
+
+#: backend/apps/hr/hiring/services.py
+msgid "The salary's upper end can't be below its lower end."
+msgstr ""
+"Maoshning yuqori chegarasi pastki chegarasidan kam bo‘lishi mumkin emas."
+
+#: backend/apps/hr/hiring/services.py
+msgid "The last day to apply can't come before the first."
+msgstr "Arizalarning oxirgi kuni birinchi kundan oldin bo‘lishi mumkin emas."
+
+#: backend/apps/hr/hiring/services.py
+msgid "The last day to apply can't be in the past."
+msgstr "Arizalarning oxirgi kuni o‘tgan kun bo‘lishi mumkin emas."
+
+#: backend/apps/hr/hiring/services.py
+msgid "The last day to apply has passed. Change it to open the vacancy."
+msgstr ""
+"Arizalarning oxirgi kuni o‘tib ketgan. Vakansiyani ochish uchun uni "
+"o‘zgartiring."
+
+#: backend/apps/hr/hiring/services.py
+msgid "Use Hire to hire someone: it adds them to the team."
+msgstr ""
+"Ishga olish uchun «Ishga olish» tugmasidan foydalaning: u odamni jamoaga "
+"qo‘shadi."
+
+#: backend/apps/hr/hiring/services.py
+msgid "Use Reject to turn someone down, with the reason."
+msgstr "Rad etish uchun «Rad etish» tugmasidan foydalaning va sababini yozing."
+
+#: backend/apps/hr/hiring/services.py
+msgid "Pick a stage of the pipeline."
+msgstr "Bosqichlardan birini tanlang."
+
+#: backend/apps/hr/hiring/services.py
+#, python-format
+msgid "%(name)s is already hired."
+msgstr "Allaqachon ishga olingan: %(name)s."
+
+#: backend/apps/hr/hiring/services.py
+msgid "Say why, for the team."
+msgstr "Jamoa uchun sababini yozing."
+
+#: backend/apps/hr/hiring/services.py
+#, python-format
+msgid "A reason can be at most %(count)d characters."
+msgstr "Sabab ko‘pi bilan %(count)d belgi bo‘lishi mumkin."
+
+#: backend/apps/hr/hiring/services.py
+#, python-format
+msgid "%(name)s was already turned down."
+msgstr "Allaqachon rad etilgan: %(name)s."
+
+#: backend/apps/hr/hiring/services.py
+#, python-format
+msgid "%(name)s was turned down. Move them back to the pipeline first."
+msgstr "Nomzod rad etilgan: %(name)s. Avval uni qayta bosqichlarga qaytaring."
+
+#: backend/apps/hr/hiring/services.py
+#, python-format
+msgid "%(name)s's Telegram account is gone, so they can't join."
+msgstr ""
+"Nomzodning Telegram akkaunti yo‘q, shuning uchun u qo‘shila olmaydi: "
+"%(name)s."
+
+#: backend/apps/hr/hiring/services.py
+msgid "The vacancy's position is no longer used. Choose another one first."
+msgstr "Vakansiyadagi lavozim endi ishlatilmaydi. Avval boshqasini tanlang."
+
+#: backend/apps/hr/hiring/services.py
+#, python-format
+msgid "Choose the branch where %(name)s will work."
+msgstr "Nomzod ishlaydigan filialni tanlang: %(name)s."
+
+#: backend/apps/hr/hiring/services.py
+#, python-format
+msgid "%(name)s already works here."
+msgstr "Bu yerda allaqachon ishlaydi: %(name)s."
+
+#: backend/apps/hr/hiring/services.py
+#, python-format
+msgid "%(name)s is blocked in this company."
+msgstr "Bu kompaniyada bloklangan: %(name)s."
+
+#: backend/apps/hr/hiring/services.py
+#, python-format
+msgid "%(name)s was turned down as a member recently and can join again later."
+msgstr ""
+"Yaqinda qo‘shilish so‘rovi rad etilgan, keyinroq qayta qo‘shila oladi: "
+"%(name)s."
+
+#: backend/apps/hr/hiring/services.py
+msgid ""
+"Hiring adds a person to the team, which needs the right to approve join "
+"requests."
+msgstr ""
+"Ishga olish odamni jamoaga qo‘shadi, buning uchun qo‘shilish so‘rovlarini "
+"tasdiqlash huquqi kerak."
+
+#: backend/apps/hr/hiring/services.py
+#, python-format
+msgid ""
+"This position comes with the «%(role)s» access, which only someone holding "
+"all of its permissions can give. Ask an owner to hire."
+msgstr ""
+"Bu lavozim bilan beriladigan ruxsatlar: «%(role)s». Ularni faqat shu "
+"ruxsatlarning barchasiga ega kishi bera oladi. Ishga olishni egasidan "
+"so‘rang."
+
+#: backend/apps/hr/hiring/services.py
+msgid "Write the note first."
+msgstr "Avval izohni yozing."
+
+#: backend/apps/hr/hiring/services.py
+#, python-format
+msgid "A note can be at most %(count)d characters."
+msgstr "Izoh ko‘pi bilan %(count)d belgi bo‘lishi mumkin."
+
+#: backend/apps/hr/hiring/services.py
+#, python-format
+msgid "A message can be at most %(count)d characters."
+msgstr "Xabar ko‘pi bilan %(count)d belgi bo‘lishi mumkin."
+
 #: backend/apps/hr/hooks.py
 msgid "A pharmacy open without a qualified pharmacist"
 msgstr "Dorixona malakali farmatsevtsiz ochiq"
@@ -10431,6 +11019,71 @@ msgstr "Tug‘ilgan kun"
 msgid "Work anniversary"
 msgstr "Ishdagi yubiley"
 
+#: backend/apps/hr/models.py
+msgid "Text"
+msgstr "Matn"
+
+#: backend/apps/hr/models.py
+msgid "Choice"
+msgstr "Tanlov"
+
+#: backend/apps/hr/models.py
+msgid "Yes or no"
+msgstr "Ha yoki yo‘q"
+
+#: backend/apps/hr/models.py backend/apps/learning/models.py
+msgid "Number"
+msgstr "Son"
+
+#: backend/apps/hr/models.py backend/apps/learning/models.py
+msgid "Paused"
+msgstr "To‘xtatilgan"
+
+#: backend/apps/hr/models.py
+msgid "Screening"
+msgstr "Saralash"
+
+#: backend/apps/hr/models.py
+msgid "Interview"
+msgstr "Suhbat"
+
+#: backend/apps/hr/models.py
+msgid "Offer"
+msgstr "Taklif"
+
+#: backend/apps/hr/models.py
+msgid "Hired"
+msgstr "Ishga olindi"
+
+#: backend/apps/hr/models.py
+msgid "Link"
+msgstr "Havola"
+
+#: backend/apps/hr/models.py
+msgid "QR code"
+msgstr "QR kod"
+
+#: backend/apps/hr/models.py backend/apps/inventory/models.py
+#: backend/apps/lifecycle/models.py
+msgid "Applied"
+msgstr "Qo‘llangan"
+
+#: backend/apps/hr/models.py
+msgid "Dispensing"
+msgstr "Dori berish"
+
+#: backend/apps/hr/models.py
+msgid "Storage"
+msgstr "Saqlash"
+
+#: backend/apps/hr/models.py backend/apps/lifecycle/models.py
+msgid "Safety"
+msgstr "Xavfsizlik"
+
+#: backend/apps/hr/models.py backend/apps/lifecycle/models.py
+msgid "Conduct"
+msgstr "Xulq-atvor"
+
 #: backend/apps/hr/owner_api.py
 msgid "Pick at most a year, ending after it starts."
 msgstr "Ko‘pi bilan bir yilni tanlang; oxiri boshidan keyin bo‘lsin."
@@ -10438,12 +11091,6 @@ msgstr "Ko‘pi bilan bir yilni tanlang; oxiri boshidan keyin bo‘lsin."
 #: backend/apps/hr/owner_api.py
 msgid "Pick at most 62 days, ending after it starts."
 msgstr "Ko‘pi bilan 62 kun tanlang; oxirgi kun birinchi kundan keyin bo‘lsin."
-
-#: backend/apps/hr/owner_api.py backend/apps/hr/services.py
-#: backend/apps/members/join_links.py backend/apps/members/owner_api.py
-#: backend/apps/members/services.py
-msgid "Pick a position of this company."
-msgstr "Shu kompaniyadagi lavozimni tanlang."
 
 #: backend/apps/hr/owner_api.py backend/apps/hr/services.py
 msgid "Pick a kind of document."
@@ -10460,6 +11107,256 @@ msgstr "Shartnoma boshlanadigan kunni kiriting."
 #: backend/apps/hr/owner_api.py backend/apps/hr/services.py
 msgid "Pick a contract template."
 msgstr "Shartnoma shablonini tanlang."
+
+#: backend/apps/hr/policies/api.py
+msgid "This policy has no file."
+msgstr "Bu qoidaga fayl biriktirilmagan."
+
+#: backend/apps/hr/policies/audit_actions.py
+msgid "Created a policy"
+msgstr "Qoida yaratdi"
+
+#: backend/apps/hr/policies/audit_actions.py
+msgid "Changed a policy"
+msgstr "Qoidani o‘zgartirdi"
+
+#: backend/apps/hr/policies/audit_actions.py
+msgid "Archived a policy"
+msgstr "Qoidani arxivga o‘tkazdi"
+
+#: backend/apps/hr/policies/audit_actions.py
+msgid "Restored a policy"
+msgstr "Qoidani arxivdan qaytardi"
+
+#: backend/apps/hr/policies/audit_actions.py
+msgid "Deleted a policy that was never published"
+msgstr "E’lon qilinmagan qoidani o‘chirdi"
+
+#: backend/apps/hr/policies/audit_actions.py
+msgid "Saved a policy draft"
+msgstr "Qoida qoralamasini saqladi"
+
+#: backend/apps/hr/policies/audit_actions.py
+msgid "Discarded a policy draft"
+msgstr "Qoida qoralamasini bekor qildi"
+
+#: backend/apps/hr/policies/audit_actions.py
+msgid "Published a policy version"
+msgstr "Qoidaning versiyasini e’lon qildi"
+
+#: backend/apps/hr/policies/audit_actions.py
+msgid "Reminded people to sign a policy"
+msgstr "Qoidani imzolashni eslatdi"
+
+#: backend/apps/hr/policies/audit_actions.py
+msgid "Read and signed a policy"
+msgstr "Qoidani o‘qib imzoladi"
+
+#. Translators: %(title)s is a policy's name, e.g. "Dori berish qoidalari".
+#: backend/apps/hr/policies/bot_messages.py
+#, python-format
+msgid "New version to read and sign: %(title)s"
+msgstr "Yangi versiyani o‘qib imzolang: %(title)s"
+
+#: backend/apps/hr/policies/bot_messages.py
+#, python-format
+msgid "Rules to read and sign: %(title)s"
+msgstr "O‘qib imzolash kerak: %(title)s"
+
+#: backend/apps/hr/policies/bot_messages.py
+#, python-format
+msgid "Read them in the app and sign by %(date)s."
+msgstr "Ilovada o‘qing va imzolang. Muddat: %(date)s."
+
+#: backend/apps/hr/policies/bot_messages.py
+#, python-format
+msgid "Rules to read and sign: %(count)d"
+msgstr "O‘qib imzolash kerak bo‘lgan qoidalar: %(count)d"
+
+#: backend/apps/hr/policies/bot_messages.py
+#, python-format
+msgid "And %(count)d more"
+msgstr "Yana: %(count)d"
+
+#: backend/apps/hr/policies/bot_messages.py
+#, python-format
+msgid "New rules to read: %(title)s"
+msgstr "Yangi qoidalar, o‘qib chiqing: %(title)s"
+
+#: backend/apps/hr/policies/bot_messages.py
+msgid "Read them in the app."
+msgstr "Ilovada o‘qing."
+
+#: backend/apps/hr/policies/bot_messages.py
+#, python-format
+msgid "Still waiting for your signature: %(title)s"
+msgstr "Imzoingiz hali kutilmoqda: %(title)s"
+
+#: backend/apps/hr/policies/bot_messages.py
+#, python-format
+msgid "Last day to sign: %(title)s"
+msgstr "Imzolash uchun oxirgi kun: %(title)s"
+
+#: backend/apps/hr/policies/bot_messages.py
+#, python-format
+msgid "Sign by tomorrow: %(title)s"
+msgstr "Ertagacha imzolang: %(title)s"
+
+#: backend/apps/hr/policies/bot_messages.py
+#, python-format
+msgid "Please read and sign: %(title)s"
+msgstr "Iltimos, o‘qib imzolang: %(title)s"
+
+#: backend/apps/hr/policies/bot_messages.py
+#, python-format
+msgid "The deadline was %(date)s. Read them in the app and sign."
+msgstr "Muddat o‘tdi: %(date)s. Ilovada o‘qing va imzolang."
+
+#: backend/apps/hr/policies/bot_messages.py
+#, python-format
+msgid "Not signed in time: %(title)s"
+msgstr "O‘z vaqtida imzolanmadi: %(title)s"
+
+#: backend/apps/hr/policies/bot_messages.py
+#, python-format
+msgid "Deadline: %(date)s"
+msgstr "Muddat: %(date)s"
+
+#: backend/apps/hr/policies/exporters.py
+msgid "Policy"
+msgstr "Qoida"
+
+#: backend/apps/hr/policies/exporters.py
+msgid "Version"
+msgstr "Versiya"
+
+#: backend/apps/hr/policies/exporters.py
+msgid "Asked"
+msgstr "So‘ralgan"
+
+#: backend/apps/hr/policies/exporters.py
+msgid "Sign by"
+msgstr "Imzolash muddati"
+
+#: backend/apps/hr/policies/exporters.py
+msgid "Signed"
+msgstr "Imzolangan"
+
+#: backend/apps/hr/policies/exporters.py
+msgid "Version signed"
+msgstr "Imzolangan versiya"
+
+#: backend/apps/hr/policies/exporters.py
+msgid "Last reminder"
+msgstr "Oxirgi eslatma"
+
+#: backend/apps/hr/policies/exporters.py
+msgid "Waiting for a signature"
+msgstr "Imzo kutilmoqda"
+
+#: backend/apps/hr/policies/exporters.py
+msgid "Signature overdue"
+msgstr "Imzo muddati o‘tgan"
+
+#: backend/apps/hr/policies/hooks.py
+msgid "Policy signatures"
+msgstr "Qoidalar bo‘yicha imzolar"
+
+#: backend/apps/hr/policies/hooks.py
+msgid "Rules to read and sign"
+msgstr "O‘qib imzolanadigan qoidalar"
+
+#: backend/apps/hr/policies/hooks.py
+msgid "Rules not signed in time"
+msgstr "O‘z vaqtida imzolanmagan qoidalar"
+
+#: backend/apps/hr/policies/owner_api.py backend/apps/hr/policies/services.py
+msgid "Give the policy a title."
+msgstr "Qoidaga nom bering."
+
+#: backend/apps/hr/policies/queries.py
+#, python-format
+msgid "Version %(number)d"
+msgstr "Versiya %(number)d"
+
+#: backend/apps/hr/policies/queries.py backend/apps/learning/models.py
+msgid "Archived"
+msgstr "Arxivda"
+
+#: backend/apps/hr/policies/services.py
+msgid "A published policy can't be deleted. Archive it instead."
+msgstr "E’lon qilingan qoidani o‘chirib bo‘lmaydi. Uni arxivga o‘tkazing."
+
+#: backend/apps/hr/policies/services.py
+msgid "There is no draft to discard."
+msgstr "Bekor qilinadigan qoralama yo‘q."
+
+#: backend/apps/hr/policies/services.py
+msgid "This policy is archived. Restore it first."
+msgstr "Bu qoida arxivda. Avval uni qaytaring."
+
+#: backend/apps/hr/policies/services.py
+msgid "There is nothing new to publish. Save a draft first."
+msgstr "E’lon qilish uchun yangi narsa yo‘q. Avval qoralamani saqlang."
+
+#: backend/apps/hr/policies/services.py
+msgid "Write the text or attach the file before publishing."
+msgstr "E’lon qilishdan oldin matn yozing yoki fayl biriktiring."
+
+#: backend/apps/hr/policies/services.py
+msgid "Your access is paused, so you can't sign now."
+msgstr "Kirishingiz vaqtincha to‘xtatilgan, hozir imzolay olmaysiz."
+
+#: backend/apps/hr/policies/services.py
+msgid "This policy isn't one of yours."
+msgstr "Bu qoida sizga tegishli emas."
+
+#: backend/apps/hr/policies/services.py
+msgid "This policy isn't in force."
+msgstr "Bu qoida amalda emas."
+
+#: backend/apps/hr/policies/services.py
+msgid "This policy asks no signature: reading it is enough."
+msgstr "Bu qoidani imzolash shart emas: o‘qib chiqish yetarli."
+
+#: backend/apps/hr/policies/services.py
+msgid "A newer version came out. Read it and sign that one."
+msgstr "Yangi versiya chiqdi. Uni o‘qib imzolang."
+
+#: backend/apps/hr/policies/services.py
+msgid "Nobody owes a signature for this policy."
+msgstr "Bu qoida bo‘yicha hech kim imzo qo‘yishi shart emas."
+
+#: backend/apps/hr/policies/services.py
+msgid "Everyone here has signed."
+msgstr "Hamma imzolagan."
+
+#: backend/apps/hr/policies/services.py
+msgid "They were reminded a few hours ago. Give them some time."
+msgstr "Bir necha soat oldin eslatilgan. Biroz vaqt bering."
+
+#: backend/apps/hr/policies/services.py
+msgid "Give the number of days to sign in."
+msgstr "Imzolash uchun kunlar sonini kiriting."
+
+#: backend/apps/hr/policies/services.py
+#, python-format
+msgid "People sign within 1 to %(max)d days."
+msgstr "Imzolash muddati 1–%(max)d kun bo‘lishi kerak."
+
+#: backend/apps/hr/policies/services.py
+msgid "Pick the branches this policy is for, among the ones you manage."
+msgstr ""
+"Qoida qaysi filiallar uchun ekanini o‘zingiz boshqaradigan filiallardan "
+"tanlang."
+
+#: backend/apps/hr/policies/services.py
+msgid "The text is too long. Attach a long document as the file."
+msgstr "Matn juda uzun. Uzun hujjatni fayl sifatida biriktiring."
+
+#: backend/apps/hr/policies/services.py
+msgid "This policy reaches branches you don't manage."
+msgstr "Bu qoida siz boshqarmaydigan filiallarga ham tegishli."
 
 #: backend/apps/hr/printing.py
 msgid "The contract's text is too long."
@@ -11984,10 +12881,6 @@ msgstr "Sanalmoqda"
 #: backend/apps/inventory/templates/inventory/controlled_register.html
 msgid "Counted"
 msgstr "Sanalgan"
-
-#: backend/apps/inventory/models.py
-msgid "Applied"
-msgstr "Qo‘llangan"
 
 #: backend/apps/inventory/models.py
 msgid "Never shown to counters."
@@ -14275,10 +15168,6 @@ msgid "Published"
 msgstr "E’lon qilingan"
 
 #: backend/apps/learning/models.py
-msgid "Archived"
-msgstr "Arxivda"
-
-#: backend/apps/learning/models.py
 msgid "A video counts as watched once this share of it was played."
 msgstr "Videoning shuncha qismi ko‘rilsa, u ko‘rilgan hisoblanadi."
 
@@ -14382,10 +15271,6 @@ msgstr "Juftlarni moslash"
 #: backend/apps/learning/models.py
 msgid "Type the answer"
 msgstr "Javobni yozish"
-
-#: backend/apps/learning/models.py
-msgid "Number"
-msgstr "Son"
 
 #: backend/apps/learning/models.py
 msgid "Easy"
@@ -14522,10 +15407,6 @@ msgid ""
 msgstr ""
 "Kompaniya kunlari bo‘yicha ko‘rilgan soniyalar, so‘nggi 60 kun: {YYYY-MM-DD: "
 "soniya}."
-
-#: backend/apps/learning/models.py
-msgid "Paused"
-msgstr "To‘xtatilgan"
 
 #: backend/apps/learning/models.py
 msgid "0 is Monday (weekly checks)."
@@ -15040,6 +15921,17 @@ msgstr ""
 "sababi bo‘yicha, hali amal qilayotganlari, xodim tanishmaganlari, kim "
 "qachongacha chetlatilgani"
 
+#: backend/apps/lifecycle/ai_tools.py
+msgid ""
+"Leaving and job changes at a glance: requests to leave waiting, last working "
+"days to come with their handover, who left in the last 90 days, job changes "
+"waiting for approval and coming (names and days, never reasons, notes or pay)"
+msgstr ""
+"Ishdan ketish va lavozim o‘zgarishlari qisqacha: kutilayotgan ishdan ketish "
+"arizalari, topshirishi bilan yaqinlashayotgan oxirgi ish kunlari, so‘nggi 90 "
+"kunda ketganlar, tasdiq kutayotgan va kutilayotgan lavozim o‘zgarishlari "
+"(ismlar va sanalar; sabablar, eslatmalar va maoshsiz)"
+
 #: backend/apps/lifecycle/audit_actions.py
 msgid "Gave a disciplinary record"
 msgstr "Intizomiy jazo berdi"
@@ -15068,6 +15960,66 @@ msgstr "Tushuntirish xati yozdi"
 msgid "Proposed a fine with a record"
 msgstr "Intizomiy jazo bilan birga jarima taklif qildi"
 
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Asked to leave"
+msgstr "Ishdan ketishni so‘radi"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Started someone's leaving"
+msgstr "Xodimni ishdan bo‘shatishni boshladi"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Agreed a last working day"
+msgstr "Oxirgi ish kunini kelishdi"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Declined a request to leave"
+msgstr "Ishdan ketish arizasini rad etdi"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Withdrew a leaving"
+msgstr "Ishdan ketishni bekor qildi"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Changed the details of a leaving"
+msgstr "Ishdan ketish tafsilotlarini o‘zgartirdi"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Left on the agreed last day"
+msgstr "Kelishilgan oxirgi kunda ishdan ketdi"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Changed the handover list"
+msgstr "Topshirish ro‘yxatini o‘zgartirdi"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Answered the exit questions"
+msgstr "Ketish oldidan savollarga javob berdi"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Proposed a job change"
+msgstr "Lavozim o‘zgarishini taklif qildi"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Approved a job change"
+msgstr "Lavozim o‘zgarishini tasdiqladi"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Rejected a job change"
+msgstr "Lavozim o‘zgarishini rad etdi"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Cancelled a job change"
+msgstr "Lavozim o‘zgarishini bekor qildi"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "A job change took effect"
+msgstr "Lavozim o‘zgarishi kuchga kirdi"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "A job change couldn't take effect"
+msgstr "Lavozim o‘zgarishi kuchga kira olmadi"
+
 #. Translators: %(category)s is what it is about, e.g. "Storage conditions
 #. breached".
 #: backend/apps/lifecycle/bot_messages.py
@@ -15085,6 +16037,188 @@ msgstr ""
 msgid "Explanation from: %(name)s"
 msgstr "Tushuntirish xati. Kimdan: %(name)s"
 
+#. Translators: %(name)s is a person's name; it stands alone after the colon.
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Asks to leave: %(name)s"
+msgstr "Ishdan ketish arizasi: %(name)s"
+
+#: backend/apps/lifecycle/bot_messages.py backend/apps/lifecycle/providers.py
+#, python-format
+msgid "Last working day asked for: %(date)s"
+msgstr "So‘ralgan oxirgi ish kuni: %(date)s"
+
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Notice: %(count)d day"
+msgid_plural "Notice: %(count)d days"
+msgstr[0] "Ogohlantirish muddati: %(count)d kun"
+
+#: backend/apps/lifecycle/bot_messages.py backend/apps/tasks/services.py
+#: backend/apps/timeoff/bot_messages.py
+#, python-format
+msgid "Reason: %(reason)s"
+msgstr "Sabab: %(reason)s"
+
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Stays after all: %(name)s"
+msgstr "Ishda qoladi: %(name)s"
+
+#: backend/apps/lifecycle/bot_messages.py
+msgid "They withdrew their request to leave."
+msgstr "Xodim ishdan ketish arizasini qaytarib oldi."
+
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Has left: %(name)s"
+msgstr "Ishdan ketdi: %(name)s"
+
+#: backend/apps/lifecycle/bot_messages.py backend/apps/payroll/notify.py
+#: backend/apps/payroll/payslip_pdf.py
+#, python-format
+msgid "Last working day: %(date)s"
+msgstr "Oxirgi ish kuni: %(date)s"
+
+#: backend/apps/lifecycle/bot_messages.py
+msgid "The final payslip is waiting in Payroll to be checked."
+msgstr "Yakuniy hisob-kitob Ish haqi bo‘limida tekshirilishini kutmoqda."
+
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Still not handed over: %(count)d item."
+msgid_plural "Still not handed over: %(count)d items."
+msgstr[0] "Hali topshirilmagan narsalar: %(count)d."
+
+#: backend/apps/lifecycle/bot_messages.py
+msgid "Everything on the handover list was handed over."
+msgstr "Topshirish ro‘yxatidagi hamma narsa topshirildi."
+
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Last working day today: %(name)s"
+msgstr "Bugun oxirgi ish kuni: %(name)s"
+
+#: backend/apps/lifecycle/bot_messages.py backend/apps/lifecycle/providers.py
+#, python-format
+msgid "Handed over: %(done)s. Still open: %(open)s."
+msgstr "Topshirildi: %(done)s. Qolgani: %(open)s."
+
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Leaving not completed: %(name)s"
+msgstr "Ishdan ketish yakunlanmadi: %(name)s"
+
+#: backend/apps/lifecycle/bot_messages.py
+msgid "Open it and press Try again."
+msgstr "Uni oching va «Qayta urinish»ni bosing."
+
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Your last working day: %(date)s"
+msgstr "Oxirgi ish kuningiz: %(date)s"
+
+#: backend/apps/lifecycle/bot_messages.py
+msgid ""
+"Hand over what you hold before then: the list is in the app. Thank you for "
+"your work."
+msgstr ""
+"Shu kungacha qo‘lingizdagi narsalarni topshiring: ro‘yxat ilovada. "
+"Mehnatingiz uchun rahmat."
+
+#: backend/apps/lifecycle/bot_messages.py
+msgid "Your request to leave was declined"
+msgstr "Ishdan ketish arizangiz rad etildi"
+
+#: backend/apps/lifecycle/bot_messages.py
+msgid "Talk to your manager if you have questions."
+msgstr "Savollaringiz bo‘lsa, rahbaringiz bilan gaplashing."
+
+#: backend/apps/lifecycle/bot_messages.py
+msgid "Your leaving is called off"
+msgstr "Ishdan ketishingiz bekor qilindi"
+
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Position: %(now)s (was: %(was)s)"
+msgstr "Lavozim: %(now)s (avval: %(was)s)"
+
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Branch: %(now)s (was: %(was)s)"
+msgstr "Filial: %(now)s (avval: %(was)s)"
+
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Department: %(now)s (was: %(was)s)"
+msgstr "Bo‘lim: %(now)s (avval: %(was)s)"
+
+#: backend/apps/lifecycle/bot_messages.py
+msgid "The pay changes too."
+msgstr "Maosh ham o‘zgaradi."
+
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Job change to approve: %(name)s"
+msgstr "Tasdiqlash uchun lavozim o‘zgarishi: %(name)s"
+
+#: backend/apps/lifecycle/bot_messages.py backend/apps/lifecycle/providers.py
+#, python-format
+msgid "Starts: %(date)s"
+msgstr "Boshlanishi: %(date)s"
+
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Job change rejected: %(name)s"
+msgstr "Lavozim o‘zgarishi rad etildi: %(name)s"
+
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Job change cancelled: %(name)s"
+msgstr "Lavozim o‘zgarishi bekor qilindi: %(name)s"
+
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Job change approved: %(name)s"
+msgstr "Lavozim o‘zgarishi tasdiqlandi: %(name)s"
+
+#: backend/apps/lifecycle/bot_messages.py
+msgid "It has taken effect."
+msgstr "U kuchga kirdi."
+
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Job change not applied: %(name)s"
+msgstr "Lavozim o‘zgarishi qo‘llanmadi: %(name)s"
+
+#: backend/apps/lifecycle/bot_messages.py
+msgid "Your job has changed"
+msgstr "Lavozimingiz o‘zgardi"
+
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "From: %(date)s"
+msgstr "Boshlanishi: %(date)s"
+
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Position: %(name)s"
+msgstr "Lavozim: %(name)s"
+
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Branch: %(name)s"
+msgstr "Filial: %(name)s"
+
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Department: %(name)s"
+msgstr "Bo‘lim: %(name)s"
+
+#: backend/apps/lifecycle/bot_messages.py
+msgid "Your pay changes too: see it in the app."
+msgstr "Maoshingiz ham o‘zgaradi: uni ilovada ko‘ring."
+
 #: backend/apps/lifecycle/hooks.py
 msgid "Warnings and reprimands"
 msgstr "Ogohlantirish va hayfsanlar"
@@ -15093,11 +16227,188 @@ msgstr "Ogohlantirish va hayfsanlar"
 msgid "Explanations to records"
 msgstr "Intizomiy jazolarga tushuntirishlar"
 
+#: backend/apps/lifecycle/hooks.py
+msgid "Requests to leave"
+msgstr "Ishdan ketish arizalari"
+
+#: backend/apps/lifecycle/hooks.py
+msgid "Leaving: withdrawn requests, last days, problems"
+msgstr "Ishdan ketish: qaytarib olingan arizalar, oxirgi kunlar, muammolar"
+
+#: backend/apps/lifecycle/hooks.py
+msgid "People who left"
+msgstr "Ishdan ketganlar"
+
+#: backend/apps/lifecycle/hooks.py
+msgid "Your leaving"
+msgstr "Ishdan ketishingiz"
+
+#: backend/apps/lifecycle/hooks.py
+msgid "Last working days"
+msgstr "Oxirgi ish kunlari"
+
+#: backend/apps/lifecycle/hooks.py
+msgid "Leaving and handover"
+msgstr "Ishdan ketish va topshirish"
+
+#: backend/apps/lifecycle/hooks.py
+msgid "Job changes to approve"
+msgstr "Tasdiqlash uchun lavozim o‘zgarishlari"
+
+#: backend/apps/lifecycle/hooks.py
+msgid "Job changes decided or not applied"
+msgstr "Qaror qilingan yoki qo‘llanmagan lavozim o‘zgarishlari"
+
+#: backend/apps/lifecycle/hooks.py
+msgid "Changes to your job"
+msgstr "Lavozimingizdagi o‘zgarishlar"
+
+#: backend/apps/lifecycle/hooks.py
+msgid "Job changes"
+msgstr "Lavozim o‘zgarishlari"
+
 #: backend/apps/lifecycle/integrations.py
 msgid "Payroll is off for this company: give the warning without a fine."
 msgstr ""
 "Bu kompaniyada «Ish haqi» moduli o‘chirilgan: ogohlantirishni jarimasiz "
 "bering."
+
+#: backend/apps/lifecycle/integrations.py backend/apps/lifecycle/job_changes.py
+msgid "Payroll is off for this company, so the pay can't change here."
+msgstr ""
+"Bu kompaniyada Ish haqi o‘chirilgan, shuning uchun maosh bu yerda "
+"o‘zgarmaydi."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "You can't propose a change to your own job."
+msgstr "O‘z lavozimingizni o‘zgartirishni taklif qila olmaysiz."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "You can't decide a change to your own job."
+msgstr "O‘z lavozimingiz o‘zgarishi bo‘yicha qaror qila olmaysiz."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "Only people who work here can have their job changed."
+msgstr "Lavozimni faqat shu yerda ishlayotganlar uchun o‘zgartirish mumkin."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "A change starts today or later."
+msgstr "O‘zgarish bugundan yoki keyinroq boshlanadi."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "Pick a day within a year."
+msgstr "Bir yil ichidagi kunni tanlang."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "Say why it changes."
+msgstr "Nima uchun o‘zgarishini yozing."
+
+#: backend/apps/lifecycle/job_changes.py backend/apps/lifecycle/terminations.py
+#, python-format
+msgid "Keep it under %(limit)s characters."
+msgstr "Matn uzunligi chegarasi: %(limit)s belgi."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "Pick the branch they move to."
+msgstr "Xodim o‘tadigan filialni tanlang."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "You can only move people to the branches you manage."
+msgstr "Xodimlarni faqat o‘zingiz boshqaradigan filiallarga o‘tkaza olasiz."
+
+#: backend/apps/lifecycle/job_changes.py backend/apps/members/departments.py
+#: backend/apps/members/services.py
+msgid "Pick a department of this company."
+msgstr "Shu kompaniyadagi bo‘limni tanlang."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "Nothing changes: pick a new position, branch, department or pay."
+msgstr ""
+"Hech narsa o‘zgarmaydi: yangi lavozim, filial, bo‘lim yoki maoshni tanlang."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "Only people who manage pay can change someone's pay."
+msgstr "Maoshni faqat ish haqini boshqaradiganlar o‘zgartira oladi."
+
+#: backend/apps/lifecycle/job_changes.py backend/apps/payroll/services.py
+msgid "Pick how the pay is counted."
+msgstr "Ish haqi qanday hisoblanishini tanlang."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "Enter the new pay."
+msgstr "Yangi maoshni kiriting."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "Only a change waiting for approval can be approved."
+msgstr "Faqat tasdiq kutayotgan o‘zgarishni tasdiqlash mumkin."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "Only a change waiting for approval can be rejected."
+msgstr "Faqat tasdiq kutayotgan o‘zgarishni rad etish mumkin."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "Say why it is rejected."
+msgstr "Rad etish sababini yozing."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "Only a change that hasn't taken effect can be cancelled."
+msgstr "Faqat hali kuchga kirmagan o‘zgarishni bekor qilish mumkin."
+
+#: backend/apps/lifecycle/job_changes.py backend/apps/lifecycle/models.py
+msgctxt "job change"
+msgid "Cancelled"
+msgstr "Bekor qilindi"
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "They left before it took effect."
+msgstr "Xodim o‘zgarish kuchga kirishidan oldin ketdi."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "Only an approved change can take effect."
+msgstr "Faqat tasdiqlangan o‘zgarish kuchga kira oladi."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid ""
+"Whoever approved it no longer works here: someone who may should apply it."
+msgstr ""
+"Uni tasdiqlagan kishi endi bu yerda ishlamaydi: huquqi bor kishi uni "
+"qo‘llashi kerak."
+
+#: backend/apps/lifecycle/job_changes.py
+#, python-format
+msgid ""
+"%(name)s may no longer make this change: someone who may should apply it."
+msgstr ""
+"Bu o‘zgarishni endi kirita olmaydi: %(name)s. Huquqi bor kishi uni qo‘llashi "
+"kerak."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "They no longer work here."
+msgstr "Xodim endi bu yerda ishlamaydi."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "The new position was removed: cancel this change."
+msgstr "Yangi lavozim o‘chirilgan: bu o‘zgarishni bekor qiling."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "The new department was removed: cancel this change."
+msgstr "Yangi bo‘lim o‘chirilgan: bu o‘zgarishni bekor qiling."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "The branch they move to is closed: cancel this change."
+msgstr "Xodim o‘tadigan filial yopilgan: bu o‘zgarishni bekor qiling."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "It couldn't take effect."
+msgstr "U kuchga kira olmadi."
+
+#: backend/apps/lifecycle/job_changes.py
+#, python-format
+msgid ""
+"A change from %(date)s already waits for them: cancel it or change that one."
+msgstr ""
+"Xodim uchun boshqa o‘zgarish kutilmoqda (boshlanishi: %(date)s): uni bekor "
+"qiling yoki o‘shani o‘zgartiring."
 
 #: backend/apps/lifecycle/models.py
 msgid "Verbal warning"
@@ -15124,20 +16435,12 @@ msgid "Absence"
 msgstr "Ishga kelmaslik"
 
 #: backend/apps/lifecycle/models.py
-msgid "Conduct"
-msgstr "Xulq-atvor"
-
-#: backend/apps/lifecycle/models.py
 msgid "Breach of the rules"
 msgstr "Qoidalarni buzish"
 
 #: backend/apps/lifecycle/models.py
 msgid "Work quality"
 msgstr "Ish sifati"
-
-#: backend/apps/lifecycle/models.py
-msgid "Safety"
-msgstr "Xavfsizlik"
 
 #: backend/apps/lifecycle/models.py
 msgid "Storage conditions breached"
@@ -15163,13 +16466,95 @@ msgstr "Tovar kamomadi"
 msgid "Acknowledged"
 msgstr "Tanishgan"
 
-#: backend/apps/lifecycle/models.py
+#: backend/apps/lifecycle/models.py backend/apps/lifecycle/terminations.py
 msgid "Withdrawn"
 msgstr "Bekor qilingan"
+
+#: backend/apps/lifecycle/models.py
+msgid "Resignation"
+msgstr "O‘z xohishi bilan"
+
+#: backend/apps/lifecycle/models.py
+msgid "By the company"
+msgstr "Kompaniya tashabbusi bilan"
+
+#: backend/apps/lifecycle/models.py
+msgid "End of contract"
+msgstr "Shartnoma muddati tugashi"
+
+#: backend/apps/lifecycle/models.py
+msgid "Requested"
+msgstr "So‘ralgan"
+
+#: backend/apps/lifecycle/models.py
+msgid "Last day agreed"
+msgstr "Oxirgi kun kelishilgan"
+
+#: backend/apps/lifecycle/models.py
+msgid "Maybe"
+msgstr "Balki"
+
+#: backend/apps/lifecycle/models.py
+msgid "Open tasks"
+msgstr "Ochiq vazifalar"
+
+#: backend/apps/lifecycle/models.py
+msgid "Keys"
+msgstr "Kalitlar"
+
+#: backend/apps/lifecycle/models.py
+msgid "Documents"
+msgstr "Hujjatlar"
+
+#: backend/apps/lifecycle/notify.py backend/apps/lifecycle/providers.py
+msgid "Agree"
+msgstr "Kelishish"
+
+#: backend/apps/lifecycle/notify.py backend/apps/lifecycle/providers.py
+msgid "Decline request"
+msgstr "Arizani rad etish"
 
 #: backend/apps/lifecycle/owner_api.py
 msgid "Propose a fine with its own button."
 msgstr "Jarimani alohida tugma orqali taklif qiling."
+
+#: backend/apps/lifecycle/owner_api.py
+msgid "Pick one of this company's."
+msgstr "Shu kompaniyaga tegishlisini tanlang."
+
+#: backend/apps/lifecycle/providers.py
+#, python-format
+msgid "Agreed: last working day %(date)s"
+msgstr "Kelishildi: oxirgi ish kuni %(date)s"
+
+#. Translators: %(name)s is a person's name; it stands alone after the colon.
+#: backend/apps/lifecycle/providers.py
+#, python-format
+msgid "Last working day: %(name)s"
+msgstr "Oxirgi ish kuni: %(name)s"
+
+#: backend/apps/lifecycle/providers.py
+#, python-format
+msgid "Job change: %(name)s"
+msgstr "Lavozim o‘zgarishi: %(name)s"
+
+#: backend/apps/lifecycle/providers.py
+#, python-format
+msgid "Their last working day was agreed: %(date)s."
+msgstr "Oxirgi ish kuni kelishilgan: %(date)s."
+
+#: backend/apps/lifecycle/providers.py
+#, python-format
+msgid ""
+"They asked to leave; the request is still waiting (last working day asked "
+"for: %(date)s)."
+msgstr ""
+"Xodim ishdan ketishni so‘ragan; ariza hali javob kutmoqda (so‘ralgan oxirgi "
+"ish kuni: %(date)s)."
+
+#: backend/apps/lifecycle/providers.py
+msgid "Offboarding them now closes it as left today."
+msgstr "Hozir ishdan bo‘shatilsa, u bugun ketgan deb yopiladi."
 
 #: backend/apps/lifecycle/services.py
 msgid "Only people who work here can be given a warning."
@@ -15234,6 +16619,124 @@ msgstr "Hodisa intizomiy jazo berilgandan keyin bo‘lishi mumkin emas."
 #: backend/apps/lifecycle/services.py
 msgid "A record can't stop counting before it was given."
 msgstr "Amal qilish muddati jazo berilgan sanadan oldin tugay olmaydi."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "You can't do this for your own leaving."
+msgstr "O‘zingizning ishdan ketishingiz uchun buni qila olmaysiz."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "Only people who work here can ask to leave."
+msgstr "Ishdan ketishni faqat shu yerda ishlayotganlar so‘ray oladi."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "You have already asked to leave."
+msgstr "Siz allaqachon ishdan ketishni so‘ragansiz."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "This request is closed."
+msgstr "Bu ariza yopilgan."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "Pick the main reason you are leaving."
+msgstr "Ketishingizning asosiy sababini tanlang."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "Pick an answer from the list."
+msgstr "Ro‘yxatdan javob tanlang."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "Only people who work here can be given a last day."
+msgstr "Oxirgi kunni faqat shu yerda ishlayotganlarga belgilash mumkin."
+
+#: backend/apps/lifecycle/terminations.py backend/apps/members/services.py
+msgid "Pick why they are leaving."
+msgstr "Ishdan ketish sababini tanlang."
+
+#: backend/apps/lifecycle/terminations.py
+#, python-format
+msgid "%(name)s is already leaving: open it to change the day."
+msgstr ""
+"Bu xodim allaqachon ketmoqda: kunni o‘zgartirish uchun uni oching (%(name)s)."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "This leaving is closed."
+msgstr "Bu ishdan ketish yopilgan."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "Pick their last working day."
+msgstr "Xodimning oxirgi ish kunini tanlang."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "Agreed"
+msgstr "Kelishildi"
+
+#: backend/apps/lifecycle/terminations.py
+msgid "Only a request waiting for an answer can be declined."
+msgstr "Faqat javob kutayotgan arizani rad etish mumkin."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "Say why the request is declined."
+msgstr "Ariza nima uchun rad etilishini yozing."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "Your last day has come: talk to your manager if you'd stay."
+msgstr ""
+"Oxirgi kuningiz keldi: qolmoqchi bo‘lsangiz, rahbaringiz bilan gaplashing."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "Say why it is called off."
+msgstr "Bekor qilish sababini yozing."
+
+#: backend/apps/lifecycle/terminations.py backend/apps/payroll/services.py
+#, python-format
+msgid "Unknown field: %(name)s"
+msgstr "Noma’lum maydon: %(name)s"
+
+#: backend/apps/lifecycle/terminations.py
+msgid "This leaving is closed: only the notes and the rehire answer change."
+msgstr ""
+"Bu ishdan ketish yopilgan: faqat eslatmalar va qayta ishga olish javobi "
+"o‘zgaradi."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "Say what is to be handed over."
+msgstr "Nima topshirilishini yozing."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "They still hold it: tick it off once it is handed back."
+msgstr "Bu hali xodimda: qaytarilgach, belgilab qo‘ying."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "Only a leaving with an agreed last day can be completed."
+msgstr "Faqat oxirgi kuni kelishilgan ishdan ketishni yakunlash mumkin."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "Their last day hasn't come yet."
+msgstr "Xodimning oxirgi kuni hali kelmagan."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "It couldn't be completed."
+msgstr "Uni yakunlab bo‘lmadi."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "Pick the last working day."
+msgstr "Oxirgi ish kunini tanlang."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "The last working day can't be in the past."
+msgstr "Oxirgi ish kuni o‘tgan sana bo‘lishi mumkin emas."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "Pick a last working day within a year."
+msgstr "Bir yil ichidagi oxirgi ish kunini tanlang."
+
+#: backend/apps/lifecycle/terminations.py backend/apps/payroll/settlement.py
+msgid "Enter the unused leave days: a number from 0 to 366."
+msgstr "Foydalanilmagan ta’til kunlarini kiriting: 0–366 oralig‘idagi son."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "This leaving is closed: its handover list no longer changes."
+msgstr "Bu ishdan ketish yopilgan: topshirish ro‘yxati endi o‘zgarmaydi."
 
 #: backend/apps/members/admin.py
 msgid "Permissions"
@@ -15410,11 +16913,6 @@ msgstr "Xabar maydoni yonidagi «%(button)s» tugmasi uni bir bosishda ochadi."
 msgid "<b>Join request</b> · %(company)s"
 msgstr "<b>Qo‘shilish so‘rovi</b> · %(company)s"
 
-#: backend/apps/members/bot_messages.py owner_bot/ownerbot/bot_messages.py
-#, python-format
-msgid "Name: %(name)s"
-msgstr "Ism: %(name)s"
-
 #: backend/apps/members/bot_messages.py
 #, python-format
 msgid "Position: %(position)s"
@@ -15424,11 +16922,6 @@ msgstr "Lavozim: %(position)s"
 #, python-format
 msgid "Access: %(role)s"
 msgstr "Ruxsat: %(role)s"
-
-#: backend/apps/members/bot_messages.py
-#, python-format
-msgid "Phone: %(phone)s"
-msgstr "Telefon: %(phone)s"
 
 #: backend/apps/members/bot_messages.py
 #, python-format
@@ -15535,10 +17028,6 @@ msgid "Thanks, your phone number is saved."
 msgstr "Rahmat, telefon raqamingiz saqlandi."
 
 #: backend/apps/members/bot_messages.py
-msgid "Please share your own phone number with the button below."
-msgstr "Iltimos, quyidagi tugma orqali o‘z raqamingizni ulashing."
-
-#: backend/apps/members/bot_messages.py
 #, python-format
 msgid "Welcome to the team, %(name)s! You've joined <b>%(company)s</b>."
 msgstr ""
@@ -15581,10 +17070,6 @@ msgstr ""
 "lavozimingiz."
 
 #: backend/apps/members/bot_messages.py
-msgid "Share my phone number"
-msgstr "Raqamimni ulashish"
-
-#: backend/apps/members/bot_messages.py
 #, python-format
 msgid "Your request to join <b>%(company)s</b> was declined."
 msgstr "<b>%(company)s</b> kompaniyasiga qo‘shilish so‘rovingiz rad etildi."
@@ -15617,11 +17102,6 @@ msgstr "%(name)s blokladi"
 #, python-format
 msgid "Join request · %(name)s"
 msgstr "Qo‘shilish so‘rovi · %(name)s"
-
-#: backend/apps/members/bot_messages.py backend/apps/tasks/bot_messages.py
-#, python-format
-msgid "Company: %(company)s"
-msgstr "Kompaniya: %(company)s"
 
 #: backend/apps/members/bot_messages.py
 #, python-format
@@ -15693,10 +17173,6 @@ msgstr "Bo‘limga nom bering."
 #: backend/apps/members/departments.py
 msgid "A department's name can be at most 100 characters."
 msgstr "Bo‘lim nomi ko‘pi bilan 100 ta belgi bo‘lishi mumkin."
-
-#: backend/apps/members/departments.py backend/apps/members/services.py
-msgid "Pick a department of this company."
-msgstr "Shu kompaniyadagi bo‘limni tanlang."
 
 #: backend/apps/members/departments.py
 msgid "A department can't go under itself or its own part."
@@ -15787,10 +17263,6 @@ msgstr "Tugash vaqti kelajakda bo‘lishi kerak."
 #: backend/apps/members/join_links.py backend/apps/members/link_api.py
 msgid "A link can work for at most a year."
 msgstr "Havola ko‘pi bilan bir yil ishlay oladi."
-
-#: backend/apps/members/join_links.py
-msgid "Choose one of your branches."
-msgstr "O‘z filiallaringizdan birini tanlang."
 
 #: backend/apps/members/join_links.py
 msgid "Choose the branch these people will work in."
@@ -16470,10 +17942,6 @@ msgstr ""
 #: backend/apps/members/services.py
 msgid "Send each of the company's positions once."
 msgstr "Kompaniyaning har bir lavozimini bir martadan yuboring."
-
-#: backend/apps/members/services.py
-msgid "Pick why they are leaving."
-msgstr "Ishdan ketish sababini tanlang."
 
 #: backend/apps/members/services.py
 msgid "Only an owner can go ahead despite the blockers."
@@ -17697,11 +19165,6 @@ msgstr "Ogohlantirishlar: %(count)s"
 msgid "The final payslip of %(name)s is ready to check"
 msgstr "Yakuniy hisob-varaq tekshirishga tayyor: %(name)s"
 
-#: backend/apps/payroll/notify.py backend/apps/payroll/payslip_pdf.py
-#, python-format
-msgid "Last working day: %(date)s"
-msgstr "Oxirgi ish kuni: %(date)s"
-
 #: backend/apps/payroll/notify.py
 #, python-format
 msgid "They owe: %(amount)s"
@@ -18003,10 +19466,6 @@ msgid "The night starts and ends at different times."
 msgstr "Tun boshlanishi va tugashi har xil vaqtda bo‘lishi kerak."
 
 #: backend/apps/payroll/services.py
-msgid "Pick how the pay is counted."
-msgstr "Ish haqi qanday hisoblanishini tanlang."
-
-#: backend/apps/payroll/services.py
 msgid "Pick how missed days are counted."
 msgstr "O‘tkazib yuborilgan kunlar qanday hisoblanishini tanlang."
 
@@ -18020,11 +19479,6 @@ msgid "Pay up to %(date)s is already finalized: pick a later day."
 msgstr ""
 "Ish haqi allaqachon yakunlangan, oxirgi kun: %(date)s. Keyinroq kunni "
 "tanlang."
-
-#: backend/apps/payroll/services.py
-#, python-format
-msgid "Unknown field: %(name)s"
-msgstr "Noma’lum maydon: %(name)s"
 
 #: backend/apps/payroll/services.py
 msgid "There is already a pay setup from that day: change that one."
@@ -18189,10 +19643,6 @@ msgstr "Avans: %(name)s"
 #: backend/apps/payroll/services.py
 msgid "Only a paid advance can be paid back."
 msgstr "Faqat to‘langan avansni qaytarish mumkin."
-
-#: backend/apps/payroll/settlement.py
-msgid "Enter the unused leave days: a number from 0 to 366."
-msgstr "Foydalanilmagan ta’til kunlarini kiriting: 0–366 oralig‘idagi son."
 
 #: backend/apps/payroll/settlement.py
 #, python-format
@@ -22101,11 +23551,6 @@ msgstr "Ko‘rish uchun bosing, so‘ng qabul qiling yoki qaytaring."
 msgid "%(name)s has left the team. These tasks they had came back to you:"
 msgstr "%(name)s jamoadan ketdi. Uning vazifalari sizga qaytdi:"
 
-#: backend/apps/tasks/bot_messages.py
-#, python-format
-msgid "Status: %(status)s"
-msgstr "Holati: %(status)s"
-
 #. Translators: %(when)s reads like "ertaga, 18:00 (juma, 26-okt)".
 #: backend/apps/tasks/bot_messages.py
 #, python-format
@@ -23564,11 +25009,6 @@ msgstr "Kimga berishni tanlang."
 msgid "You can only give it to your own people."
 msgstr "Uni faqat o‘z xodimlaringizga bera olasiz."
 
-#: backend/apps/tasks/services.py backend/apps/timeoff/bot_messages.py
-#, python-format
-msgid "Reason: %(reason)s"
-msgstr "Sabab: %(reason)s"
-
 #: backend/apps/tasks/services.py
 #, python-format
 msgid "Deadline now: %(due)s"
@@ -23771,11 +25211,6 @@ msgstr "Me’yorga qaytdi: %(time)s"
 #, python-format
 msgid "Out of range: %(label)s %(value)s"
 msgstr "Me’yordan chiqdi: %(label)s %(value)s"
-
-#: backend/apps/tasks/services.py owner_bot/ownerbot/invite.py
-#, python-format
-msgid "Branch: %(branch)s"
-msgstr "Filial: %(branch)s"
 
 #: backend/apps/tasks/services.py
 #, python-format

@@ -7,6 +7,7 @@ from django.conf import settings
 from django.db import models
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
+from django.utils.translation import pgettext_lazy
 
 from apps.companies.models import Branch, TenantModel
 from apps.core.money import CurrencyField, MoneyField
@@ -231,7 +232,7 @@ class JobChange(TenantModel):
         APPROVED = "approved", _("Approved")
         APPLIED = "applied", _("Applied")
         REJECTED = "rejected", _("Rejected")
-        CANCELLED = "cancelled", _("Cancelled")
+        CANCELLED = "cancelled", pgettext_lazy("job change", "Cancelled")
 
     membership = models.ForeignKey(Membership, on_delete=models.PROTECT, related_name="job_changes")
     effective_on = models.DateField()

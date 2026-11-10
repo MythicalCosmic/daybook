@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-10 11:49+0500\n"
+"POT-Creation-Date: 2026-11-10 17:52+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -412,7 +412,8 @@ msgstr "Повторы не могут закончиться раньше на�
 msgid "A reminder can come at most a week before."
 msgstr "Напоминание можно поставить не раньше чем за неделю."
 
-#: backend/apps/agenda/services.py backend/apps/members/join_links.py
+#: backend/apps/agenda/services.py backend/apps/hr/hiring/services.py
+#: backend/apps/lifecycle/job_changes.py backend/apps/members/join_links.py
 #: backend/apps/members/owner_api.py backend/apps/members/services.py
 msgid "Pick a branch of this company."
 msgstr "Выберите филиал этой компании."
@@ -1507,8 +1508,8 @@ msgstr[3] "Создать %(count)s задачи"
 
 #: backend/apps/ai/bot_messages.py backend/apps/announcements/bot_messages.py
 #: backend/apps/attendance/bot_messages.py backend/apps/finance/bot_messages.py
-#: backend/apps/tasks/bot_messages.py employee_bot/bot/handlers/member/tasks.py
-#: owner_bot/ownerbot/bot_messages.py
+#: backend/apps/hr/hiring/bot.py backend/apps/tasks/bot_messages.py
+#: employee_bot/bot/handlers/member/tasks.py owner_bot/ownerbot/bot_messages.py
 msgid "Cancel"
 msgstr "Отмена"
 
@@ -2101,8 +2102,9 @@ msgstr "Отменена"
 #: backend/apps/ai/models.py backend/apps/attendance/providers.py
 #: backend/apps/attendance/reports.py backend/apps/attendance/t13.py
 #: backend/apps/faceid/models.py backend/apps/finance/exporters.py
-#: backend/apps/payroll/providers.py backend/apps/projects/hooks.py
-#: backend/apps/sales/models.py backend/apps/timeoff/providers.py
+#: backend/apps/hr/policies/exporters.py backend/apps/payroll/providers.py
+#: backend/apps/projects/hooks.py backend/apps/sales/models.py
+#: backend/apps/timeoff/providers.py
 msgid "Person"
 msgstr "Сотрудник"
 
@@ -2343,8 +2345,9 @@ msgid "Announcement: %(title)s · %(read)d of %(total)d read"
 msgstr "Объявление: %(title)s · прочитали %(read)d из %(total)d"
 
 #: backend/apps/announcements/models.py backend/apps/hr/models.py
-#: backend/apps/inventory/models.py backend/apps/knowledge/providers.py
-#: backend/apps/learning/models.py backend/apps/sales/models.py
+#: backend/apps/hr/policies/queries.py backend/apps/inventory/models.py
+#: backend/apps/knowledge/providers.py backend/apps/learning/models.py
+#: backend/apps/sales/models.py
 msgid "Draft"
 msgstr "Черновик"
 
@@ -2373,15 +2376,17 @@ msgid "When the author heard who still hadn't read it."
 msgstr "Когда автору сообщили, кто ещё не прочитал."
 
 #: backend/apps/announcements/owner_api.py backend/apps/groups/services.py
-#: backend/apps/knowledge/services.py backend/apps/learning/checks.py
-#: backend/apps/learning/courses.py backend/apps/learning/daily.py
-#: backend/apps/learning/lessons.py backend/apps/learning/quizzes.py
+#: backend/apps/hr/policies/services.py backend/apps/knowledge/services.py
+#: backend/apps/learning/checks.py backend/apps/learning/courses.py
+#: backend/apps/learning/daily.py backend/apps/learning/lessons.py
+#: backend/apps/learning/quizzes.py
 msgid "Pick positions of this company."
 msgstr "Выберите должности этой компании."
 
 #: backend/apps/announcements/owner_api.py backend/apps/groups/services.py
-#: backend/apps/learning/checks.py backend/apps/learning/courses.py
-#: backend/apps/members/owner_api.py backend/apps/members/services.py
+#: backend/apps/hr/policies/services.py backend/apps/learning/checks.py
+#: backend/apps/learning/courses.py backend/apps/members/owner_api.py
+#: backend/apps/members/services.py
 msgid "Pick branches of this company."
 msgstr "Выберите филиалы этой компании."
 
@@ -2468,9 +2473,11 @@ msgstr "Срок действия должен заканчиваться пос
 #: backend/apps/attendance/services.py backend/apps/console/base.py
 #: backend/apps/davomat/owner_api.py backend/apps/davomat/services.py
 #: backend/apps/finance/api.py backend/apps/finance/claims.py
+#: backend/apps/hr/hiring/services.py backend/apps/hr/policies/services.py
 #: backend/apps/hr/services.py backend/apps/inbox/services.py
 #: backend/apps/inventory/api.py backend/apps/inventory/notify.py
-#: backend/apps/knowledge/owner_api.py backend/apps/lifecycle/services.py
+#: backend/apps/knowledge/owner_api.py backend/apps/lifecycle/job_changes.py
+#: backend/apps/lifecycle/services.py backend/apps/lifecycle/terminations.py
 #: backend/apps/members/departments.py backend/apps/members/join_links.py
 #: backend/apps/members/services.py backend/apps/payroll/runs.py
 #: backend/apps/payroll/services.py backend/apps/sales/handlers.py
@@ -2803,7 +2810,7 @@ msgstr "На консервации"
 msgid "Disposed of"
 msgstr "Выбыло"
 
-#: backend/apps/assets/models.py
+#: backend/apps/assets/models.py backend/apps/hr/models.py
 msgid "New"
 msgstr "Новое"
 
@@ -2883,7 +2890,7 @@ msgstr "Добавлено"
 msgid "Put into service"
 msgstr "Введено в эксплуатацию"
 
-#: backend/apps/assets/models.py
+#: backend/apps/assets/models.py backend/apps/hr/models.py
 msgid "Moved"
 msgstr "Перемещено"
 
@@ -2935,8 +2942,8 @@ msgstr "Сообщено о проблеме"
 msgid "Found in a count"
 msgstr "Найдено при инвентаризации"
 
-#: backend/apps/assets/models.py backend/apps/projects/hooks.py
-#: backend/apps/tasks/feeds.py
+#: backend/apps/assets/models.py backend/apps/hr/models.py
+#: backend/apps/projects/hooks.py backend/apps/tasks/feeds.py
 #: backend/apps/tasks/templates/tasks/readings_journal.html
 msgid "Note"
 msgstr "Заметка"
@@ -2960,8 +2967,9 @@ msgstr "До внесения средства сюда: в Финансы не 
 msgid "In progress"
 msgstr "В работе"
 
-#: backend/apps/assets/models.py backend/apps/inventory/models.py
-#: backend/apps/sales/hooks.py backend/apps/sales/models.py
+#: backend/apps/assets/models.py backend/apps/hr/models.py
+#: backend/apps/inventory/models.py backend/apps/sales/hooks.py
+#: backend/apps/sales/models.py
 msgid "Closed"
 msgstr "Закрыта"
 
@@ -3106,8 +3114,9 @@ msgstr ""
 
 #: backend/apps/assets/owner_api.py backend/apps/assets/services.py
 #: backend/apps/attendance/owner_api.py backend/apps/davomat/owner_api.py
-#: backend/apps/faceid/owner_api.py backend/apps/hr/owner_api.py
-#: backend/apps/inventory/api.py backend/apps/inventory/owner_api.py
+#: backend/apps/faceid/owner_api.py backend/apps/hr/hiring/owner_api.py
+#: backend/apps/hr/owner_api.py backend/apps/inventory/api.py
+#: backend/apps/inventory/owner_api.py
 #: backend/apps/learning/owner_api_courses.py
 #: backend/apps/lifecycle/owner_api.py backend/apps/payroll/owner_api.py
 #: backend/apps/recognition/owner_api.py
@@ -3137,7 +3146,8 @@ msgstr "Эта покупка не ваша."
 #: backend/apps/assets/owner_api.py backend/apps/finance/owner_api.py
 #: backend/apps/finance/owner_serializers.py
 #: backend/apps/finance/planning_api.py backend/apps/finance/recurring.py
-#: backend/apps/finance/services.py backend/apps/inventory/owner_api.py
+#: backend/apps/finance/services.py backend/apps/hr/policies/services.py
+#: backend/apps/inventory/owner_api.py
 msgid "Pick a category."
 msgstr "Выберите категорию."
 
@@ -3240,7 +3250,7 @@ msgstr "Заканчивается гарантия: %(count)d"
 msgid "Insurance ending soon: %(count)d"
 msgstr "Заканчивается страховка: %(count)d"
 
-#: backend/apps/assets/providers.py
+#: backend/apps/assets/providers.py backend/apps/lifecycle/models.py
 msgid "Equipment"
 msgstr "Оборудование"
 
@@ -3289,7 +3299,8 @@ msgstr "Тип"
 
 #: backend/apps/assets/providers.py backend/apps/attendance/providers.py
 #: backend/apps/attendance/reports.py backend/apps/davomat/importing.py
-#: backend/apps/finance/exporters.py backend/apps/payroll/providers.py
+#: backend/apps/finance/exporters.py backend/apps/hr/policies/exporters.py
+#: backend/apps/payroll/providers.py
 #: backend/apps/payroll/templates/payroll/payslip.html
 #: backend/apps/sales/hooks.py backend/apps/tasks/feeds.py
 #: backend/apps/tasks/hooks.py
@@ -3299,9 +3310,10 @@ msgstr "Филиал"
 
 #: backend/apps/assets/providers.py backend/apps/attendance/providers.py
 #: backend/apps/davomat/importing.py backend/apps/finance/exporters.py
-#: backend/apps/inventory/providers.py backend/apps/members/providers.py
-#: backend/apps/payroll/providers.py backend/apps/sales/hooks.py
-#: backend/apps/tasks/hooks.py backend/apps/timeoff/providers.py
+#: backend/apps/hr/policies/exporters.py backend/apps/inventory/providers.py
+#: backend/apps/members/providers.py backend/apps/payroll/providers.py
+#: backend/apps/sales/hooks.py backend/apps/tasks/hooks.py
+#: backend/apps/timeoff/providers.py
 msgid "Status"
 msgstr "Статус"
 
@@ -4435,10 +4447,10 @@ msgid "Planned"
 msgstr "Запланирована"
 
 #: backend/apps/attendance/models.py backend/apps/finance/models.py
-#: backend/apps/inbox/bot_messages.py backend/apps/inventory/models.py
-#: backend/apps/learning/models.py backend/apps/projects/models.py
-#: backend/apps/reminders/bot_messages.py backend/apps/sales/models.py
-#: backend/apps/tasks/bot_messages.py
+#: backend/apps/hr/models.py backend/apps/inbox/bot_messages.py
+#: backend/apps/inventory/models.py backend/apps/learning/models.py
+#: backend/apps/projects/models.py backend/apps/reminders/bot_messages.py
+#: backend/apps/sales/models.py backend/apps/tasks/bot_messages.py
 msgid "Open"
 msgstr "Открыть"
 
@@ -4488,7 +4500,8 @@ msgid "Waiting for a colleague"
 msgstr "Ждёт ответа коллеги"
 
 #: backend/apps/attendance/models.py backend/apps/finance/models.py
-#: backend/apps/inventory/models.py backend/apps/timeoff/models.py
+#: backend/apps/inventory/models.py backend/apps/lifecycle/models.py
+#: backend/apps/timeoff/models.py
 msgid "Waiting for approval"
 msgstr "Ждёт одобрения"
 
@@ -4496,16 +4509,19 @@ msgstr "Ждёт одобрения"
 #: backend/apps/finance/models.py backend/apps/inventory/models.py
 #: backend/apps/inventory/providers.py
 #: backend/apps/inventory/templates/inventory/writeoff_act.html
-#: backend/apps/members/models.py backend/apps/members/providers.py
-#: backend/apps/members/services.py backend/apps/signin/models.py
-#: backend/apps/timeoff/models.py backend/apps/timeoff/providers.py
-#: backend/apps/timeoff/services.py
+#: backend/apps/lifecycle/job_changes.py backend/apps/lifecycle/models.py
+#: backend/apps/lifecycle/providers.py backend/apps/members/models.py
+#: backend/apps/members/providers.py backend/apps/members/services.py
+#: backend/apps/signin/models.py backend/apps/timeoff/models.py
+#: backend/apps/timeoff/providers.py backend/apps/timeoff/services.py
 #: employee_bot/bot/handlers/admin/approvals.py
 msgid "Approved"
 msgstr "Одобрено"
 
 #: backend/apps/attendance/models.py backend/apps/attendance/services.py
-#: backend/apps/finance/models.py backend/apps/members/models.py
+#: backend/apps/finance/models.py backend/apps/hr/models.py
+#: backend/apps/lifecycle/job_changes.py backend/apps/lifecycle/models.py
+#: backend/apps/lifecycle/providers.py backend/apps/members/models.py
 #: backend/apps/members/providers.py backend/apps/members/services.py
 #: backend/apps/timeoff/models.py backend/apps/timeoff/providers.py
 #: backend/apps/timeoff/services.py
@@ -4597,6 +4613,7 @@ msgstr "Вход без сканирования"
 
 #: backend/apps/attendance/notify.py backend/apps/attendance/providers.py
 #: backend/apps/finance/claims.py backend/apps/inventory/providers.py
+#: backend/apps/lifecycle/notify.py backend/apps/lifecycle/providers.py
 #: backend/apps/members/bot_messages.py backend/apps/members/notifications.py
 #: backend/apps/members/providers.py backend/apps/payroll/notify.py
 #: backend/apps/payroll/providers.py backend/apps/timeoff/bot_messages.py
@@ -4605,7 +4622,8 @@ msgid "Approve"
 msgstr "Одобрить"
 
 #: backend/apps/attendance/notify.py backend/apps/attendance/providers.py
-#: backend/apps/finance/claims.py backend/apps/members/bot_messages.py
+#: backend/apps/finance/claims.py backend/apps/lifecycle/notify.py
+#: backend/apps/lifecycle/providers.py backend/apps/members/bot_messages.py
 #: backend/apps/members/notifications.py backend/apps/members/providers.py
 #: backend/apps/payroll/notify.py backend/apps/payroll/providers.py
 #: backend/apps/timeoff/bot_messages.py backend/apps/timeoff/notifications.py
@@ -4920,7 +4938,8 @@ msgstr "Дата"
 
 #: backend/apps/attendance/providers.py backend/apps/attendance/reports.py
 #: backend/apps/attendance/t13.py backend/apps/davomat/importing.py
-#: backend/apps/members/providers.py backend/apps/payroll/providers.py
+#: backend/apps/hr/policies/exporters.py backend/apps/members/providers.py
+#: backend/apps/payroll/providers.py
 #: backend/apps/payroll/templates/payroll/payslip.html
 #: backend/apps/recognition/providers.py backend/apps/reports/hooks.py
 #: backend/apps/tasks/hooks.py backend/apps/timeoff/providers.py
@@ -5425,6 +5444,8 @@ msgid "Declined by %(name)s"
 msgstr "Отклонено: %(name)s"
 
 #: backend/apps/attendance/services.py backend/apps/learning/models.py
+#: backend/apps/lifecycle/models.py backend/apps/lifecycle/providers.py
+#: backend/apps/lifecycle/terminations.py
 msgid "Declined"
 msgstr "Отклонено"
 
@@ -5466,7 +5487,8 @@ msgid "The shift changed."
 msgstr "Смена изменилась."
 
 #: backend/apps/attendance/t13.py backend/apps/davomat/importing.py
-#: backend/apps/exports/build.py
+#: backend/apps/exports/build.py backend/apps/hr/hiring/bot.py
+#: backend/apps/hr/hiring/questions.py backend/apps/lifecycle/models.py
 msgid "No"
 msgstr "Нет"
 
@@ -6409,7 +6431,8 @@ msgid "%(name)s has left: take them back first."
 msgstr ""
 "%(name)s: сотрудник уже не работает. Сначала верните сотрудника на работу."
 
-#: backend/apps/davomat/importing.py backend/apps/members/models.py
+#: backend/apps/davomat/importing.py backend/apps/lifecycle/models.py
+#: backend/apps/lifecycle/terminations.py backend/apps/members/models.py
 #: backend/apps/members/providers.py
 msgid "Left"
 msgstr "Не в компании"
@@ -6420,7 +6443,8 @@ msgid "Active"
 msgstr "Активен"
 
 #: backend/apps/davomat/importing.py backend/apps/exports/build.py
-#: backend/apps/sales/queries.py
+#: backend/apps/hr/hiring/bot.py backend/apps/hr/hiring/questions.py
+#: backend/apps/lifecycle/models.py backend/apps/sales/queries.py
 msgid "Yes"
 msgstr "Да"
 
@@ -7994,7 +8018,8 @@ msgid "A day like 2026-10-20."
 msgstr "Дата в формате 2026-10-20."
 
 #: backend/apps/finance/filters.py backend/apps/finance/services.py
-#: backend/apps/payroll/runs.py backend/apps/payroll/services.py
+#: backend/apps/lifecycle/job_changes.py backend/apps/payroll/runs.py
+#: backend/apps/payroll/services.py
 msgid "Enter an amount of money."
 msgstr "Введите сумму."
 
@@ -8920,7 +8945,7 @@ msgstr "Для автоматического платежа нужен счёт
 msgid "An automatic payment needs a fixed amount."
 msgstr "Для автоматического платежа нужна фиксированная сумма."
 
-#: backend/apps/finance/recurring.py
+#: backend/apps/finance/recurring.py backend/apps/lifecycle/job_changes.py
 msgid "Pick the day it starts."
 msgstr "Выберите дату начала."
 
@@ -10139,6 +10164,565 @@ msgstr "Ещё окна без фармацевта: %(count)d"
 msgid "Add a qualified pharmacist to the roster."
 msgstr "Добавьте в график смен квалифицированного фармацевта."
 
+#: backend/apps/hr/hiring/actions.py
+msgid "Created a vacancy"
+msgstr "Создана вакансия"
+
+#: backend/apps/hr/hiring/actions.py
+msgid "Changed a vacancy"
+msgstr "Изменена вакансия"
+
+#: backend/apps/hr/hiring/actions.py
+msgid "Opened a vacancy to applicants"
+msgstr "Вакансия открыта для откликов"
+
+#: backend/apps/hr/hiring/actions.py
+msgid "Paused a vacancy"
+msgstr "Вакансия приостановлена"
+
+#: backend/apps/hr/hiring/actions.py
+msgid "Closed a vacancy"
+msgstr "Вакансия закрыта"
+
+#: backend/apps/hr/hiring/actions.py
+msgid "Deleted a vacancy"
+msgstr "Вакансия удалена"
+
+#: backend/apps/hr/hiring/actions.py
+msgid "Applied for a vacancy"
+msgstr "Отклик на вакансию"
+
+#: backend/apps/hr/hiring/actions.py
+msgid "Moved an applicant to another stage"
+msgstr "Кандидат переведён на другой этап"
+
+#: backend/apps/hr/hiring/actions.py
+msgid "Turned down an applicant"
+msgstr "Кандидату отказано"
+
+#: backend/apps/hr/hiring/actions.py
+msgid "Hired an applicant"
+msgstr "Кандидат нанят"
+
+#: backend/apps/hr/hiring/actions.py
+msgid "Added a note about an applicant"
+msgstr "Добавлена заметка о кандидате"
+
+#: backend/apps/hr/hiring/bot.py
+#, python-format
+msgid "at least %(amount)s"
+msgstr "от %(amount)s"
+
+#: backend/apps/hr/hiring/bot.py
+#, python-format
+msgid "up to %(amount)s"
+msgstr "до %(amount)s"
+
+#: backend/apps/hr/hiring/bot.py backend/apps/tasks/services.py
+#: owner_bot/ownerbot/invite.py
+#, python-format
+msgid "Branch: %(branch)s"
+msgstr "Филиал: %(branch)s"
+
+#: backend/apps/hr/hiring/bot.py
+#, python-format
+msgid "Salary: %(salary)s"
+msgstr "Зарплата: %(salary)s"
+
+#: backend/apps/hr/hiring/bot.py
+#, python-format
+msgid "To apply, answer %(count)d question and share your phone number."
+msgid_plural ""
+"To apply, answer %(count)d questions and share your phone number."
+msgstr[0] ""
+"Чтобы откликнуться, ответьте на %(count)d вопрос и поделитесь номером "
+"телефона."
+msgstr[1] ""
+"Чтобы откликнуться, ответьте на %(count)d вопроса и поделитесь номером "
+"телефона."
+msgstr[2] ""
+"Чтобы откликнуться, ответьте на %(count)d вопросов и поделитесь номером "
+"телефона."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "To apply, give your name and share your phone number."
+msgstr "Чтобы откликнуться, назовите имя и поделитесь номером телефона."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "Have a photo of your diploma or specialist certificate at hand."
+msgstr "Приготовьте фото диплома или сертификата специалиста."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "Apply"
+msgstr "Откликнуться"
+
+#: backend/apps/hr/hiring/bot.py
+#, python-format
+msgid "This vacancy takes applications from %(date)s."
+msgstr "Эта вакансия начнёт принимать отклики %(date)s."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "This vacancy isn't open yet. Try again later."
+msgstr "Эта вакансия ещё не открыта. Попробуйте позже."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "This vacancy is paused for now. Try again in a few days."
+msgstr "Эта вакансия пока приостановлена. Попробуйте через несколько дней."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "This vacancy is closed. Thank you for your interest."
+msgstr "Эта вакансия закрыта. Спасибо за интерес."
+
+#: backend/apps/hr/hiring/bot.py
+#, python-format
+msgid "You already work here: %(company)s. Ask your manager about this job."
+msgstr ""
+"Вы уже работаете здесь: %(company)s. Спросите об этой работе своего "
+"руководителя."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "You have sent several applications today. Try again tomorrow."
+msgstr "Сегодня вы уже отправили несколько откликов. Попробуйте завтра."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "This vacancy link is invalid. Ask the company for a new one."
+msgstr "Ссылка на вакансию недействительна. Попросите у компании новую."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "What is your name? Type your first and last name."
+msgstr "Как вас зовут? Напишите имя и фамилию."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "Or tap your name below if it is right."
+msgstr "Или нажмите на имя ниже, если оно верное."
+
+#: backend/apps/hr/hiring/bot.py
+msgid ""
+"Please type your first and last name in letters, for example: Aziza Karimova."
+msgstr "Напишите имя и фамилию буквами, например: Азиза Каримова."
+
+#: backend/apps/hr/hiring/bot.py
+#, python-format
+msgid "Question %(number)d of %(count)d"
+msgstr "Вопрос %(number)d из %(count)d"
+
+#: backend/apps/hr/hiring/bot.py
+msgid "Answer with a number."
+msgstr "Ответьте числом."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "Type your answer."
+msgstr "Напишите ответ."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "Skip"
+msgstr "Пропустить"
+
+#: backend/apps/hr/hiring/bot.py
+msgid "Please answer with the buttons above."
+msgstr "Ответьте кнопками выше."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "Please answer with a number, for example: 3."
+msgstr "Ответьте числом, например: 3."
+
+#: backend/apps/hr/hiring/bot.py
+#, python-format
+msgid "Please type your answer in one message, up to %(count)d characters."
+msgstr "Напишите ответ одним сообщением, до %(count)d символов."
+
+#: backend/apps/hr/hiring/bot.py
+msgid ""
+"Share your phone number with the button below, so the company can call you."
+msgstr ""
+"Поделитесь номером телефона кнопкой ниже, чтобы компания могла вам позвонить."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "To stop, send /cancel."
+msgstr "Чтобы остановиться, отправьте /cancel."
+
+#: backend/apps/hr/hiring/bot.py backend/apps/members/bot_messages.py
+msgid "Share my phone number"
+msgstr "Поделиться номером"
+
+#: backend/apps/hr/hiring/bot.py
+msgid "Please tap the button below to share your phone number."
+msgstr "Нажмите кнопку ниже, чтобы поделиться номером телефона."
+
+#: backend/apps/hr/hiring/bot.py backend/apps/members/bot_messages.py
+msgid "Please share your own phone number with the button below."
+msgstr "Пожалуйста, поделитесь своим номером кнопкой ниже."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "Thank you, your phone number is saved."
+msgstr "Спасибо, ваш номер телефона сохранён."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "Send a photo of your diploma or specialist certificate."
+msgstr "Отправьте фото диплома или сертификата специалиста."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "No photo at hand? Tap Skip, and bring the document to the interview."
+msgstr ""
+"Нет фото под рукой? Нажмите «Пропустить» и принесите документ на "
+"собеседование."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "Please send the document as a photo, or tap Skip."
+msgstr "Отправьте документ фотографией или нажмите «Пропустить»."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "<b>Check your application</b>"
+msgstr "<b>Проверьте отклик</b>"
+
+#: backend/apps/hr/hiring/bot.py
+#, python-format
+msgid "Vacancy: %(title)s"
+msgstr "Вакансия: %(title)s"
+
+#: backend/apps/hr/hiring/bot.py backend/apps/members/bot_messages.py
+#: owner_bot/ownerbot/bot_messages.py
+#, python-format
+msgid "Name: %(name)s"
+msgstr "Имя: %(name)s"
+
+#: backend/apps/hr/hiring/bot.py backend/apps/members/bot_messages.py
+#, python-format
+msgid "Phone: %(phone)s"
+msgstr "Телефон: %(phone)s"
+
+#: backend/apps/hr/hiring/bot.py
+msgid "Document photo: attached"
+msgstr "Фото документа: приложено"
+
+#: backend/apps/hr/hiring/bot.py
+msgid "Document photo: not sent"
+msgstr "Фото документа: не отправлено"
+
+#: backend/apps/hr/hiring/bot.py
+msgid "Send application"
+msgstr "Отправить отклик"
+
+#: backend/apps/hr/hiring/bot.py
+msgid "Thank you! Your application is sent."
+msgstr "Спасибо! Ваш отклик отправлен."
+
+#: backend/apps/hr/hiring/bot.py backend/apps/members/bot_messages.py
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "Company: %(company)s"
+msgstr "Компания: %(company)s"
+
+#: backend/apps/hr/hiring/bot.py
+msgid "We'll write to you here as soon as there is news."
+msgstr "Как только будут новости, мы напишем вам здесь."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "Application cancelled. To apply again, open the vacancy link."
+msgstr "Отклик отменён. Чтобы откликнуться снова, откройте ссылку на вакансию."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "This button is no longer active."
+msgstr "Эта кнопка больше не действует."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "received, waiting to be reviewed"
+msgstr "получен, ждёт рассмотрения"
+
+#: backend/apps/hr/hiring/bot.py
+msgid "being reviewed"
+msgstr "на рассмотрении"
+
+#: backend/apps/hr/hiring/bot.py
+msgid "invited to an interview"
+msgstr "вы приглашены на собеседование"
+
+#: backend/apps/hr/hiring/bot.py
+msgid "an offer is being prepared"
+msgstr "для вас готовится предложение"
+
+#: backend/apps/hr/hiring/bot.py
+msgid "hired"
+msgstr "вас приняли на работу"
+
+#: backend/apps/hr/hiring/bot.py
+msgid "not selected this time"
+msgstr "в этот раз выбор пал на другого кандидата"
+
+#: backend/apps/hr/hiring/bot.py backend/apps/hr/hiring/services.py
+msgid "You have already applied for this vacancy."
+msgstr "Вы уже откликнулись на эту вакансию."
+
+#: backend/apps/hr/hiring/bot.py
+#, python-format
+msgid "Sent: %(date)s"
+msgstr "Отправлен: %(date)s"
+
+#: backend/apps/hr/hiring/bot.py backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "Status: %(status)s"
+msgstr "Статус: %(status)s"
+
+#: backend/apps/hr/hiring/bot.py
+#, python-format
+msgid "<b>%(company)s</b> invites you to an interview."
+msgstr "<b>%(company)s</b> приглашает вас на собеседование."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "They will call you to agree on the time."
+msgstr "Вам позвонят, чтобы договориться о времени."
+
+#: backend/apps/hr/hiring/bot.py
+#, python-format
+msgid "<b>%(company)s</b> would like to offer you the job."
+msgstr "<b>%(company)s</b> хочет предложить вам работу."
+
+#: backend/apps/hr/hiring/bot.py
+#, python-format
+msgid "Thank you for applying to <b>%(company)s</b>."
+msgstr "<b>%(company)s</b>: спасибо за ваш отклик."
+
+#: backend/apps/hr/hiring/bot.py
+msgid "This time the company chose another candidate. We wish you success."
+msgstr "В этот раз компания выбрала другого кандидата. Желаем вам успехов."
+
+#: backend/apps/hr/hiring/bot.py
+#, python-format
+msgid "Congratulations! <b>%(company)s</b> is hiring you."
+msgstr "Поздравляем! <b>%(company)s</b> берёт вас на работу."
+
+#: backend/apps/hr/hiring/bot.py
+#, python-format
+msgid "A message from <b>%(company)s</b> about your application."
+msgstr "<b>%(company)s</b>: сообщение по вашему отклику."
+
+#: backend/apps/hr/hiring/bot.py
+#, python-format
+msgid "New applicant: %(name)s"
+msgstr "Новый кандидат: %(name)s"
+
+#: backend/apps/hr/hiring/bot.py
+msgid "Came through the QR code."
+msgstr "Отклик по QR-коду."
+
+#: backend/apps/hr/hiring/hooks.py
+msgid "New applicants for vacancies"
+msgstr "Новые кандидаты на вакансии"
+
+#: backend/apps/hr/hiring/queries.py
+msgid "Any branch"
+msgstr "Любой филиал"
+
+#: backend/apps/hr/hiring/questions.py
+msgid "Send the questions as a list."
+msgstr "Отправьте вопросы списком."
+
+#: backend/apps/hr/hiring/questions.py
+#, python-format
+msgid "A vacancy can ask at most %(count)d questions."
+msgstr "В вакансии может быть не больше %(count)d вопросов."
+
+#: backend/apps/hr/hiring/questions.py
+#, python-format
+msgid "Question %(number)d is not filled in."
+msgstr "Вопрос %(number)d не заполнен."
+
+#: backend/apps/hr/hiring/questions.py
+#, python-format
+msgid "Question %(number)d has no text."
+msgstr "У вопроса %(number)d нет текста."
+
+#: backend/apps/hr/hiring/questions.py
+#, python-format
+msgid "Question %(number)d is longer than %(count)d characters."
+msgstr "Вопрос %(number)d длиннее %(count)d символов."
+
+#: backend/apps/hr/hiring/questions.py
+#, python-format
+msgid "Question %(number)d has an unknown kind."
+msgstr "У вопроса %(number)d неизвестный тип ответа."
+
+#: backend/apps/hr/hiring/questions.py
+#, python-format
+msgid "Question %(number)d needs at least two options."
+msgstr "Вопросу %(number)d нужны минимум два варианта."
+
+#: backend/apps/hr/hiring/questions.py
+#, python-format
+msgid "Question %(number)d can have at most %(count)d options."
+msgstr "В вопросе %(number)d может быть не больше %(count)d вариантов."
+
+#: backend/apps/hr/hiring/questions.py
+#, python-format
+msgid "An option of question %(number)d is longer than %(count)d characters."
+msgstr "Вариант в вопросе %(number)d длиннее %(count)d символов."
+
+#: backend/apps/hr/hiring/questions.py
+#, python-format
+msgid "Question %(number)d has the same option twice."
+msgstr "В вопросе %(number)d один вариант повторяется."
+
+#: backend/apps/hr/hiring/services.py
+msgid "Give the vacancy a title."
+msgstr "Дайте вакансии название."
+
+#: backend/apps/hr/hiring/services.py
+msgid "A vacancy can be opened, paused or closed."
+msgstr "Вакансию можно открыть, приостановить или закрыть."
+
+#: backend/apps/hr/hiring/services.py
+msgid "Only an open vacancy can be paused."
+msgstr "Приостановить можно только открытую вакансию."
+
+#: backend/apps/hr/hiring/services.py
+msgid "People applied for this vacancy. Close it instead."
+msgstr "На эту вакансию уже откликнулись. Закройте её вместо удаления."
+
+#: backend/apps/hr/hiring/services.py
+#, python-format
+msgid "A title can be at most %(count)d characters."
+msgstr "Название может быть не длиннее %(count)d символов."
+
+#: backend/apps/hr/hiring/services.py
+#, python-format
+msgid "A description can be at most %(count)d characters."
+msgstr "Описание может быть не длиннее %(count)d символов."
+
+#: backend/apps/hr/hiring/services.py backend/apps/hr/owner_api.py
+#: backend/apps/hr/services.py backend/apps/lifecycle/job_changes.py
+#: backend/apps/members/join_links.py backend/apps/members/owner_api.py
+#: backend/apps/members/services.py
+msgid "Pick a position of this company."
+msgstr "Выберите должность этой компании."
+
+#: backend/apps/hr/hiring/services.py
+msgid "You can only choose the branches you manage."
+msgstr "Можно выбирать только филиалы, которыми вы управляете."
+
+#: backend/apps/hr/hiring/services.py
+msgid "Give the salary as a positive amount."
+msgstr "Укажите зарплату положительной суммой."
+
+#: backend/apps/hr/hiring/services.py backend/apps/members/join_links.py
+msgid "Choose one of your branches."
+msgstr "Выберите один из своих филиалов."
+
+#: backend/apps/hr/hiring/services.py
+msgid "The salary's upper end can't be below its lower end."
+msgstr "Верхняя граница зарплаты не может быть ниже нижней."
+
+#: backend/apps/hr/hiring/services.py
+msgid "The last day to apply can't come before the first."
+msgstr "Последний день приёма откликов не может быть раньше первого."
+
+#: backend/apps/hr/hiring/services.py
+msgid "The last day to apply can't be in the past."
+msgstr "Последний день приёма откликов не может быть в прошлом."
+
+#: backend/apps/hr/hiring/services.py
+msgid "The last day to apply has passed. Change it to open the vacancy."
+msgstr ""
+"Последний день приёма откликов прошёл. Измените его, чтобы открыть вакансию."
+
+#: backend/apps/hr/hiring/services.py
+msgid "Use Hire to hire someone: it adds them to the team."
+msgstr "Чтобы нанять, используйте «Нанять»: это добавит человека в команду."
+
+#: backend/apps/hr/hiring/services.py
+msgid "Use Reject to turn someone down, with the reason."
+msgstr "Чтобы отказать, используйте «Отказать» и укажите причину."
+
+#: backend/apps/hr/hiring/services.py
+msgid "Pick a stage of the pipeline."
+msgstr "Выберите один из этапов."
+
+#: backend/apps/hr/hiring/services.py
+#, python-format
+msgid "%(name)s is already hired."
+msgstr "Кандидат уже нанят: %(name)s."
+
+#: backend/apps/hr/hiring/services.py
+msgid "Say why, for the team."
+msgstr "Укажите причину для команды."
+
+#: backend/apps/hr/hiring/services.py
+#, python-format
+msgid "A reason can be at most %(count)d characters."
+msgstr "Причина может быть не длиннее %(count)d символов."
+
+#: backend/apps/hr/hiring/services.py
+#, python-format
+msgid "%(name)s was already turned down."
+msgstr "Кандидату уже отказано: %(name)s."
+
+#: backend/apps/hr/hiring/services.py
+#, python-format
+msgid "%(name)s was turned down. Move them back to the pipeline first."
+msgstr "Кандидату отказано: %(name)s. Сначала верните его в отбор."
+
+#: backend/apps/hr/hiring/services.py
+#, python-format
+msgid "%(name)s's Telegram account is gone, so they can't join."
+msgstr ""
+"Аккаунта Telegram больше нет, поэтому кандидат не может вступить: %(name)s."
+
+#: backend/apps/hr/hiring/services.py
+msgid "The vacancy's position is no longer used. Choose another one first."
+msgstr "Должность вакансии больше не используется. Сначала выберите другую."
+
+#: backend/apps/hr/hiring/services.py
+#, python-format
+msgid "Choose the branch where %(name)s will work."
+msgstr "Выберите филиал, где будет работать: %(name)s."
+
+#: backend/apps/hr/hiring/services.py
+#, python-format
+msgid "%(name)s already works here."
+msgstr "Уже работает здесь: %(name)s."
+
+#: backend/apps/hr/hiring/services.py
+#, python-format
+msgid "%(name)s is blocked in this company."
+msgstr "Доступ в этой компании заблокирован: %(name)s."
+
+#: backend/apps/hr/hiring/services.py
+#, python-format
+msgid "%(name)s was turned down as a member recently and can join again later."
+msgstr ""
+"Недавно заявке на вступление было отказано, вступить можно будет позже: "
+"%(name)s."
+
+#: backend/apps/hr/hiring/services.py
+msgid ""
+"Hiring adds a person to the team, which needs the right to approve join "
+"requests."
+msgstr ""
+"Найм добавляет человека в команду, для этого нужно право одобрять заявки на "
+"вступление."
+
+#: backend/apps/hr/hiring/services.py
+#, python-format
+msgid ""
+"This position comes with the «%(role)s» access, which only someone holding "
+"all of its permissions can give. Ask an owner to hire."
+msgstr ""
+"С этой должностью выдаётся доступ «%(role)s», который может дать только тот, "
+"у кого есть все его права. Попросите владельца нанять."
+
+#: backend/apps/hr/hiring/services.py
+msgid "Write the note first."
+msgstr "Сначала напишите заметку."
+
+#: backend/apps/hr/hiring/services.py
+#, python-format
+msgid "A note can be at most %(count)d characters."
+msgstr "Заметка может быть не длиннее %(count)d символов."
+
+#: backend/apps/hr/hiring/services.py
+#, python-format
+msgid "A message can be at most %(count)d characters."
+msgstr "Сообщение может быть не длиннее %(count)d символов."
+
 #: backend/apps/hr/hooks.py
 msgid "A pharmacy open without a qualified pharmacist"
 msgstr "Аптека открыта без квалифицированного фармацевта"
@@ -10394,6 +10978,71 @@ msgstr "День рождения"
 msgid "Work anniversary"
 msgstr "Трудовой юбилей"
 
+#: backend/apps/hr/models.py
+msgid "Text"
+msgstr "Текст"
+
+#: backend/apps/hr/models.py
+msgid "Choice"
+msgstr "Выбор"
+
+#: backend/apps/hr/models.py
+msgid "Yes or no"
+msgstr "Да или нет"
+
+#: backend/apps/hr/models.py backend/apps/learning/models.py
+msgid "Number"
+msgstr "Число"
+
+#: backend/apps/hr/models.py backend/apps/learning/models.py
+msgid "Paused"
+msgstr "Приостановлена"
+
+#: backend/apps/hr/models.py
+msgid "Screening"
+msgstr "Отбор"
+
+#: backend/apps/hr/models.py
+msgid "Interview"
+msgstr "Собеседование"
+
+#: backend/apps/hr/models.py
+msgid "Offer"
+msgstr "Предложение"
+
+#: backend/apps/hr/models.py
+msgid "Hired"
+msgstr "Нанят"
+
+#: backend/apps/hr/models.py
+msgid "Link"
+msgstr "Ссылка"
+
+#: backend/apps/hr/models.py
+msgid "QR code"
+msgstr "QR-код"
+
+#: backend/apps/hr/models.py backend/apps/inventory/models.py
+#: backend/apps/lifecycle/models.py
+msgid "Applied"
+msgstr "Проведено"
+
+#: backend/apps/hr/models.py
+msgid "Dispensing"
+msgstr "Отпуск препаратов"
+
+#: backend/apps/hr/models.py
+msgid "Storage"
+msgstr "Хранение"
+
+#: backend/apps/hr/models.py backend/apps/lifecycle/models.py
+msgid "Safety"
+msgstr "Безопасность"
+
+#: backend/apps/hr/models.py backend/apps/lifecycle/models.py
+msgid "Conduct"
+msgstr "Поведение"
+
 #: backend/apps/hr/owner_api.py
 msgid "Pick at most a year, ending after it starts."
 msgstr "Выберите не больше года; конец должен быть позже начала."
@@ -10401,12 +11050,6 @@ msgstr "Выберите не больше года; конец должен б�
 #: backend/apps/hr/owner_api.py
 msgid "Pick at most 62 days, ending after it starts."
 msgstr "Выберите не больше 62 дней; последний день — не раньше первого."
-
-#: backend/apps/hr/owner_api.py backend/apps/hr/services.py
-#: backend/apps/members/join_links.py backend/apps/members/owner_api.py
-#: backend/apps/members/services.py
-msgid "Pick a position of this company."
-msgstr "Выберите должность этой компании."
 
 #: backend/apps/hr/owner_api.py backend/apps/hr/services.py
 msgid "Pick a kind of document."
@@ -10423,6 +11066,254 @@ msgstr "Укажите дату начала договора."
 #: backend/apps/hr/owner_api.py backend/apps/hr/services.py
 msgid "Pick a contract template."
 msgstr "Выберите шаблон договора."
+
+#: backend/apps/hr/policies/api.py
+msgid "This policy has no file."
+msgstr "К этому правилу файл не приложен."
+
+#: backend/apps/hr/policies/audit_actions.py
+msgid "Created a policy"
+msgstr "Создано правило"
+
+#: backend/apps/hr/policies/audit_actions.py
+msgid "Changed a policy"
+msgstr "Изменено правило"
+
+#: backend/apps/hr/policies/audit_actions.py
+msgid "Archived a policy"
+msgstr "Правило перенесено в архив"
+
+#: backend/apps/hr/policies/audit_actions.py
+msgid "Restored a policy"
+msgstr "Правило восстановлено из архива"
+
+#: backend/apps/hr/policies/audit_actions.py
+msgid "Deleted a policy that was never published"
+msgstr "Удалено неопубликованное правило"
+
+#: backend/apps/hr/policies/audit_actions.py
+msgid "Saved a policy draft"
+msgstr "Сохранён черновик правила"
+
+#: backend/apps/hr/policies/audit_actions.py
+msgid "Discarded a policy draft"
+msgstr "Удалён черновик правила"
+
+#: backend/apps/hr/policies/audit_actions.py
+msgid "Published a policy version"
+msgstr "Опубликована версия правила"
+
+#: backend/apps/hr/policies/audit_actions.py
+msgid "Reminded people to sign a policy"
+msgstr "Отправлено напоминание о подписи правила"
+
+#: backend/apps/hr/policies/audit_actions.py
+msgid "Read and signed a policy"
+msgstr "Правило прочитано и подписано"
+
+#. Translators: %(title)s is a policy's name, e.g. "Dori berish qoidalari".
+#: backend/apps/hr/policies/bot_messages.py
+#, python-format
+msgid "New version to read and sign: %(title)s"
+msgstr "Новая версия для подписи: %(title)s"
+
+#: backend/apps/hr/policies/bot_messages.py
+#, python-format
+msgid "Rules to read and sign: %(title)s"
+msgstr "Нужно прочитать и подписать: %(title)s"
+
+#: backend/apps/hr/policies/bot_messages.py
+#, python-format
+msgid "Read them in the app and sign by %(date)s."
+msgstr "Прочитайте в приложении и подпишите до %(date)s."
+
+#: backend/apps/hr/policies/bot_messages.py
+#, python-format
+msgid "Rules to read and sign: %(count)d"
+msgstr "Правила для подписи: %(count)d"
+
+#: backend/apps/hr/policies/bot_messages.py
+#, python-format
+msgid "And %(count)d more"
+msgstr "И ещё %(count)d"
+
+#: backend/apps/hr/policies/bot_messages.py
+#, python-format
+msgid "New rules to read: %(title)s"
+msgstr "Новые правила для ознакомления: %(title)s"
+
+#: backend/apps/hr/policies/bot_messages.py
+msgid "Read them in the app."
+msgstr "Прочитайте их в приложении."
+
+#: backend/apps/hr/policies/bot_messages.py
+#, python-format
+msgid "Still waiting for your signature: %(title)s"
+msgstr "Ждём вашу подпись: %(title)s"
+
+#: backend/apps/hr/policies/bot_messages.py
+#, python-format
+msgid "Last day to sign: %(title)s"
+msgstr "Последний день для подписи: %(title)s"
+
+#: backend/apps/hr/policies/bot_messages.py
+#, python-format
+msgid "Sign by tomorrow: %(title)s"
+msgstr "Подпишите до завтра: %(title)s"
+
+#: backend/apps/hr/policies/bot_messages.py
+#, python-format
+msgid "Please read and sign: %(title)s"
+msgstr "Пожалуйста, прочитайте и подпишите: %(title)s"
+
+#: backend/apps/hr/policies/bot_messages.py
+#, python-format
+msgid "The deadline was %(date)s. Read them in the app and sign."
+msgstr "Срок истёк %(date)s. Прочитайте в приложении и подпишите."
+
+#: backend/apps/hr/policies/bot_messages.py
+#, python-format
+msgid "Not signed in time: %(title)s"
+msgstr "Не подписано вовремя: %(title)s"
+
+#: backend/apps/hr/policies/bot_messages.py
+#, python-format
+msgid "Deadline: %(date)s"
+msgstr "Срок: %(date)s"
+
+#: backend/apps/hr/policies/exporters.py
+msgid "Policy"
+msgstr "Правило"
+
+#: backend/apps/hr/policies/exporters.py
+msgid "Version"
+msgstr "Версия"
+
+#: backend/apps/hr/policies/exporters.py
+msgid "Asked"
+msgstr "Запрошено"
+
+#: backend/apps/hr/policies/exporters.py
+msgid "Sign by"
+msgstr "Подписать до"
+
+#: backend/apps/hr/policies/exporters.py
+msgid "Signed"
+msgstr "Подписано"
+
+#: backend/apps/hr/policies/exporters.py
+msgid "Version signed"
+msgstr "Подписанная версия"
+
+#: backend/apps/hr/policies/exporters.py
+msgid "Last reminder"
+msgstr "Последнее напоминание"
+
+#: backend/apps/hr/policies/exporters.py
+msgid "Waiting for a signature"
+msgstr "Ожидает подписи"
+
+#: backend/apps/hr/policies/exporters.py
+msgid "Signature overdue"
+msgstr "Подпись просрочена"
+
+#: backend/apps/hr/policies/hooks.py
+msgid "Policy signatures"
+msgstr "Подписи под правилами"
+
+#: backend/apps/hr/policies/hooks.py
+msgid "Rules to read and sign"
+msgstr "Правила для ознакомления и подписи"
+
+#: backend/apps/hr/policies/hooks.py
+msgid "Rules not signed in time"
+msgstr "Правила, не подписанные вовремя"
+
+#: backend/apps/hr/policies/owner_api.py backend/apps/hr/policies/services.py
+msgid "Give the policy a title."
+msgstr "Укажите название правила."
+
+#: backend/apps/hr/policies/queries.py
+#, python-format
+msgid "Version %(number)d"
+msgstr "Версия %(number)d"
+
+#: backend/apps/hr/policies/queries.py backend/apps/learning/models.py
+msgid "Archived"
+msgstr "В архиве"
+
+#: backend/apps/hr/policies/services.py
+msgid "A published policy can't be deleted. Archive it instead."
+msgstr "Опубликованное правило нельзя удалить. Перенесите его в архив."
+
+#: backend/apps/hr/policies/services.py
+msgid "There is no draft to discard."
+msgstr "Черновика нет."
+
+#: backend/apps/hr/policies/services.py
+msgid "This policy is archived. Restore it first."
+msgstr "Правило в архиве. Сначала восстановите его."
+
+#: backend/apps/hr/policies/services.py
+msgid "There is nothing new to publish. Save a draft first."
+msgstr "Публиковать нечего. Сначала сохраните черновик."
+
+#: backend/apps/hr/policies/services.py
+msgid "Write the text or attach the file before publishing."
+msgstr "Перед публикацией напишите текст или приложите файл."
+
+#: backend/apps/hr/policies/services.py
+msgid "Your access is paused, so you can't sign now."
+msgstr "Ваш доступ приостановлен, поэтому подписать сейчас нельзя."
+
+#: backend/apps/hr/policies/services.py
+msgid "This policy isn't one of yours."
+msgstr "Это правило к вам не относится."
+
+#: backend/apps/hr/policies/services.py
+msgid "This policy isn't in force."
+msgstr "Это правило не действует."
+
+#: backend/apps/hr/policies/services.py
+msgid "This policy asks no signature: reading it is enough."
+msgstr "Подпись не требуется: достаточно прочитать."
+
+#: backend/apps/hr/policies/services.py
+msgid "A newer version came out. Read it and sign that one."
+msgstr "Вышла новая версия. Прочитайте и подпишите её."
+
+#: backend/apps/hr/policies/services.py
+msgid "Nobody owes a signature for this policy."
+msgstr "По этому правилу никто не должен ставить подпись."
+
+#: backend/apps/hr/policies/services.py
+msgid "Everyone here has signed."
+msgstr "Все уже подписали."
+
+#: backend/apps/hr/policies/services.py
+msgid "They were reminded a few hours ago. Give them some time."
+msgstr "Им напомнили несколько часов назад. Дайте им время."
+
+#: backend/apps/hr/policies/services.py
+msgid "Give the number of days to sign in."
+msgstr "Укажите, за сколько дней нужно подписать."
+
+#: backend/apps/hr/policies/services.py
+#, python-format
+msgid "People sign within 1 to %(max)d days."
+msgstr "Срок подписи: от 1 до %(max)d дней."
+
+#: backend/apps/hr/policies/services.py
+msgid "Pick the branches this policy is for, among the ones you manage."
+msgstr "Выберите филиалы для правила из тех, которыми вы управляете."
+
+#: backend/apps/hr/policies/services.py
+msgid "The text is too long. Attach a long document as the file."
+msgstr "Текст слишком длинный. Приложите длинный документ файлом."
+
+#: backend/apps/hr/policies/services.py
+msgid "This policy reaches branches you don't manage."
+msgstr "Правило касается филиалов, которыми вы не управляете."
 
 #: backend/apps/hr/printing.py
 msgid "The contract's text is too long."
@@ -11944,10 +12835,6 @@ msgstr "Идёт подсчёт"
 #: backend/apps/inventory/templates/inventory/controlled_register.html
 msgid "Counted"
 msgstr "Подсчитано"
-
-#: backend/apps/inventory/models.py
-msgid "Applied"
-msgstr "Проведено"
 
 #: backend/apps/inventory/models.py
 msgid "Never shown to counters."
@@ -14234,10 +15121,6 @@ msgid "Published"
 msgstr "Опубликовано"
 
 #: backend/apps/learning/models.py
-msgid "Archived"
-msgstr "В архиве"
-
-#: backend/apps/learning/models.py
 msgid "A video counts as watched once this share of it was played."
 msgstr "Видео считается просмотренным, когда проиграна такая его часть."
 
@@ -14342,10 +15225,6 @@ msgstr "Сопоставить пары"
 #: backend/apps/learning/models.py
 msgid "Type the answer"
 msgstr "Ввести ответ"
-
-#: backend/apps/learning/models.py
-msgid "Number"
-msgstr "Число"
 
 #: backend/apps/learning/models.py
 msgid "Easy"
@@ -14481,10 +15360,6 @@ msgid ""
 msgstr ""
 "Секунды просмотра по дням компании за последние 60 дней: {ГГГГ-ММ-ДД: "
 "секунды}."
-
-#: backend/apps/learning/models.py
-msgid "Paused"
-msgstr "Приостановлена"
 
 #: backend/apps/learning/models.py
 msgid "0 is Monday (weekly checks)."
@@ -15033,6 +15908,17 @@ msgstr ""
 "Дисциплина кратко: предупреждения и выговоры за период по видам и причинам, "
 "ещё действующие, неподтверждённые, и кто отстранён и до какого числа"
 
+#: backend/apps/lifecycle/ai_tools.py
+msgid ""
+"Leaving and job changes at a glance: requests to leave waiting, last working "
+"days to come with their handover, who left in the last 90 days, job changes "
+"waiting for approval and coming (names and days, never reasons, notes or pay)"
+msgstr ""
+"Увольнения и кадровые изменения кратко: ждущие заявления об уходе, "
+"предстоящие последние рабочие дни с передачей дел, уволившиеся за последние "
+"90 дней, кадровые изменения на утверждении и предстоящие (имена и даты, без "
+"причин, заметок и оплаты)"
+
 #: backend/apps/lifecycle/audit_actions.py
 msgid "Gave a disciplinary record"
 msgstr "Вынесено дисциплинарное взыскание"
@@ -15061,6 +15947,66 @@ msgstr "Написана объяснительная"
 msgid "Proposed a fine with a record"
 msgstr "Предложен штраф к взысканию"
 
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Asked to leave"
+msgstr "Подано заявление об уходе"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Started someone's leaving"
+msgstr "Оформлено увольнение"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Agreed a last working day"
+msgstr "Согласован последний рабочий день"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Declined a request to leave"
+msgstr "Отклонено заявление об уходе"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Withdrew a leaving"
+msgstr "Отменено увольнение"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Changed the details of a leaving"
+msgstr "Изменены детали увольнения"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Left on the agreed last day"
+msgstr "Увольнение в согласованный последний день"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Changed the handover list"
+msgstr "Изменён список передачи дел"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Answered the exit questions"
+msgstr "Даны ответы перед уходом"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Proposed a job change"
+msgstr "Предложено кадровое изменение"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Approved a job change"
+msgstr "Утверждено кадровое изменение"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Rejected a job change"
+msgstr "Отклонено кадровое изменение"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Cancelled a job change"
+msgstr "Отменено кадровое изменение"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "A job change took effect"
+msgstr "Кадровое изменение вступило в силу"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "A job change couldn't take effect"
+msgstr "Кадровое изменение не вступило в силу"
+
 #. Translators: %(category)s is what it is about, e.g. "Storage conditions
 #. breached".
 #: backend/apps/lifecycle/bot_messages.py
@@ -15078,6 +16024,192 @@ msgstr ""
 msgid "Explanation from: %(name)s"
 msgstr "Объяснительная. Автор: %(name)s"
 
+#. Translators: %(name)s is a person's name; it stands alone after the colon.
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Asks to leave: %(name)s"
+msgstr "Заявление об уходе: %(name)s"
+
+#: backend/apps/lifecycle/bot_messages.py backend/apps/lifecycle/providers.py
+#, python-format
+msgid "Last working day asked for: %(date)s"
+msgstr "Желаемый последний рабочий день: %(date)s"
+
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Notice: %(count)d day"
+msgid_plural "Notice: %(count)d days"
+msgstr[0] "Срок предупреждения: %(count)d день"
+msgstr[1] "Срок предупреждения: %(count)d дня"
+msgstr[2] "Срок предупреждения: %(count)d дней"
+
+#: backend/apps/lifecycle/bot_messages.py backend/apps/tasks/services.py
+#: backend/apps/timeoff/bot_messages.py
+#, python-format
+msgid "Reason: %(reason)s"
+msgstr "Причина: %(reason)s"
+
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Stays after all: %(name)s"
+msgstr "Остаётся в компании: %(name)s"
+
+#: backend/apps/lifecycle/bot_messages.py
+msgid "They withdrew their request to leave."
+msgstr "Сотрудник отозвал заявление об уходе."
+
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Has left: %(name)s"
+msgstr "Увольнение завершено: %(name)s"
+
+#: backend/apps/lifecycle/bot_messages.py backend/apps/payroll/notify.py
+#: backend/apps/payroll/payslip_pdf.py
+#, python-format
+msgid "Last working day: %(date)s"
+msgstr "Последний рабочий день: %(date)s"
+
+#: backend/apps/lifecycle/bot_messages.py
+msgid "The final payslip is waiting in Payroll to be checked."
+msgstr "Окончательный расчёт ждёт проверки в «Зарплате»."
+
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Still not handed over: %(count)d item."
+msgid_plural "Still not handed over: %(count)d items."
+msgstr[0] "Ещё не передано: %(count)d пункт."
+msgstr[1] "Ещё не передано: %(count)d пункта."
+msgstr[2] "Ещё не передано: %(count)d пунктов."
+
+#: backend/apps/lifecycle/bot_messages.py
+msgid "Everything on the handover list was handed over."
+msgstr "Всё из списка передачи дел передано."
+
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Last working day today: %(name)s"
+msgstr "Сегодня последний рабочий день: %(name)s"
+
+#: backend/apps/lifecycle/bot_messages.py backend/apps/lifecycle/providers.py
+#, python-format
+msgid "Handed over: %(done)s. Still open: %(open)s."
+msgstr "Передано: %(done)s. Осталось: %(open)s."
+
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Leaving not completed: %(name)s"
+msgstr "Увольнение не завершено: %(name)s"
+
+#: backend/apps/lifecycle/bot_messages.py
+msgid "Open it and press Try again."
+msgstr "Откройте и нажмите «Повторить»."
+
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Your last working day: %(date)s"
+msgstr "Ваш последний рабочий день: %(date)s"
+
+#: backend/apps/lifecycle/bot_messages.py
+msgid ""
+"Hand over what you hold before then: the list is in the app. Thank you for "
+"your work."
+msgstr ""
+"До этого дня передайте то, что у вас на руках: список в приложении. Спасибо "
+"за вашу работу."
+
+#: backend/apps/lifecycle/bot_messages.py
+msgid "Your request to leave was declined"
+msgstr "Ваше заявление об уходе отклонено"
+
+#: backend/apps/lifecycle/bot_messages.py
+msgid "Talk to your manager if you have questions."
+msgstr "Если есть вопросы, поговорите с руководителем."
+
+#: backend/apps/lifecycle/bot_messages.py
+msgid "Your leaving is called off"
+msgstr "Ваше увольнение отменено"
+
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Position: %(now)s (was: %(was)s)"
+msgstr "Должность: %(now)s (было: %(was)s)"
+
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Branch: %(now)s (was: %(was)s)"
+msgstr "Филиал: %(now)s (было: %(was)s)"
+
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Department: %(now)s (was: %(was)s)"
+msgstr "Отдел: %(now)s (было: %(was)s)"
+
+#: backend/apps/lifecycle/bot_messages.py
+msgid "The pay changes too."
+msgstr "Меняется и оплата."
+
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Job change to approve: %(name)s"
+msgstr "Кадровое изменение на утверждение: %(name)s"
+
+#: backend/apps/lifecycle/bot_messages.py backend/apps/lifecycle/providers.py
+#, python-format
+msgid "Starts: %(date)s"
+msgstr "Начало: %(date)s"
+
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Job change rejected: %(name)s"
+msgstr "Кадровое изменение отклонено: %(name)s"
+
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Job change cancelled: %(name)s"
+msgstr "Кадровое изменение отменено: %(name)s"
+
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Job change approved: %(name)s"
+msgstr "Кадровое изменение утверждено: %(name)s"
+
+#: backend/apps/lifecycle/bot_messages.py
+msgid "It has taken effect."
+msgstr "Изменение вступило в силу."
+
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Job change not applied: %(name)s"
+msgstr "Кадровое изменение не применено: %(name)s"
+
+#: backend/apps/lifecycle/bot_messages.py
+msgid "Your job has changed"
+msgstr "Ваша должность изменилась"
+
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "From: %(date)s"
+msgstr "С: %(date)s"
+
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Position: %(name)s"
+msgstr "Должность: %(name)s"
+
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Branch: %(name)s"
+msgstr "Филиал: %(name)s"
+
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Department: %(name)s"
+msgstr "Отдел: %(name)s"
+
+#: backend/apps/lifecycle/bot_messages.py
+msgid "Your pay changes too: see it in the app."
+msgstr "Меняется и ваша оплата: посмотрите в приложении."
+
 #: backend/apps/lifecycle/hooks.py
 msgid "Warnings and reprimands"
 msgstr "Предупреждения и выговоры"
@@ -15086,10 +16218,185 @@ msgstr "Предупреждения и выговоры"
 msgid "Explanations to records"
 msgstr "Объяснительные по взысканиям"
 
+#: backend/apps/lifecycle/hooks.py
+msgid "Requests to leave"
+msgstr "Заявления об уходе"
+
+#: backend/apps/lifecycle/hooks.py
+msgid "Leaving: withdrawn requests, last days, problems"
+msgstr "Увольнения: отозванные заявления, последние дни, сбои"
+
+#: backend/apps/lifecycle/hooks.py
+msgid "People who left"
+msgstr "Уволившиеся"
+
+#: backend/apps/lifecycle/hooks.py
+msgid "Your leaving"
+msgstr "Ваше увольнение"
+
+#: backend/apps/lifecycle/hooks.py
+msgid "Last working days"
+msgstr "Последние рабочие дни"
+
+#: backend/apps/lifecycle/hooks.py
+msgid "Leaving and handover"
+msgstr "Увольнение и передача дел"
+
+#: backend/apps/lifecycle/hooks.py
+msgid "Job changes to approve"
+msgstr "Кадровые изменения на утверждение"
+
+#: backend/apps/lifecycle/hooks.py
+msgid "Job changes decided or not applied"
+msgstr "Решения и сбои по кадровым изменениям"
+
+#: backend/apps/lifecycle/hooks.py
+msgid "Changes to your job"
+msgstr "Изменения вашей должности"
+
+#: backend/apps/lifecycle/hooks.py
+msgid "Job changes"
+msgstr "Кадровые изменения"
+
 #: backend/apps/lifecycle/integrations.py
 msgid "Payroll is off for this company: give the warning without a fine."
 msgstr ""
 "Модуль «Зарплата» в этой компании выключен: вынесите взыскание без штрафа."
+
+#: backend/apps/lifecycle/integrations.py backend/apps/lifecycle/job_changes.py
+msgid "Payroll is off for this company, so the pay can't change here."
+msgstr ""
+"Зарплата в этой компании выключена, поэтому оплату здесь изменить нельзя."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "You can't propose a change to your own job."
+msgstr "Нельзя предложить изменение собственной должности."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "You can't decide a change to your own job."
+msgstr "Нельзя решать об изменении собственной должности."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "Only people who work here can have their job changed."
+msgstr "Изменить должность можно только работающему сотруднику."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "A change starts today or later."
+msgstr "Изменение начинается сегодня или позже."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "Pick a day within a year."
+msgstr "Выберите день в пределах года."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "Say why it changes."
+msgstr "Напишите причину изменения."
+
+#: backend/apps/lifecycle/job_changes.py backend/apps/lifecycle/terminations.py
+#, python-format
+msgid "Keep it under %(limit)s characters."
+msgstr "Не больше %(limit)s символов."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "Pick the branch they move to."
+msgstr "Выберите филиал, куда переводится сотрудник."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "You can only move people to the branches you manage."
+msgstr "Переводить сотрудников можно только в филиалы, которыми вы управляете."
+
+#: backend/apps/lifecycle/job_changes.py backend/apps/members/departments.py
+#: backend/apps/members/services.py
+msgid "Pick a department of this company."
+msgstr "Выберите отдел этой компании."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "Nothing changes: pick a new position, branch, department or pay."
+msgstr ""
+"Ничего не меняется: выберите новую должность, филиал, отдел или оплату."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "Only people who manage pay can change someone's pay."
+msgstr "Менять оплату могут только те, кто управляет зарплатой."
+
+#: backend/apps/lifecycle/job_changes.py backend/apps/payroll/services.py
+msgid "Pick how the pay is counted."
+msgstr "Выберите, как считается оплата."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "Enter the new pay."
+msgstr "Укажите новую оплату."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "Only a change waiting for approval can be approved."
+msgstr "Утвердить можно только изменение, которое ждёт утверждения."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "Only a change waiting for approval can be rejected."
+msgstr "Отклонить можно только изменение, которое ждёт утверждения."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "Say why it is rejected."
+msgstr "Напишите причину отказа."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "Only a change that hasn't taken effect can be cancelled."
+msgstr "Отменить можно только изменение, которое ещё не вступило в силу."
+
+#: backend/apps/lifecycle/job_changes.py backend/apps/lifecycle/models.py
+msgctxt "job change"
+msgid "Cancelled"
+msgstr "Отменено"
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "They left before it took effect."
+msgstr "Сотрудник уволился до того, как изменение вступило в силу."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "Only an approved change can take effect."
+msgstr "Вступить в силу может только утверждённое изменение."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid ""
+"Whoever approved it no longer works here: someone who may should apply it."
+msgstr ""
+"Утвердивший больше здесь не работает: применить изменение должен тот, у кого "
+"есть право."
+
+#: backend/apps/lifecycle/job_changes.py
+#, python-format
+msgid ""
+"%(name)s may no longer make this change: someone who may should apply it."
+msgstr ""
+"Больше не может внести это изменение: %(name)s. Применить его должен тот, у "
+"кого есть право."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "They no longer work here."
+msgstr "Сотрудник здесь больше не работает."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "The new position was removed: cancel this change."
+msgstr "Новая должность удалена: отмените это изменение."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "The new department was removed: cancel this change."
+msgstr "Новый отдел удалён: отмените это изменение."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "The branch they move to is closed: cancel this change."
+msgstr "Филиал, куда переводится сотрудник, закрыт: отмените это изменение."
+
+#: backend/apps/lifecycle/job_changes.py
+msgid "It couldn't take effect."
+msgstr "Не удалось применить."
+
+#: backend/apps/lifecycle/job_changes.py
+#, python-format
+msgid ""
+"A change from %(date)s already waits for them: cancel it or change that one."
+msgstr ""
+"Для сотрудника уже ждёт изменение с %(date)s: отмените его или измените его."
 
 #: backend/apps/lifecycle/models.py
 msgid "Verbal warning"
@@ -15116,20 +16423,12 @@ msgid "Absence"
 msgstr "Прогул"
 
 #: backend/apps/lifecycle/models.py
-msgid "Conduct"
-msgstr "Поведение"
-
-#: backend/apps/lifecycle/models.py
 msgid "Breach of the rules"
 msgstr "Нарушение правил"
 
 #: backend/apps/lifecycle/models.py
 msgid "Work quality"
 msgstr "Качество работы"
-
-#: backend/apps/lifecycle/models.py
-msgid "Safety"
-msgstr "Безопасность"
 
 #: backend/apps/lifecycle/models.py
 msgid "Storage conditions breached"
@@ -15155,13 +16454,95 @@ msgstr "Недостача товара"
 msgid "Acknowledged"
 msgstr "Ознакомление подтверждено"
 
-#: backend/apps/lifecycle/models.py
+#: backend/apps/lifecycle/models.py backend/apps/lifecycle/terminations.py
 msgid "Withdrawn"
 msgstr "Отменено"
+
+#: backend/apps/lifecycle/models.py
+msgid "Resignation"
+msgstr "По собственному желанию"
+
+#: backend/apps/lifecycle/models.py
+msgid "By the company"
+msgstr "По инициативе компании"
+
+#: backend/apps/lifecycle/models.py
+msgid "End of contract"
+msgstr "Истечение срока договора"
+
+#: backend/apps/lifecycle/models.py
+msgid "Requested"
+msgstr "Заявление подано"
+
+#: backend/apps/lifecycle/models.py
+msgid "Last day agreed"
+msgstr "Последний день согласован"
+
+#: backend/apps/lifecycle/models.py
+msgid "Maybe"
+msgstr "Возможно"
+
+#: backend/apps/lifecycle/models.py
+msgid "Open tasks"
+msgstr "Открытые задачи"
+
+#: backend/apps/lifecycle/models.py
+msgid "Keys"
+msgstr "Ключи"
+
+#: backend/apps/lifecycle/models.py
+msgid "Documents"
+msgstr "Документы"
+
+#: backend/apps/lifecycle/notify.py backend/apps/lifecycle/providers.py
+msgid "Agree"
+msgstr "Согласовать"
+
+#: backend/apps/lifecycle/notify.py backend/apps/lifecycle/providers.py
+msgid "Decline request"
+msgstr "Отклонить заявление"
 
 #: backend/apps/lifecycle/owner_api.py
 msgid "Propose a fine with its own button."
 msgstr "Штраф предлагается отдельной кнопкой."
+
+#: backend/apps/lifecycle/owner_api.py
+msgid "Pick one of this company's."
+msgstr "Выберите вариант этой компании."
+
+#: backend/apps/lifecycle/providers.py
+#, python-format
+msgid "Agreed: last working day %(date)s"
+msgstr "Согласовано: последний рабочий день %(date)s"
+
+#. Translators: %(name)s is a person's name; it stands alone after the colon.
+#: backend/apps/lifecycle/providers.py
+#, python-format
+msgid "Last working day: %(name)s"
+msgstr "Последний рабочий день: %(name)s"
+
+#: backend/apps/lifecycle/providers.py
+#, python-format
+msgid "Job change: %(name)s"
+msgstr "Кадровое изменение: %(name)s"
+
+#: backend/apps/lifecycle/providers.py
+#, python-format
+msgid "Their last working day was agreed: %(date)s."
+msgstr "Последний рабочий день согласован: %(date)s."
+
+#: backend/apps/lifecycle/providers.py
+#, python-format
+msgid ""
+"They asked to leave; the request is still waiting (last working day asked "
+"for: %(date)s)."
+msgstr ""
+"Сотрудник подал заявление об уходе; оно ещё ждёт ответа (желаемый последний "
+"день: %(date)s)."
+
+#: backend/apps/lifecycle/providers.py
+msgid "Offboarding them now closes it as left today."
+msgstr "Если уволить сейчас, увольнение закроется сегодняшним днём."
 
 #: backend/apps/lifecycle/services.py
 msgid "Only people who work here can be given a warning."
@@ -15226,6 +16607,125 @@ msgstr "Случай не может быть позже даты взыскан
 #: backend/apps/lifecycle/services.py
 msgid "A record can't stop counting before it was given."
 msgstr "Срок действия не может закончиться раньше даты взыскания."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "You can't do this for your own leaving."
+msgstr "Для собственного увольнения так сделать нельзя."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "Only people who work here can ask to leave."
+msgstr "Подать заявление об уходе могут только работающие сотрудники."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "You have already asked to leave."
+msgstr "Вы уже подали заявление об уходе."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "This request is closed."
+msgstr "Это заявление закрыто."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "Pick the main reason you are leaving."
+msgstr "Выберите главную причину ухода."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "Pick an answer from the list."
+msgstr "Выберите ответ из списка."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "Only people who work here can be given a last day."
+msgstr "Последний день можно назначить только работающему сотруднику."
+
+#: backend/apps/lifecycle/terminations.py backend/apps/members/services.py
+msgid "Pick why they are leaving."
+msgstr "Выберите причину увольнения."
+
+#: backend/apps/lifecycle/terminations.py
+#, python-format
+msgid "%(name)s is already leaving: open it to change the day."
+msgstr ""
+"Сотрудник уже увольняется: откройте увольнение, чтобы изменить день "
+"(%(name)s)."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "This leaving is closed."
+msgstr "Это увольнение закрыто."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "Pick their last working day."
+msgstr "Выберите последний рабочий день сотрудника."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "Agreed"
+msgstr "Согласовано"
+
+#: backend/apps/lifecycle/terminations.py
+msgid "Only a request waiting for an answer can be declined."
+msgstr "Отклонить можно только заявление, которое ждёт ответа."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "Say why the request is declined."
+msgstr "Напишите, почему заявление отклонено."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "Your last day has come: talk to your manager if you'd stay."
+msgstr ""
+"Ваш последний день наступил: если хотите остаться, поговорите с "
+"руководителем."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "Say why it is called off."
+msgstr "Напишите причину отмены."
+
+#: backend/apps/lifecycle/terminations.py backend/apps/payroll/services.py
+#, python-format
+msgid "Unknown field: %(name)s"
+msgstr "Неизвестное поле: %(name)s"
+
+#: backend/apps/lifecycle/terminations.py
+msgid "This leaving is closed: only the notes and the rehire answer change."
+msgstr ""
+"Это увольнение закрыто: меняются только заметки и ответ о повторном найме."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "Say what is to be handed over."
+msgstr "Напишите, что нужно передать."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "They still hold it: tick it off once it is handed back."
+msgstr "Это ещё у сотрудника: отметьте, когда вернёт."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "Only a leaving with an agreed last day can be completed."
+msgstr "Завершить можно только увольнение с согласованным последним днём."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "Their last day hasn't come yet."
+msgstr "Последний день сотрудника ещё не наступил."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "It couldn't be completed."
+msgstr "Не удалось завершить."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "Pick the last working day."
+msgstr "Выберите последний рабочий день."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "The last working day can't be in the past."
+msgstr "Последний рабочий день не может быть в прошлом."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "Pick a last working day within a year."
+msgstr "Выберите последний рабочий день в пределах года."
+
+#: backend/apps/lifecycle/terminations.py backend/apps/payroll/settlement.py
+msgid "Enter the unused leave days: a number from 0 to 366."
+msgstr "Укажите дни неиспользованного отпуска: число от 0 до 366."
+
+#: backend/apps/lifecycle/terminations.py
+msgid "This leaving is closed: its handover list no longer changes."
+msgstr "Это увольнение закрыто: список передачи дел больше не меняется."
 
 #: backend/apps/members/admin.py
 msgid "Permissions"
@@ -15401,11 +16901,6 @@ msgstr "Кнопка «%(button)s» рядом с полем ввода откр
 msgid "<b>Join request</b> · %(company)s"
 msgstr "<b>Заявка на вступление</b> · %(company)s"
 
-#: backend/apps/members/bot_messages.py owner_bot/ownerbot/bot_messages.py
-#, python-format
-msgid "Name: %(name)s"
-msgstr "Имя: %(name)s"
-
 #: backend/apps/members/bot_messages.py
 #, python-format
 msgid "Position: %(position)s"
@@ -15415,11 +16910,6 @@ msgstr "Должность: %(position)s"
 #, python-format
 msgid "Access: %(role)s"
 msgstr "Доступ: %(role)s"
-
-#: backend/apps/members/bot_messages.py
-#, python-format
-msgid "Phone: %(phone)s"
-msgstr "Телефон: %(phone)s"
 
 #: backend/apps/members/bot_messages.py
 #, python-format
@@ -15523,10 +17013,6 @@ msgid "Thanks, your phone number is saved."
 msgstr "Спасибо, номер телефона сохранён."
 
 #: backend/apps/members/bot_messages.py
-msgid "Please share your own phone number with the button below."
-msgstr "Пожалуйста, поделитесь своим номером кнопкой ниже."
-
-#: backend/apps/members/bot_messages.py
 #, python-format
 msgid "Welcome to the team, %(name)s! You've joined <b>%(company)s</b>."
 msgstr ""
@@ -15564,10 +17050,6 @@ msgid "Open the app to create your account: your name, phone and position."
 msgstr "Откройте приложение, чтобы создать аккаунт: имя, телефон и должность."
 
 #: backend/apps/members/bot_messages.py
-msgid "Share my phone number"
-msgstr "Поделиться номером"
-
-#: backend/apps/members/bot_messages.py
 #, python-format
 msgid "Your request to join <b>%(company)s</b> was declined."
 msgstr "Ваша заявка в компанию <b>%(company)s</b> отклонена."
@@ -15600,11 +17082,6 @@ msgstr "Заблокировано: %(name)s"
 #, python-format
 msgid "Join request · %(name)s"
 msgstr "Заявка на вступление · %(name)s"
-
-#: backend/apps/members/bot_messages.py backend/apps/tasks/bot_messages.py
-#, python-format
-msgid "Company: %(company)s"
-msgstr "Компания: %(company)s"
 
 #: backend/apps/members/bot_messages.py
 #, python-format
@@ -15673,10 +17150,6 @@ msgstr "Дайте отделу название."
 #: backend/apps/members/departments.py
 msgid "A department's name can be at most 100 characters."
 msgstr "Название отдела может быть не длиннее 100 символов."
-
-#: backend/apps/members/departments.py backend/apps/members/services.py
-msgid "Pick a department of this company."
-msgstr "Выберите отдел этой компании."
 
 #: backend/apps/members/departments.py
 msgid "A department can't go under itself or its own part."
@@ -15767,10 +17240,6 @@ msgstr "Окончание должно быть в будущем."
 #: backend/apps/members/join_links.py backend/apps/members/link_api.py
 msgid "A link can work for at most a year."
 msgstr "Ссылка может работать не больше года."
-
-#: backend/apps/members/join_links.py
-msgid "Choose one of your branches."
-msgstr "Выберите один из своих филиалов."
 
 #: backend/apps/members/join_links.py
 msgid "Choose the branch these people will work in."
@@ -16452,10 +17921,6 @@ msgstr ""
 #: backend/apps/members/services.py
 msgid "Send each of the company's positions once."
 msgstr "Передайте каждую должность компании ровно один раз."
-
-#: backend/apps/members/services.py
-msgid "Pick why they are leaving."
-msgstr "Выберите причину увольнения."
 
 #: backend/apps/members/services.py
 msgid "Only an owner can go ahead despite the blockers."
@@ -17402,7 +18867,7 @@ msgstr "Первый день месяца, к которому относитс
 #: backend/apps/payroll/models.py
 msgctxt "payroll status"
 msgid "Requested"
-msgstr "Запрошено"
+msgstr "Заявление подано"
 
 #: backend/apps/payroll/models.py
 msgctxt "payroll status"
@@ -17691,11 +19156,6 @@ msgstr "Предупреждений: %(count)s"
 #, python-format
 msgid "The final payslip of %(name)s is ready to check"
 msgstr "Окончательный расчёт готов к проверке: %(name)s"
-
-#: backend/apps/payroll/notify.py backend/apps/payroll/payslip_pdf.py
-#, python-format
-msgid "Last working day: %(date)s"
-msgstr "Последний рабочий день: %(date)s"
 
 #: backend/apps/payroll/notify.py
 #, python-format
@@ -17996,10 +19456,6 @@ msgid "The night starts and ends at different times."
 msgstr "Ночь должна начинаться и заканчиваться в разное время."
 
 #: backend/apps/payroll/services.py
-msgid "Pick how the pay is counted."
-msgstr "Выберите, как считается оплата."
-
-#: backend/apps/payroll/services.py
 msgid "Pick how missed days are counted."
 msgstr "Выберите, как учитываются пропущенные дни."
 
@@ -18013,11 +19469,6 @@ msgid "Pay up to %(date)s is already finalized: pick a later day."
 msgstr ""
 "Зарплата уже утверждена по %(date)s включительно: выберите более поздний "
 "день."
-
-#: backend/apps/payroll/services.py
-#, python-format
-msgid "Unknown field: %(name)s"
-msgstr "Неизвестное поле: %(name)s"
 
 #: backend/apps/payroll/services.py
 msgid "There is already a pay setup from that day: change that one."
@@ -18180,10 +19631,6 @@ msgstr "Аванс: %(name)s"
 #: backend/apps/payroll/services.py
 msgid "Only a paid advance can be paid back."
 msgstr "Вернуть можно только выплаченный аванс."
-
-#: backend/apps/payroll/settlement.py
-msgid "Enter the unused leave days: a number from 0 to 366."
-msgstr "Укажите дни неиспользованного отпуска: число от 0 до 366."
 
 #: backend/apps/payroll/settlement.py
 #, python-format
@@ -22068,11 +23515,6 @@ msgstr "Нажмите, чтобы посмотреть, затем примит
 msgid "%(name)s has left the team. These tasks they had came back to you:"
 msgstr "%(name)s больше не в команде. Эти задачи вернулись к вам:"
 
-#: backend/apps/tasks/bot_messages.py
-#, python-format
-msgid "Status: %(status)s"
-msgstr "Статус: %(status)s"
-
 #. Translators: %(when)s reads like "ertaga, 18:00 (juma, 26-okt)".
 #: backend/apps/tasks/bot_messages.py
 #, python-format
@@ -23520,11 +24962,6 @@ msgstr "Выберите, кому передать."
 msgid "You can only give it to your own people."
 msgstr "Её можно передать только своим сотрудникам."
 
-#: backend/apps/tasks/services.py backend/apps/timeoff/bot_messages.py
-#, python-format
-msgid "Reason: %(reason)s"
-msgstr "Причина: %(reason)s"
-
 #: backend/apps/tasks/services.py
 #, python-format
 msgid "Deadline now: %(due)s"
@@ -23723,11 +25160,6 @@ msgstr "Вернулось в норму в %(time)s"
 #, python-format
 msgid "Out of range: %(label)s %(value)s"
 msgstr "Вне нормы: %(label)s %(value)s"
-
-#: backend/apps/tasks/services.py owner_bot/ownerbot/invite.py
-#, python-format
-msgid "Branch: %(branch)s"
-msgstr "Филиал: %(branch)s"
 
 #: backend/apps/tasks/services.py
 #, python-format
