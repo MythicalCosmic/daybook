@@ -476,7 +476,7 @@
   "davomat.team.today.not_in": "Hali kelmagan",
   "davomat.team.today.off": "Dam olish kuni",
   "davomat.team.today.out": "Ketdi · {time}",
-  "davomat.team.today.outNoTime": "Ish kunini tugatdi",
+  "davomat.team.today.outNoTime": "Ish kuni tugadi",
   "davomat.telegram.checked": "Tekshirildi",
   "davomat.telegram.commandMe": "o‘z kuningiz va oyingiz",
   "davomat.telegram.commandToday": "bugun kim ishda",

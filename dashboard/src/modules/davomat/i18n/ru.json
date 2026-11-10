@@ -476,7 +476,7 @@
   "davomat.team.today.not_in": "Ещё нет на месте",
   "davomat.team.today.off": "Выходной",
   "davomat.team.today.out": "Уход в {time}",
-  "davomat.team.today.outNoTime": "Уход отмечен",
+  "davomat.team.today.outNoTime": "Рабочий день завершён",
   "davomat.telegram.checked": "Проверено",
   "davomat.telegram.commandMe": "ваш день и месяц",
   "davomat.telegram.commandToday": "кто сегодня на месте",

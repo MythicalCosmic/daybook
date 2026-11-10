@@ -476,7 +476,7 @@
   "davomat.team.today.not_in": "Not in yet",
   "davomat.team.today.off": "Day off",
   "davomat.team.today.out": "Left at {time}",
-  "davomat.team.today.outNoTime": "Gone for the day",
+  "davomat.team.today.outNoTime": "Day over",
   "davomat.telegram.checked": "Checked",
   "davomat.telegram.commandMe": "your own day and month",
   "davomat.telegram.commandToday": "who’s in today",

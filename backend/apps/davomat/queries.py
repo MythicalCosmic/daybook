@@ -149,10 +149,10 @@ def today_states(
     company: Company, members: list[Membership], now: datetime | None = None
 ) -> dict[int, dict | None]:
     """Each person's state now, in the company's day: `in` (checked in, since then), `out`
-    (came and left, since the check-out), `leave` (approved time off), `off` (a day off: no
-    shift on their roster, a holiday, suspended, or not one of the company's workdays for
-    someone without a roster) or `not_in` (expected and not here, absent included). None for
-    someone who left."""
+    (came and left, since the check-out; no time when the system closed the day), `leave`
+    (approved time off), `off` (a day off: no shift on their roster, a holiday, suspended, or not
+    one of the company's workdays for someone without a roster) or `not_in` (expected and not
+    here, absent included). None for someone who left."""
     now = now or timezone.now()
     today = clock.today(company, now)
     current = [member for member in members if member.status in CURRENT]
@@ -166,6 +166,9 @@ def today_states(
     ).order_by("check_in_at", "pk")
     open_since: dict[int, datetime] = {}
     left_at: dict[int, datetime] = {}
+    # Days the system closed (arrivals only, or a forgotten check-out): over, but nobody saw the
+    # person leave, so no time is shown for them.
+    ended: set[int] = set()
     absent, excused = set(), set()
     for record in records:
         if record.status == AttendanceRecord.Status.OPEN:
@@ -173,6 +176,9 @@ def today_states(
         elif record.date != today:
             continue
         elif record.attended and record.check_out_at is not None:
+            if record.out_source == AttendanceRecord.Source.SYSTEM:
+                ended.add(record.membership_id)
+                continue
             left_at[record.membership_id] = max(
                 record.check_out_at, left_at.get(record.membership_id, record.check_out_at)
             )
@@ -203,6 +209,8 @@ def today_states(
             found[pk] = {"state": IN, "since": open_since[pk]}
         elif pk in left_at:
             found[pk] = {"state": OUT, "since": left_at[pk]}
+        elif pk in ended:
+            found[pk] = {"state": OUT, "since": None}
         elif today in away.get(pk, {}) or WorkShift.Status.LEAVE in shifts.get(pk, ()):
             found[pk] = {"state": LEAVE, "since": None}
         elif member.status == Membership.Status.SUSPENDED or pk in excused or holiday:
