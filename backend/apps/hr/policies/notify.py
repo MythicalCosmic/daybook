@@ -86,7 +86,7 @@ def _tell_many(person: Membership, items: list[PolicyAcknowledgement]) -> int:
             title=lambda reader: bot_messages.many_to_sign_title(len(titles)),
             body=lambda reader: bot_messages.many_to_sign_body(titles, due_on),
             app_screen=LIST_SCREEN,
-            dedupe_key=f"{POLICY}s:{_digest(row.version_id for row in items)}",
+            dedupe_key=f"hr.policies:{_digest(row.version_id for row in items)}",
         )
     )
 
