@@ -4,8 +4,10 @@
  * values for the terminal's own web page (a MinMoe DS-K1T341AMF, firmware V3.2.x: Configuration ›
  * Network › Advanced Settings › HTTP Listening), each with a copy button, drawn the way that page
  * looks. 3: "Scan a face at the terminal now…", which turns into "Connected" the moment its first
- * event arrives (the setup values are polled). "Simulate a face" shows the whole flow before the
- * terminal is set up; it never counts. Opened for an existing terminal, it starts at step 2.
+ * event arrives (the setup values are polled), or says the terminal sends its old history first,
+ * with "Get today's scans now" (the catch-up helper) meanwhile. "Simulate a face" shows the whole
+ * flow before the terminal is set up; it never counts. Opened for an existing terminal, it starts
+ * at step 2.
  */
 import { Check, CircleCheck, Copy, FlaskConical, History, ScanFace } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
@@ -20,12 +22,13 @@ import UiButton from "@/components/UiButton.vue";
 import UiDialog from "@/components/UiDialog.vue";
 import { toast } from "@/components/useToast";
 import WizardSteps from "@/components/WizardSteps.vue";
-import { useCompanyId } from "@/stores/company";
+import { useCompanyId, useCompanyStore } from "@/stores/company";
 
 import { useFormat } from "@/lib/useFormat";
 
 import { createDevice, simulate, useRefresh, useSetup } from "../api";
 import type { Device, Direction } from "../types";
+import CatchupHint from "./CatchupHint.vue";
 import HistoryNote from "./HistoryNote.vue";
 
 const open = defineModel<boolean>("open", { default: false });
@@ -33,6 +36,8 @@ const props = withDefaults(defineProps<{ device?: Device | null }>(), { device: 
 
 const { t } = useI18n();
 const companyId = useCompanyId();
+const company = useCompanyStore();
+const canManage = computed(() => company.can("attendance.manage"));
 const refresh = useRefresh();
 const branches = useScopedBranches();
 
@@ -212,11 +217,12 @@ const fields = computed(() => {
             <p class="text-lg font-semibold text-fg">{{ t("faceid.wizard.connected") }}</p>
             <p class="max-w-sm text-sm text-muted">{{ t("faceid.wizard.connectedBody") }}</p>
           </div>
-          <div v-else-if="historyComing" key="history" class="flex flex-col items-center gap-3">
+          <div v-else-if="historyComing" key="history" class="flex w-full flex-col items-center gap-3">
             <span class="faceid-wait relative grid size-20 place-items-center rounded-full bg-info-soft text-info"><History :size="36" /></span>
             <p class="text-lg font-semibold text-fg">{{ t("faceid.wizard.history") }}</p>
             <p class="max-w-sm text-sm text-muted">{{ t("faceid.history.sending") }}</p>
             <p class="text-sm font-medium tabular-nums text-fg" aria-live="polite">{{ t("faceid.history.skipped", historyCounts) }}</p>
+            <CatchupHint v-if="canManage && deviceId" class="mt-2 w-full max-w-xl" :device-id="deviceId" :ip="setup.data.value?.ip" />
           </div>
           <div v-else key="wait" class="flex flex-col items-center gap-3">
             <span class="faceid-wait relative grid size-20 place-items-center rounded-full bg-accent-soft text-accent-fg"><ScanFace :size="36" /></span>
