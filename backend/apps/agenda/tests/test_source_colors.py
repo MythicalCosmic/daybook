@@ -106,6 +106,21 @@ def owner(company, member):
         cost=8_400_000,
         next_service_on=today + timedelta(days=3),
     )
+    # Lifecycle: a last working day agreed and a job change approved, both inside the week.
+    from apps.lifecycle import job_changes, terminations
+    from apps.members.models import Department
+
+    leaving = terminations.request(worker, by=worker, wished_last_day=today + timedelta(days=3))
+    terminations.agree(leaving, by=owner)
+    mover = member.registered(company, home_branch=branch)
+    job_changes.propose(
+        mover,
+        by=owner,
+        effective_on=today + timedelta(days=2),
+        reason="Kassa bo‘limiga",
+        department=Department.objects.create(company=company, name="Kassa"),
+        approve=True,
+    )
     return owner
 
 

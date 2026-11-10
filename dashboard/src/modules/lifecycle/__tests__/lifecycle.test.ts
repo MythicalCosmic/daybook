@@ -11,10 +11,37 @@ import { company, json, me } from "@/test/fixtures";
 import { mountWithProviders, testApp } from "@/test/plugins";
 
 import { lifecycleApi, lifecycleKeys } from "../api";
+import ChangeLines from "../components/ChangeLines.vue";
 import ProfileActions from "../components/ProfileActions.vue";
 import en from "../i18n/en.json";
 import module from "../index";
-import { lifecycleAccess, nextStep, recordFormErrors, recordParams, recordPayload, recordState, type RecordForm } from "../lib";
+import {
+  changeAccess,
+  changeFormErrors,
+  changePayload,
+  changeTab,
+  daysLeft,
+  handoverPercent,
+  itemTitle,
+  leavingAccess,
+  lifecycleAccess,
+  nextStep,
+  NOTICE_DAYS,
+  partSides,
+  recordFormErrors,
+  recordParams,
+  recordPayload,
+  recordState,
+  shortNotice,
+  startFormErrors,
+  startPayload,
+  suggestedChangeDay,
+  suggestedLastDay,
+  type ChangeForm,
+  type RecordForm,
+  type StartForm,
+} from "../lib";
+import type { ChangePart, JobSide } from "../types";
 
 interface Call {
   method: string;
@@ -155,7 +182,7 @@ describe("api", () => {
   it("registers behind the hr switch with discipline first, the Record tab and the header actions", () => {
     expect(module).toMatchObject({ id: "lifecycle", group: "people", order: 50, feature: "hr" });
     expect(module.nav?.map((item) => item.key)).toEqual(["discipline", "suspensions", "org", "terminations", "changes", "equipment", "reviews"]);
-    expect(module.personTabs?.map((tab) => tab.id)).toEqual(["record"]);
+    expect(module.personTabs?.map((tab) => tab.id)).toEqual(["record", "career"]);
     expect(Object.keys(module.extensions ?? {})).toEqual(["people.profile.actions"]);
     expect(module.invalidates).toEqual(["lifecycle"]);
     expect(lifecycleKeys.records(1, { member: 9 })).toEqual([1, "lifecycle", "records", { member: 9 }]);
@@ -181,12 +208,206 @@ describe("Person 360 header actions", () => {
     const suspend = await mountAs(["hr.suspend"]);
     expect(suspend.text()).toBe(en["lifecycle.suspend.button"]);
     const both = await mountAs(["hr.discipline", "hr.suspend"]);
-    expect(both.text()).toContain(en["lifecycle.person.discipline"]);
+    expect(both.text()).toContain(en["lifecycle.person.actions"]);
+  });
+
+  it("offers changing the job to hr.manage and starting the leaving to hr.terminate", async () => {
+    stub();
+    expect((await mountAs(["hr.manage"])).text()).toBe(en["lifecycle.person.changeJob"]);
+    expect((await mountAs(["hr.terminate"])).text()).toBe(en["lifecycle.person.startLeaving"]);
+    expect((await mountAs(["hr.manage", "hr.terminate"])).text()).toContain(en["lifecycle.person.actions"]);
+    // Someone who has left gets neither.
+    expect((await mountAs(["hr.manage", "hr.terminate"], person("left"))).find("[data-lifecycle-actions]").exists()).toBe(false);
   });
 
   it("does not offer suspending someone already suspended or whom the server says may not be", async () => {
     stub();
     expect((await mountAs(["hr.suspend"], person("suspended"))).find("[data-lifecycle-actions]").exists()).toBe(false);
     expect((await mountAs(["hr.suspend"], person("approved", false))).find("[data-lifecycle-actions]").exists()).toBe(false);
+  });
+});
+
+// ─── Leaving ───────────────────────────────────────────────────────────────
+
+const startForm = (overrides: Partial<StartForm> = {}): StartForm => ({
+  member: 9,
+  kind: "contract_end",
+  last_day: "2026-11-20",
+  reason: "  Muddatli shartnoma tugaydi  ",
+  final_payslip: true,
+  leave_days: null,
+  ...overrides,
+});
+
+describe("leaving", () => {
+  it("reads who may see and run leavings", () => {
+    const grant = (perms: string[]) => (perm: string) => perms.includes(perm);
+    expect(leavingAccess(grant(["hr.view"]))).toEqual({ view: true, manage: false });
+    expect(leavingAccess(grant(["hr.terminate"]))).toEqual({ view: true, manage: true });
+    expect(leavingAccess(grant([]))).toEqual({ view: false, manage: false });
+  });
+
+  it("counts the days to the last day, and flags notice shorter than two weeks", () => {
+    expect(daysLeft({ last_day: "2026-11-20", wished_last_day: "2026-11-25" }, "2026-11-10")).toBe(10);
+    expect(daysLeft({ last_day: null, wished_last_day: "2026-11-12" }, "2026-11-10")).toBe(2);
+    expect(daysLeft({ last_day: null, wished_last_day: null }, "2026-11-10")).toBeNull();
+    expect(shortNotice(13)).toBe(true);
+    expect(shortNotice(NOTICE_DAYS)).toBe(false);
+    expect(shortNotice(null)).toBe(false);
+    expect(suggestedLastDay("2026-11-10")).toBe("2026-11-24");
+  });
+
+  it("shows the handover's progress and names standard items by their kind", () => {
+    expect(handoverPercent({ done: 2, total: 5 })).toBe(40);
+    expect(handoverPercent({ done: 0, total: 0 })).toBe(0);
+    expect(itemTitle({ title: "" })).toBeNull();
+    expect(itemTitle({ title: " INV-0012 Kuryer skuteri " })).toBe("INV-0012 Kuryer skuteri");
+  });
+
+  it("checks and builds the start payload", () => {
+    expect(startFormErrors(startForm(), "2026-11-10")).toEqual({});
+    expect(startFormErrors(startForm({ member: null, last_day: null }), "2026-11-10")).toEqual({ member: "required", last_day: "required" });
+    expect(startFormErrors(startForm({ last_day: "2026-11-09", leave_days: 400 }), "2026-11-10")).toEqual({ last_day: "past", leave_days: "range" });
+    expect(startPayload(startForm())).toEqual({ member_id: 9, kind: "contract_end", last_day: "2026-11-20", final_payslip: true, reason: "Muddatli shartnoma tugaydi" });
+    expect(startPayload(startForm({ reason: " ", leave_days: 6.5, final_payslip: false }))).toEqual({ member_id: 9, kind: "contract_end", last_day: "2026-11-20", final_payslip: false, leave_days: "6.5" });
+  });
+});
+
+// ─── Job changes ───────────────────────────────────────────────────────────
+
+const changeForm = (overrides: Partial<ChangeForm> = {}): ChangeForm => ({
+  member: 9,
+  effective_on: "2026-12-01",
+  parts: ["position"],
+  position: 4,
+  branch: 2,
+  department: null,
+  pay_amount: null,
+  pay_type: "monthly",
+  reason: "  Provizor diplomi bor  ",
+  approve: false,
+  ...overrides,
+});
+
+const side = (overrides: Partial<JobSide> = {}): JobSide => ({ position: null, branch: null, branches: [], department: null, role: null, pay: null, ...overrides });
+
+describe("job changes", () => {
+  it("reads who may see and propose changes, and which tab a change sits in", () => {
+    const grant = (perms: string[]) => (perm: string) => perms.includes(perm);
+    expect(changeAccess(grant(["hr.view"]))).toEqual({ view: true, propose: false });
+    expect(changeAccess(grant(["hr.manage"]))).toEqual({ view: true, propose: true });
+    expect(changeTab({ status: "proposed" })).toBe("proposed");
+    expect(changeTab({ status: "approved" })).toBe("upcoming");
+    expect(changeTab({ status: "applied" })).toBe("applied");
+    expect(changeTab({ status: "rejected" })).toBe("closed");
+    expect(changeTab({ status: "cancelled" })).toBe("closed");
+    expect(suggestedChangeDay("2026-11-10")).toBe("2026-12-01");
+    expect(suggestedChangeDay("2026-12-31")).toBe("2027-01-01");
+  });
+
+  it("names what is missing: a person, a day from today, a part, its value, a reason", () => {
+    expect(changeFormErrors(changeForm(), "2026-11-10")).toEqual({});
+    expect(changeFormErrors(changeForm({ member: null, effective_on: "2026-11-09", parts: [], reason: " " }), "2026-11-10")).toEqual({
+      member: "required",
+      effective_on: "past",
+      parts: "nothing",
+      reason: "required",
+    });
+    expect(changeFormErrors(changeForm({ parts: ["position", "branch", "pay"], position: null, branch: null, pay_amount: "0.00" }), "2026-11-10")).toEqual({
+      position: "required",
+      branch: "required",
+      pay_amount: "amount",
+    });
+  });
+
+  it("sends only the parts that change, the department cleared as null, and approve when asked", () => {
+    expect(changePayload(changeForm())).toEqual({ member_id: 9, effective_on: "2026-12-01", reason: "Provizor diplomi bor", position_id: 4 });
+    expect(changePayload(changeForm({ parts: ["department", "pay"], pay_amount: "6500000.00", approve: true }))).toEqual({
+      member_id: 9,
+      effective_on: "2026-12-01",
+      reason: "Provizor diplomi bor",
+      department_id: null,
+      pay_amount: "6500000.00",
+      pay_type: "monthly",
+      approve: true,
+    });
+    expect(changePayload(changeForm({ parts: ["branch"] }))).toEqual({ member_id: 9, effective_on: "2026-12-01", reason: "Provizor diplomi bor", branch_id: 2 });
+  });
+
+  it("reads before and after of a part by name", () => {
+    const change = { before: side({ position: { id: 1, name: "Farmatsevt" } }), after: side({ position: { id: 4, name: "Provizor" } }) };
+    expect(partSides(change, "position")).toEqual({ was: "Farmatsevt", now: "Provizor" });
+    expect(partSides(change, "department")).toEqual({ was: null, now: null });
+  });
+
+  it("shows the pay only when the server sent it, a lock otherwise", async () => {
+    const app = await testApp("/c/1/lifecycle/job-changes");
+    const base = { parts: ["position", "pay"] as ChangePart[], has_pay: true, before: side({ position: { id: 1, name: "Farmatsevt" } }), after: side({ position: { id: 4, name: "Provizor" } }) };
+    const hidden = mountWithProviders(ChangeLines, { plugins: app.plugins, props: { change: base } }).wrapper;
+    expect(hidden.find('[data-part="position"]').text()).toContain("Farmatsevt");
+    expect(hidden.find('[data-part="position"]').text()).toContain("Provizor");
+    expect(hidden.find('[data-part="pay"]').text()).toContain(en["lifecycle.changes.payChanges"]);
+    const shown = mountWithProviders(ChangeLines, {
+      plugins: app.plugins,
+      props: {
+        change: {
+          ...base,
+          before: { ...base.before, pay: { amount: "5200000.00", currency: "UZS", pay_type: "monthly" } },
+          after: { ...base.after, pay: { amount: "6500000.00", currency: "UZS", pay_type: "monthly" } },
+        },
+      },
+    }).wrapper;
+    expect(shown.find('[data-part="pay"]').text()).not.toContain(en["lifecycle.changes.payChanges"]);
+    expect(shown.find('[data-part="pay"]').text()).toContain(en["lifecycle.payType.monthly"]);
+  });
+});
+
+describe("leaving and job change api", () => {
+  it("calls the endpoints with the bodies the server reads", async () => {
+    const calls = stub();
+    await lifecycleApi.leavings(1, { status: "agreed", page: 1 });
+    await lifecycleApi.leavingCounts(1);
+    await lifecycleApi.startLeaving(1, startPayload(startForm()));
+    await lifecycleApi.agreeLeaving(1, 5, { last_day: "2026-11-20" });
+    await lifecycleApi.declineLeaving(1, 5, "Gaplashdik, qoladi");
+    await lifecycleApi.withdrawLeaving(1, 5, "Qolishga kelishdik");
+    await lifecycleApi.updateLeaving(1, 5, { rehire: "yes" });
+    await lifecycleApi.retryLeaving(1, 5);
+    await lifecycleApi.addHandoverItem(1, 5, { title: "Seyf kaliti" });
+    await lifecycleApi.setHandoverItem(1, 5, 31, { done: true });
+    await lifecycleApi.removeHandoverItem(1, 5, 31);
+    await lifecycleApi.changes(1, { status: "proposed" });
+    await lifecycleApi.currentJob(1, 9);
+    await lifecycleApi.proposeChange(1, changePayload(changeForm()));
+    await lifecycleApi.approveChange(1, 7);
+    await lifecycleApi.rejectChange(1, 7, "Hozircha emas");
+    await lifecycleApi.cancelChange(1, 7);
+    await lifecycleApi.retryChange(1, 7);
+    await lifecycleApi.career(1, 9);
+    expect(calls.map((c) => `${c.method} ${c.url}`)).toEqual([
+      "GET lifecycle/terminations/?status=agreed&page=1",
+      "GET lifecycle/terminations/counts/",
+      "POST lifecycle/terminations/",
+      "POST lifecycle/terminations/5/agree/",
+      "POST lifecycle/terminations/5/decline/",
+      "POST lifecycle/terminations/5/withdraw/",
+      "PATCH lifecycle/terminations/5/",
+      "POST lifecycle/terminations/5/retry/",
+      "POST lifecycle/terminations/5/handover/",
+      "PATCH lifecycle/terminations/5/handover/31/",
+      "DELETE lifecycle/terminations/5/handover/31/",
+      "GET lifecycle/job-changes/?status=proposed",
+      "GET lifecycle/job-changes/current/?member=9",
+      "POST lifecycle/job-changes/",
+      "POST lifecycle/job-changes/7/approve/",
+      "POST lifecycle/job-changes/7/reject/",
+      "POST lifecycle/job-changes/7/cancel/",
+      "POST lifecycle/job-changes/7/retry/",
+      "GET lifecycle/people/9/career/",
+    ]);
+    expect(calls[4]!.body).toEqual({ reason: "Gaplashdik, qoladi" });
+    expect(calls[9]!.body).toEqual({ done: true });
+    expect(calls[13]!.body).toEqual({ member_id: 9, effective_on: "2026-12-01", reason: "Provizor diplomi bor", position_id: 4 });
+    expect(lifecycleKeys.leaving(1, 5)).toEqual([1, "lifecycle", "leaving", { id: 5 }]);
   });
 });

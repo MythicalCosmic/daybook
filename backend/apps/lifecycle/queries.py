@@ -12,9 +12,11 @@ from django.db.models import Q, QuerySet
 
 from apps.audit.models import AuditLog
 from apps.hr import queries as hr_queries
-from apps.lifecycle.models import DisciplinaryRecord
+from apps.lifecycle.models import DisciplinaryRecord, JobChange, Termination
+from apps.members import scope
 from apps.members.audit_actions import MemberAction
 from apps.members.models import Membership
+from apps.members.permissions import Perm
 
 
 def records(company, *, branch_ids: list[int] | None) -> QuerySet[DisciplinaryRecord]:
@@ -99,4 +101,127 @@ def overview(company, *, branch_ids: list[int] | None, day: date, days: int) -> 
         "explained": standing.exclude(employee_response="").count(),
         "with_fine": sum(1 for record in recent if record.fine_id),
         "suspended": suspended(company, branch_ids=branch_ids),
+    }
+
+
+# Leaving and job changes ---------------------------------------------------------------------
+
+
+def _people_in(company, branch_ids: list[int] | None):
+    return hr_queries.people(company, branch_ids=branch_ids, statuses=hr_queries.EMPLOYED).values(
+        "pk"
+    )
+
+
+def terminations(company, *, branch_ids: list[int] | None) -> QuerySet[Termination]:
+    """Leavings of people who work or worked here, inside the branch scope."""
+    rows = Termination.objects.for_company(company)
+    if branch_ids is not None:
+        rows = rows.filter(membership_id__in=_people_in(company, branch_ids))
+    return rows
+
+
+def job_changes(company, *, branch_ids: list[int] | None) -> QuerySet[JobChange]:
+    """Job changes of people who work or worked here, inside the branch scope."""
+    rows = JobChange.objects.for_company(company)
+    if branch_ids is not None:
+        rows = rows.filter(membership_id__in=_people_in(company, branch_ids))
+    return rows
+
+
+def resignations_for(member: Membership, limit: int | None = None) -> list[Termination]:
+    """Requests to leave that `member` may answer (Needs you), oldest first."""
+    from apps.lifecycle.terminations import may_manage
+
+    if not member.has_perm(Perm.HR_TERMINATE):
+        return []
+    rows = (
+        terminations(member.company, branch_ids=scope.branch_ids(member))
+        .filter(status=Termination.Status.REQUESTED)
+        .exclude(membership=member)
+        .select_related("membership__role", "membership__user", "membership__company")
+        .order_by("requested_at", "pk")
+    )
+    found = [row for row in rows if may_manage(member, row.membership, in_scope=True)]
+    return found[:limit] if limit is not None else found
+
+
+def changes_to_decide(member: Membership, limit: int | None = None) -> list[JobChange]:
+    """Proposed job changes `member` may approve (Needs you), oldest first; their own
+    proposals stay on the Job changes page."""
+    from apps.lifecycle.job_changes import may_decide
+
+    if not member.has_perm(Perm.HR_MANAGE):
+        return []
+    rows = (
+        job_changes(member.company, branch_ids=scope.branch_ids(member))
+        .filter(status=JobChange.Status.PROPOSED)
+        .exclude(membership=member)
+        .exclude(proposed_by=member)
+        .select_related(
+            "membership__role", "membership__user", "membership__company", "position", "branch"
+        )
+        .order_by("created_at", "pk")
+    )
+    found = [row for row in rows if may_decide(member, row, in_scope=True)]
+    return found[:limit] if limit is not None else found
+
+
+def career(membership: Membership) -> dict:
+    """The person's working life here for their history: when they were hired, their job
+    changes that took effect or are approved to come, and their leaving."""
+    from apps.lifecycle import integrations
+
+    person = ("membership__user", "membership__position", "membership__home_branch")
+    changes = list(
+        JobChange.objects.filter(
+            membership=membership,
+            status__in=(JobChange.Status.APPLIED, JobChange.Status.APPROVED),
+        )
+        .select_related(*person, "proposed_by__user", "decided_by__user")
+        .order_by("-effective_on", "-pk")
+    )
+    leaving = list(
+        Termination.objects.filter(
+            membership=membership,
+            status__in=(
+                Termination.Status.REQUESTED,
+                Termination.Status.AGREED,
+                Termination.Status.COMPLETED,
+            ),
+        )
+        .select_related(*person, "membership__company")
+        .prefetch_related("handover")
+        .order_by("-requested_at", "-pk")
+    )
+    return {
+        "hired_on": integrations.hired_on(membership),
+        "changes": changes,
+        "terminations": leaving,
+    }
+
+
+def leaving_overview(company, *, branch_ids: list[int] | None, day: date) -> dict:
+    """Counts and days for the AI tool: requests waiting, last days to come, who left in the
+    last 90 days, job changes waiting and to come. Never a reason or a note."""
+    rows = terminations(company, branch_ids=branch_ids).select_related("membership")
+    upcoming = list(
+        rows.filter(status=Termination.Status.AGREED, last_day__gte=day).order_by("last_day")
+    )
+    left = list(
+        rows.filter(
+            status=Termination.Status.COMPLETED, left_on__gte=day - timedelta(days=90)
+        ).order_by("-left_on")
+    )
+    changes = job_changes(company, branch_ids=branch_ids).select_related("membership")
+    return {
+        "requested": list(
+            rows.filter(status=Termination.Status.REQUESTED).order_by("wished_last_day")
+        ),
+        "upcoming": upcoming,
+        "left": left,
+        "changes_waiting": changes.filter(status=JobChange.Status.PROPOSED).count(),
+        "changes_coming": list(
+            changes.filter(status=JobChange.Status.APPROVED).order_by("effective_on")
+        ),
     }

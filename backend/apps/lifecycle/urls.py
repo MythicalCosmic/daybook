@@ -17,4 +17,16 @@ urlpatterns = [
         api.ExplainView.as_view(),
         name="lifecycle-my-record-explain",
     ),
+    path("lifecycle/leaving/", api.MyLeavingView.as_view(), name="lifecycle-my-leaving"),
+    path(
+        "lifecycle/leaving/<int:pk>/withdraw/",
+        api.WithdrawLeavingView.as_view(),
+        name="lifecycle-my-leaving-withdraw",
+    ),
+    path(
+        "lifecycle/leaving/<int:pk>/exit/",
+        api.ExitAnswersView.as_view(),
+        name="lifecycle-my-leaving-exit",
+    ),
+    path("lifecycle/career/", api.MyCareerView.as_view(), name="lifecycle-my-career"),
 ]
