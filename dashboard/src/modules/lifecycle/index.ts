@@ -1,10 +1,12 @@
 /**
  * The people lifecycle (plan §13.4, package S's dashboard): disciplinary records with the pharmacy
- * categories (§14.14) and an optional fine proposed to payroll, and suspensions; the org chart,
- * terminations, job changes, equipment and reviews come later. Adds the "Record" tab to Person 360
- * and "Warn" / "Suspend" to its header (`people.profile.actions`).
+ * categories (§14.14) and an optional fine proposed to payroll, suspensions, leaving (requests to
+ * leave, the last day, the handover, the final payslip) and job changes that apply on their day;
+ * the org chart, equipment and reviews come later. Adds the "Record" and "Career" tabs to Person
+ * 360 and "Warn", "Suspend", "Change job" and "Start leaving" to its header
+ * (`people.profile.actions`).
  */
-import { Gavel, Pause, ShieldAlert } from "@lucide/vue";
+import { CalendarClock, Gavel, Pause, ShieldAlert, Shuffle } from "@lucide/vue";
 import { defineAsyncComponent } from "vue";
 
 import { defineModule } from "@/core/modules";
@@ -48,6 +50,22 @@ export default defineModule({
       keywords: ["suspend", "to‘xtatish", "приостановить", "отстранить"],
       run: () => ctx.go("lifecycle/suspensions?new=1"),
     },
+    {
+      id: "lifecycle.leave",
+      title: ctx.t("lifecycle.cmd.startLeaving"),
+      icon: CalendarClock,
+      perm: "hr.terminate",
+      keywords: ["leaving", "termination", "resignation", "ishdan bo‘shatish", "ariza", "увольнение", "заявление"],
+      run: () => ctx.go("lifecycle/terminations?new=1"),
+    },
+    {
+      id: "lifecycle.change",
+      title: ctx.t("lifecycle.cmd.proposeChange"),
+      icon: Shuffle,
+      perm: "hr.manage",
+      keywords: ["promotion", "transfer", "raise", "lavozim", "ko‘chirish", "maosh", "перевод", "повышение"],
+      run: () => ctx.go("lifecycle/job-changes?new=1"),
+    },
   ],
   personTabs: [
     {
@@ -57,12 +75,21 @@ export default defineModule({
       order: 70,
       component: defineAsyncComponent(() => import("./components/PersonRecordTab.vue")),
     },
+    {
+      id: "career",
+      title: "lifecycle.career.tab",
+      perm: ["hr.view", "hr.manage", "hr.terminate"],
+      order: 72,
+      component: defineAsyncComponent(() => import("./components/CareerTab.vue")),
+    },
   ],
   extensions: {
     "people.profile.actions": [defineAsyncComponent(() => import("./components/ProfileActions.vue"))],
   },
   deepLinks: {
     record: (id) => (/^\d+$/.test(id) ? `lifecycle/discipline?record=${id}` : "lifecycle/discipline"),
+    termination: (id) => (/^\d+$/.test(id) ? `lifecycle/terminations?termination=${id}` : "lifecycle/terminations"),
+    change: (id) => (/^\d+$/.test(id) ? `lifecycle/job-changes?change=${id}` : "lifecycle/job-changes"),
   },
   messages: (language) => import(`./i18n/${language}.json`),
 });

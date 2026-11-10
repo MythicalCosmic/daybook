@@ -1,7 +1,7 @@
 /**
- * Routes of the people lifecycle, children of /c/:companyId (plan §13.4): discipline and
- * suspensions; the org chart, terminations, job changes, equipment and reviews are calm "coming
- * soon" pages until they are built. Every page loads lazily.
+ * Routes of the people lifecycle, children of /c/:companyId (plan §13.4): discipline,
+ * suspensions, leaving (terminations) and job changes; the org chart, equipment and reviews are
+ * calm "coming soon" pages until they are built. Every page loads lazily.
  */
 import type { RouteRecordRaw } from "vue-router";
 
@@ -24,15 +24,13 @@ export const routes: RouteRecordRaw[] = [
   {
     path: "lifecycle/terminations",
     name: "lifecycle.terminations",
-    component: soon,
-    props: { page: "terminations" },
+    component: () => import("./pages/TerminationsPage.vue"),
     meta: { title: "lifecycle.nav.terminations", perm: ["hr.terminate", "hr.view"] },
   },
   {
     path: "lifecycle/job-changes",
     name: "lifecycle.changes",
-    component: soon,
-    props: { page: "changes" },
+    component: () => import("./pages/JobChangesPage.vue"),
     meta: { title: "lifecycle.nav.changes", perm: ["hr.manage", "hr.view"] },
   },
   {

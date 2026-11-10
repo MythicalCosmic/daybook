@@ -69,7 +69,7 @@ def resignation_items(member: Membership, limit: int) -> list[QueueItem]:
                     ),
                     QueueAction(
                         "decline",
-                        _("Decline"),
+                        _("Decline request"),
                         "danger",
                         "POST",
                         f"lifecycle/terminations/{termination.pk}/decline/",

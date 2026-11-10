@@ -138,7 +138,9 @@ def leave_requested(termination_id: int) -> None:
         actor=termination.membership,
         actions=[
             NotificationAction("agree", lambda person: _("Agree"), "primary"),
-            NotificationAction("decline", lambda person: _("Decline"), "danger", needs_reason=True),
+            NotificationAction(
+                "decline", lambda person: _("Decline request"), "danger", needs_reason=True
+            ),
         ],
         dedupe_key=f"lifecycle.resignation:{termination.pk}",
     )
