@@ -13,10 +13,11 @@ from apps.ai.tools import registry
 from apps.ai.tools.registry import ToolContext
 from apps.audit.models import AuditLog
 from apps.companies.tests.factories import CompanyFactory
+from apps.knowledge import demo as knowledge_demo
 from apps.knowledge import sanitize
 from apps.knowledge.demo import COLD_CHAIN
 from apps.knowledge.tests.factories import PageFactory, SpaceFactory
-from apps.learning import tutor_tools
+from apps.learning import demo_tutor, tutor_tools
 from apps.learning.models import Question, QuestionDraftJob, Quiz, Status, TutorDraft
 from apps.learning.tests.q2.fixtures import (
     ai_on,
@@ -767,3 +768,36 @@ def test_without_claude_the_tutor_drafts_from_a_page_when_asked(
     chat.run_turn(other.pk)
     other.refresh_from_db()
     assert TutorDraft.objects.count() == 2
+
+
+# The demo ---------------------------------------------------------------------------------
+
+
+def test_the_demo_owner_has_drafts_waiting_in_a_tutor_conversation(company, demo_people):
+    switch_on(company)
+    company.default_language = "uz"
+    company.save(update_fields=["default_language"])
+    people = demo_people(company)
+    now = timezone.now()
+    knowledge_demo.seed(company, people, now)
+
+    demo_tutor.seed(company, people, now)
+
+    conversation = AIConversation.objects.get(company=company, agent="tutor")
+    assert conversation.membership == people["owner"]
+    questions, quiz = tutor_tools.cards(conversation, people["owner"].user)
+    kinds = [item["question"]["kind"] for item in questions["questions"]]
+    assert kinds == ["single", "order", "true_false"]
+    assert {item["question"]["state"] for item in questions["questions"]} == {"draft"}
+    assert quiz["quiz"]["status"] == "draft" and quiz["quiz"]["time_limit_seconds"] == 600
+    turn = AITurn.objects.get(conversation=conversation)
+    assert turn.status == "done" and questions["message_id"] == turn.message_id
+    # A history Claude can go on from: each tool call answered in the next message.
+    messages = list(conversation.messages.order_by("seq"))
+    assert [message.role for message in messages] == ["user", "assistant"] * 3
+    for call, answer in zip(messages[1::2], messages[2::2], strict=False):
+        uses = [block["id"] for block in call.content if block["type"] == "tool_use"]
+        results = [b["tool_use_id"] for b in answer.content if b["type"] == "tool_result"]
+        assert uses == results
+    shown = [message.display_text != "" for message in messages]
+    assert shown == [True, False, False, False, False, True]
