@@ -65,7 +65,7 @@ function signedPoints(value: string): string {
           <span class="num" data-testid="advisor-period">{{ period }}</span>
           <UiBadge :tone="review.written_by === 'ai' ? 'primary' : 'neutral'" data-testid="advisor-writer">{{ t(writerKey(review.written_by)) }}</UiBadge>
         </p>
-        <h2 class="font-display text-lg leading-snug text-fg md:text-[1.6rem] md:leading-tight" data-testid="advisor-headline">{{ review.headline }}</h2>
+        <h2 class="font-display text-[1.05rem] leading-snug text-fg md:text-[1.3rem] md:leading-snug" data-testid="advisor-headline">{{ review.headline }}</h2>
         <p v-if="review.written_at" class="text-xs text-subtle">{{ t("ai.advisor.writtenAt", { time: fmt.instant(review.written_at, "short") }) }}</p>
       </div>
     </header>

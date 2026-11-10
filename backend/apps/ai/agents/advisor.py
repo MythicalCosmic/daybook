@@ -267,7 +267,6 @@ def fake_answer(ctx, question: str) -> tuple[str, list[dict]]:
     import time
 
     from apps.ai.tools import registry as tools
-    from apps.briefings import display
 
     steps: list[dict] = []
 
@@ -289,36 +288,66 @@ def fake_answer(ctx, question: str) -> tuple[str, list[dict]]:
     data = call("briefings_advisor_facts", {})
     review = data.get("review") or {}
     finance = (data.get("facts") or {}).get("finance")
-    lines = [f"**{review['headline']}**"] if review.get("headline") else []
+    lines: list[str] = []
     if WHAT_IF.search(question or "") and finance:
-        branches = max(len(finance.get("branches") or []), 1)
-        weekly = float(finance["expenses"]["average"] or 0)
-        monthly_cost = round(weekly * 52 / 12 / branches, -5)
-        scenario = call(
-            "briefings_advisor_scenario",
-            {"monthly_change": f"{-monthly_cost:.2f}", "label": "second pharmacy"},
-        )
-        if scenario:
-            currency = scenario.get("currency") or "UZS"
-            low = scenario["scenario"]["low"]
-            values = {
-                "cost": display.money(monthly_cost, currency, ctx.language),
-                "low": display.money(low["balance"], currency, ctx.language),
-                "date": display.day(low["date"], ctx.language),
-            }
-            lines.append(
-                _(
-                    "One more pharmacy that costs about %(cost)s a month: the lowest balance "
-                    "would be %(low)s (%(date)s)."
-                )
-                % values
-            )
+        lines += _what_if_lines(finance, call, ctx.language)
     else:
+        if review.get("headline"):
+            lines.append(f"**{review['headline']}**")
         lines += [f"- {text}" for text in review.get("went_wrong", [])[:3]]
         lines += [f"{n}. {text}" for n, text in enumerate(review.get("suggestions", []), 1)]
     if not lines:
         lines.append(_("There is no business review yet: the first one comes on Monday morning."))
     return "\n".join(lines), steps
+
+
+def _what_if_lines(finance: dict, call, language: str) -> list[str]:
+    """One more pharmacy that costs what an average one costs to run (its gross profit less its
+    profit: rent, salaries, bills), a month of it, on the cash forecast."""
+    from apps.briefings import display
+
+    branches = max(len(finance.get("branches") or []), 1)
+    gross = finance["gross_profit"]["average"] or finance["gross_profit"]["value"]
+    profit = finance["profit"]["average"] or finance["profit"]["value"]
+    weekly = max(float(gross or 0) - float(profit or 0), 0.0)
+    monthly_cost = round(weekly * 52 / 12 / branches, -5)
+    scenario = call(
+        "briefings_advisor_scenario",
+        {"monthly_change": f"{-monthly_cost:.2f}", "label": "second pharmacy"},
+    )
+    if not scenario:
+        return []
+    currency = scenario.get("currency") or "UZS"
+    found = scenario["scenario"]
+    lines = [
+        _(
+            "One more pharmacy that costs about %(cost)s a month to run: the lowest balance "
+            "would be %(low)s (%(date)s)."
+        )
+        % {
+            "cost": display.money(monthly_cost, currency, language),
+            "low": display.money(found["low"]["balance"], currency, language),
+            "date": display.day(found["low"]["date"], language),
+        }
+    ]
+    if found["below_zero_on"]:
+        lines.append(
+            _("On %(date)s the money would run out: not yet, or only with a loan or a partner.")
+            % {"date": display.day(found["below_zero_on"], language)}
+        )
+    else:
+        days = scenario["days"]
+        lines.append(
+            ngettext(
+                "Even then the money lasts the next %(days)s day: it fits, as long as the new "
+                "pharmacy starts selling soon.",
+                "Even then the money lasts the next %(days)s days: it fits, as long as the new "
+                "pharmacy starts selling soon.",
+                days,
+            )
+            % {"days": days}
+        )
+    return lines
 
 
 AGENT = registry.register(

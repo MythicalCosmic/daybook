@@ -152,7 +152,7 @@ const hasMessages = computed(() => (messages.data.value?.length ?? 0) > 0);
         <h2 class="truncate text-sm font-semibold text-fg">{{ t("ai.advisor.chat.title") }}</h2>
         <p class="truncate text-xs text-muted">{{ t("ai.advisor.chat.subtitle") }}</p>
       </div>
-      <UiButton size="sm" variant="ghost" :icon="MessageSquarePlus" :disabled="live || empty" data-testid="advisor-new-chat" @click="newChat">{{ t("ai.chat.new") }}</UiButton>
+      <UiButton size="sm" variant="ghost" class="!size-9 shrink-0 !px-0" :disabled="live || empty" :aria-label="t('ai.chat.new')" :title="t('ai.chat.new')" data-testid="advisor-new-chat" @click="newChat"><MessageSquarePlus :size="17" aria-hidden="true" /></UiButton>
     </header>
 
     <div ref="box" class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3.5 py-4" role="log" aria-live="polite" :aria-label="t('ai.chat.thread')" data-testid="advisor-thread" @scroll.passive="onScroll">
