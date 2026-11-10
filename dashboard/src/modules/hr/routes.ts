@@ -1,7 +1,8 @@
 /**
  * Routes of HR, children of /c/:companyId (plan §6.1): the overview first, then documents (and the
- * compliance matrix), contracts, contract templates, celebrations; policies and hiring are calm
- * "coming soon" pages until they are built. Every page loads lazily.
+ * compliance matrix), contracts, contract templates, celebrations, hiring (vacancies and each
+ * one's pipeline board); policies is a calm "coming soon" page until it is built. Every page
+ * loads lazily.
  */
 import type { RouteRecordRaw } from "vue-router";
 
@@ -27,5 +28,7 @@ export const routes: RouteRecordRaw[] = [
   // Pharmacist coverage (plan §14.9): HR's, and the roster's (whoever runs attendance reads it too).
   { path: "hr/coverage", name: "hr.coverage", component: () => import("./pages/CoveragePage.vue"), meta: { title: "hr.nav.coverage", perm: ["hr.view", "attendance.view"] } },
   { path: "hr/policies", name: "hr.policies", component: soon, props: { page: "policies" }, meta: { title: "hr.nav.policies", perm: "hr.view" } },
-  { path: "hr/hiring", name: "hr.hiring", component: soon, props: { page: "hiring" }, meta: { title: "hr.nav.hiring", perm: "hr.hiring" } },
+  // Hiring: vacancies with a bot link, and each one's pipeline board (apps/hr/hiring).
+  { path: "hr/hiring", name: "hr.hiring", component: () => import("./hiring/pages/HiringPage.vue"), meta: { title: "hr.nav.hiring", perm: "hr.hiring" } },
+  { path: "hr/hiring/:vacancyId(\\d+)", name: "hr.vacancy", component: () => import("./hiring/pages/VacancyPage.vue"), meta: { title: "hr.nav.hiring", perm: "hr.hiring" } },
 ];

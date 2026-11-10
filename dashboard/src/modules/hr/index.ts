@@ -2,11 +2,12 @@
  * HR (plan §3.11, §4.10, §6.2; package G's dashboard): the overview of what needs attention
  * (expiring documents, contracts ending, probation ending, birthdays), documents with the
  * compliance matrix, contracts and their templates, celebrations, and pharmacist coverage (§14.9:
- * its page, the roster's gaps in `attendance.roster.coverage`, the Overview card); policies and
- * hiring come later. Adds the "HR" tab to Person 360 and the HR panel to Settings. Kept tiny:
+ * its page, the roster's gaps in `attendance.roster.coverage`, the Overview card) and hiring
+ * (vacancies with a bot link and QR code, each one's pipeline board; `hiring/`); policies come
+ * later. Adds the "HR" tab to Person 360 and the HR panel to Settings. Kept tiny:
  * pages and the API load on first use. Whoever runs the roster (attendance.view) sees Coverage.
  */
-import { FilePlus2, FileSignature, IdCard, ShieldCheck } from "@lucide/vue";
+import { BriefcaseBusiness, FilePlus2, FileSignature, IdCard, ShieldCheck } from "@lucide/vue";
 import { defineAsyncComponent } from "vue";
 
 import { defineModule } from "@/core/modules";
@@ -33,7 +34,8 @@ export default defineModule({
     { key: "templates", title: "hr.nav.templates", to: "hr/contract-templates", perm: "hr.manage" },
     { key: "celebrations", title: "hr.nav.celebrations", to: "hr/celebrations", perm: "hr.view" },
     { key: "policies", title: "hr.nav.policies", to: "hr/policies", perm: "hr.view" },
-    { key: "hiring", title: "hr.nav.hiring", to: "hr/hiring", perm: "hr.hiring" },
+    // The badge: applicants nobody has looked at yet.
+    { key: "hiring", title: "hr.nav.hiring", to: "hr/hiring", perm: "hr.hiring", badge: counter("hr.applicants") },
   ],
   // The roster's changes move coverage (its gaps are computed from the shifts).
   invalidates: ["hr", "attendance.roster"],
@@ -61,6 +63,14 @@ export default defineModule({
       perm: ["hr.view", "attendance.view"],
       keywords: ["pharmacist", "farmatsevt", "фармацевт", "provizor", "coverage", "smena", "смена", "gap"],
       run: () => ctx.go("hr/coverage"),
+    },
+    {
+      id: "hr.vacancy",
+      title: ctx.t("hr.cmd.vacancy"),
+      icon: BriefcaseBusiness,
+      perm: "hr.hiring",
+      keywords: ["vacancy", "hiring", "job", "vakansiya", "ishga olish", "вакансия", "найм", "farmatsevt"],
+      run: () => ctx.go("hr/hiring?new=1"),
     },
   ],
   widgets: [
@@ -100,6 +110,7 @@ export default defineModule({
     contract: (id) => (/^\d+$/.test(id) ? `hr/contracts?contract=${id}` : "hr/contracts"),
     document: (id) => (/^\d+$/.test(id) ? `hr/documents?document=${id}` : "hr/documents"),
     coverage: (id) => (/^\d+$/.test(id) ? `hr/coverage?branch=${id}` : "hr/coverage"),
+    vacancy: (id) => (/^\d+$/.test(id) ? `hr/hiring/${id}` : "hr/hiring"),
   },
   messages: (language) => import(`./i18n/${language}.json`),
 });
