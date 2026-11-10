@@ -101,7 +101,7 @@ class PolicyViewSet(
         )
         return context
 
-    def detail(self, policy: Policy) -> dict:
+    def payload(self, policy: Policy) -> dict:
         policy = self.get_queryset().get(pk=policy.pk)
         context = self.context_for([policy])
         users = [policy.created_by_id, *policy.versions.values_list("published_by_id", flat=True)]
@@ -144,7 +144,7 @@ class PolicyViewSet(
 
     @extend_schema(responses=s.PolicyDetailSerializer)
     def retrieve(self, request, *args, **kwargs):
-        return Response(self.detail(self.get_object()))
+        return Response(self.payload(self.get_object()))
 
     @extend_schema(request=s.PolicyWriteSerializer, responses={201: s.PolicyDetailSerializer})
     def create(self, request, company_id):
@@ -153,7 +153,7 @@ class PolicyViewSet(
             raise ValidationError({"title": [_("Give the policy a title.")]})
         data.pop("is_active", None)
         policy = services.create_policy(self.company, by=self.membership, **data)
-        return Response(self.detail(policy), status=status.HTTP_201_CREATED)
+        return Response(self.payload(policy), status=status.HTTP_201_CREATED)
 
     @extend_schema(request=s.PolicyWriteSerializer, responses=s.PolicyDetailSerializer)
     def partial_update(self, request, company_id, pk):
@@ -162,7 +162,7 @@ class PolicyViewSet(
         data.pop("body", None)
         data.pop("change_note", None)
         policy = services.update_policy(policy, by=self.membership, **data)
-        return Response(self.detail(policy))
+        return Response(self.payload(policy))
 
     def perform_destroy(self, instance):
         services.delete_policy(instance, by=self.membership)
@@ -201,7 +201,7 @@ class PolicyViewSet(
         services.publish(
             policy, by=self.membership, asks_again=data.get("asks_again", True), **fields
         )
-        return Response(self.detail(policy))
+        return Response(self.payload(policy))
 
     @extend_schema(
         parameters=[OpenApiParameter("number", int, OpenApiParameter.PATH)],
