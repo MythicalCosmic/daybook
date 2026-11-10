@@ -11,7 +11,7 @@ import { membership, person, renderApp, routeApi } from "../../test/harness";
 import { features, findFeature } from "../registry";
 import { ReviewCard } from "./reviewSlots";
 import ReviewPage from "./ReviewPage";
-import { answered, cleanAnswers, resumeStep, unrated, waitingCount, type MyReview, type MyReviews, type ReviewQuestion } from "./reviews";
+import { answered, cleanAnswers, noBreak, resumeStep, unrated, waitingCount, type MyReview, type MyReviews, type ReviewQuestion } from "./reviews";
 import ReviewsPage from "./ReviewsPage";
 
 const client = vi.hoisted(() => ({ api: vi.fn() }));
@@ -172,7 +172,7 @@ describe("my reviews, Home and Me", () => {
       }),
     });
     renderApp(<ReviewsPage />, { me });
-    expect(await screen.findByText("Yunusobod: 3-chorak, 2026")).toBeTruthy();
+    expect(await screen.findByText(noBreak("Yunusobod: 3-chorak, 2026"))).toBeTruthy();
     expect(screen.getByText("Chilonzor: 2-chorak, 2026")).toBeTruthy();
     expect(screen.getByText("4 of 5 · A bonus")).toBeTruthy();
     expect(screen.getByText("New")).toBeTruthy();

@@ -205,7 +205,17 @@ export interface Review {
   goals: Goal[];
   /** Their pay now: payroll.view only. */
   pay: { amount: Money; currency: Currency; pay_type: string; rounding_step: Money } | null;
-  job_change: { id: number; status: "proposed" | "approved" | "applied" | "rejected" | "cancelled"; effective_on: string; parts: string[]; pay_after: Money | null; error: string; can_decide: boolean } | null;
+  /** The raise or promotion as its job change; the pay before and after only with payroll.view. */
+  job_change: {
+    id: number;
+    status: "proposed" | "approved" | "applied" | "rejected" | "cancelled";
+    effective_on: string;
+    parts: string[];
+    pay_before: Money | null;
+    pay_after: Money | null;
+    error: string;
+    can_decide: boolean;
+  } | null;
   bonus: { id: number; amount: Money; currency: Currency; status: string; period: string } | null;
   outcome_state: OutcomeState | null;
   published_at: string | null;

@@ -509,6 +509,7 @@ class ChangeRefSerializer(serializers.Serializer):
     status = serializers.ChoiceField(JobChange.Status.choices)
     effective_on = serializers.DateField()
     parts = serializers.ListField(child=serializers.CharField())
+    pay_before = serializers.CharField(allow_null=True, help_text="Only with payroll.view.")
     pay_after = serializers.CharField(allow_null=True, help_text="Only with payroll.view.")
     error = serializers.CharField(allow_blank=True)
     can_decide = serializers.BooleanField()
@@ -736,14 +737,16 @@ class ReviewSerializer(serializers.ModelSerializer):
         if change is None:
             return None
         viewer = self._viewer()
-        pay_after = None
+        pay_before = pay_after = None
         if viewer.has_perm(Perm.PAYROLL_VIEW) and "pay" in (change.parts or []):
+            pay_before = ((change.before or {}).get("pay") or {}).get("amount")
             pay_after = ((change.after or {}).get("pay") or {}).get("amount")
         return {
             "id": change.pk,
             "status": change.status,
             "effective_on": change.effective_on,
             "parts": list(change.parts or []),
+            "pay_before": pay_before,
             "pay_after": pay_after,
             "error": change.error,
             "can_decide": change.status == JobChange.Status.PROPOSED

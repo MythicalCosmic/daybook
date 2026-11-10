@@ -47,9 +47,10 @@ const questionChart = computed(() => {
   const rows = data.value?.questions ?? [];
   return {
     categories: rows.map((_, index) => t("lifecycle.reviews.results.questionShort", { number: index + 1 })),
+    // The chart theme's first two colours (ECharts can't read CSS variables).
     series: [
-      { name: t("lifecycle.reviews.results.selfAverage"), data: rows.map((row) => (row.self_average ? Number(row.self_average) : null)), color: "var(--c-info)" },
-      { name: t("lifecycle.reviews.results.managerAverage"), data: rows.map((row) => (row.manager_average ? Number(row.manager_average) : null)), color: "var(--c-primary)" },
+      { name: t("lifecycle.reviews.results.selfAverage"), data: rows.map((row) => (row.self_average ? Number(row.self_average) : null)) },
+      { name: t("lifecycle.reviews.results.managerAverage"), data: rows.map((row) => (row.manager_average ? Number(row.manager_average) : null)) },
     ],
   };
 });
@@ -75,7 +76,7 @@ const questionChart = computed(() => {
         <div class="ui-card p-4" data-raise-cost>
           <p class="flex items-center gap-1.5 text-xs font-medium text-muted"><TrendingUp :size="14" aria-hidden="true" />{{ t("lifecycle.reviews.results.raisesCost") }}</p>
           <template v-if="data.cost">
-            <p class="mt-1 text-2xl font-semibold tabular-nums text-fg"><MoneyText :value="data.cost.raises_monthly" :currency="data.cost.currency" compact /></p>
+            <p class="mt-1 text-2xl font-semibold tabular-nums text-fg"><MoneyText :value="data.cost.raises_monthly" :currency="data.cost.currency" /></p>
             <p v-if="Number(data.cost.raises_waiting) > 0" class="text-xs text-warning">{{ t("lifecycle.reviews.results.waiting") }}: <MoneyText :value="data.cost.raises_waiting" :currency="data.cost.currency" compact /></p>
             <p v-else class="text-xs text-muted">{{ t("lifecycle.reviews.results.perMonth") }}</p>
           </template>
@@ -84,7 +85,7 @@ const questionChart = computed(() => {
         <div class="ui-card p-4">
           <p class="flex items-center gap-1.5 text-xs font-medium text-muted"><Banknote :size="14" aria-hidden="true" />{{ t("lifecycle.reviews.results.bonuses") }}</p>
           <template v-if="data.cost">
-            <p class="mt-1 text-2xl font-semibold tabular-nums text-fg"><MoneyText :value="data.cost.bonuses" :currency="data.cost.currency" compact /></p>
+            <p class="mt-1 text-2xl font-semibold tabular-nums text-fg"><MoneyText :value="data.cost.bonuses" :currency="data.cost.currency" /></p>
             <p v-if="Number(data.cost.bonuses_waiting) > 0" class="text-xs text-warning">{{ t("lifecycle.reviews.results.waiting") }}: <MoneyText :value="data.cost.bonuses_waiting" :currency="data.cost.currency" compact /></p>
             <p v-else class="text-xs text-muted">{{ t("lifecycle.reviews.results.approvedOnly") }}</p>
           </template>
@@ -98,7 +99,7 @@ const questionChart = computed(() => {
           <p class="mb-4 text-xs text-muted">{{ t("lifecycle.reviews.results.spreadHint") }}</p>
           <ul class="flex flex-col gap-2.5">
             <li v-for="row in spread.slice().reverse()" :key="row.rating" class="flex items-center gap-3">
-              <span class="w-24 shrink-0 text-sm text-muted">{{ row.rating }} · {{ t(`lifecycle.reviews.rating.word${row.rating}`) }}</span>
+              <span class="w-36 shrink-0 truncate text-sm text-muted">{{ row.rating }} · {{ t(`lifecycle.reviews.rating.word${row.rating}`) }}</span>
               <span class="relative h-6 flex-1 overflow-hidden rounded-[8px] bg-surface-2 dark:bg-surface-3">
                 <span class="absolute inset-y-0 left-0 rounded-[8px] transition-[width] duration-500" :style="{ width: `${row.share}%`, background: row.color }" />
               </span>
@@ -123,7 +124,7 @@ const questionChart = computed(() => {
       <section v-if="data.questions.length" class="ui-card p-4 sm:p-5" data-questions-chart>
         <h3 class="text-sm font-semibold text-fg">{{ t("lifecycle.reviews.results.byQuestion") }}</h3>
         <p class="mb-2 text-xs text-muted">{{ t("lifecycle.reviews.results.byQuestionHint") }}</p>
-        <BarChart :categories="questionChart.categories" :series="questionChart.series" :y-max="5" height="220px" legend :label="t('lifecycle.reviews.results.byQuestion')" />
+        <BarChart :categories="questionChart.categories" :series="questionChart.series" :y-max="5" integer height="220px" legend :label="t('lifecycle.reviews.results.byQuestion')" />
         <ol class="mt-3 grid gap-1 text-xs text-muted sm:grid-cols-2">
           <li v-for="(row, index) in data.questions" :key="row.id" class="truncate" :title="row.text">{{ index + 1 }}. {{ row.text }}</li>
         </ol>

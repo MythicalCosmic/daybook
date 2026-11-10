@@ -157,3 +157,11 @@ export function waitingCount(data: MyReviews | undefined): number {
   if (!data) return 0;
   return data.open.filter((row) => row.can_answer).length + data.past.filter((row) => !row.acknowledged_at).length;
 }
+
+/**
+ * A date or a round's name that never breaks inside "9-noyabr", "3-chorak" or "1 ноября" (a no-break
+ * hyphen after a number, a no-break space between a number and a word).
+ */
+export function noBreak(text: string): string {
+  return text.replace(/(\d)-(\p{L})/gu, "$1\u2011$2").replace(/(\d) (\p{L})/gu, "$1\u00a0$2");
+}

@@ -280,25 +280,25 @@ const audienceLine = computed(() => {
       </section>
 
       <!-- How far everyone has got -->
-      <div v-if="round.status !== 'draft' && progress" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" data-progress>
-        <div class="ui-card p-4">
+      <div v-if="round.status !== 'draft' && progress" class="grid grid-cols-2 gap-3 xl:grid-cols-4" data-progress>
+        <div class="ui-card p-3 sm:p-4">
           <p class="text-xs font-medium text-muted">{{ t("lifecycle.reviews.round.selfSent") }}</p>
-          <p class="mt-1 text-2xl font-semibold tabular-nums text-fg">{{ progress.self_sent }}<span class="text-sm font-normal text-muted"> / {{ progress.people }}</span></p>
-          <ProgressBar class="mt-2" :value="share(progress.self_sent)" size="sm" tone="info" :label="t('lifecycle.reviews.round.selfSent')" />
+          <p class="mt-1 text-xl font-semibold sm:text-2xl tabular-nums text-fg">{{ progress.self_sent }}<span class="text-sm font-normal text-muted"> / {{ progress.people }}</span></p>
+          <ProgressBar class="mt-2" :value="share(progress.self_sent)" size="sm" tone="info" />
         </div>
-        <div class="ui-card p-4">
+        <div class="ui-card p-3 sm:p-4">
           <p class="text-xs font-medium text-muted">{{ t("lifecycle.reviews.round.published") }}</p>
-          <p class="mt-1 text-2xl font-semibold tabular-nums text-fg">{{ progress.published }}<span class="text-sm font-normal text-muted"> / {{ progress.people }}</span></p>
-          <ProgressBar class="mt-2" :value="share(progress.published)" size="sm" tone="success" :label="t('lifecycle.reviews.round.published')" />
+          <p class="mt-1 text-xl font-semibold sm:text-2xl tabular-nums text-fg">{{ progress.published }}<span class="text-sm font-normal text-muted"> / {{ progress.people }}</span></p>
+          <ProgressBar class="mt-2" :value="share(progress.published)" size="sm" tone="success" />
         </div>
-        <div class="ui-card p-4">
+        <div class="ui-card p-3 sm:p-4">
           <p class="text-xs font-medium text-muted">{{ t("lifecycle.reviews.round.late") }}</p>
-          <p :class="['mt-1 text-2xl font-semibold tabular-nums', progress.late ? 'text-danger' : 'text-fg']">{{ progress.late }}</p>
+          <p :class="['mt-1 text-xl font-semibold sm:text-2xl tabular-nums', progress.late ? 'text-danger' : 'text-fg']">{{ progress.late }}</p>
           <p class="mt-1 text-xs text-muted">{{ t("lifecycle.reviews.round.lateLine", { self: progress.self_late, manager: progress.manager_late }) }}</p>
         </div>
-        <div class="ui-card p-4">
+        <div class="ui-card p-3 sm:p-4">
           <p class="text-xs font-medium text-muted">{{ round.mine ? t("lifecycle.reviews.round.mine") : t("lifecycle.reviews.round.acknowledged") }}</p>
-          <p class="mt-1 text-2xl font-semibold tabular-nums text-fg">{{ round.mine || progress.acknowledged }}</p>
+          <p class="mt-1 text-xl font-semibold sm:text-2xl tabular-nums text-fg">{{ round.mine || progress.acknowledged }}</p>
           <p class="mt-1 text-xs text-muted">{{ round.mine ? t("lifecycle.reviews.round.mineLine") : t("lifecycle.reviews.round.acknowledgedLine", { count: progress.published }, progress.published) }}</p>
         </div>
       </div>

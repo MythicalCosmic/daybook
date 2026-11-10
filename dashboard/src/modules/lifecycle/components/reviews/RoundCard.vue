@@ -49,18 +49,8 @@ const deadline = computed(() => {
     </div>
 
     <div v-if="round.status !== 'draft'" class="grid gap-3 sm:grid-cols-2">
-      <div>
-        <div class="mb-1 flex items-center justify-between text-xs text-muted">
-          <span>{{ t("lifecycle.reviews.round.selfSent") }}</span><span class="tabular-nums text-fg">{{ round.progress.self_sent }} / {{ people }}</span>
-        </div>
-        <ProgressBar :value="share(round.progress.self_sent)" size="sm" tone="info" :label="t('lifecycle.reviews.round.selfSent')" />
-      </div>
-      <div>
-        <div class="mb-1 flex items-center justify-between text-xs text-muted">
-          <span>{{ t("lifecycle.reviews.round.published") }}</span><span class="tabular-nums text-fg">{{ round.progress.published }} / {{ people }}</span>
-        </div>
-        <ProgressBar :value="share(round.progress.published)" size="sm" tone="success" :label="t('lifecycle.reviews.round.published')" />
-      </div>
+      <ProgressBar :value="share(round.progress.self_sent)" size="sm" tone="info" :label="t('lifecycle.reviews.round.selfSent')" :value-text="`${round.progress.self_sent} / ${people}`" />
+      <ProgressBar :value="share(round.progress.published)" size="sm" tone="success" :label="t('lifecycle.reviews.round.published')" :value-text="`${round.progress.published} / ${people}`" />
     </div>
     <p v-else class="rounded-[12px] border border-dashed border-line px-3 py-2.5 text-sm text-muted">{{ t("lifecycle.reviews.card.draft", { count: round.questions.length }, round.questions.length) }}</p>
 

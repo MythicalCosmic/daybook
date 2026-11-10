@@ -38,18 +38,18 @@ const records = computed(() => props.kpis?.discipline.records ?? 0);
 
     <p v-if="!kpis" class="rounded-[12px] border border-dashed border-line px-4 py-6 text-center text-sm text-muted">{{ t("lifecycle.reviews.kpis.later") }}</p>
 
-    <ul v-else :class="['grid gap-2.5', compact ? '' : 'sm:grid-cols-2']">
-      <li class="rounded-[12px] border border-line px-3.5 py-3">
+    <ul v-else :class="['grid grid-cols-2 gap-2.5', compact ? '' : 'lg:grid-cols-3']">
+      <li class="min-w-0 rounded-[12px] border border-line px-3 py-2.5">
         <div class="flex items-center gap-2 text-xs font-medium text-muted"><ClipboardCheck :size="14" aria-hidden="true" />{{ t("lifecycle.reviews.kpis.tasks") }}</div>
         <template v-if="kpis.tasks.total">
           <p class="mt-1 text-xl font-semibold tabular-nums text-fg">{{ fmt.percent(onTime ?? 0, 1) }}</p>
-          <ProgressBar class="mt-1.5" :value="onTime ?? 0" :max="100" size="xs" :tone="onTimeTone" :label="t('lifecycle.reviews.kpis.tasks')" />
+          <ProgressBar class="mt-1.5" :value="onTime ?? 0" :max="100" size="xs" :tone="onTimeTone" />
           <p class="mt-1.5 text-xs text-muted">{{ t("lifecycle.reviews.kpis.tasksLine", { onTime: kpis.tasks.on_time, total: kpis.tasks.total, late: kpis.tasks.late, missed: kpis.tasks.missed }) }}</p>
         </template>
         <p v-else class="mt-1 text-sm text-muted">{{ t("lifecycle.reviews.kpis.noTasks") }}</p>
       </li>
 
-      <li v-if="kpis.attendance" class="rounded-[12px] border border-line px-3.5 py-3">
+      <li v-if="kpis.attendance" class="min-w-0 rounded-[12px] border border-line px-3 py-2.5">
         <div class="flex items-center gap-2 text-xs font-medium text-muted"><CalendarCheck :size="14" aria-hidden="true" />{{ t("lifecycle.reviews.kpis.attendance") }}</div>
         <div class="mt-1 flex items-baseline gap-4">
           <p class="text-xl font-semibold tabular-nums" :class="kpis.attendance.late_arrivals ? 'text-warning' : 'text-fg'">
@@ -62,7 +62,7 @@ const records = computed(() => props.kpis?.discipline.records ?? 0);
         <p class="mt-1.5 text-xs text-muted">{{ t("lifecycle.reviews.kpis.attendanceLine", { attended: kpis.attendance.attended_days, scheduled: kpis.attendance.scheduled_days, hours: fmt.number(kpis.attendance.worked_hours, 0) }) }}</p>
       </li>
 
-      <li class="rounded-[12px] border border-line px-3.5 py-3">
+      <li class="min-w-0 rounded-[12px] border border-line px-3 py-2.5">
         <div class="flex items-center gap-2 text-xs font-medium text-muted"><ShieldCheck :size="14" aria-hidden="true" />{{ t("lifecycle.reviews.kpis.discipline") }}</div>
         <p class="mt-1 text-xl font-semibold tabular-nums" :class="records ? 'text-warning' : 'text-success'">{{ records }}</p>
         <p class="mt-1.5 text-xs text-muted">
@@ -71,7 +71,7 @@ const records = computed(() => props.kpis?.discipline.records ?? 0);
         </p>
       </li>
 
-      <li v-if="kpis.sales" class="rounded-[12px] border border-line px-3.5 py-3">
+      <li v-if="kpis.sales" class="min-w-0 rounded-[12px] border border-line px-3 py-2.5">
         <div class="flex items-center gap-2 text-xs font-medium text-muted"><Store :size="14" aria-hidden="true" />{{ t("lifecycle.reviews.kpis.sales") }}</div>
         <p class="mt-1 text-xl font-semibold tabular-nums text-fg"><MoneyText :value="kpis.sales.net" :currency="kpis.sales.currency" compact /></p>
         <p class="mt-1.5 text-xs text-muted">
@@ -81,7 +81,7 @@ const records = computed(() => props.kpis?.discipline.records ?? 0);
         </p>
       </li>
 
-      <li v-if="kpis.learning" class="rounded-[12px] border border-line px-3.5 py-3">
+      <li v-if="kpis.learning" class="min-w-0 rounded-[12px] border border-line px-3 py-2.5">
         <div class="flex items-center gap-2 text-xs font-medium text-muted"><BookOpenCheck :size="14" aria-hidden="true" />{{ t("lifecycle.reviews.kpis.learning") }}</div>
         <p class="mt-1 text-xl font-semibold tabular-nums text-fg">{{ kpis.learning.completed }}</p>
         <p class="mt-1.5 text-xs text-muted">
@@ -90,7 +90,7 @@ const records = computed(() => props.kpis?.discipline.records ?? 0);
         </p>
       </li>
 
-      <li v-if="kpis.goals" class="rounded-[12px] border border-line px-3.5 py-3">
+      <li v-if="kpis.goals" class="min-w-0 rounded-[12px] border border-line px-3 py-2.5">
         <div class="flex items-center gap-2 text-xs font-medium text-muted"><Flag :size="14" aria-hidden="true" />{{ t("lifecycle.reviews.kpis.goals") }}</div>
         <p class="mt-1 text-xl font-semibold tabular-nums text-fg">{{ kpis.goals.done }}<span class="text-sm font-normal text-muted"> / {{ kpis.goals.done + kpis.goals.missed + kpis.goals.open }}</span></p>
         <p class="mt-1.5 text-xs text-muted">{{ t("lifecycle.reviews.kpis.goalsLine", { missed: kpis.goals.missed, open: kpis.goals.open }) }}</p>

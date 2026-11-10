@@ -180,7 +180,7 @@ const stageNote = computed(() => {
             <div class="grid shrink-0 grid-cols-2 gap-2 text-center">
               <div class="rounded-[10px] bg-surface-2 px-2.5 py-1.5 dark:bg-surface-3">
                 <p class="text-[11px] text-muted">{{ t("lifecycle.reviews.theirs") }}</p>
-                <p class="text-sm font-semibold tabular-nums text-fg">{{ review.self_part.average ?? "—" }}</p>
+                <p class="text-sm font-semibold tabular-nums text-fg">{{ review.self_part.average ? fmt.number(review.self_part.average, 1) : "—" }}</p>
               </div>
               <div class="rounded-[10px] bg-surface-2 px-2.5 py-1.5 dark:bg-surface-3">
                 <p class="text-[11px] text-muted">{{ t("lifecycle.reviews.yours") }}</p>

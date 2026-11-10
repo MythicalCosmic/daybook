@@ -74,10 +74,10 @@ async function runReject(reason: string): Promise<void> {
           <template v-else-if="review.outcome === 'improvement_plan'">{{ t("lifecycle.reviews.state.planLine", { count: review.goals.length }, review.goals.length) }}</template>
           <template v-else>{{ t("lifecycle.reviews.state.noneLine") }}</template>
         </p>
-        <p v-if="review.pay && change?.pay_after" class="mt-1 flex flex-wrap items-center gap-1.5 text-sm" data-state-pay>
-          <MoneyText class="tabular-nums text-muted" :value="review.pay.amount" :currency="review.pay.currency" />
+        <p v-if="change?.pay_before && change.pay_after" class="mt-1 flex flex-wrap items-center gap-1.5 text-sm" data-state-pay>
+          <MoneyText class="tabular-nums text-muted" :value="change.pay_before" :currency="review.pay?.currency ?? review.bonus_currency" />
           <ArrowRight :size="13" class="text-subtle" aria-hidden="true" />
-          <MoneyText class="font-semibold tabular-nums text-fg" :value="change.pay_after" :currency="review.pay.currency" />
+          <MoneyText class="font-semibold tabular-nums text-fg" :value="change.pay_after" :currency="review.pay?.currency ?? review.bonus_currency" />
         </p>
         <p v-if="change?.error" class="mt-1 text-xs text-danger">{{ change.error }}</p>
       </div>

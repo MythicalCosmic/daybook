@@ -61,7 +61,7 @@ const share = (goal: Goal) => {
             <span v-if="goal.status === 'open' && goal.due_on < today" class="text-danger"> · {{ t("lifecycle.reviews.goalOverdue") }}</span>
           </p>
           <div v-if="goal.target !== null" class="mt-2 flex items-center gap-2">
-            <ProgressBar class="flex-1" :value="share(goal) ?? 0" :max="100" size="xs" :tone="goal.status === 'done' ? 'success' : 'primary'" :label="goal.title" />
+            <ProgressBar class="flex-1" :value="share(goal) ?? 0" :max="100" size="xs" :tone="goal.status === 'done' ? 'success' : 'primary'" />
             <input
               v-if="editable"
               :value="goal.progress ?? ''"

@@ -10,7 +10,7 @@ import { dayMonth } from "../../lib/time";
 import { Banner } from "../../ui";
 import type { MeItemStatus, SlotProps } from "../registry";
 import { useFeatureOpen } from "../useFeatureOpen";
-import { useMyReviews, waitingCount } from "./reviews";
+import { noBreak, useMyReviews, waitingCount } from "./reviews";
 import { useRecordT } from "./text";
 
 export function ReviewCard({ member }: SlotProps) {
@@ -27,14 +27,14 @@ export function ReviewCard({ member }: SlotProps) {
         iconTone="accent"
         icon={ClipboardPen}
         title={t("rv.homeTitle")}
-        body={toAnswer.late ? t("rv.homeLate") : t("rv.homeBody", { date: dayMonth(toAnswer.round.self_due_on, "UTC", locale) })}
+        body={toAnswer.late ? t("rv.homeLate") : t("rv.homeBody", { date: noBreak(dayMonth(toAnswer.round.self_due_on, "UTC", locale)) })}
         wrap
         onClick={() => go.page("review", { id: toAnswer.id })}
       />
     );
   }
   if (unread) {
-    return <Banner size="lg" iconTone="sage" icon={Star} title={t("rv.homeReady")} body={unread.round.name} wrap onClick={() => go.page("review", { id: unread.id })} />;
+    return <Banner size="lg" iconTone="sage" icon={Star} title={t("rv.homeReady")} body={noBreak(unread.round.name)} wrap onClick={() => go.page("review", { id: unread.id })} />;
   }
   return null;
 }

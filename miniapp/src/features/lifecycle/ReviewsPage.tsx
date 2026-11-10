@@ -11,7 +11,7 @@ import { useNavigation } from "../../state/navigation";
 import { useMember } from "../../state/session";
 import { Badge, CardButton, EmptyState, ListCard, ListRow, LoadError, PageHeader, Screen, ScreenSkeleton, SectionHead, cx } from "../../ui";
 import { useFeatureOpen } from "../useFeatureOpen";
-import { useMyReviews, type MyReviewRow } from "./reviews";
+import { noBreak, useMyReviews, type MyReviewRow } from "./reviews";
 import { useRecordT, type RecordKey } from "./text";
 import "./lifecycle.css";
 
@@ -33,7 +33,7 @@ export default function ReviewsPage() {
     );
   }
   const { open, past, goals } = reviews.data;
-  const day = (value: string) => dayMonthYear(value, "UTC", locale, new Date());
+  const day = (value: string) => noBreak(dayMonthYear(value, "UTC", locale, new Date()));
   const openReview = (row: MyReviewRow) => go.page("review", { id: row.id });
 
   return (
@@ -45,7 +45,7 @@ export default function ReviewsPage() {
         <CardButton key={row.id} tone={row.can_answer ? "accent" : "plain"} className="rv-open" onClick={() => openReview(row)}>
           <span className="circle rv-open-icon">{row.can_answer ? <ClipboardPen size={20} aria-hidden="true" /> : <Hourglass size={20} aria-hidden="true" />}</span>
           <span className="rv-open-main">
-            <span className="rv-open-title">{row.round.name}</span>
+            <span className="rv-open-title">{noBreak(row.round.name)}</span>
             <span className={cx("rv-open-line", row.late && "lc-warn")}>
               {row.can_answer
                 ? row.late

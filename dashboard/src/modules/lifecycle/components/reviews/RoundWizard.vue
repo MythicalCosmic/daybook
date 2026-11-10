@@ -283,7 +283,7 @@ const completed = computed(() => STEPS.slice(0, index.value));
               <span class="mt-2 grid size-6 shrink-0 place-items-center rounded-full bg-primary-soft text-xs font-semibold text-primary">{{ number + 1 }}</span>
               <div class="grid min-w-0 flex-1 gap-2">
                 <TextInput :model-value="question.text" :maxlength="300" :placeholder="t('lifecycle.reviews.wizard.questionPlaceholder')" :invalid="!question.text.trim() && !!errors.questions" :aria-label="t('lifecycle.reviews.wizard.questionLabel', { number: number + 1 })" @update:model-value="(value) => setText(number, value ?? '')" />
-                <SegmentedControl :model-value="question.kind" :options="KIND_OPTIONS" size="sm" :aria-label="t('lifecycle.reviews.wizard.kind')" @update:model-value="(value: QuestionKind) => setKind(number, value)" />
+                <SegmentedControl class="justify-self-start" :model-value="question.kind" :options="KIND_OPTIONS" size="sm" :aria-label="t('lifecycle.reviews.wizard.kind')" @update:model-value="(value: QuestionKind) => setKind(number, value)" />
               </div>
               <div class="flex shrink-0 flex-col gap-0.5 sm:flex-row">
                 <IconButton :icon="ArrowUp" size="sm" :label="t('lifecycle.reviews.wizard.up')" :disabled="number === 0" @click="form.questions = moveItem(form.questions, number, -1)" />

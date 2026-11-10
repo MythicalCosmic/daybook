@@ -24,6 +24,7 @@ import { useFeedback } from "../states";
 import {
   answered,
   cleanAnswers,
+  noBreak,
   resumeStep,
   unrated,
   useAcknowledgeReview,
@@ -35,7 +36,7 @@ import {
   type ReviewOutcome,
   type ReviewQuestion,
 } from "./reviews";
-import { keepTogether, useRecordT, type RecordKey, type RecordT } from "./text";
+import { useRecordT, type RecordKey, type RecordT } from "./text";
 import "./lifecycle.css";
 
 const MAX_ANSWER = 2000;
@@ -48,7 +49,7 @@ export default function ReviewPage({ params }: PageProps) {
   const navigation = useNavigation();
   const id = Number(params.id);
   const review = useMyReview(member.companyId, id);
-  const header = <PageHeader kicker={member.company.name} title={review.data?.round.name ?? t("rv.title")} subtitle={t("rv.subtitle")} onBack={navigation.pop} />;
+  const header = <PageHeader kicker={member.company.name} title={review.data ? noBreak(review.data.round.name) : t("rv.title")} subtitle={t("rv.subtitle")} onBack={navigation.pop} />;
 
   if (!review.data) {
     return (
@@ -65,7 +66,7 @@ export default function ReviewPage({ params }: PageProps) {
 }
 
 function longDay(day: string, locale: string): string {
-  return keepTogether(capitalise(`${weekdayLong(day, "UTC", locale)}, ${dayMonthLong(day, "UTC", locale)}`));
+  return noBreak(capitalise(`${weekdayLong(day, "UTC", locale)}, ${dayMonthLong(day, "UTC", locale)}`));
 }
 
 function ratingWord(t: RecordT, rating: number): string {
@@ -126,7 +127,7 @@ function Answering({ review }: { review: MyReview }) {
     });
   };
 
-  const header = <PageHeader kicker={member.company.name} title={review.round.name} subtitle={t("rv.dueLine", { date: longDay(review.round.self_due_on, locale) })} onBack={navigation.pop} />;
+  const header = <PageHeader kicker={member.company.name} title={noBreak(review.round.name)} subtitle={t("rv.subtitle")} onBack={navigation.pop} />;
 
   if (step === 0) {
     return (
@@ -293,14 +294,14 @@ function Published({ review, header }: { review: MyReview; header: ReactNode }) 
     <>
       <Screen variant="detail">
         {header}
-        <Card className="rv-hero">
+        <Card layout="row" className="rv-hero">
           <div className={cx("rv-hero-score", `rv-tone-${rating}`)}>
             <span className="rv-hero-number">{rating || "—"}</span>
             <span className="rv-hero-of">/ 5</span>
           </div>
           <div className="rv-hero-main">
             <div className="rv-hero-word">{rating ? ratingWord(t, rating) : "—"}</div>
-            <div className="ft-quiet">{t("rv.byLine", { name: review.reviewer ?? "—", date: review.published_at ? dayMonthYear(review.published_at, member.timeZone, locale, new Date()) : "" })}</div>
+            <div className="rv-sub">{t("rv.byLine", { name: review.reviewer ?? "—", date: review.published_at ? dayMonthYear(review.published_at, member.timeZone, locale, new Date()) : "" })}</div>
           </div>
         </Card>
         {review.summary && (
@@ -311,13 +312,13 @@ function Published({ review, header }: { review: MyReview; header: ReactNode }) 
         )}
 
         <SectionHead>{t("rv.follows")}</SectionHead>
-        <Card className="rv-outcome">
+        <Card layout="row" className="rv-outcome">
           <span className="circle rv-outcome-icon">
             <Icon size={20} aria-hidden="true" />
           </span>
           <div className="rv-outcome-main">
             <div className="rv-outcome-title">{t(`rv.outcome.${outcome}` as RecordKey)}</div>
-            <div className="ft-quiet">{outcomeLine(t, review, locale, lang)}</div>
+            <div className="rv-sub">{noBreak(outcomeLine(t, review, locale, lang))}</div>
             {stateWord && <Badge tone={stateWord === "rejected" ? "neutral" : stateWord === "waiting" ? "accent" : "sage"}>{t(`rv.state.${stateWord}` as RecordKey)}</Badge>}
           </div>
         </Card>
@@ -331,7 +332,7 @@ function Published({ review, header }: { review: MyReview; header: ReactNode }) 
                   {goal.status === "done" ? <CheckCheck size={18} aria-hidden="true" /> : <Target size={18} aria-hidden="true" />}
                   <div className="rv-goal-main">
                     <div className="rv-goal-title">{goal.title}</div>
-                    <div className="ft-quiet">
+                    <div className="rv-sub">
                       {t("rv.goalBy", { date: dayMonthYear(goal.due_on, "UTC", locale, new Date()) })} · {t(`rv.goal.${goal.status}` as RecordKey)}
                     </div>
                   </div>
