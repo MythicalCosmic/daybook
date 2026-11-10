@@ -66,7 +66,9 @@ def uptimes(incidents, now: float, coverage_start: float | None) -> dict:
     return {k: uptime(incidents, now - w, now, coverage_start) for k, w in WINDOWS.items()}
 
 
-def daily_bars(incidents, now: float, coverage_start: float | None, days: int = 90, tz_offset: int = 0):
+def daily_bars(
+    incidents, now: float, coverage_start: float | None, days: int = 90, tz_offset: int = 0
+):
     """One entry per local day, oldest first: {"day": unix day start, "uptime": % or None, "down_s": seconds}."""
     local_now = now + tz_offset
     today0 = local_now - (local_now % DAY) - tz_offset
@@ -75,7 +77,10 @@ def daily_bars(incidents, now: float, coverage_start: float | None, days: int = 
         d0 = today0 - i * DAY
         d1 = min(d0 + DAY, now)
         up = uptime(incidents, d0, d1, coverage_start)
-        down = sum(overlap(s, e if e is not None else now, max(d0, coverage_start or d0), d1) for s, e in incidents)
+        down = sum(
+            overlap(s, e if e is not None else now, max(d0, coverage_start or d0), d1)
+            for s, e in incidents
+        )
         out.append({"day": d0, "uptime": up, "down_s": round(down)})
     return out
 

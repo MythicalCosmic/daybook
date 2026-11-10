@@ -9,25 +9,57 @@ from .core import duration_text
 
 T = {
     "uz": {
-        "title": "Holat", "sub": "Daybook xizmatlarining holati",
-        "operational": "Barcha tizimlar ishlayapti", "degraded": "Ayrim xizmatlar sekin ishlayapti",
-        "partial": "Ayrim xizmatlar ishlamayapti", "major": "Xizmatlar ishlamayapti",
-        "up": "Ishlayapti", "warn": "Ogohlantirish", "down": "Ishlamayapti", "unknown": "Tekshirilmoqda",
-        "days90": "90 kun oldin", "today": "Bugun", "uptime": "Ishlash vaqti", "resp": "Javob vaqti",
-        "incidents": "So'nggi nosozliklar", "none": "So'nggi 90 kunda nosozlik bo'lmadi.",
-        "ongoing": "davom etmoqda", "lasted": "davomiyligi", "updated": "Yangilandi", "every": "har {n} soniyada tekshiriladi",
-        "version": "versiya", "nodata": "ma'lumot yo'q", "certdays": "sertifikat: {n} kun qoldi", "lang": "English",
+        "title": "Holat",
+        "sub": "Daybook xizmatlarining holati",
+        "operational": "Barcha tizimlar ishlayapti",
+        "degraded": "Ayrim xizmatlar sekin ishlayapti",
+        "partial": "Ayrim xizmatlar ishlamayapti",
+        "major": "Xizmatlar ishlamayapti",
+        "up": "Ishlayapti",
+        "warn": "Ogohlantirish",
+        "down": "Ishlamayapti",
+        "unknown": "Tekshirilmoqda",
+        "days90": "90 kun oldin",
+        "today": "Bugun",
+        "uptime": "Ishlash vaqti",
+        "resp": "Javob vaqti",
+        "incidents": "So'nggi nosozliklar",
+        "none": "So'nggi 90 kunda nosozlik bo'lmadi.",
+        "ongoing": "davom etmoqda",
+        "lasted": "davomiyligi",
+        "updated": "Yangilandi",
+        "every": "har {n} soniyada tekshiriladi",
+        "version": "versiya",
+        "nodata": "ma'lumot yo'q",
+        "certdays": "sertifikat: {n} kun qoldi",
+        "lang": "English",
         "checks": "Tekshiruvlar",
     },
     "en": {
-        "title": "Status", "sub": "Daybook service status",
-        "operational": "All systems operational", "degraded": "Some services are degraded",
-        "partial": "Partial outage", "major": "Major outage",
-        "up": "Operational", "warn": "Degraded", "down": "Down", "unknown": "Checking",
-        "days90": "90 days ago", "today": "Today", "uptime": "Uptime", "resp": "Response time",
-        "incidents": "Recent incidents", "none": "No incidents in the last 90 days.",
-        "ongoing": "ongoing", "lasted": "lasted", "updated": "Updated", "every": "checked every {n} s",
-        "version": "version", "nodata": "no data", "certdays": "certificate: {n} days left", "lang": "O'zbekcha",
+        "title": "Status",
+        "sub": "Daybook service status",
+        "operational": "All systems operational",
+        "degraded": "Some services are degraded",
+        "partial": "Partial outage",
+        "major": "Major outage",
+        "up": "Operational",
+        "warn": "Degraded",
+        "down": "Down",
+        "unknown": "Checking",
+        "days90": "90 days ago",
+        "today": "Today",
+        "uptime": "Uptime",
+        "resp": "Response time",
+        "incidents": "Recent incidents",
+        "none": "No incidents in the last 90 days.",
+        "ongoing": "ongoing",
+        "lasted": "lasted",
+        "updated": "Updated",
+        "every": "checked every {n} s",
+        "version": "version",
+        "nodata": "no data",
+        "certdays": "certificate: {n} days left",
+        "lang": "O'zbekcha",
         "checks": "Checks",
     },
 }
@@ -123,20 +155,24 @@ def render(snap: dict, lang: str = "uz") -> str:
     e = html.escape
     tz = snap["tz_offset_s"]
     other = "?lang=en" if lang == "uz" else "?"
-    out = [f"""<!doctype html><html lang="{lang}"><head><meta charset="utf-8">
+    out = [
+        f"""<!doctype html><html lang="{lang}"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="refresh" content="60">
-<title>Holat · Status</title><meta name="description" content="{e(t['sub'])}">
+<title>Holat · Status</title><meta name="description" content="{e(t["sub"])}">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='7' fill='%2312a150'/%3E%3C/svg%3E">
 <style>{CSS}</style></head><body><div class="wrap">
-<header><div class="brand"><div class="logo">D</div><div>Holat · Status<small>{e(t['sub'])}</small></div></div>
-<a class="lang" href="{other}">{t['lang']}</a></header>"""]
+<header><div class="brand"><div class="logo">D</div><div>Holat · Status<small>{e(t["sub"])}</small></div></div>
+<a class="lang" href="{other}">{t["lang"]}</a></header>"""
+    ]
     ov = snap["overall"]
     out.append(f"""<div class="banner {ov}"><div class="big">{ICON[ov]}</div><div>{e(t[ov])}</div>
-<div class="meta">{t['updated']} {_fmt_time(snap['generated_at'], tz, False)}<br>{t['every'].format(n=snap['interval_s'])}</div></div>""")
+<div class="meta">{t["updated"]} {_fmt_time(snap["generated_at"], tz, False)}<br>{t["every"].format(n=snap["interval_s"])}</div></div>""")
 
     for s in snap["services"]:
         lv = s["level"]
-        ver = f'<span class="ver">{t["version"]} {e(s["version"])}</span>' if s.get("version") else ""
+        ver = (
+            f'<span class="ver">{t["version"]} {e(s["version"])}</span>' if s.get("version") else ""
+        )
         bars = []
         for d in s["days"]:
             day = _fmt_time(d["day"] + 43200, tz).split()[0]
@@ -147,15 +183,15 @@ def render(snap: dict, lang: str = "uz") -> str:
         ms = [c["avg_ms_24h"] for c in s["checks"] if c["type"] == "http" and c["avg_ms_24h"]]
         resp = f"{round(sum(ms) / len(ms))} ms" if ms else "&mdash;"
         u = s["uptime"]
-        out.append(f"""<section class="card"><div class="row"><h2>{e(s['name'])}</h2>{ver}
+        out.append(f"""<section class="card"><div class="row"><h2>{e(s["name"])}</h2>{ver}
 <div class="state {lv}"><span class="dot"></span>{t[lv]}</div></div>
-<div class="bars" role="img" aria-label="{e(t['uptime'])} 90">{''.join(bars)}</div>
-<div class="axis"><span>{t['days90']}</span><b>{_pct(u['90d'])}</b><span>{t['today']}</span></div>
-<div class="stats"><div class="stat"><span>24h</span><b>{_pct(u['24h'])}</b></div>
-<div class="stat"><span>7d / 30d</span><b>{_pct(u['7d'])} · {_pct(u['30d'])}</b></div>
-<div class="stat"><span>90d</span><b>{_pct(u['90d'])}</b></div>
-<div class="stat"><span>{t['resp']}</span><b>{resp}</b></div></div>
-<details><summary>{t['checks']} ({len(s['checks'])})</summary><ul class="checks">""")
+<div class="bars" role="img" aria-label="{e(t["uptime"])} 90">{"".join(bars)}</div>
+<div class="axis"><span>{t["days90"]}</span><b>{_pct(u["90d"])}</b><span>{t["today"]}</span></div>
+<div class="stats"><div class="stat"><span>24h</span><b>{_pct(u["24h"])}</b></div>
+<div class="stat"><span>7d / 30d</span><b>{_pct(u["7d"])} · {_pct(u["30d"])}</b></div>
+<div class="stat"><span>90d</span><b>{_pct(u["90d"])}</b></div>
+<div class="stat"><span>{t["resp"]}</span><b>{resp}</b></div></div>
+<details><summary>{t["checks"]} ({len(s["checks"])})</summary><ul class="checks">""")
         for c in s["checks"]:
             last = c.get("last") or {}
             if c["type"] == "tls" and last.get("days_left") is not None:
@@ -164,11 +200,11 @@ def render(snap: dict, lang: str = "uz") -> str:
                 right = f"{last['ms']} ms" + (f" · HTTP {last['code']}" if last.get("code") else "")
             else:
                 right = e(last.get("detail") or t["nodata"])
-            out.append(f"""<li><span class="dot {c['level']}" title="{t[c['level']]}"></span>
-<div>{e(c['name'])}<div class="t">{e(c['target'] or '')}</div></div><div class="r">{right} · {_pct(c['uptime']['24h'])}</div></li>""")
+            out.append(f"""<li><span class="dot {c["level"]}" title="{t[c["level"]]}"></span>
+<div>{e(c["name"])}<div class="t">{e(c["target"] or "")}</div></div><div class="r">{right} · {_pct(c["uptime"]["24h"])}</div></li>""")
         out.append("</ul></details></section>")
 
-    out.append(f"<h3>{t['incidents']}</h3><section class=\"card\">")
+    out.append(f'<h3>{t["incidents"]}</h3><section class="card">')
     if not snap["incidents"]:
         out.append(f'<div class="empty">{t["none"]}</div>')
     for i in snap["incidents"][:15]:
@@ -179,9 +215,9 @@ def render(snap: dict, lang: str = "uz") -> str:
         else:
             tail = f"{when} &ndash; {_fmt_time(i['end'], tz, False)} · {t['lasted']} {duration_text(i['duration_s'])}"
             when = ""
-        out.append(f"""<div class="inc"><span class="dot {'down' if ongoing else 'up'}"></span>
-<b>{e(i['service'])} &mdash; {e(i['check'])}</b><p>{when + ' · ' if when else ''}{tail}</p>
-<p>{e(i['detail'] or '')}</p></div>""")
+        out.append(f"""<div class="inc"><span class="dot {"down" if ongoing else "up"}"></span>
+<b>{e(i["service"])} &mdash; {e(i["check"])}</b><p>{when + " · " if when else ""}{tail}</p>
+<p>{e(i["detail"] or "")}</p></div>""")
     out.append(f"""</section><footer>Holat · Status &middot; <a href="/api/status.json">status.json</a> &middot;
-UTC{'+' if tz >= 0 else '-'}{abs(tz) // 3600}</footer></div></body></html>""")
+UTC{"+" if tz >= 0 else "-"}{abs(tz) // 3600}</footer></div></body></html>""")
     return "".join(out)

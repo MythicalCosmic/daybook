@@ -3,13 +3,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from status import app, core, page  # noqa: E402
+from status import app, core, page
 
 DAY = 86400
 NOW = 1_800_000_000.0
 
 
 # ---- flap rule
+
 
 def test_single_failure_is_not_an_incident():
     st = core.CheckState(threshold=2)
@@ -36,6 +37,7 @@ def test_alternating_failures_never_alert():
 
 
 # ---- uptime math
+
 
 def test_uptime_full_and_none():
     assert core.uptime([], NOW - DAY, NOW, NOW - 10 * DAY) == 100.0
@@ -85,6 +87,7 @@ def test_merge_and_levels():
 
 # ---- incidents end to end (fake checks, real SQLite, no network)
 
+
 class FakeAlerter:
     def __init__(self):
         self.sent = []
@@ -93,10 +96,23 @@ class FakeAlerter:
         self.sent.append(text)
 
 
-CFG = {"interval": 60, "timeout": 10, "fail_threshold": 2, "tls_warn_days": 14, "slow_ms": 3000,
-       "services": [{"id": "s", "name": "Svc", "checks": [
-           {"id": "a", "name": "Health", "type": "http", "url": "https://x/"},
-           {"id": "b", "name": "Dash", "type": "http", "url": "https://x/d"}]}]}
+CFG = {
+    "interval": 60,
+    "timeout": 10,
+    "fail_threshold": 2,
+    "tls_warn_days": 14,
+    "slow_ms": 3000,
+    "services": [
+        {
+            "id": "s",
+            "name": "Svc",
+            "checks": [
+                {"id": "a", "name": "Health", "type": "http", "url": "https://x/"},
+                {"id": "b", "name": "Dash", "type": "http", "url": "https://x/d"},
+            ],
+        }
+    ],
+}
 
 
 def _run(tmp_path, pattern):
@@ -104,9 +120,16 @@ def _run(tmp_path, pattern):
     al = FakeAlerter()
     mon = app.Monitor(CFG, store, al)
     for i, ok_a in enumerate(pattern):
-        mon.tick(NOW + i * 60, runner=lambda c, cfg, ok_a=ok_a: {
-            "ok": ok_a if c["id"] == "a" else True, "level": "up" if (ok_a or c["id"] != "a") else "down",
-            "ms": 100, "code": 200, "detail": "" if ok_a else "timeout"})
+        mon.tick(
+            NOW + i * 60,
+            runner=lambda c, cfg, ok_a=ok_a: {
+                "ok": ok_a if c["id"] == "a" else True,
+                "level": "up" if (ok_a or c["id"] != "a") else "down",
+                "ms": 100,
+                "code": 200,
+                "detail": "" if ok_a else "timeout",
+            },
+        )
     return mon, store, al
 
 
@@ -138,7 +161,10 @@ def test_restart_keeps_open_incident(tmp_path):
     assert mon2.states["a"].down
     snap = app.snapshot(mon2, NOW + 120)
     assert snap["overall"] == "partial" or snap["services"][0]["level"] == "down"
-    mon2.tick(NOW + 180, runner=lambda c, cfg: {"ok": True, "level": "up", "ms": 1, "code": 200, "detail": ""})
+    mon2.tick(
+        NOW + 180,
+        runner=lambda c, cfg: {"ok": True, "level": "up", "ms": 1, "code": 200, "detail": ""},
+    )
     assert len(al.sent) == 2 and store.q("SELECT end FROM incidents") == [(NOW + 180,)]
 
 

@@ -13,7 +13,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlsplit
 
@@ -24,6 +24,7 @@ UA = "daybook-status/1.0"
 
 
 # ---------------------------------------------------------------- config
+
 
 def load_config(path: str) -> dict:
     with open(path, encoding="utf-8") as f:
@@ -51,6 +52,7 @@ def all_checks(cfg):
 
 # ---------------------------------------------------------------- checks
 
+
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, *a, **k):
         return None
@@ -59,7 +61,11 @@ class _NoRedirect(urllib.request.HTTPRedirectHandler):
 def run_http(c: dict, timeout: float, slow_ms: int) -> dict:
     expect = c.get("expect_status", 200)
     req = urllib.request.Request(c["url"], headers={"User-Agent": UA, "Accept": "*/*"})
-    opener = urllib.request.build_opener(_NoRedirect) if not c.get("follow_redirects", False) else urllib.request.build_opener()
+    opener = (
+        urllib.request.build_opener(_NoRedirect)
+        if not c.get("follow_redirects", False)
+        else urllib.request.build_opener()
+    )
     t0 = time.monotonic()
     body, code = b"", None
     try:
@@ -111,8 +117,14 @@ def run_tls(c: dict, timeout: float, warn_days: int) -> dict:
     exp = ssl.cert_time_to_seconds(cert["notAfter"])
     days = (exp - time.time()) / 86400
     warn = c.get("warn_days", warn_days)
-    res = {"ok": True, "level": "up", "ms": ms, "code": None, "days_left": round(days, 1),
-           "detail": f"{int(days)} days left"}
+    res = {
+        "ok": True,
+        "level": "up",
+        "ms": ms,
+        "code": None,
+        "days_left": round(days, 1),
+        "detail": f"{int(days)} days left",
+    }
     if days < warn:
         res["level"] = "warn"
     return res
@@ -165,23 +177,30 @@ class Store:
 
     def add_sample(self, cid, ts, r):
         extra = {k: r[k] for k in ("version", "days_left") if k in r}
-        self.x("INSERT INTO samples VALUES (?,?,?,?,?,?,?,?)",
-               (cid, ts, int(r["ok"]), r["level"], r["ms"], r["code"], r["detail"], json.dumps(extra)))
+        self.x(
+            "INSERT INTO samples VALUES (?,?,?,?,?,?,?,?)",
+            (cid, ts, int(r["ok"]), r["level"], r["ms"], r["code"], r["detail"], json.dumps(extra)),
+        )
 
     def open_incident(self, cid, start, detail):
-        return self.x("INSERT INTO incidents(check_id,start,detail) VALUES (?,?,?)", (cid, start, detail))
+        return self.x(
+            "INSERT INTO incidents(check_id,start,detail) VALUES (?,?,?)", (cid, start, detail)
+        )
 
     def close_incident(self, cid, end):
         self.x("UPDATE incidents SET end=? WHERE check_id=? AND end IS NULL", (end, cid))
 
     def open_incidents(self):
-        return {r[0]: r[1] for r in self.q("SELECT check_id, start FROM incidents WHERE end IS NULL")}
+        return {
+            r[0]: r[1] for r in self.q("SELECT check_id, start FROM incidents WHERE end IS NULL")
+        }
 
     def prune(self, now):
         self.x("DELETE FROM samples WHERE ts < ?", (now - 95 * 86400,))
 
 
 # ---------------------------------------------------------------- alerts
+
 
 class Alerter:
     def __init__(self, token: str | None, chat_ids: list[str]):
@@ -193,26 +212,33 @@ class Alerter:
             return
         for chat in self.chat_ids:
             try:
-                data = urllib.parse.urlencode({"chat_id": chat, "text": text,
-                                               "disable_web_page_preview": "true"}).encode()
-                urllib.request.urlopen(f"https://api.telegram.org/bot{self.token}/sendMessage",
-                                       data=data, timeout=10).read()
+                data = urllib.parse.urlencode(
+                    {"chat_id": chat, "text": text, "disable_web_page_preview": "true"}
+                ).encode()
+                urllib.request.urlopen(
+                    f"https://api.telegram.org/bot{self.token}/sendMessage", data=data, timeout=10
+                ).read()
             except Exception as e:  # never let an alert failure stop monitoring
                 log.error("telegram send to %s failed: %s", chat, _err(e))
 
 
 def down_text(svc: str, check: str, detail: str, url: str = "") -> str:
-    return (f"ISHLAMAYAPTI: {svc} - {check}\nSabab: {detail}\n\n"
-            f"DOWN: {svc} - {check}\nReason: {detail}" + (f"\n{url}" if url else ""))
+    return (
+        f"ISHLAMAYAPTI: {svc} - {check}\nSabab: {detail}\n\n"
+        f"DOWN: {svc} - {check}\nReason: {detail}" + (f"\n{url}" if url else "")
+    )
 
 
 def up_text(svc: str, check: str, seconds: float) -> str:
     d = core.duration_text(seconds)
-    return (f"TIKLANDI: {svc} - {check}\nIshlamagan vaqt: {d}\n\n"
-            f"RECOVERED: {svc} - {check}\nDowntime: {d}")
+    return (
+        f"TIKLANDI: {svc} - {check}\nIshlamagan vaqt: {d}\n\n"
+        f"RECOVERED: {svc} - {check}\nDowntime: {d}"
+    )
 
 
 # ---------------------------------------------------------------- monitor loop
+
 
 class Monitor:
     def __init__(self, cfg, store: Store, alerter: Alerter):
@@ -236,7 +262,13 @@ class Monitor:
             try:
                 results[c["id"]] = runner(c, self.cfg)
             except Exception as e:
-                results[c["id"]] = {"ok": False, "level": "down", "ms": None, "code": None, "detail": _err(e)}
+                results[c["id"]] = {
+                    "ok": False,
+                    "level": "down",
+                    "ms": None,
+                    "code": None,
+                    "detail": _err(e),
+                }
 
         threads = [threading.Thread(target=work, args=(c,)) for _, c in jobs]
         for t in threads:
@@ -276,6 +308,7 @@ class Monitor:
 
 # ---------------------------------------------------------------- snapshot (page + JSON)
 
+
 def check_level(st: core.CheckState, last: dict | None) -> str:
     if st.down:
         return "down"
@@ -296,46 +329,87 @@ def snapshot(mon: Monitor, now: float | None = None) -> dict:
         for c in svc["checks"]:
             cid = c["id"]
             cov = store.q("SELECT MIN(ts) FROM samples WHERE check_id=?", (cid,))[0][0]
-            inc = store.q("SELECT start, end, detail FROM incidents WHERE check_id=? AND (end IS NULL OR end > ?)"
-                          " ORDER BY start", (cid, now - 90 * 86400))
+            inc = store.q(
+                "SELECT start, end, detail FROM incidents WHERE check_id=? AND (end IS NULL OR end > ?)"
+                " ORDER BY start",
+                (cid, now - 90 * 86400),
+            )
             spans = [(s, e) for s, e, _ in inc]
-            avg = store.q("SELECT AVG(ms) FROM samples WHERE check_id=? AND ts>? AND ms IS NOT NULL",
-                          (cid, now - 86400))[0][0]
+            avg = store.q(
+                "SELECT AVG(ms) FROM samples WHERE check_id=? AND ts>? AND ms IS NOT NULL",
+                (cid, now - 86400),
+            )[0][0]
             last = mon.last.get(cid)
             if last is None:
-                row = store.q("SELECT ts, ok, level, ms, code, detail, extra FROM samples WHERE check_id=?"
-                              " ORDER BY ts DESC LIMIT 1", (cid,))
+                row = store.q(
+                    "SELECT ts, ok, level, ms, code, detail, extra FROM samples WHERE check_id=?"
+                    " ORDER BY ts DESC LIMIT 1",
+                    (cid,),
+                )
                 if row:
                     ts, ok, lv, ms, code, detail, extra = row[0]
-                    last = {"ts": ts, "ok": bool(ok), "level": lv, "ms": ms, "code": code, "detail": detail,
-                            **json.loads(extra or "{}")}
+                    last = {
+                        "ts": ts,
+                        "ok": bool(ok),
+                        "level": lv,
+                        "ms": ms,
+                        "code": code,
+                        "detail": detail,
+                        **json.loads(extra or "{}"),
+                    }
             lv = check_level(mon.states[cid], last)
-            checks.append({
-                "id": cid, "name": c["name"], "type": c["type"], "target": c.get("url") or c.get("host"),
-                "level": lv, "last": last, "avg_ms_24h": round(avg) if avg else None,
-                "uptime": core.uptimes(spans, now, cov),
-            })
+            checks.append(
+                {
+                    "id": cid,
+                    "name": c["name"],
+                    "type": c["type"],
+                    "target": c.get("url") or c.get("host"),
+                    "level": lv,
+                    "last": last,
+                    "avg_ms_24h": round(avg) if avg else None,
+                    "uptime": core.uptimes(spans, now, cov),
+                }
+            )
             coverages.append(cov)
             for s, e, d in inc:
-                rec = {"service": svc["name"], "check": c["name"], "check_id": cid, "start": s, "end": e,
-                       "duration_s": round((e or now) - s), "detail": d}
+                rec = {
+                    "service": svc["name"],
+                    "check": c["name"],
+                    "check_id": cid,
+                    "start": s,
+                    "end": e,
+                    "duration_s": round((e or now) - s),
+                    "detail": d,
+                }
                 svc_incidents.append((s, e))
                 all_incidents.append(rec)
         cov = min([x for x in coverages if x is not None], default=None)
         merged = _merge(svc_incidents)
-        version = next((ch["last"].get("version") for ch in checks if ch["last"] and ch["last"].get("version")), None)
+        version = next(
+            (
+                ch["last"].get("version")
+                for ch in checks
+                if ch["last"] and ch["last"].get("version")
+            ),
+            None,
+        )
         known = [ch["level"] for ch in checks if ch["level"] != "unknown"]
-        services.append({
-            "id": svc["id"], "name": svc["name"], "url": svc.get("url"), "version": version,
-            "level": core.level(known) if known else "unknown",
-            "uptime": core.uptimes(merged, now, cov),
-            "days": core.daily_bars(merged, now, cov, 90, tz),
-            "checks": checks,
-        })
+        services.append(
+            {
+                "id": svc["id"],
+                "name": svc["name"],
+                "url": svc.get("url"),
+                "version": version,
+                "level": core.level(known) if known else "unknown",
+                "uptime": core.uptimes(merged, now, cov),
+                "days": core.daily_bars(merged, now, cov, 90, tz),
+                "checks": checks,
+            }
+        )
     all_incidents.sort(key=lambda r: r["start"], reverse=True)
     return {
         "generated_at": now,
-        "generated_at_iso": datetime.fromtimestamp(now, timezone.utc).isoformat(timespec="seconds"),
+        "generated_at_iso": datetime.fromtimestamp(now, UTC).isoformat(timespec="seconds"),
         "interval_s": mon.cfg["interval"],
         "tz_offset_s": tz,
         "overall": core.overall(s["level"] for s in services if s["level"] != "unknown"),
@@ -357,6 +431,7 @@ def _merge(spans):
 
 
 # ---------------------------------------------------------------- web
+
 
 def make_handler(mon: Monitor):
     cache = {"t": 0.0, "snap": None}
@@ -382,8 +457,10 @@ def make_handler(mon: Monitor):
             self.send_header("Cache-Control", f"public, max-age={cache_s}")
             self.send_header("X-Content-Type-Options", "nosniff")
             self.send_header("Referrer-Policy", "no-referrer")
-            self.send_header("Content-Security-Policy",
-                             "default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'")
+            self.send_header(
+                "Content-Security-Policy",
+                "default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'",
+            )
             self.end_headers()
             if self.command != "HEAD":
                 self.wfile.write(body)
@@ -408,8 +485,9 @@ def make_handler(mon: Monitor):
 
 
 def main():
-    logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO"),
-                        format="%(asctime)s %(levelname)s %(message)s")
+    logging.basicConfig(
+        level=os.environ.get("LOG_LEVEL", "INFO"), format="%(asctime)s %(levelname)s %(message)s"
+    )
     cfg = load_config(os.environ.get("STATUS_CONFIG", "/app/config.json"))
     store = Store(os.environ.get("STATUS_DB", "/data/status.sqlite3"))
     chats = [x.strip() for x in os.environ.get("STATUS_CHAT_IDS", "").split(",") if x.strip()]
@@ -417,8 +495,12 @@ def main():
     mon = Monitor(cfg, store, alerter)
     threading.Thread(target=mon.run_forever, daemon=True, name="monitor").start()
     port = int(os.environ.get("PORT", "8080"))
-    log.info("status page on :%d, %d checks, telegram %s", port, sum(1 for _ in all_checks(cfg)),
-             "on" if alerter.token and chats else "off (log only)")
+    log.info(
+        "status page on :%d, %d checks, telegram %s",
+        port,
+        sum(1 for _ in all_checks(cfg)),
+        "on" if alerter.token and chats else "off (log only)",
+    )
     ThreadingHTTPServer(("0.0.0.0", port), make_handler(mon)).serve_forever()
 
 
