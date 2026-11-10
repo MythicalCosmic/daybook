@@ -215,7 +215,9 @@ def leaving_overview(company, *, branch_ids: list[int] | None, day: date) -> dic
     )
     changes = job_changes(company, branch_ids=branch_ids).select_related("membership")
     return {
-        "requested": rows.filter(status=Termination.Status.REQUESTED).count(),
+        "requested": list(
+            rows.filter(status=Termination.Status.REQUESTED).order_by("wished_last_day")
+        ),
         "upcoming": upcoming,
         "left": left,
         "changes_waiting": changes.filter(status=JobChange.Status.PROPOSED).count(),

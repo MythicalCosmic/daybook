@@ -498,3 +498,25 @@ def test_without_hr_the_leaving_pages_answer_403(shop, staff, api_as, owner_api)
     shop.save(update_fields=["features"])
     assert api_as(staff.ali).get(mine(shop)).status_code == 403
     assert owner_api(staff.owner).get(base(shop)).status_code == 403
+
+
+def test_the_ai_tool_counts_leaving_without_reasons_or_notes(shop, staff, run):
+    import json
+
+    from apps.ai.tools.testing import call_tool
+
+    agreed = run(terminations.agree, ask(staff, run, reason="Maxfiy sabab"), by=staff.owner)
+    terminations.update(agreed, by=staff.owner, notes="Ichki eslatma")
+    run(terminations.request, staff.sara, by=staff.sara, wished_last_day=LAST, reason="Boshqa")
+
+    result = call_tool("lifecycle_leaving", staff.owner, _now=local(DAY, 10))
+    assert result["data"]["leaving"] == 1 and result["data"]["requests_waiting"] == 1
+    leaving = next(row for row in result["rows"] if row["type"] == "leaving")
+    assert leaving["name"] == "Ali Valiyev" and leaving["last_day"] == "2026-11-04"
+    assert leaving["to_hand_over"] == 3
+    text = json.dumps(result, ensure_ascii=False)
+    for secret in ("Maxfiy sabab", "Ichki eslatma", "Boshqa"):
+        assert secret not in text
+    lead = call_tool("lifecycle_leaving", staff.lead, _now=local(DAY, 10))
+    assert "Sara Tosheva" not in json.dumps(lead, ensure_ascii=False)
+    assert call_tool("lifecycle_leaving", staff.ali) == {"error": "not_allowed"}
