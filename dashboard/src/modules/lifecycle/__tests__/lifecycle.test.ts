@@ -182,9 +182,9 @@ describe("api", () => {
   it("registers behind the hr switch with discipline first, the Record tab and the header actions", () => {
     expect(module).toMatchObject({ id: "lifecycle", group: "people", order: 50, feature: "hr" });
     expect(module.nav?.map((item) => item.key)).toEqual(["discipline", "suspensions", "org", "terminations", "changes", "equipment", "reviews"]);
-    expect(module.personTabs?.map((tab) => tab.id)).toEqual(["record", "career"]);
-    expect(Object.keys(module.extensions ?? {})).toEqual(["people.profile.actions"]);
-    expect(module.invalidates).toEqual(["lifecycle"]);
+    expect(module.personTabs?.map((tab) => tab.id)).toEqual(["record", "career", "equipment"]);
+    expect(Object.keys(module.extensions ?? {})).toEqual(["people.profile.actions", "people.offboard.step"]);
+    expect(module.invalidates).toEqual(["lifecycle", "assets"]);
     expect(lifecycleKeys.records(1, { member: 9 })).toEqual([1, "lifecycle", "records", { member: 9 }]);
   });
 });

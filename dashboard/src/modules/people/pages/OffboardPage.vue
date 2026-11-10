@@ -14,6 +14,7 @@ import { useRoute, useRouter } from "vue-router";
 import CheckBox from "@/components/CheckBox.vue";
 import DatePicker from "@/components/DatePicker.vue";
 import ErrorState from "@/components/ErrorState.vue";
+import ExtensionSlot from "@/components/ExtensionSlot.vue";
 import FormField from "@/components/FormField.vue";
 import InlineAlert from "@/components/InlineAlert.vue";
 import PageHeader from "@/components/PageHeader.vue";
@@ -186,6 +187,7 @@ const personUrl = computed(() => `/c/${company.currentId}/people/${memberId.valu
             <!-- A part with nothing to say (no till for a courier) says so instead of an empty card. -->
             <p v-else-if="!step.restricted && !step.blockers.length && !step.fields.length" class="text-sm text-muted" data-nothing>{{ t("people.offboard.nothing") }}</p>
             <InlineAlert v-for="blocker in step.blockers" :key="blocker" tone="danger" size="sm" :description="blocker" />
+            <ExtensionSlot name="people.offboard.step" :context="{ stepKey: step.key, memberId }" class="empty:hidden" />
             <div v-if="step.fields.length" class="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <OffboardField
                 v-for="field in step.fields"

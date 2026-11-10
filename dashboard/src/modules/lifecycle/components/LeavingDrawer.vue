@@ -56,6 +56,7 @@ import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore, useCompanyToday } from "@/stores/company";
 
 import { lifecycleApi, useLeaving, useLifecycleMutation } from "../api";
+import HandoverEquipment from "../equipment/HandoverEquipment.vue";
 import { itemTitle, LEAVING_KIND_TONES, LEAVING_TONES, NOTICE_DAYS, shortNotice } from "../lib";
 import type { HandoverItem, LeaveUpdateInput, Rehire } from "../types";
 import AgreeDialog from "./AgreeDialog.vue";
@@ -383,6 +384,7 @@ const eveningTime = "20:00";
                 <p :class="['text-sm font-medium', item.done ? 'text-muted line-through decoration-[var(--c-line-strong)]' : 'text-fg']">{{ itemName(item) }}</p>
                 <p v-if="itemHint(item)" :class="['text-xs', item.kind === 'equipment' && item.held && !item.ticked ? 'text-warning' : 'text-muted']">{{ itemHint(item) }}</p>
                 <p v-if="item.note" class="mt-0.5 text-xs text-muted">{{ item.note }}</p>
+                <HandoverEquipment v-if="item.kind === 'equipment' && item.held && item.asset_id && isOpen" :member-id="leaving.member.id" :asset-id="item.asset_id" />
               </div>
               <IconButton v-if="removable(item)" size="sm" variant="ghost" :icon="X" :label="t('lifecycle.handover.remove')" @click="removeItem.mutate(item.id)" />
             </li>
