@@ -21,6 +21,7 @@ from django.utils import timezone
 from apps.core import demo_plan as plan
 from apps.core.demo_time import moment
 from apps.hr import conf, printing, services, watch
+from apps.hr.hiring import demo as hiring_demo
 from apps.hr.models import (
     Contract,
     ContractKind,
@@ -102,6 +103,7 @@ def seed(company, people, now) -> None:
     settings.employer_name = "«Demo Dorixona» MChJ"
     settings.employer_tin = "305998877"
     settings.save()
+    hiring_demo.seed(company, people, now)  # vacancies and applicants (apps.hr.hiring.demo)
     everyone = _everyone(company)
     keys = {member.pk: story.key_of(member) for member in everyone}
     _profiles(company, story, everyone, keys)

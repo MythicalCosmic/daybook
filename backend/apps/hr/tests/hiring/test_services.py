@@ -393,12 +393,10 @@ def test_hire_makes_an_approved_member_with_the_vacancys_job(
 def test_the_hirer_gives_only_a_role_they_hold_themselves(hirers, vacancy, applicant):
     # The Manager role sells nothing itself, so it can't hand out the cashier's access.
     cashier = vacancy(position=hirers.cashier, title="Kassir")
-    assert services.hire_blocker(hirers.manager, cashier) == (
-        "You can only give a role whose permissions you have yourself."
-    )
+    assert "«Cashier» access" in services.hire_blocker(hirers.manager, cashier)
     assert services.hire_blocker(hirers.owner, cashier) is None
     assert "approve join requests" in services.hire_blocker(hirers.recruiter, cashier)
-    with pytest.raises(PermissionDenied, match="role whose permissions"):
+    with pytest.raises(PermissionDenied, match="Ask an owner"):
         services.hire(applicant(cashier, 8110), by=hirers.manager)
     assert not Membership.objects.filter(user__telegram_id=8110).exists()
 

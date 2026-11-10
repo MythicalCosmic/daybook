@@ -603,10 +603,8 @@ def hire(applicant: Applicant, *, by: Membership, branch=None, message: str = ""
     vacancy = applicant.vacancy
     company = vacancy.company
     _ensure_may_run(by, vacancy)
-    if not by.has_perm(Perm.MEMBERS_APPROVE):
-        raise PermissionDenied(
-            _("Hiring adds a person to the team, which needs the right to approve join requests.")
-        )
+    if blocker := hire_blocker(by, vacancy):
+        raise PermissionDenied(blocker)
     names = {"name": applicant.name}
     if applicant.stage == Stage.HIRED or applicant.membership_id is not None:
         raise DomainError(_("%(name)s is already hired.") % names)
@@ -687,7 +685,10 @@ def hire_blocker(by: Membership, vacancy: Vacancy) -> str | None:
     if vacancy.position is not None:
         role = members.title_role(vacancy.position, vacancy.company)
         if role is not None and not members.may_assign_role(by, role):
-            return _("You can only give a role whose permissions you have yourself.")
+            return _(
+                "This position comes with the «%(role)s» access, which only someone holding all "
+                "of its permissions can give. Ask an owner to hire."
+            ) % {"role": role.name}
     return None
 
 
