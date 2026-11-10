@@ -6,7 +6,8 @@ retries whatever wasn't answered with 200 (stored events come in a burst after a
 
 * any request with a known code answers **200** quickly, even an event we ignore or can't read
   (the reason is logged and the body kept); an unknown code answers 404; a GET answers 200 (the
-  terminal's "Test" button);
+  terminal's "Test" button) with how far the terminal's upload of its stored history has come:
+  counts and a date only (`deploy/faceid/catchup.py` stops by it);
 * no session, token or CSRF (the code in the path is the secret: 144 random bits), a throttle per
   code, bodies up to 8 MB (Caddy has the same limit);
 * the body is read here (multipart, JSON or XML: `hikvision.parse`), then `services.receive`.
@@ -21,6 +22,7 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 
+from apps.attendance import clock
 from apps.faceid import hikvision, services
 from apps.faceid.models import FaceDevice
 
@@ -44,6 +46,18 @@ def _allowed(token: str) -> bool:
     except ValueError:  # expired in between
         cache.set(key, 1, 61)
         return True
+
+
+def history(device: FaceDevice) -> dict:
+    """The terminal's upload of its stored history: still coming (`active`: some came in the last
+    10 minutes), how many old scans were skipped, the newest one's time in the company's zone.
+    Nothing personal: the code in the URL is the secret, and this is all it tells."""
+    until = device.history_until
+    return {
+        "active": services.history_active(device),
+        "skipped": device.history_skipped,
+        "until": clock.local(device.company, until).isoformat() if until else None,
+    }
 
 
 def _read_body(request) -> bytes | None:
@@ -76,7 +90,7 @@ class HikvisionView(View):
         device = self.device(token)
         if device is None:
             return HttpResponse(status=404)
-        return JsonResponse(OK)
+        return JsonResponse(OK | {"history": history(device)})
 
     def head(self, request, token: str):
         return self.get(request, token)

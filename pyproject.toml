@@ -47,6 +47,8 @@ package = false
 [tool.ruff]
 line-length = 100
 target-version = "py314"
+# The Face ID catch-up helper runs on any laptop: Python 3.9 and later (lint and format alike).
+per-file-target-version = { "deploy/faceid/catchup.py" = "py39" }
 # docs/ holds the plans, whose Markdown has Python sketches ruff would reformat; .claude/ holds
 # agent worktrees.
 extend-exclude = ["**/migrations/**", "docs", ".claude"]
