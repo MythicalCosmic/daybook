@@ -244,8 +244,10 @@ def test_template_questions_follow_the_reader_and_edited_ones_keep_their_words(s
     assert cycle.questions[0]["key"] == "" and cycle.questions[1]["key"] == "customers"
     with translation.override("ru"):
         shown = reviews.shown_questions(cycle)
+        russian = str(reviews.TEMPLATE_TEXT["customers"])
     assert shown[0]["text"] == "Retseptli dorilar: qoidalarga rioya"
-    assert shown[1]["text"] == str(reviews.TEMPLATE_TEXT["customers"])
+    # The template's own question follows the reader: in Russian for a Russian reader.
+    assert shown[1]["text"] == russian != str(reviews.TEMPLATE_TEXT["customers"])
 
 
 # The person's own answers ---------------------------------------------------------------------
