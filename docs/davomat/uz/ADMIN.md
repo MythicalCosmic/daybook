@@ -44,12 +44,23 @@ Yuz orqali kirish (Face ID) › **Terminal qo‘shish**, uch qadam:
    qanday hisoblashi:
    - *Kirish*: har bir skanerlash — kelish;
    - *Chiqish*: har bir skanerlash — ketish;
-   - *Bitta eshik*: avval kelish, keyin ketish (terminal bitta bo‘lsa, odatda shu tanlanadi).
+   - *Bitta eshik*: terminal bitta bo‘lsa, odatda shu tanlanadi; uning skanerlashlari nimani
+     anglatishi Yuz orqali kirish › Sozlamalar bo‘limida belgilanadi (quyida).
 2. **Terminalda**: terminalga kiritiladigan qiymatlar (quyida). Ularni shu sahifadan nusxalang: har
    bir terminalning URL manzilida o‘z maxfiy kodi bor.
 3. **Birinchi skanerlash**: terminalda yuzni skanerlang. Birinchi hodisa kelishi bilan sahifa yashil
    rangga o‘tadi. («Yuzni sinab ko‘rish» skanerlash terminalsiz qanday ko‘rinishini ko‘rsatadi; u
    hisobga olinmaydi.)
+
+**Terminaldan qanday foydalaniladi** (Yuz orqali kirish › Sozlamalar) bitta eshikli terminal
+skanerlashlari nimani anglatishini belgilaydi. *Xodimlar faqat kelganda skanerlaydi* (odatiy
+tanlov): har bir xodimning kundagi birinchi skanerlashi kelishni belgilaydi, keyingilari esa surati
+bilan *Ko‘rildi* deb saqlanadi va davomatni o‘zgartirmaydi. Ketish qayd etilmaydi, shuning uchun kun
+o‘zi yopiladi (xodim smenasining oxirida; jadvali yo‘q xodimga ish soati hisoblanmaydi) va hech
+kimdan unutilgan ketish haqida so‘ralmaydi. *Xodimlar kelganda ham, ketganda ham skanerlaydi*:
+birinchi skanerlash kelish, keyingisi ketish. Har ikki holatda ham ertasi kungi birinchi skanerlash
+oldingi kundan ketish emas, yangi kelish hisoblanadi; *Kirish* yoki *Chiqish* deb sozlangan terminal
+doim aynan shunday ishlaydi.
 
 ### Terminalning veb-sahifasida
 
