@@ -39,9 +39,11 @@ Rules:
 
 from __future__ import annotations
 
+import json
 import logging
 import re
 from datetime import datetime, time, timedelta
+from pathlib import Path
 from urllib.parse import urlsplit
 
 from django.core.files.base import ContentFile
@@ -834,6 +836,24 @@ def setup(device: FaceDevice) -> dict:
         "http": {"port": 80, "url": f"http://{host}{path}"},
         "https": {"port": 443, "url": f"https://{host}{path}"},
     }
+
+
+# The catch-up helper (deploy/faceid/catchup.py): run on a computer in the terminal's network, it
+# sends the terminal's newest scans while the terminal still uploads its old history.
+CATCHUP_SCRIPT = Path(__file__).resolve().parents[3] / "deploy" / "faceid" / "catchup.py"
+CATCHUP_URL_LINE = 'DEVICE_URL = ""'
+
+
+def catchup_script(device: FaceDevice) -> str:
+    """The helper with this terminal's address on the server filled in: the URL the setup
+    wizard shows (so `--url` isn't needed)."""
+    values = setup(device)
+    url = values[values["recommended"]]["url"]
+    text = CATCHUP_SCRIPT.read_text(encoding="utf-8")
+    if text.count(CATCHUP_URL_LINE) != 1:
+        raise RuntimeError(f"{CATCHUP_SCRIPT} has no single {CATCHUP_URL_LINE!r} line")
+    # A JSON string is a Python string literal too.
+    return text.replace(CATCHUP_URL_LINE, f"DEVICE_URL = {json.dumps(url)}")
 
 
 # Snapshots ------------------------------------------------------------------------------

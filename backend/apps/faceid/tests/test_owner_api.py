@@ -283,6 +283,72 @@ def test_a_clock_days_behind_is_told_apart_from_history(staff, owner_api, device
     assert history["clock_hides"] and history["skipped"] == 0
 
 
+def test_the_catchup_helper_downloads_with_the_terminals_address_filled_in(
+    staff, owner_api, device, yunusobod_device, other_company, settings
+):
+    """While a terminal uploads its old history, managers download catchup.py from its page: the
+    terminal's address on the server (the URL the setup wizard shows) is filled in."""
+    from apps.companies.models import Branch
+
+    settings.PUBLIC_DEVICE_HOST = "davomat.example.uz"
+    company = staff.ali.company
+    path = f"devices/{device.pk}/catchup/"
+    response = owner_api(staff.manager).get(url(company, path))
+    assert response.status_code == 200
+    assert response["Content-Disposition"] == 'attachment; filename="catchup.py"'
+    assert response["Content-Type"].startswith("text/x-python")
+    assert response["Cache-Control"] == "private, no-store"
+    script = response.content.decode()
+    shown = owner_api(staff.manager).get(url(company, f"devices/{device.pk}/setup/")).json()
+    address = shown[shown["recommended"]]["url"]
+    assert address == f"https://davomat.example.uz/api/v1/devices/hik/{device.token}/"
+    assert f'DEVICE_URL = "{address}"' in script and 'DEVICE_URL = ""' not in script
+    compile(script, "catchup.py", "exec")
+    # Asked for as a Python file, it answers the same.
+    asked = owner_api(staff.manager).get(url(company, path), HTTP_ACCEPT="text/x-python")
+    assert asked.status_code == 200 and asked.content == response.content
+
+    assert owner_api(staff.accountant).get(url(company, path)).status_code == 403  # view only
+    # Another company: its id, or its terminal's id under ours.
+    assert owner_api(staff.manager).get(url(other_company, path)).status_code == 404
+    branch = other_company.branches.first() or Branch.objects.create(
+        company=other_company, name="Other", code="OTH"
+    )
+    theirs = FaceDevice.objects.create(company=other_company, branch=branch, name="Theirs")
+    path = f"devices/{theirs.pk}/catchup/"
+    assert owner_api(staff.manager).get(url(company, path)).status_code == 404
+    # A branch lead gets their own branch's terminals only.
+    path = f"devices/{yunusobod_device.pk}/catchup/"
+    assert owner_api(staff.lead).get(url(company, path)).status_code == 404
+    path = f"devices/{device.pk}/catchup/"
+    assert owner_api(staff.lead).get(url(company, path)).status_code == 200
+    # Face ID switched off: nothing.
+    company.features = ["attendance"]
+    company.save()
+    assert owner_api(staff.manager).get(url(company, path)).status_code == 404
+
+
+def test_the_setup_values_carry_the_terminals_own_address(staff, owner_api, device):
+    """The wizard's catch-up command names the terminal by the address it reports."""
+    company = staff.ali.company
+    path = url(company, f"devices/{device.pk}/setup/")
+    assert owner_api(staff.manager).get(path).json()["ip"] == ""
+    post(device)  # the terminal says it is 192.168.1.250
+    assert owner_api(staff.manager).get(path).json()["ip"] == "192.168.1.250"
+
+
+def test_the_image_carries_the_catchup_helper():
+    """The download reads deploy/faceid/catchup.py: the production image must have it."""
+    from pathlib import Path
+
+    from django.conf import settings as django_settings
+
+    root = Path(django_settings.BASE_DIR).parent
+    assert "COPY deploy/faceid ./deploy/faceid" in (root / "Dockerfile").read_text()
+    assert face.CATCHUP_SCRIPT.is_file()
+    assert root / "deploy" / "faceid" / "catchup.py" == face.CATCHUP_SCRIPT
+
+
 def test_a_test_scan_from_the_setup_card(staff, owner_api, device):
     company = staff.ali.company
     response = owner_api(staff.manager).post(url(company, f"devices/{device.pk}/simulate/"))

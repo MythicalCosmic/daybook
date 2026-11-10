@@ -78,6 +78,8 @@ export interface Setup {
   heartbeat_minutes: number;
   http: { port: number; url: string };
   https: { port: number; url: string };
+  /** The terminal's address in its own network, as it says ("" until it does). */
+  ip: string;
   last_event_at: string | null;
   last_seen_at: string | null;
   last_test_at: string | null;

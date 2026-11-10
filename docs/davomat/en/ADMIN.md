@@ -86,12 +86,56 @@ a terminal further ahead gets its scans timed on arrival, and its card says the 
 
 The first time it connects, a terminal sends **everything it ever stored**, oldest first: often
 tens of thousands of old scans, about one or two a second, which can take hours. Davomat skips
-every scan older than a day or from before the terminal was added: none of them becomes an
-arrival or a message. The terminal's card says "The terminal is sending its old history first"
-with the count, and live scans start when it's done.
+every scan older than a day or from before the terminal was added: none of them is kept, becomes
+an arrival or sends a message; they are only counted. The terminal's card says "The terminal is
+sending its old history first" with the count, and its live scans come right after it.
 
-So connect a terminal **the day before** it counts for real (in the evening, say), and never
-factory-reset a terminal: that deletes the enrolled faces.
+So connect a terminal **the day before** it counts for real (in the evening, say) when you can,
+and never factory-reset a terminal to get rid of its history: that deletes the enrolled faces.
+
+### Today's scans now: the catch-up helper
+
+While the old history comes in, a scan made today waits behind it. The catch-up helper sends
+today's scans straight away. It is a small program, `catchup.py`, that runs on a computer **in
+the terminal's network** (the installer's laptop, or the server when it sits in that network):
+every few seconds it asks the terminal for its newest scans and sends each one, with its photo,
+to Davomat, exactly as the terminal itself does. Davomat keeps every scan once, so when the
+terminal's own upload gets to them, it adds nothing.
+
+1. On the terminal's card (Face ID › Terminals), open **Get today's scans now** (the setup's last
+   step shows it too) and press **Download catchup.py**. The file comes with this terminal's
+   address in Davomat filled in; it holds the terminal's secret code, so keep it like the setup
+   values.
+2. The computer needs Python 3.9 or newer: Linux and macOS have it (`python3 --version`); on
+   Windows install it from [python.org](https://www.python.org/downloads/) and tick "Add
+   python.exe to PATH".
+3. Open a terminal window (Windows: PowerShell) in the folder with the file and run the command
+   the card shows, with the terminal's address in its network:
+
+   ```bash
+   HIK_PASS=… python3 catchup.py --terminal 192.168.1.250
+   ```
+
+   Put the terminal's `admin` password in place of `…`, or leave it as it is and type the
+   password when it asks: that keeps it out of the shell's history. On Windows:
+   `py catchup.py --terminal 192.168.1.250`, then the password. It is never shown or saved.
+4. It prints one line per scan it sends (the time, the name or "unknown face", "sent") and, every
+   few minutes, how far the terminal's own upload has come. Leave the window open.
+5. **It stops by itself** once the terminal has caught up (no old scans for 10 minutes), after 12
+   hours at the latest (`--hours`), or with Ctrl+C.
+
+Good to know:
+
+- `--check` only tests both connections (the terminal's sign-in and Davomat's address) and sends
+  nothing: a good first step.
+- It starts with the scans of the last 10 minutes and never sends older ones (`--since 60` reaches
+  an hour back; scans from before the terminal was added to Davomat are skipped anyway).
+- A wrong password stops it at once, with the tries left: a few wrong tries in a row lock the
+  terminal's sign-in for about half an hour.
+- A dropped network is retried by itself. If HTTPS to the server doesn't work from that computer
+  (a local installation's own certificate, or a Mac whose Python has no certificates yet), it
+  sends over plain HTTP, the way the terminal does, and says so.
+- `--user` signs in as another terminal user; `python3 catchup.py --help` lists every option.
 
 ### Employee numbers
 

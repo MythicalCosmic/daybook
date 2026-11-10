@@ -93,13 +93,61 @@ ular yetib kelgan vaqt yoziladi va terminal kartochkasida soat noto‘g‘riligi
 Terminal birinchi marta ulanganda **xotirasida saqlangan hamma narsani** eng eskisidan boshlab
 yuboradi: ko‘pincha o‘n minglab eski skanerlashlarni, sekundiga taxminan bir-ikkitadan, bu esa bir
 necha soat davom etishi mumkin. Davomat bir kundan eski yoki terminal qo‘shilishidan oldingi har bir
-skanerlashni o‘tkazib yuboradi: ularning hech biri kelish yoki xabarga aylanmaydi. Terminal
-kartochkasida soni bilan birga «Terminal avval eski tarixini yubormoqda» yozuvi chiqadi; bu
-tugagach, jonli skanerlashlar boshlanadi.
+skanerlashni o‘tkazib yuboradi: ularning hech biri saqlanmaydi, kelish yoki xabarga aylanmaydi,
+faqat sanaladi. Terminal kartochkasida soni bilan birga «Terminal avval eski tarixini yubormoqda»
+yozuvi chiqadi; jonli skanerlashlar shundan keyin darhol keladi.
 
-Shuning uchun terminalni u haqiqatan hisoblay boshlashidan **bir kun oldin** ulang (masalan,
-kechqurun) va terminalni hech qachon zavod sozlamalariga qaytarmang: bu ro‘yxatga olingan yuzlarni
-o‘chirib yuboradi.
+Shuning uchun imkon bo‘lsa, terminalni u haqiqatan hisoblay boshlashidan **bir kun oldin** ulang
+(masalan, kechqurun) va eski tarixdan qutulish uchun terminalni hech qachon zavod sozlamalariga
+qaytarmang: bu ro‘yxatga olingan yuzlarni o‘chirib yuboradi.
+
+### Bugungi skanerlashlar hozir: yordamchi dastur
+
+Eski tarix kelayotgan paytda bugun qilingan skanerlash uning ortida navbat kutadi. Yordamchi dastur
+bugungi skanerlashlarni darhol yuboradi. Bu — **terminal tarmog‘idagi** kompyuterda (o‘rnatuvchining
+noutbukida yoki server shu tarmoqda bo‘lsa, serverning o‘zida) ishlaydigan kichik `catchup.py`
+dasturi: u har bir necha soniyada terminaldan eng yangi skanerlashlarni so‘raydi va har birini surati
+bilan Davomatga xuddi terminalning o‘zi yuborgandek jo‘natadi. Davomat har bir skanerlashni bir marta
+saqlaydi, shuning uchun terminalning o‘z yuklashi ularga yetib kelganda hech narsa qo‘shilmaydi.
+
+1. Terminal kartochkasida (Yuz orqali kirish › Terminallar) **Bugungi skanerlashlarni hozir olish**
+   bandini oching (u sozlashning oxirgi qadamida ham bor) va **Yuklab olish: catchup.py** tugmasini
+   bosing. Faylga shu terminalning Davomatdagi manzili yozilgan bo‘ladi; unda terminalning maxfiy
+   kodi bor, shuning uchun uni sozlash qiymatlari kabi ehtiyot qiling.
+2. Kompyuterda Python 3.9 yoki undan yangi versiyasi bo‘lishi kerak: Linux va macOS tizimlarida u
+   bor (`python3 --version`); Windows tizimida uni [python.org](https://www.python.org/downloads/)
+   saytidan o‘rnating va «Add python.exe to PATH» belgisini qo‘ying.
+3. Fayl turgan papkada terminal oynasini (Windows tizimida — PowerShell) oching va kartochkada
+   ko‘rsatilgan buyruqni terminalning o‘z tarmog‘idagi manzili bilan ishga tushiring:
+
+   ```bash
+   HIK_PASS=… python3 catchup.py --terminal 192.168.1.250
+   ```
+
+   `…` o‘rniga terminalning `admin` parolini yozing yoki uni o‘zgartirmay qoldirib, dastur so‘raganda
+   parolni kiriting: shunda parol buyruqlar tarixida qolmaydi. Windows tizimida:
+   `py catchup.py --terminal 192.168.1.250`, so‘ng parol. Parol hech qachon ko‘rsatilmaydi va
+   saqlanmaydi.
+4. Dastur yuborgan har bir skanerlash uchun bitta qator chiqaradi (vaqti, ismi yoki «unknown face»,
+   «sent») va har bir necha daqiqada terminalning o‘z yuklashi qayergacha yetganini aytadi. Oynani
+   yopmang.
+5. Terminal yetib olgach (10 daqiqa davomida eski skanerlash kelmasa), **dastur o‘zi to‘xtaydi**;
+   eng ko‘pi bilan 12 soatdan keyin (`--hours`) yoki Ctrl+C bilan ham to‘xtaydi.
+
+Bilib qo‘ying:
+
+- `--check` faqat ikkala ulanishni (terminalga kirishni va Davomat manzilini) tekshiradi va hech
+  narsa yubormaydi: birinchi qadam uchun qulay.
+- Dastur so‘nggi 10 daqiqadagi skanerlashlardan boshlaydi va undan eskilarini hech qachon
+  yubormaydi (`--since 60` bir soat orqaga qaraydi; terminal Davomatga qo‘shilishidan oldingi
+  skanerlashlar baribir o‘tkazib yuboriladi).
+- Noto‘g‘ri parol dasturni darhol to‘xtatadi va nechta urinish qolganini aytadi: ketma-ket bir
+  necha noto‘g‘ri urinish terminalga kirishni taxminan yarim soatga qulflaydi.
+- Tarmoq uzilsa, dastur o‘zi qayta urinadi. Agar shu kompyuterdan serverga HTTPS ishlamasa
+  (mahalliy o‘rnatishning o‘z sertifikati yoki Python dasturida hali sertifikatlar bo‘lmagan Mac
+  kompyuteri), u terminalning o‘zi kabi oddiy HTTP orqali yuboradi va buni aytadi.
+- `--user` terminalning boshqa foydalanuvchisi sifatida kiradi; `python3 catchup.py --help` barcha
+  sozlamalarni ko‘rsatadi.
 
 ### Xodim raqamlari
 

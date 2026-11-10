@@ -1,5 +1,5 @@
 """Owner endpoints of Face ID (`faceid/…`, rule 21): the live feed, everyone the terminals know,
-the terminals with their setup, the links and the settings.
+the terminals with their setup (and the catch-up helper, filled in), the links and the settings.
 
 Company- and branch-scoped (a terminal belongs to a branch; an id outside the caller's branches
 answers 404, like another company's), `attendance.view` for the feed, the people and the
@@ -8,17 +8,21 @@ terminals' status, `attendance.manage` for terminals, links and settings. Writes
 off.
 """
 
+import json
 from collections import defaultdict
 from datetime import datetime, time, timedelta
 from difflib import SequenceMatcher
 
 from django.db.models import Count, Max, Min
+from django.http import HttpResponse
 from django.utils import timezone
 from django.utils.translation import gettext as _
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import mixins, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.renderers import BaseRenderer, JSONRenderer
 from rest_framework.response import Response
 
 from apps.attendance import clock
@@ -225,11 +229,26 @@ def setup_payload(device: FaceDevice) -> dict:
         .first()
     )
     return services.setup(device) | {
+        "ip": device.ip,
         "last_event_at": _iso(device.company, device.last_event_at),
         "last_seen_at": _iso(device.company, device.last_seen_at),
         "last_test_at": _iso(device.company, last_test),
         "history": history_payload(device, timezone.now()),
     }
+
+
+class ScriptRenderer(BaseRenderer):
+    """Lets a request for the catch-up helper (`Accept: text/x-python`) through DRF's content
+    negotiation; the view answers the file itself."""
+
+    media_type = "text/x-python"
+    format = "py"
+    charset = "utf-8"
+
+    def render(self, data, accepted_media_type=None, renderer_context=None):
+        if isinstance(data, bytes | str):
+            return data
+        return json.dumps(data, default=str).encode()
 
 
 class DeviceViewSet(FaceIdOn, Scoped, mixins.ListModelMixin, OwnerViewSet):
@@ -291,6 +310,19 @@ class DeviceViewSet(FaceIdOn, Scoped, mixins.ListModelMixin, OwnerViewSet):
     @action(detail=True, methods=["post"])
     def regenerate(self, request, company_id, pk):
         return Response(setup_payload(services.new_code(self.get_object(), by=self.membership)))
+
+    @extend_schema(request=None, responses={(200, ScriptRenderer.media_type): OpenApiTypes.BINARY})
+    @action(detail=True, methods=["get"], renderer_classes=[JSONRenderer, ScriptRenderer])
+    def catchup(self, request, company_id, pk):
+        """`catchup.py`, the helper that sends the terminal's newest scans while it still uploads
+        its old history, with the terminal's address on the server filled in (it holds the
+        terminal's code, like the setup values)."""
+        script = services.catchup_script(self.get_object())
+        response = HttpResponse(script.encode("utf-8"), content_type="text/x-python; charset=utf-8")
+        response["Content-Disposition"] = 'attachment; filename="catchup.py"'
+        response["Cache-Control"] = "private, no-store"
+        response["X-Content-Type-Options"] = "nosniff"
+        return response
 
     @extend_schema(request=None, responses={201: s.EventOutSerializer})
     @action(detail=True, methods=["post"])

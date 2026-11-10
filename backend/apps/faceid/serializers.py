@@ -102,6 +102,7 @@ class SetupSerializer(serializers.Serializer):
     heartbeat_minutes = serializers.IntegerField()
     http = ProtocolSerializer()
     https = ProtocolSerializer()
+    ip = serializers.CharField(help_text="The terminal's address in its own network, as it says.")
     last_event_at = serializers.DateTimeField(allow_null=True)
     last_seen_at = serializers.DateTimeField(allow_null=True)
     last_test_at = serializers.DateTimeField(allow_null=True)

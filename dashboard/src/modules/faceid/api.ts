@@ -6,10 +6,12 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
 import { computed, toValue, type MaybeRefOrGetter } from "vue";
 
-import { http, ownerPath } from "@/api/http";
+import { http, ownerPath, request } from "@/api/http";
 import { keys as shellKeys, moduleKey, qk } from "@/api/keys";
+import { downloadFile } from "@/lib/csv";
 import { useCompanyId } from "@/stores/company";
 
+import { CATCHUP_FILE } from "./lib";
 import type { Device, DeviceInput, FaceIdSettings, KnownPerson, Link, Page, Scan, ScanParams, Setup, Status } from "./types";
 
 export const MODULE = "faceid";
@@ -34,6 +36,16 @@ export const createLink = (companyId: number, employeeNo: string, memberId: numb
 export const deleteLink = (companyId: number, id: number) => http.delete(path(companyId, `links/${id}/`));
 export const getSettings = (companyId: number, signal?: AbortSignal) => http.get<FaceIdSettings>(path(companyId, "settings/"), undefined, { signal });
 export const saveSettings = (companyId: number, body: Partial<FaceIdSettings>) => http.patch<FaceIdSettings>(path(companyId, "settings/"), body);
+
+/**
+ * Saves `catchup.py`, the helper that sends a terminal's newest scans while it still uploads its
+ * old history, with the terminal's address on the server filled in (`attendance.manage`). A
+ * refusal is toasted by the HTTP client.
+ */
+export async function downloadCatchup(companyId: number, id: number): Promise<void> {
+  const response = await request<Response>(path(companyId, `devices/${id}/catchup/`), { headers: { Accept: "*/*" }, raw: true, toast: true });
+  downloadFile(CATCHUP_FILE, await response.blob());
+}
 
 // ─── Keys ───────────────────────────────────────────────────────────────────
 

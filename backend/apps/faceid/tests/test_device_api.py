@@ -81,6 +81,28 @@ def test_the_terminals_connection_test_and_unknown_codes(device):
     assert client.get("/api/v1/devices/hik/short/").status_code == 404
 
 
+def test_the_get_says_how_far_the_old_history_has_come(device, freeze):
+    """The catch-up helper (deploy/faceid/catchup.py) asks the terminal's own address how far
+    the terminal's upload of its stored scans has come: counts and a date, nothing personal."""
+    client = Client()
+    answer = client.get(url(device)).json()
+    assert answer["statusString"] == "OK" and answer["statusCode"] == 200  # as before
+    assert answer["history"] == {"active": False, "skipped": 0, "until": None}  # never
+
+    for serial, at in ((1, "2022-10-11T16:00:00+08:00"), (2, "2023-03-02T09:15:00+08:00")):
+        content_type, body = hik.multipart(hik.event(serial=serial, at=at, name="Abdu"))
+        client.post(url(device), data=body, content_type=content_type)
+    history = client.get(url(device)).json()["history"]
+    # The terminal's wall clock, read in the company's zone (its own offset means nothing).
+    assert history == {"active": True, "skipped": 2, "until": "2023-03-02T09:15:00+05:00"}
+
+    freeze(local(DAY, 9, 9))  # ten quiet minutes later: done, the count stays
+    history = client.get(url(device, slash=False)).json()["history"]
+    assert history == {"active": False, "skipped": 2, "until": "2023-03-02T09:15:00+05:00"}
+    assert "Abdu" not in client.get(url(device)).content.decode()
+    assert client.head(url(device)).status_code == 200
+
+
 def test_an_unreadable_body_is_answered_200_and_kept_once(device):
     client = Client()
     for _ in range(3):

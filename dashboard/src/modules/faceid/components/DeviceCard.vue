@@ -2,8 +2,8 @@
 /**
  * One terminal: a status ring (online, quiet, never connected, switched off), its model, branch
  * and direction, the last scan, today's scans and a small per-hour chart, the old history it sent
- * first (skipped), a clock warning when the terminal's time is off, and for managers the setup
- * values, a new code and the switch.
+ * first (skipped; for managers, "Get today's scans now" while it comes), a clock warning when the
+ * terminal's time is off, and for managers the setup values, a new code and the switch.
  */
 import { Clock, DoorOpen, KeyRound, Power, Settings2, TriangleAlert } from "@lucide/vue";
 import { computed } from "vue";
@@ -63,7 +63,7 @@ const now = new Date().getHours();
       </div>
     </div>
 
-    <HistoryNote :history="device.history" />
+    <HistoryNote :history="device.history" :catchup="canManage && device.enabled ? device : null" />
     <p v-if="device.clock_off && !device.history.clock_hides" class="flex items-start gap-2 rounded-[10px] bg-warning-soft px-3 py-2 text-sm text-warning">
       <TriangleAlert :size="15" class="mt-0.5 shrink-0" aria-hidden="true" />
       <span>{{ (device.clock_offset_s ?? 0) < 0 ? t("faceid.terminals.clockBehind", { n: offMinutes }) : t("faceid.terminals.clockAhead", { n: offMinutes }) }}</span>

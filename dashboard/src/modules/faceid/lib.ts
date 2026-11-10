@@ -68,6 +68,18 @@ export function peak(hourly: number[]): number {
 /** The direction's words key. */
 export const directionKey = (direction: string) => `faceid.direction.${direction}`;
 
+/** The catch-up helper's file, as the download names it (apps/faceid/owner_api.py). */
+export const CATCHUP_FILE = "catchup.py";
+
+/**
+ * The command that runs the catch-up helper next to the downloaded file: the terminal's password
+ * goes in HIK_PASS (left as "…", the helper asks for it); Windows' launcher asks for it anyway.
+ */
+export function catchupCommand(address: string, system: "unix" | "windows" = "unix"): string {
+  const run = `${CATCHUP_FILE} --terminal ${address.trim()}`;
+  return system === "windows" ? `py ${run}` : `HIK_PASS=… python3 ${run}`;
+}
+
 /** The scans of a feed page that weren't there before (for the "new row" highlight). */
 export function freshIds(previous: readonly number[], next: readonly { id: number }[]): number[] {
   const seen = new Set(previous);
