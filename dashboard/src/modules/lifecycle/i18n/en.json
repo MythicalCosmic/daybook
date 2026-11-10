@@ -431,6 +431,7 @@
   "lifecycle.org.zoomIn": "Zoom in",
   "lifecycle.org.zoomReset": "Actual size",
   "lifecycle.org.fit": "Fit to the screen",
+  "lifecycle.org.print": "Print or save as PDF",
   "lifecycle.org.hint": "Drag someone onto another department or branch to propose a move: it waits for approval and applies on its day. With the keyboard: Space picks them up, the arrows choose where, Space puts them down.",
   "lifecycle.org.emptyTitle": "Nobody here yet",
   "lifecycle.org.emptyBody": "Once people join, they appear in the tree under their department or branch.",

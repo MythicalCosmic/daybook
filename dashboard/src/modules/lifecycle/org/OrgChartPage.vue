@@ -9,7 +9,7 @@
  * another department or branch, or pick them up with Space and choose with the arrows, or use
  * "Move…"; the job change dialog opens filled in. Phones get the same tree as an indented outline.
  */
-import { ChevronDown, ChevronUp, ChevronsDownUp, ChevronsUpDown, Maximize2, Minus, Network, Pencil, Plus, Search } from "@lucide/vue";
+import { ChevronDown, ChevronUp, ChevronsDownUp, ChevronsUpDown, Maximize2, Minus, Network, Pencil, Plus, Printer, Search } from "@lucide/vue";
 import { useResizeObserver } from "@vueuse/core";
 import { computed, nextTick, onBeforeUnmount, provide, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
@@ -186,6 +186,31 @@ useResizeObserver(stage, (entries) => {
   fit(true);
   if (zoom.value > 0.9) setZoom(1);
 });
+/**
+ * Print the chart as it is now (its view, folds and zoom; "Save as PDF" in the print dialog keeps
+ * a copy): a window with only the tree and the page's styles, light whatever the theme.
+ */
+function printChart(): void {
+  const content = stage.value;
+  if (!content) return;
+  const win = window.open("", "_blank", "width=1200,height=800");
+  if (!win) return;
+  const styles = [...document.querySelectorAll('style, link[rel="stylesheet"]')].map((node) => node.outerHTML).join("");
+  win.document.write(
+    `<!doctype html><html lang="${document.documentElement.lang}"><head><meta charset="utf-8"><base href="${location.origin}/">${styles}` +
+      "<style>body{margin:0;padding:24px;background:#fff}@page{size:landscape;margin:10mm}.org-print-title{font:600 18px/1.4 sans-serif;margin:0 0 16px}</style></head>" +
+      `<body><h1 class="org-print-title"></h1>${content.outerHTML}</body></html>`,
+  );
+  win.document.close();
+  win.document.title = `${t("lifecycle.nav.org")} · ${data.value?.company.name ?? ""}`;
+  const heading = win.document.querySelector(".org-print-title");
+  if (heading) heading.textContent = win.document.title;
+  win.addEventListener("load", () => {
+    win.focus();
+    win.print();
+  });
+}
+
 function onWheel(event: WheelEvent): void {
   if (!event.ctrlKey && !event.metaKey) return;
   event.preventDefault();
@@ -412,6 +437,8 @@ function chosen(target: MoveTarget): void {
           <button type="button" class="min-w-[3.25rem] rounded-[6px] px-1 text-xs font-semibold tabular-nums text-muted hover:text-fg" :aria-label="t('lifecycle.org.zoomReset')" @click="setZoom(1)">{{ zoomLabel }}</button>
           <IconButton :icon="Plus" size="sm" variant="ghost" :label="t('lifecycle.org.zoomIn')" @click="setZoom(zoom + 0.1)" />
           <IconButton :icon="Maximize2" size="sm" variant="ghost" :label="t('lifecycle.org.fit')" data-org-fit @click="fit()" />
+          <span class="mx-0.5 h-5 w-px bg-line" aria-hidden="true" />
+          <IconButton :icon="Printer" size="sm" variant="ghost" :label="t('lifecycle.org.print')" data-org-print @click="printChart" />
         </div>
       </div>
 
