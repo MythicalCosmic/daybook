@@ -653,7 +653,7 @@
   "lifecycle.equipment.history.written_off": "Written off {date}",
   "lifecycle.equipment.history.held": "Held",
   "lifecycle.equipment.history.cameBack": "came back {condition}",
-  "lifecycle.equipment.off.title": "Equipment uses the Assets module",
+  "lifecycle.equipment.off.title": "Equipment needs the Assets and equipment module",
   "lifecycle.equipment.off.body": "Switch it on to give out uniforms, keys and devices: people confirm in the app, and leaving asks for them back.",
   "lifecycle.equipment.off.action": "Open Settings › Modules",
   "lifecycle.equipment.off.ask": "Ask an owner to switch it on in Settings › Modules.",

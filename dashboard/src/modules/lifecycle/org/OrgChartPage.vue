@@ -141,7 +141,18 @@ async function reveal(personId: number | null): Promise<void> {
   await nextTick();
   const element = document.querySelector<HTMLElement>(`[data-org-chart] [data-person-id="${personId}"]`);
   const still = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
-  element?.scrollIntoView?.({ block: "center", inline: "center", behavior: still ? "auto" : "smooth" });
+  const behavior: ScrollBehavior = still ? "auto" : "smooth";
+  const box = viewport.value;
+  if (element && box?.contains(element)) {
+    // The canvas scrolls to them; the page itself stays where it is.
+    const frame = box.getBoundingClientRect();
+    const spot = element.getBoundingClientRect();
+    box.scrollTo?.({
+      left: box.scrollLeft + spot.left - frame.left - frame.width / 2 + spot.width / 2,
+      top: box.scrollTop + spot.top - frame.top - frame.height / 2 + spot.height / 2,
+      behavior,
+    });
+  } else element?.scrollIntoView?.({ block: "center", inline: "center", behavior });
 }
 
 // ─── Zoom and pan ────────────────────────────────────────────────────────────

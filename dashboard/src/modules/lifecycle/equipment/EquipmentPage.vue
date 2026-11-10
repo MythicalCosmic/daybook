@@ -166,7 +166,7 @@ const stockLine = (item: StockItem) => [item.number, item.serial ? t("lifecycle.
     </div>
 
     <template v-else>
-      <KpiStrip v-if="page || skeleton" :items="kpis" :loading="skeleton" phone="grid" data-equipment-kpis />
+      <KpiStrip v-if="page || skeleton" :items="kpis" :loading="skeleton" :columns="kpis.length === 5 ? 5 : 4" phone="compact" data-equipment-kpis />
 
       <div class="flex flex-wrap items-center gap-3">
         <div class="no-scrollbar max-w-full overflow-x-auto">
