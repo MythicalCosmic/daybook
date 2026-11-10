@@ -65,8 +65,37 @@ the new URL in.
 "The terminal is sending its old history first" for hours after connecting a terminal is
 normal: it uploads every scan it ever stored, oldest first, at its own pace (about one or two a
 second; 40 000 old scans take a working day). Davomat skips them (no arrivals, no messages) and
-counts them on the terminal's card. Live scans come right after. Don't restart or reset the
-terminal: it starts over, and a factory reset deletes the enrolled faces.
+counts them on the terminal's card. Live scans come right after; the catch-up helper sends
+today's scans meanwhile (next section). Don't restart or reset the terminal: it starts over, and
+a factory reset deletes the enrolled faces.
+
+## I connected the terminal but today's scans don't show
+
+1. **The card says "The terminal is sending its old history first"**: today's scans wait behind
+   the old ones (above). Send them now with the catch-up helper: the card's **Get today's scans
+   now** (ADMIN.md, "Today's scans now: the catch-up helper"). It stops by itself when the
+   terminal catches up.
+2. **The card says the terminal's clock is far behind**: its live scans look old and are skipped.
+   Set its date and time ("The clock", below).
+3. **"Waiting for the terminal's first event"**: nothing reaches the server ("The terminal can't
+   reach the server", above).
+4. **The scans show but count for nobody**: "Scans that don't count", below.
+
+When the helper itself stops with a message:
+
+- **"The terminal refused the user … with this password"**: a wrong user or password. Check them
+  before trying again: a few wrong tries in a row lock the terminal's sign-in for about half an
+  hour ("has locked its sign-in": wait that long).
+- **"Can't reach the terminal"**: the computer isn't on the terminal's network, or the address is
+  wrong (the terminal shows it under Menu › Communication › Network).
+  `python3 catchup.py --terminal <address> --check` tests both connections.
+- **"The server doesn't know this terminal's address (404)"**: the terminal got a new code since
+  the download. Download the helper again from its card.
+- **`python3` isn't found** (Windows): use `py catchup.py …`, or install Python from python.org
+  with "Add python.exe to PATH".
+- **"HTTPS to the server doesn't work from this computer"** is a note, not a stop: the scans go
+  over plain HTTP, like the terminal's own. On a Mac with Python from python.org, run "Install
+  Certificates.command" (Applications › Python 3.x) to bring HTTPS back.
 
 ## The clock
 

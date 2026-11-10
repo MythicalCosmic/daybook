@@ -73,9 +73,40 @@ Terminal ulangandan keyin bir necha soat davomida «Terminal avval eski tarixini
 turishi — odatiy hol: terminal xotirasida saqlangan har bir skanerlashni eng eskisidan boshlab o‘z
 sur’atida yuklaydi (sekundiga taxminan bir-ikkitadan; 40 000 eski skanerlash bir ish kunini oladi).
 Davomat ularni o‘tkazib yuboradi (kelish ham, xabar ham bo‘lmaydi) va terminal kartochkasida sanab
-boradi. Jonli skanerlashlar shundan keyin darhol boshlanadi. Terminalni o‘chirib-yoqmang va
-sozlamalarini tiklamang: u tarixni boshidan yuboradi, zavod sozlamalariga qaytarish esa ro‘yxatga
-olingan yuzlarni o‘chirib yuboradi.
+boradi. Jonli skanerlashlar shundan keyin darhol boshlanadi; ungacha bugungi skanerlashlarni
+yordamchi dastur yuboradi (keyingi bo‘lim). Terminalni o‘chirib-yoqmang va sozlamalarini
+tiklamang: u tarixni boshidan yuboradi, zavod sozlamalariga qaytarish esa ro‘yxatga olingan
+yuzlarni o‘chirib yuboradi.
+
+## Terminal ulandi, lekin bugungi skanerlashlar ko‘rinmayapti
+
+1. **Kartochkada «Terminal avval eski tarixini yubormoqda» yozuvi turibdi**: bugungi skanerlashlar
+   eskilarining ortida navbat kutmoqda (yuqoriga qarang). Ularni yordamchi dastur bilan hozir
+   yuboring: kartochkadagi **Bugungi skanerlashlarni hozir olish** bandi (ADMIN.md, «Bugungi
+   skanerlashlar hozir: yordamchi dastur»). Terminal yetib olgach, dastur o‘zi to‘xtaydi.
+2. **Kartochkada terminal soati ancha orqada ekani yozilgan**: uning jonli skanerlashlari eski
+   bo‘lib ko‘rinadi va o‘tkazib yuboriladi. Sana va vaqtini sozlang (quyidagi «Soat» bo‘limi).
+3. **«Terminalning birinchi hodisasi kutilmoqda»**: serverga hech narsa yetib kelmayapti (yuqoridagi
+   «Terminal serverga ulana olmayapti» bo‘limi).
+4. **Skanerlashlar ko‘rinadi, lekin hech kimga hisoblanmaydi**: quyidagi «Hisobga olinmagan
+   skanerlashlar» bo‘limi.
+
+Yordamchi dasturning o‘zi xabar bilan to‘xtasa:
+
+- **«The terminal refused the user … with this password»**: foydalanuvchi yoki parol noto‘g‘ri.
+  Qayta urinishdan oldin ularni tekshiring: ketma-ket bir necha noto‘g‘ri urinish terminalga
+  kirishni taxminan yarim soatga qulflaydi («has locked its sign-in» bo‘lsa, shuncha kuting).
+- **«Can't reach the terminal»**: kompyuter terminal tarmog‘ida emas yoki manzil noto‘g‘ri (terminal
+  uni Menu › Communication › Network bo‘limida ko‘rsatadi).
+  `python3 catchup.py --terminal <address> --check` ikkala ulanishni tekshiradi.
+- **«The server doesn't know this terminal's address (404)»**: yuklab olingandan keyin terminalga
+  yangi kod berilgan. Dasturni terminal kartochkasidan qayta yuklab oling.
+- **`python3` topilmadi** (Windows): `py catchup.py …` buyrug‘ini ishlating yoki Python dasturini
+  python.org saytidan «Add python.exe to PATH» belgisi bilan o‘rnating.
+- **«HTTPS to the server doesn't work from this computer»** — bu to‘xtash emas, izoh: skanerlashlar
+  terminalning o‘zinikidek oddiy HTTP orqali ketadi. python.org saytidan o‘rnatilgan Python bor Mac
+  kompyuterida HTTPS ishlashi uchun «Install Certificates.command» faylini (Applications › Python
+  3.x) ishga tushiring.
 
 ## Soat
 
