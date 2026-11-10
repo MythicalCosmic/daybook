@@ -16,6 +16,13 @@ ENUM_NAME_OVERRIDES = {
     "HrCheckStateEnum": "apps.hr.queries.CHECK_STATES",
     "HrContractKindEnum": "apps.hr.models.ContractKind",
     "HrContractStatusEnum": "apps.hr.models.Contract.Status",
+    # Hiring (apps.hr.hiring).
+    "HrVacancyStatusEnum": "apps.hr.models.Vacancy.Status",
+    "HrQuestionKindEnum": "apps.hr.models.QuestionKind",
+    "HrApplicantStageEnum": "apps.hr.models.Applicant.Stage",
+    "HrApplicantPipelineStageEnum": "apps.hr.hiring.queries.OPEN_STAGES",
+    "HrApplicantSourceEnum": "apps.hr.models.Applicant.Source",
+    "HrApplicantEventKindEnum": "apps.hr.models.ApplicantEvent.Kind",
     "HrPharmacistRoleEnum": "apps.hr.services.PHARMACIST_ROLES",
     "HrCoverageStateEnum": "apps.hr.coverage.STATES",
     "HrCoverageReasonEnum": "apps.hr.queries.REASONS",
