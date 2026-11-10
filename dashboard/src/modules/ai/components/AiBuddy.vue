@@ -3,8 +3,9 @@
  * The AI's little helpers, drawn: a pixel creature (no image file) in five looks — Claude itself
  * (orange) and one chibi per agent: voice tasks (violet, headphones and a mic), morning plan
  * (yellow, a rising sun on its head), deadline watcher (red, an alarm clock on its head) and photo
- * checker (teal, square glasses) and the tutor (warm amber, a mortarboard, round glasses and a
- * book); an agent an owner made is the same little creature in the colour
+ * checker (teal, square glasses), the tutor (warm amber, a mortarboard, round glasses and a
+ * book) and the advisor (calm blue in a navy suit with a gold tie and a tiny gold bar chart on the
+ * chest, a briefcase in its hand); an agent an owner made is the same little creature in the colour
  * its owner picked, with a heart on an antenna (`variant="custom"`, `color`). Expressions: open eyes, a blink, a look around, ^ ^ when happy,
  * heart eyes, closed eyes asleep, a wink, star eyes, wide-eyed surprise, shy eyes down, dizzy X
  * eyes, eyes up thinking. Little dances: wiggle, twist, disco arms, spin, bounce, jumping jacks. Moves: breathing, hop, wave, dance, typing, a poke, walking,
@@ -183,7 +184,16 @@ onBeforeUnmount(() => {
           <rect class="buddy-pages" x="4" y="14" width="1" height="5" />
           <rect class="buddy-tassel" x="2" y="15" width="2" height="1" />
         </g>
+        <!-- The advisor's suit sleeve and its briefcase, carried in the left hand. -->
+        <g v-else-if="variant === 'advisor'" class="buddy-arm-left" data-prop="briefcase">
+          <rect class="buddy-sleeve" x="2" y="9" width="4" height="4" />
+          <rect class="buddy-case-handle" x="2" y="14" width="3" height="1" />
+          <rect class="buddy-case" x="0" y="15" width="6" height="4" />
+          <rect class="buddy-case-light" x="0" y="15" width="6" height="1" />
+          <rect class="buddy-clasp" x="2" y="16" width="2" height="1" />
+        </g>
         <rect class="buddy-limb buddy-arm-right" x="30" y="9" width="4" height="5" />
+        <rect v-if="variant === 'advisor'" class="buddy-arm-right buddy-sleeve" x="30" y="9" width="4" height="4" />
         <rect class="buddy-limb buddy-leg buddy-leg-a" x="8" y="18" width="3" height="6" />
         <rect class="buddy-limb buddy-leg buddy-leg-b" x="13" y="18" width="3" height="6" />
         <rect class="buddy-limb buddy-leg buddy-leg-a" x="20" y="18" width="3" height="6" />
@@ -342,6 +352,26 @@ onBeforeUnmount(() => {
             <rect class="buddy-tassel" x="26" y="3" width="3" height="2" />
           </g>
         </template>
+        <!-- The advisor's navy suit: lapels round a white collar, a gold tie, a pocket square and
+             a little gold bar chart pinned to the chest. -->
+        <g v-else-if="variant === 'advisor'" data-prop="suit">
+          <rect class="buddy-jacket" x="6" y="14" width="24" height="4" />
+          <rect class="buddy-jacket-dark" x="6" y="17" width="24" height="1" />
+          <rect class="buddy-shirt" x="15" y="14" width="6" height="1" />
+          <rect class="buddy-shirt" x="16" y="15" width="4" height="1" />
+          <rect class="buddy-lapel" x="14" y="14" width="1" height="1" />
+          <rect class="buddy-lapel" x="15" y="15" width="1" height="1" />
+          <rect class="buddy-lapel" x="21" y="14" width="1" height="1" />
+          <rect class="buddy-lapel" x="20" y="15" width="1" height="1" />
+          <rect class="buddy-tie" x="17" y="14" width="2" height="3" />
+          <rect class="buddy-tie-tip" x="17" y="17" width="2" height="1" />
+          <rect class="buddy-shirt" x="24" y="15" width="2" height="1" />
+          <g data-prop="chart">
+            <rect class="buddy-chartbit" x="9" y="16" width="1" height="1" />
+            <rect class="buddy-chartbit" x="10" y="15" width="1" height="2" />
+            <rect class="buddy-chartbit" x="11" y="14" width="1" height="3" />
+          </g>
+        </g>
         <g v-else-if="variant === 'custom'" data-prop="antenna">
           <rect class="buddy-gear" x="17" y="-1" width="2" height="3" />
           <g class="buddy-antenna">
@@ -437,6 +467,7 @@ onBeforeUnmount(() => {
 .ai-buddy[data-variant="photo"] { --buddy-main: #36b1a4; --buddy-light: #5fc8bc; --buddy-dark: #24897f; --buddy-gear: #1d3b57; }
 .ai-buddy[data-variant="hr"] { --buddy-main: #4fb36f; --buddy-light: #78c991; --buddy-dark: #34925a; --buddy-gear: #22324a; }
 .ai-buddy[data-variant="tutor"] { --buddy-main: #d9893b; --buddy-light: #e8a865; --buddy-dark: #b56d26; --buddy-gear: #3b2a1f; }
+.ai-buddy[data-variant="advisor"] { --buddy-main: #6b8fd6; --buddy-light: #93aee6; --buddy-dark: #4b6fb5; --buddy-gear: #1f2a44; }
 
 .buddy-body { fill: var(--buddy-main); }
 .buddy-light { fill: var(--buddy-light); }
@@ -469,6 +500,16 @@ onBeforeUnmount(() => {
 .buddy-book-spine { fill: #1f4f66; }
 .buddy-pages { fill: #fbf7ee; }
 .buddy-heartbit { fill: var(--buddy-pink); }
+/* The advisor's suit, tie and briefcase. */
+.buddy-jacket, .buddy-sleeve { fill: #24345a; }
+.buddy-jacket-dark { fill: #1a2643; }
+.buddy-lapel { fill: #43598c; }
+.buddy-shirt { fill: #fbf7ee; }
+.ai-buddy[data-variant="advisor"] .buddy-tie, .buddy-chartbit, .buddy-clasp { fill: var(--buddy-gold); }
+.buddy-tie-tip { fill: #c98f22; }
+.buddy-case { fill: #7a4a2b; }
+.buddy-case-light { fill: #9b6a43; }
+.buddy-case-handle { fill: #4a2c19; }
 /* Its little heart beats while its agent works. */
 .buddy-antenna { transform-box: fill-box; transform-origin: center bottom; }
 .ai-buddy[data-mood="busy"] .buddy-antenna { animation: buddy-beat 1.2s steps(2) infinite; }

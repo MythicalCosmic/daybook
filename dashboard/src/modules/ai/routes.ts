@@ -27,6 +27,12 @@ export const routes: RouteRecordRaw[] = [
     meta: { title: "ai.agent.title" },
   },
   {
+    path: "ai/advisor",
+    name: "ai.advisor",
+    component: () => import("./pages/AdvisorPage.vue"),
+    meta: { title: "ai.advisor.title", perm: "reports.view" },
+  },
+  {
     path: "ai/activity",
     name: "ai.activity",
     component: () => import("./pages/ActivityPage.vue"),

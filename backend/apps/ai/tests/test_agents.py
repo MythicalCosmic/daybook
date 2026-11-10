@@ -59,6 +59,7 @@ def late_task(crew, hours: int = 3, **fields) -> Task:
 
 def test_the_agents_in_the_dashboards_order():
     assert [agent.key for agent in agents.all_agents()] == [
+        "advisor",
         "voice_tasks",
         "deadline_watcher",
         "morning_plan",

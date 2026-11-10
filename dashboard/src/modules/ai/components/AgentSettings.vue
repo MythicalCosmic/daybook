@@ -10,7 +10,9 @@ import { useI18n } from "vue-i18n";
 
 import EmptyState from "@/components/EmptyState.vue";
 import InlineAlert from "@/components/InlineAlert.vue";
+import UiButton from "@/components/UiButton.vue";
 import { toast } from "@/components/useToast";
+import { useCompanyStore } from "@/stores/company";
 
 import { usePatchAgent } from "../api";
 import type { Agent, AgentConfigValue } from "../types";
@@ -19,6 +21,7 @@ import AgentField from "./AgentField.vue";
 const props = defineProps<{ agent: Agent; canConfigure: boolean; aiOn: boolean }>();
 
 const { t } = useI18n();
+const company = useCompanyStore();
 const patch = usePatchAgent();
 const saving = ref<string | null>(null);
 const editable = computed(() => props.canConfigure && props.aiOn);
@@ -41,6 +44,11 @@ async function save(key: string, value: AgentConfigValue): Promise<void> {
     <InlineAlert v-if="agent.unavailable_reason === 'needs_claude'" tone="warning" :icon="KeyRound" :title="t('ai.agents.needsClaudeTitle')" :description="t('ai.agents.needsClaudeBody')" />
     <InlineAlert v-else-if="agent.unavailable_reason === 'needs_speech'" tone="warning" :icon="Lock" :title="t('ai.agents.needsSpeechTitle')" :description="t('ai.agents.needsSpeechBody')" />
     <InlineAlert v-if="agent.key === 'photo_checker'" tone="info" :icon="Info" :description="t('ai.agents.photosNote')" />
+    <InlineAlert v-if="agent.key === 'advisor'" tone="info" :icon="Info" :description="t('ai.agents.advisorNote')" data-testid="agent-advisor-note">
+      <template #actions>
+        <UiButton size="sm" :to="{ name: 'ai.advisor', params: { companyId: company.currentId ?? 0 } }">{{ t("ai.agents.advisorOpen") }}</UiButton>
+      </template>
+    </InlineAlert>
 
     <div v-if="agent.fields.length" class="ui-card flex flex-col divide-y divide-line">
       <div v-for="field in agent.fields" :key="field.key" class="px-4 py-3.5 md:px-5">

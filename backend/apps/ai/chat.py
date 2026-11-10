@@ -84,6 +84,7 @@ def available(member: Membership) -> bool:
 
 
 TUTOR = "tutor"
+ADVISOR = "advisor"
 
 
 def tutor_available(member: Membership) -> bool:
@@ -93,11 +94,27 @@ def tutor_available(member: Membership) -> bool:
     return available(member) and learning_conf.is_on(member.company)
 
 
+def advisor_available(member: Membership) -> bool:
+    """ "Ask the advisor": Ask AI, and Maslahatchi works here and is on (apps.ai.agents.advisor)."""
+    from apps.ai.agents import advisor
+
+    return available(member) and advisor.is_on(member.company)
+
+
+def agent_available(member: Membership, agent: str) -> bool:
+    if agent == TUTOR:
+        return tutor_available(member)
+    if agent == ADVISOR:
+        return advisor_available(member)
+    return available(member)
+
+
 def start_conversation(by: Membership, *, agent: str = "") -> AIConversation:
-    """A new conversation of `by`'s; `agent` "tutor" makes it "Ask the tutor"."""
-    if agent not in ("", TUTOR):
+    """A new conversation of `by`'s; `agent` "tutor" makes it "Ask the tutor", "advisor"
+    "Ask the advisor"."""
+    if agent not in ("", TUTOR, ADVISOR):
         raise ValueError(f"No conversations with agent {agent!r}.")
-    if not (tutor_available(by) if agent == TUTOR else available(by)):
+    if not agent_available(by, agent):
         raise TurnRefused("ai_off", _("Ask AI isn't available here."), 403)
     return AIConversation.objects.create(
         company_id=by.company_id, membership=by, last_activity_at=timezone.now(), agent=agent
@@ -313,25 +330,48 @@ def turn_context(member: Membership, page: str = "") -> str:
     )
 
 
+def _agent_module(conversation: AIConversation):
+    """The agent a conversation talks to (the tutor, the advisor), None for Ask AI itself."""
+    if conversation.agent == TUTOR:
+        from apps.ai.agents import tutor
+
+        return tutor
+    if conversation.agent == ADVISOR:
+        from apps.ai.agents import advisor
+
+        return advisor
+    return None
+
+
 def system_text(conversation: AIConversation, company) -> str:
-    """The system prompt: Ask AI's rules; for "Ask the tutor" the tutor's own after them, then
-    the company's instructions for the tutor (apps.ai.instructions)."""
-    if conversation.agent != TUTOR:
+    """The system prompt: Ask AI's rules; for "Ask the tutor" or "Ask the advisor" the agent's
+    own after them, then the company's instructions for it (apps.ai.instructions)."""
+    agent = _agent_module(conversation)
+    if agent is None:
         return SYSTEM
     from apps.ai import instructions
-    from apps.ai.agents import tutor
 
-    return instructions.system_for(company, tutor.KEY, f"{SYSTEM}\n\n{tutor.CHAT_SYSTEM}")
+    return instructions.system_for(company, agent.KEY, f"{SYSTEM}\n\n{agent.CHAT_SYSTEM}")
 
 
 def conversation_tools(conversation: AIConversation, ctx: ToolContext) -> list:
-    """The tools of the conversation: all the asker may use, or the tutor's domains."""
+    """The tools of the conversation: all the asker may use, or the agent's domains."""
     tools = registry.tools_for(ctx)
-    if conversation.agent != TUTOR:
+    agent = _agent_module(conversation)
+    if agent is None:
         return tools
-    from apps.ai.agents import tutor
+    return [tool for tool in tools if tool.domain in agent.CHAT_DOMAINS]
 
-    return [tool for tool in tools if tool.domain in tutor.CHAT_DOMAINS]
+
+def conversation_profile(conversation: AIConversation) -> tuple[str, str, str]:
+    """(usage feature, model, effort) of a conversation's calls, the same for its whole life
+    (the prompt cache): "Ask the advisor" runs on the fast model at low effort (the owner's
+    budget), the others as Ask AI."""
+    if conversation.agent == ADVISOR:
+        from apps.ai.agents import advisor
+
+        return advisor.CHAT_FEATURE, settings.AI_MODEL_FAST, "low"
+    return "chat", settings.AI_MODEL_CHAT, "medium"
 
 
 def _loop(turn: AITurn, ctx: ToolContext) -> str | None:
@@ -346,21 +386,22 @@ def _loop(turn: AITurn, ctx: ToolContext) -> str | None:
         },
     ]
     steps: list[dict] = []
+    feature, model, effort = conversation_profile(conversation)
     for round_number in range(MAX_ROUNDS + 1):
         if _cancelled(turn):
             return None
         _ensure_may_call(ctx.company)
         last = round_number == MAX_ROUNDS
         response = client.converse(
-            "chat",
+            feature,
             company=ctx.company,
             membership=ctx.membership,
-            model=settings.AI_MODEL_CHAT,
+            model=model,
             system=system,
             messages=_history(conversation),
             tools=definitions,
             tool_choice={"type": "none"} if last else None,
-            effort="medium",
+            effort=effort,
             max_tokens=MAX_TOKENS,
         )
         content = [block.to_dict() for block in response.content]
@@ -462,6 +503,8 @@ def _fake_answer(turn: AITurn, ctx: ToolContext) -> str:
     conversation = turn.conversation
     if conversation.agent == TUTOR:
         return _fake_tutor_answer(turn, ctx)
+    if conversation.agent == ADVISOR:
+        return _fake_advisor_answer(turn, ctx)
     started = time.monotonic()
     tool_name = "tasks_search"
     tool = registry.get_tool(tool_name)
@@ -499,6 +542,21 @@ def _fake_answer(turn: AITurn, ctx: ToolContext) -> str:
                     f"- [{row['title']}](task:{row['id']})" + (f" — {name}" if name else "")
                 )
             text = "\n".join(lines)
+    text = clean_answer(text, ctx)
+    content = [{"type": "text", "text": text}]
+    message = _add_message(conversation, turn, "assistant", content, text)
+    AITurn.objects.filter(pk=turn.pk).update(steps=steps, message=message, model="fake")
+    return text
+
+
+def _fake_advisor_answer(turn: AITurn, ctx: ToolContext) -> str:
+    """The advisor's canned answer, through its real tools (apps.ai.agents.advisor)."""
+    from apps.ai.agents import advisor
+
+    conversation = turn.conversation
+    question = turn.conversation.messages.filter(turn=turn, role="user").first()
+    asked = (question.display_text if question else "") or ""
+    text, steps = advisor.fake_answer(ctx, asked)
     text = clean_answer(text, ctx)
     content = [{"type": "text", "text": text}]
     message = _add_message(conversation, turn, "assistant", content, text)

@@ -1,5 +1,5 @@
 /** Icons for what the AI endpoints name by key: agents (lucide names), sources and levels. */
-import { AlarmClock, Bot, Briefcase, LayoutDashboard, Mic, ScanEye, Send, Smartphone, Sparkles, Sunrise, UserRoundCog } from "@lucide/vue";
+import { AlarmClock, Bot, Briefcase, LayoutDashboard, Mic, ScanEye, Send, Smartphone, Sparkles, Sunrise, TrendingUp, UserRoundCog } from "@lucide/vue";
 import type { Component } from "vue";
 
 import type { DraftSource } from "./types";
@@ -12,6 +12,7 @@ const AGENT_ICONS: Record<string, Component> = {
   "scan-eye": ScanEye,
   sparkles: Sparkles,
   briefcase: Briefcase,
+  "trending-up": TrendingUp,
   bot: Bot,
 };
 

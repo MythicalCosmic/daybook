@@ -629,6 +629,7 @@ def test_it_is_listed_after_the_built_in_agents(crew):
     assert all(item["custom"] is None for item in rows[:-1])
     assert rows[-1]["custom"]["job"] == JOB
     assert [agent.key for agent in agents.all_agents()] == [
+        "advisor",
         "voice_tasks",
         "deadline_watcher",
         "morning_plan",
