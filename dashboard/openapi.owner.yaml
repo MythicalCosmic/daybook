@@ -5048,6 +5048,221 @@ paths:
                 items:
                   $ref: '#/components/schemas/BranchToday'
           description: ''
+  /api/v1/owner/companies/{company_id}/briefings/:
+    get:
+      operationId: companies_briefings_list
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: kind
+        schema:
+          type: string
+          enum:
+          - monthly
+          - weekly
+        description: weekly (default).
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BriefingsList'
+          description: ''
+  /api/v1/owner/companies/{company_id}/briefings/{briefing_id}/:
+    get:
+      operationId: companies_briefings_retrieve
+      parameters:
+      - in: path
+        name: briefing_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BriefingsReview'
+          description: ''
+  /api/v1/owner/companies/{company_id}/briefings/advisor/conversations/:
+    get:
+      operationId: companies_briefings_advisor_conversations_list
+      description: |-
+        The caller's "Ask the advisor" conversations (Ask AI conversations with `agent`
+        "advisor", private to their author).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BriefingsConversation'
+          description: ''
+    post:
+      operationId: companies_briefings_advisor_conversations_create
+      description: |-
+        The caller's "Ask the advisor" conversations (Ask AI conversations with `agent`
+        "advisor", private to their author).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BriefingsConversation'
+          description: ''
+  /api/v1/owner/companies/{company_id}/briefings/latest/:
+    get:
+      operationId: companies_briefings_latest_retrieve
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: kind
+        schema:
+          type: string
+          enum:
+          - monthly
+          - weekly
+        description: weekly (default).
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BriefingsLatest'
+          description: ''
+  /api/v1/owner/companies/{company_id}/briefings/regenerate/:
+    post:
+      operationId: companies_briefings_regenerate_create
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BriefingsRegenerateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BriefingsRegenerateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BriefingsRegenerateRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BriefingsReview'
+          description: ''
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BriefingsQueued'
+          description: ''
+  /api/v1/owner/companies/{company_id}/briefings/settings/:
+    get:
+      operationId: companies_briefings_settings_retrieve
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BriefingsSettings'
+          description: ''
+    patch:
+      operationId: companies_briefings_settings_partial_update
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedBriefingsSettingsRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedBriefingsSettingsRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedBriefingsSettingsRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BriefingsSettings'
+          description: ''
   /api/v1/owner/companies/{company_id}/calendar/:
     get:
       operationId: companies_calendar_retrieve
@@ -5447,6 +5662,28 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/AgendaSource'
+          description: ''
+  /api/v1/owner/companies/{company_id}/cockpit/:
+    get:
+      operationId: insights_owner_cockpit
+      description: 'Egasi paneli: profit by branch, cash and runway, decisions waiting,
+        insights.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cockpit'
           description: ''
   /api/v1/owner/companies/{company_id}/davomat/settings/:
     get:
@@ -8374,6 +8611,277 @@ paths:
               schema:
                 $ref: '#/components/schemas/FinanceDebtSummary'
           description: ''
+  /api/v1/owner/companies/{company_id}/finance/dividends/:
+    get:
+      operationId: companies_finance_dividends_list
+      description: Every dividend round, the latest first; POST prepares one (a draft).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FinanceDividend'
+          description: ''
+    post:
+      operationId: companies_finance_dividends_create
+      description: Every dividend round, the latest first; POST prepares one (a draft).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DividendInputRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DividendInputRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DividendInputRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceDividend'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/dividends/{id}/:
+    get:
+      operationId: companies_finance_dividends_retrieve
+      description: One round; PATCH changes the amount or the note while nothing of
+        it is paid.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceDividend'
+          description: ''
+    patch:
+      operationId: companies_finance_dividends_partial_update
+      description: One round; PATCH changes the amount or the note while nothing of
+        it is paid.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDividendPatchRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedDividendPatchRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDividendPatchRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceDividend'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/dividends/{id}/cancel/:
+    post:
+      operationId: companies_finance_dividends_cancel_create
+      description: Drop a round nothing of which is paid.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReasonInputRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReasonInputRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReasonInputRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceDividend'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/dividends/{id}/lines/{line_id}/undo/:
+    post:
+      operationId: companies_finance_dividends_lines_undo_create
+      description: 'Take one line''s payment back: its owner draw is voided.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: line_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReasonInputRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReasonInputRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReasonInputRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceDividend'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/dividends/{id}/pay/:
+    post:
+      operationId: companies_finance_dividends_pay_create
+      description: |-
+        Pay the round's unpaid lines (or the listed ones) from a business account in the base
+        currency: one owner draw per partner.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DividendPayInputRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DividendPayInputRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DividendPayInputRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceDividend'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/dividends/suggest/:
+    get:
+      operationId: companies_finance_dividends_suggest_retrieve
+      description: |-
+        What a round for the period could pay (its net profit less rounds already made for it,
+        at most what is safe to take out today) and how it splits by the shares.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: from
+        schema:
+          type: string
+      - in: query
+        name: to
+        schema:
+          type: string
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Suggest'
+          description: ''
   /api/v1/owner/companies/{company_id}/finance/options/:
     get:
       operationId: companies_finance_options_retrieve
@@ -8420,6 +8928,311 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FinanceOverview'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/owner-money/:
+    get:
+      operationId: companies_finance_owner_money_retrieve
+      description: |-
+        The safe amount to take out today with its reasons, this month's draws and
+        contributions, a monthly amount the forecast carries, six months of profit against draws,
+        planned purchases and the accounts money can be taken from.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnerMoney'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/owner-money/purchases/:
+    post:
+      operationId: companies_finance_owner_money_purchases_create
+      description: Plan a purchase the safe amount keeps money back for.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PurchaseInputRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PurchaseInputRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PurchaseInputRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinancePlannedPurchase'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/owner-money/purchases/{id}/:
+    patch:
+      operationId: companies_finance_owner_money_purchases_partial_update
+      description: Change a planned purchase, mark it bought (or dropped), or remove
+        it.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPurchasePatchRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPurchasePatchRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPurchasePatchRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinancePlannedPurchase'
+          description: ''
+    delete:
+      operationId: companies_finance_owner_money_purchases_destroy
+      description: Change a planned purchase, mark it bought (or dropped), or remove
+        it.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/finance/owner-money/put/:
+    post:
+      operationId: companies_finance_owner_money_put_create
+      description: Put the owner's own money into the business (an owner contribution).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MoveInputRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MoveInputRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MoveInputRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MoveResult'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/owner-money/settings/:
+    patch:
+      operationId: companies_finance_owner_money_settings_partial_update
+      description: |-
+        The cash buffer (empty: one month of fixed costs) and how many days of payments due the
+        safe amount keeps back.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSettingsInputRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSettingsInputRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSettingsInputRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnerMoneySettings'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/owner-money/take/:
+    post:
+      operationId: companies_finance_owner_money_take_create
+      description: |-
+        Take money out of the business (an owner draw). Above the safe amount it needs
+        `confirmed: true`.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MoveInputRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MoveInputRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MoveInputRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MoveResult'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/partners/:
+    get:
+      operationId: companies_finance_partners_retrieve
+      description: The partners now (their shares add up to 100 %) and before; PUT
+        sets them from a day.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Partners'
+          description: ''
+    put:
+      operationId: companies_finance_partners_update
+      description: The partners now (their shares add up to 100 %) and before; PUT
+        sets them from a day.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartnersInputRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PartnersInputRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PartnersInputRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Partners'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/partners/profit-share/:
+    get:
+      operationId: companies_finance_partners_profit_share_retrieve
+      description: |-
+        Each partner's part of a period's net profit, by the days they held each share, with
+        the dividends paid to them for rounds of the period (default: this year so far).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: from
+        schema:
+          type: string
+      - in: query
+        name: to
+        schema:
+          type: string
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfitShare'
           description: ''
   /api/v1/owner/companies/{company_id}/finance/payables/:
     get:
@@ -9856,6 +10669,277 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Upcoming'
+          description: ''
+  /api/v1/owner/companies/{company_id}/goals/:
+    get:
+      operationId: companies_goals_list
+      description: The goals of a tab with their progress now and their weekly series;
+        POST sets one.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - active
+          - archived
+          - done
+        description: active
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GoalList'
+          description: ''
+    post:
+      operationId: companies_goals_create
+      description: The goals of a tab with their progress now and their weekly series;
+        POST sets one.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoalInputRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/GoalInputRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/GoalInputRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Goal'
+          description: ''
+  /api/v1/owner/companies/{company_id}/goals/{id}/:
+    get:
+      operationId: companies_goals_retrieve
+      description: One goal with its whole weekly series; PATCH changes it, DELETE
+        removes it.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Goal'
+          description: ''
+    patch:
+      operationId: companies_goals_partial_update
+      description: One goal with its whole weekly series; PATCH changes it, DELETE
+        removes it.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedGoalPatchRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedGoalPatchRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedGoalPatchRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Goal'
+          description: ''
+    delete:
+      operationId: companies_goals_destroy
+      description: One goal with its whole weekly series; PATCH changes it, DELETE
+        removes it.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/goals/{id}/archive/:
+    post:
+      operationId: companies_goals_archive_create
+      description: Put a goal away (it stops being measured and told about).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Goal'
+          description: ''
+  /api/v1/owner/companies/{company_id}/goals/{id}/restore/:
+    post:
+      operationId: companies_goals_restore_create
+      description: Bring an archived goal back.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Goal'
+          description: ''
+  /api/v1/owner/companies/{company_id}/goals/metrics/:
+    get:
+      operationId: companies_goals_metrics_retrieve
+      description: |-
+        What a goal can measure here (a module that is off says so), the branches and people to
+        pick.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Metrics'
+          description: ''
+  /api/v1/owner/companies/{company_id}/goals/preview/:
+    get:
+      operationId: companies_goals_preview_retrieve
+      description: |-
+        A metric's value so far and its pace to the period's end, with the state a target would
+        have: what the goal dialog shows while someone types.
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: ends_on
+        schema:
+          type: string
+        required: true
+      - in: query
+        name: metric
+        schema:
+          type: string
+        required: true
+      - in: query
+        name: starts_on
+        schema:
+          type: string
+        required: true
+      - in: query
+        name: target
+        schema:
+          type: string
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Preview'
           description: ''
   /api/v1/owner/companies/{company_id}/groups/:
     get:
@@ -13023,6 +14107,290 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InboxCount'
+          description: ''
+  /api/v1/owner/companies/{company_id}/insights/:
+    get:
+      operationId: insights_owner_list
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: domain
+        schema:
+          type: string
+          enum:
+          - finance
+          - hr
+          - payroll
+          - people
+          - sales
+          - tasks
+      - in: query
+        name: kind
+        schema:
+          type: string
+          enum:
+          - branch_margin
+          - cash_low
+          - expense_spike
+          - overdue_payables
+          - overdue_receivables
+          - staff_cost
+          - stock_build
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: At most 200.
+      - in: query
+        name: severity
+        schema:
+          type: string
+          enum:
+          - critical
+          - info
+          - warning
+      - in: query
+        name: status
+        schema:
+          type: string
+        description: 'live (default: open and seen), all, or one status.'
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InsightList'
+          description: ''
+  /api/v1/owner/companies/{company_id}/insights/{id}/:
+    get:
+      operationId: insights_owner_detail
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InsightsInsight'
+          description: ''
+  /api/v1/owner/companies/{company_id}/insights/{id}/acknowledge/:
+    post:
+      operationId: insights_owner_ack
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InsightsInsight'
+          description: ''
+  /api/v1/owner/companies/{company_id}/insights/{id}/dismiss/:
+    post:
+      operationId: insights_owner_dismiss
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DismissRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DismissRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DismissRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InsightsInsight'
+          description: ''
+  /api/v1/owner/companies/{company_id}/insights/{id}/make-task/:
+    post:
+      operationId: insights_owner_make_task
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MakeTaskRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MakeTaskRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MakeTaskRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MadeTask'
+          description: ''
+  /api/v1/owner/companies/{company_id}/insights/{id}/resolve/:
+    post:
+      operationId: insights_owner_resolve
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InsightsInsight'
+          description: ''
+  /api/v1/owner/companies/{company_id}/insights/check/:
+    post:
+      operationId: insights_owner_check
+      description: Run the rules now (the cockpit's "Check now"), at most once a minute
+        per company.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckResult'
+          description: ''
+  /api/v1/owner/companies/{company_id}/insights/settings/:
+    get:
+      operationId: insights_owner_settings
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InsightsSettingsResponse'
+          description: ''
+    patch:
+      operationId: insights_owner_settings_update
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedInsightsSettingsRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedInsightsSettingsRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedInsightsSettingsRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InsightsSettingsResponse'
           description: ''
   /api/v1/owner/companies/{company_id}/invite/:
     get:
@@ -37377,6 +38745,14 @@ components:
         * `ok` - ok
         * `strong` - strong
         * `unrated` - unrated
+    BasisEnum:
+      enum:
+      - spending
+      - forecast
+      type: string
+      description: |-
+        * `spending` - spending
+        * `forecast` - forecast
     BlankEnum:
       enum:
       - ''
@@ -37783,6 +39159,299 @@ components:
       - name
       - opens_at
       - status
+    BriefingsAction:
+      type: object
+      properties:
+        text:
+          type: string
+          description: The suggestion.
+        fact:
+          type: string
+          description: The signal it is about (a key of facts.signals).
+        label:
+          type: string
+          description: The button's words.
+        url:
+          type: string
+          description: A dashboard path, /c/<company>/…
+      required:
+      - fact
+      - label
+      - text
+      - url
+    BriefingsConversation:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        last_activity_at:
+          type: string
+          format: date-time
+      required:
+      - created_at
+      - id
+      - last_activity_at
+      - title
+    BriefingsKindEnum:
+      enum:
+      - weekly
+      - monthly
+      type: string
+      description: |-
+        * `weekly` - Weekly review
+        * `monthly` - Monthly review
+    BriefingsLatest:
+      type: object
+      properties:
+        review:
+          allOf:
+          - $ref: '#/components/schemas/BriefingsReview'
+          nullable: true
+          description: Null before the first one.
+        next:
+          allOf:
+          - $ref: '#/components/schemas/BriefingsNext'
+          description: 'When the next reviews go out (null: off).'
+        writer:
+          allOf:
+          - $ref: '#/components/schemas/WriterEnum'
+          description: |-
+            Who writes the reviews now: Claude or the templates.
+
+            * `ai` - ai
+            * `template` - template
+        advisor_on:
+          type: boolean
+          description: Maslahatchi works here and is on.
+        chat:
+          type: boolean
+          description: '"Ask the advisor" is open to the caller.'
+        has_data:
+          type: boolean
+          description: The caller sees something a review talks about (money, sales,
+            stock, people).
+        can_regenerate:
+          type: boolean
+          description: company.settings
+        regenerations_left:
+          type: integer
+        can_configure:
+          type: boolean
+          description: 'company.settings: the review settings.'
+      required:
+      - advisor_on
+      - can_configure
+      - can_regenerate
+      - chat
+      - has_data
+      - next
+      - regenerations_left
+      - review
+      - writer
+    BriefingsList:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/BriefingsSummary'
+      required:
+      - results
+    BriefingsNext:
+      type: object
+      properties:
+        weekly:
+          type: string
+          format: date-time
+          nullable: true
+        monthly:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - monthly
+      - weekly
+    BriefingsPeriod:
+      type: object
+      properties:
+        kind:
+          type: string
+        start:
+          type: string
+          format: date
+        end:
+          type: string
+          format: date
+      required:
+      - end
+      - kind
+      - start
+    BriefingsQueued:
+      type: object
+      properties:
+        queued:
+          type: boolean
+      required:
+      - queued
+    BriefingsRecipientsEnum:
+      enum:
+      - owners
+      - reports
+      type: string
+      description: |-
+        * `owners` - Owners
+        * `reports` - Everyone who sees reports
+    BriefingsRegenerateRequest:
+      type: object
+      properties:
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/BriefingsKindEnum'
+          default: weekly
+    BriefingsReview:
+      type: object
+      properties:
+        id:
+          type: integer
+        kind:
+          $ref: '#/components/schemas/BriefingsKindEnum'
+        day:
+          type: string
+          format: date
+          description: The first day of the period it reviews.
+        period:
+          $ref: '#/components/schemas/BriefingsPeriod'
+        headline:
+          type: string
+        written_by:
+          $ref: '#/components/schemas/BriefingsWrittenByEnum'
+        written_at:
+          type: string
+          format: date-time
+          nullable: true
+        language:
+          type: string
+        sections:
+          type: array
+          items:
+            $ref: '#/components/schemas/BriefingsSection'
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/BriefingsAction'
+          description: Up to three suggestions.
+        facts:
+          type: object
+          additionalProperties: {}
+          description: 'Every number of the review (apps.briefings.facts): money as
+            strings, the sections of the domains the reader may see, and `signals`.'
+      required:
+      - actions
+      - day
+      - facts
+      - headline
+      - id
+      - kind
+      - language
+      - period
+      - sections
+      - written_at
+      - written_by
+    BriefingsSection:
+      type: object
+      properties:
+        key:
+          $ref: '#/components/schemas/BriefingsSectionKeyEnum'
+        title:
+          type: string
+        bullets:
+          type: array
+          items:
+            type: string
+        facts:
+          type: array
+          items:
+            type: string
+          description: The signal key each bullet rests on.
+      required:
+      - bullets
+      - facts
+      - key
+      - title
+    BriefingsSectionKeyEnum:
+      enum:
+      - went_well
+      - went_wrong
+      type: string
+      description: |-
+        * `went_well` - went_well
+        * `went_wrong` - went_wrong
+    BriefingsSettings:
+      type: object
+      properties:
+        weekly_enabled:
+          type: boolean
+          description: The weekly business review, for the week before.
+        monthly_enabled:
+          type: boolean
+          description: The monthly business review, on the first day of the month.
+        weekday:
+          type: integer
+          maximum: 6
+          minimum: 0
+          description: The day the weekly review goes out.
+        send_at:
+          type: string
+          format: time
+        recipients:
+          $ref: '#/components/schemas/BriefingsRecipientsEnum'
+      required:
+      - send_at
+    BriefingsSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+        kind:
+          $ref: '#/components/schemas/BriefingsKindEnum'
+        day:
+          type: string
+          format: date
+          description: The first day of the period it reviews.
+        period:
+          $ref: '#/components/schemas/BriefingsPeriod'
+        headline:
+          type: string
+        written_by:
+          $ref: '#/components/schemas/BriefingsWrittenByEnum'
+        written_at:
+          type: string
+          format: date-time
+          nullable: true
+        language:
+          type: string
+      required:
+      - day
+      - headline
+      - id
+      - kind
+      - language
+      - period
+      - written_at
+      - written_by
+    BriefingsWrittenByEnum:
+      enum:
+      - ai
+      - template
+      type: string
+      description: |-
+        * `ai` - Claude
+        * `template` - Template
     BudgetCopyRequest:
       type: object
       properties:
@@ -37865,6 +39534,31 @@ components:
       - category
       - share
       - status
+    Buffer:
+      type: object
+      properties:
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        auto:
+          type: boolean
+        fixed_costs:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+      required:
+      - amount
+      - auto
+      - fixed_costs
+    BufferSourceEnum:
+      enum:
+      - setting
+      - fixed_costs
+      type: string
+      description: |-
+        * `setting` - setting
+        * `fixed_costs` - fixed_costs
     BulkDecisionRequest:
       type: object
       properties:
@@ -38107,6 +39801,28 @@ components:
       - minutes
       - record_id
       - shift_id
+    CheckResult:
+      type: object
+      properties:
+        created:
+          type: integer
+        updated:
+          type: integer
+        reopened:
+          type: integer
+        resolved:
+          type: integer
+        failed:
+          type: integer
+        notified:
+          type: integer
+      required:
+      - created
+      - failed
+      - notified
+      - reopened
+      - resolved
+      - updated
     ChecklistRow:
       type: object
       properties:
@@ -38265,6 +39981,539 @@ components:
           maxLength: 300
       required:
       - reason
+    Cockpit:
+      type: object
+      properties:
+        today:
+          type: string
+          format: date
+        currency:
+          type: string
+        generated_at:
+          type: string
+          format: date-time
+        can:
+          $ref: '#/components/schemas/CockpitCan'
+        money:
+          allOf:
+          - $ref: '#/components/schemas/CockpitMoney'
+          description: Only with finance.view and the finance module.
+        cash:
+          allOf:
+          - $ref: '#/components/schemas/CockpitCash'
+          description: Only with finance.view and the finance module.
+        decisions:
+          $ref: '#/components/schemas/CockpitDecisions'
+        insights:
+          $ref: '#/components/schemas/CockpitInsights'
+      required:
+      - can
+      - currency
+      - decisions
+      - generated_at
+      - insights
+      - today
+    CockpitBranch:
+      type: object
+      properties:
+        month:
+          $ref: '#/components/schemas/CockpitPeriod'
+        last_month:
+          $ref: '#/components/schemas/CockpitPeriod'
+        trend:
+          type: array
+          items:
+            $ref: '#/components/schemas/CockpitTrend'
+        id:
+          type: integer
+        name:
+          type: string
+        code:
+          type: string
+        states:
+          $ref: '#/components/schemas/CockpitStates'
+      required:
+      - code
+      - id
+      - last_month
+      - month
+      - name
+      - states
+      - trend
+    CockpitCan:
+      type: object
+      properties:
+        money:
+          type: boolean
+        insights:
+          type: boolean
+        settings:
+          type: boolean
+      required:
+      - insights
+      - money
+      - settings
+    CockpitCash:
+      type: object
+      properties:
+        currency:
+          type: string
+        now:
+          type: string
+        buffer:
+          type: string
+        buffer_source:
+          $ref: '#/components/schemas/BufferSourceEnum'
+        daily_spend:
+          type: string
+        runway:
+          $ref: '#/components/schemas/CockpitRunway'
+        low:
+          $ref: '#/components/schemas/CockpitLow'
+        end:
+          type: string
+        points:
+          type: array
+          items:
+            $ref: '#/components/schemas/CockpitPoint'
+        basis:
+          type: object
+          additionalProperties: {}
+      required:
+      - basis
+      - buffer
+      - buffer_source
+      - currency
+      - daily_spend
+      - end
+      - low
+      - now
+      - points
+      - runway
+    CockpitCause:
+      type: object
+      properties:
+        title:
+          type: string
+        kind:
+          type: string
+        date:
+          type: string
+          format: date
+        amount:
+          type: string
+        overdue:
+          type: boolean
+      required:
+      - amount
+      - date
+      - kind
+      - overdue
+      - title
+    CockpitCost:
+      type: object
+      properties:
+        key:
+          type: string
+        name:
+          type: string
+        color:
+          type: string
+        amount:
+          type: string
+        previous:
+          type: string
+          nullable: true
+      required:
+      - amount
+      - key
+      - name
+    CockpitDecision:
+      type: object
+      properties:
+        kind:
+          type: string
+        id:
+          type: string
+        title:
+          type: string
+        subtitle:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          nullable: true
+        url:
+          type: string
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/CockpitQueueAction'
+        source:
+          type: string
+        group:
+          type: string
+      required:
+      - actions
+      - created_at
+      - group
+      - id
+      - kind
+      - source
+      - subtitle
+      - title
+      - url
+    CockpitDecisions:
+      type: object
+      properties:
+        total:
+          type: integer
+        sources:
+          type: array
+          items:
+            $ref: '#/components/schemas/CockpitSource'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CockpitDecision'
+      required:
+      - items
+      - sources
+      - total
+    CockpitFigures:
+      type: object
+      properties:
+        month:
+          $ref: '#/components/schemas/CockpitPeriod'
+        last_month:
+          $ref: '#/components/schemas/CockpitPeriod'
+        trend:
+          type: array
+          items:
+            $ref: '#/components/schemas/CockpitTrend'
+      required:
+      - last_month
+      - month
+      - trend
+    CockpitInsights:
+      type: object
+      properties:
+        live:
+          type: integer
+        open:
+          type: integer
+        critical:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/InsightsInsight'
+      required:
+      - critical
+      - items
+      - live
+      - open
+    CockpitLow:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        balance:
+          type: string
+        short_by:
+          type: string
+        under_buffer_by:
+          type: string
+        causes:
+          type: array
+          items:
+            $ref: '#/components/schemas/CockpitCause'
+      required:
+      - balance
+      - causes
+      - date
+      - short_by
+      - under_buffer_by
+    CockpitMissing:
+      type: object
+      properties:
+        key:
+          type: string
+        name:
+          type: string
+        last_month:
+          type: string
+      required:
+      - key
+      - last_month
+      - name
+    CockpitMoney:
+      type: object
+      properties:
+        periods:
+          $ref: '#/components/schemas/CockpitPeriods'
+        total:
+          $ref: '#/components/schemas/CockpitFigures'
+        branches:
+          type: array
+          items:
+            $ref: '#/components/schemas/CockpitBranch'
+        unassigned:
+          allOf:
+          - $ref: '#/components/schemas/CockpitUnassigned'
+          nullable: true
+          description: What is booked on no branch (every-branch callers only).
+      required:
+      - branches
+      - periods
+      - total
+      - unassigned
+    CockpitPeriod:
+      type: object
+      properties:
+        revenue:
+          type: string
+        goods:
+          type: string
+          description: Medicines and goods bought (booked on receipt).
+        gross:
+          type: string
+        gross_margin:
+          type: string
+          nullable: true
+        expense:
+          type: string
+        profit:
+          type: string
+        margin:
+          type: string
+          nullable: true
+        costs:
+          type: array
+          items:
+            $ref: '#/components/schemas/CockpitCost'
+        previous:
+          allOf:
+          - $ref: '#/components/schemas/CockpitPrevious'
+          nullable: true
+        missing:
+          type: array
+          items:
+            $ref: '#/components/schemas/CockpitMissing'
+      required:
+      - costs
+      - expense
+      - goods
+      - gross
+      - gross_margin
+      - margin
+      - previous
+      - profit
+      - revenue
+    CockpitPeriods:
+      type: object
+      properties:
+        month:
+          $ref: '#/components/schemas/CockpitRange'
+        last_month:
+          $ref: '#/components/schemas/CockpitRange'
+      required:
+      - last_month
+      - month
+    CockpitPoint:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        balance:
+          type: string
+      required:
+      - balance
+      - date
+    CockpitPrevious:
+      type: object
+      properties:
+        revenue:
+          type: string
+        gross:
+          type: string
+        gross_margin:
+          type: string
+          nullable: true
+        expense:
+          type: string
+        profit:
+          type: string
+        margin:
+          type: string
+          nullable: true
+      required:
+      - expense
+      - gross
+      - gross_margin
+      - margin
+      - profit
+      - revenue
+    CockpitQueueAction:
+      type: object
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        style:
+          type: string
+        method:
+          type: string
+        endpoint:
+          type: string
+          description: Relative to /api/v1/owner/companies/{cid}/.
+        body:
+          type: object
+          additionalProperties: {}
+        needs_reason:
+          type: boolean
+      required:
+      - body
+      - endpoint
+      - key
+      - label
+      - method
+      - needs_reason
+      - style
+    CockpitRange:
+      type: object
+      properties:
+        to:
+          type: string
+          format: date
+        previous_from:
+          type: string
+          format: date
+        previous_to:
+          type: string
+          format: date
+        from:
+          type: string
+          format: date
+      required:
+      - from
+      - previous_from
+      - previous_to
+      - to
+    CockpitRest:
+      type: object
+      properties:
+        revenue:
+          type: string
+        goods:
+          type: string
+        gross:
+          type: string
+        expense:
+          type: string
+        profit:
+          type: string
+        costs:
+          type: array
+          items:
+            $ref: '#/components/schemas/CockpitCost'
+      required:
+      - costs
+      - expense
+      - goods
+      - gross
+      - profit
+      - revenue
+    CockpitRunway:
+      type: object
+      properties:
+        days:
+          type: integer
+          nullable: true
+        basis:
+          $ref: '#/components/schemas/BasisEnum'
+        below_zero_on:
+          type: string
+          format: date
+          nullable: true
+        horizon:
+          type: integer
+      required:
+      - basis
+      - below_zero_on
+      - days
+      - horizon
+    CockpitSource:
+      type: object
+      properties:
+        key:
+          type: string
+        group:
+          type: string
+        label:
+          type: string
+        count:
+          type: integer
+      required:
+      - count
+      - group
+      - key
+      - label
+    CockpitState:
+      type: object
+      properties:
+        state:
+          $ref: '#/components/schemas/CockpitStateStateEnum'
+        reasons:
+          type: array
+          items:
+            type: string
+      required:
+      - reasons
+      - state
+    CockpitStateStateEnum:
+      enum:
+      - green
+      - amber
+      - red
+      type: string
+      description: |-
+        * `green` - green
+        * `amber` - amber
+        * `red` - red
+    CockpitStates:
+      type: object
+      properties:
+        month:
+          $ref: '#/components/schemas/CockpitState'
+        last_month:
+          $ref: '#/components/schemas/CockpitState'
+      required:
+      - last_month
+      - month
+    CockpitTrend:
+      type: object
+      properties:
+        month:
+          type: string
+        profit:
+          type: string
+      required:
+      - month
+      - profit
+    CockpitUnassigned:
+      type: object
+      properties:
+        month:
+          $ref: '#/components/schemas/CockpitRest'
+        last_month:
+          $ref: '#/components/schemas/CockpitRest'
+      required:
+      - last_month
+      - month
     CodeEnum:
       enum:
       - present
@@ -39976,6 +42225,71 @@ components:
       - id
       - ip
       - last_seen_at
+    DismissRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 300
+    DividendInputRequest:
+      type: object
+      properties:
+        period_start:
+          type: string
+          format: date
+        period_end:
+          type: string
+          format: date
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        note:
+          type: string
+          maxLength: 300
+      required:
+      - amount
+      - period_end
+      - period_start
+    DividendPayInputRequest:
+      type: object
+      properties:
+        account:
+          type: integer
+        paid_on:
+          type: string
+          format: date
+        lines:
+          type: array
+          items:
+            type: integer
+      required:
+      - account
+    DrawAccount:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        kind:
+          type: string
+        currency:
+          type: string
+        balance:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        branch_id:
+          type: integer
+          nullable: true
+      required:
+      - balance
+      - branch_id
+      - currency
+      - id
+      - kind
+      - name
     EngineEnum:
       enum:
       - auto
@@ -41132,6 +43446,101 @@ components:
       - aging
       - payable
       - receivable
+    FinanceDividend:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        period_start:
+          type: string
+          format: date
+        period_end:
+          type: string
+          format: date
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        profit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        status:
+          type: string
+          readOnly: true
+        note:
+          type: string
+          maxLength: 300
+        paid_amount:
+          type: string
+          readOnly: true
+        paid_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/FinanceDividendLine'
+          readOnly: true
+      required:
+      - amount
+      - created_at
+      - id
+      - lines
+      - paid_amount
+      - period_end
+      - period_start
+      - profit
+      - status
+    FinanceDividendLine:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        partner:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+        share:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        paid:
+          type: boolean
+          readOnly: true
+        paid_on:
+          type: string
+          format: date
+          nullable: true
+        account:
+          type: object
+          additionalProperties: {}
+          nullable: true
+          readOnly: true
+        transaction_id:
+          type: integer
+          nullable: true
+          readOnly: true
+      required:
+      - account
+      - amount
+      - id
+      - paid
+      - partner
+      - share
+      - transaction_id
     FinanceOptions:
       type: object
       properties:
@@ -41241,6 +43650,73 @@ components:
       - receivable
       - today
       - top_expenses
+    FinancePartner:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        key:
+          type: string
+          readOnly: true
+        name:
+          type: string
+          maxLength: 200
+        member:
+          type: object
+          additionalProperties: {}
+          nullable: true
+          readOnly: true
+        share:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        starts_on:
+          type: string
+          format: date
+        ends_on:
+          type: string
+          format: date
+          nullable: true
+      required:
+      - id
+      - key
+      - member
+      - name
+      - share
+      - starts_on
+    FinancePlannedPurchase:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        due_on:
+          type: string
+          format: date
+          nullable: true
+          description: 'When it will be bought. Empty: some time soon.'
+        branch:
+          type: object
+          additionalProperties: {}
+          nullable: true
+          readOnly: true
+        done:
+          type: boolean
+          readOnly: true
+      required:
+      - amount
+      - branch
+      - done
+      - id
+      - title
     FinancePnl:
       type: object
       properties:
@@ -41571,6 +44047,99 @@ components:
       description: |-
         * `posted` - Posted
         * `void` - Void
+    FlowAccount:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        kind:
+          type: string
+      required:
+      - id
+      - kind
+      - name
+    FlowRow:
+      type: object
+      properties:
+        id:
+          type: integer
+        occurred_on:
+          type: string
+          format: date
+        direction:
+          type: string
+          description: in or out
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        currency:
+          type: string
+        base_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        account:
+          $ref: '#/components/schemas/FlowAccount'
+        description:
+          type: string
+        person:
+          type: string
+          nullable: true
+        dividend:
+          type: boolean
+        created_by:
+          type: string
+          nullable: true
+      required:
+      - account
+      - amount
+      - base_amount
+      - created_by
+      - currency
+      - description
+      - direction
+      - dividend
+      - id
+      - occurred_on
+      - person
+    Flows:
+      type: object
+      properties:
+        from:
+          type: string
+          format: date
+        to:
+          type: string
+          format: date
+        drawn:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        put_in:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        net:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        count:
+          type: integer
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/FlowRow'
+      required:
+      - count
+      - drawn
+      - from
+      - net
+      - put_in
+      - rows
+      - to
     ForceCloseRequest:
       type: object
       properties:
@@ -41657,6 +44226,218 @@ components:
           type: string
           format: time
           description: 'Today, in the company''s timezone. Default: in two hours.'
+    Goal:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        metric:
+          $ref: '#/components/schemas/GoalsMetricEnum'
+        unit:
+          type: string
+          description: money, percent or count
+        better:
+          type: string
+          description: up or down
+        kind:
+          type: string
+          description: sum, rate, ratio or level
+        target:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        starts_on:
+          type: string
+          format: date
+        ends_on:
+          type: string
+          format: date
+        branch:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+        owner:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+        note:
+          type: string
+        status:
+          $ref: '#/components/schemas/GoalsStatusEnum'
+        state:
+          $ref: '#/components/schemas/GoalsStateEnum'
+        value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        forecast:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        baseline:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        progress:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,1})?$
+          nullable: true
+        days_left:
+          type: integer
+        time_share:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,2}(?:\.\d{0,4})?$
+        available:
+          type: boolean
+        series:
+          type: array
+          items:
+            $ref: '#/components/schemas/Point'
+        can_edit:
+          type: boolean
+      required:
+      - available
+      - baseline
+      - better
+      - branch
+      - can_edit
+      - days_left
+      - ends_on
+      - forecast
+      - id
+      - kind
+      - metric
+      - note
+      - owner
+      - progress
+      - series
+      - starts_on
+      - state
+      - status
+      - target
+      - time_share
+      - title
+      - unit
+      - value
+    GoalInputRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        metric:
+          $ref: '#/components/schemas/GoalsMetricEnum'
+        target:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        starts_on:
+          type: string
+          format: date
+        ends_on:
+          type: string
+          format: date
+        branch:
+          type: integer
+          nullable: true
+        owner:
+          type: integer
+          nullable: true
+        note:
+          type: string
+          maxLength: 500
+      required:
+      - ends_on
+      - metric
+      - starts_on
+      - target
+      - title
+    GoalList:
+      type: object
+      properties:
+        today:
+          type: string
+          format: date
+        currency:
+          type: string
+        can_manage:
+          type: boolean
+        goals:
+          type: array
+          items:
+            $ref: '#/components/schemas/Goal'
+        counts:
+          type: object
+          additionalProperties:
+            type: integer
+      required:
+      - can_manage
+      - counts
+      - currency
+      - goals
+      - today
+    GoalsMetricEnum:
+      enum:
+      - revenue
+      - gross_profit
+      - net_profit
+      - margin
+      - branches
+      - headcount
+      - turnover
+      - average_check
+      - late_arrivals
+      - training
+      type: string
+      description: |-
+        * `revenue` - Revenue
+        * `gross_profit` - Gross profit
+        * `net_profit` - Net profit
+        * `margin` - Net margin
+        * `branches` - Branches open
+        * `headcount` - Headcount
+        * `turnover` - Staff turnover
+        * `average_check` - Average check
+        * `late_arrivals` - Late arrivals
+        * `training` - Training completed
+    GoalsStateEnum:
+      enum:
+      - not_started
+      - on_track
+      - at_risk
+      - off_track
+      - achieved
+      - missed
+      - no_data
+      type: string
+      description: |-
+        * `not_started` - Not started
+        * `on_track` - On track
+        * `at_risk` - At risk
+        * `off_track` - Off track
+        * `achieved` - Achieved
+        * `missed` - Missed
+        * `no_data` - No data
+    GoalsStatusEnum:
+      enum:
+      - active
+      - achieved
+      - missed
+      - archived
+      type: string
+      description: |-
+        * `active` - Active
+        * `achieved` - Achieved
+        * `missed` - Missed
+        * `archived` - Archived
     Group:
       type: object
       properties:
@@ -44882,6 +47663,252 @@ components:
         * `info` - Info
         * `warning` - Warning
         * `critical` - Critical
+    InsightBranch:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
+    InsightKind:
+      type: object
+      properties:
+        kind:
+          type: string
+        label:
+          type: string
+        domain:
+          type: string
+        available:
+          type: boolean
+          description: Its module is on.
+      required:
+      - available
+      - domain
+      - kind
+      - label
+    InsightList:
+      type: object
+      properties:
+        count:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/InsightsInsight'
+      required:
+      - count
+      - results
+    InsightSubject:
+      type: object
+      properties:
+        type:
+          type: string
+        id:
+          type: integer
+          nullable: true
+        label:
+          type: string
+      required:
+      - id
+      - label
+      - type
+    InsightTask:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        status:
+          type: string
+      required:
+      - id
+      - status
+      - title
+    InsightWindow:
+      type: object
+      properties:
+        to:
+          type: string
+          format: date
+          nullable: true
+        from:
+          type: string
+          format: date
+          nullable: true
+      required:
+      - from
+      - to
+    InsightsDomainEnum:
+      enum:
+      - tasks
+      - people
+      - finance
+      - sales
+      - hr
+      - payroll
+      type: string
+      description: |-
+        * `tasks` - Tasks
+        * `people` - People
+        * `finance` - Finance
+        * `sales` - Sales
+        * `hr` - HR
+        * `payroll` - Payroll
+    InsightsInsight:
+      type: object
+      properties:
+        id:
+          type: integer
+        kind:
+          $ref: '#/components/schemas/InsightsKindEnum'
+        domain:
+          $ref: '#/components/schemas/InsightsDomainEnum'
+        severity:
+          $ref: '#/components/schemas/InsightsSeverityEnum'
+        status:
+          $ref: '#/components/schemas/InsightsStatusEnum'
+        branch:
+          allOf:
+          - $ref: '#/components/schemas/InsightBranch'
+          nullable: true
+        subject:
+          allOf:
+          - $ref: '#/components/schemas/InsightSubject'
+          nullable: true
+        title:
+          type: string
+        explanation:
+          type: string
+        suggested_action:
+          type: string
+        metrics:
+          type: object
+          additionalProperties: {}
+          description: 'The numbers behind it: value, baseline, threshold, unit, series
+            and the kind''s own (money as strings).'
+        window:
+          $ref: '#/components/schemas/InsightWindow'
+        detected_at:
+          type: string
+          format: date-time
+        last_seen_at:
+          type: string
+          format: date-time
+        acknowledged_at:
+          type: string
+          format: date-time
+          nullable: true
+        task:
+          allOf:
+          - $ref: '#/components/schemas/InsightTask'
+          nullable: true
+      required:
+      - acknowledged_at
+      - branch
+      - detected_at
+      - domain
+      - explanation
+      - id
+      - kind
+      - last_seen_at
+      - metrics
+      - severity
+      - status
+      - subject
+      - suggested_action
+      - task
+      - title
+      - window
+    InsightsKindEnum:
+      enum:
+      - cash_low
+      - branch_margin
+      - expense_spike
+      - overdue_receivables
+      - overdue_payables
+      - stock_build
+      - staff_cost
+      type: string
+      description: |-
+        * `cash_low` - Cash low point under the buffer
+        * `branch_margin` - A branch's profit or margin falling
+        * `expense_spike` - An expense category jumping
+        * `overdue_receivables` - Overdue money owed to us piling up
+        * `overdue_payables` - Overdue bills to suppliers piling up
+        * `stock_build` - Stock growing while sales fall
+        * `staff_cost` - Staff cost share rising
+    InsightsSensitivityEnum:
+      enum:
+      - low
+      - normal
+      - high
+      type: string
+      description: |-
+        * `low` - Only big changes
+        * `normal` - Normal
+        * `high` - Small changes too
+    InsightsSettingsResponse:
+      type: object
+      properties:
+        disabled_kinds:
+          type: array
+          items:
+            $ref: '#/components/schemas/InsightsKindEnum'
+        sensitivity:
+          $ref: '#/components/schemas/InsightsSensitivityEnum'
+        quiet_from:
+          type: string
+          format: time
+        quiet_to:
+          type: string
+          format: time
+        notify_critical_via_bot:
+          type: boolean
+          description: Send urgent insights to the owner bot.
+        expense_alert_min_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        kinds:
+          type: array
+          items:
+            $ref: '#/components/schemas/InsightKind'
+          readOnly: true
+        last_run_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+      required:
+      - kinds
+      - last_run_at
+    InsightsSeverityEnum:
+      enum:
+      - info
+      - warning
+      - critical
+      type: string
+      description: |-
+        * `info` - Information
+        * `warning` - Warning
+        * `critical` - Urgent
+    InsightsStatusEnum:
+      enum:
+      - open
+      - acknowledged
+      - dismissed
+      - resolved
+      type: string
+      description: |-
+        * `open` - Open
+        * `acknowledged` - Seen
+        * `dismissed` - Dismissed
+        * `resolved` - Resolved
     Installment:
       type: object
       properties:
@@ -53673,6 +56700,43 @@ components:
         * `denied` - Denied
         * `expired` - Expired
         * `consumed` - Used
+    LowPoint:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+          nullable: true
+        balance:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+      required:
+      - balance
+      - date
+    MadeTask:
+      type: object
+      properties:
+        insight:
+          $ref: '#/components/schemas/InsightsInsight'
+        task:
+          $ref: '#/components/schemas/InsightTask'
+      required:
+      - insight
+      - task
+    MakeTaskRequest:
+      type: object
+      properties:
+        assignee_id:
+          type: integer
+          nullable: true
+        due_on:
+          type: string
+          format: date
+          nullable: true
+        title:
+          type: string
+          maxLength: 200
     ManagerOption:
       type: object
       properties:
@@ -54051,6 +57115,64 @@ components:
         * `blocked` - Blocked
         * `left` - Left
         * `suspended` - Suspended
+    Metric:
+      type: object
+      properties:
+        key:
+          $ref: '#/components/schemas/GoalsMetricEnum'
+        label:
+          type: string
+        hint:
+          type: string
+        unit:
+          type: string
+          description: money, percent or count
+        better:
+          type: string
+          description: up or down
+        kind:
+          type: string
+          description: sum, rate, ratio or level
+        branchable:
+          type: boolean
+        available:
+          type: boolean
+        feature:
+          type: string
+          nullable: true
+      required:
+      - available
+      - better
+      - branchable
+      - feature
+      - hint
+      - key
+      - kind
+      - label
+      - unit
+    Metrics:
+      type: object
+      properties:
+        metrics:
+          type: array
+          items:
+            $ref: '#/components/schemas/Metric'
+        branches:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ref'
+        people:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ref'
+        company_wide:
+          type: boolean
+          description: May set goals for the whole company.
+      required:
+      - branches
+      - company_wide
+      - metrics
+      - people
     Module:
       type: object
       properties:
@@ -54078,6 +57200,50 @@ components:
       - enabled
       - key
       - label
+    Month:
+      type: object
+      properties:
+        month:
+          type: string
+          format: date
+        profit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        drawn:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        put_in:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+      required:
+      - drawn
+      - month
+      - profit
+      - put_in
+    MoveInputRequest:
+      type: object
+      properties:
+        account:
+          type: integer
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        occurred_on:
+          type: string
+          format: date
+        description:
+          type: string
+          maxLength: 300
+        confirmed:
+          type: boolean
+          default: false
+      required:
+      - account
+      - amount
     MoveRequest:
       type: object
       properties:
@@ -54089,6 +57255,30 @@ components:
           maxLength: 1000
       required:
       - to
+    MoveResult:
+      type: object
+      properties:
+        id:
+          type: integer
+        occurred_on:
+          type: string
+          format: date
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        account:
+          type: integer
+        safe:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+      required:
+      - account
+      - amount
+      - id
+      - occurred_on
+      - safe
     Movement:
       type: object
       properties:
@@ -54754,6 +57944,111 @@ components:
       - photo_url
       - telegram_id
       - username
+    OwnerMoney:
+      type: object
+      description: The owner's money page in one call.
+      properties:
+        today:
+          type: string
+          format: date
+        currency:
+          type: string
+        horizon_days:
+          type: integer
+        until:
+          type: string
+          format: date
+        cash:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        personal:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        complete:
+          type: boolean
+        due:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        reasons:
+          type: array
+          items:
+            $ref: '#/components/schemas/Reason'
+        unknown:
+          type: integer
+        buffer:
+          $ref: '#/components/schemas/Buffer'
+        planned:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        purchases:
+          $ref: '#/components/schemas/Purchases'
+        safe:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        short:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        month:
+          $ref: '#/components/schemas/Flows'
+        suggestion:
+          $ref: '#/components/schemas/Suggestion'
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/Month'
+        accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/DrawAccount'
+        settings:
+          $ref: '#/components/schemas/OwnerMoneySettings'
+        partners:
+          type: integer
+          description: How many partners there are now.
+        is_owner:
+          type: boolean
+      required:
+      - accounts
+      - buffer
+      - cash
+      - complete
+      - currency
+      - due
+      - history
+      - horizon_days
+      - is_owner
+      - month
+      - partners
+      - personal
+      - planned
+      - purchases
+      - reasons
+      - safe
+      - settings
+      - short
+      - suggestion
+      - today
+      - unknown
+      - until
+    OwnerMoneySettings:
+      type: object
+      properties:
+        cash_buffer:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        draw_horizon_days:
+          type: integer
+      required:
+      - cash_buffer
+      - draw_horizon_days
     OwnerTimeOff:
       type: object
       properties:
@@ -56257,6 +59552,58 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Transfer'
+    PartnerRowInputRequest:
+      type: object
+      properties:
+        member:
+          type: integer
+          nullable: true
+        name:
+          type: string
+          maxLength: 200
+        share:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+      required:
+      - share
+    Partners:
+      type: object
+      properties:
+        current:
+          type: array
+          items:
+            $ref: '#/components/schemas/FinancePartner'
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/FinancePartner'
+        since:
+          type: string
+          format: date
+          nullable: true
+        people:
+          type: array
+          items:
+            $ref: '#/components/schemas/PersonRef'
+      required:
+      - current
+      - history
+      - people
+      - since
+    PartnersInputRequest:
+      type: object
+      properties:
+        effective_on:
+          type: string
+          format: date
+        partners:
+          type: array
+          items:
+            $ref: '#/components/schemas/PartnerRowInputRequest'
+      required:
+      - effective_on
+      - partners
     PatchedAIAgentUpdateRequest:
       type: object
       properties:
@@ -56821,6 +60168,25 @@ components:
         e_prescription_area:
           type: boolean
           description: In an area where some medicines are dispensed only by e-prescription.
+    PatchedBriefingsSettingsRequest:
+      type: object
+      properties:
+        weekly_enabled:
+          type: boolean
+          description: The weekly business review, for the week before.
+        monthly_enabled:
+          type: boolean
+          description: The monthly business review, on the first day of the month.
+        weekday:
+          type: integer
+          maximum: 6
+          minimum: 0
+          description: The day the weekly review goes out.
+        send_at:
+          type: string
+          format: time
+        recipients:
+          $ref: '#/components/schemas/BriefingsRecipientsEnum'
     PatchedCategoryUpdateRequest:
       type: object
       properties:
@@ -57074,6 +60440,16 @@ components:
           $ref: '#/components/schemas/FaceidDirectionEnum'
         enabled:
           type: boolean
+    PatchedDividendPatchRequest:
+      type: object
+      properties:
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        note:
+          type: string
+          maxLength: 300
     PatchedFaceIdSettingsRequest:
       type: object
       properties:
@@ -57129,6 +60505,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/CompaniesFeatureEnum'
+    PatchedGoalPatchRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        target:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        starts_on:
+          type: string
+          format: date
+        ends_on:
+          type: string
+          format: date
+        owner:
+          type: integer
+          nullable: true
+        note:
+          type: string
+          maxLength: 500
     PatchedGroupUpdateRequest:
       type: object
       properties:
@@ -57474,6 +60873,28 @@ components:
           type: boolean
           default: false
           description: Open it to applicants at once (new ones only).
+    PatchedInsightsSettingsRequest:
+      type: object
+      properties:
+        disabled_kinds:
+          type: array
+          items:
+            $ref: '#/components/schemas/InsightsKindEnum'
+        sensitivity:
+          $ref: '#/components/schemas/InsightsSensitivityEnum'
+        quiet_from:
+          type: string
+          format: time
+        quiet_to:
+          type: string
+          format: time
+        notify_critical_via_bot:
+          type: boolean
+          description: Send urgent insights to the owner bot.
+        expense_alert_min_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
     PatchedInventoryCategoryRequest:
       type: object
       properties:
@@ -58717,6 +62138,26 @@ components:
           maxLength: 300
         billable:
           type: boolean
+    PatchedPurchasePatchRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        due_on:
+          type: string
+          format: date
+          nullable: true
+        branch:
+          type: integer
+          nullable: true
+        done:
+          type: boolean
     PatchedRecognitionSettingsRequest:
       type: object
       properties:
@@ -59221,6 +62662,18 @@ components:
           type: integer
           maximum: 480
           minimum: 0
+    PatchedSettingsInputRequest:
+      type: object
+      properties:
+        cash_buffer:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        draw_horizon_days:
+          type: integer
+          maximum: 90
+          minimum: 7
     PatchedSettingsUpdateRequest:
       type: object
       properties:
@@ -61282,6 +64735,16 @@ components:
       - suspended_until
       - username
       - work
+    PersonRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
     PinRequest:
       type: object
       properties:
@@ -61328,6 +64791,29 @@ components:
       - id
       - name
       - photo_url
+    Point:
+      type: object
+      properties:
+        'on':
+          type: string
+          format: date
+        value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        forecast:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        state:
+          $ref: '#/components/schemas/GoalsStateEnum'
+      required:
+      - forecast
+      - 'on'
+      - state
+      - value
     Policy:
       type: object
       properties:
@@ -61569,6 +65055,46 @@ components:
       - in_app
       - kind
       - telegram
+    Preview:
+      type: object
+      properties:
+        metric:
+          $ref: '#/components/schemas/GoalsMetricEnum'
+        state:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/GoalsStateEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        forecast:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        baseline:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        progress:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,1})?$
+          nullable: true
+        days_left:
+          type: integer
+      required:
+      - baseline
+      - days_left
+      - forecast
+      - metric
+      - progress
+      - state
+      - value
     PreviewRequest:
       type: object
       properties:
@@ -61612,6 +65138,70 @@ components:
       description: |-
         * `missing` - missing
         * `expired` - expired
+    ProfitShare:
+      type: object
+      properties:
+        from:
+          type: string
+          format: date
+        to:
+          type: string
+          format: date
+        currency:
+          type: string
+        profit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        partners:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProfitSharePartner'
+        unassigned_share:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+      required:
+      - currency
+      - from
+      - partners
+      - profit
+      - to
+      - unassigned_share
+    ProfitSharePartner:
+      type: object
+      properties:
+        key:
+          type: string
+        name:
+          type: string
+        membership_id:
+          type: integer
+          nullable: true
+        share:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        profit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        dividends_paid:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        dividends_due:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+      required:
+      - dividends_due
+      - dividends_paid
+      - key
+      - membership_id
+      - name
+      - profit
+      - share
     Progress:
       type: object
       properties:
@@ -63226,6 +66816,41 @@ components:
       required:
       - counters
       - versions
+    PurchaseInputRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        due_on:
+          type: string
+          format: date
+          nullable: true
+        branch:
+          type: integer
+          nullable: true
+      required:
+      - amount
+      - title
+    Purchases:
+      type: object
+      properties:
+        kept:
+          type: array
+          items:
+            $ref: '#/components/schemas/FinancePlannedPurchase'
+        later:
+          type: array
+          items:
+            $ref: '#/components/schemas/FinancePlannedPurchase'
+      required:
+      - kept
+      - later
     QueueAction:
       type: object
       properties:
@@ -63384,6 +67009,45 @@ components:
       - missed
       - set_up
       - taken
+    Reason:
+      type: object
+      properties:
+        key:
+          type: string
+        kind:
+          type: string
+          description: bill, auto, tax, payable, payroll, loan or installment
+        title:
+          type: string
+        subtitle:
+          type: string
+        date:
+          type: string
+          format: date
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        count:
+          type: integer
+        overdue:
+          type: boolean
+        estimate:
+          type: boolean
+        url:
+          type: string
+      required:
+      - amount
+      - count
+      - date
+      - estimate
+      - key
+      - kind
+      - overdue
+      - subtitle
+      - title
+      - url
     ReasonCodeEnum:
       enum:
       - no_stock
@@ -63398,6 +67062,15 @@ components:
         * `broken` - Equipment broken
         * `not_mine` - Not my task
         * `other` - Another reason
+    ReasonInputRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 300
+      required:
+      - reason
     ReassignRequest:
       type: object
       properties:
@@ -64549,6 +68222,16 @@ components:
       - frequency
       - name
       - starts_on
+    Ref:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
     Register:
       type: object
       properties:
@@ -67696,6 +71379,26 @@ components:
       - label
       - type
       - url
+    SplitRow:
+      type: object
+      properties:
+        partner_id:
+          type: integer
+        name:
+          type: string
+        share:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+      required:
+      - amount
+      - name
+      - partner_id
+      - share
     StoragePresetDefaults:
       type: object
       properties:
@@ -67786,6 +71489,102 @@ components:
       - photo_url
       - title
       - url
+    Suggest:
+      type: object
+      properties:
+        from:
+          type: string
+          format: date
+        to:
+          type: string
+          format: date
+        currency:
+          type: string
+        profit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        already:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        safe:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        limited_by:
+          type: string
+          description: safe or profit
+        split:
+          type: array
+          items:
+            $ref: '#/components/schemas/SplitRow'
+      required:
+      - already
+      - amount
+      - currency
+      - from
+      - limited_by
+      - profit
+      - safe
+      - split
+      - to
+    Suggestion:
+      type: object
+      properties:
+        today:
+          type: string
+          format: date
+        currency:
+          type: string
+        days:
+          type: integer
+        monthly:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        dates:
+          type: array
+          items:
+            type: string
+            format: date
+        buffer:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        low:
+          $ref: '#/components/schemas/LowPoint'
+        below_buffer_on:
+          type: string
+          format: date
+          nullable: true
+        profit_average:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          description: Net profit per month over the last 3 full months.
+        above_profit:
+          type: boolean
+          description: The monthly amount is more than that.
+        basis:
+          type: object
+          additionalProperties: {}
+      required:
+      - above_profit
+      - basis
+      - below_buffer_on
+      - buffer
+      - currency
+      - dates
+      - days
+      - low
+      - monthly
+      - profit_average
+      - today
     Summary:
       type: object
       properties:
@@ -70008,6 +73807,14 @@ components:
           nullable: true
       required:
       - reason
+    WriterEnum:
+      enum:
+      - ai
+      - template
+      type: string
+      description: |-
+        * `ai` - ai
+        * `template` - template
   securitySchemes:
     ownerJwtAuth:
       type: http
