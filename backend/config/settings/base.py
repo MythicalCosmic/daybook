@@ -73,6 +73,8 @@ INSTALLED_APPS = [
     "apps.agenda",
     "apps.crm",
     "apps.assets",
+    # Business goals (v11): after every app whose numbers they measure, whose demos they read.
+    "apps.goals",
     # The Davomat edition (docs/DAVOMAT.md): after attendance and faceid, whose services it uses.
     "apps.davomat",
 ]
