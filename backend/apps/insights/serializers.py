@@ -83,7 +83,6 @@ class InsightSettingsSerializer(serializers.ModelSerializer):
     disabled_kinds = serializers.ListField(
         child=serializers.ChoiceField(Insight.Kind.choices), required=False
     )
-    min_cash_buffer = MoneySerializerField(required=False, allow_null=True)
     expense_alert_min_amount = MoneySerializerField(required=False)
     quiet_from = serializers.TimeField(format="%H:%M", required=False)
     quiet_to = serializers.TimeField(format="%H:%M", required=False)
@@ -97,7 +96,6 @@ class InsightSettingsSerializer(serializers.ModelSerializer):
             "quiet_from",
             "quiet_to",
             "notify_critical_via_bot",
-            "min_cash_buffer",
             "expense_alert_min_amount",
         )
 
@@ -271,7 +269,7 @@ class CockpitCashSerializer(serializers.Serializer):
     currency = serializers.CharField()
     now = serializers.CharField()
     buffer = serializers.CharField()
-    buffer_source = serializers.ChoiceField(["setting", "usual_week"])
+    buffer_source = serializers.ChoiceField(["setting", "fixed_costs"])
     daily_spend = serializers.CharField()
     runway = CockpitRunwaySerializer()
     low = CockpitLowSerializer()

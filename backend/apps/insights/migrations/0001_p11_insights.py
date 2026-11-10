@@ -31,7 +31,6 @@ class Migration(migrations.Migration):
                 ('quiet_from', models.TimeField(default=datetime.time(22, 0), help_text='No Telegram messages from this time…')),
                 ('quiet_to', models.TimeField(default=datetime.time(8, 0), help_text='…until this time.')),
                 ('notify_critical_via_bot', models.BooleanField(default=True, help_text='Send urgent insights to the owner bot.')),
-                ('min_cash_buffer', apps.core.money.MoneyField(blank=True, help_text='The least cash to keep on hand. Empty: a week of the usual spending and supplier payments.', null=True)),
                 ('expense_alert_min_amount', apps.core.money.MoneyField(default=Decimal('1000000'), help_text="An expense jump smaller than this isn't worth a word.")),
                 ('last_run_at', models.DateTimeField(blank=True, editable=False, null=True)),
                 ('company', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='insight_settings', to='companies.company')),

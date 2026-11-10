@@ -35,14 +35,15 @@ CLAIM = (Decimal("1850000"), "Muzlatkich termometrlari va kalibrlash, Chilonzor"
 
 
 def seed(company, people, now) -> None:
-    """Demo Dorixona: the buffer, the fuel of the week and a claim waiting."""
-    from apps.insights import conf
+    """Demo Dorixona: the owner's buffer (Finance's one setting, "Mening pulim"), the fuel of
+    the week and a claim waiting."""
+    from apps.finance import conf as finance_conf
 
-    row = conf.get_settings(company)
-    row.min_cash_buffer = BUFFER
-    row.save(update_fields=["min_cash_buffer", "updated_at"])
     if not company.has_feature("finance"):
         return
+    money = finance_conf.get_settings(company)
+    money.cash_buffer = BUFFER
+    money.save(update_fields=["cash_buffer"])
     story = demo_plan.Plan(company, people, now)
     _fuel(company, people, story)
     _claim(company, people, story)

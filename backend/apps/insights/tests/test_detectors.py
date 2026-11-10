@@ -6,6 +6,7 @@ from decimal import Decimal
 
 import pytest
 
+from apps.finance import conf as finance_conf
 from apps.finance import queries
 from apps.insights import conf, engine
 from apps.insights.models import Insight, Snapshot
@@ -44,8 +45,8 @@ def assert_fires_once_and_dedupes(company, kind, now=NOW) -> Insight:
 
 
 def test_cash_low_point_under_the_buffer(shop, books):
-    row = conf.get_settings(shop)
-    row.min_cash_buffer = mln(10)
+    row = finance_conf.get_settings(shop)
+    row.cash_buffer = mln(10)
     row.save()
     books.income(mln(5), days_before(70), category="other_income")
     insight = assert_fires_once_and_dedupes(shop, Kind.CASH_LOW)
@@ -81,19 +82,25 @@ def test_cash_running_out_is_urgent_and_names_the_payment(shop, books):
     assert insight.title.startswith("Cash runs out on")
 
 
-def test_default_buffer_is_a_week_of_usual_spending(shop, books):
+def test_the_buffer_is_the_owners_one_buffer_from_finance(shop, books):
     books.income(mln(500), days_before(70), category="other_income")
     for day in range(1, 57):
         books.expense(mln(1), days_before(day), category="utilities")
     run(shop)
-    # A week of 1 mln a day is 7 mln; 500 mln minus a month of spending stays far above it.
+    # A month of fixed costs (utilities, 1 mln a day) is about 30 mln: 500 mln minus a month of
+    # spending stays far above it.
     assert live(shop, Kind.CASH_LOW) == []
-    forecast = queries.forecast(shop, 30, branch_ids=None, today=TODAY)
+    from apps.finance import owner_draw
     from apps.insights import detectors
 
-    buffer, source = detectors.cash_buffer(conf.get_settings(shop), forecast)
-    assert source == "usual_week"
-    assert buffer == Decimal(forecast["basis"]["daily_out"]) * 7
+    buffer, source = detectors.cash_buffer(shop, TODAY)
+    assert source == "fixed_costs"
+    assert buffer == owner_draw.cash_buffer(shop, TODAY)["amount"] > 0
+    # The owner's own buffer ("Mening pulim") is the cockpit's too.
+    row = finance_conf.get_settings(shop)
+    row.cash_buffer = mln(20)
+    row.save()
+    assert detectors.cash_buffer(shop, TODAY) == (mln(20), "setting")
 
 
 # Branch margin ------------------------------------------------------------------------------

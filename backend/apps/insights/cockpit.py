@@ -32,7 +32,7 @@ from django.utils import timezone
 
 from apps.console import pulse
 from apps.core.money import quantize
-from apps.insights import conf, decisions, detectors, queries
+from apps.insights import decisions, detectors, queries
 from apps.members import scope
 from apps.members.models import Membership
 from apps.members.permissions import Perm
@@ -378,8 +378,7 @@ def cash(company, today: date, branch_ids) -> dict:
     from apps.finance import queries as finance
 
     forecast = finance.forecast(company, HORIZON, branch_ids=branch_ids, today=today)
-    settings_row = conf.get_settings(company)
-    buffer, source = detectors.cash_buffer(settings_row, forecast)
+    buffer, source = detectors.cash_buffer(company, today)
     start = Decimal(forecast["start"])
     basis = forecast["basis"]
     daily = Decimal(basis["daily_out"]) + Decimal(basis["daily_paid"])

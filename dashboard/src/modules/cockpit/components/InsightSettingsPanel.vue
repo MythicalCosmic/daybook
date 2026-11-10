@@ -1,8 +1,9 @@
 <script setup lang="ts">
 /**
  * Settings › Insights (`insights/settings/`, ai.configure or company.settings): urgent insights in
- * the owner bot and the quiet hours, how sensitive the checks are, the cash buffer, the smallest
- * expense jump worth a word, and which checks run.
+ * the owner bot and the quiet hours, how sensitive the checks are, the smallest expense jump
+ * worth a word, and which checks run. The cash buffer is the owner's one buffer, set on
+ * "Mening pulim" (Finance): this panel only shows where.
  */
 import { computed, reactive, watch } from "vue";
 import { useI18n } from "vue-i18n";
@@ -14,6 +15,7 @@ import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import TimePicker from "@/components/TimePicker.vue";
 import ToggleSwitch from "@/components/ToggleSwitch.vue";
 import UiButton from "@/components/UiButton.vue";
+import { useCompanyStore } from "@/stores/company";
 import { toast } from "@/components/useToast";
 import { useFormat } from "@/lib/useFormat";
 
@@ -21,6 +23,7 @@ import { useInsightSettings, useSaveSettings, type InsightSettings } from "../ap
 
 const { t } = useI18n();
 const fmt = useFormat();
+const company = useCompanyStore();
 const settings = useInsightSettings();
 const save = useSaveSettings();
 
@@ -29,7 +32,6 @@ const form = reactive({
   quiet_from: "22:00" as string | null,
   quiet_to: "08:00" as string | null,
   sensitivity: "normal" as InsightSettings["sensitivity"],
-  min_cash_buffer: null as string | null,
   expense_alert_min_amount: "1000000" as string | null,
   enabled: {} as Record<string, boolean>,
 });
@@ -43,7 +45,6 @@ watch(
       quiet_from: data.quiet_from,
       quiet_to: data.quiet_to,
       sensitivity: data.sensitivity,
-      min_cash_buffer: data.min_cash_buffer,
       expense_alert_min_amount: data.expense_alert_min_amount,
       enabled: Object.fromEntries(data.kinds.map((kind) => [kind.kind, !data.disabled_kinds.includes(kind.kind)])),
     });
@@ -60,7 +61,6 @@ async function submit(): Promise<void> {
       quiet_from: form.quiet_from ?? "22:00",
       quiet_to: form.quiet_to ?? "08:00",
       sensitivity: form.sensitivity,
-      min_cash_buffer: form.min_cash_buffer || null,
       expense_alert_min_amount: form.expense_alert_min_amount || "1000000",
       disabled_kinds: Object.entries(form.enabled)
         .filter(([, on]) => !on)
@@ -101,7 +101,7 @@ async function submit(): Promise<void> {
       </FormField>
       <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <FormField :label="t('cockpit.settings.buffer')" :hint="t('cockpit.settings.bufferHint')">
-          <MoneyInput v-model="form.min_cash_buffer" />
+          <UiButton size="sm" variant="secondary" class="self-start" :to="`/c/${company.currentId}/finance/my-money`">{{ t("cockpit.settings.bufferOpen") }}</UiButton>
         </FormField>
         <FormField :label="t('cockpit.settings.minAmount')">
           <MoneyInput v-model="form.expense_alert_min_amount" />

@@ -72,6 +72,8 @@ export const CATALOG: readonly CatalogEntry[] = [
     perm: "dashboard.access",
     pages: [
       { id: "agents", to: "ai" },
+      // v11 U: Maslahatchi, the business advisor (its weekly review and chat).
+      { id: "advisor", to: "ai/advisor", perm: "reports.view" },
       { id: "activity", to: "ai/activity" },
       { id: "voice", to: "ai/voice" },
       { id: "ask", to: "ai/ask", perm: "ai.use" },

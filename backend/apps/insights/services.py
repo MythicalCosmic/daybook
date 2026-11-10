@@ -165,7 +165,6 @@ SETTINGS_FIELDS = (
     "quiet_from",
     "quiet_to",
     "notify_critical_via_bot",
-    "min_cash_buffer",
     "expense_alert_min_amount",
 )
 

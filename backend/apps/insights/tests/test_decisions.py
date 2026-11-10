@@ -12,8 +12,10 @@ pytestmark = pytest.mark.django_db
 
 def test_the_built_in_sources_are_registered():
     keys = [source.key for source in decisions.SOURCES]
-    assert keys[:7] == [
+    assert keys[:9] == [
         "members.join",
+        "lifecycle.resignations",
+        "lifecycle.job_changes",
         "finance.claims",
         "timeoff.request",
         "attendance.overtime",

@@ -29,8 +29,11 @@ register_action(notify.KIND, notify.TASK[0], notify.task_action)
 
 # What waits for the owner's decision ("Qaroringizni kutmoqda"): the "Needs you" queues that
 # are decisions, by their kind (each keeps its own permission, switch, items and buttons).
-# Hiring adds `decisions.register_source("<its queue kind>", group="hire", order=15)`.
+# Leaving and job changes (apps.lifecycle) are decisions too; hiring's applicants are not a yes
+# or no (they move along their vacancy's board), so they stay on Hiring.
 decisions.register_source("members.join", group="people", order=10)
+decisions.register_source("lifecycle.resignations", group="people", order=12)
+decisions.register_source("lifecycle.job_changes", group="people", order=14)
 decisions.register_source("finance.claims", group="expense", order=20)
 decisions.register_source("timeoff.request", group="time_off", order=30)
 decisions.register_source("attendance.overtime", group="overtime", order=40)

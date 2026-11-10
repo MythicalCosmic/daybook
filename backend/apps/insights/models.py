@@ -49,14 +49,6 @@ class InsightSettings(TimeStampedModel):
     notify_critical_via_bot = models.BooleanField(
         default=True, help_text=_("Send urgent insights to the owner bot.")
     )
-    min_cash_buffer = MoneyField(
-        null=True,
-        blank=True,
-        help_text=_(
-            "The least cash to keep on hand. Empty: a week of the usual spending and supplier "
-            "payments."
-        ),
-    )
     expense_alert_min_amount = MoneyField(
         default=Decimal("1000000"),
         help_text=_("An expense jump smaller than this isn't worth a word."),

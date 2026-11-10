@@ -171,14 +171,14 @@ def same_days_last_month(today: date) -> tuple[date, date]:
     return last_start, last_end
 
 
-def cash_buffer(settings_row: InsightSettings, forecast: dict) -> tuple[Decimal, str]:
-    """The least cash to keep: the company's own setting, else a week of the usual spending and
-    supplier payments (the forecast's basis)."""
-    if settings_row.min_cash_buffer is not None:
-        return quantize(settings_row.min_cash_buffer), "setting"
-    basis = forecast.get("basis") or {}
-    daily = Decimal(basis.get("daily_out") or 0) + Decimal(basis.get("daily_paid") or 0)
-    return quantize(daily * 7), "usual_week"
+def cash_buffer(company, today: date) -> tuple[Decimal, str]:
+    """The least cash to keep: the one buffer the owner sets on "Mening pulim" (Finance's
+    `cash_buffer`), else one month of fixed costs. It is the amount "safe to take" keeps back
+    (`apps.finance.owner_draw.cash_buffer`), so the cockpit and the owner's money agree."""
+    from apps.finance import owner_draw
+
+    found = owner_draw.cash_buffer(company, today)
+    return quantize(found["amount"]), ("fixed_costs" if found["auto"] else "setting")
 
 
 def low_point_causes(
@@ -236,7 +236,7 @@ def cash_low(ctx: Context) -> list[Finding]:
     points = forecast["points"][: CASH_DAYS + 1]
     if not points:
         return []
-    buffer, source = cash_buffer(ctx.settings, forecast)
+    buffer, source = cash_buffer(ctx.company, ctx.today)
     lowest = min(points, key=lambda point: Decimal(point["balance"]))
     low = Decimal(lowest["balance"])
     low_day = date.fromisoformat(lowest["date"])

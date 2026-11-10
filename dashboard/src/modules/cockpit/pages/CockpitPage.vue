@@ -169,7 +169,7 @@ const bufferLine = computed(() => {
   const c = cash.value;
   if (!c) return "";
   const amount = fmt.money(c.buffer, undefined, { compact: true });
-  return c.buffer_source === "setting" ? t("cockpit.cash.buffer", { amount }) : t("cockpit.cash.bufferUsual", { amount });
+  return c.buffer_source === "setting" ? t("cockpit.cash.buffer", { amount }) : t("cockpit.cash.bufferFixed", { amount });
 });
 
 const check = useCheckNow();

@@ -100,7 +100,7 @@ export interface CockpitCash {
   currency: string;
   now: Money;
   buffer: Money;
-  buffer_source: "setting" | "usual_week";
+  buffer_source: "setting" | "fixed_costs";
   daily_spend: Money;
   runway: { days: number | null; basis: "spending" | "forecast"; below_zero_on: string | null; horizon: number };
   low: { date: string; balance: Money; short_by: Money; under_buffer_by: Money; causes: LowCause[] };
@@ -172,7 +172,6 @@ export interface InsightSettings {
   quiet_from: string;
   quiet_to: string;
   notify_critical_via_bot: boolean;
-  min_cash_buffer: Money | null;
   expense_alert_min_amount: Money;
   kinds: Array<{ kind: string; label: string; domain: string; available: boolean }>;
   last_run_at: string | null;

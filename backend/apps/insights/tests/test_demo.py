@@ -5,8 +5,9 @@ from datetime import date
 import pytest
 from django.utils import timezone
 
+from apps.finance import conf as finance_conf
 from apps.finance import defaults as finance_defaults
-from apps.insights import conf, demo
+from apps.insights import demo
 from apps.insights.models import Insight
 
 pytestmark = pytest.mark.django_db
@@ -20,7 +21,7 @@ def test_the_demo_seeds_and_finishes(company, demo_people):
     now = timezone.now()
     demo.seed(company, people, now)
     demo.finish(company, people, now)
-    assert str(conf.get_settings(company).min_cash_buffer) == "150000000.00"
+    assert str(finance_conf.get_settings(company).cash_buffer) == "150000000.00"
     # Without the other demos' books the cash is under the buffer at once.
     assert Insight.objects.filter(company=company, kind=Insight.Kind.CASH_LOW).exists()
 

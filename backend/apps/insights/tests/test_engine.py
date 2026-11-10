@@ -5,6 +5,7 @@ from datetime import time, timedelta
 
 import pytest
 
+from apps.finance import conf as finance_conf
 from apps.inbox.models import Notification
 from apps.inbox.services import run_action
 from apps.insights import conf, engine, notify
@@ -114,8 +115,8 @@ def test_warnings_never_go_to_the_bot(shop, owner, late_bill):
 
 
 def test_turning_urgent_notifies_again(shop, books, owner):
-    row = conf.get_settings(shop)
-    row.min_cash_buffer = mln(10)
+    row = finance_conf.get_settings(shop)
+    row.cash_buffer = mln(10)
     row.save()
     books.income(mln(5), days_before(70), category="other_income")
     engine.run(shop, NOW)

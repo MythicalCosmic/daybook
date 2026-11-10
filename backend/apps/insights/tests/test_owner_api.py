@@ -209,12 +209,11 @@ def test_settings(shop, owner, owner_api):
     assert {kind["kind"] for kind in data["kinds"]} == set(Insight.Kind.values)
     response = client.patch(
         url(shop, "insights/settings/"),
-        {"min_cash_buffer": "150000000.00", "disabled_kinds": ["staff_cost"], "quiet_to": "07:30"},
+        {"disabled_kinds": ["staff_cost"], "quiet_to": "07:30"},
         format="json",
     )
     assert response.status_code == 200, response.content
     row = InsightSettings.objects.get(company=shop)
-    assert str(row.min_cash_buffer) == "150000000.00"
     assert row.disabled_kinds == ["staff_cost"]
     assert row.quiet_to.strftime("%H:%M") == "07:30"
     log = AuditLog.objects.get(action="insights.settings_changed")
