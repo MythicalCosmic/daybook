@@ -57,6 +57,11 @@ urlpatterns = [
         name="owner-ai-conversations",
     ),
     path(
+        "ai/conversations/<int:conversation_id>/",
+        owner_api.ConversationDetailView.as_view(),
+        name="owner-ai-conversation",
+    ),
+    path(
         "ai/conversations/<int:conversation_id>/messages/",
         owner_api.ConversationMessagesView.as_view(),
         name="owner-ai-conversation-messages",

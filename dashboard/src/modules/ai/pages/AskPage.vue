@@ -6,7 +6,7 @@
  * them. Conversations sit beside the chat on wide screens and in a sheet on phones. Without
  * Claude the page says what it will do once Claude is connected.
  */
-import { ArrowUp, CircleAlert, History, KeyRound, MessageSquarePlus, MessagesSquare, RotateCcw, Sparkles, Square } from "@lucide/vue";
+import { ArrowUp, CircleAlert, History, KeyRound, MessageSquarePlus, MessagesSquare, RotateCcw, Sparkles, Square, Trash2 } from "@lucide/vue";
 import { useQueryClient } from "@tanstack/vue-query";
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
@@ -19,6 +19,8 @@ import ErrorState from "@/components/ErrorState.vue";
 import MarkdownView from "@/components/MarkdownView.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import UiButton from "@/components/UiButton.vue";
+import { useConfirm } from "@/components/useConfirm";
+import { toast } from "@/components/useToast";
 import UserAvatar from "@/components/UserAvatar.vue";
 import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useFormat } from "@/lib/useFormat";
@@ -133,6 +135,37 @@ function pick(conversation: Conversation): void {
   listOpen.value = false;
 }
 
+const confirm = useConfirm();
+const deleting = ref<number | null>(null);
+const openConversation = computed(() => conversations.data.value?.find((row) => row.id === conversationId.value) ?? null);
+
+/** Delete a conversation after a confirm; the open one gives way to a new chat. */
+async function remove(conversation: Conversation): Promise<void> {
+  if (deleting.value !== null || (live.value && conversation.id === conversationId.value)) return;
+  const answer = await confirm({
+    title: t("ai.chat.deleteTitle"),
+    message: t("ai.chat.deleteBody", { title: conversationTitle(conversation) }),
+    confirmLabel: t("ai.chat.delete"),
+    tone: "danger",
+    icon: Trash2,
+  });
+  if (!answer) return;
+  deleting.value = conversation.id;
+  try {
+    await aiApi.deleteConversation(cid.value, conversation.id);
+    client.setQueryData<Conversation[]>(aiKeys.conversations(cid.value), (list) => (list ?? []).filter((row) => row.id !== conversation.id));
+    if (conversationId.value === conversation.id) {
+      conversationId.value = null;
+      failed.value = null;
+    }
+    toast.success(t("ai.chat.deleted"));
+  } catch {
+    // The reason is a toast from the HTTP layer.
+  } finally {
+    deleting.value = null;
+  }
+}
+
 function onKeydown(event: KeyboardEvent): void {
   if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
     event.preventDefault();
@@ -207,15 +240,26 @@ const conversationTime = (conversation: Conversation) => fmt.relative(conversati
           <div v-if="conversations.isPending.value" class="flex flex-col gap-1.5" aria-hidden="true"><SkeletonBlock v-for="n in 4" :key="n" height="44px" radius="8px" /></div>
           <p v-else-if="!conversations.data.value?.length" class="px-2 py-3 text-sm text-muted">{{ t("ai.chat.noHistory") }}</p>
           <ul v-else class="flex flex-col gap-0.5">
-            <li v-for="conversation in conversations.data.value" :key="conversation.id">
+            <li v-for="conversation in conversations.data.value" :key="conversation.id" class="group relative" :data-conversation="conversation.id">
               <button
                 type="button"
                 :aria-current="conversation.id === conversationId ? 'true' : undefined"
-                :class="['pressable flex w-full flex-col rounded-[8px] px-2.5 py-2 text-left', conversation.id === conversationId ? 'bg-accent-soft text-accent-fg' : 'text-fg hover:bg-highlight']"
+                :class="['pressable flex w-full flex-col rounded-[8px] py-2 pl-2.5 pr-10 text-left', conversation.id === conversationId ? 'bg-accent-soft text-accent-fg' : 'text-fg hover:bg-highlight']"
                 @click="pick(conversation)"
               >
                 <span class="truncate text-sm font-medium">{{ conversationTitle(conversation) }}</span>
                 <span class="num text-xs text-muted">{{ conversationTime(conversation) }}</span>
+              </button>
+              <button
+                type="button"
+                class="pressable absolute right-1.5 top-1/2 grid size-8 -translate-y-1/2 place-items-center rounded-[8px] text-muted opacity-0 transition-opacity hover:bg-danger-soft hover:text-danger focus-visible:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100 disabled:pointer-events-none"
+                :aria-label="t('ai.chat.deleteAria', { title: conversationTitle(conversation) })"
+                :title="t('ai.chat.delete')"
+                :disabled="deleting === conversation.id || (live && conversation.id === conversationId)"
+                data-testid="ai-delete-conversation"
+                @click="remove(conversation)"
+              >
+                <Trash2 :size="15" aria-hidden="true" />
               </button>
             </li>
           </ul>
@@ -223,6 +267,21 @@ const conversationTime = (conversation: Conversation) => fmt.relative(conversati
       </aside>
 
       <section class="flex min-h-[60dvh] min-w-0 flex-col lg:min-h-0">
+        <!-- The open conversation: its title and Delete. -->
+        <div v-if="openConversation" class="flex items-center gap-2 border-b border-line py-1.5 pl-4 pr-2 md:pl-6" data-testid="ai-thread-header">
+          <p class="min-w-0 flex-1 truncate text-sm font-semibold text-fg">{{ conversationTitle(openConversation) }}</p>
+          <UiButton
+            variant="ghost"
+            size="sm"
+            class="shrink-0 text-muted hover:text-danger"
+            :icon="Trash2"
+            :disabled="live"
+            :loading="deleting === openConversation.id"
+            data-testid="ai-delete-open"
+            @click="openConversation && remove(openConversation)"
+            >{{ t("ai.chat.delete") }}</UiButton
+          >
+        </div>
         <div class="min-h-0 flex-1 px-4 py-5 md:px-6 lg:overflow-y-auto" role="log" aria-live="polite" :aria-label="t('ai.chat.thread')">
           <!-- A new conversation: what to ask. -->
           <div v-if="empty" class="mx-auto flex max-w-[560px] flex-col items-center gap-4 py-6 text-center">
@@ -323,14 +382,23 @@ const conversationTime = (conversation: Conversation) => fmt.relative(conversati
         <UiButton variant="primary" size="lg" block :icon="MessageSquarePlus" :disabled="live" @click="newChat">{{ t("ai.chat.new") }}</UiButton>
         <p v-if="!conversations.data.value?.length" class="px-1 py-3 text-base text-muted">{{ t("ai.chat.noHistory") }}</p>
         <ul v-else class="flex flex-col gap-1">
-          <li v-for="conversation in conversations.data.value" :key="conversation.id">
+          <li v-for="conversation in conversations.data.value" :key="conversation.id" class="relative">
             <button
               type="button"
-              :class="['pressable flex min-h-12 w-full flex-col justify-center rounded-[10px] px-3 py-2 text-left', conversation.id === conversationId ? 'bg-accent-soft text-accent-fg' : 'text-fg hover:bg-highlight']"
+              :class="['pressable flex min-h-12 w-full flex-col justify-center rounded-[10px] py-2 pl-3 pr-14 text-left', conversation.id === conversationId ? 'bg-accent-soft text-accent-fg' : 'text-fg hover:bg-highlight']"
               @click="pick(conversation)"
             >
               <span class="truncate text-base font-medium">{{ conversationTitle(conversation) }}</span>
               <span class="num text-sm text-muted">{{ conversationTime(conversation) }}</span>
+            </button>
+            <button
+              type="button"
+              class="pressable absolute right-1 top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-[10px] text-muted hover:bg-danger-soft hover:text-danger disabled:opacity-40"
+              :aria-label="t('ai.chat.deleteAria', { title: conversationTitle(conversation) })"
+              :disabled="deleting === conversation.id || (live && conversation.id === conversationId)"
+              @click="remove(conversation)"
+            >
+              <Trash2 :size="18" aria-hidden="true" />
             </button>
           </li>
         </ul>

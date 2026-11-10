@@ -85,6 +85,7 @@ export const aiApi = {
 
   conversations: (cid: number, signal?: AbortSignal) => http.get<Conversation[] | Page<Conversation>>(path(cid, "conversations/"), undefined, { signal }).then(rows),
   newConversation: (cid: number) => http.post<Conversation>(path(cid, "conversations/"), {}),
+  deleteConversation: (cid: number, id: number) => http.delete<void>(path(cid, `conversations/${id}/`)),
   messages: (cid: number, id: number, signal?: AbortSignal) =>
     http.get<ChatMessage[] | Page<ChatMessage>>(path(cid, `conversations/${id}/messages/`), undefined, { signal }).then(rows),
   sendTurn: (cid: number, conversation: number, body: { text: string; page?: string }) =>

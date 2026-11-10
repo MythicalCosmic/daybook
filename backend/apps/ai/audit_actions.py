@@ -11,3 +11,4 @@ class AIAction(models.TextChoices):
     AGENT_CHANGED = "ai.agent_changed", _("Changed an AI agent")
     AGENT_CREATED = "ai.agent_created", _("Created an AI agent")
     AGENT_DELETED = "ai.agent_deleted", _("Deleted an AI agent")
+    CONVERSATION_DELETED = "ai.conversation_deleted", _("Deleted an Ask AI conversation")
