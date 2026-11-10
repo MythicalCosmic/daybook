@@ -561,7 +561,7 @@
   "hr.coverage.permit.open": "Open licences",
   "hr.cmd.policy": "New policy",
   "hr.policy.new": "New policy",
-  "hr.policy.description": "Rules everyone they apply to reads and signs in the app; a new version asks again.",
+  "hr.policy.description": "Rules people read and sign in the app; a new version asks them again.",
   "hr.policy.tab.active": "In force",
   "hr.policy.tab.drafts": "Drafts",
   "hr.policy.tab.archived": "Archived",

@@ -101,6 +101,7 @@ const title = computed(() => (picked.value ? t("hr.policy.version", { n: picked.
     </ol>
 
     <UiDrawer v-model:open="open" :title="mode === 'compare' ? t('hr.policy.versions.compareTitle', { n: picked ?? 0 }) : title" size="lg">
+      <div class="p-5">
       <template v-if="mode === 'read'">
         <div v-if="reading.isPending.value" class="flex flex-col gap-2" aria-hidden="true"><SkeletonBlock v-for="n in 8" :key="n" :width="n % 3 ? '100%' : '70%'" /></div>
         <ErrorState v-else-if="reading.isError.value" compact :error="reading.error.value" :retry="() => reading.refetch()" />
@@ -121,6 +122,7 @@ const title = computed(() => (picked.value ? t("hr.policy.version", { n: picked.
         </FormField>
         <PolicyDiff v-if="base" :policy-id="policy.id" :from="Math.min(base, picked)" :to="Math.max(base, picked)" />
       </template>
+      </div>
     </UiDrawer>
   </div>
 </template>

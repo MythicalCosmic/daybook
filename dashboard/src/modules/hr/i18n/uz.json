@@ -561,7 +561,7 @@
   "hr.coverage.permit.open": "Litsenziyalarni ochish",
   "hr.cmd.policy": "Yangi qoida",
   "hr.policy.new": "Yangi qoida",
-  "hr.policy.description": "Qoidalar: ular kimga tegishli bo‘lsa, ilovada o‘qib imzolaydi, yangi versiya chiqqanda yana so‘raladi.",
+  "hr.policy.description": "Xodimlar ilovada o‘qib imzolaydigan qoidalar; yangi versiya chiqqanda imzo yana so‘raladi.",
   "hr.policy.tab.active": "Amalda",
   "hr.policy.tab.drafts": "Qoralamalar",
   "hr.policy.tab.archived": "Arxiv",

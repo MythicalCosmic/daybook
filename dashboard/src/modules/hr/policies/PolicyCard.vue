@@ -28,9 +28,11 @@ const tally = computed(() => props.policy.tally);
 const segments = computed(() => {
   const row = tally.value;
   if (!row || !row.total) return [];
+  // The bar scales its segments to their sum: the ones still waiting are the empty track.
   return [
     { value: row.signed, color: "var(--c-success)", label: t("hr.policy.kpi.signed") },
     { value: row.late, color: "var(--c-danger)", label: t("hr.policy.kpi.late") },
+    { value: row.waiting, color: "transparent", label: t("hr.policy.kpi.waiting") },
   ];
 });
 const deadline = computed(() => {
@@ -81,7 +83,7 @@ const deadline = computed(() => {
           </p>
           <p v-if="tally.total && tally.signed === tally.total" class="text-xs font-medium text-success">{{ t("hr.policy.allSigned") }}</p>
         </div>
-        <ProgressBar v-if="tally.total" :segments="segments" :max="tally.total" size="sm" :label="t('hr.policy.signedOf', { signed: tally.signed, total: tally.total })" />
+        <ProgressBar v-if="tally.total" :segments="segments" :max="tally.total" size="sm" />
         <div class="flex flex-wrap items-center gap-1.5">
           <StatusPill v-if="tally.late" tone="danger" size="sm" :label="t('hr.policy.count.late', { n: tally.late }, tally.late)" />
           <StatusPill v-if="tally.waiting" tone="info" size="sm" :label="t('hr.policy.count.waiting', { n: tally.waiting }, tally.waiting)" />

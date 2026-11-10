@@ -260,8 +260,15 @@
   margin: 0;
 }
 
+/* A wide table scrolls in its own box; the box keeps the table's space below it (its overflow stops
+   the margins from collapsing into the heading's). */
 .hr-prose-scroll {
   overflow-x: auto;
+  margin: 0 0 1.1em;
+}
+
+.hr-prose-scroll > table {
+  margin: 0;
 }
 
 /* The editor's own text area when knowledge's editor isn't available (a plain one). */

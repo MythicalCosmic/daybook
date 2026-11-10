@@ -82,7 +82,8 @@ const kpis = computed(() => {
     {
       id: "deadline",
       label: t("hr.policy.kpi.deadline"),
-      value: null,
+      // The tile animates a number: the days left stand in for it, and the date is what shows.
+      value: left ?? 0,
       format: () => (due ? fmt.day(due, "medium") : "—"),
       hint: left === null ? undefined : left > 0 ? t("hr.days.in.none", { n: left }, left) : left === 0 ? t("hr.policy.dueToday") : t("hr.policy.deadlinePassed", { date: fmt.day(due!, "short") }),
     },

@@ -150,6 +150,8 @@ defineExpose({ waitingCount });
         <DropdownMenu v-if="rowMenu(row).length" :items="rowMenu(row)" align="end">
           <template #trigger><IconButton :icon="EllipsisVertical" :label="t('common.more')" @click.stop /></template>
         </DropdownMenu>
+        <span v-else aria-hidden="true" />
+
       </template>
       <template #card="{ row }">
         <div class="flex items-start gap-3">
