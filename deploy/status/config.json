@@ -1,0 +1,33 @@
+{
+  "interval": 60,
+  "timeout": 10,
+  "fail_threshold": 2,
+  "tls_warn_days": 14,
+  "slow_ms": 3000,
+  "services": [
+    {
+      "id": "daybook",
+      "name": "Daybook",
+      "url": "https://144.91.81.29.nip.io/",
+      "checks": [
+        {"id": "daybook-health", "name": "Health", "url": "https://144.91.81.29.nip.io/health/",
+         "expect_status": 200, "expect_json": {"status": "ok"}, "version_field": "version"},
+        {"id": "daybook-dashboard", "name": "Dashboard", "url": "https://144.91.81.29.nip.io/dashboard/", "expect_status": 200},
+        {"id": "daybook-terminal", "name": "Face ID terminal route", "url": "http://144.91.81.29.nip.io/api/v1/devices/hik/0000000000000000/", "expect_status": 404},
+        {"id": "daybook-tls", "name": "TLS certificate", "type": "tls", "host": "144.91.81.29.nip.io", "port": 443}
+      ]
+    },
+    {
+      "id": "davomat",
+      "name": "Davomat",
+      "url": "https://faceid.144.91.81.29.nip.io/",
+      "checks": [
+        {"id": "davomat-health", "name": "Health", "url": "https://faceid.144.91.81.29.nip.io/health/",
+         "expect_status": 200, "expect_json": {"status": "ok"}, "version_field": "version"},
+        {"id": "davomat-dashboard", "name": "Dashboard", "url": "https://faceid.144.91.81.29.nip.io/dashboard/", "expect_status": 200},
+        {"id": "davomat-terminal", "name": "Face ID terminal route", "url": "http://faceid.144.91.81.29.nip.io/api/v1/devices/hik/0000000000000000/", "expect_status": 404},
+        {"id": "davomat-tls", "name": "TLS certificate", "type": "tls", "host": "faceid.144.91.81.29.nip.io", "port": 443}
+      ]
+    }
+  ]
+}

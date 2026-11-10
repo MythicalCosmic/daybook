@@ -1,0 +1,29 @@
+name: daybook-status
+
+services:
+  status:
+    build: .
+    image: daybook-status:latest
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - status-data:/data
+      - ./config.json:/app/config.json:ro
+    ports:
+      - "127.0.0.1:18095:8080"
+    networks:
+      - status
+    mem_limit: 128m
+    logging:
+      driver: json-file
+      options: {max-size: "5m", max-file: "3"}
+
+networks:
+  status:
+    name: daybook-status
+
+volumes:
+  status-data:
+    name: daybook-status-data
