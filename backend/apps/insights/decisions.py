@@ -91,8 +91,8 @@ def register_source(
     own = items is not None
     if own and label is None:
         raise RegistryError(f"decision source {key!r}: a source with its own items needs a label.")
-    # A queue-backed source belongs to the queue's app, whoever lists it.
-    app = calling_app() if own else None
+    # A queue-backed source belongs to the queue's app (its key's label), whoever lists it.
+    app = calling_app() if own else key.split(".", 1)[0]
     SOURCES.add(DecisionSource(key, app, perm, feature, group, order, label, count, items))
 
 

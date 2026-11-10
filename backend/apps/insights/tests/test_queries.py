@@ -54,3 +54,17 @@ def test_a_module_switched_off_hides_its_insights(shop):
     shop.features = []
     shop.save(update_fields=["features"])
     assert queries.open_for(shop, None) == []
+
+
+def test_the_ai_tool_follows_the_askers_scope(shop, owner, branch_accountant, branches):
+    from apps.ai.tools.registry import ToolContext
+    from apps.insights.ai_tools import InsightsOpenInput, insights_open
+
+    mine = InsightFactory(company=shop, branch=branches[0])
+    InsightFactory(company=shop, branch=branches[1])
+    InsightFactory(company=shop, kind=Insight.Kind.STAFF_COST, domain="payroll")
+    everything = insights_open(ToolContext.for_member(owner), InsightsOpenInput())
+    assert len(everything.rows) == 3
+    theirs = insights_open(ToolContext.for_member(branch_accountant), InsightsOpenInput())
+    assert [row["id"] for row in theirs.rows] == [mine.pk]  # no payroll view, one branch
+    assert theirs.rows[0]["branch"] == "Chilonzor"

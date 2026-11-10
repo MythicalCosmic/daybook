@@ -12,10 +12,13 @@ export function rankBranches(branches: readonly CockpitBranch[], period: PeriodK
 export const STATE_TONE: Record<BranchState, StatusTone> = { green: "success", amber: "warning", red: "danger" };
 export const SEVERITY_TONE: Record<InsightSeverity, StatusTone> = { critical: "danger", warning: "warning", info: "info" };
 
-/** Profit's change against the period it is compared with, in percent; null when that had none to compare. */
+/**
+ * Profit's change against the period it is compared with, in percent; null when there was no
+ * profit to compare with, or it turned into a loss (a "−392 %" says nothing the red figure doesn't).
+ */
 export function profitChange(figures: PeriodFigures): number | null {
   const before = figures.previous?.profit;
-  if (before === undefined || before === null || compare(before, 0) <= 0) return null;
+  if (before === undefined || before === null || compare(before, 0) <= 0 || compare(figures.profit, 0) < 0) return null;
   return changePercent(figures.profit, before);
 }
 

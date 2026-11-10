@@ -36,7 +36,7 @@ import BranchCard from "../components/BranchCard.vue";
 import DecisionList from "../components/DecisionList.vue";
 import InsightList from "../components/InsightList.vue";
 import RunwayChart from "../components/RunwayChart.vue";
-import { decisionGroups, lowKind, rankBranches, topCosts } from "../lib";
+import { decisionGroups, lowKind, profitChange, rankBranches, topCosts } from "../lib";
 
 const { t } = useI18n();
 const fmt = useFormat();
@@ -96,11 +96,13 @@ const kpis = computed(() => {
       id: "profit",
       label: t("cockpit.kpi.profit"),
       value: total.value.profit,
-      previous: total.value.previous?.profit ?? null,
+      // No comparable change (none before, or a loss now): no badge at all, not a dash.
+      ...(profitChange(total.value) === null
+        ? {}
+        : { delta: profitChange(total.value), deltaLabel: key.value === "month" ? t("cockpit.kpi.vsSameDays") : t("cockpit.kpi.vsMonthBefore") }),
       format: "money" as const,
       compact: true,
       icon: TrendingUp,
-      deltaLabel: key.value === "month" ? t("cockpit.kpi.vsSameDays") : t("cockpit.kpi.vsMonthBefore"),
       hint: total.value.margin !== null ? t("cockpit.kpi.margin", { margin: fmt.percent(Number(total.value.margin), 1) }) : undefined,
       spark: money.value?.total.trend.map((point) => point.profit),
       sparkColor: "var(--c-chart-1)",

@@ -215,6 +215,8 @@ describe("rules", () => {
     expect(profitChange(now)).toBe(-33.3);
     expect(marginPoints(now)).toBe(-6.7);
     expect(profitChange(figures({ previous: { ...now.previous!, profit: "-1000.00" } }))).toBeNull();
+    // Turned into a loss: no percentage, the red figure says it.
+    expect(profitChange(figures({ profit: "-500.00" }))).toBeNull();
     expect(marginPoints(figures({ margin: null }))).toBeNull();
   });
 
