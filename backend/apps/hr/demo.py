@@ -31,6 +31,7 @@ from apps.hr.models import (
     EmployeeProfile,
     RequiredDocument,
 )
+from apps.hr.policies import demo as policies_demo
 from apps.members.models import Membership, Position
 
 CURRENT = (Membership.Status.APPROVED, Membership.Status.SUSPENDED)
@@ -109,6 +110,7 @@ def seed(company, people, now) -> None:
     _documents(company, story, everyone, keys, owner)
     templates = _templates(company, owner)
     _contracts(company, story, everyone, keys, owner, templates)
+    policies_demo.seed(company, people, now)
 
 
 def seed_small(company, people, now) -> None:
