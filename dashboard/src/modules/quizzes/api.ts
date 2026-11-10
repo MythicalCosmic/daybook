@@ -39,6 +39,7 @@ import type {
   TopicOption,
   Turn,
   Tutor,
+  TutorDraftCard,
 } from "./types";
 
 export const MODULE = "quizzes";
@@ -96,6 +97,13 @@ export const quizzesApi = {
   ask: (cid: number, conversation: number, text: string, page: string) =>
     http.post<{ turn_id: number }>(ownerPath(cid, `ai/conversations/${conversation}/turns/`), { text, page }),
   turn: (cid: number, turn: number) => http.get<Turn>(ownerPath(cid, `ai/turns/${turn}/`)),
+  /** The tutor's draft cards of one conversation, each draft as it is now. */
+  tutorDrafts: (cid: number, conversation: number) => http.get<TutorDraftCard[]>(path(cid, `tutor/conversations/${conversation}/drafts/`)),
+  /** The person's decisions on a card: all its drafts, or only `questionIds`. */
+  approveTutorDraft: (cid: number, id: number, questionIds?: number[]) =>
+    http.post<TutorDraftCard>(path(cid, `tutor/drafts/${id}/approve/`), questionIds ? { question_ids: questionIds } : {}),
+  discardTutorDraft: (cid: number, id: number, questionIds?: number[]) =>
+    http.post<TutorDraftCard>(path(cid, `tutor/drafts/${id}/discard/`), questionIds ? { question_ids: questionIds } : {}),
 
   /** The company's topics (the knowledge base keeps them; every picker shares them). */
   topics: (cid: number) => http.get<TopicOption[]>(ownerPath(cid, "knowledge/topics/")),
@@ -158,6 +166,13 @@ export const useDraft = (id: MaybeRefOrGetter<number | null>) =>
 export const useDaily = (enabled: MaybeRefOrGetter<boolean> = true) => useResource("daily", {}, (cid) => quizzesApi.daily(cid), { enabled });
 export const useTutor = () => useResource("tutor", {}, (cid) => quizzesApi.tutor(cid), { staleTime: 30_000 });
 export const useConversations = (enabled: MaybeRefOrGetter<boolean> = true) => useResource("conversations", {}, (cid) => quizzesApi.conversations(cid), { enabled });
+/** A conversation's draft cards, asked again every 1.5 s while one is being written. */
+export const useTutorDrafts = (conversation: MaybeRefOrGetter<number | null>, enabled: MaybeRefOrGetter<boolean> = true) =>
+  useResource("tutorDrafts", () => ({ conversation: toValue(conversation) }), (cid, p) => quizzesApi.tutorDrafts(cid, Number(p.conversation)), {
+    enabled: () => toValue(enabled) && !!toValue(conversation),
+    staleTime: 5_000,
+    refetchInterval: (rows) => (rows?.some((row) => row.state === "running") ? 1500 : false),
+  });
 export const useTopics = () => useResource("topics", {}, (cid) => quizzesApi.topics(cid), { staleTime: 120_000 });
 
 /** Refetch every query of the module and the sidebar pulse (after a write). */

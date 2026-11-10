@@ -9,7 +9,7 @@ and right answers keep their kind's own shape (§4.3): `{"option": "b"}`, `{"opt
 
 from rest_framework import serializers
 
-from apps.learning.models import Attempt, Question
+from apps.learning.models import Attempt, Question, Status, TutorDraft
 
 ANSWER_HELP = (
     "The answer in its kind's shape, in the ids shown: single {option}, multi {options: []}, "
@@ -601,3 +601,52 @@ class LearningTutorConversationSerializer(serializers.Serializer):
     title = serializers.CharField(allow_blank=True)
     created_at = serializers.DateTimeField()
     last_activity_at = serializers.DateTimeField()
+
+
+class LearningTutorDraftItemSerializer(serializers.Serializer):
+    """One question of a draft card, as it is now: `deleted` once it is gone."""
+
+    id = serializers.IntegerField()
+    deleted = serializers.BooleanField()
+    question = LearningQuestionSerializer(allow_null=True)
+    preview = LearningPreviewItemSerializer(
+        allow_null=True, help_text="As the learner will see it, with the right answer."
+    )
+
+
+class LearningTutorDraftQuizSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    title = serializers.CharField()
+    status = serializers.ChoiceField(Status.choices)
+    pass_percent = serializers.IntegerField()
+    time_limit_seconds = serializers.IntegerField(allow_null=True)
+    max_attempts = serializers.IntegerField(allow_null=True)
+    audience_all = serializers.BooleanField()
+    positions = serializers.ListField(child=serializers.CharField())
+
+
+class LearningTutorDraftSerializer(serializers.Serializer):
+    """A card of "Ask the tutor": what one draft tool call made (questions, or a quiz)."""
+
+    id = serializers.IntegerField()
+    kind = serializers.ChoiceField(TutorDraft.Kind.choices)
+    state = serializers.ChoiceField(TutorDraft.State.choices)
+    turn_id = serializers.IntegerField()
+    message_id = serializers.IntegerField(
+        allow_null=True, help_text="The answer it goes under (null while the turn runs)."
+    )
+    count = serializers.IntegerField(help_text="Questions asked for.")
+    title = serializers.CharField(allow_blank=True)
+    error = serializers.CharField(allow_blank=True)
+    created_at = serializers.DateTimeField()
+    questions = LearningTutorDraftItemSerializer(many=True)
+    quiz = LearningTutorDraftQuizSerializer(allow_null=True)
+
+
+class LearningTutorDecideSerializer(serializers.Serializer):
+    question_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=False,
+        max_length=50,
+        help_text="Only these questions of the card; leave it out for all of them.",
+    )

@@ -450,6 +450,49 @@ export interface Turn {
   message_id: number | null;
 }
 
+/** A card of "Ask the tutor" (`learning/tutor/conversations/{id}/drafts/`): what one draft tool
+ * call made, questions or a quiz, with every draft as it is now. Nothing is in use until the
+ * person approves it. */
+export type TutorDraftKind = "questions" | "quiz";
+export type TutorDraftState = "running" | "done" | "failed";
+
+export interface TutorDraftItem {
+  id: number;
+  /** Deleted since (discarded here or on the questions page). */
+  deleted: boolean;
+  question: Question | null;
+  /** As the learner will see it, with the right answer (questions cards only). */
+  preview: PreviewItem | null;
+}
+
+export interface TutorDraftQuiz {
+  id: number;
+  title: string;
+  status: QuizStatus;
+  pass_percent: number;
+  time_limit_seconds: number | null;
+  max_attempts: number | null;
+  audience_all: boolean;
+  positions: string[];
+}
+
+export interface TutorDraftCard {
+  id: number;
+  kind: TutorDraftKind;
+  state: TutorDraftState;
+  turn_id: number;
+  /** The answer it goes under; null while its turn runs. */
+  message_id: number | null;
+  /** Questions asked for. */
+  count: number;
+  title: string;
+  error: string;
+  created_at: string;
+  questions: TutorDraftItem[];
+  /** Null on a quiz card once the quiz was deleted. */
+  quiz: TutorDraftQuiz | null;
+}
+
 /** Pickers: topics, knowledge pages and lessons to write questions from. */
 export interface TopicOption {
   id: number;

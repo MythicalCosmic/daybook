@@ -355,23 +355,44 @@ def system_text(conversation: AIConversation, company) -> str:
 
 
 def conversation_tools(conversation: AIConversation, ctx: ToolContext) -> list:
-    """The tools of the conversation: all the asker may use, or the agent's domains."""
+    """The tools of the conversation: all the asker may use, or the agent's domains; the tutor
+    also gets its draft tools (apps.learning.tutor_tools: drafts only, for holders of
+    learning.manage)."""
     tools = registry.tools_for(ctx)
     agent = _agent_module(conversation)
     if agent is None:
         return tools
-    return [tool for tool in tools if tool.domain in agent.CHAT_DOMAINS]
+    read = [tool for tool in tools if tool.domain in agent.CHAT_DOMAINS]
+    if conversation.agent == TUTOR:
+        from apps.learning import tutor_tools
+
+        return read + tutor_tools.tools_for(ctx)
+    return read
 
 
 def conversation_profile(conversation: AIConversation) -> tuple[str, str, str]:
     """(usage feature, model, effort) of a conversation's calls, the same for its whole life
-    (the prompt cache): "Ask the advisor" runs on the fast model at low effort (the owner's
-    budget), the others as Ask AI."""
+    (the prompt cache): "Ask the advisor" runs on the fast model at low effort, "Ask the tutor"
+    on the fast model (Claude Haiku 5.5, the owner's budget) at medium effort, Ask AI on the
+    chat model."""
     if conversation.agent == ADVISOR:
         from apps.ai.agents import advisor
 
         return advisor.CHAT_FEATURE, settings.AI_MODEL_FAST, "low"
+    if conversation.agent == TUTOR:
+        return "chat", settings.AI_MODEL_FAST, "medium"
     return "chat", settings.AI_MODEL_CHAT, "medium"
+
+
+def _run_tool(conversation: AIConversation, turn: AITurn, ctx: ToolContext, use) -> dict:
+    """One tool call of the loop: the tutor's draft tools in its own conversations, else the
+    read-only registry."""
+    if conversation.agent == TUTOR:
+        from apps.learning import tutor_tools
+
+        if use.name in tutor_tools.names():
+            return tutor_tools.run(use.name, ctx, use.input, turn=turn, tool_use_id=use.id)
+    return registry.run_tool(use.name, ctx, use.input)
 
 
 def _loop(turn: AITurn, ctx: ToolContext) -> str | None:
@@ -417,11 +438,11 @@ def _loop(turn: AITurn, ctx: ToolContext) -> str | None:
         for use in uses:
             started = time.monotonic()
             tool = by_name.get(use.name)
-            result = registry.run_tool(use.name, ctx, use.input)
+            result = _run_tool(conversation, turn, ctx, use)
             failed = "error" in result
             steps.append(
                 {
-                    "label": str(tool.label) if tool else use.name,
+                    "label": str(getattr(tool, "step", "") or tool.label) if tool else use.name,
                     "status": "error" if failed else "done",
                     "ms": int((time.monotonic() - started) * 1000),
                 }
@@ -565,8 +586,20 @@ def _fake_advisor_answer(turn: AITurn, ctx: ToolContext) -> str:
 
 
 def _fake_tutor_answer(turn: AITurn, ctx: ToolContext) -> str:
-    """The tutor's canned answer: the skill matrix's weakest topics, through the real tool."""
+    """The tutor's canned answer: asked to write questions, drafts through its real draft tool
+    (apps.learning.tutor_tools.fake_answer); else the skill matrix's weakest topics, through the
+    real tool."""
+    from apps.learning import tutor_tools
+
     conversation = turn.conversation
+    question = conversation.messages.filter(turn=turn, role="user").first()
+    drafted = tutor_tools.fake_answer(ctx, turn, question.display_text if question else "")
+    if drafted is not None:
+        text, steps = drafted
+        content = [{"type": "text", "text": text}]
+        message = _add_message(conversation, turn, "assistant", content, text)
+        AITurn.objects.filter(pk=turn.pk).update(steps=steps, message=message, model="fake")
+        return text
     started = time.monotonic()
     tool = registry.get_tool("learning_skills")
     if tool is None or not tool.allowed(ctx):

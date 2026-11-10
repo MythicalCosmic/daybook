@@ -33,6 +33,21 @@ urlpatterns = [
         name="owner-learning-tutor-conversations",
     ),
     path(
+        "learning/tutor/conversations/<int:conversation_id>/drafts/",
+        api.TutorDraftsView.as_view(),
+        name="owner-learning-tutor-drafts",
+    ),
+    path(
+        "learning/tutor/drafts/<int:draft_id>/approve/",
+        api.TutorDraftApproveView.as_view(),
+        name="owner-learning-tutor-draft-approve",
+    ),
+    path(
+        "learning/tutor/drafts/<int:draft_id>/discard/",
+        api.TutorDraftDiscardView.as_view(),
+        name="owner-learning-tutor-draft-discard",
+    ),
+    path(
         "learning/skills/<int:member_id>/",
         api.PersonSkillsView.as_view(),
         name="owner-learning-person-skills",

@@ -16,6 +16,8 @@
     GET              learning/skills/{member}/         one person's skills and attempts
     GET              learning/suggestions/?state&kind  ·  POST …/{id}/accept|dismiss/
     GET/POST         learning/drafts/  ·  GET learning/drafts/{id}/
+    GET              learning/tutor/conversations/{id}/drafts/   the tutor chat's draft cards
+    POST             learning/tutor/drafts/{id}/approve|discard/  {question_ids?}
 
 Reading results needs `learning.view` or `learning.manage`; the bank, writing, deciding and
 drafting need `learning.manage`. Everything is company-scoped and answers 404 while the
@@ -48,6 +50,7 @@ from apps.learning import (
     quizzes,
     skills,
     suggestions,
+    tutor_tools,
 )
 from apps.learning import serializers_quizzes as s
 from apps.learning.models import (
@@ -57,6 +60,7 @@ from apps.learning.models import (
     QuestionDraftJob,
     Quiz,
     RegularCheck,
+    TutorDraft,
     TutorSuggestion,
 )
 from apps.members.models import Membership
@@ -799,3 +803,61 @@ def _conversation(row) -> dict:
         "created_at": row.created_at,
         "last_activity_at": row.last_activity_at,
     }
+
+
+class TutorDraftsView(LearningOn, OwnerAPIView):
+    """The draft cards of one of the viewer's "Ask the tutor" conversations (questions and
+    quizzes the tutor drafted), with each draft as it is now."""
+
+    perm = MANAGE
+
+    @extend_schema(responses=s.LearningTutorDraftSerializer(many=True))
+    def get(self, request, company_id, conversation_id):
+        from apps.ai.models import AIConversation
+
+        conversation = AIConversation.objects.filter(
+            pk=conversation_id,
+            company_id=self.company.pk,
+            membership=self.membership,
+            agent="tutor",
+        ).first()
+        if conversation is None:
+            raise NotFound
+        rows = tutor_tools.cards(conversation, request.user)
+        return Response(s.LearningTutorDraftSerializer(rows, many=True).data)
+
+
+class TutorDraftDecision(LearningOn, OwnerAPIView):
+    """The person's decision on a card of their own conversation (never the AI's)."""
+
+    perm = MANAGE
+    decide = staticmethod(tutor_tools.approve)
+
+    @extend_schema(
+        request=s.LearningTutorDecideSerializer, responses=s.LearningTutorDraftSerializer
+    )
+    def post(self, request, company_id, draft_id):
+        data = _clean(s.LearningTutorDecideSerializer, request.data)
+        draft = TutorDraft.objects.filter(
+            pk=draft_id, company=self.company, conversation__membership=self.membership
+        ).first()
+        if draft is None:
+            raise NotFound
+        try:
+            self.decide(draft, by=self.membership, question_ids=data.get("question_ids"))
+        except grading.InvalidQuestion as exc:
+            raise _invalid(exc) from exc
+        return Response(s.LearningTutorDraftSerializer(tutor_tools.card(draft, request.user)).data)
+
+
+class TutorDraftApproveView(TutorDraftDecision):
+    """Approve: the card's draft questions go into use; a quiz card's quiz is published with
+    its draft questions."""
+
+    decide = staticmethod(tutor_tools.approve)
+
+
+class TutorDraftDiscardView(TutorDraftDecision):
+    """Discard: the card's draft questions are deleted; a quiz card's draft quiz is deleted."""
+
+    decide = staticmethod(tutor_tools.discard)

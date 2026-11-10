@@ -76,7 +76,11 @@ const agent = computed(() => tutor.data.value?.agent ?? null);
 </script>
 
 <template>
-  <div>
+  <!-- On wide screens the page is two panes that fill the window below the header: the tutor's
+       findings scroll on the left, the chat is a window of its own on the right. Narrower, the
+       chat is a panel as tall as the screen under the findings. Either way a long conversation
+       scrolls inside the chat and never makes the page longer. -->
+  <div class="flex flex-col xl:h-[calc(100dvh-var(--topbar-h)-86px)]" data-testid="tutor-page">
     <PageHeader :title="t('quizzes.nav.tutor')" :description="t('quizzes.tutor.description')">
       <template #actions>
         <UiButton v-if="agent?.listed" variant="secondary" :icon="Settings2" :to="`/c/${company.currentId}/ai/agents/tutor`">{{ t("quizzes.tutor.settings") }}</UiButton>
@@ -92,8 +96,8 @@ const agent = computed(() => tutor.data.value?.agent ?? null);
         <Sparkles :size="14" aria-hidden="true" />{{ t("quizzes.tutor.nextReport", { when: fmt.instant(agent.next_report_at) }) }}
       </p>
 
-      <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
-        <div class="flex min-w-0 flex-col gap-4">
+      <div class="grid gap-4 xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(0,1fr)_460px] 2xl:grid-cols-[minmax(0,1fr)_540px]">
+        <div class="flex min-w-0 flex-col gap-4 xl:min-h-0 xl:overflow-y-auto xl:overscroll-contain xl:pr-1" data-testid="tutor-findings">
           <PageSection variant="card" :title="t('quizzes.tutor.suggestions')" :count="suggestions.data.value?.length" flush>
             <div v-if="suggestions.isPending.value" class="p-4"><SkeletonBlock height="64px" /></div>
             <ul v-else-if="suggestions.data.value?.length" class="divide-y divide-line" data-testid="suggestions">
@@ -148,10 +152,16 @@ const agent = computed(() => tutor.data.value?.agent ?? null);
           </div>
         </div>
 
-        <PageSection variant="card" :title="t('quizzes.tutor.ask')" class="xl:sticky xl:top-4 xl:self-start">
+        <div
+          class="ui-card flex h-[calc(100dvh-var(--topbar-h)-var(--safe-top)-var(--tabbar-h)-var(--safe-bottom)-3rem)] max-h-[820px] min-h-[440px] flex-col overflow-hidden xl:h-auto xl:max-h-none xl:min-h-0"
+          data-testid="tutor-chat-panel"
+        >
           <TutorChat v-if="agent?.chat" />
-          <InlineAlert v-else tone="info" :description="t('quizzes.tutor.askOff')" />
-        </PageSection>
+          <div v-else class="flex flex-col gap-3 p-4">
+            <h2 class="text-sm font-semibold text-fg">{{ t("quizzes.tutor.ask") }}</h2>
+            <InlineAlert tone="info" :description="t('quizzes.tutor.askOff')" />
+          </div>
+        </div>
       </div>
     </template>
   </div>
