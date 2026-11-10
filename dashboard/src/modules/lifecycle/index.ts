@@ -6,7 +6,7 @@
  * 360 and "Warn", "Suspend", "Change job" and "Start leaving" to its header
  * (`people.profile.actions`).
  */
-import { CalendarClock, Gavel, Pause, ShieldAlert, Shuffle } from "@lucide/vue";
+import { CalendarClock, ClipboardPen, Gavel, Pause, ShieldAlert, Shuffle } from "@lucide/vue";
 import { defineAsyncComponent } from "vue";
 
 import { defineModule } from "@/core/modules";
@@ -30,7 +30,7 @@ export default defineModule({
     { key: "terminations", title: "lifecycle.nav.terminations", to: "lifecycle/terminations", perm: ["hr.terminate", "hr.view"], badge: counter("lifecycle.resignations") },
     { key: "changes", title: "lifecycle.nav.changes", to: "lifecycle/job-changes", perm: ["hr.manage", "hr.view"], badge: counter("lifecycle.job_changes") },
     { key: "equipment", title: "lifecycle.nav.equipment", to: "lifecycle/equipment", perm: ["assets.manage", "hr.manage"] },
-    { key: "reviews", title: "lifecycle.nav.reviews", to: "lifecycle/reviews", perm: "reviews.manage" },
+    { key: "reviews", title: "lifecycle.nav.reviews", to: "lifecycle/reviews", perm: "reviews.manage", badge: counter("lifecycle.reviews_to_write") },
   ],
   invalidates: ["lifecycle"],
   commands: (ctx) => [
@@ -65,6 +65,14 @@ export default defineModule({
       perm: "hr.manage",
       keywords: ["promotion", "transfer", "raise", "lavozim", "ko‘chirish", "maosh", "перевод", "повышение"],
       run: () => ctx.go("lifecycle/job-changes?new=1"),
+    },
+    {
+      id: "lifecycle.review",
+      title: ctx.t("lifecycle.reviews.newRound"),
+      icon: ClipboardPen,
+      perm: "reviews.manage",
+      keywords: ["review", "appraisal", "baholash", "attestatsiya", "оценка", "аттестация", "kpi"],
+      run: () => ctx.go("lifecycle/reviews?new=1"),
     },
   ],
   personTabs: [

@@ -40,5 +40,18 @@ export const routes: RouteRecordRaw[] = [
     props: { page: "equipment" },
     meta: { title: "lifecycle.nav.equipment", perm: ["assets.manage", "hr.manage"] },
   },
-  { path: "lifecycle/reviews", name: "lifecycle.reviews", component: soon, props: { page: "reviews" }, meta: { title: "lifecycle.nav.reviews", perm: "reviews.manage" } },
+  // Performance reviews: the rounds, a round, one person's review.
+  { path: "lifecycle/reviews", name: "lifecycle.reviews", component: () => import("./pages/ReviewsPage.vue"), meta: { title: "lifecycle.nav.reviews", perm: "reviews.manage" } },
+  {
+    path: "lifecycle/reviews/:roundId(\\d+)",
+    name: "lifecycle.review-round",
+    component: () => import("./pages/ReviewRoundPage.vue"),
+    meta: { title: "lifecycle.nav.reviews", perm: "reviews.manage" },
+  },
+  {
+    path: "lifecycle/reviews/:roundId(\\d+)/:reviewId(\\d+)",
+    name: "lifecycle.review",
+    component: () => import("./pages/ReviewPage.vue"),
+    meta: { title: "lifecycle.nav.reviews", perm: "reviews.manage" },
+  },
 ];

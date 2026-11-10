@@ -1,9 +1,9 @@
 <script setup lang="ts">
 /**
- * A lifecycle page that is designed but not built yet (org chart, equipment, reviews): what it
+ * A lifecycle page that is designed but not built yet (org chart, equipment): what it
  * will do, in one line, and where to go meanwhile.
  */
-import { ArrowRight, ChartColumn, Network, Sparkles } from "@lucide/vue";
+import { ArrowRight, Network, Sparkles } from "@lucide/vue";
 import { computed, type Component } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -13,7 +13,7 @@ import StatusPill from "@/components/StatusPill.vue";
 import UiButton from "@/components/UiButton.vue";
 import { useCompanyStore } from "@/stores/company";
 
-type Page = "org" | "equipment" | "reviews";
+type Page = "org" | "equipment";
 const props = defineProps<{ page: Page }>();
 
 const { t } = useI18n();
@@ -21,7 +21,6 @@ const company = useCompanyStore();
 
 const MEANWHILE: Partial<Record<Page, { to: string; icon: Component }>> = {
   org: { to: "people/departments", icon: Network },
-  reviews: { to: "reports/team", icon: ChartColumn },
 };
 const meanwhile = computed(() => MEANWHILE[props.page] ?? null);
 </script>
