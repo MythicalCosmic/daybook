@@ -18573,6 +18573,113 @@ paths:
               schema:
                 $ref: '#/components/schemas/LearningTutorConversation'
           description: ''
+  /api/v1/owner/companies/{company_id}/learning/tutor/conversations/{conversation_id}/drafts/:
+    get:
+      operationId: companies_learning_tutor_conversations_drafts_list
+      description: |-
+        The draft cards of one of the viewer's "Ask the tutor" conversations (questions and
+        quizzes the tutor drafted), with each draft as it is now.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: conversation_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LearningTutorDraft'
+          description: ''
+  /api/v1/owner/companies/{company_id}/learning/tutor/drafts/{draft_id}/approve/:
+    post:
+      operationId: companies_learning_tutor_drafts_approve_create
+      description: |-
+        Approve: the card's draft questions go into use; a quiz card's quiz is published with
+        its draft questions.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: draft_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LearningTutorDecideRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LearningTutorDecideRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LearningTutorDecideRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningTutorDraft'
+          description: ''
+  /api/v1/owner/companies/{company_id}/learning/tutor/drafts/{draft_id}/discard/:
+    post:
+      operationId: companies_learning_tutor_drafts_discard_create
+      description: 'Discard: the card''s draft questions are deleted; a quiz card''s
+        draft quiz is deleted.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: draft_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LearningTutorDecideRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LearningTutorDecideRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LearningTutorDecideRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningTutorDraft'
+          description: ''
   /api/v1/owner/companies/{company_id}/learning/videos/:
     get:
       operationId: companies_learning_videos_list
@@ -55048,6 +55155,135 @@ components:
       - id
       - last_activity_at
       - title
+    LearningTutorDecideRequest:
+      type: object
+      properties:
+        question_ids:
+          type: array
+          items:
+            type: integer
+          description: Only these questions of the card; leave it out for all of them.
+          maxItems: 50
+    LearningTutorDraft:
+      type: object
+      description: 'A card of "Ask the tutor": what one draft tool call made (questions,
+        or a quiz).'
+      properties:
+        id:
+          type: integer
+        kind:
+          $ref: '#/components/schemas/LearningTutorDraftKindEnum'
+        state:
+          $ref: '#/components/schemas/LearningTutorDraftStateEnum'
+        turn_id:
+          type: integer
+        message_id:
+          type: integer
+          nullable: true
+          description: The answer it goes under (null while the turn runs).
+        count:
+          type: integer
+          description: Questions asked for.
+        title:
+          type: string
+        error:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/LearningTutorDraftItem'
+        quiz:
+          allOf:
+          - $ref: '#/components/schemas/LearningTutorDraftQuiz'
+          nullable: true
+      required:
+      - count
+      - created_at
+      - error
+      - id
+      - kind
+      - message_id
+      - questions
+      - quiz
+      - state
+      - title
+      - turn_id
+    LearningTutorDraftItem:
+      type: object
+      description: 'One question of a draft card, as it is now: `deleted` once it
+        is gone.'
+      properties:
+        id:
+          type: integer
+        deleted:
+          type: boolean
+        question:
+          allOf:
+          - $ref: '#/components/schemas/LearningQuestion'
+          nullable: true
+        preview:
+          allOf:
+          - $ref: '#/components/schemas/LearningPreviewItem'
+          nullable: true
+          description: As the learner will see it, with the right answer.
+      required:
+      - deleted
+      - id
+      - preview
+      - question
+    LearningTutorDraftKindEnum:
+      enum:
+      - questions
+      - quiz
+      type: string
+      description: |-
+        * `questions` - Questions
+        * `quiz` - Quiz
+    LearningTutorDraftQuiz:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        status:
+          $ref: '#/components/schemas/LearningStatusEnum'
+        pass_percent:
+          type: integer
+        time_limit_seconds:
+          type: integer
+          nullable: true
+        max_attempts:
+          type: integer
+          nullable: true
+        audience_all:
+          type: boolean
+        positions:
+          type: array
+          items:
+            type: string
+      required:
+      - audience_all
+      - id
+      - max_attempts
+      - pass_percent
+      - positions
+      - status
+      - time_limit_seconds
+      - title
+    LearningTutorDraftStateEnum:
+      enum:
+      - running
+      - done
+      - failed
+      type: string
+      description: |-
+        * `running` - Being written
+        * `done` - Done
+        * `failed` - Failed
     LearningTutorEvent:
       type: object
       properties:

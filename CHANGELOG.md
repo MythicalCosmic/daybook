@@ -39,6 +39,15 @@
   report per partner.
 - The buffer is one setting: the cockpit's cash warning uses the same amount.
 
+### Ustoz: the tutor writes questions for your approval
+- The chat on Learning › Ustoz is a fixed window: the page never grows, messages scroll inside,
+  the box to write in stays at the bottom, and a "new messages" button shows when you have
+  scrolled up. On a wide screen the findings and the chat sit side by side.
+- Ask the tutor for questions ("5 questions on the cold chain from this page") and it writes them
+  in front of you, of all seven kinds, as cards that look as learners will see them, the right
+  answer marked. Each is a draft until a person presses **Tasdiqlash** (or edits or deletes it);
+  a quiz card publishes its questions and the quiz in one tap. The tutor never publishes.
+
 ### Maqsadlar: business goals
 - Goals measured from the company's own numbers, never typed by hand: revenue, gross and net
   profit, margin, pharmacies open, headcount, staff turnover, average check, late arrivals and
