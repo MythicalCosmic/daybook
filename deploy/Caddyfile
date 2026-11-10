@@ -120,3 +120,8 @@ http://{$DOMAIN} {
 		redir https://{$DOMAIN}{uri} permanent
 	}
 }
+
+# Other sites on this server, one file each in /etc/daybook/caddy-sites on the host (outside the
+# code, so a deploy never touches them): a Davomat install next to Daybook, for one
+# (docs/davomat/en/INSTALL.md, "Next to Daybook"). No files: nothing more.
+import /etc/caddy/sites/*.caddy

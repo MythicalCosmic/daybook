@@ -18,6 +18,8 @@ services:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
       - media:/srv/media:ro
       - learning_media:/srv/learning:ro
+      # Other sites on this server (deploy/Caddyfile's last line): kept on the host, not in the code.
+      - /etc/daybook/caddy-sites:/etc/caddy/sites:ro
       - caddy_data:/data
       - caddy_config:/config
     # Not on stream: without it the site still works and the dashboard polls for AI answers.
