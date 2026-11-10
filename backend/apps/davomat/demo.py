@@ -5,6 +5,11 @@ so attendance, the live feed and the reports all have data. This morning a newco
 terminal knows but nobody added (number 00000016, "Ravshan") becomes an employee by himself
 (`auto_create_employees`), and an unknown face tries the door.
 
+Its people scan only when they come (Face ID's default `scan_mode`, "arrival"), as Daybook's do:
+each morning's scans are the check-ins, two people who step out and come back are only seen,
+and each day closes quietly at the shift's end. `scan_mode="both"` (`davomat_demo --scan-mode
+both`) has them scan when they leave too, from 18:00 on, one of them forgetting it once.
+
 `live=True` (`davomat_demo --live`) keeps today's scans still to come, and `run_live` posts each
 one when its moment comes, with a heartbeat from both terminals every minute: a demo built before
 work starts fills in as the morning goes, the way real terminals would make it.
@@ -78,6 +83,10 @@ NEWCOMER = ("00000016", "Ravshan")
 # The director and the branch's manager sign in to the web app and scan at the door too.
 USERS_WHO_SCAN = (("00000020", "Sardor", OFFICE, 7), ("00000021", "Nodira", BRANCH, 8))
 SERIAL = "DS-K1T341AMF-NAMUNA-"
+# Where people scan only when they come: who steps out and comes back, this long after arriving
+# (Aziza to the bank, Sherzod to a customer), so the feed shows a scan that is only seen.
+BACK_AGAIN = {1: timedelta(minutes=40), 10: timedelta(minutes=55)}
+ARRIVAL, BOTH = FaceIdSettings.ScanMode.ARRIVAL, FaceIdSettings.ScanMode.BOTH
 
 
 @dataclass
@@ -95,6 +104,8 @@ class Built:
     # in time order, and each terminal's next serial numbers.
     pending: list[tuple] = field(default_factory=list)
     serials: dict = field(default_factory=dict)
+    # How its people use the terminals (FaceIdSettings.scan_mode).
+    scan_mode: str = ARRIVAL
 
 
 def build(
@@ -104,10 +115,14 @@ def build(
     password: str = PASSWORD,
     live: bool = False,
     days_back: int = DAYS_BACK,
+    scan_mode: str = ARRIVAL,
 ):
     """The whole demo, as of `now`; the organization must not exist yet, with `days_back` days
     of scans before today (the command makes a month of them, for the reports). `live`: today's
-    scans after `now` wait in `pending` for `run_live` (otherwise they never happen)."""
+    scans after `now` wait in `pending` for `run_live` (otherwise they never happen).
+    `scan_mode`: "arrival" (people scan only when they come) or "both" (departures too)."""
+    if scan_mode not in FaceIdSettings.ScanMode.values:
+        raise ValueError(f"Unknown scan mode: {scan_mode}")
     now = now or timezone.now()
     with demo_time.moment(now - timedelta(days=40)):
         owner = services.setup_organization(
@@ -180,11 +195,11 @@ def build(
         attendance.assign_schedule(company, schedule, ids, by=owner, effective_from=start)
         attendance.generate_shifts(company, start=start, days=days_back + 1, member_ids=ids)
     devices = _terminals(company, branches, now)
-    with demo_time.moment(now - timedelta(days=30)):
-        # Its people scan when they come and when they leave: the departures from 18:00 on are
-        # part of the demo (the default is "arrival": people scan only when they come).
-        faceid.update_settings(company, by=owner, scan_mode=FaceIdSettings.ScanMode.BOTH)
-    built = Built(company, owner, manager, people, devices, scanning)
+    if scan_mode == BOTH:
+        # Its people scan when they leave too (the default: only when they come).
+        with demo_time.moment(now - timedelta(days=30)):
+            faceid.update_settings(company, by=owner, scan_mode=BOTH)
+    built = Built(company, owner, manager, people, devices, scanning, scan_mode=scan_mode)
     # Oydin is on leave from today (a family wedding); her shifts say so.
     with demo_time.moment(now - timedelta(days=2)):
         timeoff.record_time_off(
@@ -357,11 +372,14 @@ def _scan_the_week(
     built: Built, today: date, now: datetime, *, live: bool = False, days_back: int = DAYS_BACK
 ) -> None:
     """Each workday this past week and this morning: everyone in between 08:35 and 09:15 (a
-    few late), out after 18:00; someone off sick now and then, someone who forgot to scan out.
-    Each morning starts the way the nightly jobs leave it: forgotten check-outs closed and
-    missed shifts marked absent. `live`: today's moments after `now` go to `built.pending`, and
-    the newcomer comes today whatever the time."""
+    few late), someone off sick now and then. People scan only when they come: two of them step
+    out and come back within the hour (only seen). With `scan_mode` "both" they are out after
+    18:00 instead, and someone forgot to scan out. Each morning starts the way the nightly jobs
+    leave it: open days closed (quietly where people scan only when they come) and missed
+    shifts marked absent. `live`: today's moments after `now` go to `built.pending`, and the
+    newcomer comes today whatever the time."""
     company = built.company
+    departures = built.scan_mode == BOTH
     luck = random.Random(2026)
     serials = {
         where: iter(range(41000 * (n + 1), 41000 * (n + 2)))
@@ -386,9 +404,13 @@ def _scan_the_week(
             came = clock.at(company, day, time(8, 35)) + timedelta(minutes=luck.randint(0, 40))
             if luck.random() < 0.12:
                 came += timedelta(minutes=luck.randint(20, 50))  # late
+            # Drawn either way, so both modes have the same mornings.
             went = clock.at(company, day, time(18, 0)) + timedelta(minutes=luck.randint(0, 45))
             moments.append((came, where, terminal_number, shown))
-            if not (day == today - timedelta(days=1) and index == 9):  # Nodir forgot
+            if not departures:
+                if index in BACK_AGAIN:
+                    moments.append((came + BACK_AGAIN[index], where, terminal_number, shown))
+            elif not (day == today - timedelta(days=1) and index == 9):  # Nodir forgot
                 moments.append((went, where, terminal_number, shown))
         if day == (today if live else _newcomer_day(company, today, now)):
             # The newcomer the terminal knows, twice; an unknown face at the branch.
