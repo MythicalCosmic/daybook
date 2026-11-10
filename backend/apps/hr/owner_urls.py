@@ -8,6 +8,7 @@ from django.urls import path
 from rest_framework.routers import SimpleRouter
 
 from apps.hr import owner_api
+from apps.hr.policies import owner_urls as policies
 
 router = SimpleRouter()
 router.register("hr/documents", owner_api.DocumentViewSet, basename="hr-document")
@@ -42,4 +43,5 @@ urlpatterns = [
         name="hr-sensitive",
     ),
     *router.urls,
+    *policies.urlpatterns,
 ]

@@ -46,3 +46,39 @@ def post_celebrations() -> int:
     from apps.hr import watch
 
     return watch.post_celebrations()
+
+
+# Policies (apps.hr.policies) ----------------------------------------------------------------
+
+
+@shared_task
+def follow_up_policies() -> int:
+    """Newcomers asked to sign, notices, reminders before the deadline and late notes to the
+    manager (once each, outside quiet hours)."""
+    from apps.hr.policies import follow_up
+
+    return follow_up.follow_up()
+
+
+@shared_task
+def policy_notices(policy_id: int) -> int:
+    """After a publish: the people asked hear (now, or after the quiet hours)."""
+    from apps.hr.policies import follow_up
+
+    return follow_up.notices_after_publish(policy_id)
+
+
+@shared_task
+def policy_to_read(policy_id: int, version_id: int) -> int:
+    """A policy that asks no signature: its readers hear about the new version."""
+    from apps.hr.policies import follow_up
+
+    return follow_up.to_read(policy_id, version_id)
+
+
+@shared_task
+def policies_after_joining(company_id: int) -> int:
+    """Someone was approved: the policies of their position and branches ask them."""
+    from apps.hr.policies import follow_up
+
+    return follow_up.after_joining(company_id)

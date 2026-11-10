@@ -20,4 +20,9 @@ ENUM_NAME_OVERRIDES = {
     "HrCoverageStateEnum": "apps.hr.coverage.STATES",
     "HrCoverageReasonEnum": "apps.hr.queries.REASONS",
     "HrCoverageClosedEnum": "apps.hr.coverage.CLOSED",
+    # Policies (apps/hr/policies).
+    "HrPolicyCategoryEnum": "apps.hr.models.PolicyCategory",
+    "HrPolicyStateEnum": "apps.hr.policies.queries.STATES",
+    "HrMyPolicyStateEnum": "apps.hr.policies.queries.MY_STATES",
+    "HrPolicyFileTypeEnum": "apps.hr.policies.serializers.FILE_TYPES",
 }

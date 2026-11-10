@@ -28,4 +28,9 @@ SCHEDULE = {
         "task": "apps.hr.tasks.watch_planned_coverage",
         "schedule": crontab(minute=23),
     },
+    # Policies: newcomers asked, reminders before the deadline, late notes to the manager.
+    "hr-follow-up-policies": {
+        "task": "apps.hr.tasks.follow_up_policies",
+        "schedule": crontab(minute="2,17,32,47"),
+    },
 }
