@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.6.1 — 2026-11-10
+
+### Face ID: today's scans first when a terminal is connected
+- A terminal connected for the first time uploads every scan it ever stored, oldest first: often
+  hours of old scans before today's. They are still skipped, and now **a small helper brings
+  today's scans in right away**. Run it on a computer in the terminal's network and new scans show
+  within seconds. It stops by itself once the terminal has caught up.
+- **Get today's scans now** on the terminal's card (and in the setup wizard) while old history is
+  coming in: download the helper with this terminal's address filled in, and copy the command to
+  run (Python 3.9 or newer, nothing to install; it asks for the terminal's password and never keeps
+  it). The helper is also `deploy/faceid/catchup.py`.
+- The terminal's address on the server now also says how far its old history has come.
+
+### Davomat
+- **A new mark**: a bold D with a check cut into it, on an indigo tile. It is in the tab, the sidebar,
+  the sign-in page and the first paint. The files, and a picture for the organization's Telegram
+  bot, are in `deploy/davomat/brand`.
+- **The sign-in page** on a desktop: the organization, the headline and the live board on a dark
+  indigo panel, and the form on its own beside it. One indigo family and the status colors, in
+  light and dark; a phone gets the form under the organization's name. The setup page's light is
+  calmer too.
+
+### Fixes
+- A deploy no longer stops when migrations take more than two minutes: the backend now has five
+  before its health check counts. On 0.6.0 that kept the site down for five minutes.
+
 ## 0.6.0 — 2026-11-10
 
 ### New: training (People › Training)

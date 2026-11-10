@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: 911 Trello API
-  version: 0.6.0
+  version: 0.6.1
   description: API for the employee mini app and the owner dashboard.
 paths:
   /api/v1/owner/auth/dev-login/:
@@ -6416,6 +6416,44 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FaceIdDevice'
+          description: ''
+  /api/v1/owner/companies/{company_id}/faceid/devices/{id}/catchup/:
+    get:
+      operationId: companies_faceid_devices_catchup_retrieve
+      description: |-
+        `catchup.py`, the helper that sends the terminal's newest scans while it still uploads
+        its old history, with the terminal's address on the server filled in (it holds the
+        terminal's code, like the setup values).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - json
+          - py
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            text/x-python:
+              schema:
+                type: string
+                format: binary
           description: ''
   /api/v1/owner/companies/{company_id}/faceid/devices/{id}/regenerate/:
     post:
@@ -38509,6 +38547,9 @@ components:
           $ref: '#/components/schemas/FaceIdProtocol'
         https:
           $ref: '#/components/schemas/FaceIdProtocol'
+        ip:
+          type: string
+          description: The terminal's address in its own network, as it says.
         last_event_at:
           type: string
           format: date-time
@@ -38530,6 +38571,7 @@ components:
       - host
       - http
       - https
+      - ip
       - last_event_at
       - last_seen_at
       - last_test_at
