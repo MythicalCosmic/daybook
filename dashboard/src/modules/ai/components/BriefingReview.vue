@@ -113,13 +113,18 @@ function signedPoints(value: string): string {
         <span class="grid size-7 place-items-center rounded-full bg-accent-soft text-accent-fg" aria-hidden="true"><Lightbulb :size="15" /></span>
         {{ todoTitle }}
       </h3>
-      <ol class="grid gap-3 lg:grid-cols-3">
-        <li v-for="(action, index) in review.actions" :key="action.fact" class="advisor-action flex flex-col gap-3 rounded-[14px] border border-line bg-surface p-3.5" :data-fact="action.fact">
-          <div class="flex gap-3">
+      <ol class="flex flex-col gap-2.5">
+        <li
+          v-for="(action, index) in review.actions"
+          :key="action.fact"
+          class="advisor-action flex flex-col gap-3 rounded-[14px] border border-line bg-surface p-3.5 sm:flex-row sm:items-center sm:gap-4"
+          :data-fact="action.fact"
+        >
+          <div class="flex min-w-0 flex-1 gap-3">
             <span class="num grid size-7 shrink-0 place-items-center rounded-full bg-primary text-sm font-semibold text-on-primary" aria-hidden="true">{{ index + 1 }}</span>
-            <p class="min-w-0 flex-1 text-base leading-relaxed text-fg">{{ action.text }}</p>
+            <p class="min-w-0 flex-1 pt-0.5 text-base leading-relaxed text-fg">{{ action.text }}</p>
           </div>
-          <UiButton :to="action.url" size="sm" variant="secondary" :icon-right="ArrowRight" class="self-start lg:mt-auto">{{ action.label }}</UiButton>
+          <UiButton :to="action.url" size="sm" variant="secondary" :icon-right="ArrowRight" class="shrink-0 self-start max-sm:ml-10 sm:self-center">{{ action.label }}</UiButton>
         </li>
       </ol>
     </section>

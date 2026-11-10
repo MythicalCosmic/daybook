@@ -100,15 +100,20 @@ def compared(value: Decimal, previous: Decimal | None, average: Decimal | None) 
 
 
 def compared_share(value: Decimal | None, previous: Decimal | None, average: Decimal | None):
-    """A percentage with the period before and the average, and the moves in points."""
+    """A percentage with the period before and the average, and the moves in points between
+    the shares as they are shown (30.3 to 25.3 moved 5.0 points, never 4.9)."""
     if value is None:
         return None
+    shown, before, usual = (
+        Decimal(one_decimal(part)) if part is not None else None
+        for part in (value, previous, average)
+    )
     return {
-        "value": one_decimal(value),
-        "previous": one_decimal(previous),
-        "average": one_decimal(average),
-        "change_pts": one_decimal(value - previous) if previous is not None else None,
-        "vs_average_pts": one_decimal(value - average) if average is not None else None,
+        "value": str(shown),
+        "previous": str(before) if before is not None else None,
+        "average": str(usual) if usual is not None else None,
+        "change_pts": str(shown - before) if before is not None else None,
+        "vs_average_pts": str(shown - usual) if usual is not None else None,
     }
 
 
