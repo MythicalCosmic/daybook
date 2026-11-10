@@ -36,6 +36,7 @@ sources.register(
 
 register_file_check("assets.file", providers.may_open_file)
 register_file_check("assets.permit", providers.may_open_permit)
+register_file_check("assets.handout", providers.may_open_handout)
 
 registry.register_pulse("assets", perm=READ, count=None, feature=FEATURE)
 

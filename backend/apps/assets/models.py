@@ -439,6 +439,16 @@ class AssetAssignment(TenantModel):
         blank=True,
         related_name="+",
     )
+    # The photos taken when it was given and when it came back (private: the holder, and those
+    # who may see the asset or the person), and the deduction proposed to payroll for a loss
+    # or damage (a payroll Adjustment's id: payroll approves it as usual).
+    photo_out = models.FileField(
+        storage=private_storage, upload_to=private_upload_to("assets/handouts"), blank=True
+    )
+    photo_in = models.FileField(
+        storage=private_storage, upload_to=private_upload_to("assets/handouts"), blank=True
+    )
+    deduction_id = models.PositiveIntegerField(null=True, blank=True)
 
     class Meta:
         ordering = ["-issued_on", "-pk"]

@@ -32,4 +32,5 @@ urlpatterns = [
     ),
     # The org chart and equipment (package B, v11).
     path("", include("apps.lifecycle.orgchart.owner_urls")),
+    path("", include("apps.lifecycle.equipment.owner_urls")),
 ]

@@ -96,7 +96,9 @@ def _audit(action: str, company, by: Membership | None, target, **details) -> No
 
 def _bump(company) -> None:
     company_id = company.pk
-    transaction.on_commit(lambda: pulse.bump(company_id, PULSE))
+    # The lifecycle's Equipment page shows who holds what: it refreshes with every change here
+    # (a confirmation in the app included).
+    transaction.on_commit(lambda: pulse.bump(company_id, PULSE, "lifecycle.equipment"))
 
 
 def _money(value, *, name: str, allow_zero: bool = False) -> Decimal:
@@ -828,7 +830,30 @@ def move(asset: Asset, *, by: Membership, branch, on: date, note: str = "") -> A
 # Who holds it -----------------------------------------------------------------------------------
 
 
-def _open_assignment(asset, membership, *, by, on, condition="", note="") -> AssetAssignment:
+def handout_photo(file):
+    """A photo taken when something is given or comes back, decoded and re-encoded (nothing of
+    the original file is kept). Raises `InvalidUpload` for anything that isn't a picture."""
+    from apps.core.uploads import sanitize_image
+
+    return sanitize_image(file)
+
+
+def _save_photo(assignment: AssetAssignment, field: str, photo) -> None:
+    """`photo`: a file `handout_photo` made, or the name of one already stored (the photo of
+    several things given in one go is stored once)."""
+    if photo in (None, ""):
+        return
+    target = getattr(assignment, field)
+    if isinstance(photo, str):
+        target.name = photo
+    else:
+        target.save(photo.name, photo, save=False)
+    assignment.save(update_fields=[field, "updated_at"])
+
+
+def _open_assignment(
+    asset, membership, *, by, on, condition="", note="", photo=None, notify=True
+) -> AssetAssignment:
     assignment = AssetAssignment.objects.create(
         company=asset.company,
         asset=asset,
@@ -838,18 +863,30 @@ def _open_assignment(asset, membership, *, by, on, condition="", note="") -> Ass
         condition_out=condition or asset.condition,
         note_out=note[:300],
     )
+    _save_photo(assignment, "photo_out", photo)
     _event(asset, AssetEvent.Kind.ISSUED, by=by, on=on, membership=membership, note=note[:500])
-    from apps.assets import notify
+    if notify:
+        from apps.assets import notify as notices
 
-    transaction.on_commit(lambda: notify.issued(assignment.pk))
+        transaction.on_commit(lambda: notices.issued(assignment.pk))
     return assignment
 
 
 @transaction.atomic
 def issue(
-    asset: Asset, *, by: Membership, membership: Membership, on: date, condition="", note=""
+    asset: Asset,
+    *,
+    by: Membership,
+    membership: Membership,
+    on: date,
+    condition="",
+    note="",
+    photo=None,
+    notify: bool = True,
 ) -> AssetAssignment:
-    """Give the asset to someone (a laptop, the keys, a uniform): they confirm in the app."""
+    """Give the asset to someone (a laptop, the keys, a uniform): they confirm in the app.
+    `photo` is how it looked when given (`handout_photo`); `notify=False` when the caller
+    tells the person about several things at once (`notify.issued_many`)."""
     asset = _lock(asset)
     _check_day(asset.company, on, name=_("The day"))
     _live(asset)
@@ -861,7 +898,16 @@ def issue(
         )
     if condition and condition not in Asset.Condition.values:
         raise DomainError(_("Pick a condition from the list."))
-    assignment = _open_assignment(asset, membership, by=by, on=on, condition=condition, note=note)
+    assignment = _open_assignment(
+        asset,
+        membership,
+        by=by,
+        on=on,
+        condition=condition,
+        note=note,
+        photo=photo,
+        notify=notify,
+    )
     asset.custodian = membership
     if condition:
         asset.condition = condition
@@ -887,7 +933,10 @@ def acknowledge(assignment: AssetAssignment, *, by: Membership) -> AssetAssignme
 
 
 @transaction.atomic
-def take_back(asset: Asset, *, by: Membership, on: date, condition="", note="") -> AssetAssignment:
+def take_back(
+    asset: Asset, *, by: Membership, on: date, condition="", note="", photo=None
+) -> AssetAssignment:
+    """It comes back, in `condition` (`photo`: how it looked, `handout_photo`)."""
     asset = _lock(asset)
     _check_day(asset.company, on, name=_("The day"))
     assignment = asset.assignments.select_for_update().filter(returned_on__isnull=True).first()
@@ -902,6 +951,7 @@ def take_back(asset: Asset, *, by: Membership, on: date, condition="", note="") 
     assignment.note_in = note[:300]
     assignment.received_by = _user(by)
     assignment.save()
+    _save_photo(assignment, "photo_in", photo)
     asset.custodian = None
     if condition:
         asset.condition = condition
@@ -916,6 +966,25 @@ def take_back(asset: Asset, *, by: Membership, on: date, condition="", note="") 
     )
     _audit(AssetAction.RETURNED, asset.company, by, asset, by_whom=str(assignment.membership))
     _bump(asset.company)
+    return assignment
+
+
+@transaction.atomic
+def link_deduction(assignment: AssetAssignment, *, by: Membership, deduction_id: int):
+    """Remember the deduction proposed to payroll for what was lost or damaged on this
+    hand-out (a payroll Adjustment's id; payroll decides it)."""
+    assignment = AssetAssignment.objects.select_for_update().get(pk=assignment.pk)
+    assignment.deduction_id = deduction_id
+    assignment.save(update_fields=["deduction_id", "updated_at"])
+    _audit(
+        AssetAction.EVENT,
+        assignment.company,
+        by,
+        assignment.asset,
+        kind="deduction",
+        person=str(assignment.membership),
+    )
+    _bump(assignment.company)
     return assignment
 
 

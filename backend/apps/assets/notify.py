@@ -9,6 +9,7 @@ coming up or overdue. Once per asset, date and step: `dedupe_key` holds all thre
 from datetime import date
 
 from django.utils.translation import gettext as _
+from django.utils.translation import ngettext
 
 from apps.assets.models import Asset, AssetAssignment, Permit
 from apps.inbox import services as inbox
@@ -70,6 +71,45 @@ def issued(assignment_id: int) -> None:
         app_screen=MINE_SCREEN,
         target=asset,
         dedupe_key=f"assets.issued:{assignment.pk}",
+    )
+
+
+def issued_many(assignment_ids: list[int]) -> None:
+    """Several things given to one person at once (a lab coat, a badge and a key): one notice
+    naming them all, instead of one each."""
+    rows = list(
+        AssetAssignment.objects.select_related(
+            "asset", "membership__user", "membership__company"
+        ).filter(pk__in=assignment_ids, returned_on__isnull=True)
+    )
+    if not rows:
+        return
+    if len(rows) == 1:
+        issued(rows[0].pk)
+        return
+    person = rows[0].membership
+    if person.status != Membership.Status.APPROVED or any(
+        row.membership_id != person.pk for row in rows
+    ):
+        return
+    names = ", ".join(f"{row.asset.number} {row.asset.name}" for row in rows[:6])
+    if len(rows) > 6:
+        names = f"{names}…"
+    inbox.notify(
+        [person],
+        ISSUED,
+        title=lambda member: (
+            ngettext(
+                "You were given %(count)d thing: %(things)s",
+                "You were given %(count)d things: %(things)s",
+                len(rows),
+            )
+            % {"count": len(rows), "things": names}
+        ),
+        body=lambda member: _("Check them and confirm in the app that you have them."),
+        app_screen=MINE_SCREEN,
+        target=rows[0].asset,
+        dedupe_key=f"assets.issued:{min(row.pk for row in rows)}:{len(rows)}",
     )
 
 
