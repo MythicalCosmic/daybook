@@ -3248,6 +3248,7 @@ export interface components {
             note: string;
             /** Format: date-time */
             acknowledged_at: string | null;
+            /** @description The photo taken when it was given to them, else a photo of the asset. */
             photo_url: string | null;
         };
         AttendanceBranchRef: {

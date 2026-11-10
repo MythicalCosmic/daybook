@@ -19180,6 +19180,254 @@ paths:
               schema:
                 $ref: '#/components/schemas/LifecycleRecord'
           description: ''
+  /api/v1/owner/companies/{company_id}/lifecycle/equipment/:
+    get:
+      operationId: lifecycle_equipment_people
+      description: HR (the lifecycle) and the assets module both on.
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: One branch (in scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleEquipmentPeople'
+          description: ''
+  /api/v1/owner/companies/{company_id}/lifecycle/equipment/categories/:
+    get:
+      operationId: lifecycle_equipment_categories
+      description: HR (the lifecycle) and the assets module both on.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleEquipmentCategories'
+          description: ''
+    post:
+      operationId: lifecycle_equipment_category_add
+      description: HR (the lifecycle) and the assets module both on.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LifecycleEquipmentCategoryInputRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LifecycleEquipmentCategoryInputRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LifecycleEquipmentCategoryInputRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleEquipmentCategories'
+          description: ''
+  /api/v1/owner/companies/{company_id}/lifecycle/equipment/handouts/{id}/deduction/:
+    post:
+      operationId: lifecycle_equipment_deduction
+      description: HR (the lifecycle) and the assets module both on.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LifecycleEquipmentDeductionInputRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LifecycleEquipmentDeductionInputRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LifecycleEquipmentDeductionInputRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleEquipmentHolder'
+          description: ''
+  /api/v1/owner/companies/{company_id}/lifecycle/equipment/handouts/{id}/return/:
+    post:
+      operationId: lifecycle_equipment_return
+      description: HR (the lifecycle) and the assets module both on.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LifecycleEquipmentReturnInputRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LifecycleEquipmentReturnInputRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleEquipmentHolder'
+          description: ''
+  /api/v1/owner/companies/{company_id}/lifecycle/equipment/issue/:
+    post:
+      operationId: lifecycle_equipment_issue
+      description: HR (the lifecycle) and the assets module both on.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LifecycleEquipmentIssueInputRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LifecycleEquipmentIssueInputRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleEquipmentHolder'
+          description: ''
+  /api/v1/owner/companies/{company_id}/lifecycle/equipment/items/:
+    get:
+      operationId: lifecycle_equipment_items
+      description: HR (the lifecycle) and the assets module both on.
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: One branch (in scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - all
+          - out
+          - stock
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LifecycleEquipmentStock'
+          description: ''
+    post:
+      operationId: lifecycle_equipment_add
+      description: HR (the lifecycle) and the assets module both on.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LifecycleEquipmentAddInputRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LifecycleEquipmentAddInputRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LifecycleEquipmentAddInputRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleEquipmentAdded'
+          description: ''
   /api/v1/owner/companies/{company_id}/lifecycle/job-changes/:
     get:
       operationId: companies_lifecycle_job_changes_list
@@ -19492,6 +19740,28 @@ paths:
               schema:
                 $ref: '#/components/schemas/LifecycleCurrentJob'
           description: ''
+  /api/v1/owner/companies/{company_id}/lifecycle/org/:
+    get:
+      operationId: lifecycle_org_chart
+      description: 403 while HR (and with it the lifecycle) is switched off for the
+        company.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleOrgChart'
+          description: ''
   /api/v1/owner/companies/{company_id}/lifecycle/people/{member_id}/career/:
     get:
       operationId: companies_lifecycle_people_career_retrieve
@@ -19518,6 +19788,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/LifecycleCareer'
+          description: ''
+  /api/v1/owner/companies/{company_id}/lifecycle/people/{member_id}/equipment/:
+    get:
+      operationId: lifecycle_equipment_person
+      description: 'Person 360''s Equipment tab: what they hold, and what they were
+        given before.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: member_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleEquipmentPersonPage'
           description: ''
   /api/v1/owner/companies/{company_id}/lifecycle/suspensions/:
     get:
@@ -55583,6 +55880,628 @@ components:
       - pay
       - position
       - role
+    LifecycleEquipmentAddInputRequest:
+      type: object
+      properties:
+        category_id:
+          type: integer
+        name:
+          type: string
+          minLength: 1
+          maxLength: 110
+        quantity:
+          type: integer
+          maximum: 100
+          minimum: 1
+          default: 1
+        branch_id:
+          type: integer
+          nullable: true
+        note:
+          type: string
+          maxLength: 500
+        cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        serial:
+          type: string
+          maxLength: 64
+        model:
+          type: string
+          maxLength: 80
+      required:
+      - category_id
+      - name
+    LifecycleEquipmentAdded:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleEquipmentStock'
+      required:
+      - items
+    LifecycleEquipmentCan:
+      type: object
+      properties:
+        values:
+          type: boolean
+          description: Sees what things cost.
+        devices:
+          type: boolean
+          description: Adds and writes off devices (assets.manage).
+        deduct:
+          type: boolean
+          description: 'Payroll is on: deductions can be proposed.'
+        pay:
+          type: boolean
+          description: Sees a deduction's amount (payroll.view).
+        register:
+          type: boolean
+          description: Opens the asset register.
+      required:
+      - deduct
+      - devices
+      - pay
+      - register
+      - values
+    LifecycleEquipmentCategories:
+      type: object
+      properties:
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleEquipmentCategory'
+        suggestions:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleEquipmentSuggestion'
+      required:
+      - categories
+      - suggestions
+    LifecycleEquipmentCategory:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        icon:
+          type: string
+          description: A lucide icon name.
+        kind:
+          type: string
+          description: fixed, intangible or low_value.
+        stock:
+          type: integer
+        out:
+          type: integer
+        may_add:
+          type: boolean
+      required:
+      - icon
+      - id
+      - kind
+      - may_add
+      - name
+      - out
+      - stock
+    LifecycleEquipmentCategoryInputRequest:
+      type: object
+      properties:
+        suggestion:
+          type: string
+        name:
+          type: string
+          maxLength: 100
+        kind:
+          type: string
+          minLength: 1
+          default: low_value
+          description: low_value (uniforms, keys) or fixed (a device).
+        icon:
+          type: string
+          maxLength: 40
+    LifecycleEquipmentCategoryRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        icon:
+          type: string
+          description: A lucide icon name.
+        kind:
+          type: string
+          description: fixed, intangible or low_value.
+      required:
+      - icon
+      - id
+      - kind
+      - name
+    LifecycleEquipmentDeduction:
+      type: object
+      properties:
+        id:
+          type: integer
+        amount:
+          type: string
+          nullable: true
+          description: Only with payroll.view.
+        currency:
+          type: string
+        status:
+          type: string
+          description: The adjustment's status in payroll.
+      required:
+      - amount
+      - currency
+      - id
+      - status
+    LifecycleEquipmentDeductionInputRequest:
+      type: object
+      properties:
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        reason:
+          type: string
+          maxLength: 300
+      required:
+      - amount
+    LifecycleEquipmentHistory:
+      type: object
+      description: 'Something a person holds: the hand-out and its asset.'
+      properties:
+        assignment_id:
+          type: integer
+        asset_id:
+          type: integer
+        number:
+          type: string
+        name:
+          type: string
+        model:
+          type: string
+        serial:
+          type: string
+        notes:
+          type: string
+          description: A size, for a uniform.
+        category:
+          $ref: '#/components/schemas/LifecycleEquipmentCategoryRef'
+        branch:
+          allOf:
+          - $ref: '#/components/schemas/HrBranchRef'
+          nullable: true
+        issued_on:
+          type: string
+          format: date
+        condition_out:
+          type: string
+        note_out:
+          type: string
+        acknowledged_at:
+          type: string
+          format: date-time
+          nullable: true
+        photo_url:
+          type: string
+          nullable: true
+          description: The photo taken when given, else one of the asset.
+        value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+          description: What it cost (register readers).
+        deduction:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleEquipmentDeduction'
+          nullable: true
+        may_write_off:
+          type: boolean
+          description: A device needs assets.manage.
+        returned_on:
+          type: string
+          format: date
+          nullable: true
+        condition_in:
+          type: string
+        note_in:
+          type: string
+        photo_in_url:
+          type: string
+          nullable: true
+        outcome:
+          type: string
+          description: held, returned, lost or written_off.
+      required:
+      - acknowledged_at
+      - asset_id
+      - assignment_id
+      - branch
+      - category
+      - condition_in
+      - condition_out
+      - deduction
+      - issued_on
+      - may_write_off
+      - model
+      - name
+      - note_in
+      - note_out
+      - notes
+      - number
+      - outcome
+      - photo_in_url
+      - photo_url
+      - returned_on
+      - serial
+      - value
+    LifecycleEquipmentHolder:
+      type: object
+      properties:
+        person:
+          $ref: '#/components/schemas/LifecycleEquipmentPerson'
+        leaving:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleEquipmentLeaving'
+          nullable: true
+        left_on:
+          type: string
+          format: date
+          nullable: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleEquipmentItem'
+        value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        unconfirmed:
+          type: integer
+        overdue:
+          type: integer
+          description: Items still held by someone who has left.
+        leaving_soon:
+          type: boolean
+          description: Leaves within two weeks, holding items.
+      required:
+      - items
+      - leaving
+      - leaving_soon
+      - left_on
+      - overdue
+      - person
+      - unconfirmed
+      - value
+    LifecycleEquipmentIssueInputRequest:
+      type: object
+      properties:
+        person_id:
+          type: integer
+        asset_ids:
+          type: array
+          items:
+            type: integer
+          maxItems: 30
+          minItems: 1
+        'on':
+          type: string
+          format: date
+          nullable: true
+        condition:
+          oneOf:
+          - $ref: '#/components/schemas/AssetsConditionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        note:
+          type: string
+          maxLength: 300
+        photo:
+          type: string
+          format: binary
+          nullable: true
+      required:
+      - asset_ids
+      - person_id
+    LifecycleEquipmentItem:
+      type: object
+      description: 'Something a person holds: the hand-out and its asset.'
+      properties:
+        assignment_id:
+          type: integer
+        asset_id:
+          type: integer
+        number:
+          type: string
+        name:
+          type: string
+        model:
+          type: string
+        serial:
+          type: string
+        notes:
+          type: string
+          description: A size, for a uniform.
+        category:
+          $ref: '#/components/schemas/LifecycleEquipmentCategoryRef'
+        branch:
+          allOf:
+          - $ref: '#/components/schemas/HrBranchRef'
+          nullable: true
+        issued_on:
+          type: string
+          format: date
+        condition_out:
+          type: string
+        note_out:
+          type: string
+        acknowledged_at:
+          type: string
+          format: date-time
+          nullable: true
+        photo_url:
+          type: string
+          nullable: true
+          description: The photo taken when given, else one of the asset.
+        value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+          description: What it cost (register readers).
+        deduction:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleEquipmentDeduction'
+          nullable: true
+        may_write_off:
+          type: boolean
+          description: A device needs assets.manage.
+      required:
+      - acknowledged_at
+      - asset_id
+      - assignment_id
+      - branch
+      - category
+      - condition_out
+      - deduction
+      - issued_on
+      - may_write_off
+      - model
+      - name
+      - note_out
+      - notes
+      - number
+      - photo_url
+      - serial
+      - value
+    LifecycleEquipmentLeaving:
+      type: object
+      properties:
+        id:
+          type: integer
+        status:
+          type: string
+          description: requested or agreed.
+        day:
+          type: string
+          format: date
+          nullable: true
+      required:
+      - day
+      - id
+      - status
+    LifecycleEquipmentPeople:
+      type: object
+      properties:
+        today:
+          type: string
+          format: date
+        people:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleEquipmentHolder'
+        totals:
+          $ref: '#/components/schemas/LifecycleEquipmentTotals'
+        can:
+          $ref: '#/components/schemas/LifecycleEquipmentCan'
+      required:
+      - can
+      - people
+      - today
+      - totals
+    LifecycleEquipmentPerson:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        photo_url:
+          type: string
+          nullable: true
+        position:
+          type: string
+          nullable: true
+        home_branch:
+          allOf:
+          - $ref: '#/components/schemas/HrBranchRef'
+          nullable: true
+        status:
+          type: string
+          description: approved, suspended, left or blocked.
+      required:
+      - home_branch
+      - id
+      - name
+      - photo_url
+      - position
+      - status
+    LifecycleEquipmentPersonPage:
+      type: object
+      properties:
+        today:
+          type: string
+          format: date
+        holder:
+          $ref: '#/components/schemas/LifecycleEquipmentHolder'
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleEquipmentHistory'
+        can:
+          $ref: '#/components/schemas/LifecycleEquipmentCan'
+      required:
+      - can
+      - history
+      - holder
+      - today
+    LifecycleEquipmentReturnInputRequest:
+      type: object
+      properties:
+        outcome:
+          type: string
+          minLength: 1
+          default: returned
+          description: returned (came back) or lost.
+        'on':
+          type: string
+          format: date
+          nullable: true
+        condition:
+          oneOf:
+          - $ref: '#/components/schemas/AssetsConditionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        note:
+          type: string
+          maxLength: 300
+        photo:
+          type: string
+          format: binary
+          nullable: true
+        write_off:
+          type: boolean
+          default: false
+        deduction:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        reason:
+          type: string
+          maxLength: 300
+    LifecycleEquipmentStock:
+      type: object
+      properties:
+        id:
+          type: integer
+        number:
+          type: string
+        name:
+          type: string
+        model:
+          type: string
+        serial:
+          type: string
+        notes:
+          type: string
+        category:
+          $ref: '#/components/schemas/LifecycleEquipmentCategoryRef'
+        branch:
+          allOf:
+          - $ref: '#/components/schemas/HrBranchRef'
+          nullable: true
+        status:
+          type: string
+          description: in_use, in_storage, repair or suspended.
+        condition:
+          type: string
+        value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        holder:
+          allOf:
+          - $ref: '#/components/schemas/HrPersonRef'
+          nullable: true
+        issued_on:
+          type: string
+          format: date
+          nullable: true
+        acknowledged_at:
+          type: string
+          format: date-time
+          nullable: true
+        photo_url:
+          type: string
+          nullable: true
+      required:
+      - acknowledged_at
+      - branch
+      - category
+      - condition
+      - holder
+      - id
+      - issued_on
+      - model
+      - name
+      - notes
+      - number
+      - photo_url
+      - serial
+      - status
+      - value
+    LifecycleEquipmentSuggestion:
+      type: object
+      properties:
+        key:
+          type: string
+        name:
+          type: string
+        kind:
+          type: string
+        icon:
+          type: string
+      required:
+      - icon
+      - key
+      - kind
+      - name
+    LifecycleEquipmentTotals:
+      type: object
+      properties:
+        people:
+          type: integer
+          description: People holding something.
+        items:
+          type: integer
+        unconfirmed:
+          type: integer
+        to_return:
+          type: integer
+          description: Held by people who leave or have left.
+        value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        in_stock:
+          type: integer
+      required:
+      - in_stock
+      - items
+      - people
+      - to_return
+      - unconfirmed
+      - value
     LifecycleExitInterview:
       type: object
       properties:
@@ -56519,6 +57438,308 @@ components:
       - id
       - parts
       - status
+    LifecycleOrgBranch:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        code:
+          type: string
+        manager:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleOrgRef'
+          nullable: true
+        headcount:
+          type: integer
+          description: People the branch view puts under it.
+      required:
+      - code
+      - headcount
+      - id
+      - manager
+      - name
+    LifecycleOrgCan:
+      type: object
+      properties:
+        move:
+          type: boolean
+          description: Proposes job changes (hr.manage).
+        decide:
+          type: boolean
+          description: May approve a move in the same step.
+        hiring:
+          type: boolean
+          description: Opens vacancies (hr.hiring).
+        structure:
+          type: boolean
+          description: Edits the departments.
+      required:
+      - decide
+      - hiring
+      - move
+      - structure
+    LifecycleOrgChange:
+      type: object
+      properties:
+        id:
+          type: integer
+        status:
+          type: string
+          description: proposed or approved.
+        effective_on:
+          type: string
+          format: date
+        parts:
+          type: array
+          items:
+            type: string
+      required:
+      - effective_on
+      - id
+      - parts
+      - status
+    LifecycleOrgChart:
+      type: object
+      properties:
+        today:
+          type: string
+          format: date
+        company:
+          $ref: '#/components/schemas/LifecycleOrgCompany'
+        owners:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleOrgRef'
+        departments:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleOrgDepartment'
+          description: Parents before children.
+        branches:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleOrgBranch'
+        positions:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleOrgPosition'
+        people:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleOrgPerson'
+        vacancies:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleOrgVacancy'
+        can:
+          $ref: '#/components/schemas/LifecycleOrgCan'
+      required:
+      - branches
+      - can
+      - company
+      - departments
+      - owners
+      - people
+      - positions
+      - today
+      - vacancies
+    LifecycleOrgCompany:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
+    LifecycleOrgDepartment:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        parent_id:
+          type: integer
+          nullable: true
+        depth:
+          type: integer
+          description: 1 at the top.
+        head:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleOrgRef'
+          nullable: true
+        headcount:
+          type: integer
+          description: People the viewer sees directly in it.
+        total:
+          type: integer
+          description: With every department below it.
+      required:
+      - depth
+      - head
+      - headcount
+      - id
+      - name
+      - parent_id
+      - total
+    LifecycleOrgLeaving:
+      type: object
+      properties:
+        id:
+          type: integer
+        status:
+          type: string
+          description: requested or agreed.
+        day:
+          type: string
+          format: date
+          nullable: true
+          description: The agreed last day, else the asked.
+      required:
+      - day
+      - id
+      - status
+    LifecycleOrgPerson:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        photo_url:
+          type: string
+          nullable: true
+        position_id:
+          type: integer
+          nullable: true
+        department_id:
+          type: integer
+          nullable: true
+        home_branch_id:
+          type: integer
+          nullable: true
+        branch_id:
+          type: integer
+          nullable: true
+          description: Where the branch view puts them (their home branch if shown).
+        manager_id:
+          type: integer
+          nullable: true
+          description: Their nearest head.
+        is_owner:
+          type: boolean
+        status:
+          type: string
+          description: approved or suspended.
+        suspended_until:
+          type: string
+          format: date
+          nullable: true
+        on_leave_until:
+          type: string
+          format: date
+          nullable: true
+        leaving:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleOrgLeaving'
+          nullable: true
+        change:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleOrgChange'
+          nullable: true
+          description: The next job change waiting.
+        may_move:
+          type: boolean
+          description: The viewer may propose a job change.
+        why_not:
+          type: string
+          nullable: true
+          description: 'Why not: rights (no hr.manage), self, owner (only an owner
+            moves one).'
+      required:
+      - branch_id
+      - change
+      - department_id
+      - home_branch_id
+      - id
+      - is_owner
+      - leaving
+      - manager_id
+      - may_move
+      - name
+      - on_leave_until
+      - photo_url
+      - position_id
+      - status
+      - suspended_until
+      - why_not
+    LifecycleOrgPosition:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        order:
+          type: integer
+      required:
+      - id
+      - name
+      - order
+    LifecycleOrgRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        photo_url:
+          type: string
+          nullable: true
+        position:
+          type: string
+          nullable: true
+          description: The job title's name.
+      required:
+      - id
+      - name
+      - photo_url
+      - position
+    LifecycleOrgVacancy:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        position_id:
+          type: integer
+          nullable: true
+        branch_id:
+          type: integer
+          nullable: true
+        department_id:
+          type: integer
+          nullable: true
+          description: 'Where the department view puts it (None: at the top).'
+        applicants:
+          type: integer
+          description: Applicants still in the running.
+        new:
+          type: integer
+          description: Applicants nobody has looked at yet.
+      required:
+      - applicants
+      - branch_id
+      - department_id
+      - id
+      - new
+      - position_id
+      - title
     LifecycleRecord:
       type: object
       description: A disciplinary record as HR sees it.

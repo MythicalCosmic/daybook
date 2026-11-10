@@ -39,6 +39,25 @@
   report per partner.
 - The buffer is one setting: the cockpit's cash warning uses the same amount.
 
+### Org chart (People movement › Org chart)
+- The whole company as one tree: the owner on top, departments (or pharmacies, with a switch
+  between the two) with their heads and headcount, people under their manager by job title, and
+  open vacancies as dashed places that open their hiring board.
+- Search a person, fold parts, zoom, hover for their card, click for their page; print it or
+  save it as a PDF. On a phone it is an indented list.
+- Drag a person onto another department, pharmacy or manager (or use the keyboard, or
+  "Move…") and the job change dialog opens filled in: the move is a proposal that needs the
+  usual approval and applies on its day.
+
+### Equipment (People movement › Equipment)
+- Who holds what: lab coats, badges, keys, the cash-box key, phones and scanners, with what is
+  confirmed, what someone took when they left and who is leaving soon with things to return.
+- **Give**: several things at once, with a photo; the employee gets one message and confirms in
+  the app ("I have it"). **Take back**: the condition, a photo and a note; a damaged or lost item
+  can be written off and, if you choose, a deduction proposed to payroll.
+- "10 lab coats" becomes ten numbered items with their size. Leaving lists the person's items
+  with Came back, Lost or Deduct, and Person 360 has an Equipment tab.
+
 ### Ustoz: the tutor writes questions for your approval
 - The chat on Learning › Ustoz is a fixed window: the page never grows, messages scroll inside,
   the box to write in stays at the bottom, and a "new messages" button shows when you have

@@ -6949,6 +6949,8 @@ components:
         photo_url:
           type: string
           nullable: true
+          description: The photo taken when it was given to them, else a photo of
+            the asset.
       required:
       - acknowledged_at
       - asset_id
