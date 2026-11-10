@@ -100,7 +100,7 @@ const columns = computed<TableColumn<LeavingRow>[]>(() => {
     kind,
     { id: "last_day", header: t("lifecycle.leaving.lastDay"), width: 210, value: (row) => row.last_day ?? "" },
     { id: "handover", header: t("lifecycle.handover.title"), width: 190, value: (row) => row.handover.done },
-    { id: "notice", header: t("lifecycle.leaving.noticeLabel"), width: 130, numeric: true, value: (row) => row.notice_days ?? 0 },
+    { id: "notice", header: t("lifecycle.leaving.noticeLabel"), width: 184, numeric: true, value: (row) => row.notice_days ?? 0 },
   ];
 });
 
