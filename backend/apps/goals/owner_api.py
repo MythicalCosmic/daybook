@@ -106,6 +106,7 @@ class GoalsView(GoalsMixin, OwnerAPIView):
     @extend_schema(
         parameters=[OpenApiParameter("status", str, enum=list(TABS), description="active")],
         responses=s.GoalListSerializer,
+        operation_id="companies_goals_list",
     )
     def get(self, request, company_id):
         tab = request.query_params.get("status") or "active"

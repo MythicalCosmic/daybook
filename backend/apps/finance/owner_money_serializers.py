@@ -20,9 +20,7 @@ def money_out(**kwargs):
 
 class ReasonSerializer(serializers.Serializer):
     key = serializers.CharField()
-    kind = serializers.ChoiceField(
-        ["bill", "auto", "tax", "payable", "payroll", "loan", "installment"]
-    )
+    kind = serializers.CharField(help_text="bill, auto, tax, payable, payroll, loan or installment")
     title = serializers.CharField()
     subtitle = serializers.CharField(allow_blank=True)
     date = serializers.DateField()
@@ -70,7 +68,7 @@ class FlowAccountSerializer(serializers.Serializer):
 class FlowRowSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     occurred_on = serializers.DateField()
-    direction = serializers.ChoiceField(["in", "out"])
+    direction = serializers.CharField(help_text="in or out")
     amount = money_out()
     currency = serializers.CharField()
     base_amount = money_out()
@@ -353,7 +351,7 @@ class SuggestSerializer(serializers.Serializer):
     already = money_out()
     safe = money_out()
     amount = money_out()
-    limited_by = serializers.ChoiceField(["safe", "profit"])
+    limited_by = serializers.CharField(help_text="safe or profit")
     split = SplitRowSerializer(many=True)
 
 

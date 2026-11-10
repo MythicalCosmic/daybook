@@ -196,7 +196,17 @@ class OwnerMoneySettingsView(OwnerMoneyMixin, OwnerAPIView):
         )
 
 
-class PurchasesView(OwnerMoneyMixin, OwnerAPIView):
+class PurchaseMixin(OwnerMoneyMixin):
+    def _branch(self, pk) -> Branch | None:
+        if pk is None:
+            return None
+        found = Branch.objects.filter(company=self.company, pk=pk).first()
+        if found is None:
+            raise exceptions.ValidationError({"branch": [_("Pick a branch.")]})
+        return found
+
+
+class PurchasesView(PurchaseMixin, OwnerAPIView):
     """Plan a purchase the safe amount keeps money back for."""
 
     @extend_schema(request=s.PurchaseInputSerializer, responses={201: s.PurchaseSerializer})
@@ -217,16 +227,8 @@ class PurchasesView(OwnerMoneyMixin, OwnerAPIView):
         self.changed()
         return Response(s.PurchaseSerializer(row).data, status=status.HTTP_201_CREATED)
 
-    def _branch(self, pk) -> Branch | None:
-        if pk is None:
-            return None
-        found = Branch.objects.filter(company=self.company, pk=pk).first()
-        if found is None:
-            raise exceptions.ValidationError({"branch": [_("Pick a branch.")]})
-        return found
 
-
-class PurchaseView(PurchasesView):
+class PurchaseView(PurchaseMixin, OwnerAPIView):
     """Change a planned purchase, mark it bought (or dropped), or remove it."""
 
     def _row(self, pk) -> PlannedPurchase:
