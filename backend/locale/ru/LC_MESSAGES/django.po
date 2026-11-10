@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-11 01:51+0500\n"
+"POT-Creation-Date: 2026-11-11 02:27+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -2495,14 +2495,14 @@ msgstr "Когда автору сообщили, кто ещё не прочи�
 #: backend/apps/hr/policies/services.py backend/apps/knowledge/services.py
 #: backend/apps/learning/checks.py backend/apps/learning/courses.py
 #: backend/apps/learning/daily.py backend/apps/learning/lessons.py
-#: backend/apps/learning/quizzes.py
+#: backend/apps/learning/quizzes.py backend/apps/lifecycle/reviews.py
 msgid "Pick positions of this company."
 msgstr "Выберите должности этой компании."
 
 #: backend/apps/announcements/owner_api.py backend/apps/groups/services.py
 #: backend/apps/hr/policies/services.py backend/apps/learning/checks.py
-#: backend/apps/learning/courses.py backend/apps/members/owner_api.py
-#: backend/apps/members/services.py
+#: backend/apps/learning/courses.py backend/apps/lifecycle/reviews.py
+#: backend/apps/members/owner_api.py backend/apps/members/services.py
 msgid "Pick branches of this company."
 msgstr "Выберите филиалы этой компании."
 
@@ -2593,11 +2593,11 @@ msgstr "Срок действия должен заканчиваться пос
 #: backend/apps/hr/services.py backend/apps/inbox/services.py
 #: backend/apps/inventory/api.py backend/apps/inventory/notify.py
 #: backend/apps/knowledge/owner_api.py backend/apps/lifecycle/job_changes.py
-#: backend/apps/lifecycle/services.py backend/apps/lifecycle/terminations.py
-#: backend/apps/members/departments.py backend/apps/members/join_links.py
-#: backend/apps/members/services.py backend/apps/payroll/runs.py
-#: backend/apps/payroll/services.py backend/apps/sales/handlers.py
-#: backend/apps/timeoff/services.py
+#: backend/apps/lifecycle/reviews.py backend/apps/lifecycle/services.py
+#: backend/apps/lifecycle/terminations.py backend/apps/members/departments.py
+#: backend/apps/members/join_links.py backend/apps/members/services.py
+#: backend/apps/payroll/runs.py backend/apps/payroll/services.py
+#: backend/apps/sales/handlers.py backend/apps/timeoff/services.py
 #: employee_bot/bot/handlers/admin/approvals.py
 msgid "You don't have permission to do this."
 msgstr "У вас нет прав на это действие."
@@ -3259,6 +3259,7 @@ msgid "Pick a branch you work with."
 msgstr "Выберите филиал, с которым вы работаете."
 
 #: backend/apps/assets/owner_api.py backend/apps/learning/attempts.py
+#: backend/apps/lifecycle/review_owner_api.py
 msgid "Pick someone of this company."
 msgstr "Выберите сотрудника этой компании."
 
@@ -3434,7 +3435,7 @@ msgstr "Тип"
 #: backend/apps/assets/providers.py backend/apps/attendance/providers.py
 #: backend/apps/attendance/reports.py backend/apps/davomat/importing.py
 #: backend/apps/finance/exporters.py backend/apps/hr/policies/exporters.py
-#: backend/apps/payroll/providers.py
+#: backend/apps/lifecycle/review_hooks.py backend/apps/payroll/providers.py
 #: backend/apps/payroll/templates/payroll/payslip.html
 #: backend/apps/sales/hooks.py backend/apps/tasks/feeds.py
 #: backend/apps/tasks/hooks.py
@@ -4022,6 +4023,7 @@ msgstr "Учёт посещаемости в этой компании не вк
 #: backend/apps/attendance/api.py backend/apps/attendance/owner_api.py
 #: backend/apps/faceid/owner_api.py backend/apps/hr/owner_api.py
 #: backend/apps/lifecycle/owner_api.py
+#: backend/apps/lifecycle/review_owner_api.py backend/apps/lifecycle/reviews.py
 msgid "Give a day as YYYY-MM-DD."
 msgstr "Укажите день в формате YYYY-MM-DD."
 
@@ -4638,7 +4640,7 @@ msgstr "Ждёт ответа коллеги"
 
 #: backend/apps/attendance/models.py backend/apps/finance/models.py
 #: backend/apps/inventory/models.py backend/apps/lifecycle/models.py
-#: backend/apps/timeoff/models.py
+#: backend/apps/lifecycle/review_queries.py backend/apps/timeoff/models.py
 msgid "Waiting for approval"
 msgstr "Ждёт одобрения"
 
@@ -4647,10 +4649,11 @@ msgstr "Ждёт одобрения"
 #: backend/apps/inventory/providers.py
 #: backend/apps/inventory/templates/inventory/writeoff_act.html
 #: backend/apps/lifecycle/job_changes.py backend/apps/lifecycle/models.py
-#: backend/apps/lifecycle/providers.py backend/apps/members/models.py
-#: backend/apps/members/providers.py backend/apps/members/services.py
-#: backend/apps/signin/models.py backend/apps/timeoff/models.py
-#: backend/apps/timeoff/providers.py backend/apps/timeoff/services.py
+#: backend/apps/lifecycle/providers.py backend/apps/lifecycle/review_queries.py
+#: backend/apps/members/models.py backend/apps/members/providers.py
+#: backend/apps/members/services.py backend/apps/signin/models.py
+#: backend/apps/timeoff/models.py backend/apps/timeoff/providers.py
+#: backend/apps/timeoff/services.py
 #: employee_bot/bot/handlers/admin/approvals.py
 msgid "Approved"
 msgstr "Одобрено"
@@ -5075,8 +5078,8 @@ msgstr "Дата"
 
 #: backend/apps/attendance/providers.py backend/apps/attendance/reports.py
 #: backend/apps/attendance/t13.py backend/apps/davomat/importing.py
-#: backend/apps/hr/policies/exporters.py backend/apps/members/providers.py
-#: backend/apps/payroll/providers.py
+#: backend/apps/hr/policies/exporters.py backend/apps/lifecycle/review_hooks.py
+#: backend/apps/members/providers.py backend/apps/payroll/providers.py
 #: backend/apps/payroll/templates/payroll/payslip.html
 #: backend/apps/recognition/providers.py backend/apps/reports/hooks.py
 #: backend/apps/tasks/hooks.py backend/apps/timeoff/providers.py
@@ -7343,7 +7346,7 @@ msgctxt "davomat role"
 msgid "Viewer"
 msgstr "Наблюдатель"
 
-#: backend/apps/davomat/services.py
+#: backend/apps/davomat/services.py backend/apps/lifecycle/review_hooks.py
 #: backend/apps/payroll/templates/payroll/payslip.html
 msgid "Employee"
 msgstr "Сотрудник"
@@ -8774,8 +8777,8 @@ msgid "A day like 2026-10-20."
 msgstr "Дата в формате 2026-10-20."
 
 #: backend/apps/finance/filters.py backend/apps/finance/services.py
-#: backend/apps/lifecycle/job_changes.py backend/apps/payroll/runs.py
-#: backend/apps/payroll/services.py
+#: backend/apps/lifecycle/job_changes.py backend/apps/lifecycle/reviews.py
+#: backend/apps/payroll/runs.py backend/apps/payroll/services.py
 msgid "Enter an amount of money."
 msgstr "Введите сумму."
 
@@ -9915,6 +9918,7 @@ msgid "An automatic payment needs a fixed amount."
 msgstr "Для автоматического платежа нужна фиксированная сумма."
 
 #: backend/apps/finance/recurring.py backend/apps/lifecycle/job_changes.py
+#: backend/apps/lifecycle/reviews.py
 msgid "Pick the day it starts."
 msgstr "Выберите дату начала."
 
@@ -11799,6 +11803,7 @@ msgstr "Описание может быть не длиннее %(count)d си�
 
 #: backend/apps/hr/hiring/services.py backend/apps/hr/owner_api.py
 #: backend/apps/hr/services.py backend/apps/lifecycle/job_changes.py
+#: backend/apps/lifecycle/review_owner_api.py backend/apps/lifecycle/reviews.py
 #: backend/apps/members/join_links.py backend/apps/members/owner_api.py
 #: backend/apps/members/services.py
 msgid "Pick a position of this company."
@@ -12233,7 +12238,7 @@ msgid "QR code"
 msgstr "QR-код"
 
 #: backend/apps/hr/models.py backend/apps/inventory/models.py
-#: backend/apps/lifecycle/models.py
+#: backend/apps/lifecycle/models.py backend/apps/lifecycle/review_queries.py
 msgid "Applied"
 msgstr "Проведено"
 
@@ -16759,7 +16764,7 @@ msgstr ""
 msgid "The video couldn't be converted. Export it again as MP4."
 msgstr "Не удалось преобразовать видео. Экспортируйте его заново в MP4."
 
-#: backend/apps/learning/models.py
+#: backend/apps/learning/models.py backend/apps/lifecycle/review_hooks.py
 msgid "Published"
 msgstr "Опубликовано"
 
@@ -17722,6 +17727,54 @@ msgstr "Кадровое изменение вступило в силу"
 msgid "A job change couldn't take effect"
 msgstr "Кадровое изменение не вступило в силу"
 
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Created a review round"
+msgstr "Создан цикл оценки"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Changed a review round"
+msgstr "Цикл оценки изменён"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Opened a review round"
+msgstr "Открыта оценка"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Started the reviewers' part of a round"
+msgstr "Начат этап оценки руководителями"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Closed a review round"
+msgstr "Цикл оценки закрыт"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Deleted a review round draft"
+msgstr "Удалён черновик оценки"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Sent their self review"
+msgstr "Отправлена самооценка"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Changed who gives a review"
+msgstr "Сменён оценивающий"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Took someone out of a review round"
+msgstr "Сотрудник исключён из оценки"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Published a performance review"
+msgstr "Опубликована оценка сотрудника"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Read their performance review"
+msgstr "Сотрудник ознакомился с оценкой"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Marked a review goal"
+msgstr "Отмечена цель из оценки"
+
 #. Translators: %(category)s is what it is about, e.g. "Storage conditions
 #. breached".
 #: backend/apps/lifecycle/bot_messages.py
@@ -18146,7 +18199,7 @@ msgstr "Нельзя решать об изменении собственной
 msgid "Only people who work here can have their job changed."
 msgstr "Изменить должность можно только работающему сотруднику."
 
-#: backend/apps/lifecycle/job_changes.py
+#: backend/apps/lifecycle/job_changes.py backend/apps/lifecycle/reviews.py
 msgid "A change starts today or later."
 msgstr "Изменение начинается сегодня или позже."
 
@@ -18356,6 +18409,60 @@ msgstr "Открытые задачи"
 msgid "Documents"
 msgstr "Документы"
 
+#: backend/apps/lifecycle/models.py
+msgctxt "review round"
+msgid "Draft"
+msgstr "Черновик"
+
+#: backend/apps/lifecycle/models.py
+msgid "Self reviews"
+msgstr "Самооценка"
+
+#: backend/apps/lifecycle/models.py
+msgid "Manager reviews"
+msgstr "Оценка руководителей"
+
+#: backend/apps/lifecycle/models.py
+msgctxt "review round"
+msgid "Closed"
+msgstr "Закрыта"
+
+#: backend/apps/lifecycle/models.py
+msgctxt "review outcome"
+msgid "No change"
+msgstr "Без изменений"
+
+#: backend/apps/lifecycle/models.py
+msgid "Raise"
+msgstr "Повышение оклада"
+
+#: backend/apps/lifecycle/models.py backend/apps/lifecycle/review_hooks.py
+msgid "Bonus"
+msgstr "Премия"
+
+#: backend/apps/lifecycle/models.py
+msgid "Promotion"
+msgstr "Повышение в должности"
+
+#: backend/apps/lifecycle/models.py
+msgid "Improvement plan"
+msgstr "План улучшения"
+
+#: backend/apps/lifecycle/models.py
+msgctxt "review goal"
+msgid "In progress"
+msgstr "В работе"
+
+#: backend/apps/lifecycle/models.py
+msgctxt "review goal"
+msgid "Reached"
+msgstr "Достигнута"
+
+#: backend/apps/lifecycle/models.py
+msgctxt "review goal"
+msgid "Not reached"
+msgstr "Не достигнута"
+
 #: backend/apps/lifecycle/notify.py backend/apps/lifecycle/providers.py
 msgid "Agree"
 msgstr "Согласовать"
@@ -18405,6 +18512,467 @@ msgstr ""
 #: backend/apps/lifecycle/providers.py
 msgid "Offboarding them now closes it as left today."
 msgstr "Если уволить сейчас, увольнение закроется сегодняшним днём."
+
+#: backend/apps/lifecycle/review_ai.py backend/apps/lifecycle/reviews.py
+msgid "Only the person's reviewer writes this review."
+msgstr "Эту оценку заполняет только оценивающий сотрудника."
+
+#: backend/apps/lifecycle/review_ai.py
+msgid "You may not use AI in this company."
+msgstr "Вам нельзя пользоваться ИИ в этой компании."
+
+#: backend/apps/lifecycle/review_ai.py
+msgid "AI isn't available for this company right now. Write it yourself."
+msgstr "Сейчас ИИ для этой компании недоступен. Напишите комментарий сами."
+
+#: backend/apps/lifecycle/review_ai.py
+msgid "Answer a few questions first: the draft follows your answers."
+msgstr ""
+"Сначала ответьте на несколько вопросов: черновик опирается на ваши ответы."
+
+#: backend/apps/lifecycle/review_ai.py
+msgid ""
+"Claude couldn't write a draft just now. Try again, or write it yourself."
+msgstr ""
+"Claude сейчас не смог написать черновик. Попробуйте ещё раз или напишите "
+"сами."
+
+#: backend/apps/lifecycle/review_ai.py
+msgid "That's enough drafts for this review today. Write it yourself."
+msgstr ""
+"На сегодня черновиков для этой оценки достаточно. Напишите комментарий сами."
+
+#: backend/apps/lifecycle/review_ai.py
+msgid "Thank you for your work in this period."
+msgstr "Спасибо за вашу работу в этом периоде."
+
+#: backend/apps/lifecycle/review_ai.py
+#, python-format
+msgid "What went best in this period: %(topic)s."
+msgstr "Что лучше всего получилось в этом периоде: %(topic)s."
+
+#: backend/apps/lifecycle/review_ai.py
+#, python-format
+msgid "To work on next: %(topic)s."
+msgstr "Над чем поработать дальше: %(topic)s."
+
+#: backend/apps/lifecycle/review_hooks.py
+msgid "Your performance reviews"
+msgstr "Ваши оценки"
+
+#: backend/apps/lifecycle/review_hooks.py
+msgid "Performance reviews to write"
+msgstr "Оценки, которые нужно заполнить"
+
+#: backend/apps/lifecycle/review_hooks.py
+msgid "Performance review deadlines"
+msgstr "Сроки оценки сотрудников"
+
+#: backend/apps/lifecycle/review_hooks.py
+msgid "Performance reviews"
+msgstr "Оценка сотрудников"
+
+#: backend/apps/lifecycle/review_hooks.py
+msgid "Round"
+msgstr "Цикл оценки"
+
+#: backend/apps/lifecycle/review_hooks.py
+msgid "Reviewer"
+msgstr "Оценивающий"
+
+#: backend/apps/lifecycle/review_hooks.py
+msgid "Self review sent"
+msgstr "Самооценка отправлена"
+
+#: backend/apps/lifecycle/review_hooks.py
+msgid "Self rating (average)"
+msgstr "Самооценка (средняя)"
+
+#: backend/apps/lifecycle/review_hooks.py
+msgid "Reviewer's rating (average)"
+msgstr "Оценка руководителя (средняя)"
+
+#: backend/apps/lifecycle/review_hooks.py
+msgid "Overall rating"
+msgstr "Общая оценка"
+
+#: backend/apps/lifecycle/review_hooks.py
+msgid "Outcome"
+msgstr "Итог"
+
+#: backend/apps/lifecycle/review_hooks.py
+msgid "Raise (percent)"
+msgstr "Повышение (процент)"
+
+#: backend/apps/lifecycle/review_hooks.py
+msgid "Promoted to"
+msgstr "Новая должность"
+
+#: backend/apps/lifecycle/review_hooks.py
+msgid "From"
+msgstr "С даты"
+
+#: backend/apps/lifecycle/review_hooks.py
+msgid "Approval"
+msgstr "Согласование"
+
+#: backend/apps/lifecycle/review_hooks.py
+msgid "Read by the employee"
+msgstr "Сотрудник ознакомился"
+
+#. Translators: %(name)s is the review round's name, e.g. "2026, 4th quarter".
+#: backend/apps/lifecycle/review_notify.py
+#, python-format
+msgid "Performance review: %(name)s"
+msgstr "Оценка работы: %(name)s"
+
+#: backend/apps/lifecycle/review_notify.py
+#, python-format
+msgid ""
+"Please answer a few questions about your work. It takes about five minutes, "
+"and you can stop and go on later. Deadline: %(date)s."
+msgstr ""
+"Ответьте, пожалуйста, на несколько вопросов о своей работе. Это займёт около "
+"пяти минут, можно прерваться и продолжить позже. Срок: %(date)s."
+
+#: backend/apps/lifecycle/review_notify.py
+msgid "Reminder: your self review is waiting"
+msgstr "Напоминание: ждём вашу самооценку"
+
+#: backend/apps/lifecycle/review_notify.py
+#, python-format
+msgid ""
+"%(name)s: a few questions about your work are still waiting. Deadline: "
+"%(date)s."
+msgstr ""
+"%(name)s: несколько вопросов о вашей работе ещё ждут ответа. Срок: %(date)s."
+
+#: backend/apps/lifecycle/review_notify.py
+msgid "Your performance review is ready"
+msgstr "Ваша оценка готова"
+
+#: backend/apps/lifecycle/review_notify.py
+#, python-format
+msgid "%(name)s: your manager's answers and what follows are in the app."
+msgstr "%(name)s: ответы руководителя и итог — в приложении."
+
+#. Translators: %(name)s is the review round's name.
+#: backend/apps/lifecycle/review_notify.py
+#, python-format
+msgid "Reviews to write: %(name)s"
+msgstr "Оценки к заполнению: %(name)s"
+
+#: backend/apps/lifecycle/review_notify.py
+#, python-format
+msgid "%(count)s person waits for your review. Deadline: %(date)s."
+msgid_plural "%(count)s people wait for your review. Deadline: %(date)s."
+msgstr[0] "Вашей оценки ждёт %(count)s сотрудник. Срок: %(date)s."
+msgstr[1] "Вашей оценки ждут %(count)s сотрудника. Срок: %(date)s."
+msgstr[2] "Вашей оценки ждут %(count)s сотрудников. Срок: %(date)s."
+
+#: backend/apps/lifecycle/review_notify.py
+msgid "Reminder: reviews to publish"
+msgstr "Напоминание: оценки ждут публикации"
+
+#: backend/apps/lifecycle/review_notify.py
+#, python-format
+msgid "%(name)s: %(count)s review is still to publish. Deadline: %(date)s."
+msgid_plural ""
+"%(name)s: %(count)s reviews are still to publish. Deadline: %(date)s."
+msgstr[0] "%(name)s: ещё %(count)s оценка ждёт публикации. Срок: %(date)s."
+msgstr[1] "%(name)s: ещё %(count)s оценки ждут публикации. Срок: %(date)s."
+msgstr[2] "%(name)s: ещё %(count)s оценок ждут публикации. Срок: %(date)s."
+
+#. Translators: %(name)s is a review round's name; it stands after the colon.
+#: backend/apps/lifecycle/review_queries.py
+#, python-format
+msgid "Self reviews due: %(name)s"
+msgstr "Срок самооценки: %(name)s"
+
+#: backend/apps/lifecycle/review_queries.py
+#, python-format
+msgid "Reviewers' deadline: %(name)s"
+msgstr "Срок для руководителей: %(name)s"
+
+#: backend/apps/lifecycle/review_queries.py
+msgid "Not approved"
+msgstr "Не согласовано"
+
+#: backend/apps/lifecycle/reviews.py
+msgid ""
+"Dispensing and storage rules: prescriptions, expiry dates, the fridge and its"
+" log"
+msgstr ""
+"Правила отпуска и хранения: рецепты, сроки годности, холодильник и его журнал"
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Customer care: polite and patient, clear answers at the counter"
+msgstr "Работа с покупателями: вежливо, терпеливо, понятные ответы у прилавка"
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Cash discipline: the till balances and every sale gets its receipt"
+msgstr "Кассовая дисциплина: касса сходится, на каждую продажу пробит чек"
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Teamwork: helping colleagues and handing over the shift properly"
+msgstr "Работа в команде: помощь коллегам и аккуратная передача смены"
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Learning: new medicines, the courses and the rules"
+msgstr "Обучение: новые препараты, курсы и правила"
+
+#: backend/apps/lifecycle/reviews.py
+msgid "What went best in this period?"
+msgstr "Что в этом периоде получилось лучше всего?"
+
+#: backend/apps/lifecycle/reviews.py
+msgid "What should get better next, and what help would it take?"
+msgstr "Что стоит улучшить дальше и какая помощь для этого нужна?"
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Add the questions."
+msgstr "Добавьте вопросы."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "A round asks 3 to 10 questions."
+msgstr "В оценке от 3 до 10 вопросов."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "A question is a rating from 1 to 5 or a text answer."
+msgstr "Вопрос — это оценка от 1 до 5 или текстовый ответ."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Write every question."
+msgstr "Заполните текст каждого вопроса."
+
+#: backend/apps/lifecycle/reviews.py
+#, python-format
+msgid "Keep each question under %(limit)s characters."
+msgstr "Каждый вопрос — не длиннее %(limit)s символов."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Answer the questions."
+msgstr "Ответьте на вопросы."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "A rating is a whole number from 1 to 5."
+msgstr "Оценка — целое число от 1 до 5."
+
+#: backend/apps/lifecycle/reviews.py
+#, python-format
+msgid "Keep each answer under %(limit)s characters."
+msgstr "Каждый ответ — не длиннее %(limit)s символов."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Name the round."
+msgstr "Назовите цикл оценки."
+
+#: backend/apps/lifecycle/reviews.py
+#, python-format
+msgid "Keep the name under %(limit)s characters."
+msgstr "Название — не длиннее %(limit)s символов."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "The period has to end after it starts."
+msgstr "Период должен заканчиваться после начала."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Keep the period within a year."
+msgstr "Период — не больше года."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "The reviewers' deadline comes on or after the self-review deadline."
+msgstr "Срок для руководителей — не раньше срока самооценки."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "The self-review deadline has passed: pick a later day."
+msgstr "Срок самооценки уже прошёл: выберите более позднюю дату."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Pick a self-review deadline within three months."
+msgstr "Срок самооценки — в пределах трёх месяцев."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "You can only take in the branches you manage."
+msgstr "Можно включить только филиалы, которыми вы руководите."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "This review round is closed."
+msgstr "Эта оценка закрыта."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Only the name and the deadlines change once a round is open."
+msgstr "После открытия оценки меняются только название и сроки."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Pick a reviewers' deadline from today on."
+msgstr "Срок для руководителей — сегодня или позже."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Only a draft round can be deleted; close an open one instead."
+msgstr "Удалить можно только черновик; открытую оценку закройте."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "This round is already open."
+msgstr "Эта оценка уже открыта."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Nobody is in this round: pick other positions or branches."
+msgstr "В эту оценку никто не попал: выберите другие должности или филиалы."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Only a round in its self-review part can move on."
+msgstr "Перейти дальше можно только с этапа самооценки."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Only an open round can be closed."
+msgstr "Закрыть можно только открытую оценку."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Only an open round sends reminders."
+msgstr "Напоминания отправляются только в открытой оценке."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Nobody is behind: there is nobody to remind."
+msgstr "Никто не отстаёт: напоминать некому."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Your access is paused, so this can't change now."
+msgstr "Ваш доступ приостановлен, поэтому сейчас это изменить нельзя."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Your review is already published."
+msgstr "Ваша оценка уже опубликована."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "You have already sent your answers."
+msgstr "Вы уже отправили ответы."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Give every rating before you send."
+msgstr "Перед отправкой поставьте оценку каждому вопросу."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Your review isn't published yet."
+msgstr "Ваша оценка ещё не опубликована."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "This review is published, so it can't change."
+msgstr "Эта оценка опубликована, её нельзя изменить."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Your part opens once the self reviews are in."
+msgstr "Ваша часть откроется, когда сотрудники отправят самооценку."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Give the raise as a percentage."
+msgstr "Укажите повышение в процентах."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "A raise is from 0.5 to 50 percent."
+msgstr "Повышение — от 0,5 до 50 процентов."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Add the goals."
+msgstr "Добавьте цели."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "An improvement plan has at most three goals."
+msgstr "В плане улучшения не больше трёх целей."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Keep each goal under 200 characters."
+msgstr "Каждая цель — не длиннее 200 символов."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "A goal's target is a number."
+msgstr "Целевое значение должно быть числом."
+
+#: backend/apps/lifecycle/reviews.py
+#, python-format
+msgid "Keep the summary under %(limit)s characters."
+msgstr "Итоговый комментарий — не длиннее %(limit)s символов."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Pick what follows from the review."
+msgstr "Выберите итог оценки."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Only people who may propose pay can give a raise or a bonus."
+msgstr ""
+"Повышение или премию может предложить только тот, у кого есть право "
+"предлагать выплаты."
+
+#: backend/apps/lifecycle/reviews.py
+#, python-format
+msgid ""
+"%(name)s has no pay set in Payroll, so a raise can't be counted: set their "
+"pay first, or give a bonus."
+msgstr ""
+"В разделе «Зарплата» у сотрудника не задан оклад (%(name)s), поэтому "
+"повышение не рассчитать: сначала задайте оклад или назначьте премию."
+
+#: backend/apps/lifecycle/reviews.py
+#, python-format
+msgid "Performance review «%(name)s»: rated %(rating)s of 5."
+msgstr "Оценка «%(name)s»: %(rating)s из 5."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Pick the position they are promoted to."
+msgstr "Выберите должность, на которую повышают."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "They already hold this position: pick another one."
+msgstr "Сотрудник уже занимает эту должность: выберите другую."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Enter the bonus."
+msgstr "Укажите сумму премии."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "An improvement plan needs one to three goals."
+msgstr "В плане улучшения должно быть от одной до трёх целей."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Name every goal."
+msgstr "Назовите каждую цель."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "A goal's day is today or later."
+msgstr "Срок цели — сегодня или позже."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Rate every question first."
+msgstr "Сначала оцените каждый вопрос."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Give the overall rating."
+msgstr "Поставьте общую оценку."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Pick someone who runs reviews."
+msgstr "Выберите того, кто проводит оценку."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Nobody reviews themselves."
+msgstr "Сотрудник не может оценивать сам себя."
+
+#: backend/apps/lifecycle/reviews.py
+#, python-format
+msgid "%(name)s doesn't see this person's branch."
+msgstr "%(name)s не видит филиал этого сотрудника."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Goals are marked once the review is published."
+msgstr "Цели отмечаются после публикации оценки."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Progress is a number."
+msgstr "Прогресс должен быть числом."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Pick how the goal went."
+msgstr "Выберите, как выполнена цель."
 
 #: backend/apps/lifecycle/services.py
 msgid "Only people who work here can be given a warning."

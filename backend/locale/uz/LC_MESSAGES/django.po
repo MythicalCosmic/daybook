@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-11 01:51+0500\n"
+"POT-Creation-Date: 2026-11-11 02:27+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -2436,14 +2436,14 @@ msgstr "Muallifga kim hali o‘qimagani aytilgan vaqt."
 #: backend/apps/hr/policies/services.py backend/apps/knowledge/services.py
 #: backend/apps/learning/checks.py backend/apps/learning/courses.py
 #: backend/apps/learning/daily.py backend/apps/learning/lessons.py
-#: backend/apps/learning/quizzes.py
+#: backend/apps/learning/quizzes.py backend/apps/lifecycle/reviews.py
 msgid "Pick positions of this company."
 msgstr "Shu kompaniyaning lavozimlarini tanlang."
 
 #: backend/apps/announcements/owner_api.py backend/apps/groups/services.py
 #: backend/apps/hr/policies/services.py backend/apps/learning/checks.py
-#: backend/apps/learning/courses.py backend/apps/members/owner_api.py
-#: backend/apps/members/services.py
+#: backend/apps/learning/courses.py backend/apps/lifecycle/reviews.py
+#: backend/apps/members/owner_api.py backend/apps/members/services.py
 msgid "Pick branches of this company."
 msgstr "Shu kompaniyaning filiallarini tanlang."
 
@@ -2533,11 +2533,11 @@ msgstr "E’lonning amal qilish muddati u yuborilgandan keyin tugashi kerak."
 #: backend/apps/hr/services.py backend/apps/inbox/services.py
 #: backend/apps/inventory/api.py backend/apps/inventory/notify.py
 #: backend/apps/knowledge/owner_api.py backend/apps/lifecycle/job_changes.py
-#: backend/apps/lifecycle/services.py backend/apps/lifecycle/terminations.py
-#: backend/apps/members/departments.py backend/apps/members/join_links.py
-#: backend/apps/members/services.py backend/apps/payroll/runs.py
-#: backend/apps/payroll/services.py backend/apps/sales/handlers.py
-#: backend/apps/timeoff/services.py
+#: backend/apps/lifecycle/reviews.py backend/apps/lifecycle/services.py
+#: backend/apps/lifecycle/terminations.py backend/apps/members/departments.py
+#: backend/apps/members/join_links.py backend/apps/members/services.py
+#: backend/apps/payroll/runs.py backend/apps/payroll/services.py
+#: backend/apps/sales/handlers.py backend/apps/timeoff/services.py
 #: employee_bot/bot/handlers/admin/approvals.py
 msgid "You don't have permission to do this."
 msgstr "Bunga ruxsatingiz yo‘q."
@@ -3202,6 +3202,7 @@ msgid "Pick a branch you work with."
 msgstr "O‘zingiz ishlaydigan filialni tanlang."
 
 #: backend/apps/assets/owner_api.py backend/apps/learning/attempts.py
+#: backend/apps/lifecycle/review_owner_api.py
 msgid "Pick someone of this company."
 msgstr "Shu kompaniya xodimini tanlang."
 
@@ -3375,7 +3376,7 @@ msgstr "Turi"
 #: backend/apps/assets/providers.py backend/apps/attendance/providers.py
 #: backend/apps/attendance/reports.py backend/apps/davomat/importing.py
 #: backend/apps/finance/exporters.py backend/apps/hr/policies/exporters.py
-#: backend/apps/payroll/providers.py
+#: backend/apps/lifecycle/review_hooks.py backend/apps/payroll/providers.py
 #: backend/apps/payroll/templates/payroll/payslip.html
 #: backend/apps/sales/hooks.py backend/apps/tasks/feeds.py
 #: backend/apps/tasks/hooks.py
@@ -3970,6 +3971,7 @@ msgstr "Bu kompaniyada davomat yoqilmagan."
 #: backend/apps/attendance/api.py backend/apps/attendance/owner_api.py
 #: backend/apps/faceid/owner_api.py backend/apps/hr/owner_api.py
 #: backend/apps/lifecycle/owner_api.py
+#: backend/apps/lifecycle/review_owner_api.py backend/apps/lifecycle/reviews.py
 msgid "Give a day as YYYY-MM-DD."
 msgstr "Kunni YYYY-MM-DD ko‘rinishida kiriting."
 
@@ -4596,7 +4598,7 @@ msgstr "Hamkasb javobi kutilmoqda"
 
 #: backend/apps/attendance/models.py backend/apps/finance/models.py
 #: backend/apps/inventory/models.py backend/apps/lifecycle/models.py
-#: backend/apps/timeoff/models.py
+#: backend/apps/lifecycle/review_queries.py backend/apps/timeoff/models.py
 msgid "Waiting for approval"
 msgstr "Tasdiq kutilmoqda"
 
@@ -4605,10 +4607,11 @@ msgstr "Tasdiq kutilmoqda"
 #: backend/apps/inventory/providers.py
 #: backend/apps/inventory/templates/inventory/writeoff_act.html
 #: backend/apps/lifecycle/job_changes.py backend/apps/lifecycle/models.py
-#: backend/apps/lifecycle/providers.py backend/apps/members/models.py
-#: backend/apps/members/providers.py backend/apps/members/services.py
-#: backend/apps/signin/models.py backend/apps/timeoff/models.py
-#: backend/apps/timeoff/providers.py backend/apps/timeoff/services.py
+#: backend/apps/lifecycle/providers.py backend/apps/lifecycle/review_queries.py
+#: backend/apps/members/models.py backend/apps/members/providers.py
+#: backend/apps/members/services.py backend/apps/signin/models.py
+#: backend/apps/timeoff/models.py backend/apps/timeoff/providers.py
+#: backend/apps/timeoff/services.py
 #: employee_bot/bot/handlers/admin/approvals.py
 msgid "Approved"
 msgstr "Tasdiqlangan"
@@ -5038,8 +5041,8 @@ msgstr "Sana"
 
 #: backend/apps/attendance/providers.py backend/apps/attendance/reports.py
 #: backend/apps/attendance/t13.py backend/apps/davomat/importing.py
-#: backend/apps/hr/policies/exporters.py backend/apps/members/providers.py
-#: backend/apps/payroll/providers.py
+#: backend/apps/hr/policies/exporters.py backend/apps/lifecycle/review_hooks.py
+#: backend/apps/members/providers.py backend/apps/payroll/providers.py
 #: backend/apps/payroll/templates/payroll/payslip.html
 #: backend/apps/recognition/providers.py backend/apps/reports/hooks.py
 #: backend/apps/tasks/hooks.py backend/apps/timeoff/providers.py
@@ -7313,7 +7316,7 @@ msgctxt "davomat role"
 msgid "Viewer"
 msgstr "Kuzatuvchi"
 
-#: backend/apps/davomat/services.py
+#: backend/apps/davomat/services.py backend/apps/lifecycle/review_hooks.py
 #: backend/apps/payroll/templates/payroll/payslip.html
 msgid "Employee"
 msgstr "Xodim"
@@ -8757,8 +8760,8 @@ msgid "A day like 2026-10-20."
 msgstr "2026-10-20 ko‘rinishidagi sana."
 
 #: backend/apps/finance/filters.py backend/apps/finance/services.py
-#: backend/apps/lifecycle/job_changes.py backend/apps/payroll/runs.py
-#: backend/apps/payroll/services.py
+#: backend/apps/lifecycle/job_changes.py backend/apps/lifecycle/reviews.py
+#: backend/apps/payroll/runs.py backend/apps/payroll/services.py
 msgid "Enter an amount of money."
 msgstr "Pul summasini kiriting."
 
@@ -9910,6 +9913,7 @@ msgid "An automatic payment needs a fixed amount."
 msgstr "Avtomatik to‘lov uchun aniq summa kerak."
 
 #: backend/apps/finance/recurring.py backend/apps/lifecycle/job_changes.py
+#: backend/apps/lifecycle/reviews.py
 msgid "Pick the day it starts."
 msgstr "Boshlanish kunini tanlang."
 
@@ -11798,6 +11802,7 @@ msgstr "Tavsif ko‘pi bilan %(count)d belgi bo‘lishi mumkin."
 
 #: backend/apps/hr/hiring/services.py backend/apps/hr/owner_api.py
 #: backend/apps/hr/services.py backend/apps/lifecycle/job_changes.py
+#: backend/apps/lifecycle/review_owner_api.py backend/apps/lifecycle/reviews.py
 #: backend/apps/members/join_links.py backend/apps/members/owner_api.py
 #: backend/apps/members/services.py
 msgid "Pick a position of this company."
@@ -12238,7 +12243,7 @@ msgid "QR code"
 msgstr "QR kod"
 
 #: backend/apps/hr/models.py backend/apps/inventory/models.py
-#: backend/apps/lifecycle/models.py
+#: backend/apps/lifecycle/models.py backend/apps/lifecycle/review_queries.py
 msgid "Applied"
 msgstr "Qo‘llangan"
 
@@ -16757,7 +16762,7 @@ msgid "The video couldn't be converted. Export it again as MP4."
 msgstr ""
 "Videoni o‘zgartirib bo‘lmadi. Uni qaytadan MP4 sifatida eksport qiling."
 
-#: backend/apps/learning/models.py
+#: backend/apps/learning/models.py backend/apps/lifecycle/review_hooks.py
 msgid "Published"
 msgstr "E’lon qilingan"
 
@@ -17683,6 +17688,54 @@ msgstr "Lavozim o‘zgarishi kuchga kirdi"
 msgid "A job change couldn't take effect"
 msgstr "Lavozim o‘zgarishi kuchga kira olmadi"
 
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Created a review round"
+msgstr "Baholash yaratdi"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Changed a review round"
+msgstr "Baholashni o‘zgartirdi"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Opened a review round"
+msgstr "Baholashni ochdi"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Started the reviewers' part of a round"
+msgstr "Baholovchilar bosqichini boshladi"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Closed a review round"
+msgstr "Baholashni yopdi"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Deleted a review round draft"
+msgstr "Baholash qoralamasini o‘chirdi"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Sent their self review"
+msgstr "O‘zini baholashni yubordi"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Changed who gives a review"
+msgstr "Baholovchini almashtirdi"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Took someone out of a review round"
+msgstr "Xodimni baholashdan chiqardi"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Published a performance review"
+msgstr "Baholashni e’lon qildi"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Read their performance review"
+msgstr "Baholash bilan tanishdi"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Marked a review goal"
+msgstr "Baholash maqsadini belgiladi"
+
 #. Translators: %(category)s is what it is about, e.g. "Storage conditions
 #. breached".
 #: backend/apps/lifecycle/bot_messages.py
@@ -18107,7 +18160,7 @@ msgstr "O‘z lavozimingiz o‘zgarishi bo‘yicha qaror qila olmaysiz."
 msgid "Only people who work here can have their job changed."
 msgstr "Lavozimni faqat shu yerda ishlayotganlar uchun o‘zgartirish mumkin."
 
-#: backend/apps/lifecycle/job_changes.py
+#: backend/apps/lifecycle/job_changes.py backend/apps/lifecycle/reviews.py
 msgid "A change starts today or later."
 msgstr "O‘zgarish bugundan yoki keyinroq boshlanadi."
 
@@ -18318,6 +18371,60 @@ msgstr "Ochiq vazifalar"
 msgid "Documents"
 msgstr "Hujjatlar"
 
+#: backend/apps/lifecycle/models.py
+msgctxt "review round"
+msgid "Draft"
+msgstr "Qoralama"
+
+#: backend/apps/lifecycle/models.py
+msgid "Self reviews"
+msgstr "O‘zini baholash"
+
+#: backend/apps/lifecycle/models.py
+msgid "Manager reviews"
+msgstr "Rahbar bahosi"
+
+#: backend/apps/lifecycle/models.py
+msgctxt "review round"
+msgid "Closed"
+msgstr "Yopilgan"
+
+#: backend/apps/lifecycle/models.py
+msgctxt "review outcome"
+msgid "No change"
+msgstr "O‘zgarishsiz"
+
+#: backend/apps/lifecycle/models.py
+msgid "Raise"
+msgstr "Oylik oshishi"
+
+#: backend/apps/lifecycle/models.py backend/apps/lifecycle/review_hooks.py
+msgid "Bonus"
+msgstr "Mukofot"
+
+#: backend/apps/lifecycle/models.py
+msgid "Promotion"
+msgstr "Lavozimga ko‘tarish"
+
+#: backend/apps/lifecycle/models.py
+msgid "Improvement plan"
+msgstr "Rivojlanish rejasi"
+
+#: backend/apps/lifecycle/models.py
+msgctxt "review goal"
+msgid "In progress"
+msgstr "Jarayonda"
+
+#: backend/apps/lifecycle/models.py
+msgctxt "review goal"
+msgid "Reached"
+msgstr "Erishildi"
+
+#: backend/apps/lifecycle/models.py
+msgctxt "review goal"
+msgid "Not reached"
+msgstr "Erishilmadi"
+
 #: backend/apps/lifecycle/notify.py backend/apps/lifecycle/providers.py
 msgid "Agree"
 msgstr "Kelishish"
@@ -18367,6 +18474,470 @@ msgstr ""
 #: backend/apps/lifecycle/providers.py
 msgid "Offboarding them now closes it as left today."
 msgstr "Hozir ishdan bo‘shatilsa, u bugun ketgan deb yopiladi."
+
+#: backend/apps/lifecycle/review_ai.py backend/apps/lifecycle/reviews.py
+msgid "Only the person's reviewer writes this review."
+msgstr "Bu baholashni faqat xodimning baholovchisi yozadi."
+
+#: backend/apps/lifecycle/review_ai.py
+msgid "You may not use AI in this company."
+msgstr "Sizga bu kompaniyada AI’dan foydalanish ruxsat etilmagan."
+
+#: backend/apps/lifecycle/review_ai.py
+msgid "AI isn't available for this company right now. Write it yourself."
+msgstr "Hozir bu kompaniya uchun AI ishlamayapti. Xulosani o‘zingiz yozing."
+
+#: backend/apps/lifecycle/review_ai.py
+msgid "Answer a few questions first: the draft follows your answers."
+msgstr ""
+"Avval bir nechta savolga javob bering: qoralama sizning javoblaringizga "
+"tayanadi."
+
+#: backend/apps/lifecycle/review_ai.py
+msgid ""
+"Claude couldn't write a draft just now. Try again, or write it yourself."
+msgstr ""
+"Claude hozir qoralama yoza olmadi. Qayta urinib ko‘ring yoki o‘zingiz yozing."
+
+#: backend/apps/lifecycle/review_ai.py
+msgid "That's enough drafts for this review today. Write it yourself."
+msgstr "Bugun bu baholash uchun qoralamalar yetarli. Xulosani o‘zingiz yozing."
+
+#: backend/apps/lifecycle/review_ai.py
+msgid "Thank you for your work in this period."
+msgstr "Shu davrdagi mehnatingiz uchun rahmat."
+
+#: backend/apps/lifecycle/review_ai.py
+#, python-format
+msgid "What went best in this period: %(topic)s."
+msgstr "Shu davrda eng yaxshi chiqqani: %(topic)s."
+
+#: backend/apps/lifecycle/review_ai.py
+#, python-format
+msgid "To work on next: %(topic)s."
+msgstr "Keyingi davrda e’tibor berish kerak: %(topic)s."
+
+#: backend/apps/lifecycle/review_hooks.py
+msgid "Your performance reviews"
+msgstr "Sizning baholashlaringiz"
+
+#: backend/apps/lifecycle/review_hooks.py
+msgid "Performance reviews to write"
+msgstr "Yozilishi kerak bo‘lgan baholashlar"
+
+#: backend/apps/lifecycle/review_hooks.py
+msgid "Performance review deadlines"
+msgstr "Baholash muddatlari"
+
+#: backend/apps/lifecycle/review_hooks.py
+msgid "Performance reviews"
+msgstr "Ish natijalarini baholash"
+
+#: backend/apps/lifecycle/review_hooks.py
+msgid "Round"
+msgstr "Baholash"
+
+#: backend/apps/lifecycle/review_hooks.py
+msgid "Reviewer"
+msgstr "Baholovchi"
+
+#: backend/apps/lifecycle/review_hooks.py
+msgid "Self review sent"
+msgstr "O‘zini baholash yuborilgan"
+
+#: backend/apps/lifecycle/review_hooks.py
+msgid "Self rating (average)"
+msgstr "O‘zini baholash (o‘rtacha)"
+
+#: backend/apps/lifecycle/review_hooks.py
+msgid "Reviewer's rating (average)"
+msgstr "Baholovchi bahosi (o‘rtacha)"
+
+#: backend/apps/lifecycle/review_hooks.py
+msgid "Overall rating"
+msgstr "Umumiy baho"
+
+#: backend/apps/lifecycle/review_hooks.py
+msgid "Outcome"
+msgstr "Natija"
+
+#: backend/apps/lifecycle/review_hooks.py
+msgid "Raise (percent)"
+msgstr "Oylik oshishi (foiz)"
+
+#: backend/apps/lifecycle/review_hooks.py
+msgid "Promoted to"
+msgstr "Yangi lavozim"
+
+#: backend/apps/lifecycle/review_hooks.py
+msgid "From"
+msgstr "Qachondan"
+
+#: backend/apps/lifecycle/review_hooks.py
+msgid "Approval"
+msgstr "Tasdiqlash"
+
+#: backend/apps/lifecycle/review_hooks.py
+msgid "Read by the employee"
+msgstr "Xodim tanishgan"
+
+#. Translators: %(name)s is the review round's name, e.g. "2026, 4th quarter".
+#: backend/apps/lifecycle/review_notify.py
+#, python-format
+msgid "Performance review: %(name)s"
+msgstr "Ish natijalarini baholash: %(name)s"
+
+#: backend/apps/lifecycle/review_notify.py
+#, python-format
+msgid ""
+"Please answer a few questions about your work. It takes about five minutes, "
+"and you can stop and go on later. Deadline: %(date)s."
+msgstr ""
+"Ishingiz haqida bir nechta savolga javob bering. Taxminan besh daqiqa ketadi,"
+" to‘xtab, keyin davom ettirishingiz mumkin. Muddat: %(date)s."
+
+#: backend/apps/lifecycle/review_notify.py
+msgid "Reminder: your self review is waiting"
+msgstr "Eslatma: o‘zingizni baholash kutilmoqda"
+
+#: backend/apps/lifecycle/review_notify.py
+#, python-format
+msgid ""
+"%(name)s: a few questions about your work are still waiting. Deadline: "
+"%(date)s."
+msgstr ""
+"%(name)s: ishingiz haqidagi bir nechta savol hali javob kutmoqda. Muddat: "
+"%(date)s."
+
+#: backend/apps/lifecycle/review_notify.py
+msgid "Your performance review is ready"
+msgstr "Baholash natijangiz tayyor"
+
+#: backend/apps/lifecycle/review_notify.py
+#, python-format
+msgid "%(name)s: your manager's answers and what follows are in the app."
+msgstr "%(name)s: rahbaringiz javoblari va natija ilovada."
+
+#. Translators: %(name)s is the review round's name.
+#: backend/apps/lifecycle/review_notify.py
+#, python-format
+msgid "Reviews to write: %(name)s"
+msgstr "Yozilishi kerak bo‘lgan baholashlar: %(name)s"
+
+#: backend/apps/lifecycle/review_notify.py
+#, python-format
+msgid "%(count)s person waits for your review. Deadline: %(date)s."
+msgid_plural "%(count)s people wait for your review. Deadline: %(date)s."
+msgstr[0] "Baholashingizni kutayotganlar: %(count)s kishi. Muddat: %(date)s."
+
+#: backend/apps/lifecycle/review_notify.py
+msgid "Reminder: reviews to publish"
+msgstr "Eslatma: e’lon qilinishi kerak bo‘lgan baholashlar"
+
+#: backend/apps/lifecycle/review_notify.py
+#, python-format
+msgid "%(name)s: %(count)s review is still to publish. Deadline: %(date)s."
+msgid_plural ""
+"%(name)s: %(count)s reviews are still to publish. Deadline: %(date)s."
+msgstr[0] ""
+"%(name)s: e’lon qilinmagan baholashlar: %(count)s ta. Muddat: %(date)s."
+
+#. Translators: %(name)s is a review round's name; it stands after the colon.
+#: backend/apps/lifecycle/review_queries.py
+#, python-format
+msgid "Self reviews due: %(name)s"
+msgstr "O‘zini baholash muddati: %(name)s"
+
+#: backend/apps/lifecycle/review_queries.py
+#, python-format
+msgid "Reviewers' deadline: %(name)s"
+msgstr "Baholovchilar muddati: %(name)s"
+
+#: backend/apps/lifecycle/review_queries.py
+msgid "Not approved"
+msgstr "Tasdiqlanmadi"
+
+#: backend/apps/lifecycle/reviews.py
+msgid ""
+"Dispensing and storage rules: prescriptions, expiry dates, the fridge and its"
+" log"
+msgstr ""
+"Dori berish va saqlash qoidalari: retseptlar, yaroqlilik muddati, muzlatgich "
+"va uning jurnali"
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Customer care: polite and patient, clear answers at the counter"
+msgstr ""
+"Xaridorlarga xizmat: xushmuomalalik, sabr, peshtaxtada tushunarli javoblar"
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Cash discipline: the till balances and every sale gets its receipt"
+msgstr "Kassa intizomi: kassa qoldig‘i to‘g‘ri, har bir savdoga chek beriladi"
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Teamwork: helping colleagues and handing over the shift properly"
+msgstr "Jamoada ishlash: hamkasblarga yordam va smenani to‘g‘ri topshirish"
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Learning: new medicines, the courses and the rules"
+msgstr "O‘rganish: yangi dorilar, kurslar va qoidalar"
+
+#: backend/apps/lifecycle/reviews.py
+msgid "What went best in this period?"
+msgstr "Bu davrda nima eng yaxshi chiqdi?"
+
+#: backend/apps/lifecycle/reviews.py
+msgid "What should get better next, and what help would it take?"
+msgstr ""
+"Keyingi davrda nimani yaxshilash kerak va buning uchun qanday yordam kerak?"
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Add the questions."
+msgstr "Savollarni qo‘shing."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "A round asks 3 to 10 questions."
+msgstr "Baholashda 3–10 ta savol bo‘ladi."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "A question is a rating from 1 to 5 or a text answer."
+msgstr "Savol — 1–5 ballik baho yoki matnli javob."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Write every question."
+msgstr "Har bir savolni yozing."
+
+#: backend/apps/lifecycle/reviews.py
+#, python-format
+msgid "Keep each question under %(limit)s characters."
+msgstr "Har bir savol ko‘pi bilan %(limit)s belgi bo‘lsin."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Answer the questions."
+msgstr "Savollarga javob bering."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "A rating is a whole number from 1 to 5."
+msgstr "Baho — 1–5 oralig‘idagi butun son."
+
+#: backend/apps/lifecycle/reviews.py
+#, python-format
+msgid "Keep each answer under %(limit)s characters."
+msgstr "Har bir javob ko‘pi bilan %(limit)s belgi bo‘lsin."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Name the round."
+msgstr "Baholashga nom bering."
+
+#: backend/apps/lifecycle/reviews.py
+#, python-format
+msgid "Keep the name under %(limit)s characters."
+msgstr "Nomi ko‘pi bilan %(limit)s belgi bo‘lsin."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "The period has to end after it starts."
+msgstr "Davr boshlanganidan keyin tugashi kerak."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Keep the period within a year."
+msgstr "Davr bir yildan oshmasin."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "The reviewers' deadline comes on or after the self-review deadline."
+msgstr "Baholovchilar muddati o‘zini baholash muddatidan oldin bo‘lmasin."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "The self-review deadline has passed: pick a later day."
+msgstr "O‘zini baholash muddati o‘tib ketgan: keyinroq kunni tanlang."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Pick a self-review deadline within three months."
+msgstr "O‘zini baholash muddatini uch oy ichida tanlang."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "You can only take in the branches you manage."
+msgstr "Faqat o‘zingiz boshqaradigan filiallarni qo‘sha olasiz."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "This review round is closed."
+msgstr "Bu baholash yopilgan."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Only the name and the deadlines change once a round is open."
+msgstr "Baholash ochilgandan keyin faqat nomi va muddatlari o‘zgaradi."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Pick a reviewers' deadline from today on."
+msgstr "Baholovchilar muddatini bugundan boshlab tanlang."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Only a draft round can be deleted; close an open one instead."
+msgstr "Faqat qoralama baholashni o‘chirish mumkin; ochilganini esa yoping."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "This round is already open."
+msgstr "Bu baholash allaqachon ochilgan."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Nobody is in this round: pick other positions or branches."
+msgstr ""
+"Bu baholashga hech kim tushmadi: boshqa lavozim yoki filiallarni tanlang."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Only a round in its self-review part can move on."
+msgstr "Keyingi bosqichga faqat o‘zini baholash bosqichidagi baholash o‘tadi."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Only an open round can be closed."
+msgstr "Faqat ochiq baholashni yopish mumkin."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Only an open round sends reminders."
+msgstr "Eslatmalar faqat ochiq baholashda yuboriladi."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Nobody is behind: there is nobody to remind."
+msgstr "Hech kim kechikmayapti: eslatadigan kishi yo‘q."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Your access is paused, so this can't change now."
+msgstr ""
+"Kirishingiz to‘xtatilgan, shuning uchun hozir buni o‘zgartirib bo‘lmaydi."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Your review is already published."
+msgstr "Baholashingiz allaqachon e’lon qilingan."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "You have already sent your answers."
+msgstr "Javoblaringizni allaqachon yuborgansiz."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Give every rating before you send."
+msgstr "Yuborishdan oldin har bir savolga baho qo‘ying."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Your review isn't published yet."
+msgstr "Baholashingiz hali e’lon qilinmagan."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "This review is published, so it can't change."
+msgstr "Bu baholash e’lon qilingan, uni o‘zgartirib bo‘lmaydi."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Your part opens once the self reviews are in."
+msgstr "Sizning qismingiz xodimlar o‘zini baholab bo‘lgach ochiladi."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Give the raise as a percentage."
+msgstr "Oylik oshishini foizda kiriting."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "A raise is from 0.5 to 50 percent."
+msgstr "Oylik oshishi 0,5–50 foiz oralig‘ida bo‘ladi."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Add the goals."
+msgstr "Maqsadlarni qo‘shing."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "An improvement plan has at most three goals."
+msgstr "Rivojlanish rejasida ko‘pi bilan uchta maqsad bo‘ladi."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Keep each goal under 200 characters."
+msgstr "Har bir maqsad ko‘pi bilan 200 belgi bo‘lsin."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "A goal's target is a number."
+msgstr "Maqsad ko‘rsatkichi son bo‘lishi kerak."
+
+#: backend/apps/lifecycle/reviews.py
+#, python-format
+msgid "Keep the summary under %(limit)s characters."
+msgstr "Xulosa ko‘pi bilan %(limit)s belgi bo‘lsin."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Pick what follows from the review."
+msgstr "Baholash natijasini tanlang."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Only people who may propose pay can give a raise or a bonus."
+msgstr ""
+"Oylik oshishi yoki mukofotni faqat maosh taklif qilish huquqi borlar bera "
+"oladi."
+
+#: backend/apps/lifecycle/reviews.py
+#, python-format
+msgid ""
+"%(name)s has no pay set in Payroll, so a raise can't be counted: set their "
+"pay first, or give a bonus."
+msgstr ""
+"Maoshlar bo‘limida xodimga maosh belgilanmagan (%(name)s), shuning uchun "
+"oylik oshishini hisoblab bo‘lmaydi: avval maoshni belgilang yoki mukofot "
+"bering."
+
+#: backend/apps/lifecycle/reviews.py
+#, python-format
+msgid "Performance review «%(name)s»: rated %(rating)s of 5."
+msgstr "«%(name)s» baholashi: 5 balldan %(rating)s ball."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Pick the position they are promoted to."
+msgstr "Qaysi lavozimga ko‘tarilishini tanlang."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "They already hold this position: pick another one."
+msgstr "Xodim allaqachon shu lavozimda: boshqasini tanlang."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Enter the bonus."
+msgstr "Mukofot miqdorini kiriting."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "An improvement plan needs one to three goals."
+msgstr "Rivojlanish rejasiga bittadan uchtagacha maqsad kerak."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Name every goal."
+msgstr "Har bir maqsadni nomlang."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "A goal's day is today or later."
+msgstr "Maqsad muddati bugun yoki undan keyin bo‘lishi kerak."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Rate every question first."
+msgstr "Avval har bir savolga baho qo‘ying."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Give the overall rating."
+msgstr "Umumiy bahoni qo‘ying."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Pick someone who runs reviews."
+msgstr "Baholash huquqi bor kishini tanlang."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Nobody reviews themselves."
+msgstr "Xodim o‘zini o‘zi baholovchi bo‘la olmaydi."
+
+#: backend/apps/lifecycle/reviews.py
+#, python-format
+msgid "%(name)s doesn't see this person's branch."
+msgstr "%(name)s bu xodimning filialini ko‘rmaydi."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Goals are marked once the review is published."
+msgstr "Maqsadlar baholash e’lon qilingandan keyin belgilanadi."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Progress is a number."
+msgstr "Bajarilish son bo‘lishi kerak."
+
+#: backend/apps/lifecycle/reviews.py
+msgid "Pick how the goal went."
+msgstr "Maqsad qanday bajarilganini tanlang."
 
 #: backend/apps/lifecycle/services.py
 msgid "Only people who work here can be given a warning."
@@ -20528,7 +21099,7 @@ msgstr "Bajarilgan vazifalar uchun vazifa narxlari ham to‘lanadi."
 #: backend/apps/payroll/models.py
 msgctxt "payroll"
 msgid "Bonus"
-msgstr "Bonus"
+msgstr "Mukofot"
 
 #: backend/apps/payroll/models.py
 msgctxt "payroll"
@@ -20775,7 +21346,7 @@ msgstr "Vazifa mukofoti"
 #: backend/apps/payroll/models.py
 msgctxt "payslip line"
 msgid "Bonus"
-msgstr "Bonus"
+msgstr "Mukofot"
 
 #: backend/apps/payroll/models.py
 msgctxt "payslip line"
