@@ -111,9 +111,27 @@ def seed(company, people, now) -> None:
                 note=f"O‘lcham {size}",
                 cost=Decimal("185000"),
             )
-        badges = services.add_items(
-            company, by=owner, category=cats["badge"], name="Beyj", quantity=18, cost="25000"
-        )
+        # Each pharmacy keeps its own badges (a branch head sees their stock).
+        badges = [
+            *services.add_items(
+                company,
+                by=owner,
+                category=cats["badge"],
+                name="Beyj",
+                quantity=10,
+                branch=first,
+                cost="25000",
+            ),
+            *services.add_items(
+                company,
+                by=owner,
+                category=cats["badge"],
+                name="Beyj",
+                quantity=8,
+                branch=second,
+                cost="25000",
+            ),
+        ]
         # The door keys stay in stock.
         services.add_items(
             company, by=owner, category=cats["key"], name="Eshik kaliti", quantity=3, branch=first
@@ -152,7 +170,9 @@ def seed(company, people, now) -> None:
     free_coats = {
         branch.pk: [c for c in coats if c.branch_id == branch.pk] for branch in (first, second)
     }
-    free_badges = list(badges)
+    free_badges = {
+        branch.pk: [b for b in badges if b.branch_id == branch.pk] for branch in (first, second)
+    }
 
     def give(key, pairs, *, days_ago, confirm=True, note=""):
         """Give `pairs` [(asset, picture kind)] to `key` `days_ago` (not before they joined),
@@ -183,20 +203,24 @@ def seed(company, people, now) -> None:
                     assets.acknowledge(assignment, by=person)
         return made
 
-    def coat_for(key):
+    def take(pools, key):
+        """The next free one at the person's pharmacy (else at the first)."""
         person = story.member(key)
-        pool = free_coats.get(person.home_branch_id if person else first.pk) or free_coats[first.pk]
+        pool = pools.get(person.home_branch_id if person else first.pk) or pools[first.pk]
         return pool.pop(0) if pool else None
 
-    def badge():
-        return free_badges.pop(0) if free_badges else None
+    def coat_for(key):
+        return take(free_coats, key)
+
+    def badge_for(key):
+        return take(free_badges, key)
 
     for key in COATS:
-        give(key, [(coat_for(key), "coat"), (badge(), "badge")], days_ago=90)
+        give(key, [(coat_for(key), "coat"), (badge_for(key), "badge")], days_ago=90)
     for key in COATS_RECENT:
-        give(key, [(coat_for(key), "coat"), (badge(), "badge")], days_ago=45)
+        give(key, [(coat_for(key), "coat"), (badge_for(key), "badge")], days_ago=45)
     for key in BADGE_ONLY:
-        give(key, [(badge(), "badge")], days_ago=80)
+        give(key, [(badge_for(key), "badge")], days_ago=80)
     give("manager", [(cash_keys[0], "key")], days_ago=200, note="Ikkinchi nusxasi seyfda")
     give("farrux", [(cash_keys[1], "key")], days_ago=200)
     give("otabek", [(phone, "device")], days_ago=60, note="Zaryadlovchi bilan")
@@ -247,7 +271,11 @@ def seed(company, people, now) -> None:
                 services.give_back(
                     assignment, by=owner, outcome=services.LOST, on=lost_on, note=note
                 )
-        give("dilshod", [(badge(), "badge")], days_ago=max(0, (story.today - lost_on).days - 1))
+        give(
+            "dilshod",
+            [(badge_for("dilshod"), "badge")],
+            days_ago=max(0, (story.today - lost_on).days - 1),
+        )
 
     # Kamola's coat, given yesterday: she hasn't confirmed it yet (the one item waiting).
     kamola = story.member("kamola")
@@ -264,4 +292,4 @@ def seed(company, people, now) -> None:
                 note="O‘lchami to‘g‘ri kelmasa, almashtiramiz",
                 photo=pictures["coat"],
             )
-    give("kamola", [(badge(), "badge")], days_ago=20)
+    give("kamola", [(badge_for("kamola"), "badge")], days_ago=20)
