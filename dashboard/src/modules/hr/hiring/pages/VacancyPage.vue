@@ -289,7 +289,7 @@ const menu = computed<MenuEntry[]>(() => {
             :sortable="false"
             :column-width="columnWidth"
             height="calc(100dvh - 330px)"
-            data-board
+            data-pipeline
             @move="onMove"
           >
             <template #card="{ item }">

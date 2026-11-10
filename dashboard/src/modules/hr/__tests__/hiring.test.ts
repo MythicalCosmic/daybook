@@ -314,6 +314,20 @@ describe("Vacancy page", () => {
     expect(wrapper.text()).toContain("47"); // the link's openings
   });
 
+  it("moves a card with the keyboard: screening goes at once, and the card keeps the focus", async () => {
+    const { wrapper, calls } = await mountVacancy({ ...board(), "hr/applicants/31/move/": detail({ stage: "screening" }) });
+    const card = () => wrapper.find('[data-card-key="31"]');
+    (card().element as HTMLElement).focus();
+    await card().trigger("keydown", { key: " " });
+    await card().trigger("keydown", { key: "ArrowRight" });
+    await flushPromises();
+    expect(wrapper.find('[data-column="screening"] [data-card-key="31"]').exists()).toBe(true);
+    expect(document.activeElement?.getAttribute("data-card-key")).toBe("31");
+    await card().trigger("keydown", { key: " " });
+    await flushPromises();
+    expect(calls.find((c) => c.url === "hr/applicants/31/move/")?.body).toEqual({ stage: "screening" });
+  });
+
   it("opens the applicant's panel with answers, the diploma photo and the history", async () => {
     const { wrapper } = await mountVacancy(board(), "?applicant=31");
     const panel = document.body.querySelector("[data-applicant-drawer]");
