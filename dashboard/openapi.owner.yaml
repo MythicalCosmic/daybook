@@ -6791,8 +6791,9 @@ paths:
   /api/v1/owner/companies/{company_id}/faceid/settings/:
     get:
       operationId: companies_faceid_settings_retrieve
-      description: 'Face ID''s settings: attendance, Telegram, groups, alerts, repeats,
-        snapshots.'
+      description: |-
+        Face ID's settings: attendance and how people use the terminal (`scan_mode`), Telegram,
+        groups, alerts, repeats, snapshots.
       parameters:
       - in: path
         name: company_id
@@ -6812,8 +6813,9 @@ paths:
           description: ''
     patch:
       operationId: companies_faceid_settings_partial_update
-      description: 'Face ID''s settings: attendance, Telegram, groups, alerts, repeats,
-        snapshots.'
+      description: |-
+        Face ID's settings: attendance and how people use the terminal (`scan_mode`), Telegram,
+        groups, alerts, repeats, snapshots.
       parameters:
       - in: path
         name: company_id
@@ -38497,6 +38499,14 @@ components:
           type: boolean
           description: A linked person's scan checks them in or out (when Attendance
             is on).
+        scan_mode:
+          allOf:
+          - $ref: '#/components/schemas/FaceidScanModeEnum'
+          description: |-
+            How people use a one-door terminal: only when they come, or both ways.
+
+            * `arrival` - People scan only when they come
+            * `both` - People scan when they come and when they leave
         telegram:
           allOf:
           - $ref: '#/components/schemas/FaceidTelegramEnum'
@@ -38728,6 +38738,14 @@ components:
         * `person` - Person
         * `stranger` - Unknown face
         * `other` - Other event
+    FaceidScanModeEnum:
+      enum:
+      - arrival
+      - both
+      type: string
+      description: |-
+        * `arrival` - People scan only when they come
+        * `both` - People scan when they come and when they leave
     FaceidTelegramEnum:
       enum:
       - 'off'
@@ -52724,6 +52742,14 @@ components:
           type: boolean
           description: A linked person's scan checks them in or out (when Attendance
             is on).
+        scan_mode:
+          allOf:
+          - $ref: '#/components/schemas/FaceidScanModeEnum'
+          description: |-
+            How people use a one-door terminal: only when they come, or both ways.
+
+            * `arrival` - People scan only when they come
+            * `both` - People scan when they come and when they leave
         telegram:
           allOf:
           - $ref: '#/components/schemas/FaceidTelegramEnum'

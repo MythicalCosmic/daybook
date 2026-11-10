@@ -13,6 +13,20 @@
   it). The helper is also `deploy/faceid/catchup.py`.
 - The terminal's address on the server now also says how far its old history has come.
 
+### Face ID: "Came" without guessing "Left"
+- With one terminal at one door, a scan doesn't say whether someone is coming or going, and most
+  people scan only when they come. **Face ID › Settings › How people use the terminal**:
+  - **Only when they come** (now the default, existing companies included): the day's first scan
+    is "Came", a later one is only "Seen" (kept with its photo), never "Left". The day closes by
+    itself at the shift's end, with no "you forgot to check out" messages. Lateness stays exact;
+    leaving time, early leave and overtime aren't recorded in this mode.
+  - **When they come and when they leave**: the first scan is "Came", the next "Left", as before.
+- **A new day is never a departure** in either mode: a check-in still open from yesterday no
+  longer turns this morning's scan into "Left" (someone in at 16:43 who scanned the next morning
+  was shown as leaving after 16 hours). A night shift's morning scan still checks out.
+- Entrance and exit terminals work as before. Davomat's example organization now scans only on
+  arrival too (`davomat_demo --scan-mode both` shows departures).
+
 ### Davomat
 - **A new mark**: a bold D with a check cut into it, on an indigo tile. It is in the tab, the sidebar,
   the sign-in page and the first paint. The files, and a picture for the organization's Telegram

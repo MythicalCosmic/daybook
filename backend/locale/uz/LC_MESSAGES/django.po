@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-10 02:25+0500\n"
+"POT-Creation-Date: 2026-11-10 09:02+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -6902,10 +6902,24 @@ msgid "Every scan"
 msgstr "Har bir skanerlash"
 
 #: backend/apps/faceid/models.py
+msgid "People scan only when they come"
+msgstr "Xodimlar faqat kelganda skanerlaydi"
+
+#: backend/apps/faceid/models.py
+msgid "People scan when they come and when they leave"
+msgstr "Xodimlar kelganda ham, ketganda ham skanerlaydi"
+
+#: backend/apps/faceid/models.py
 msgid "A linked person's scan checks them in or out (when Attendance is on)."
 msgstr ""
 "Biriktirilgan xodimning skanerlashi kelish yoki ketishni belgilaydi (Davomat "
 "yoqilgan bo‘lsa)."
+
+#: backend/apps/faceid/models.py
+msgid "How people use a one-door terminal: only when they come, or both ways."
+msgstr ""
+"Bitta eshikli terminaldan qanday foydalaniladi: faqat kelganda yoki kelganda "
+"ham, ketganda ham."
 
 #: backend/apps/faceid/models.py
 msgid "What managers who see the branch get in Telegram, with the snapshot."
