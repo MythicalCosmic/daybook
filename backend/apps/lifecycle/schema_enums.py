@@ -17,4 +17,14 @@ ENUM_NAME_OVERRIDES = {
     "LifecycleExitReasonEnum": "apps.lifecycle.terminations.EXIT_REASONS",
     "LifecycleRecommendEnum": "apps.lifecycle.terminations.RECOMMEND",
     "LifecycleJobChangeStatusEnum": "apps.lifecycle.models.JobChange.Status",
+    # Performance reviews.
+    "LifecycleReviewRoundStatusEnum": "apps.lifecycle.models.ReviewCycle.Status",
+    "LifecycleReviewOutcomeEnum": "apps.lifecycle.models.Review.Outcome",
+    "LifecycleReviewGoalStatusEnum": "apps.lifecycle.models.ReviewGoal.Status",
+    "LifecycleReviewQuestionKindEnum": "apps.lifecycle.reviews.KINDS",
+    "LifecycleReviewSelfStateEnum": "apps.lifecycle.review_serializers.SELF_STATES",
+    "LifecycleReviewManagerStateEnum": "apps.lifecycle.review_serializers.MANAGER_STATES",
+    "LifecycleReviewOutcomeStateEnum": "apps.lifecycle.review_serializers.OUTCOME_STATES",
+    "LifecycleReviewLatePartEnum": "apps.lifecycle.review_serializers.LATE_PARTS",
+    "LifecycleMyReviewStateEnum": "apps.lifecycle.review_serializers.MY_STATES",
 }

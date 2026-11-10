@@ -121,6 +121,20 @@ def owner(company, member):
         department=Department.objects.create(company=company, name="Kassa"),
         approve=True,
     )
+    # Reviews: an open round whose self reviews are due inside the week.
+    from apps.lifecycle import reviews
+
+    round_ = reviews.create_cycle(
+        company,
+        by=owner,
+        name="3-chorak",
+        period_start=today - timedelta(days=60),
+        period_end=today - timedelta(days=1),
+        self_due_on=today + timedelta(days=4),
+        manager_due_on=today + timedelta(days=9),
+        questions=reviews.template(),
+    )
+    reviews.open_cycle(round_, by=owner)
     return owner
 
 

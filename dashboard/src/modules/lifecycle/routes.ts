@@ -1,11 +1,9 @@
 /**
  * Routes of the people lifecycle, children of /c/:companyId (plan §13.4): discipline,
- * suspensions, the org chart, leaving (terminations), job changes and equipment; reviews are a
- * calm "coming soon" page until they are built. Every page loads lazily.
+ * suspensions, the org chart, leaving (terminations), job changes, equipment and reviews.
+ * Every page loads lazily.
  */
 import type { RouteRecordRaw } from "vue-router";
-
-const soon = () => import("./pages/ComingSoonPage.vue");
 
 export const routes: RouteRecordRaw[] = [
   {
@@ -44,5 +42,18 @@ export const routes: RouteRecordRaw[] = [
     component: () => import("./equipment/EquipmentPage.vue"),
     meta: { title: "lifecycle.nav.equipment", perm: ["assets.manage", "hr.manage"] },
   },
-  { path: "lifecycle/reviews", name: "lifecycle.reviews", component: soon, props: { page: "reviews" }, meta: { title: "lifecycle.nav.reviews", perm: "reviews.manage" } },
+  // Performance reviews: the rounds, a round, one person's review.
+  { path: "lifecycle/reviews", name: "lifecycle.reviews", component: () => import("./pages/ReviewsPage.vue"), meta: { title: "lifecycle.nav.reviews", perm: "reviews.manage" } },
+  {
+    path: "lifecycle/reviews/:roundId(\\d+)",
+    name: "lifecycle.review-round",
+    component: () => import("./pages/ReviewRoundPage.vue"),
+    meta: { title: "lifecycle.nav.reviews", perm: "reviews.manage" },
+  },
+  {
+    path: "lifecycle/reviews/:roundId(\\d+)/:reviewId(\\d+)",
+    name: "lifecycle.review",
+    component: () => import("./pages/ReviewPage.vue"),
+    meta: { title: "lifecycle.nav.reviews", perm: "reviews.manage" },
+  },
 ];

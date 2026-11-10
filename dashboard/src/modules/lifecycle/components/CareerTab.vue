@@ -5,7 +5,7 @@
  * that took effect (position, branch, department, pay: the pay for payroll.view) and the day they
  * joined. A change or a leaving opens in its own panel without leaving the page.
  */
-import { CalendarClock, CircleCheck, DoorOpen, LogOut, Plus, Shuffle, Sparkles, UserRoundPlus } from "@lucide/vue";
+import { CalendarClock, CircleCheck, DoorOpen, LogOut, Plus, Shuffle, Sparkles, Star, UserRoundPlus } from "@lucide/vue";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
@@ -20,6 +20,9 @@ import { useCompanyStore, useCompanyToday } from "@/stores/company";
 
 import { useCareer } from "../api";
 import { CHANGE_TONES, changeAccess, LEAVING_TONES } from "../lib";
+import { usePersonReviews } from "../reviews/api";
+import { OUTCOME_TONES, ratingTone } from "../reviews/lib";
+import type { CareerReview } from "../reviews/types";
 import type { JobChange, LeavingRow } from "../types";
 import ChangeDrawer from "./ChangeDrawer.vue";
 import ChangeLines from "./ChangeLines.vue";
@@ -39,10 +42,13 @@ const access = computed(() => changeAccess((perm) => company.can(perm)));
 
 const career = useCareer(() => props.memberId);
 const data = computed(() => career.data.value ?? null);
+// Their published performance reviews, for people who run reviews.
+const reviews = usePersonReviews(() => props.memberId, () => company.can("reviews.manage"));
 
 type Entry =
   | { key: string; day: string; kind: "change"; change: JobChange }
   | { key: string; day: string; kind: "leaving"; leaving: LeavingRow }
+  | { key: string; day: string; kind: "review"; review: CareerReview }
   | { key: string; day: string; kind: "hired" };
 const entries = computed<Entry[]>(() => {
   const value = data.value;
@@ -50,6 +56,7 @@ const entries = computed<Entry[]>(() => {
   const list: Entry[] = [
     ...value.changes.map((change) => ({ key: `c${change.id}`, day: change.effective_on, kind: "change" as const, change })),
     ...value.leavings.map((leaving) => ({ key: `l${leaving.id}`, day: leaving.left_on ?? leaving.last_day ?? leaving.wished_last_day ?? leaving.requested_at.slice(0, 10), kind: "leaving" as const, leaving })),
+    ...(reviews.data.value ?? []).map((review) => ({ key: `r${review.id}`, day: review.published_at.slice(0, 10), kind: "review" as const, review })),
   ];
   list.sort((a, b) => (a.day < b.day ? 1 : a.day > b.day ? -1 : 0));
   if (value.hired_on) list.push({ key: "hired", day: value.hired_on, kind: "hired" });
@@ -62,6 +69,9 @@ function openChange(id: number): void {
 }
 function openLeaving(id: number): void {
   void router.push({ query: { ...route.query, termination: String(id) } });
+}
+function openReview(review: CareerReview): void {
+  if (review.can_open) void router.push({ path: `/c/${company.currentId}/lifecycle/reviews/${review.round.id}/${review.id}` });
 }
 const proposing = ref(false);
 /** The dialog names them from their job today. */
@@ -101,15 +111,18 @@ function leavingTitle(row: LeavingRow): string {
                 ? 'border-line bg-surface-2 text-muted'
                 : entry.kind === 'leaving'
                   ? 'border-transparent bg-warning-soft text-warning'
-                  : entry.change.status === 'approved'
-                    ? 'border-dashed border-[var(--c-primary)] bg-primary-soft text-primary'
-                    : 'border-transparent bg-success-soft text-success',
+                  : entry.kind === 'review'
+                    ? 'border-transparent bg-info-soft text-info'
+                    : entry.change.status === 'approved'
+                      ? 'border-dashed border-[var(--c-primary)] bg-primary-soft text-primary'
+                      : 'border-transparent bg-success-soft text-success',
             ]"
             aria-hidden="true"
           >
             <UserRoundPlus v-if="entry.kind === 'hired'" :size="16" />
             <LogOut v-else-if="entry.kind === 'leaving' && entry.leaving.status === 'completed'" :size="16" />
             <DoorOpen v-else-if="entry.kind === 'leaving'" :size="16" />
+            <Star v-else-if="entry.kind === 'review'" :size="16" />
             <CalendarClock v-else-if="entry.change.status === 'approved'" :size="16" />
             <Shuffle v-else :size="16" />
           </span>
@@ -118,6 +131,22 @@ function leavingTitle(row: LeavingRow): string {
             <p class="text-sm font-medium text-fg">{{ t("lifecycle.career.hired") }}</p>
             <p class="text-xs tabular-nums text-muted">{{ fmt.day(entry.day, "long") }}</p>
           </div>
+
+          <button
+            v-else-if="entry.kind === 'review'"
+            type="button"
+            :disabled="!entry.review.can_open"
+            class="min-w-0 flex-1 rounded-[12px] border border-line px-3.5 py-3 text-left transition-colors enabled:hover:border-line-strong enabled:hover:bg-surface-2/50 disabled:cursor-default"
+            data-career-review
+            @click="openReview(entry.review)"
+          >
+            <div class="flex flex-wrap items-center gap-2">
+              <p class="text-sm font-semibold text-fg">{{ t("lifecycle.reviews.career.title", { name: entry.review.round.name }) }}</p>
+              <StatusPill size="sm" :tone="ratingTone(entry.review.rating)" :icon="Star" :label="entry.review.rating ? `${entry.review.rating}/5` : '—'" />
+              <StatusPill v-if="entry.review.outcome !== 'none'" size="sm" variant="outline" :tone="OUTCOME_TONES[entry.review.outcome]" :label="t(`lifecycle.reviews.outcome.${entry.review.outcome}`)" />
+            </div>
+            <p class="mt-0.5 text-xs tabular-nums text-muted">{{ t("lifecycle.reviews.career.published", { date: fmt.day(entry.day, "medium") }) }}</p>
+          </button>
 
           <button
             v-else-if="entry.kind === 'leaving'"

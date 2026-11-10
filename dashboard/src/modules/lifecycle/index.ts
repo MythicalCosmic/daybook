@@ -7,7 +7,7 @@
  * "Warn", "Suspend", "Change job" and "Start leaving" to its header (`people.profile.actions`), and
  * the equipment actions to the offboarding wizard's equipment step (`people.offboard.step`).
  */
-import { CalendarClock, Gavel, HandHelping, Network, Pause, ShieldAlert, Shuffle } from "@lucide/vue";
+import { CalendarClock, ClipboardPen, Gavel, HandHelping, Network, Pause, ShieldAlert, Shuffle } from "@lucide/vue";
 import { defineAsyncComponent } from "vue";
 
 import { defineModule } from "@/core/modules";
@@ -31,7 +31,7 @@ export default defineModule({
     { key: "terminations", title: "lifecycle.nav.terminations", to: "lifecycle/terminations", perm: ["hr.terminate", "hr.view"], badge: counter("lifecycle.resignations") },
     { key: "changes", title: "lifecycle.nav.changes", to: "lifecycle/job-changes", perm: ["hr.manage", "hr.view"], badge: counter("lifecycle.job_changes") },
     { key: "equipment", title: "lifecycle.nav.equipment", to: "lifecycle/equipment", perm: ["assets.manage", "hr.manage"] },
-    { key: "reviews", title: "lifecycle.nav.reviews", to: "lifecycle/reviews", perm: "reviews.manage" },
+    { key: "reviews", title: "lifecycle.nav.reviews", to: "lifecycle/reviews", perm: "reviews.manage", badge: counter("lifecycle.reviews_to_write") },
   ],
   // `lifecycle.equipment` moves with every change in assets too (a confirmation in the app included).
   invalidates: ["lifecycle"],
@@ -83,6 +83,14 @@ export default defineModule({
       perm: ["assets.manage", "hr.manage"],
       keywords: ["equipment", "uniform", "lab coat", "key", "badge", "jihoz", "xalat", "kalit", "beyj", "форма", "халат", "ключ", "бейдж"],
       run: () => ctx.go("lifecycle/equipment?give=0"),
+    },
+    {
+      id: "lifecycle.review",
+      title: ctx.t("lifecycle.reviews.newRound"),
+      icon: ClipboardPen,
+      perm: "reviews.manage",
+      keywords: ["review", "appraisal", "baholash", "attestatsiya", "оценка", "аттестация", "kpi"],
+      run: () => ctx.go("lifecycle/reviews?new=1"),
     },
   ],
   personTabs: [

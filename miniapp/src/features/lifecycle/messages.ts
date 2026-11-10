@@ -6,9 +6,11 @@
  * (yozma ogohlantirish / письменное предупреждение).
  */
 import { defineMessages } from "../../i18n/feature";
+import { reviewMessages } from "./reviewMessages";
 
 export const messages = defineMessages({
   en: {
+    ...reviewMessages.en,
     "me.record": "My record",
     "home.title": "A new disciplinary record",
     "home.body": "{kind}: please read it",
@@ -179,6 +181,7 @@ export const messages = defineMessages({
     "pay.per_task": "{amount} a task",
   },
   ru: {
+    ...reviewMessages.ru,
     "me.record": "Дисциплина",
     "home.title": "Новая дисциплинарная запись",
     "home.body": "{kind}: ознакомьтесь",
@@ -359,6 +362,7 @@ export const messages = defineMessages({
     "pay.per_task": "{amount} за задачу",
   },
   uz: {
+    ...reviewMessages.uz,
     "me.record": "Intizom",
     "home.title": "Yangi intizomiy yozuv",
     "home.body": "{kind}: tanishib chiqing",

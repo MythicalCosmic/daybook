@@ -319,3 +319,383 @@
   flex: none;
   color: var(--muted);
 }
+
+/* "Baholashlarim": a round to answer, one question a screen (a 1–5 scale with its words), the last
+   look before sending, and the published review (the rating, what follows, question by question). */
+.rv-open {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+}
+
+.rv-open-icon {
+  width: 44px;
+  height: 44px;
+  background: var(--color-surface);
+  color: var(--color-accent-700);
+}
+
+.rv-open-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rv-open-title {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.rv-open-line {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.rv-intro,
+.rv-done {
+  align-items: flex-start;
+  gap: 8px;
+  padding: 22px 20px;
+}
+
+.rv-intro-title,
+.rv-done-title {
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.rv-intro-facts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.rv-intro-facts > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rv-question {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding-top: 6px;
+}
+
+.rv-question-text {
+  font-family: var(--font-heading);
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.rv-scale {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.rv-scale-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-height: 84px;
+  padding: 12px 4px 10px;
+  border: 1.5px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  transition:
+    transform 0.12s ease,
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.rv-scale-button:active {
+  transform: scale(0.96);
+}
+
+.rv-scale-number {
+  font-family: var(--font-heading);
+  font-size: 24px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.rv-scale-word {
+  font-size: 11.5px;
+  line-height: 1.2;
+  text-align: center;
+  color: var(--muted);
+}
+
+.rv-scale-button--on {
+  border-color: transparent;
+  color: #fff;
+}
+
+.rv-scale-button--on .rv-scale-word {
+  color: rgb(255 255 255 / 0.9);
+}
+
+/* From a concern (1) to strong (5): terracotta to sage. */
+.rv-scale-button--on.rv-tone-1,
+.rv-scale-button--on.rv-tone-2 {
+  background: var(--color-accent-700);
+}
+
+.rv-scale-button--on.rv-tone-3 {
+  background: var(--color-accent);
+}
+
+.rv-scale-button--on.rv-tone-4,
+.rv-scale-button--on.rv-tone-5 {
+  background: var(--color-accent-2-700);
+}
+
+.rv-check {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rv-check-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  text-align: left;
+}
+
+.rv-check-row > svg {
+  flex: none;
+  color: var(--muted);
+}
+
+.rv-check-row--missing {
+  box-shadow: inset 0 0 0 1.5px var(--color-accent);
+}
+
+.rv-check-number {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--color-accent-100);
+  color: var(--color-accent-800);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.rv-check-main {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+.rv-check-question {
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.rv-check-answer {
+  font-size: 13.5px;
+  color: var(--muted);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.rv-hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+}
+
+.rv-hero-score {
+  flex: none;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 2px;
+  width: 84px;
+  height: 84px;
+  padding-top: 18px;
+  border-radius: 24px;
+  background: var(--color-accent-100);
+  color: var(--color-accent-800);
+}
+
+.rv-hero-score.rv-tone-4,
+.rv-hero-score.rv-tone-5 {
+  background: var(--color-accent-2-100);
+  color: var(--color-accent-2-800);
+}
+
+.rv-hero-number {
+  font-family: var(--font-heading);
+  font-size: 38px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.rv-hero-of {
+  font-size: 15px;
+  font-weight: 600;
+  opacity: 0.7;
+}
+
+.rv-hero-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.rv-hero-word {
+  font-family: var(--font-heading);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.rv-outcome {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 18px;
+}
+
+.rv-outcome-icon {
+  width: 42px;
+  height: 42px;
+  background: var(--color-accent-2-100);
+  color: var(--color-accent-2-800);
+}
+
+.rv-outcome-main {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+
+.rv-outcome-title {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.rv-goals,
+.rv-compare {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rv-goal {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.rv-goal > svg {
+  flex: none;
+  margin-top: 1px;
+  color: var(--color-accent-700);
+}
+
+.rv-goal--done > svg {
+  color: var(--color-accent-2-700);
+}
+
+.rv-goal-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rv-goal-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.rv-compare-card {
+  gap: 6px;
+}
+
+.rv-compare-question {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.rv-compare-row {
+  display: flex;
+  gap: 18px;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+
+.rv-compare-row b {
+  color: var(--color-text);
+  font-size: 15px;
+}
+
+.rv-compare-note {
+  font-size: 14px;
+}
+
+.rv-numbers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 12px;
+  padding: 16px;
+}
+
+.rv-fact {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rv-fact-value {
+  font-family: var(--font-heading);
+  font-size: 22px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.rv-fact-label {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+/* A grey line under a title inside a card (no side padding of its own). */
+.rv-sub {
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--muted);
+}

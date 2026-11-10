@@ -2,7 +2,7 @@
 
 from django.urls import path
 
-from apps.lifecycle import api
+from apps.lifecycle import api, review_urls
 
 urlpatterns = [
     path("lifecycle/records/", api.MyRecordsView.as_view(), name="lifecycle-my-records"),
@@ -29,4 +29,6 @@ urlpatterns = [
         name="lifecycle-my-leaving-exit",
     ),
     path("lifecycle/career/", api.MyCareerView.as_view(), name="lifecycle-my-career"),
+    # Performance reviews.
+    *review_urls.urlpatterns,
 ]
