@@ -239,6 +239,7 @@ describe("the reviewer's page", () => {
     expect(wrapper.get('[data-question="q1"] [data-their-answer]').text()).toContain("4");
     expect(wrapper.get('[data-question="q3"] [data-their-answer]').text()).toContain("Kassa to‘g‘ri chiqdi");
     expect(wrapper.get("[data-kpis]").text()).toContain("92.5%");
+    expect(wrapper.get('[data-question="q1"] [data-my-answer]').text()).toContain(en["lifecycle.reviews.yourAnswer"]);
     expect(wrapper.get("[data-publish-needs]").text()).toContain(en["lifecycle.reviews.publishNeeds.ratings"]);
 
     await wrapper.get('[data-question="q1"] [data-my-answer] [data-value="4"]').trigger("click");
@@ -268,6 +269,8 @@ describe("the reviewer's page", () => {
     const wrapper = await open();
     expect(wrapper.get('[data-question="q1"] [data-their-answer]').text()).toContain(en["lifecycle.reviews.hiddenShort"]);
     expect(wrapper.text()).toContain(en["lifecycle.reviews.kpis.later"]);
+    // Someone else's review: the reviewer's side is "the reviewer's", not "yours".
+    expect(wrapper.get('[data-question="q1"] [data-my-answer]').text()).toContain(en["lifecycle.reviews.reviewerAnswer"]);
     expect(wrapper.findAll("button").some((button) => button.text() === en["lifecycle.reviews.publish"])).toBe(false);
   });
 

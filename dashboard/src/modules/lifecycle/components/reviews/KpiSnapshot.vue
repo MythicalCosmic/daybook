@@ -51,7 +51,7 @@ const records = computed(() => props.kpis?.discipline.records ?? 0);
 
       <li v-if="kpis.attendance" class="min-w-0 rounded-[12px] border border-line px-3 py-2.5">
         <div class="flex items-center gap-2 text-xs font-medium text-muted"><CalendarCheck :size="14" aria-hidden="true" />{{ t("lifecycle.reviews.kpis.attendance") }}</div>
-        <div class="mt-1 flex items-baseline gap-4">
+        <div class="mt-1 flex flex-wrap items-baseline gap-x-4 gap-y-0.5">
           <p class="text-xl font-semibold tabular-nums" :class="kpis.attendance.late_arrivals ? 'text-warning' : 'text-fg'">
             {{ kpis.attendance.late_arrivals }}<span class="ml-1 text-xs font-normal text-muted">{{ t("lifecycle.reviews.kpis.lateShort") }}</span>
           </p>

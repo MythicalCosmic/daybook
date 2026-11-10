@@ -182,6 +182,8 @@
   "lifecycle.reviews.commentPlaceholder": "Комментарий (необязательно)",
   "lifecycle.reviews.theirs": "Сотрудник",
   "lifecycle.reviews.yours": "Вы",
+  "lifecycle.reviews.reviewerShort": "Оценивающий",
+  "lifecycle.reviews.reviewerAnswer": "Ответ оценивающего",
   "lifecycle.reviews.reviewerLine": "Оценивающий: {name}",
   "lifecycle.reviews.earlier": "Прежние оценки",
   "lifecycle.reviews.overall": "Общая оценка",

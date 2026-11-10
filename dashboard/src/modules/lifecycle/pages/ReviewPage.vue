@@ -48,6 +48,8 @@ const reviewId = computed(() => Number(route.params.reviewId));
 const query = useReview(reviewId);
 const review = computed<Review | null>(() => query.data.value ?? null);
 const writable = computed(() => !!review.value?.can.write);
+// An owner reading someone else's review sees "the reviewer's" where its reviewer sees "yours".
+const iReview = computed(() => writable.value || (!!review.value?.reviewer && review.value.reviewer.id === company.current?.membership_id));
 const published = computed(() => !!review.value?.published_at);
 const back = computed(() => ({ path: `/c/${company.currentId}/lifecycle/reviews/${roundId.value}` }));
 
@@ -199,21 +201,28 @@ const stageNote = computed(() => {
       <div class="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_380px] lg:grid-rows-[auto_1fr]">
         <!-- Who, and their numbers: first on a phone, beside the answers on a wide screen -->
         <div class="flex flex-col gap-4 lg:col-start-2 lg:row-start-1">
-          <section class="ui-card flex items-center gap-3 p-4">
-            <UserAvatar :name="review.member.name" :src="review.member.photo_url" :size="44" />
-            <div class="min-w-0 flex-1">
-              <p class="truncate text-sm font-semibold text-fg">{{ review.member.name }}</p>
-              <p class="truncate text-xs text-muted">{{ [review.position, review.home_branch?.name].filter(Boolean).join(" · ") }}</p>
-              <p class="mt-0.5 flex items-center gap-1 truncate text-xs text-subtle"><UserRound :size="12" aria-hidden="true" />{{ t("lifecycle.reviews.reviewerLine", { name: review.reviewer?.name ?? "—" }) }}</p>
-            </div>
-            <div class="grid shrink-0 grid-cols-2 gap-2 text-center">
-              <div class="rounded-[10px] bg-surface-2 px-2.5 py-1.5 dark:bg-surface-3">
-                <p class="text-[11px] text-muted">{{ t("lifecycle.reviews.theirs") }}</p>
-                <p class="text-sm font-semibold tabular-nums text-fg">{{ review.self_part.average ? fmt.number(review.self_part.average, 1) : "—" }}</p>
+          <!-- Who: the two averages beside them on a wide card, under them in the narrow column -->
+          <section class="@container ui-card p-4" data-person>
+            <div class="flex flex-col gap-3 @[26rem]:flex-row @[26rem]:items-center">
+              <div class="flex min-w-0 flex-1 items-center gap-3">
+                <UserAvatar :name="review.member.name" :src="review.member.photo_url" :size="44" />
+                <div class="min-w-0 flex-1">
+                  <p class="truncate text-sm font-semibold text-fg">{{ review.member.name }}</p>
+                  <p class="truncate text-xs text-muted">{{ [review.position, review.home_branch?.name].filter(Boolean).join(" · ") }}</p>
+                  <p class="mt-0.5 flex items-start gap-1 text-xs text-subtle">
+                    <UserRound :size="12" class="mt-0.5 shrink-0" aria-hidden="true" /><span class="min-w-0 break-words">{{ t("lifecycle.reviews.reviewerLine", { name: review.reviewer?.name ?? "—" }) }}</span>
+                  </p>
+                </div>
               </div>
-              <div class="rounded-[10px] bg-surface-2 px-2.5 py-1.5 dark:bg-surface-3">
-                <p class="text-[11px] text-muted">{{ t("lifecycle.reviews.yours") }}</p>
-                <p class="text-sm font-semibold tabular-nums text-fg">{{ myAverage === null ? "—" : fmt.number(myAverage, 1) }}</p>
+              <div class="grid shrink-0 grid-cols-2 gap-2 text-center">
+                <div class="rounded-[10px] bg-surface-2 px-2.5 py-1.5 dark:bg-surface-3">
+                  <p class="text-[11px] text-muted">{{ t("lifecycle.reviews.theirs") }}</p>
+                  <p class="text-sm font-semibold tabular-nums text-fg">{{ review.self_part.average ? fmt.number(review.self_part.average, 1) : "—" }}</p>
+                </div>
+                <div class="rounded-[10px] bg-surface-2 px-2.5 py-1.5 dark:bg-surface-3">
+                  <p class="text-[11px] text-muted">{{ iReview ? t("lifecycle.reviews.yours") : t("lifecycle.reviews.reviewerShort") }}</p>
+                  <p class="text-sm font-semibold tabular-nums text-fg">{{ myAverage === null ? "—" : fmt.number(myAverage, 1) }}</p>
+                </div>
               </div>
             </div>
           </section>
@@ -262,7 +271,7 @@ const stageNote = computed(() => {
                   </template>
                 </div>
                 <div class="rounded-[12px] border border-line p-3" data-my-answer>
-                  <p class="mb-2 text-[11px] font-medium uppercase tracking-wide text-subtle">{{ t("lifecycle.reviews.yourAnswer") }}</p>
+                  <p class="mb-2 text-[11px] font-medium uppercase tracking-wide text-subtle">{{ iReview ? t("lifecycle.reviews.yourAnswer") : t("lifecycle.reviews.reviewerAnswer") }}</p>
                   <RatingPills
                     v-if="question.kind === 'rating'"
                     :model-value="form.answers[question.id]?.rating ?? null"

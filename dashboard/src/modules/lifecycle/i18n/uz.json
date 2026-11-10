@@ -182,6 +182,8 @@
   "lifecycle.reviews.commentPlaceholder": "Izoh (ixtiyoriy)",
   "lifecycle.reviews.theirs": "Xodim",
   "lifecycle.reviews.yours": "Siz",
+  "lifecycle.reviews.reviewerShort": "Baholovchi",
+  "lifecycle.reviews.reviewerAnswer": "Baholovchi javobi",
   "lifecycle.reviews.reviewerLine": "Baholovchi: {name}",
   "lifecycle.reviews.earlier": "Avvalgi baholashlar",
   "lifecycle.reviews.overall": "Umumiy baho",

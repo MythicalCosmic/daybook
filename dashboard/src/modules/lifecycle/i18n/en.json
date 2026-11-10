@@ -182,6 +182,8 @@
   "lifecycle.reviews.commentPlaceholder": "A comment (optional)",
   "lifecycle.reviews.theirs": "Theirs",
   "lifecycle.reviews.yours": "Yours",
+  "lifecycle.reviews.reviewerShort": "Reviewer",
+  "lifecycle.reviews.reviewerAnswer": "Reviewer's answer",
   "lifecycle.reviews.reviewerLine": "Reviewer: {name}",
   "lifecycle.reviews.earlier": "Earlier reviews",
   "lifecycle.reviews.overall": "Overall rating",
