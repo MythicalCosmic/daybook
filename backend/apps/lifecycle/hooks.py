@@ -147,3 +147,6 @@ registry.register_calendar_source(
     events=providers.calendar_job_changes,
     feature=FEATURE,
 )
+
+# Performance reviews register their own (apps/lifecycle/review_hooks.py).
+from apps.lifecycle import review_hooks  # noqa: E402, F401

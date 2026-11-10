@@ -126,10 +126,14 @@ def propose(
     pay_amount=None,
     pay_type: str = "",
     approve: bool = False,
+    review: bool = False,
 ) -> JobChange:
     """Propose a new position, home branch, department and/or pay from `effective_on`. With
-    `approve`, someone who may decide it approves it in the same step (otherwise it waits)."""
-    _ensure_may_propose(membership, by)
+    `approve`, someone who may decide it approves it in the same step (otherwise it waits).
+    `review`: a performance review's outcome, proposed by its reviewer (apps.lifecycle.reviews
+    checked they may); it always waits for someone who may decide it."""
+    if not review:
+        _ensure_may_propose(membership, by)
     membership = _lock_member(membership)
     if membership.status not in hr_queries.CURRENT:
         raise DomainError(_("Only people who work here can have their job changed."))
@@ -180,7 +184,7 @@ def propose(
             parts.append("department")
             change.department = department
     wants_pay = pay_amount not in (None, "") or bool(pay_type)
-    if wants_pay and _pay_part(change, by=by, amount=pay_amount, pay_type=pay_type):
+    if wants_pay and _pay_part(change, by=by, amount=pay_amount, pay_type=pay_type, checked=review):
         parts.append("pay")
     if not parts:
         raise DomainError(_("Nothing changes: pick a new position, branch, department or pay."))
@@ -190,7 +194,7 @@ def propose(
     change.after = _target(change, change.before)
     change.save()
     _audit(LifecycleAction.CHANGE_PROPOSED, change, by, **_shown(change))
-    if approve and may_decide(by, change):
+    if approve and not review and may_decide(by, change):
         _approve(change, by=by)
     else:
         transaction.on_commit(partial(tasks.notify_change_proposed.delay, change.pk))
@@ -198,13 +202,16 @@ def propose(
     return change
 
 
-def _pay_part(change: JobChange, *, by: Membership, amount, pay_type: str) -> bool:
-    """Fill the pay of `change`; False when it is the pay they already have."""
+def _pay_part(
+    change: JobChange, *, by: Membership, amount, pay_type: str, checked: bool = False
+) -> bool:
+    """Fill the pay of `change`; False when it is the pay they already have. `checked`: the
+    caller checked who proposes it (a review's raise)."""
     membership = change.membership
     company = membership.company
     if not integrations.payroll_on(company):
         raise DomainError(_("Payroll is off for this company, so the pay can't change here."))
-    if not by.has_perm(Perm.PAYROLL_MANAGE):
+    if not checked and not by.has_perm(Perm.PAYROLL_MANAGE):
         raise PermissionDenied(_("Only people who manage pay can change someone's pay."))
     current = integrations.current_pay(membership, on=change.effective_on)
     pay_type = pay_type or (current["pay_type"] if current else "monthly")

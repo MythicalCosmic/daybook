@@ -122,3 +122,54 @@ def apply_job_changes() -> int:
     from apps.lifecycle import job_changes
 
     return job_changes.apply_due()
+
+
+# Performance reviews (apps.lifecycle.reviews, review_notify) ----------------------------------
+
+
+@shared_task
+def notify_review_round_opened(cycle_id: int) -> None:
+    """Everyone in a round that opened hears, with a way into the app."""
+    from apps.lifecycle import review_notify
+
+    review_notify.round_opened(cycle_id)
+
+
+@shared_task
+def notify_review_stage(cycle_id: int) -> None:
+    """The reviewers hear their part has begun, with how many wait for them."""
+    from apps.lifecycle import review_notify
+
+    review_notify.reviewers_part(cycle_id)
+
+
+@shared_task
+def notify_review_reminders(cycle_id: int) -> None:
+    """The day before a deadline: whoever is still to answer (or to publish) hears again."""
+    from apps.lifecycle import review_notify
+
+    review_notify.deadline_reminders(cycle_id)
+
+
+@shared_task
+def notify_review_nudge(cycle_id: int, review_ids: list[int], reviewer_ids: list[int]) -> None:
+    """The round page's Remind: the people still to answer, the reviewers still to publish."""
+    from apps.lifecycle import review_notify
+
+    review_notify.nudge(cycle_id, review_ids, reviewer_ids)
+
+
+@shared_task
+def notify_review_published(review_id: int) -> None:
+    from apps.lifecycle import review_notify
+
+    review_notify.published(review_id)
+
+
+@shared_task
+def run_reviews() -> int:
+    """Every 15 minutes: the day-before reminders, and the reviewers' part after the self
+    deadline, in each company's time."""
+    from apps.lifecycle import reviews
+
+    return reviews.run_due()

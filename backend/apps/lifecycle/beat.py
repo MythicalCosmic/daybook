@@ -18,4 +18,10 @@ SCHEDULE = {
         "task": "apps.lifecycle.tasks.apply_job_changes",
         "schedule": crontab(minute="2-59/15"),
     },
+    # Performance reviews: the day-before reminders (from 10:00) and the reviewers' part from the
+    # day after the self deadline, in each company's time.
+    "lifecycle-reviews": {
+        "task": "apps.lifecycle.tasks.run_reviews",
+        "schedule": crontab(minute="7-59/15"),
+    },
 }

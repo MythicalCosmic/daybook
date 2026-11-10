@@ -7,7 +7,7 @@ owner endpoints outside a company.
 from django.urls import path
 from rest_framework.routers import SimpleRouter
 
-from apps.lifecycle import owner_api
+from apps.lifecycle import owner_api, review_owner_urls
 
 router = SimpleRouter()
 router.register(
@@ -30,4 +30,6 @@ urlpatterns = [
         owner_api.CareerView.as_view(),
         name="lifecycle-career",
     ),
+    # Performance reviews.
+    *review_owner_urls.urlpatterns,
 ]

@@ -280,3 +280,159 @@ class JobChange(TenantModel):
 
     def __str__(self):
         return f"{self.membership} · {self.effective_on}"
+
+
+# Performance reviews (docs/PLAN-OWNER.md §13.4 "Reviews", apps.lifecycle.reviews) -------------
+
+
+class ReviewCycle(TenantModel):
+    """A review round: a period, who is in it (everyone, or some positions and/or branches),
+    3-10 questions and two deadlines. A draft until it opens; then everyone in it answers about
+    their own work in the mini app (self), their reviewer adds theirs (manager), each review is
+    published to its person, and the round closes."""
+
+    class Status(models.TextChoices):
+        DRAFT = "draft", pgettext_lazy("review round", "Draft")
+        SELF = "self", _("Self reviews")
+        MANAGER = "manager", _("Manager reviews")
+        CLOSED = "closed", pgettext_lazy("review round", "Closed")
+
+    name = models.CharField(max_length=120)
+    period_start = models.DateField()
+    period_end = models.DateField()
+    # Who is in it: these positions and/or branches; none of either is everyone.
+    positions = models.ManyToManyField(Position, blank=True, related_name="+")
+    branches = models.ManyToManyField(Branch, blank=True, related_name="+")
+    # [{"id": "q1", "kind": "rating" | "text", "text": "…", "key": "dispensing" | ""}]: a
+    # template question keeps its key while its text is untouched, so each reader gets it in
+    # their own language.
+    questions = models.JSONField(default=list, blank=True)
+    self_due_on = models.DateField()
+    manager_due_on = models.DateField()
+    status = models.CharField(max_length=8, choices=Status.choices, default=Status.DRAFT)
+    created_by = models.ForeignKey(
+        Membership, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    opened_at = models.DateTimeField(null=True, blank=True)
+    opened_by = models.ForeignKey(
+        Membership, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    # When the reviewers' part began (by the self deadline, or someone moved it on).
+    manager_at = models.DateTimeField(null=True, blank=True)
+    closed_at = models.DateTimeField(null=True, blank=True)
+    closed_by = models.ForeignKey(
+        Membership, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    # The day-before reminders went out: to the people (self) and to the reviewers (manager).
+    self_reminded_on = models.DateField(null=True, blank=True)
+    manager_reminded_on = models.DateField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-period_end", "-pk"]
+        indexes = [models.Index(fields=["company", "status"])]
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def is_open(self) -> bool:
+        return self.status in (self.Status.SELF, self.Status.MANAGER)
+
+
+class Review(TenantModel):
+    """One person's review in a round: their own answers, their reviewer's answers beside a
+    snapshot of their numbers for the period (taken when the reviewer first opens it, so it
+    never changes later), the rating, a short summary and the outcome. A raise or a promotion
+    becomes a proposed job change, a bonus a proposed payroll adjustment: both wait for the
+    usual approval."""
+
+    class Outcome(models.TextChoices):
+        NONE = "none", pgettext_lazy("review outcome", "No change")
+        RAISE = "raise", _("Raise")
+        BONUS = "bonus", _("Bonus")
+        PROMOTION = "promotion", _("Promotion")
+        PLAN = "improvement_plan", _("Improvement plan")
+
+    cycle = models.ForeignKey(ReviewCycle, on_delete=models.CASCADE, related_name="reviews")
+    membership = models.ForeignKey(
+        Membership, on_delete=models.PROTECT, related_name="performance_reviews"
+    )
+    reviewer = models.ForeignKey(
+        Membership, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    # {question id: {"rating": 1-5 | None, "text": "…"}}
+    self_answers = models.JSONField(default=dict, blank=True)
+    self_saved_at = models.DateTimeField(null=True, blank=True)
+    self_sent_at = models.DateTimeField(null=True, blank=True)
+    manager_answers = models.JSONField(default=dict, blank=True)
+    manager_saved_at = models.DateTimeField(null=True, blank=True)
+    # The person's numbers for the period (apps.lifecycle.review_kpis), frozen once taken.
+    kpis = models.JSONField(default=dict, blank=True)
+    kpis_at = models.DateTimeField(null=True, blank=True)
+    rating = models.PositiveSmallIntegerField(null=True, blank=True)
+    summary = models.TextField(blank=True)
+    outcome = models.CharField(max_length=16, choices=Outcome.choices, default=Outcome.NONE)
+    raise_percent = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    bonus_amount = MoneyField(null=True, blank=True)
+    bonus_currency = CurrencyField()
+    promotion_position = models.ForeignKey(
+        Position, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    # From when a raise or a promotion applies; for a bonus, the month of its payslip.
+    effective_on = models.DateField(null=True, blank=True)
+    # What the outcome became: the job change (raise, promotion) or payroll's adjustment (bonus).
+    job_change = models.ForeignKey(
+        JobChange, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    bonus_id = models.PositiveBigIntegerField(null=True, blank=True)
+    published_at = models.DateTimeField(null=True, blank=True)
+    published_by = models.ForeignKey(
+        Membership, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    acknowledged_at = models.DateTimeField(null=True, blank=True)
+    # The last "please answer" nudge (the round page's Remind).
+    reminded_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["cycle", "pk"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["cycle", "membership"], name="lifecycle_one_review_a_person_a_round"
+            ),
+        ]
+        indexes = [models.Index(fields=["company", "reviewer"])]
+
+    def __str__(self):
+        return f"{self.cycle} · {self.membership}"
+
+
+class ReviewGoal(TenantModel):
+    """A personal goal of a review's improvement plan: what to reach and by when (named apart
+    from apps.goals.Goal, the business's own goals). The reviewer marks how far it got."""
+
+    class Status(models.TextChoices):
+        OPEN = "open", pgettext_lazy("review goal", "In progress")
+        DONE = "done", pgettext_lazy("review goal", "Reached")
+        MISSED = "missed", pgettext_lazy("review goal", "Not reached")
+
+    membership = models.ForeignKey(
+        Membership, on_delete=models.PROTECT, related_name="review_goals"
+    )
+    review = models.ForeignKey(Review, on_delete=models.CASCADE, related_name="goals")
+    title = models.CharField(max_length=200)
+    # An optional measure: reach `target` `unit` (95 %, 0 errors); `progress` is how far it got.
+    target = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    unit = models.CharField(max_length=30, blank=True)
+    progress = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    due_on = models.DateField()
+    status = models.CharField(max_length=8, choices=Status.choices, default=Status.OPEN)
+    note = models.CharField(max_length=300, blank=True)
+    order = models.PositiveSmallIntegerField(default=0)
+    closed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["order", "pk"]
+        indexes = [models.Index(fields=["company", "status", "due_on"])]
+
+    def __str__(self):
+        return self.title
