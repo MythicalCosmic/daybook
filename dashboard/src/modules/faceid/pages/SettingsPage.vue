@@ -98,7 +98,7 @@ async function save(): Promise<void> {
               <RadioCards v-model="draft.scan_mode" :columns="2" :options="scanModeOptions" />
             </FormField>
           </div>
-          <ToggleSwitch v-model="draft.notify_employee" layout="row" class="px-4 py-3 md:px-5" :disabled="!draft.attendance" :label="t('faceid.settings.notifyEmployee')" :description="t('faceid.settings.notifyEmployeeHint')" />
+          <ToggleSwitch v-model="draft.notify_employee" layout="row" class="px-4 py-3 md:px-5" :disabled="!draft.attendance" :label="t('faceid.settings.notifyEmployee')" :description="draft.scan_mode === 'arrival' ? t('faceid.settings.notifyEmployeeArrivalHint') : t('faceid.settings.notifyEmployeeHint')" />
           <div class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-5">
             <div class="min-w-0 flex-1">
               <p class="text-sm font-medium text-fg">{{ t("faceid.settings.repeat") }}</p>

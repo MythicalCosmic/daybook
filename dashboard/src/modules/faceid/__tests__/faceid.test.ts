@@ -225,8 +225,13 @@ describe("SettingsPage", () => {
     ]);
     expect(radios.map((radio) => radio.attributes("aria-checked"))).toEqual(["true", "false"]);
     expect(wrapper.text()).not.toContain("the next one the check-out");
+    // Nobody hears about leaving where leaving isn't recorded.
+    expect(wrapper.text()).toContain('The bot says "You came in: 08:57, Chilonzor."');
+    expect(wrapper.text()).not.toContain("on leaving");
+    expect(wrapper.text()).toContain("Arrivals and every later scan");
 
     await radios[1]!.trigger("click");
+    expect(wrapper.text()).toContain("and, on leaving, the hours worked.");
     const save = wrapper.findAll("button").find((button) => button.text() === "Save");
     await save!.trigger("click");
     await flushPromises();
