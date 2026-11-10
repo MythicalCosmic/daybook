@@ -66,7 +66,7 @@ const share = (goal: Goal) => {
               v-if="editable"
               :value="goal.progress ?? ''"
               inputmode="decimal"
-              class="h-7 w-20 rounded-[8px] border border-line bg-surface px-2 text-right text-xs tabular-nums text-fg outline-none focus:border-[var(--c-primary)]"
+              class="h-7 w-20 rounded-[8px] border border-line bg-surface px-2 text-right text-xs pointer-coarse:text-md tabular-nums text-fg outline-none focus:border-[var(--c-primary)]"
               :aria-label="t('lifecycle.reviews.goalProgress')"
               @change="(event) => progress(goal, event)"
             />
