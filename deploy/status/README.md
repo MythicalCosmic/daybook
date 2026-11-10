@@ -47,5 +47,5 @@ or use the host's docker bridge address (`172.17.0.1:18095`) and publish the por
 
 ```sh
 uv run pytest deploy/status
-cd deploy/status && docker compose -p daybook-status-local up -d --build   # http://127.0.0.1:18095/
+docker network create edge 2>/dev/null; cd deploy/status && docker compose -p daybook-status-local up -d --build   # http://127.0.0.1:18095/ (it joins the network `edge`, as on vps8)
 ```

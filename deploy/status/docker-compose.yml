@@ -1,7 +1,8 @@
 name: daybook-status
 
 services:
-  status:
+  # A unique name: on vps8's shared network `edge` the service name is also a DNS name.
+  daybook-status:
     build: .
     image: daybook-status:latest
     restart: unless-stopped
@@ -15,6 +16,8 @@ services:
       - "127.0.0.1:18095:8080"
     networks:
       - status
+      # vps8's shared Caddy network: its site file (caddy-site.caddy) proxies to daybook-status:8080.
+      - edge
     mem_limit: 128m
     logging:
       driver: json-file
@@ -23,6 +26,9 @@ services:
 networks:
   status:
     name: daybook-status
+  edge:
+    name: edge
+    external: true
 
 volumes:
   status-data:
