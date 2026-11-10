@@ -345,12 +345,12 @@ const barMessage = computed(() => {
             <div v-if="files.length" class="flex items-center gap-2 rounded-[10px] border border-line px-3 py-2">
               <FileText :size="16" class="shrink-0 text-subtle" aria-hidden="true" />
               <p class="min-w-0 flex-1 truncate text-sm text-fg">{{ t("hr.policy.fileNew", { name: files[0]!.name }) }}</p>
-              <IconButton :icon="X" :label="t('common.file.remove')" size="sm" @click="files = []" />
+              <IconButton :icon="X" :label="t('common.file.remove', { name: files[0]!.name })" size="sm" @click="files = []" />
             </div>
             <div v-else-if="text.data.value?.has_file && !removeFile" class="flex items-center gap-2 rounded-[10px] border border-line px-3 py-2">
               <FileText :size="16" class="shrink-0 text-subtle" aria-hidden="true" />
               <a v-if="text.data.value.file_url" :href="text.data.value.file_url" target="_blank" rel="noopener" class="min-w-0 flex-1 truncate text-sm font-medium text-fg hover:text-primary">{{ t(`hr.policy.fileType.${text.data.value.file_type ?? "pdf"}`) }}</a>
-              <IconButton :icon="X" :label="t('common.file.remove')" size="sm" @click="removeFile = true" />
+              <IconButton :icon="X" :label="t('common.file.remove', { name: t(`hr.policy.fileType.${text.data.value.file_type ?? 'pdf'}`) })" size="sm" @click="removeFile = true" />
             </div>
             <FileDrop v-else :model-value="files" accept="application/pdf,image/*" :max-size="20 * 1024 * 1024" compact :hint="t('hr.policy.fileHint')" @update:model-value="pickFile" />
             <UiButton v-if="removeFile" size="sm" variant="ghost" class="self-start" @click="removeFile = false">{{ t("common.undo") }}</UiButton>
