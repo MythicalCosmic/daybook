@@ -58,6 +58,21 @@
 - "10 lab coats" becomes ten numbered items with their size. Leaving lists the person's items
   with Came back, Lost or Deduct, and Person 360 has an Equipment tab.
 
+### Reviews (People movement › Reviews)
+- Open a review round for everyone or chosen positions or pharmacies, with a ready set of
+  questions for a pharmacy (dispensing and storage rules, customer care, cash discipline,
+  teamwork, learning) or your own, and deadlines for the self part and the reviewers' part.
+- Each person answers in the app, one question at a time, with a reminder the day before the
+  deadline. Their reviewer (their department head, else their pharmacy's manager, else the owner)
+  sees the answers next to the person's numbers for the period, kept as they were, and gives a
+  rating, a short summary and an outcome.
+- Outcomes follow through as proposals: a raise or a promotion becomes a job change, a bonus a
+  payroll proposal, an improvement plan one to three goals with dates. Nothing changes pay
+  without the usual approval. The person reads the published review in the app; the round shows
+  the ratings, the outcomes and what the raises and bonuses cost.
+- With AI on, **Draft with AI** suggests the reviewer's summary from the answers and the numbers,
+  as text to edit; it never rates or decides.
+
 ### Ustoz: the tutor writes questions for your approval
 - The chat on Learning › Ustoz is a fixed window: the page never grows, messages scroll inside,
   the box to write in stays at the bottom, and a "new messages" button shows when you have

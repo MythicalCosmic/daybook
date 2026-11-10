@@ -2465,6 +2465,152 @@ paths:
               schema:
                 $ref: '#/components/schemas/LifecycleMyRecord'
           description: ''
+  /api/v1/companies/{company_id}/lifecycle/reviews/:
+    get:
+      operationId: v1_companies_lifecycle_my_reviews
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleMyReviews'
+          description: ''
+  /api/v1/companies/{company_id}/lifecycle/reviews/{id}/:
+    get:
+      operationId: v1_companies_lifecycle_reviews_retrieve
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleMyReview'
+          description: ''
+    patch:
+      operationId: v1_companies_lifecycle_reviews_partial_update
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedLifecycleMyReviewWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedLifecycleMyReviewWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedLifecycleMyReviewWriteRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleMyReview'
+          description: ''
+  /api/v1/companies/{company_id}/lifecycle/reviews/{id}/acknowledge/:
+    post:
+      operationId: v1_companies_lifecycle_reviews_acknowledge_create
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleMyReview'
+          description: ''
+  /api/v1/companies/{company_id}/lifecycle/reviews/{id}/send/:
+    post:
+      operationId: v1_companies_lifecycle_reviews_send_create
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LifecycleMyReviewSendRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LifecycleMyReviewSendRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LifecycleMyReviewSendRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleMyReview'
+          description: ''
   /api/v1/companies/{company_id}/members/:
     get:
       operationId: v1_companies_members_list
@@ -11576,6 +11722,342 @@ components:
       - responded_at
       - status
       - withdraw_reason
+    LifecycleMyReview:
+      type: object
+      description: |-
+        The person's own review: the questions and their answers; once published, their
+        reviewer's answers, the rating, the summary, what follows and the goals.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        round:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleMyReviewRound'
+          readOnly: true
+        state:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleMyReviewStateEnum'
+          readOnly: true
+        can_answer:
+          type: boolean
+          readOnly: true
+        self_sent_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        acknowledged_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        rating:
+          type: integer
+          nullable: true
+          readOnly: true
+        outcome:
+          nullable: true
+          readOnly: true
+          oneOf:
+          - $ref: '#/components/schemas/LifecycleReviewOutcomeEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        late:
+          type: boolean
+          readOnly: true
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleReviewQuestion'
+          readOnly: true
+        answers:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/LifecycleReviewAnswer'
+          readOnly: true
+        self_saved_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        reviewer:
+          type: string
+          nullable: true
+          readOnly: true
+        manager_answers:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/LifecycleReviewAnswer'
+          nullable: true
+          readOnly: true
+        summary:
+          type: string
+          nullable: true
+          readOnly: true
+        raise_percent:
+          type: string
+          nullable: true
+          readOnly: true
+        bonus:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleReviewBonus'
+          nullable: true
+          readOnly: true
+        change:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleMyReviewChange'
+          nullable: true
+          readOnly: true
+        goals:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleReviewGoal'
+          readOnly: true
+        kpis:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleReviewKpis'
+          nullable: true
+          readOnly: true
+      required:
+      - acknowledged_at
+      - answers
+      - bonus
+      - can_answer
+      - change
+      - goals
+      - id
+      - kpis
+      - late
+      - manager_answers
+      - outcome
+      - published_at
+      - questions
+      - raise_percent
+      - rating
+      - reviewer
+      - round
+      - self_saved_at
+      - self_sent_at
+      - state
+      - summary
+    LifecycleMyReviewChange:
+      type: object
+      properties:
+        status:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/LifecycleReviewOutcomeStateEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        effective_on:
+          type: string
+          format: date
+          nullable: true
+        position:
+          type: string
+          nullable: true
+        pay_before:
+          type: string
+          nullable: true
+          description: Their own pay.
+        pay_after:
+          type: string
+          nullable: true
+          description: Their own pay.
+        currency:
+          type: string
+          nullable: true
+      required:
+      - currency
+      - effective_on
+      - pay_after
+      - pay_before
+      - position
+      - status
+    LifecycleMyReviewGoal:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        target:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        unit:
+          type: string
+          readOnly: true
+        progress:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        due_on:
+          type: string
+          format: date
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleReviewGoalStatusEnum'
+          readOnly: true
+        note:
+          type: string
+          readOnly: true
+        closed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        round:
+          type: string
+          readOnly: true
+        review_id:
+          type: integer
+          readOnly: true
+      required:
+      - closed_at
+      - due_on
+      - id
+      - note
+      - progress
+      - review_id
+      - round
+      - status
+      - target
+      - title
+      - unit
+    LifecycleMyReviewRound:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        status:
+          $ref: '#/components/schemas/LifecycleReviewRoundStatusEnum'
+        period_start:
+          type: string
+          format: date
+        period_end:
+          type: string
+          format: date
+        self_due_on:
+          type: string
+          format: date
+      required:
+      - id
+      - name
+      - period_end
+      - period_start
+      - self_due_on
+      - status
+    LifecycleMyReviewRow:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        round:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleMyReviewRound'
+          readOnly: true
+        state:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleMyReviewStateEnum'
+          readOnly: true
+        can_answer:
+          type: boolean
+          readOnly: true
+        self_sent_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        acknowledged_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        rating:
+          type: integer
+          nullable: true
+          readOnly: true
+        outcome:
+          nullable: true
+          readOnly: true
+          oneOf:
+          - $ref: '#/components/schemas/LifecycleReviewOutcomeEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        late:
+          type: boolean
+          readOnly: true
+      required:
+      - acknowledged_at
+      - can_answer
+      - id
+      - late
+      - outcome
+      - published_at
+      - rating
+      - round
+      - self_sent_at
+      - state
+    LifecycleMyReviewSendRequest:
+      type: object
+      properties:
+        answers:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/LifecycleReviewAnswerRequest'
+    LifecycleMyReviewStateEnum:
+      enum:
+      - todo
+      - draft
+      - sent
+      - published
+      type: string
+      description: |-
+        * `todo` - todo
+        * `draft` - draft
+        * `sent` - sent
+        * `published` - published
+    LifecycleMyReviews:
+      type: object
+      properties:
+        open:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleMyReviewRow'
+          description: Rounds waiting for my answers or sent.
+        past:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleMyReviewRow'
+          description: Published, newest first.
+        goals:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleMyReviewGoal'
+          description: My open goals.
+      required:
+      - goals
+      - open
+      - past
     LifecycleNamed:
       type: object
       properties:
@@ -11650,6 +12132,325 @@ components:
         * `issued` - Issued
         * `acknowledged` - Acknowledged
         * `withdrawn` - Withdrawn
+    LifecycleReviewAnswer:
+      type: object
+      properties:
+        rating:
+          type: integer
+          maximum: 5
+          minimum: 1
+          nullable: true
+        text:
+          type: string
+    LifecycleReviewAnswerRequest:
+      type: object
+      properties:
+        rating:
+          type: integer
+          maximum: 5
+          minimum: 1
+          nullable: true
+        text:
+          type: string
+    LifecycleReviewAttendanceKpi:
+      type: object
+      properties:
+        scheduled_days:
+          type: integer
+        attended_days:
+          type: integer
+        absent_days:
+          type: integer
+        late_arrivals:
+          type: integer
+        late_minutes:
+          type: integer
+        leave_days:
+          type: integer
+        worked_hours:
+          type: string
+      required:
+      - absent_days
+      - attended_days
+      - late_arrivals
+      - late_minutes
+      - leave_days
+      - scheduled_days
+      - worked_hours
+    LifecycleReviewBonus:
+      type: object
+      properties:
+        id:
+          type: integer
+        amount:
+          type: string
+        currency:
+          type: string
+        status:
+          type: string
+          description: The adjustment's status in payroll.
+        period:
+          type: string
+          format: date
+      required:
+      - amount
+      - currency
+      - id
+      - period
+      - status
+    LifecycleReviewDisciplineKpi:
+      type: object
+      properties:
+        records:
+          type: integer
+        by_kind:
+          type: object
+          additionalProperties:
+            type: integer
+      required:
+      - by_kind
+      - records
+    LifecycleReviewGoal:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        target:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        unit:
+          type: string
+          readOnly: true
+        progress:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        due_on:
+          type: string
+          format: date
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleReviewGoalStatusEnum'
+          readOnly: true
+        note:
+          type: string
+          readOnly: true
+        closed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+      required:
+      - closed_at
+      - due_on
+      - id
+      - note
+      - progress
+      - status
+      - target
+      - title
+      - unit
+    LifecycleReviewGoalStatusEnum:
+      enum:
+      - open
+      - done
+      - missed
+      type: string
+      description: |-
+        * `open` - In progress
+        * `done` - Reached
+        * `missed` - Not reached
+    LifecycleReviewGoalsKpi:
+      type: object
+      properties:
+        open:
+          type: integer
+        done:
+          type: integer
+        missed:
+          type: integer
+      required:
+      - done
+      - missed
+      - open
+    LifecycleReviewKpis:
+      type: object
+      properties:
+        taken_at:
+          type: string
+          format: date-time
+        start:
+          type: string
+          format: date
+        end:
+          type: string
+          format: date
+        tasks:
+          $ref: '#/components/schemas/LifecycleReviewTasksKpi'
+        attendance:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleReviewAttendanceKpi'
+          nullable: true
+        discipline:
+          $ref: '#/components/schemas/LifecycleReviewDisciplineKpi'
+        sales:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleReviewSalesKpi'
+          nullable: true
+          description: Only with sales.view.
+        learning:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleReviewLearningKpi'
+          nullable: true
+        goals:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleReviewGoalsKpi'
+          nullable: true
+      required:
+      - attendance
+      - discipline
+      - end
+      - goals
+      - learning
+      - sales
+      - start
+      - taken_at
+      - tasks
+    LifecycleReviewLearningKpi:
+      type: object
+      properties:
+        completed:
+          type: integer
+        open:
+          type: integer
+        late:
+          type: integer
+      required:
+      - completed
+      - late
+      - open
+    LifecycleReviewOutcomeEnum:
+      enum:
+      - none
+      - raise
+      - bonus
+      - promotion
+      - improvement_plan
+      type: string
+      description: |-
+        * `none` - No change
+        * `raise` - Raise
+        * `bonus` - Bonus
+        * `promotion` - Promotion
+        * `improvement_plan` - Improvement plan
+    LifecycleReviewOutcomeStateEnum:
+      enum:
+      - waiting
+      - approved
+      - applied
+      - rejected
+      type: string
+      description: |-
+        * `waiting` - waiting
+        * `approved` - approved
+        * `applied` - applied
+        * `rejected` - rejected
+    LifecycleReviewQuestion:
+      type: object
+      properties:
+        id:
+          type: string
+        kind:
+          $ref: '#/components/schemas/LifecycleReviewQuestionKindEnum'
+        text:
+          type: string
+        key:
+          type: string
+          description: The template question it is, while its words are untouched.
+      required:
+      - id
+      - key
+      - kind
+      - text
+    LifecycleReviewQuestionKindEnum:
+      enum:
+      - rating
+      - text
+      type: string
+      description: |-
+        * `rating` - rating
+        * `text` - text
+    LifecycleReviewRoundStatusEnum:
+      enum:
+      - draft
+      - self
+      - manager
+      - closed
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `self` - Self reviews
+        * `manager` - Manager reviews
+        * `closed` - Closed
+    LifecycleReviewSalesKpi:
+      type: object
+      properties:
+        shifts:
+          type: integer
+        net:
+          type: string
+        receipts:
+          type: integer
+        avg_check:
+          type: string
+        accuracy:
+          type: string
+          nullable: true
+        shortages:
+          type: integer
+        shortage_total:
+          type: string
+        currency:
+          type: string
+      required:
+      - accuracy
+      - avg_check
+      - currency
+      - net
+      - receipts
+      - shifts
+      - shortage_total
+      - shortages
+    LifecycleReviewTasksKpi:
+      type: object
+      properties:
+        total:
+          type: integer
+        on_time:
+          type: integer
+        late:
+          type: integer
+        missed:
+          type: integer
+        on_time_percent:
+          type: string
+          nullable: true
+      required:
+      - late
+      - missed
+      - on_time
+      - on_time_percent
+      - total
     Line:
       type: object
       properties:
@@ -12615,6 +13416,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/InventoryCountedLineRequest'
+    PatchedLifecycleMyReviewWriteRequest:
+      type: object
+      properties:
+        answers:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/LifecycleReviewAnswerRequest'
     PatchedMeRequest:
       type: object
       properties:

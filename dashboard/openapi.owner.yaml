@@ -19816,6 +19816,676 @@ paths:
               schema:
                 $ref: '#/components/schemas/LifecycleEquipmentPersonPage'
           description: ''
+  /api/v1/owner/companies/{company_id}/lifecycle/people/{member_id}/reviews/:
+    get:
+      operationId: companies_lifecycle_people_reviews_list
+      description: 'Person 360''s career line: the person''s published reviews (reviews.manage).'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: member_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LifecycleCareerReview'
+          description: ''
+  /api/v1/owner/companies/{company_id}/lifecycle/review-goals/{id}/:
+    patch:
+      operationId: companies_lifecycle_review_goals_partial_update
+      description: A published improvement plan's goal, marked by the reviewer (or
+        an owner).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedLifecycleReviewGoalUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedLifecycleReviewGoalUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedLifecycleReviewGoalUpdateRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleReviewGoal'
+          description: ''
+  /api/v1/owner/companies/{company_id}/lifecycle/review-rounds/:
+    get:
+      operationId: companies_lifecycle_review_rounds_list
+      description: 'Review rounds: drafts, open ones with their progress, closed ones
+        with their results.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: status
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+            - closed
+            - draft
+            - manager
+            - self
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LifecycleReviewRound'
+          description: ''
+    post:
+      operationId: companies_lifecycle_review_rounds_create
+      description: 'Review rounds: drafts, open ones with their progress, closed ones
+        with their results.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LifecycleReviewRoundWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LifecycleReviewRoundWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LifecycleReviewRoundWriteRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleReviewRound'
+          description: ''
+  /api/v1/owner/companies/{company_id}/lifecycle/review-rounds/{id}/:
+    get:
+      operationId: companies_lifecycle_review_rounds_retrieve
+      description: 'Review rounds: drafts, open ones with their progress, closed ones
+        with their results.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleReviewRound'
+          description: ''
+    patch:
+      operationId: companies_lifecycle_review_rounds_partial_update
+      description: 'Review rounds: drafts, open ones with their progress, closed ones
+        with their results.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedLifecycleReviewRoundUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedLifecycleReviewRoundUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedLifecycleReviewRoundUpdateRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleReviewRound'
+          description: ''
+    delete:
+      operationId: companies_lifecycle_review_rounds_destroy
+      description: 'Review rounds: drafts, open ones with their progress, closed ones
+        with their results.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/lifecycle/review-rounds/{id}/advance/:
+    post:
+      operationId: companies_lifecycle_review_rounds_advance_create
+      description: 'Review rounds: drafts, open ones with their progress, closed ones
+        with their results.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleReviewRound'
+          description: ''
+  /api/v1/owner/companies/{company_id}/lifecycle/review-rounds/{id}/close/:
+    post:
+      operationId: companies_lifecycle_review_rounds_close_create
+      description: 'Review rounds: drafts, open ones with their progress, closed ones
+        with their results.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleReviewRound'
+          description: ''
+  /api/v1/owner/companies/{company_id}/lifecycle/review-rounds/{id}/open/:
+    post:
+      operationId: companies_lifecycle_review_rounds_open_create
+      description: 'Review rounds: drafts, open ones with their progress, closed ones
+        with their results.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleReviewRound'
+          description: ''
+  /api/v1/owner/companies/{company_id}/lifecycle/review-rounds/{id}/remind/:
+    post:
+      operationId: companies_lifecycle_review_rounds_remind_create
+      description: 'Review rounds: drafts, open ones with their progress, closed ones
+        with their results.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleReviewReminded'
+          description: ''
+  /api/v1/owner/companies/{company_id}/lifecycle/review-rounds/{id}/results/:
+    get:
+      operationId: companies_lifecycle_review_rounds_results_retrieve
+      description: 'Review rounds: drafts, open ones with their progress, closed ones
+        with their results.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleReviewResults'
+          description: ''
+  /api/v1/owner/companies/{company_id}/lifecycle/review-rounds/{id}/reviews/:
+    get:
+      operationId: companies_lifecycle_review_rounds_reviews_list
+      description: 'Review rounds: drafts, open ones with their progress, closed ones
+        with their results.'
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: array
+          items:
+            type: integer
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: query
+        name: mine
+        schema:
+          type: boolean
+        description: Only the reviews the viewer gives.
+      - in: query
+        name: q
+        schema:
+          type: string
+      - in: query
+        name: state
+        schema:
+          type: string
+          enum:
+          - published
+          - self_late
+          - self_waiting
+          - to_write
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LifecycleReviewRow'
+          description: ''
+  /api/v1/owner/companies/{company_id}/lifecycle/review-rounds/preview/:
+    get:
+      operationId: companies_lifecycle_review_rounds_preview_retrieve
+      description: 'Review rounds: drafts, open ones with their progress, closed ones
+        with their results.'
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: array
+          items:
+            type: integer
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: period_end
+        schema:
+          type: string
+        description: Who had joined by then (YYYY-MM-DD).
+      - in: query
+        name: position
+        schema:
+          type: array
+          items:
+            type: integer
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleReviewPreview'
+          description: ''
+  /api/v1/owner/companies/{company_id}/lifecycle/review-rounds/template/:
+    get:
+      operationId: companies_lifecycle_review_rounds_template_list
+      description: 'Review rounds: drafts, open ones with their progress, closed ones
+        with their results.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LifecycleReviewQuestion'
+          description: ''
+  /api/v1/owner/companies/{company_id}/lifecycle/reviews/{id}/:
+    get:
+      operationId: companies_lifecycle_reviews_retrieve
+      description: |-
+        One review: its reviewer writes and publishes it; owners read it; a round's runner may
+        give it to another reviewer or take the person out of the round.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleReview'
+          description: ''
+    patch:
+      operationId: companies_lifecycle_reviews_partial_update
+      description: |-
+        One review: its reviewer writes and publishes it; owners read it; a round's runner may
+        give it to another reviewer or take the person out of the round.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedLifecycleReviewManagerWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedLifecycleReviewManagerWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedLifecycleReviewManagerWriteRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleReview'
+          description: ''
+    delete:
+      operationId: companies_lifecycle_reviews_destroy
+      description: |-
+        One review: its reviewer writes and publishes it; owners read it; a round's runner may
+        give it to another reviewer or take the person out of the round.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/lifecycle/reviews/{id}/draft-summary/:
+    post:
+      operationId: companies_lifecycle_reviews_draft_summary_create
+      description: Claude's suggested summary for the reviewer (nothing is saved).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleReviewSummaryDraft'
+          description: ''
+  /api/v1/owner/companies/{company_id}/lifecycle/reviews/{id}/publish/:
+    post:
+      operationId: companies_lifecycle_reviews_publish_create
+      description: |-
+        One review: its reviewer writes and publishes it; owners read it; a round's runner may
+        give it to another reviewer or take the person out of the round.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleReview'
+          description: ''
+  /api/v1/owner/companies/{company_id}/lifecycle/reviews/{id}/reviewer/:
+    post:
+      operationId: companies_lifecycle_reviews_reviewer_create
+      description: |-
+        One review: its reviewer writes and publishes it; owners read it; a round's runner may
+        give it to another reviewer or take the person out of the round.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LifecycleReviewReassignRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LifecycleReviewReassignRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LifecycleReviewReassignRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleReviewRow'
+          description: ''
   /api/v1/owner/companies/{company_id}/lifecycle/suspensions/:
     get:
       operationId: companies_lifecycle_suspensions_list
@@ -55828,6 +56498,38 @@ components:
       - changes
       - hired_on
       - leavings
+    LifecycleCareerReview:
+      type: object
+      properties:
+        id:
+          type: integer
+        round:
+          $ref: '#/components/schemas/LifecycleReviewRef'
+        period_start:
+          type: string
+          format: date
+        period_end:
+          type: string
+          format: date
+        published_at:
+          type: string
+          format: date-time
+        rating:
+          type: integer
+          nullable: true
+        outcome:
+          $ref: '#/components/schemas/LifecycleReviewOutcomeEnum'
+        can_open:
+          type: boolean
+      required:
+      - can_open
+      - id
+      - outcome
+      - period_end
+      - period_start
+      - published_at
+      - rating
+      - round
     LifecycleCurrentJob:
       type: object
       description: 'Someone''s job now, for the "Change job" dialog: the pay only
@@ -57970,6 +58672,1244 @@ components:
         * `yes` - Yes
         * `maybe` - Maybe
         * `no` - No
+    LifecycleReview:
+      type: object
+      description: One review as its reviewer (or an owner) reads it.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        round:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleReviewRoundRef'
+          readOnly: true
+        member:
+          allOf:
+          - $ref: '#/components/schemas/HrPersonRef'
+          readOnly: true
+        position:
+          type: string
+          nullable: true
+          readOnly: true
+        home_branch:
+          allOf:
+          - $ref: '#/components/schemas/HrBranchRef'
+          nullable: true
+          readOnly: true
+        reviewer:
+          allOf:
+          - $ref: '#/components/schemas/HrPersonRef'
+          nullable: true
+          readOnly: true
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleReviewQuestion'
+          readOnly: true
+        self_part:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleReviewSelfPart'
+          readOnly: true
+        manager_answers:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/LifecycleReviewAnswer'
+          readOnly: true
+        manager_state:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleReviewManagerStateEnum'
+          readOnly: true
+        manager_average:
+          type: string
+          nullable: true
+          readOnly: true
+        manager_saved_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        kpis:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleReviewKpis'
+          nullable: true
+          readOnly: true
+        kpis_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        rating:
+          type: integer
+          readOnly: true
+          nullable: true
+        summary:
+          type: string
+          readOnly: true
+        outcome:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleReviewOutcomeEnum'
+          readOnly: true
+        raise_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        bonus_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        bonus_currency:
+          allOf:
+          - $ref: '#/components/schemas/CurrencyEnum'
+          readOnly: true
+        promotion_position:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleReviewRef'
+          nullable: true
+          readOnly: true
+        effective_on:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        goals:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleReviewGoal'
+          readOnly: true
+        pay:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleReviewPay'
+          nullable: true
+          readOnly: true
+          description: Their pay now, only with payroll.view.
+        job_change:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleReviewChange'
+          nullable: true
+          readOnly: true
+        bonus:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleReviewBonus'
+          nullable: true
+          readOnly: true
+        outcome_state:
+          nullable: true
+          readOnly: true
+          oneOf:
+          - $ref: '#/components/schemas/LifecycleReviewOutcomeStateEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        published_by:
+          allOf:
+          - $ref: '#/components/schemas/HrPersonRef'
+          nullable: true
+          readOnly: true
+        acknowledged_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        earlier:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleReviewEarlier'
+          readOnly: true
+        can:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleReviewCan'
+          readOnly: true
+      required:
+      - acknowledged_at
+      - bonus
+      - bonus_amount
+      - bonus_currency
+      - can
+      - earlier
+      - effective_on
+      - goals
+      - home_branch
+      - id
+      - job_change
+      - kpis
+      - kpis_at
+      - manager_answers
+      - manager_average
+      - manager_saved_at
+      - manager_state
+      - member
+      - outcome
+      - outcome_state
+      - pay
+      - position
+      - promotion_position
+      - published_at
+      - published_by
+      - questions
+      - raise_percent
+      - rating
+      - reviewer
+      - round
+      - self_part
+      - summary
+    LifecycleReviewAnswer:
+      type: object
+      properties:
+        rating:
+          type: integer
+          maximum: 5
+          minimum: 1
+          nullable: true
+        text:
+          type: string
+    LifecycleReviewAnswerRequest:
+      type: object
+      properties:
+        rating:
+          type: integer
+          maximum: 5
+          minimum: 1
+          nullable: true
+        text:
+          type: string
+    LifecycleReviewAttendanceKpi:
+      type: object
+      properties:
+        scheduled_days:
+          type: integer
+        attended_days:
+          type: integer
+        absent_days:
+          type: integer
+        late_arrivals:
+          type: integer
+        late_minutes:
+          type: integer
+        leave_days:
+          type: integer
+        worked_hours:
+          type: string
+      required:
+      - absent_days
+      - attended_days
+      - late_arrivals
+      - late_minutes
+      - leave_days
+      - scheduled_days
+      - worked_hours
+    LifecycleReviewAudience:
+      type: object
+      properties:
+        positions:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleReviewRef'
+        branches:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleReviewRef'
+      required:
+      - branches
+      - positions
+    LifecycleReviewBonus:
+      type: object
+      properties:
+        id:
+          type: integer
+        amount:
+          type: string
+        currency:
+          type: string
+        status:
+          type: string
+          description: The adjustment's status in payroll.
+        period:
+          type: string
+          format: date
+      required:
+      - amount
+      - currency
+      - id
+      - period
+      - status
+    LifecycleReviewBranchResult:
+      type: object
+      properties:
+        branch:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleReviewRef'
+          nullable: true
+        people:
+          type: integer
+        average:
+          type: string
+          nullable: true
+        raises:
+          type: integer
+        bonuses:
+          type: integer
+        promotions:
+          type: integer
+        plans:
+          type: integer
+        raise_cost:
+          type: string
+          nullable: true
+          description: Only with payroll.view.
+        bonus_total:
+          type: string
+          nullable: true
+          description: Only with payroll.view.
+      required:
+      - average
+      - bonus_total
+      - bonuses
+      - branch
+      - people
+      - plans
+      - promotions
+      - raise_cost
+      - raises
+    LifecycleReviewCan:
+      type: object
+      properties:
+        write:
+          type: boolean
+        pay:
+          type: boolean
+          description: May give a raise or a bonus.
+        reassign:
+          type: boolean
+        remove:
+          type: boolean
+        goals:
+          type: boolean
+          description: May mark the plan's goals.
+        draft_summary:
+          type: boolean
+          description: May ask Claude for a suggested summary (AI on, ai.use).
+      required:
+      - draft_summary
+      - goals
+      - pay
+      - reassign
+      - remove
+      - write
+    LifecycleReviewChange:
+      type: object
+      properties:
+        id:
+          type: integer
+        status:
+          $ref: '#/components/schemas/LifecycleJobChangeStatusEnum'
+        effective_on:
+          type: string
+          format: date
+        parts:
+          type: array
+          items:
+            type: string
+        pay_before:
+          type: string
+          nullable: true
+          description: Only with payroll.view.
+        pay_after:
+          type: string
+          nullable: true
+          description: Only with payroll.view.
+        error:
+          type: string
+        can_decide:
+          type: boolean
+      required:
+      - can_decide
+      - effective_on
+      - error
+      - id
+      - parts
+      - pay_after
+      - pay_before
+      - status
+    LifecycleReviewCost:
+      type: object
+      properties:
+        currency:
+          type: string
+        raises_monthly:
+          type: string
+          description: 'Approved raises: what they add a month.'
+        raises_waiting:
+          type: string
+          description: Raises still waiting for approval.
+        bonuses:
+          type: string
+          description: Approved bonuses.
+        bonuses_waiting:
+          type: string
+      required:
+      - bonuses
+      - bonuses_waiting
+      - currency
+      - raises_monthly
+      - raises_waiting
+    LifecycleReviewDisciplineKpi:
+      type: object
+      properties:
+        records:
+          type: integer
+        by_kind:
+          type: object
+          additionalProperties:
+            type: integer
+      required:
+      - by_kind
+      - records
+    LifecycleReviewEarlier:
+      type: object
+      properties:
+        id:
+          type: integer
+        round:
+          type: string
+        period_end:
+          type: string
+          format: date
+        rating:
+          type: integer
+          nullable: true
+        outcome:
+          $ref: '#/components/schemas/LifecycleReviewOutcomeEnum'
+        published_at:
+          type: string
+          format: date-time
+      required:
+      - id
+      - outcome
+      - period_end
+      - published_at
+      - rating
+      - round
+    LifecycleReviewGoal:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        target:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        unit:
+          type: string
+          readOnly: true
+        progress:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        due_on:
+          type: string
+          format: date
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleReviewGoalStatusEnum'
+          readOnly: true
+        note:
+          type: string
+          readOnly: true
+        closed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+      required:
+      - closed_at
+      - due_on
+      - id
+      - note
+      - progress
+      - status
+      - target
+      - title
+      - unit
+    LifecycleReviewGoalStatusEnum:
+      enum:
+      - open
+      - done
+      - missed
+      type: string
+      description: |-
+        * `open` - In progress
+        * `done` - Reached
+        * `missed` - Not reached
+    LifecycleReviewGoalWriteRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 200
+        due_on:
+          type: string
+          format: date
+          nullable: true
+        target:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        unit:
+          type: string
+          default: ''
+          maxLength: 30
+      required:
+      - title
+    LifecycleReviewGoalsKpi:
+      type: object
+      properties:
+        open:
+          type: integer
+        done:
+          type: integer
+        missed:
+          type: integer
+      required:
+      - done
+      - missed
+      - open
+    LifecycleReviewKpis:
+      type: object
+      properties:
+        taken_at:
+          type: string
+          format: date-time
+        start:
+          type: string
+          format: date
+        end:
+          type: string
+          format: date
+        tasks:
+          $ref: '#/components/schemas/LifecycleReviewTasksKpi'
+        attendance:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleReviewAttendanceKpi'
+          nullable: true
+        discipline:
+          $ref: '#/components/schemas/LifecycleReviewDisciplineKpi'
+        sales:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleReviewSalesKpi'
+          nullable: true
+          description: Only with sales.view.
+        learning:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleReviewLearningKpi'
+          nullable: true
+        goals:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleReviewGoalsKpi'
+          nullable: true
+      required:
+      - attendance
+      - discipline
+      - end
+      - goals
+      - learning
+      - sales
+      - start
+      - taken_at
+      - tasks
+    LifecycleReviewLatePartEnum:
+      enum:
+      - self
+      - manager
+      type: string
+      description: |-
+        * `self` - self
+        * `manager` - manager
+    LifecycleReviewLearningKpi:
+      type: object
+      properties:
+        completed:
+          type: integer
+        open:
+          type: integer
+        late:
+          type: integer
+      required:
+      - completed
+      - late
+      - open
+    LifecycleReviewManagerStateEnum:
+      enum:
+      - not_started
+      - draft
+      - published
+      type: string
+      description: |-
+        * `not_started` - not_started
+        * `draft` - draft
+        * `published` - published
+    LifecycleReviewOutcomeEnum:
+      enum:
+      - none
+      - raise
+      - bonus
+      - promotion
+      - improvement_plan
+      type: string
+      description: |-
+        * `none` - No change
+        * `raise` - Raise
+        * `bonus` - Bonus
+        * `promotion` - Promotion
+        * `improvement_plan` - Improvement plan
+    LifecycleReviewOutcomeStateEnum:
+      enum:
+      - waiting
+      - approved
+      - applied
+      - rejected
+      type: string
+      description: |-
+        * `waiting` - waiting
+        * `approved` - approved
+        * `applied` - applied
+        * `rejected` - rejected
+    LifecycleReviewPay:
+      type: object
+      properties:
+        amount:
+          type: string
+        currency:
+          type: string
+        pay_type:
+          type: string
+        rounding_step:
+          type: string
+          description: A raise rounds the new pay to this.
+      required:
+      - amount
+      - currency
+      - pay_type
+      - rounding_step
+    LifecycleReviewPreview:
+      type: object
+      properties:
+        count:
+          type: integer
+        reviewers:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleReviewPreviewReviewer'
+        people:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleReviewPreviewPerson'
+      required:
+      - count
+      - people
+      - reviewers
+    LifecycleReviewPreviewPerson:
+      type: object
+      properties:
+        member:
+          $ref: '#/components/schemas/HrPersonRef'
+        position:
+          type: string
+          nullable: true
+        home_branch:
+          allOf:
+          - $ref: '#/components/schemas/HrBranchRef'
+          nullable: true
+        reviewer:
+          allOf:
+          - $ref: '#/components/schemas/HrPersonRef'
+          nullable: true
+      required:
+      - home_branch
+      - member
+      - position
+      - reviewer
+    LifecycleReviewPreviewReviewer:
+      type: object
+      properties:
+        reviewer:
+          allOf:
+          - $ref: '#/components/schemas/HrPersonRef'
+          nullable: true
+        people:
+          type: integer
+      required:
+      - people
+      - reviewer
+    LifecycleReviewProgress:
+      type: object
+      properties:
+        people:
+          type: integer
+        self_sent:
+          type: integer
+        published:
+          type: integer
+        acknowledged:
+          type: integer
+        late:
+          type: integer
+        self_late:
+          type: integer
+        manager_late:
+          type: integer
+      required:
+      - acknowledged
+      - late
+      - manager_late
+      - people
+      - published
+      - self_late
+      - self_sent
+    LifecycleReviewQuestion:
+      type: object
+      properties:
+        id:
+          type: string
+        kind:
+          $ref: '#/components/schemas/LifecycleReviewQuestionKindEnum'
+        text:
+          type: string
+        key:
+          type: string
+          description: The template question it is, while its words are untouched.
+      required:
+      - id
+      - key
+      - kind
+      - text
+    LifecycleReviewQuestionKindEnum:
+      enum:
+      - rating
+      - text
+      type: string
+      description: |-
+        * `rating` - rating
+        * `text` - text
+    LifecycleReviewQuestionResult:
+      type: object
+      properties:
+        id:
+          type: string
+        text:
+          type: string
+        self_average:
+          type: string
+          nullable: true
+        manager_average:
+          type: string
+          nullable: true
+      required:
+      - id
+      - manager_average
+      - self_average
+      - text
+    LifecycleReviewQuestionWriteRequest:
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/LifecycleReviewQuestionKindEnum'
+        text:
+          type: string
+          minLength: 1
+          maxLength: 300
+        key:
+          type: string
+          default: ''
+      required:
+      - kind
+      - text
+    LifecycleReviewReassignRequest:
+      type: object
+      properties:
+        reviewer_id:
+          type: integer
+      required:
+      - reviewer_id
+    LifecycleReviewRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
+    LifecycleReviewReminded:
+      type: object
+      properties:
+        people:
+          type: integer
+        reviewers:
+          type: integer
+      required:
+      - people
+      - reviewers
+    LifecycleReviewResults:
+      type: object
+      properties:
+        people:
+          type: integer
+        published:
+          type: integer
+        average:
+          type: string
+          nullable: true
+        spread:
+          type: object
+          additionalProperties:
+            type: integer
+          description: How many people got each rating, 1 to 5.
+        outcomes:
+          type: object
+          additionalProperties:
+            type: integer
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleReviewQuestionResult'
+        by_branch:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleReviewBranchResult'
+        cost:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleReviewCost'
+          nullable: true
+          description: Only with payroll.view.
+      required:
+      - average
+      - by_branch
+      - cost
+      - outcomes
+      - people
+      - published
+      - questions
+      - spread
+    LifecycleReviewRound:
+      type: object
+      description: A round with how far it has got for the viewer (the reviews they
+        see).
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        period_start:
+          type: string
+          format: date
+          readOnly: true
+        period_end:
+          type: string
+          format: date
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleReviewRoundStatusEnum'
+          readOnly: true
+        self_due_on:
+          type: string
+          format: date
+          readOnly: true
+        manager_due_on:
+          type: string
+          format: date
+          readOnly: true
+        reviewers_begin_on:
+          type: string
+          format: date
+          nullable: true
+          readOnly: true
+          description: 'Before the reviewers'' part: the day it begins by itself.'
+        audience:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleReviewAudience'
+          readOnly: true
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleReviewQuestion'
+          readOnly: true
+        progress:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleReviewProgress'
+          readOnly: true
+        mine:
+          type: integer
+          readOnly: true
+          description: Reviews waiting for the viewer to write.
+        created_by:
+          allOf:
+          - $ref: '#/components/schemas/HrPersonRef'
+          nullable: true
+          readOnly: true
+        opened_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        manager_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        closed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        can:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleReviewRoundCan'
+          readOnly: true
+      required:
+      - audience
+      - can
+      - closed_at
+      - created_at
+      - created_by
+      - id
+      - manager_at
+      - manager_due_on
+      - mine
+      - name
+      - opened_at
+      - period_end
+      - period_start
+      - progress
+      - questions
+      - reviewers_begin_on
+      - self_due_on
+      - status
+    LifecycleReviewRoundCan:
+      type: object
+      properties:
+        run:
+          type: boolean
+        edit:
+          type: boolean
+        open:
+          type: boolean
+        advance:
+          type: boolean
+        close:
+          type: boolean
+        remind:
+          type: boolean
+        delete:
+          type: boolean
+      required:
+      - advance
+      - close
+      - delete
+      - edit
+      - open
+      - remind
+      - run
+    LifecycleReviewRoundRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        status:
+          $ref: '#/components/schemas/LifecycleReviewRoundStatusEnum'
+        period_start:
+          type: string
+          format: date
+        period_end:
+          type: string
+          format: date
+        self_due_on:
+          type: string
+          format: date
+        manager_due_on:
+          type: string
+          format: date
+      required:
+      - id
+      - manager_due_on
+      - name
+      - period_end
+      - period_start
+      - self_due_on
+      - status
+    LifecycleReviewRoundStatusEnum:
+      enum:
+      - draft
+      - self
+      - manager
+      - closed
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `self` - Self reviews
+        * `manager` - Manager reviews
+        * `closed` - Closed
+    LifecycleReviewRoundWriteRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        period_start:
+          type: string
+          format: date
+        period_end:
+          type: string
+          format: date
+        self_due_on:
+          type: string
+          format: date
+        manager_due_on:
+          type: string
+          format: date
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleReviewQuestionWriteRequest'
+        positions:
+          type: array
+          items:
+            type: integer
+        branches:
+          type: array
+          items:
+            type: integer
+        open:
+          type: boolean
+          default: false
+          description: Open it at once (everyone in it hears).
+      required:
+      - manager_due_on
+      - name
+      - period_end
+      - period_start
+      - questions
+      - self_due_on
+    LifecycleReviewRow:
+      type: object
+      description: |-
+        One person in a round, as its page lists them; the rating and outcome only for whoever
+        may read the review.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        member:
+          allOf:
+          - $ref: '#/components/schemas/HrPersonRef'
+          readOnly: true
+        position:
+          type: string
+          nullable: true
+          readOnly: true
+        home_branch:
+          allOf:
+          - $ref: '#/components/schemas/HrBranchRef'
+          nullable: true
+          readOnly: true
+        reviewer:
+          allOf:
+          - $ref: '#/components/schemas/HrPersonRef'
+          nullable: true
+          readOnly: true
+        self_state:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleReviewSelfStateEnum'
+          readOnly: true
+        self_sent_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        manager_state:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleReviewManagerStateEnum'
+          readOnly: true
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        acknowledged_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        reminded_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        late:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleReviewLatePartEnum'
+          readOnly: true
+        rating:
+          type: integer
+          nullable: true
+          readOnly: true
+        outcome:
+          nullable: true
+          readOnly: true
+          oneOf:
+          - $ref: '#/components/schemas/LifecycleReviewOutcomeEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        outcome_state:
+          nullable: true
+          readOnly: true
+          oneOf:
+          - $ref: '#/components/schemas/LifecycleReviewOutcomeStateEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        can_open:
+          type: boolean
+          readOnly: true
+      required:
+      - acknowledged_at
+      - can_open
+      - home_branch
+      - id
+      - late
+      - manager_state
+      - member
+      - outcome
+      - outcome_state
+      - position
+      - published_at
+      - rating
+      - reminded_at
+      - reviewer
+      - self_sent_at
+      - self_state
+    LifecycleReviewSalesKpi:
+      type: object
+      properties:
+        shifts:
+          type: integer
+        net:
+          type: string
+        receipts:
+          type: integer
+        avg_check:
+          type: string
+        accuracy:
+          type: string
+          nullable: true
+        shortages:
+          type: integer
+        shortage_total:
+          type: string
+        currency:
+          type: string
+      required:
+      - accuracy
+      - avg_check
+      - currency
+      - net
+      - receipts
+      - shifts
+      - shortage_total
+      - shortages
+    LifecycleReviewSelfPart:
+      type: object
+      properties:
+        visible:
+          type: boolean
+          description: False until the reviewers' part begins.
+        state:
+          $ref: '#/components/schemas/LifecycleReviewSelfStateEnum'
+        sent_at:
+          type: string
+          format: date-time
+          nullable: true
+        answers:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/LifecycleReviewAnswer'
+          nullable: true
+        average:
+          type: string
+          nullable: true
+      required:
+      - answers
+      - average
+      - sent_at
+      - state
+      - visible
+    LifecycleReviewSelfStateEnum:
+      enum:
+      - not_started
+      - draft
+      - sent
+      type: string
+      description: |-
+        * `not_started` - not_started
+        * `draft` - draft
+        * `sent` - sent
+    LifecycleReviewSummaryDraft:
+      type: object
+      properties:
+        summary:
+          type: string
+          description: A suggestion for the reviewer to read and change.
+        engine:
+          type: string
+          description: claude, or fake (AI_FAKE's canned draft).
+      required:
+      - engine
+      - summary
+    LifecycleReviewTasksKpi:
+      type: object
+      properties:
+        total:
+          type: integer
+        on_time:
+          type: integer
+        late:
+          type: integer
+        missed:
+          type: integer
+        on_time_percent:
+          type: string
+          nullable: true
+      required:
+      - late
+      - missed
+      - on_time
+      - on_time_percent
+      - total
     LifecycleSuspendRequest:
       type: object
       properties:
@@ -63102,6 +65042,88 @@ components:
           pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
           nullable: true
           description: Also propose this fine in payroll.
+    PatchedLifecycleReviewGoalUpdateRequest:
+      type: object
+      properties:
+        progress:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        status:
+          $ref: '#/components/schemas/LifecycleReviewGoalStatusEnum'
+        note:
+          type: string
+          maxLength: 300
+    PatchedLifecycleReviewManagerWriteRequest:
+      type: object
+      properties:
+        answers:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/LifecycleReviewAnswerRequest'
+        rating:
+          type: integer
+          maximum: 5
+          minimum: 1
+          nullable: true
+        summary:
+          type: string
+          maxLength: 2000
+        outcome:
+          $ref: '#/components/schemas/LifecycleReviewOutcomeEnum'
+        raise_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          nullable: true
+        bonus_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        promotion_position_id:
+          type: integer
+          nullable: true
+        effective_on:
+          type: string
+          format: date
+          nullable: true
+        goals:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleReviewGoalWriteRequest'
+    PatchedLifecycleReviewRoundUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        period_start:
+          type: string
+          format: date
+        period_end:
+          type: string
+          format: date
+        self_due_on:
+          type: string
+          format: date
+        manager_due_on:
+          type: string
+          format: date
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleReviewQuestionWriteRequest'
+        positions:
+          type: array
+          items:
+            type: integer
+        branches:
+          type: array
+          items:
+            type: integer
     PatchedOwnerMeUpdateRequest:
       type: object
       properties:

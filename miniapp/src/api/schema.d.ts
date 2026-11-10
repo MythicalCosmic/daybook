@@ -1318,6 +1318,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/companies/{company_id}/lifecycle/reviews/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["v1_companies_lifecycle_my_reviews"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/lifecycle/reviews/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["v1_companies_lifecycle_reviews_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["v1_companies_lifecycle_reviews_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/lifecycle/reviews/{id}/acknowledge/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["v1_companies_lifecycle_reviews_acknowledge_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/lifecycle/reviews/{id}/send/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["v1_companies_lifecycle_reviews_send_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/companies/{company_id}/members/": {
         parameters: {
             query?: never;
@@ -5119,6 +5183,116 @@ export interface components {
             readonly has_fine: boolean;
             readonly withdraw_reason: string;
         };
+        /**
+         * @description The person's own review: the questions and their answers; once published, their
+         *     reviewer's answers, the rating, the summary, what follows and the goals.
+         */
+        LifecycleMyReview: {
+            readonly id: number;
+            readonly round: components["schemas"]["LifecycleMyReviewRound"];
+            readonly state: components["schemas"]["LifecycleMyReviewStateEnum"];
+            readonly can_answer: boolean;
+            /** Format: date-time */
+            readonly self_sent_at: string | null;
+            /** Format: date-time */
+            readonly published_at: string | null;
+            /** Format: date-time */
+            readonly acknowledged_at: string | null;
+            readonly rating: number | null;
+            readonly outcome: (components["schemas"]["LifecycleReviewOutcomeEnum"] | components["schemas"]["NullEnum"]) | null;
+            readonly late: boolean;
+            readonly questions: components["schemas"]["LifecycleReviewQuestion"][];
+            readonly answers: {
+                [key: string]: components["schemas"]["LifecycleReviewAnswer"];
+            };
+            /** Format: date-time */
+            readonly self_saved_at: string | null;
+            readonly reviewer: string | null;
+            readonly manager_answers: {
+                [key: string]: components["schemas"]["LifecycleReviewAnswer"];
+            } | null;
+            readonly summary: string | null;
+            readonly raise_percent: string | null;
+            readonly bonus: components["schemas"]["LifecycleReviewBonus"] | null;
+            readonly change: components["schemas"]["LifecycleMyReviewChange"] | null;
+            readonly goals: components["schemas"]["LifecycleReviewGoal"][];
+            readonly kpis: components["schemas"]["LifecycleReviewKpis"] | null;
+        };
+        LifecycleMyReviewChange: {
+            status: (components["schemas"]["LifecycleReviewOutcomeStateEnum"] | components["schemas"]["NullEnum"]) | null;
+            /** Format: date */
+            effective_on: string | null;
+            position: string | null;
+            /** @description Their own pay. */
+            pay_before: string | null;
+            /** @description Their own pay. */
+            pay_after: string | null;
+            currency: string | null;
+        };
+        LifecycleMyReviewGoal: {
+            readonly id: number;
+            readonly title: string;
+            /** Format: decimal */
+            readonly target: string | null;
+            readonly unit: string;
+            /** Format: decimal */
+            readonly progress: string | null;
+            /** Format: date */
+            readonly due_on: string;
+            readonly status: components["schemas"]["LifecycleReviewGoalStatusEnum"];
+            readonly note: string;
+            /** Format: date-time */
+            readonly closed_at: string | null;
+            readonly round: string;
+            readonly review_id: number;
+        };
+        LifecycleMyReviewRound: {
+            id: number;
+            name: string;
+            status: components["schemas"]["LifecycleReviewRoundStatusEnum"];
+            /** Format: date */
+            period_start: string;
+            /** Format: date */
+            period_end: string;
+            /** Format: date */
+            self_due_on: string;
+        };
+        LifecycleMyReviewRow: {
+            readonly id: number;
+            readonly round: components["schemas"]["LifecycleMyReviewRound"];
+            readonly state: components["schemas"]["LifecycleMyReviewStateEnum"];
+            readonly can_answer: boolean;
+            /** Format: date-time */
+            readonly self_sent_at: string | null;
+            /** Format: date-time */
+            readonly published_at: string | null;
+            /** Format: date-time */
+            readonly acknowledged_at: string | null;
+            readonly rating: number | null;
+            readonly outcome: (components["schemas"]["LifecycleReviewOutcomeEnum"] | components["schemas"]["NullEnum"]) | null;
+            readonly late: boolean;
+        };
+        LifecycleMyReviewSendRequest: {
+            answers?: {
+                [key: string]: components["schemas"]["LifecycleReviewAnswerRequest"];
+            };
+        };
+        /**
+         * @description * `todo` - todo
+         *     * `draft` - draft
+         *     * `sent` - sent
+         *     * `published` - published
+         * @enum {string}
+         */
+        LifecycleMyReviewStateEnum: "todo" | "draft" | "sent" | "published";
+        LifecycleMyReviews: {
+            /** @description Rounds waiting for my answers or sent. */
+            open: components["schemas"]["LifecycleMyReviewRow"][];
+            /** @description Published, newest first. */
+            past: components["schemas"]["LifecycleMyReviewRow"][];
+            /** @description My open goals. */
+            goals: components["schemas"]["LifecycleMyReviewGoal"][];
+        };
         LifecycleNamed: {
             id: number;
             name: string;
@@ -5163,6 +5337,140 @@ export interface components {
          * @enum {string}
          */
         LifecycleRecordStatusEnum: "issued" | "acknowledged" | "withdrawn";
+        LifecycleReviewAnswer: {
+            rating?: number | null;
+            text?: string;
+        };
+        LifecycleReviewAnswerRequest: {
+            rating?: number | null;
+            text?: string;
+        };
+        LifecycleReviewAttendanceKpi: {
+            scheduled_days: number;
+            attended_days: number;
+            absent_days: number;
+            late_arrivals: number;
+            late_minutes: number;
+            leave_days: number;
+            worked_hours: string;
+        };
+        LifecycleReviewBonus: {
+            id: number;
+            amount: string;
+            currency: string;
+            /** @description The adjustment's status in payroll. */
+            status: string;
+            /** Format: date */
+            period: string;
+        };
+        LifecycleReviewDisciplineKpi: {
+            records: number;
+            by_kind: {
+                [key: string]: number;
+            };
+        };
+        LifecycleReviewGoal: {
+            readonly id: number;
+            readonly title: string;
+            /** Format: decimal */
+            readonly target: string | null;
+            readonly unit: string;
+            /** Format: decimal */
+            readonly progress: string | null;
+            /** Format: date */
+            readonly due_on: string;
+            readonly status: components["schemas"]["LifecycleReviewGoalStatusEnum"];
+            readonly note: string;
+            /** Format: date-time */
+            readonly closed_at: string | null;
+        };
+        /**
+         * @description * `open` - In progress
+         *     * `done` - Reached
+         *     * `missed` - Not reached
+         * @enum {string}
+         */
+        LifecycleReviewGoalStatusEnum: "open" | "done" | "missed";
+        LifecycleReviewGoalsKpi: {
+            open: number;
+            done: number;
+            missed: number;
+        };
+        LifecycleReviewKpis: {
+            /** Format: date-time */
+            taken_at: string;
+            /** Format: date */
+            start: string;
+            /** Format: date */
+            end: string;
+            tasks: components["schemas"]["LifecycleReviewTasksKpi"];
+            attendance: components["schemas"]["LifecycleReviewAttendanceKpi"] | null;
+            discipline: components["schemas"]["LifecycleReviewDisciplineKpi"];
+            /** @description Only with sales.view. */
+            sales: components["schemas"]["LifecycleReviewSalesKpi"] | null;
+            learning: components["schemas"]["LifecycleReviewLearningKpi"] | null;
+            goals: components["schemas"]["LifecycleReviewGoalsKpi"] | null;
+        };
+        LifecycleReviewLearningKpi: {
+            completed: number;
+            open: number;
+            late: number;
+        };
+        /**
+         * @description * `none` - No change
+         *     * `raise` - Raise
+         *     * `bonus` - Bonus
+         *     * `promotion` - Promotion
+         *     * `improvement_plan` - Improvement plan
+         * @enum {string}
+         */
+        LifecycleReviewOutcomeEnum: "none" | "raise" | "bonus" | "promotion" | "improvement_plan";
+        /**
+         * @description * `waiting` - waiting
+         *     * `approved` - approved
+         *     * `applied` - applied
+         *     * `rejected` - rejected
+         * @enum {string}
+         */
+        LifecycleReviewOutcomeStateEnum: "waiting" | "approved" | "applied" | "rejected";
+        LifecycleReviewQuestion: {
+            id: string;
+            kind: components["schemas"]["LifecycleReviewQuestionKindEnum"];
+            text: string;
+            /** @description The template question it is, while its words are untouched. */
+            key: string;
+        };
+        /**
+         * @description * `rating` - rating
+         *     * `text` - text
+         * @enum {string}
+         */
+        LifecycleReviewQuestionKindEnum: "rating" | "text";
+        /**
+         * @description * `draft` - Draft
+         *     * `self` - Self reviews
+         *     * `manager` - Manager reviews
+         *     * `closed` - Closed
+         * @enum {string}
+         */
+        LifecycleReviewRoundStatusEnum: "draft" | "self" | "manager" | "closed";
+        LifecycleReviewSalesKpi: {
+            shifts: number;
+            net: string;
+            receipts: number;
+            avg_check: string;
+            accuracy: string | null;
+            shortages: number;
+            shortage_total: string;
+            currency: string;
+        };
+        LifecycleReviewTasksKpi: {
+            total: number;
+            on_time: number;
+            late: number;
+            missed: number;
+            on_time_percent: string | null;
+        };
         Line: {
             readonly id: number;
             readonly kind: components["schemas"]["PayrollLineKindEnum"];
@@ -5553,6 +5861,11 @@ export interface components {
         };
         PatchedInventoryCountedRequest: {
             lines?: components["schemas"]["InventoryCountedLineRequest"][];
+        };
+        PatchedLifecycleMyReviewWriteRequest: {
+            answers?: {
+                [key: string]: components["schemas"]["LifecycleReviewAnswerRequest"];
+            };
         };
         PatchedMeRequest: {
             language?: components["schemas"]["LanguageEnum"];
@@ -9164,6 +9477,127 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LifecycleMyRecord"];
+                };
+            };
+        };
+    };
+    v1_companies_lifecycle_my_reviews: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LifecycleMyReviews"];
+                };
+            };
+        };
+    };
+    v1_companies_lifecycle_reviews_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LifecycleMyReview"];
+                };
+            };
+        };
+    };
+    v1_companies_lifecycle_reviews_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedLifecycleMyReviewWriteRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedLifecycleMyReviewWriteRequest"];
+                "multipart/form-data": components["schemas"]["PatchedLifecycleMyReviewWriteRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LifecycleMyReview"];
+                };
+            };
+        };
+    };
+    v1_companies_lifecycle_reviews_acknowledge_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LifecycleMyReview"];
+                };
+            };
+        };
+    };
+    v1_companies_lifecycle_reviews_send_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["LifecycleMyReviewSendRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["LifecycleMyReviewSendRequest"];
+                "multipart/form-data": components["schemas"]["LifecycleMyReviewSendRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LifecycleMyReview"];
                 };
             };
         };
