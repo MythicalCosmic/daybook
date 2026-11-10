@@ -4,7 +4,7 @@
  * (signed when, waiting until when, late since when, or only to read), and how many signatures
  * they gave to earlier versions. A row opens the policy.
  */
-import { BookOpenCheck } from "@lucide/vue";
+import { ScrollText } from "@lucide/vue";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink } from "vue-router";
@@ -43,12 +43,12 @@ function detail(row: PersonPolicyStanding): string {
 <template>
   <section class="ui-card overflow-hidden" data-hr-policies>
     <header class="flex items-center gap-2 border-b border-line px-5 py-3">
-      <BookOpenCheck :size="16" class="text-subtle" aria-hidden="true" />
+      <ScrollText :size="16" class="text-subtle" aria-hidden="true" />
       <h2 class="flex-1 text-md font-semibold text-fg">{{ t("hr.nav.policies") }}</h2>
     </header>
     <div v-if="query.isPending.value" class="flex flex-col gap-2 p-4"><SkeletonBlock v-for="n in 2" :key="n" height="40px" /></div>
     <ErrorState v-else-if="query.isError.value" compact class="m-4" :error="query.error.value" :retry="() => query.refetch()" />
-    <EmptyState v-else-if="!rows.length" size="sm" tone="neutral" :icon="BookOpenCheck" :title="t('hr.policy.person.empty')" />
+    <EmptyState v-else-if="!rows.length" size="sm" tone="neutral" :icon="ScrollText" :title="t('hr.policy.person.empty')" />
     <template v-else>
       <ul class="divide-y divide-[var(--c-border)]">
         <li v-for="row in rows" :key="row.policy.id">

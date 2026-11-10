@@ -7,7 +7,7 @@
  * Settings. Kept tiny:
  * pages and the API load on first use. Whoever runs the roster (attendance.view) sees Coverage.
  */
-import { BookOpenCheck, FilePlus2, FileSignature, IdCard, ShieldCheck } from "@lucide/vue";
+import { FilePlus2, FileSignature, IdCard, ScrollText, ShieldCheck } from "@lucide/vue";
 import { defineAsyncComponent } from "vue";
 
 import { defineModule } from "@/core/modules";
@@ -67,7 +67,7 @@ export default defineModule({
     {
       id: "hr.policy",
       title: ctx.t("hr.cmd.policy"),
-      icon: BookOpenCheck,
+      icon: ScrollText,
       perm: "hr.manage",
       keywords: ["policy", "rules", "qoida", "qoidalar", "правило", "правила", "imzo", "подпись", "dori berish", "saqlash"],
       run: () => ctx.go("hr/policies/new"),

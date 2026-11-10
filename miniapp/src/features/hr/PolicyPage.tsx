@@ -3,7 +3,7 @@
  * changed in this version, the text, the attached document, and "O‘qidim va roziman" (I have read
  * it and agree) with a confirm while it waits for my signature; once signed, when I signed it.
  */
-import { BookOpenCheck, CheckCheck, CircleCheck, PenLine, TriangleAlert } from "lucide-react";
+import { CheckCheck, CircleCheck, PenLine, ScrollText, TriangleAlert } from "lucide-react";
 import { useMemo } from "react";
 
 import { useI18n } from "../../i18n";
@@ -91,7 +91,7 @@ export default function PolicyPage({ params }: PageProps) {
             body={data.signed_number && data.signed_number !== data.number ? t("policy.signedOlder", { number: data.signed_number }) : undefined}
           />
         )}
-        {data.state === "to_read" && <Banner icon={BookOpenCheck} title={t("policy.toReadBanner")} />}
+        {data.state === "to_read" && <Banner icon={ScrollText} title={t("policy.toReadBanner")} />}
 
         {data.change_note && data.number > 1 && (
           <Card className="hr-change">

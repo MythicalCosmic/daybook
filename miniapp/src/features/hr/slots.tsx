@@ -3,7 +3,7 @@
  * document that ran out (or soon will), a card for rules to read and sign, and the Me rows'
  * bubbles.
  */
-import { BookOpenCheck } from "lucide-react";
+import { ScrollText } from "lucide-react";
 
 import { useI18n } from "../../i18n";
 import { dayMonthYear } from "../../lib/time";
@@ -62,7 +62,7 @@ export function PoliciesCard({ member }: SlotProps) {
       size="lg"
       tone="plain"
       iconTone="accent"
-      icon={BookOpenCheck}
+      icon={ScrollText}
       title={pending.length === 1 ? t("home.policy", { title: first.title }) : t("home.policies", { count: pending.length })}
       body={late ? t("home.policyLate") : due ? t("home.policyBody", { date: dayMonthYear(due, "UTC", locale) }) : undefined}
       chevron

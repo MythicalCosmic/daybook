@@ -13,7 +13,7 @@
  * Deep links (the bot's notices): `hr.contract`, `hr.documents`, `hr.policy:<id>`, `hr.policies`;
  * also `hr` for this page.
  */
-import { BookOpenCheck, FolderOpen } from "lucide-react";
+import { FolderOpen, ScrollText } from "lucide-react";
 import { lazy } from "react";
 
 import { hasModule, isSuspended } from "../../api/membership";
@@ -48,7 +48,7 @@ export default defineFeature({
   ],
   meItems: [
     { id: "documents", group: "documents", label: "me.documents", icon: FolderOpen, open: { page: "home" }, order: 10, useStatus: useMeStatus },
-    { id: "policies", group: "documents", label: "me.policies", icon: BookOpenCheck, open: { page: "policies" }, order: 12, useStatus: usePoliciesStatus },
+    { id: "policies", group: "documents", label: "me.policies", icon: ScrollText, open: { page: "policies" }, order: 12, useStatus: usePoliciesStatus },
   ],
   routes: {
     hr: { page: "home", tab: "profile" },

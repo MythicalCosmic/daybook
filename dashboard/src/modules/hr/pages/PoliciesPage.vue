@@ -5,7 +5,7 @@
  * applies to and how the signing goes (signed of everyone asked, waiting, late, the deadline).
  * "New policy" opens the editor (`?new=1` from the palette too).
  */
-import { BookOpenCheck, FileText, Plus, Tags } from "@lucide/vue";
+import { FileText, Plus, ScrollText, Tags } from "@lucide/vue";
 import { computed, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
@@ -64,7 +64,7 @@ const empty = computed(() => {
   if (filtered.value) return { icon: FileText, title: t("hr.empty.noMatch"), body: t("hr.empty.noMatchBody") };
   if (view.value === "drafts") return { icon: FileText, title: t("hr.policy.emptyDrafts"), body: t("hr.policy.emptyDraftsBody") };
   if (view.value === "archived") return { icon: FileText, title: t("hr.policy.emptyArchived"), body: t("hr.policy.emptyArchivedBody") };
-  return { icon: BookOpenCheck, title: t("hr.policy.emptyTitle"), body: t("hr.policy.emptyBody") };
+  return { icon: ScrollText, title: t("hr.policy.emptyTitle"), body: t("hr.policy.emptyBody") };
 });
 
 // "New policy" from the palette (?new=1).

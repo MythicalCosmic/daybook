@@ -2,7 +2,7 @@
  * "Hujjatlarim" (Me → My documents): who I am here, my contract and documents (with what needs
  * me), my details with the few I may change, and my emergency contacts.
  */
-import { BookOpenCheck, FilePen, FolderOpen, Phone, Plus } from "lucide-react";
+import { FilePen, FolderOpen, Phone, Plus, ScrollText } from "lucide-react";
 
 import { useI18n } from "../../i18n";
 import { dayMonthLong, dayMonthYear } from "../../lib/time";
@@ -72,7 +72,7 @@ export default function HrPage() {
         />
         {policies.data && policies.data.length > 0 && (
           <ListRow
-            icon={BookOpenCheck}
+            icon={ScrollText}
             title={t("row.policies")}
             subtitle={pending.length === 0 ? t("row.policiesAll") : pending.length === 1 ? pending[0]!.title : t("home.policies", { count: pending.length })}
             alert={pending.some((row) => row.state === "late")}

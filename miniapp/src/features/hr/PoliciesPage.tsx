@@ -2,7 +2,7 @@
  * "Qoidalar" (Me → Rules, or the bot's `hr.policies` link): the rules of my position, what to sign
  * first (late ones on top), then the signed ones and those only to read. A row opens the rule.
  */
-import { BookOpenCheck, BookText, Pill, Scale, ShieldCheck, Thermometer, type LucideIcon } from "lucide-react";
+import { BookText, Pill, Scale, ScrollText, ShieldCheck, Thermometer, type LucideIcon } from "lucide-react";
 
 import { useI18n } from "../../i18n";
 import { dayMonthYear } from "../../lib/time";
@@ -78,7 +78,7 @@ export default function PoliciesPage() {
     <Screen variant="detail">
       {header}
       {rows.length === 0 ? (
-        <EmptyState icon={BookOpenCheck} tone="sage" title={t("policies.empty")} body={t("policies.emptyBody")} />
+        <EmptyState icon={ScrollText} tone="sage" title={t("policies.empty")} body={t("policies.emptyBody")} />
       ) : (
         <>
           {pending.length > 0 && (
