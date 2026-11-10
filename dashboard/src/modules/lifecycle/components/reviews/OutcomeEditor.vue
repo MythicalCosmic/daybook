@@ -103,7 +103,7 @@ const touched = () => emit("change");
           <NumberInput v-model="percent" :min="0.5" :max="50" :step="0.5" :decimals="2" suffix="%" :disabled="payBlocked" />
         </FormField>
         <FormField :label="t('lifecycle.reviews.from')" required>
-          <DatePicker v-model="form.effective_on" :min="today" format="weekday" @update:model-value="touched" />
+          <DatePicker v-model="form.effective_on" :min="today" format="medium" @update:model-value="touched" />
         </FormField>
       </div>
 
