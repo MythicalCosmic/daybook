@@ -74,15 +74,17 @@ export default function HrPage() {
           <ListRow
             icon={BookOpenCheck}
             title={t("row.policies")}
-            subtitle={pending[0] ? pending[0].title : t("row.policiesAll")}
+            subtitle={pending.length === 0 ? t("row.policiesAll") : pending.length === 1 ? pending[0]!.title : t("home.policies", { count: pending.length })}
             alert={pending.some((row) => row.state === "late")}
             className="hr-wrap"
             value={
               pending.length ? (
                 <Badge tone="accent" size="small">
-                  {t("row.policiesToSign", { count: pending.length })}
+                  {t("row.policiesSign")}
                 </Badge>
-              ) : undefined
+              ) : (
+                String(policies.data.length)
+              )
             }
             onClick={() => go.page("policies")}
           />

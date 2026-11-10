@@ -157,9 +157,8 @@ export const messages = defineMessages({
 
     // Rules to read and sign (policies.ts, PoliciesPage, PolicyPage).
     "me.policies": "Rules",
-    "row.policies": "Rules to read and sign",
-    "row.policiesToSign_one": "To sign: {count}",
-    "row.policiesToSign_other": "To sign: {count}",
+    "row.policies": "Rules",
+    "row.policiesSign": "Sign",
     "row.policiesAll": "All signed",
     "home.policy": "Rules to sign: {title}",
     "home.policies_one": "{count} rule to read and sign",
@@ -354,11 +353,8 @@ export const messages = defineMessages({
 
     // Rules to read and sign (policies.ts, PoliciesPage, PolicyPage).
     "me.policies": "Правила",
-    "row.policies": "Правила для ознакомления",
-    "row.policiesToSign_one": "Подписать: {count}",
-    "row.policiesToSign_few": "Подписать: {count}",
-    "row.policiesToSign_many": "Подписать: {count}",
-    "row.policiesToSign_other": "Подписать: {count}",
+    "row.policies": "Правила",
+    "row.policiesSign": "Подписать",
     "row.policiesAll": "Всё подписано",
     "home.policy": "Подпишите правила: {title}",
     "home.policies_one": "{count} правило нужно подписать",
@@ -551,9 +547,8 @@ export const messages = defineMessages({
 
     // Rules to read and sign (policies.ts, PoliciesPage, PolicyPage).
     "me.policies": "Qoidalar",
-    "row.policies": "O‘qib imzolanadigan qoidalar",
-    "row.policiesToSign_one": "Imzolash kerak: {count}",
-    "row.policiesToSign_other": "Imzolash kerak: {count}",
+    "row.policies": "Qoidalar",
+    "row.policiesSign": "Imzolang",
     "row.policiesAll": "Hammasi imzolangan",
     "home.policy": "Imzolash kerak: {title}",
     "home.policies_one": "Imzolash kerak bo‘lgan qoidalar: {count}",

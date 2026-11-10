@@ -9,6 +9,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { resolveScreen } from "../../state/deeplink";
 import { membership, navigationState, person, renderApp, routeApi } from "../../test/harness";
 import { features, findFeature } from "../registry";
+import HrPage from "./HrPage";
 import PoliciesPage from "./PoliciesPage";
 import type { MyPolicy, MyPolicyDetail } from "./policies";
 import PolicyPage from "./PolicyPage";
@@ -172,6 +173,41 @@ describe("Home, Me and links", () => {
     }
     renderApp(<Row />, { me });
     await waitFor(() => expect(screen.getByTestId("status").textContent).toBe("2"));
+  });
+
+  it("My documents has a Rules row: what to sign, or that everything is signed", async () => {
+    const profile = {
+      first_name: "Alisher",
+      last_name: "Valiyev",
+      middle_name: "",
+      position: "Farmatsevt",
+      department: null,
+      birth_date: null,
+      show_birthday: true,
+      hire_date: "2025-10-18",
+      employment_type: "full_time",
+      personal_phone: "",
+      email: "",
+      address: "",
+      city: "",
+      pinfl: "",
+      passport: "",
+      payout_method: "cash",
+      payout_card: "",
+      emergency_contacts: [],
+    };
+    routeApi(client.api, { "/hr/profile/": profile, "/hr/documents/": [], "/hr/policies/": [rule(), rule({ id: 9, state: "signed" })] });
+    renderApp(<HrPage />, { me });
+    expect(await screen.findByText("Rules")).toBeTruthy();
+    expect(screen.getByText("Saqlash va harorat rejimi")).toBeTruthy();
+    expect(screen.getByText("Sign")).toBeTruthy();
+    fireEvent.click(screen.getByText("Rules"));
+    expect(navigationState().stack.at(-1)).toEqual({ feature: "hr", page: "policies" });
+
+    cleanup();
+    routeApi(client.api, { "/hr/profile/": profile, "/hr/documents/": [], "/hr/policies/": [rule({ state: "signed" })] });
+    renderApp(<HrPage />, { me });
+    expect(await screen.findByText("All signed")).toBeTruthy();
   });
 
   it("opens a rule and the list from the bot's links, over Me", () => {
