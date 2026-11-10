@@ -134,7 +134,25 @@ function signedPoints(value: string): string {
         <span class="grid size-7 place-items-center rounded-full bg-surface-2 text-muted dark:bg-surface-3" aria-hidden="true"><Building2 :size="15" /></span>
         {{ t("ai.advisor.branches") }}
       </h3>
-      <div class="overflow-x-auto">
+      <!-- On a phone each pharmacy is a short block: revenue, then margin and profit. -->
+      <ul class="flex flex-col divide-y divide-line sm:hidden" data-testid="advisor-branches-phone">
+        <li v-for="branch in branches" :key="branch.id" class="flex flex-col gap-1 py-2.5">
+          <div class="flex items-baseline justify-between gap-3">
+            <RouterLink :to="branch.url" class="truncate text-base font-medium text-fg hover:underline">{{ branch.name }}</RouterLink>
+            <span class="num shrink-0 text-base text-fg">{{ fmt.money(branch.revenue.value, currency, { compact: true }) }}</span>
+          </div>
+          <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-sm text-muted">
+            <span class="num">
+              {{ t("ai.advisor.kpi.grossMargin") }}: {{ branch.gross_margin ? `${fmt.number(branch.gross_margin.value, 1)}%` : "—" }}
+              <span v-if="branch.gross_margin?.change_pts" :class="Number(branch.gross_margin.change_pts) < 0 ? 'text-danger' : 'text-success'">
+                ({{ t("ai.advisor.points", { value: signedPoints(branch.gross_margin.change_pts) }) }})
+              </span>
+            </span>
+            <span :class="['num', Number(branch.profit.value) < 0 && 'text-danger']">{{ t("ai.advisor.kpi.profit") }}: {{ fmt.money(branch.profit.value, currency, { compact: true }) }}</span>
+          </div>
+        </li>
+      </ul>
+      <div class="overflow-x-auto max-sm:hidden">
         <table class="w-full min-w-[520px] text-sm">
           <thead>
             <tr class="text-left text-xs uppercase tracking-wide text-subtle">
