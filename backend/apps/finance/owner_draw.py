@@ -38,7 +38,7 @@ import logging
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date, timedelta
-from decimal import ROUND_FLOOR, Decimal
+from decimal import ROUND_FLOOR, ROUND_HALF_UP, Decimal
 
 from django.db import transaction
 from django.db.models import Min, Q, Sum
@@ -144,7 +144,8 @@ def safe_amount(company, on: date | None = None, *, horizon_days: int | None = N
     purchases = planned_purchases(company, today, until)
     planned = quantize(sum((row.amount for row in purchases["kept"]), ZERO))
     needed = due + buffer["amount"] + planned
-    safe = max(quantize(business - needed), ZERO)
+    # A clean, careful figure: whole so‘m, rounded down.
+    safe = max(whole(business - needed, company.base_currency, ROUND_FLOOR), ZERO)
     return {
         "today": today,
         "currency": company.base_currency,
@@ -393,7 +394,7 @@ def fixed_costs(company, on: date | None = None) -> Decimal:
     )
     if not spent or observed <= 0:
         return ZERO
-    return max(quantize(-spent / observed * MONTH_DAYS), ZERO)
+    return max(whole(-spent / observed * MONTH_DAYS, company.base_currency), ZERO)
 
 
 # Planned purchases -------------------------------------------------------------------------------
@@ -785,6 +786,13 @@ def _unbooked_payroll(company, today: date, until: date) -> list[tuple[date, Dec
     if booked and booked >= pay_days[0][1]:
         pay_days = pay_days[1:]
     return pay_days
+
+
+def whole(amount: Decimal, currency: str, rounding=ROUND_HALF_UP) -> Decimal:
+    """So‘m without tiyin (their worth is nothing to an owner), dollars with cents."""
+    if currency == "UZS":
+        return quantize(Decimal(amount).quantize(Decimal(1), rounding=rounding))
+    return quantize(amount)
 
 
 def round_down(amount: Decimal, currency: str) -> Decimal:

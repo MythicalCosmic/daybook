@@ -42,7 +42,7 @@ const legend = computed(() =>
           <ShieldCheck :size="16" :class="safe > 0 ? 'text-success' : 'text-subtle'" aria-hidden="true" />
           {{ t("finance.myMoney.safeLabel") }}
         </p>
-        <p class="mt-2 text-[40px] font-semibold leading-none tracking-[-0.025em] tabular-nums sm:text-[52px]" :class="safe > 0 ? 'text-success' : 'text-fg'" data-safe-amount>
+        <p class="mt-2 break-words text-[34px] font-semibold leading-tight tracking-[-0.025em] tabular-nums sm:text-[52px] sm:leading-none" :class="safe > 0 ? 'text-success' : 'text-fg'" data-safe-amount>
           <MoneyText :value="data.safe" />
         </p>
         <p class="mt-2 max-w-[560px] text-sm text-muted">

@@ -63,7 +63,7 @@ function when(reason: { date: string; overdue: boolean }): string {
           <p class="truncate text-sm font-semibold text-fg">{{ t("finance.myMoney.cashLine") }}</p>
           <p class="truncate text-xs text-muted">{{ t("finance.myMoney.cashLineHint") }}</p>
         </div>
-        <span class="shrink-0 text-sm font-semibold tabular-nums text-fg"><MoneyText :value="data.cash" /></span>
+        <span class="shrink-0 text-sm font-semibold tabular-nums text-fg"><MoneyText class="sm:hidden" :value="data.cash" compact /><MoneyText class="hidden sm:inline" :value="data.cash" /></span>
       </li>
 
       <li v-for="reason in visible" :key="reason.key">
@@ -81,7 +81,7 @@ function when(reason: { date: string; overdue: boolean }): string {
               <template v-else-if="reason.subtitle && !(reason.kind === 'payroll' && reason.estimate)"> · {{ reason.subtitle }}</template>
             </p>
           </div>
-          <span class="shrink-0 text-sm font-semibold tabular-nums text-fg">−<MoneyText :value="reason.amount" /></span>
+          <span class="shrink-0 text-sm font-semibold tabular-nums text-fg">−<MoneyText class="sm:hidden" :value="reason.amount" compact /><MoneyText class="hidden sm:inline" :value="reason.amount" /></span>
         </RouterLink>
       </li>
 
@@ -101,7 +101,7 @@ function when(reason: { date: string; overdue: boolean }): string {
             <button type="button" class="font-medium text-primary hover:underline" data-buffer-edit @click="emit('settings')">{{ t("finance.myMoney.change") }}</button>
           </p>
         </div>
-        <span class="shrink-0 text-sm font-semibold tabular-nums text-fg">−<MoneyText :value="data.buffer.amount" /></span>
+        <span class="shrink-0 text-sm font-semibold tabular-nums text-fg">−<MoneyText class="sm:hidden" :value="data.buffer.amount" compact /><MoneyText class="hidden sm:inline" :value="data.buffer.amount" /></span>
       </li>
 
       <li v-if="Number(data.planned) > 0" class="flex items-center gap-3 rounded-[10px] px-2 py-2">
@@ -110,7 +110,7 @@ function when(reason: { date: string; overdue: boolean }): string {
           <p class="truncate text-sm font-semibold text-fg">{{ t("finance.myMoney.plannedLine") }}</p>
           <p class="truncate text-xs text-muted">{{ t("finance.myMoney.plannedCount", { n: data.purchases.kept.length }, data.purchases.kept.length) }}</p>
         </div>
-        <span class="shrink-0 text-sm font-semibold tabular-nums text-fg">−<MoneyText :value="data.planned" /></span>
+        <span class="shrink-0 text-sm font-semibold tabular-nums text-fg">−<MoneyText class="sm:hidden" :value="data.planned" compact /><MoneyText class="hidden sm:inline" :value="data.planned" /></span>
       </li>
 
       <li class="mt-1 flex items-center gap-3 border-t border-line px-2 pb-1 pt-3">
