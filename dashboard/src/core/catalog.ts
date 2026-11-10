@@ -316,6 +316,8 @@ export const CATALOG: readonly CatalogEntry[] = [
       { id: "recurring", to: "finance/recurring", perm: "finance.view" },
       { id: "calendar", to: "finance/calendar", perm: "finance.view" },
       { id: "claims", to: "finance/claims", perm: "finance.approve", badge: "finance.claims" },
+      // v11 K: the owner's money (a sidebar row of its own).
+      { id: "myMoney", to: "finance/my-money", perm: "finance.manage" },
     ],
   },
   {
@@ -349,6 +351,8 @@ export const CATALOG: readonly CatalogEntry[] = [
       { id: "advances", to: "payroll/advances", perm: ["payroll.manage", "payroll.pay"] },
     ],
   },
+  // v11 K: business goals measured from the company's own data.
+  { id: "goals", group: "money", order: 45, pkg: "K11", perm: "reports.view", pages: [{ id: "list", to: "goals" }] },
   { id: "crm", group: "money", order: 50, pkg: "U", perm: ["crm.view", "crm.manage"], pages: [{ id: "deals", to: "crm" }] },
 
   // Communication
