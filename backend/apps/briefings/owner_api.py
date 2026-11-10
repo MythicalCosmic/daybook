@@ -43,7 +43,11 @@ def _kind(request) -> str:
 class BriefingListView(OwnerAPIView):
     perm = READ
 
-    @extend_schema(parameters=[KIND], responses=s.BriefingsListSerializer)
+    @extend_schema(
+        operation_id="companies_briefings_list",
+        parameters=[KIND],
+        responses=s.BriefingsListSerializer,
+    )
     def get(self, request, company_id):
         rows = queries.visible(self.membership, kind=_kind(request))
         return Response(

@@ -10,7 +10,7 @@
  * on the windowsill (curled up asleep at night or while the agent sleeps), birds cross the day sky
  * and stars shoot through the night, dust floats in the sunbeam, the plants sway, and each agent's
  * desk has its own thing (a microphone, an alarm clock, an hourglass, a camera, folders, a pile of
- * books with chalk on top, a Claude plush). A tap on the chibi makes it say what it does, what it did today and when it runs next;
+ * books with chalk on top, a little bar chart on an easel, a Claude plush). A tap on the chibi makes it say what it does, what it did today and when it runs next;
  * the cat purrs, the window sends a bird (or a shooting star), the lamp switches, the mug steams
  * and the desk thing does its trick. Those are a pointer's fun only: the picture has one name for
  * screen readers.
@@ -67,7 +67,7 @@ const props = withDefaults(
 );
 
 const { t } = useI18n();
-const VARIANTS = new Set(["claude", "voice", "morning", "deadline", "photo", "hr", "tutor", "custom"]);
+const VARIANTS = new Set(["claude", "voice", "morning", "deadline", "photo", "hr", "tutor", "advisor", "custom"]);
 const chibi = computed(() => (VARIANTS.has(props.variant) ? (props.variant as ReturnType<typeof buddyVariant>) : buddyVariant(props.variant)));
 const buddy = computed(() => sceneBuddy(props.state));
 const reduced = reducedMotion();
@@ -714,6 +714,20 @@ onBeforeUnmount(() => {
               <rect class="sc-chalk" x="116" y="85" width="6" height="2" />
               <rect class="sc-chalk-shade" x="116" y="86" width="6" height="1" />
             </template>
+            <template v-else-if="chibi === 'advisor'">
+              <!-- A little bar chart on an easel; its bars rise and fall while the advisor works. -->
+              <rect class="sc-wood-dark" x="114" y="96" width="1" height="4" />
+              <rect class="sc-wood-dark" x="125" y="96" width="1" height="4" />
+              <rect class="sc-gear" x="111" y="83" width="18" height="14" />
+              <rect class="sc-paper" x="112" y="84" width="16" height="12" />
+              <g class="sc-bars">
+                <rect class="sc-bar-1" x="114" y="91" width="2" height="4" />
+                <rect class="sc-bar-2" x="117" y="89" width="2" height="6" />
+                <rect class="sc-bar-1" x="120" y="88" width="2" height="7" />
+                <rect class="sc-bar-3" x="123" y="86" width="2" height="9" />
+              </g>
+              <rect class="sc-paper-shade" x="112" y="95" width="16" height="1" />
+            </template>
             <template v-else-if="chibi === 'custom'">
               <!-- The report it is about to send: an envelope with a heart seal. -->
               <rect class="sc-paper" x="113" y="90" width="14" height="10" />
@@ -1117,6 +1131,15 @@ onBeforeUnmount(() => {
 .sc-book-band-3 { fill: #9ad8a8; }
 .sc-chalk { fill: #f7f3e8; }
 .sc-chalk-shade { fill: #d9d2c2; }
+.sc-bar-1 { fill: #4fb36f; }
+.sc-bar-2 { fill: #6b8fd6; }
+.sc-bar-3 { fill: #f2b544; }
+/* At work, the advisor's chart is being drawn: its bars rise and fall one after another. */
+.sc-bars rect { transform-box: fill-box; transform-origin: 50% 100%; }
+.agent-scene[data-state="working"] .sc-bars rect { animation: sc-bar 1.8s ease-in-out infinite; }
+.agent-scene[data-state="working"] .sc-bars rect:nth-child(2) { animation-delay: 0.2s; }
+.agent-scene[data-state="working"] .sc-bars rect:nth-child(3) { animation-delay: 0.4s; }
+.agent-scene[data-state="working"] .sc-bars rect:nth-child(4) { animation-delay: 0.6s; }
 /* At work, the envelope lifts a little: the report is on its way. */
 .agent-scene[data-state="working"] .sc-prop[data-prop="custom"] { animation: sc-wobble 2.4s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 100%; }
 .agent-scene[data-state="working"] .sc-prop[data-prop="morning"] { animation: sc-wobble 2.4s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 100%; }
@@ -1361,6 +1384,10 @@ onBeforeUnmount(() => {
   0% { transform: scaleY(0.15); }
   95% { transform: scaleY(1); }
   100% { transform: scaleY(0.15); }
+}
+@keyframes sc-bar {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(0.55); }
 }
 @keyframes sc-wobble {
   0%, 100% { transform: rotate(0); }

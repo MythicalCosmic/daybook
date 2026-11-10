@@ -29,6 +29,7 @@ SUGGESTIONS = 3
 POINTS = 4
 TEXT_MAX = 280
 HEADLINE_MAX = 200
+BOT_TEXT_MAX = 3500
 # A bad signal this heavy is the headline (money running out, a loss, a critical alert);
 # otherwise revenue is.
 HEADLINE_WEIGHT = 20
@@ -571,4 +572,8 @@ def bot_text(content: dict, language: str, kind: str = "weekly") -> str:
             todo = _("What to do this month") if kind == "monthly" else _("What to do this week")
             lines += ["", todo]
             lines += [f"{index}. {action['text']}" for index, action in enumerate(actions, 1)]
-        return "\n".join(lines).strip()
+        text = "\n".join(lines).strip()
+        # A Telegram message holds 4096 characters (the title and the button come on top).
+        while len(text) > BOT_TEXT_MAX and "\n" in text:
+            text = text.rsplit("\n", 1)[0].rstrip()
+        return text[:BOT_TEXT_MAX]

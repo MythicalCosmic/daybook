@@ -16,8 +16,8 @@ export const SCENE_ACTIONS: Record<Exclude<SceneState, "asleep">, readonly Buddy
 
 /** Each chibi's own move, now and then at its desk: the voice chibi listens, the deadline one
  * rings its clock, the morning one cheers, the photo one winks (a snap), HR thinks it over, the
- * tutor's chalk sparkles, and an owner's own one sends its love (its antenna lights up with
- * hearts). */
+ * tutor's chalk sparkles, the advisor's eyes light up with stars (a good idea for the business),
+ * and an owner's own one sends its love (its antenna lights up with hearts). */
 export const SIGNATURE_MOVE: Record<BuddyVariant, BuddyAction> = {
   claude: "sparkle",
   voice: "listen",
@@ -26,6 +26,7 @@ export const SIGNATURE_MOVE: Record<BuddyVariant, BuddyAction> = {
   photo: "wink",
   hr: "think",
   tutor: "sparkle",
+  advisor: "star",
   custom: "hearts",
 };
 

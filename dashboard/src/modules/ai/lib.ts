@@ -407,7 +407,7 @@ export type BuddyAction =
  * The family: Claude itself, one chibi per agent, each with its colours and its prop, and the
  * agents an owner made, all alike but each in the colour its owner picked (`custom`).
  */
-export type BuddyVariant = "claude" | "voice" | "morning" | "deadline" | "photo" | "hr" | "tutor" | "custom";
+export type BuddyVariant = "claude" | "voice" | "morning" | "deadline" | "photo" | "hr" | "tutor" | "advisor" | "custom";
 
 const AGENT_BUDDIES: Record<string, BuddyVariant> = {
   voice_tasks: "voice",
@@ -416,6 +416,7 @@ const AGENT_BUDDIES: Record<string, BuddyVariant> = {
   photo_checker: "photo",
   hr_assistant: "hr",
   tutor: "tutor",
+  advisor: "advisor",
 };
 
 /** An agent an owner made in their own words (`custom_12`, briefs/v6-k.md). */
@@ -585,7 +586,7 @@ export type BuddyReaction = { key: string; action: BuddyAction; visit?: boolean 
  * rings the deadline watcher's clock (and Claude goes to see), tasks made from a voice note
  * please its chibi, a checked photo pleases or puzzles the photo checker; the tutor cheers its
  * weekly report, thinks over its suggestions, waves its nudges off and sparkles over questions it
- * wrote. */
+ * wrote; the advisor cheers a business review it sent and gets star eyes over one it wrote again. */
 export function activityReactions(items: readonly Pick<ActivityItem, "agent" | "kind">[]): BuddyReaction[] {
   return items.flatMap((item): BuddyReaction[] => {
     switch (`${item.agent}:${item.kind}`) {
@@ -617,6 +618,11 @@ export function activityReactions(items: readonly Pick<ActivityItem, "agent" | "
         return [{ key: "tutor", action: "wave" }];
       case "tutor:questions_written":
         return [{ key: "tutor", action: "sparkle" }];
+      case "advisor:weekly_sent":
+      case "advisor:monthly_sent":
+        return [{ key: "advisor", action: "cheer" }];
+      case "advisor:review_rewritten":
+        return [{ key: "advisor", action: "star" }];
       default:
         return [];
     }

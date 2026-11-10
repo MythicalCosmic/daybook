@@ -174,11 +174,16 @@ describe("registration", () => {
   it("sits right after Tasks, opens voice notes from the bot and fills the New task dialog", () => {
     expect(module).toMatchObject({ id: "ai", group: "work", order: 15 });
     expect(module.feature).toBeUndefined();
-    expect(module.nav?.map((item) => item.to)).toEqual(["ai", "ai/activity", "ai/voice", "ai/ask"]);
+    expect(module.nav?.map((item) => item.to)).toEqual(["ai", "ai/advisor", "ai/activity", "ai/voice", "ai/ask"]);
+    expect(module.nav?.find((item) => item.key === "advisor")?.perm).toBe("reports.view");
     expect(module.deepLinks?.draft?.("41")).toBe("ai/voice?draft=41");
     expect(module.deepLinks?.draft?.("x")).toBe("ai/voice");
+    expect(module.deepLinks?.advisor?.("41")).toBe("ai/advisor?review=41");
+    expect(module.deepLinks?.advisor?.("x")).toBe("ai/advisor");
     expect(Object.keys(module.extensions ?? {})).toEqual(["shell.panel", "tasks.create.tools"]);
     expect(module.widgets?.map((widget) => widget.id)).toEqual(["ai.kpi.today"]);
     expect(module.settings?.[0]).toMatchObject({ id: "ai", perm: "ai.configure" });
+    expect(module.settings?.[1]).toMatchObject({ id: "ai.briefings", perm: "company.settings" });
+    expect(module.invalidates).toEqual(["ai", "briefings"]);
   });
 });
