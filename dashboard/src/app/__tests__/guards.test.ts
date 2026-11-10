@@ -65,8 +65,13 @@ describe("guards", () => {
     expect(router.currentRoute.value.fullPath).toBe("/c/1/inbox");
   });
 
-  it("opens the company overview from / and the welcome page without any company", async () => {
-    const first = boot({ refresh: 200 });
+  it("opens Egasi paneli for an owner from /, the overview for everyone else, the welcome page without any company", async () => {
+    const owner = boot({ refresh: 200 });
+    await owner.router.push("/");
+    expect(owner.router.currentRoute.value.path).toBe("/c/1/owner");
+    expect(owner.router.currentRoute.value.name).toBe("cockpit.owner");
+
+    const first = boot({ refresh: 200, me: me([manager(["dashboard.access", "reports.view"], { id: 1 })]) });
     await first.router.push("/");
     expect(first.router.currentRoute.value.path).toBe("/c/1");
     expect(first.router.currentRoute.value.name).toBe("overview.today");
@@ -80,9 +85,10 @@ describe("guards", () => {
     const { router } = boot({ refresh: 200 });
     await router.push("/login?next=/c/1/exports");
     expect(router.currentRoute.value.fullPath).toBe("/c/1/exports");
-    // Another site is never a destination: "/" instead, which opens the default company.
+    // Another site is never a destination: "/" instead, which opens the default company (an
+    // owner's landing page there).
     await router.push("/login?next=https://evil.example");
-    expect(router.currentRoute.value.fullPath).toBe("/c/1");
+    expect(router.currentRoute.value.fullPath).toBe("/c/1/owner");
   });
 });
 
