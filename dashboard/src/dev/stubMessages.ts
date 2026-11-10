@@ -9,7 +9,8 @@ import { kitchenMessages } from "./kitchen/kitchenMessages";
 type Triple = [en: string, ru: string, uz: string];
 
 export const STUB_TITLES: Record<string, { title: Triple; pages: Record<string, Triple> }> = {
-  overview: { title: ["Overview", "Обзор", "Umumiy ko‘rinish"], pages: { today: ["Today", "Сегодня", "Bugun"] } },
+  cockpit: { title: ["Owner's panel", "Панель владельца", "Egasi paneli"], pages: { owner: ["Owner's panel", "Панель владельца", "Egasi paneli"] } },
+  overview:{ title: ["Overview", "Обзор", "Umumiy ko‘rinish"], pages: { today: ["Today", "Сегодня", "Bugun"] } },
   inbox: { title: ["Inbox", "Входящие", "Kiruvchilar"], pages: { inbox: ["Inbox", "Входящие", "Kiruvchilar"] } },
   tasks: {
     title: ["Tasks", "Задачи", "Vazifalar"],

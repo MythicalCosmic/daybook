@@ -18,6 +18,8 @@ declare module "vue-router" {
     companyless?: boolean;
     /** "full": the page manages its own padding and scrolling (boards, maps, chat). */
     layout?: "default" | "full";
+    /** Where "/" takes an owner who may open it (Egasi paneli), instead of the company's front page. */
+    ownerLanding?: boolean;
   }
 }
 

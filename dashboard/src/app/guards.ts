@@ -16,7 +16,7 @@ import { telegram } from "@/shell/TelegramBridge";
 import { useCompanyStore } from "@/stores/company";
 import { useSessionStore } from "@/stores/session";
 
-import { pathInCompany } from "./navigation";
+import { landingPath, pathInCompany } from "./navigation";
 
 export { safeNext };
 
@@ -73,7 +73,8 @@ export function installGuards(router: Router): void {
       }
     } else if (to.name === "root") {
       const id = company.defaultCompanyId();
-      return id === null ? { name: "welcome", replace: true } : { path: `/c/${id}`, replace: true };
+      if (id === null) return { name: "welcome", replace: true };
+      return { path: landingPath(router, company.companies.find((c) => c.id === id), id), replace: true };
     }
 
     await loadMessages(to);
