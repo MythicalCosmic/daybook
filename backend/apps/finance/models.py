@@ -144,6 +144,21 @@ class FinanceSettings(models.Model):
     # Which set of default rows `defaults.ensure` has added (1: the pharmacy categories), so a
     # category the owner deleted never comes back on the next deploy.
     defaults_version = models.PositiveSmallIntegerField(default=0, editable=False)
+    # The owner's money (v11, `apps.finance.owner_draw`): what stays in the business before the
+    # owner takes anything out, and how far ahead the payments due are counted.
+    cash_buffer = MoneyField(
+        null=True,
+        blank=True,
+        help_text=_(
+            "Money that always stays in the business, in the base currency. Empty: one month "
+            "of fixed costs."
+        ),
+    )
+    draw_horizon_days = models.PositiveSmallIntegerField(
+        default=30,
+        validators=[MinValueValidator(7), MaxValueValidator(90)],
+        help_text=_("How many days of payments due the safe amount to take keeps back."),
+    )
 
     class Meta:
         verbose_name = "finance settings"
@@ -1224,3 +1239,178 @@ class Claim(TenantModel):
 
     def __str__(self):
         return f"Claim #{self.pk}: {self.amount} {self.currency}"
+
+
+# The owner's money (v11): planned purchases, partners and their dividends ------------------------
+
+
+class PlannedPurchase(TenantModel):
+    """Something the owner means to buy (a fridge, a fit-out, a car for deliveries): the safe
+    amount to take keeps its money back until it is bought or dropped (`owner_draw`)."""
+
+    company = models.ForeignKey(
+        Company, on_delete=models.PROTECT, related_name="finance_planned_purchases"
+    )
+    title = models.CharField(max_length=200)
+    amount = MoneyField(help_text=_("In the base currency."))
+    due_on = models.DateField(
+        null=True, blank=True, help_text=_("When it will be bought. Empty: some time soon.")
+    )
+    branch = models.ForeignKey(
+        Branch,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="finance_planned_purchases",
+    )
+    done_at = models.DateTimeField(
+        null=True, blank=True, help_text=_("Bought or dropped: no longer kept back.")
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+
+    class Meta:
+        ordering = [F("due_on").asc(nulls_last=True), "pk"]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(amount__gt=0), name="finance_planned_purchase_positive"
+            ),
+        ]
+
+    def __str__(self):
+        return self.title
+
+
+class Partner(TenantModel):
+    """Someone who owns part of the business, from `starts_on` until `ends_on` (empty: still
+    does). A member of the company or just a name. The shares of the partners on any day add up
+    to 100 % (`apps.finance.partners.set_partners` replaces them all at once)."""
+
+    company = models.ForeignKey(Company, on_delete=models.PROTECT, related_name="finance_partners")
+    membership = models.ForeignKey(
+        Membership,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="finance_partner_shares",
+        help_text=_("When the partner works here too. Empty: only the name."),
+    )
+    name = models.CharField(max_length=200)
+    share = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal("0.01")), MaxValueValidator(Decimal(100))],
+        help_text=_("Percent of the business."),
+    )
+    starts_on = models.DateField()
+    ends_on = models.DateField(null=True, blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+
+    class Meta:
+        ordering = ["-starts_on", "-share", "pk"]
+        indexes = [models.Index(fields=["company", "starts_on", "ends_on"])]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(share__gt=0) & Q(share__lte=100), name="finance_partner_share_range"
+            ),
+            models.CheckConstraint(
+                condition=Q(ends_on__isnull=True) | Q(ends_on__gte=F("starts_on")),
+                name="finance_partner_ends_after_start",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.name}: {self.share} %"
+
+
+class Dividend(TenantModel):
+    """Profit shared out to the partners for a period: an amount split by their shares into
+    lines, each paid as an owner draw from an account. Draft until every line is paid."""
+
+    class Status(models.TextChoices):
+        DRAFT = "draft", _("Draft")
+        PARTLY_PAID = "partly_paid", _("Partly paid")
+        PAID = "paid", _("Paid")
+        CANCELLED = "cancelled", _("Cancelled")
+
+    company = models.ForeignKey(Company, on_delete=models.PROTECT, related_name="finance_dividends")
+    period_start = models.DateField()
+    period_end = models.DateField()
+    amount = MoneyField(help_text=_("In the base currency."))
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.DRAFT)
+    profit = MoneyField(
+        null=True, blank=True, help_text=_("The period's net profit when the round was made.")
+    )
+    note = models.CharField(max_length=300, blank=True)
+    paid_at = models.DateTimeField(null=True, blank=True)
+    cancelled_at = models.DateTimeField(null=True, blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+
+    class Meta:
+        ordering = ["-period_end", "-pk"]
+        constraints = [
+            models.CheckConstraint(condition=Q(amount__gt=0), name="finance_dividend_positive"),
+            models.CheckConstraint(
+                condition=Q(period_end__gte=F("period_start")),
+                name="finance_dividend_period_order",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.period_start}–{self.period_end}: {self.amount}"
+
+
+class DividendLine(models.Model):
+    """One partner's part of a dividend round, paid by its owner draw (`transaction`)."""
+
+    dividend = models.ForeignKey(Dividend, on_delete=models.CASCADE, related_name="lines")
+    partner = models.ForeignKey(Partner, on_delete=models.PROTECT, related_name="dividend_lines")
+    share = models.DecimalField(max_digits=5, decimal_places=2)
+    amount = MoneyField(help_text=_("In the base currency."))
+    transaction = models.ForeignKey(
+        Transaction,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="dividend_lines",
+        help_text=_("The owner draw that paid it; voiding it makes the line unpaid again."),
+    )
+    paid_on = models.DateField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-share", "pk"]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(amount__gt=0), name="finance_dividend_line_positive"
+            ),
+            models.UniqueConstraint(
+                fields=["dividend", "partner"], name="finance_unique_dividend_partner"
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.partner_id}: {self.amount}"
+
+    @property
+    def is_paid(self) -> bool:
+        """Paid while its owner draw stands (a void from the ledger makes it unpaid again)."""
+        return self.transaction_id is not None and (
+            self.transaction.status == Transaction.Status.POSTED
+        )

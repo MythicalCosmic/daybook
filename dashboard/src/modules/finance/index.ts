@@ -44,6 +44,14 @@ export default defineModule({
     { key: "counterparties", title: "finance.nav.counterparties", to: "finance/counterparties", perm: VIEW },
     { key: "reports", title: "finance.nav.reports", to: "finance/reports", perm: VIEW },
     { key: "settings", title: "finance.nav.settings", to: "finance/settings", perm: MANAGE },
+    // v11: "Mening pulim", a sidebar row of its own in Money, right after Finance.
+    {
+      key: "myMoney",
+      title: "finance.nav.myMoney",
+      to: "finance/my-money",
+      perm: MANAGE,
+      row: { key: "finance.mymoney", title: "finance.nav.myMoney", icon: PiggyBank, group: "money", order: 31 },
+    },
   ],
   badge: counter("finance.overdue"),
   // Every finance write bumps "finance.ledger"; debts also move "finance.overdue".

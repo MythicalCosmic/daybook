@@ -105,4 +105,11 @@ export const routes: RouteRecordRaw[] = [
     component: () => import("./pages/FinanceSettingsPage.vue"),
     meta: { title: "finance.nav.settings", perm: "finance.manage" },
   },
+  // v11: the owner's money (its own sidebar row in Money): the safe amount, draws, partners.
+  {
+    path: "finance/my-money",
+    name: "finance.myMoney",
+    component: () => import("./pages/MyMoneyPage.vue"),
+    meta: { title: "finance.nav.myMoney", perm: "finance.manage" },
+  },
 ];

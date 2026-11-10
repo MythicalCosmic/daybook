@@ -113,6 +113,10 @@ def finish(company, people, now) -> None:
         return
     with translation.override(company.default_language):
         Ledger(company, people, now).finish()
+        # v11: partners, last quarter's dividend, this month's draw, planned purchases.
+        from apps.finance import demo_owner
+
+        demo_owner.build(company, people, now)
     today = queries.local_today(company, now)
     first_of_last_month = (today.replace(day=1) - timedelta(days=1)).replace(day=1)
     locked_until = first_of_last_month - timedelta(days=1)

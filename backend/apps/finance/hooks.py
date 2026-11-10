@@ -15,6 +15,7 @@ from apps.finance import (
     claims,
     defaults,
     exporters,
+    partners,
     providers,
     recurring,
     reminders,
@@ -27,7 +28,10 @@ from apps.finance.models import (
     Category,
     CompanyRate,
     Counterparty,
+    Dividend,
     FinanceSettings,
+    Partner,
+    PlannedPurchase,
 )
 from apps.inbox.registry import register_action, register_kind
 from apps.members.permissions import Perm
@@ -63,6 +67,12 @@ sources.register(
     claims.SOURCE,
     label=_("Expense claim"),
     url_template="/c/{company_id}/finance/claims?claim={id}",
+)
+# v11: a dividend line paid as an owner draw (keyed by the line).
+sources.register(
+    partners.SOURCE,
+    label=_("Dividend"),
+    url_template="/c/{company_id}/finance/my-money?tab=partners&dividend={id}",
 )
 
 
@@ -322,4 +332,14 @@ audit_registry.register_target(
     "claim",
     Perm.FINANCE_VIEW,
     check=lambda member, target_id: claims.visible_claims(member).filter(pk=target_id).exists(),
+)
+# v11: the owner's money. Its rows are the whole company's (owner_money_api needs every branch).
+audit_registry.register_target(
+    "partner", Perm.FINANCE_MANAGE, check=providers.company_row_check(Partner)
+)
+audit_registry.register_target(
+    "dividend", Perm.FINANCE_MANAGE, check=providers.company_row_check(Dividend)
+)
+audit_registry.register_target(
+    "plannedpurchase", Perm.FINANCE_MANAGE, check=providers.company_row_check(PlannedPurchase)
 )
