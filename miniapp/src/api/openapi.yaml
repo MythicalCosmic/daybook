@@ -1230,6 +1230,114 @@ paths:
               schema:
                 $ref: '#/components/schemas/HrMyDocument'
           description: ''
+  /api/v1/companies/{company_id}/hr/policies/:
+    get:
+      operationId: v1_companies_hr_policies_list
+      description: 'The rules that apply to me: late and waiting ones first, then
+        the signed ones.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HrMyPolicy'
+          description: ''
+  /api/v1/companies/{company_id}/hr/policies/{id}/:
+    get:
+      operationId: v1_companies_hr_policies_retrieve
+      description: 'One rule to read: its text in force, and whether and when I signed
+        it.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrMyPolicyDetail'
+          description: ''
+  /api/v1/companies/{company_id}/hr/policies/{id}/file/:
+    get:
+      operationId: v1_companies_hr_policies_file_retrieve
+      description: A short-lived link to the rule's file (Telegram opens it outside
+        the app).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrFileLink'
+          description: ''
+  /api/v1/companies/{company_id}/hr/policies/versions/{id}/acknowledge/:
+    post:
+      operationId: v1_companies_hr_policies_versions_acknowledge_create
+      description: '''I have read it and agree'' for the version in force.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrMyPolicyDetail'
+          description: ''
   /api/v1/companies/{company_id}/hr/profile/:
     get:
       operationId: v1_companies_hr_profile_retrieve
@@ -2105,6 +2213,144 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/LearningAttemptPlay'
+          description: ''
+  /api/v1/companies/{company_id}/lifecycle/career/:
+    get:
+      operationId: v1_companies_lifecycle_career_retrieve
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleMyCareer'
+          description: ''
+  /api/v1/companies/{company_id}/lifecycle/leaving/:
+    get:
+      operationId: v1_companies_lifecycle_leaving_retrieve
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleMyLeavingState'
+          description: ''
+    post:
+      operationId: v1_companies_lifecycle_leaving_create
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LifecycleLeaveRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LifecycleLeaveRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LifecycleLeaveRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleMyLeavingState'
+          description: ''
+  /api/v1/companies/{company_id}/lifecycle/leaving/{id}/exit/:
+    post:
+      operationId: v1_companies_lifecycle_leaving_exit_create
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LifecycleExitAnswerRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LifecycleExitAnswerRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LifecycleExitAnswerRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleMyLeavingState'
+          description: ''
+  /api/v1/companies/{company_id}/lifecycle/leaving/{id}/withdraw/:
+    post:
+      operationId: v1_companies_lifecycle_leaving_withdraw_create
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleMyLeavingState'
           description: ''
   /api/v1/companies/{company_id}/lifecycle/records/:
     get:
@@ -6845,6 +7091,9 @@ components:
         * `rejected` - Rejected
         * `cancelled` - Cancelled
         * `expired` - Expired
+    BlankEnum:
+      enum:
+      - ''
     BlockerReportRequest:
       type: object
       properties:
@@ -8211,6 +8460,124 @@ components:
       required:
       - file
       - kind
+    HrMyPolicy:
+      type: object
+      description: A policy in my list.
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        category:
+          $ref: '#/components/schemas/HrPolicyCategoryEnum'
+        number:
+          type: integer
+          description: The version in force.
+        published_at:
+          type: string
+          format: date-time
+        state:
+          $ref: '#/components/schemas/HrMyPolicyStateEnum'
+        due_on:
+          type: string
+          format: date
+          nullable: true
+        signed_at:
+          type: string
+          format: date-time
+          nullable: true
+        signed_number:
+          type: integer
+          nullable: true
+        has_file:
+          type: boolean
+      required:
+      - category
+      - due_on
+      - has_file
+      - id
+      - number
+      - published_at
+      - signed_at
+      - signed_number
+      - state
+      - title
+    HrMyPolicyDetail:
+      type: object
+      description: 'One of my policies to read (and sign): the text in force and what
+        changed in it.'
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        category:
+          $ref: '#/components/schemas/HrPolicyCategoryEnum'
+        number:
+          type: integer
+          description: The version in force.
+        published_at:
+          type: string
+          format: date-time
+        state:
+          $ref: '#/components/schemas/HrMyPolicyStateEnum'
+        due_on:
+          type: string
+          format: date
+          nullable: true
+        signed_at:
+          type: string
+          format: date-time
+          nullable: true
+        signed_number:
+          type: integer
+          nullable: true
+        has_file:
+          type: boolean
+        version_id:
+          type: integer
+          description: Sign this version.
+        body:
+          type: string
+        change_note:
+          type: string
+        asks_again:
+          type: boolean
+          description: False when the version in force is a small edit of the one
+            signed.
+        file_type:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/HrPolicyFileTypeEnum'
+          - $ref: '#/components/schemas/NullEnum'
+      required:
+      - asks_again
+      - body
+      - category
+      - change_note
+      - due_on
+      - file_type
+      - has_file
+      - id
+      - number
+      - published_at
+      - signed_at
+      - signed_number
+      - state
+      - title
+      - version_id
+    HrMyPolicyStateEnum:
+      enum:
+      - waiting
+      - late
+      - signed
+      - to_read
+      type: string
+      description: |-
+        * `waiting` - waiting
+        * `late` - late
+        * `signed` - signed
+        * `to_read` - to_read
     HrMyProfile:
       type: object
       description: 'Someone''s own profile: their IDs and card masked back.'
@@ -8323,6 +8690,28 @@ components:
       - id
       - name
       - photo_url
+    HrPolicyCategoryEnum:
+      enum:
+      - dispensing
+      - storage
+      - safety
+      - conduct
+      - other
+      type: string
+      description: |-
+        * `dispensing` - Dispensing
+        * `storage` - Storage
+        * `safety` - Safety
+        * `conduct` - Conduct
+        * `other` - Other
+    HrPolicyFileTypeEnum:
+      enum:
+      - pdf
+      - image
+      type: string
+      description: |-
+        * `pdf` - pdf
+        * `image` - image
     InboxPerson:
       type: object
       properties:
@@ -10713,6 +11102,62 @@ components:
       - poster_url
       - url
       - width
+    LifecycleExitAnswerRequest:
+      type: object
+      properties:
+        reason:
+          $ref: '#/components/schemas/LifecycleExitReasonEnum'
+        better:
+          type: string
+          maxLength: 1000
+        recommend:
+          oneOf:
+          - $ref: '#/components/schemas/LifecycleRecommendEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+      required:
+      - reason
+    LifecycleExitInterview:
+      type: object
+      properties:
+        reason:
+          $ref: '#/components/schemas/LifecycleExitReasonEnum'
+        better:
+          type: string
+        recommend:
+          type: string
+          description: yes, maybe, no or empty.
+        answered_at:
+          type: string
+          format: date-time
+      required:
+      - answered_at
+      - better
+      - reason
+      - recommend
+    LifecycleExitReasonEnum:
+      enum:
+      - pay
+      - schedule
+      - workload
+      - team
+      - growth
+      - moving
+      - studies
+      - health
+      - family
+      - other
+      type: string
+      description: |-
+        * `pay` - pay
+        * `schedule` - schedule
+        * `workload` - workload
+        * `team` - team
+        * `growth` - growth
+        * `moving` - moving
+        * `studies` - studies
+        * `health` - health
+        * `family` - family
+        * `other` - other
     LifecycleExplainRequest:
       type: object
       properties:
@@ -10722,6 +11167,330 @@ components:
           maxLength: 2000
       required:
       - text
+    LifecycleHandoverKindEnum:
+      enum:
+      - equipment
+      - tasks
+      - keys
+      - documents
+      - other
+      type: string
+      description: |-
+        * `equipment` - Equipment
+        * `tasks` - Open tasks
+        * `keys` - Keys
+        * `documents` - Documents
+        * `other` - Other
+    LifecycleJobChangeStatusEnum:
+      enum:
+      - proposed
+      - approved
+      - applied
+      - rejected
+      - cancelled
+      type: string
+      description: |-
+        * `proposed` - Waiting for approval
+        * `approved` - Approved
+        * `applied` - Applied
+        * `rejected` - Rejected
+        * `cancelled` - Cancelled
+    LifecycleJobPay:
+      type: object
+      properties:
+        amount:
+          type: string
+          description: Money as a string, e.g. "5200000.00".
+        currency:
+          type: string
+        pay_type:
+          type: string
+          description: monthly, daily, hourly or per_task.
+      required:
+      - amount
+      - currency
+      - pay_type
+    LifecycleJobSide:
+      type: object
+      description: 'A job as it was or became: the pay only for payroll.view.'
+      properties:
+        position:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleNamed'
+          nullable: true
+        branch:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleNamed'
+          nullable: true
+        branches:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleNamed'
+        department:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleNamed'
+          nullable: true
+        role:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleNamed'
+          nullable: true
+        pay:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleJobPay'
+          nullable: true
+      required:
+      - branch
+      - branches
+      - department
+      - pay
+      - position
+      - role
+    LifecycleLeaveRequestRequest:
+      type: object
+      properties:
+        wished_last_day:
+          type: string
+          format: date
+          description: My last working day (today or later).
+        reason:
+          type: string
+          maxLength: 2000
+      required:
+      - wished_last_day
+    LifecycleLeavingKindEnum:
+      enum:
+      - resignation
+      - company
+      - contract_end
+      - other
+      type: string
+      description: |-
+        * `resignation` - Resignation
+        * `company` - By the company
+        * `contract_end` - End of contract
+        * `other` - Other
+    LifecycleLeavingStatusEnum:
+      enum:
+      - requested
+      - agreed
+      - completed
+      - withdrawn
+      - declined
+      type: string
+      description: |-
+        * `requested` - Requested
+        * `agreed` - Last day agreed
+        * `completed` - Left
+        * `withdrawn` - Withdrawn
+        * `declined` - Declined
+    LifecycleMyCareer:
+      type: object
+      properties:
+        hired_on:
+          type: string
+          format: date
+          nullable: true
+        position:
+          type: string
+          nullable: true
+        branch:
+          type: string
+          nullable: true
+        department:
+          type: string
+          nullable: true
+        changes:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleMyJobChange'
+      required:
+      - branch
+      - changes
+      - department
+      - hired_on
+      - position
+    LifecycleMyHandoverItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleHandoverKindEnum'
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        done:
+          type: boolean
+          readOnly: true
+        open_tasks:
+          type: integer
+          nullable: true
+          readOnly: true
+      required:
+      - done
+      - id
+      - kind
+      - open_tasks
+      - title
+    LifecycleMyJobChange:
+      type: object
+      description: 'One of my job changes: what it was and became, my own pay included.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        effective_on:
+          type: string
+          format: date
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleJobChangeStatusEnum'
+          readOnly: true
+        parts:
+          type: array
+          items:
+            type: string
+          readOnly: true
+        before:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleJobSide'
+          readOnly: true
+        after:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleJobSide'
+          readOnly: true
+        applied_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+      required:
+      - after
+      - applied_at
+      - before
+      - effective_on
+      - id
+      - parts
+      - status
+    LifecycleMyLeaving:
+      type: object
+      description: 'My leaving as I read it: no HR notes, nothing about others.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleLeavingKindEnum'
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleLeavingStatusEnum'
+          readOnly: true
+        mine:
+          type: boolean
+          readOnly: true
+          description: I asked for it (a resignation).
+        wished_last_day:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        last_day:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        left_on:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        reason:
+          type: string
+          readOnly: true
+        requested_at:
+          type: string
+          format: date-time
+          readOnly: true
+        agreed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        agreed_by:
+          type: string
+          nullable: true
+          readOnly: true
+        close_reason:
+          type: string
+          readOnly: true
+        closed_by_me:
+          type: boolean
+          readOnly: true
+        notice_days:
+          type: integer
+          nullable: true
+          readOnly: true
+        handover:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleMyHandoverItem'
+          readOnly: true
+        exit_interview:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleExitInterview'
+          nullable: true
+          readOnly: true
+        can_withdraw:
+          type: boolean
+          readOnly: true
+        can_answer:
+          type: boolean
+          readOnly: true
+      required:
+      - agreed_at
+      - agreed_by
+      - can_answer
+      - can_withdraw
+      - close_reason
+      - closed_by_me
+      - exit_interview
+      - handover
+      - id
+      - kind
+      - last_day
+      - left_on
+      - mine
+      - notice_days
+      - reason
+      - requested_at
+      - status
+      - wished_last_day
+    LifecycleMyLeavingState:
+      type: object
+      properties:
+        current:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleMyLeaving'
+          nullable: true
+        can_request:
+          type: boolean
+        notice_days:
+          type: integer
+          description: The usual notice, in days.
+        today:
+          type: string
+          format: date
+      required:
+      - can_request
+      - current
+      - notice_days
+      - today
     LifecycleMyRecord:
       type: object
       description: 'A record as the person reads it: no evidence file, no fine amount.'
@@ -10805,6 +11574,26 @@ components:
       - responded_at
       - status
       - withdraw_reason
+    LifecycleNamed:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
+    LifecycleRecommendEnum:
+      enum:
+      - 'yes'
+      - maybe
+      - 'no'
+      type: string
+      description: |-
+        * `yes` - yes
+        * `maybe` - maybe
+        * `no` - no
     LifecycleRecordCategoryEnum:
       enum:
       - lateness

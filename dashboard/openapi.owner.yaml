@@ -10142,6 +10142,259 @@ paths:
                 items:
                   $ref: '#/components/schemas/Holiday'
           description: ''
+  /api/v1/owner/companies/{company_id}/hr/applicants/:
+    get:
+      operationId: companies_hr_applicants_list
+      description: Applicants of the vacancies in the caller's branches, newest first.
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: array
+          items:
+            type: integer
+        description: Branch ids (in scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Name, phone digits or @username.
+      - in: query
+        name: source
+        schema:
+          type: string
+          enum:
+          - link
+          - qr
+      - in: query
+        name: stage
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+            - hired
+            - interview
+            - new
+            - offer
+            - rejected
+            - screening
+      - in: query
+        name: vacancy
+        schema:
+          type: array
+          items:
+            type: integer
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedHrApplicantList'
+          description: ''
+  /api/v1/owner/companies/{company_id}/hr/applicants/{id}/:
+    get:
+      operationId: companies_hr_applicants_retrieve
+      description: Applicants of the vacancies in the caller's branches, newest first.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrApplicantDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/hr/applicants/{id}/hire/:
+    post:
+      operationId: companies_hr_applicants_hire_create
+      description: Applicants of the vacancies in the caller's branches, newest first.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HrApplicantHireRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HrApplicantHireRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HrApplicantHireRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrApplicantDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/hr/applicants/{id}/move/:
+    post:
+      operationId: companies_hr_applicants_move_create
+      description: Applicants of the vacancies in the caller's branches, newest first.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HrApplicantMoveRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HrApplicantMoveRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HrApplicantMoveRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrApplicantDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/hr/applicants/{id}/notes/:
+    post:
+      operationId: companies_hr_applicants_notes_create
+      description: Applicants of the vacancies in the caller's branches, newest first.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HrApplicantNoteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HrApplicantNoteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HrApplicantNoteRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrApplicantDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/hr/applicants/{id}/reject/:
+    post:
+      operationId: companies_hr_applicants_reject_create
+      description: Applicants of the vacancies in the caller's branches, newest first.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HrApplicantRejectRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HrApplicantRejectRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HrApplicantRejectRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrApplicantDetail'
+          description: ''
   /api/v1/owner/companies/{company_id}/hr/celebrations/:
     get:
       operationId: companies_hr_celebrations_list
@@ -11551,6 +11804,34 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/owner/companies/{company_id}/hr/people/{member_id}/policies/:
+    get:
+      operationId: companies_hr_people_policies_retrieve
+      description: |-
+        Person 360's HR tab: the policies that apply to the person and where they stand, and
+        every signature they gave (earlier versions too).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: member_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrPersonPolicies'
+          description: ''
   /api/v1/owner/companies/{company_id}/hr/people/{member_id}/profile/:
     get:
       operationId: companies_hr_people_profile_retrieve
@@ -11638,6 +11919,441 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HrSensitive'
+          description: ''
+  /api/v1/owner/companies/{company_id}/hr/policies/:
+    get:
+      operationId: companies_hr_policies_list
+      description: The company's policies, their drafts and versions, and who has
+        signed them.
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+            - conduct
+            - dispensing
+            - other
+            - safety
+            - storage
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: q
+        schema:
+          type: string
+      - in: query
+        name: view
+        schema:
+          type: string
+          enum:
+          - active
+          - all
+          - archived
+          - drafts
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HrPolicy'
+          description: ''
+    post:
+      operationId: companies_hr_policies_create
+      description: The company's policies, their drafts and versions, and who has
+        signed them.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HrPolicyWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HrPolicyWriteRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HrPolicyWriteRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrPolicyDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/hr/policies/{id}/:
+    get:
+      operationId: companies_hr_policies_retrieve
+      description: The company's policies, their drafts and versions, and who has
+        signed them.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrPolicyDetail'
+          description: ''
+    patch:
+      operationId: companies_hr_policies_partial_update
+      description: The company's policies, their drafts and versions, and who has
+        signed them.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedHrPolicyWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedHrPolicyWriteRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedHrPolicyWriteRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrPolicyDetail'
+          description: ''
+    delete:
+      operationId: companies_hr_policies_destroy
+      description: The company's policies, their drafts and versions, and who has
+        signed them.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/hr/policies/{id}/acknowledgements/:
+    get:
+      operationId: companies_hr_policies_acknowledgements_list
+      description: The company's policies, their drafts and versions, and who has
+        signed them.
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: array
+          items:
+            type: integer
+        description: Branch ids (in scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: query
+        name: page
+        schema:
+          type: integer
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+      - in: query
+        name: q
+        schema:
+          type: string
+      - in: query
+        name: state
+        schema:
+          type: string
+          enum:
+          - late
+          - signed
+          - waiting
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HrPolicySignature'
+          description: ''
+  /api/v1/owner/companies/{company_id}/hr/policies/{id}/draft/:
+    put:
+      operationId: companies_hr_policies_draft_update
+      description: The company's policies, their drafts and versions, and who has
+        signed them.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HrPolicyDraftWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HrPolicyDraftWriteRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HrPolicyDraftWriteRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrPolicyVersionDetail'
+          description: ''
+    delete:
+      operationId: companies_hr_policies_draft_destroy
+      description: The company's policies, their drafts and versions, and who has
+        signed them.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/hr/policies/{id}/publish/:
+    post:
+      operationId: companies_hr_policies_publish_create
+      description: The company's policies, their drafts and versions, and who has
+        signed them.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HrPolicyPublishRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HrPolicyPublishRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HrPolicyPublishRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrPolicyDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/hr/policies/{id}/remind/:
+    post:
+      operationId: companies_hr_policies_remind_create
+      description: The company's policies, their drafts and versions, and who has
+        signed them.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HrPolicyRemindRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HrPolicyRemindRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HrPolicyRemindRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrPolicyReminded'
+          description: ''
+  /api/v1/owner/companies/{company_id}/hr/policies/{id}/versions/{number}/:
+    get:
+      operationId: companies_hr_policies_versions_retrieve
+      description: The company's policies, their drafts and versions, and who has
+        signed them.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: number
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrPolicyVersionDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/hr/policies/audience/:
+    get:
+      operationId: companies_hr_policies_audience_retrieve
+      description: Who a choice of positions and branches applies to (the editor's
+        live count).
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: array
+          items:
+            type: integer
+        description: Branch ids (in scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: position
+        schema:
+          type: array
+          items:
+            type: integer
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrPolicyAudience'
           description: ''
   /api/v1/owner/companies/{company_id}/hr/required-documents/:
     get:
@@ -11844,6 +12560,304 @@ paths:
               schema:
                 $ref: '#/components/schemas/HrSettings'
           description: ''
+  /api/v1/owner/companies/{company_id}/hr/vacancies/:
+    get:
+      operationId: companies_hr_vacancies_list
+      description: Vacancies in the caller's branches, working ones first, each with
+        its stage counts.
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: array
+          items:
+            type: integer
+        description: Branch ids (in scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: q
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+            - closed
+            - draft
+            - open
+            - paused
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedHrVacancyList'
+          description: ''
+    post:
+      operationId: companies_hr_vacancies_create
+      description: Vacancies in the caller's branches, working ones first, each with
+        its stage counts.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HrVacancyWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HrVacancyWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HrVacancyWriteRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrVacancy'
+          description: ''
+  /api/v1/owner/companies/{company_id}/hr/vacancies/{id}/:
+    get:
+      operationId: companies_hr_vacancies_retrieve
+      description: Vacancies in the caller's branches, working ones first, each with
+        its stage counts.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrVacancy'
+          description: ''
+    patch:
+      operationId: companies_hr_vacancies_partial_update
+      description: Vacancies in the caller's branches, working ones first, each with
+        its stage counts.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedHrVacancyPatchRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedHrVacancyPatchRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedHrVacancyPatchRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrVacancy'
+          description: ''
+    delete:
+      operationId: companies_hr_vacancies_destroy
+      description: Vacancies in the caller's branches, working ones first, each with
+        its stage counts.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/hr/vacancies/{id}/close/:
+    post:
+      operationId: companies_hr_vacancies_close_create
+      description: Vacancies in the caller's branches, working ones first, each with
+        its stage counts.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrVacancy'
+          description: ''
+  /api/v1/owner/companies/{company_id}/hr/vacancies/{id}/open/:
+    post:
+      operationId: companies_hr_vacancies_open_create
+      description: Vacancies in the caller's branches, working ones first, each with
+        its stage counts.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrVacancy'
+          description: ''
+  /api/v1/owner/companies/{company_id}/hr/vacancies/{id}/pause/:
+    post:
+      operationId: companies_hr_vacancies_pause_create
+      description: Vacancies in the caller's branches, working ones first, each with
+        its stage counts.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrVacancy'
+          description: ''
+  /api/v1/owner/companies/{company_id}/hr/vacancies/{id}/qr/:
+    get:
+      operationId: companies_hr_vacancies_qr_retrieve
+      description: Vacancies in the caller's branches, working ones first, each with
+        its stage counts.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: query
+        name: plain
+        schema:
+          type: boolean
+        description: 'The plain link''s code (default: the QR code''s own).'
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+          description: A PNG.
+        '404':
+          description: No such vacancy, or no bot username set.
   /api/v1/owner/companies/{company_id}/inbox/:
     get:
       operationId: companies_inbox_list
@@ -16691,6 +17705,345 @@ paths:
               schema:
                 $ref: '#/components/schemas/LifecycleRecord'
           description: ''
+  /api/v1/owner/companies/{company_id}/lifecycle/job-changes/:
+    get:
+      operationId: companies_lifecycle_job_changes_list
+      description: |-
+        New positions, branches, departments and pay from a day: proposed, approved, applied on
+        their day, and the ones turned down or called off.
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: array
+          items:
+            type: integer
+        description: Branch ids (in scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: member
+        schema:
+          type: integer
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: q
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - applied
+          - closed
+          - proposed
+          - upcoming
+        description: 'A tab: upcoming = approved, closed = rejected or cancelled.'
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedLifecycleJobChangeList'
+          description: ''
+    post:
+      operationId: companies_lifecycle_job_changes_create
+      description: |-
+        New positions, branches, departments and pay from a day: proposed, approved, applied on
+        their day, and the ones turned down or called off.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LifecycleJobChangeWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LifecycleJobChangeWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LifecycleJobChangeWriteRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleJobChange'
+          description: ''
+  /api/v1/owner/companies/{company_id}/lifecycle/job-changes/{id}/:
+    get:
+      operationId: companies_lifecycle_job_changes_retrieve
+      description: |-
+        New positions, branches, departments and pay from a day: proposed, approved, applied on
+        their day, and the ones turned down or called off.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleJobChange'
+          description: ''
+  /api/v1/owner/companies/{company_id}/lifecycle/job-changes/{id}/approve/:
+    post:
+      operationId: companies_lifecycle_job_changes_approve_create
+      description: |-
+        New positions, branches, departments and pay from a day: proposed, approved, applied on
+        their day, and the ones turned down or called off.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleJobChange'
+          description: ''
+  /api/v1/owner/companies/{company_id}/lifecycle/job-changes/{id}/cancel/:
+    post:
+      operationId: companies_lifecycle_job_changes_cancel_create
+      description: |-
+        New positions, branches, departments and pay from a day: proposed, approved, applied on
+        their day, and the ones turned down or called off.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LifecycleJobChangeReasonRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LifecycleJobChangeReasonRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LifecycleJobChangeReasonRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleJobChange'
+          description: ''
+  /api/v1/owner/companies/{company_id}/lifecycle/job-changes/{id}/reject/:
+    post:
+      operationId: companies_lifecycle_job_changes_reject_create
+      description: |-
+        New positions, branches, departments and pay from a day: proposed, approved, applied on
+        their day, and the ones turned down or called off.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LifecycleJobChangeReasonRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LifecycleJobChangeReasonRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LifecycleJobChangeReasonRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleJobChange'
+          description: ''
+  /api/v1/owner/companies/{company_id}/lifecycle/job-changes/{id}/retry/:
+    post:
+      operationId: companies_lifecycle_job_changes_retry_create
+      description: |-
+        New positions, branches, departments and pay from a day: proposed, approved, applied on
+        their day, and the ones turned down or called off.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleJobChange'
+          description: ''
+  /api/v1/owner/companies/{company_id}/lifecycle/job-changes/counts/:
+    get:
+      operationId: companies_lifecycle_job_changes_counts_retrieve
+      description: |-
+        New positions, branches, departments and pay from a day: proposed, approved, applied on
+        their day, and the ones turned down or called off.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleJobChangeCounts'
+          description: ''
+  /api/v1/owner/companies/{company_id}/lifecycle/job-changes/current/:
+    get:
+      operationId: companies_lifecycle_job_changes_current_retrieve
+      description: |-
+        New positions, branches, departments and pay from a day: proposed, approved, applied on
+        their day, and the ones turned down or called off.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: member
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleCurrentJob'
+          description: ''
+  /api/v1/owner/companies/{company_id}/lifecycle/people/{member_id}/career/:
+    get:
+      operationId: companies_lifecycle_people_career_retrieve
+      description: 'Person 360''s career tab: hired, job changes (applied and to come),
+        leaving.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: member_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleCareer'
+          description: ''
   /api/v1/owner/companies/{company_id}/lifecycle/suspensions/:
     get:
       operationId: companies_lifecycle_suspensions_list
@@ -16779,6 +18132,468 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/owner/companies/{company_id}/lifecycle/terminations/:
+    get:
+      operationId: companies_lifecycle_terminations_list
+      description: |-
+        People leaving: requests to answer, last days agreed with their handover list, people
+        who left with their final payslip, and requests withdrawn or declined.
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: array
+          items:
+            type: integer
+        description: Branch ids (in scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: kind
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+            - company
+            - contract_end
+            - other
+            - resignation
+      - in: query
+        name: member
+        schema:
+          type: integer
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: q
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - agreed
+          - closed
+          - completed
+          - requested
+        description: 'A tab: closed = withdrawn or declined.'
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedLifecycleLeavingRowList'
+          description: ''
+    post:
+      operationId: companies_lifecycle_terminations_create
+      description: |-
+        People leaving: requests to answer, last days agreed with their handover list, people
+        who left with their final payslip, and requests withdrawn or declined.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LifecycleLeaveStartRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LifecycleLeaveStartRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LifecycleLeaveStartRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleLeaving'
+          description: ''
+  /api/v1/owner/companies/{company_id}/lifecycle/terminations/{id}/:
+    get:
+      operationId: companies_lifecycle_terminations_retrieve
+      description: |-
+        People leaving: requests to answer, last days agreed with their handover list, people
+        who left with their final payslip, and requests withdrawn or declined.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleLeaving'
+          description: ''
+    patch:
+      operationId: companies_lifecycle_terminations_partial_update
+      description: |-
+        People leaving: requests to answer, last days agreed with their handover list, people
+        who left with their final payslip, and requests withdrawn or declined.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedLifecycleLeaveUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedLifecycleLeaveUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedLifecycleLeaveUpdateRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleLeaving'
+          description: ''
+  /api/v1/owner/companies/{company_id}/lifecycle/terminations/{id}/agree/:
+    post:
+      operationId: companies_lifecycle_terminations_agree_create
+      description: |-
+        People leaving: requests to answer, last days agreed with their handover list, people
+        who left with their final payslip, and requests withdrawn or declined.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LifecycleLeaveAgreeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LifecycleLeaveAgreeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LifecycleLeaveAgreeRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleLeaving'
+          description: ''
+  /api/v1/owner/companies/{company_id}/lifecycle/terminations/{id}/decline/:
+    post:
+      operationId: companies_lifecycle_terminations_decline_create
+      description: |-
+        People leaving: requests to answer, last days agreed with their handover list, people
+        who left with their final payslip, and requests withdrawn or declined.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LifecycleLeaveReasonRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LifecycleLeaveReasonRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LifecycleLeaveReasonRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleLeaving'
+          description: ''
+  /api/v1/owner/companies/{company_id}/lifecycle/terminations/{id}/handover/:
+    post:
+      operationId: companies_lifecycle_terminations_handover_create
+      description: |-
+        People leaving: requests to answer, last days agreed with their handover list, people
+        who left with their final payslip, and requests withdrawn or declined.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LifecycleHandoverAddRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LifecycleHandoverAddRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LifecycleHandoverAddRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleLeaving'
+          description: ''
+  /api/v1/owner/companies/{company_id}/lifecycle/terminations/{id}/handover/{item_id}/:
+    patch:
+      operationId: companies_lifecycle_terminations_handover_partial_update
+      description: |-
+        People leaving: requests to answer, last days agreed with their handover list, people
+        who left with their final payslip, and requests withdrawn or declined.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: item_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedLifecycleHandoverSetRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedLifecycleHandoverSetRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedLifecycleHandoverSetRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleLeaving'
+          description: ''
+    delete:
+      operationId: companies_lifecycle_terminations_handover_destroy
+      description: |-
+        People leaving: requests to answer, last days agreed with their handover list, people
+        who left with their final payslip, and requests withdrawn or declined.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: item_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/lifecycle/terminations/{id}/retry/:
+    post:
+      operationId: companies_lifecycle_terminations_retry_create
+      description: |-
+        People leaving: requests to answer, last days agreed with their handover list, people
+        who left with their final payslip, and requests withdrawn or declined.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleLeaving'
+          description: ''
+  /api/v1/owner/companies/{company_id}/lifecycle/terminations/{id}/withdraw/:
+    post:
+      operationId: companies_lifecycle_terminations_withdraw_create
+      description: |-
+        People leaving: requests to answer, last days agreed with their handover list, people
+        who left with their final payslip, and requests withdrawn or declined.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LifecycleLeaveReasonRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LifecycleLeaveReasonRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LifecycleLeaveReasonRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleLeaving'
+          description: ''
+  /api/v1/owner/companies/{company_id}/lifecycle/terminations/counts/:
+    get:
+      operationId: companies_lifecycle_terminations_counts_retrieve
+      description: |-
+        People leaving: requests to answer, last days agreed with their handover list, people
+        who left with their final payslip, and requests withdrawn or declined.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleLeavingCounts'
+          description: ''
   /api/v1/owner/companies/{company_id}/notification-preferences/:
     get:
       operationId: companies_notification_preferences_list
@@ -40075,6 +41890,339 @@ components:
       - days_until
       - member
       - years
+    HrApplicant:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        vacancy:
+          allOf:
+          - $ref: '#/components/schemas/HrNamed'
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        phone:
+          type: string
+          readOnly: true
+        telegram_username:
+          type: string
+          readOnly: true
+        language:
+          allOf:
+          - $ref: '#/components/schemas/LanguageEnum'
+          readOnly: true
+        stage:
+          allOf:
+          - $ref: '#/components/schemas/HrApplicantStageEnum'
+          readOnly: true
+        stage_changed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        source:
+          allOf:
+          - $ref: '#/components/schemas/HrApplicantSourceEnum'
+          readOnly: true
+        answers:
+          readOnly: true
+        has_document:
+          type: boolean
+          readOnly: true
+        rejected_reason:
+          type: string
+          readOnly: true
+        member:
+          allOf:
+          - $ref: '#/components/schemas/HrPersonRef'
+          nullable: true
+          readOnly: true
+          description: Who they became, once hired.
+        hired_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - answers
+      - created_at
+      - has_document
+      - hired_at
+      - id
+      - language
+      - member
+      - name
+      - phone
+      - rejected_reason
+      - source
+      - stage
+      - stage_changed_at
+      - telegram_username
+      - vacancy
+    HrApplicantDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        vacancy:
+          allOf:
+          - $ref: '#/components/schemas/HrNamed'
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        phone:
+          type: string
+          readOnly: true
+        telegram_username:
+          type: string
+          readOnly: true
+        language:
+          allOf:
+          - $ref: '#/components/schemas/LanguageEnum'
+          readOnly: true
+        stage:
+          allOf:
+          - $ref: '#/components/schemas/HrApplicantStageEnum'
+          readOnly: true
+        stage_changed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        source:
+          allOf:
+          - $ref: '#/components/schemas/HrApplicantSourceEnum'
+          readOnly: true
+        answers:
+          readOnly: true
+        has_document:
+          type: boolean
+          readOnly: true
+        rejected_reason:
+          type: string
+          readOnly: true
+        member:
+          allOf:
+          - $ref: '#/components/schemas/HrPersonRef'
+          nullable: true
+          readOnly: true
+          description: Who they became, once hired.
+        hired_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        document:
+          type: string
+          nullable: true
+          description: A signed link to their diploma photo, when they sent one.
+          readOnly: true
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrApplicantEvent'
+          readOnly: true
+          description: Oldest first.
+      required:
+      - answers
+      - created_at
+      - document
+      - events
+      - has_document
+      - hired_at
+      - id
+      - language
+      - member
+      - name
+      - phone
+      - rejected_reason
+      - source
+      - stage
+      - stage_changed_at
+      - telegram_username
+      - vacancy
+    HrApplicantEvent:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/HrApplicantEventKindEnum'
+          readOnly: true
+        from_stage:
+          allOf:
+          - $ref: '#/components/schemas/HrApplicantStageEnum'
+          readOnly: true
+        to_stage:
+          allOf:
+          - $ref: '#/components/schemas/HrApplicantStageEnum'
+          readOnly: true
+        text:
+          type: string
+          readOnly: true
+        message:
+          type: string
+          readOnly: true
+        notified:
+          type: boolean
+          readOnly: true
+        by:
+          allOf:
+          - $ref: '#/components/schemas/HrPersonRef'
+          nullable: true
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - by
+      - created_at
+      - from_stage
+      - id
+      - kind
+      - message
+      - notified
+      - text
+      - to_stage
+    HrApplicantEventKindEnum:
+      enum:
+      - applied
+      - moved
+      - note
+      type: string
+      description: |-
+        * `applied` - Applied
+        * `moved` - Moved
+        * `note` - Note
+    HrApplicantHireRequest:
+      type: object
+      properties:
+        branch_id:
+          type: integer
+          nullable: true
+          description: Only for a vacancy without a branch.
+        message:
+          type: string
+          default: ''
+          maxLength: 1000
+    HrApplicantMoveRequest:
+      type: object
+      properties:
+        stage:
+          $ref: '#/components/schemas/HrApplicantPipelineStageEnum'
+        message:
+          type: string
+          default: ''
+          maxLength: 1000
+        notify:
+          type: boolean
+          nullable: true
+          description: 'Tell them in the bot. Empty: for an interview or an offer,
+            or with a message.'
+      required:
+      - stage
+    HrApplicantNoteRequest:
+      type: object
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 2000
+      required:
+      - text
+    HrApplicantPipelineStageEnum:
+      enum:
+      - new
+      - screening
+      - interview
+      - offer
+      type: string
+      description: |-
+        * `new` - new
+        * `screening` - screening
+        * `interview` - interview
+        * `offer` - offer
+    HrApplicantRejectRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          description: For the team.
+          maxLength: 200
+        message:
+          type: string
+          default: ''
+          maxLength: 1000
+        notify:
+          type: boolean
+          default: true
+      required:
+      - reason
+    HrApplicantSourceEnum:
+      enum:
+      - link
+      - qr
+      type: string
+      description: |-
+        * `link` - Link
+        * `qr` - QR code
+    HrApplicantStageCounts:
+      type: object
+      properties:
+        new:
+          type: integer
+        screening:
+          type: integer
+        interview:
+          type: integer
+        offer:
+          type: integer
+        hired:
+          type: integer
+        rejected:
+          type: integer
+        total:
+          type: integer
+      required:
+      - hired
+      - interview
+      - new
+      - offer
+      - rejected
+      - screening
+      - total
+    HrApplicantStageEnum:
+      enum:
+      - new
+      - screening
+      - interview
+      - offer
+      - hired
+      - rejected
+      type: string
+      description: |-
+        * `new` - New
+        * `screening` - Screening
+        * `interview` - Interview
+        * `offer` - Offer
+        * `hired` - Hired
+        * `rejected` - Rejected
     HrBirthday:
       type: object
       properties:
@@ -41256,6 +43404,18 @@ components:
       - minutes
       - need
       - since
+    HrMyPolicyStateEnum:
+      enum:
+      - waiting
+      - late
+      - signed
+      - to_read
+      type: string
+      description: |-
+        * `waiting` - waiting
+        * `late` - late
+        * `signed` - signed
+        * `to_read` - to_read
     HrNamed:
       type: object
       properties:
@@ -41343,6 +43503,20 @@ components:
       - kind
       - problem
       - valid_until
+    HrPersonPolicies:
+      type: object
+      properties:
+        current:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrPolicyStanding'
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrPolicyPastSignature'
+      required:
+      - current
+      - history
     HrPersonRef:
       type: object
       properties:
@@ -41439,6 +43613,608 @@ components:
             type: string
       required:
       - placeholders
+    HrPolicy:
+      type: object
+      description: |-
+        A policy in the list: what it is, who it applies to, its version and how the signing
+        goes among the people in the viewer's scope (`tally`, null while nobody is asked).
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        category:
+          allOf:
+          - $ref: '#/components/schemas/HrPolicyCategoryEnum'
+          readOnly: true
+        requires_ack:
+          type: boolean
+          readOnly: true
+        ack_within_days:
+          type: integer
+          readOnly: true
+        is_active:
+          type: boolean
+          readOnly: true
+        positions:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrNamed'
+          readOnly: true
+        branches:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrBranchRef'
+          readOnly: true
+        version:
+          allOf:
+          - $ref: '#/components/schemas/HrPolicyVersionRef'
+          nullable: true
+          readOnly: true
+          description: The version in force.
+        ack_number:
+          type: integer
+          nullable: true
+          readOnly: true
+          description: The version signatures are asked for (a small edit after it
+            keeps them).
+        draft:
+          allOf:
+          - $ref: '#/components/schemas/HrPolicyDraftRef'
+          nullable: true
+          readOnly: true
+        tally:
+          allOf:
+          - $ref: '#/components/schemas/HrPolicyTally'
+          nullable: true
+          readOnly: true
+        due_on:
+          type: string
+          format: date
+          nullable: true
+          readOnly: true
+          description: The deadline of those asked when that version came out.
+        can_change:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - ack_number
+      - ack_within_days
+      - branches
+      - can_change
+      - category
+      - created_at
+      - draft
+      - due_on
+      - id
+      - is_active
+      - positions
+      - requires_ack
+      - tally
+      - title
+      - updated_at
+      - version
+    HrPolicyAudience:
+      type: object
+      properties:
+        count:
+          type: integer
+          description: People it would apply to now.
+        people:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrPersonRef'
+          description: The first few, in the viewer's scope.
+      required:
+      - count
+      - people
+    HrPolicyCategoryEnum:
+      enum:
+      - dispensing
+      - storage
+      - safety
+      - conduct
+      - other
+      type: string
+      description: |-
+        * `dispensing` - Dispensing
+        * `storage` - Storage
+        * `safety` - Safety
+        * `conduct` - Conduct
+        * `other` - Other
+    HrPolicyDetail:
+      type: object
+      description: |-
+        One policy: its list shape, every version (newest first) and how many people it applies
+        to now.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        category:
+          allOf:
+          - $ref: '#/components/schemas/HrPolicyCategoryEnum'
+          readOnly: true
+        requires_ack:
+          type: boolean
+          readOnly: true
+        ack_within_days:
+          type: integer
+          readOnly: true
+        is_active:
+          type: boolean
+          readOnly: true
+        positions:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrNamed'
+          readOnly: true
+        branches:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrBranchRef'
+          readOnly: true
+        version:
+          allOf:
+          - $ref: '#/components/schemas/HrPolicyVersionRef'
+          nullable: true
+          readOnly: true
+          description: The version in force.
+        ack_number:
+          type: integer
+          nullable: true
+          readOnly: true
+          description: The version signatures are asked for (a small edit after it
+            keeps them).
+        draft:
+          allOf:
+          - $ref: '#/components/schemas/HrPolicyDraftRef'
+          nullable: true
+          readOnly: true
+        tally:
+          allOf:
+          - $ref: '#/components/schemas/HrPolicyTally'
+          nullable: true
+          readOnly: true
+        due_on:
+          type: string
+          format: date
+          nullable: true
+          readOnly: true
+          description: The deadline of those asked when that version came out.
+        can_change:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        versions:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrPolicyVersion'
+          readOnly: true
+        audience_count:
+          type: integer
+          readOnly: true
+        created_by:
+          type: string
+          nullable: true
+          readOnly: true
+      required:
+      - ack_number
+      - ack_within_days
+      - audience_count
+      - branches
+      - can_change
+      - category
+      - created_at
+      - created_by
+      - draft
+      - due_on
+      - id
+      - is_active
+      - positions
+      - requires_ack
+      - tally
+      - title
+      - updated_at
+      - version
+      - versions
+    HrPolicyDraftRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        number:
+          type: integer
+        updated_at:
+          type: string
+          format: date-time
+      required:
+      - id
+      - number
+      - updated_at
+    HrPolicyDraftWriteRequest:
+      type: object
+      description: The next version's text, file (multipart) and note; `remove_file`
+        drops the file.
+      properties:
+        body:
+          type: string
+        change_note:
+          type: string
+          maxLength: 300
+        file:
+          type: string
+          format: binary
+          nullable: true
+        remove_file:
+          type: boolean
+          default: false
+    HrPolicyFileTypeEnum:
+      enum:
+      - pdf
+      - image
+      type: string
+      description: |-
+        * `pdf` - pdf
+        * `image` - image
+    HrPolicyPastSignature:
+      type: object
+      properties:
+        policy:
+          $ref: '#/components/schemas/HrPolicyRef'
+        number:
+          type: integer
+          description: The version that asked.
+        signed_number:
+          type: integer
+          nullable: true
+        signed_at:
+          type: string
+          format: date-time
+      required:
+      - number
+      - policy
+      - signed_at
+      - signed_number
+    HrPolicyPublishRequest:
+      type: object
+      properties:
+        asks_again:
+          type: boolean
+          default: true
+          description: 'False for a small edit: nobody is asked again, signatures
+            stay.'
+        change_note:
+          type: string
+          maxLength: 300
+    HrPolicyRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        category:
+          $ref: '#/components/schemas/HrPolicyCategoryEnum'
+      required:
+      - category
+      - id
+      - title
+    HrPolicyRemindRequest:
+      type: object
+      properties:
+        member_ids:
+          type: array
+          items:
+            type: integer
+          nullable: true
+    HrPolicyReminded:
+      type: object
+      properties:
+        reminded:
+          type: integer
+      required:
+      - reminded
+    HrPolicySignature:
+      type: object
+      description: One row of the people grid.
+      properties:
+        member:
+          $ref: '#/components/schemas/HrPersonRef'
+        position:
+          allOf:
+          - $ref: '#/components/schemas/HrNamed'
+          nullable: true
+        branch:
+          allOf:
+          - $ref: '#/components/schemas/HrBranchRef'
+          nullable: true
+        state:
+          $ref: '#/components/schemas/HrPolicyStateEnum'
+        asked_at:
+          type: string
+          format: date-time
+        due_on:
+          type: string
+          format: date
+        signed_at:
+          type: string
+          format: date-time
+          nullable: true
+        signed_number:
+          type: integer
+          nullable: true
+        reminded_at:
+          type: string
+          format: date-time
+          nullable: true
+        earlier_signed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When they signed an earlier version (if they did).
+      required:
+      - asked_at
+      - branch
+      - due_on
+      - earlier_signed_at
+      - member
+      - position
+      - reminded_at
+      - signed_at
+      - signed_number
+      - state
+    HrPolicyStanding:
+      type: object
+      description: Where one person stands on one policy that applies to them.
+      properties:
+        policy:
+          $ref: '#/components/schemas/HrPolicyRef'
+        number:
+          type: integer
+          description: The version in force.
+        state:
+          $ref: '#/components/schemas/HrMyPolicyStateEnum'
+        due_on:
+          type: string
+          format: date
+          nullable: true
+        signed_at:
+          type: string
+          format: date-time
+          nullable: true
+        signed_number:
+          type: integer
+          nullable: true
+      required:
+      - due_on
+      - number
+      - policy
+      - signed_at
+      - signed_number
+      - state
+    HrPolicyStateEnum:
+      enum:
+      - signed
+      - waiting
+      - late
+      type: string
+      description: |-
+        * `signed` - signed
+        * `waiting` - waiting
+        * `late` - late
+    HrPolicyTally:
+      type: object
+      properties:
+        total:
+          type: integer
+        signed:
+          type: integer
+        waiting:
+          type: integer
+        late:
+          type: integer
+      required:
+      - late
+      - signed
+      - total
+      - waiting
+    HrPolicyVersion:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        number:
+          type: integer
+          readOnly: true
+        change_note:
+          type: string
+          readOnly: true
+        asks_again:
+          type: boolean
+          readOnly: true
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        published_by:
+          type: string
+          nullable: true
+          readOnly: true
+        is_draft:
+          type: boolean
+          readOnly: true
+        has_file:
+          type: boolean
+          readOnly: true
+        file_type:
+          readOnly: true
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/HrPolicyFileTypeEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - asks_again
+      - change_note
+      - created_at
+      - file_type
+      - has_file
+      - id
+      - is_draft
+      - number
+      - published_at
+      - published_by
+      - updated_at
+    HrPolicyVersionDetail:
+      type: object
+      description: A version with its text, and a short-lived link to its file.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        number:
+          type: integer
+          readOnly: true
+        change_note:
+          type: string
+          readOnly: true
+        asks_again:
+          type: boolean
+          readOnly: true
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        published_by:
+          type: string
+          nullable: true
+          readOnly: true
+        is_draft:
+          type: boolean
+          readOnly: true
+        has_file:
+          type: boolean
+          readOnly: true
+        file_type:
+          readOnly: true
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/HrPolicyFileTypeEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        body:
+          type: string
+          readOnly: true
+        body_text:
+          type: string
+          readOnly: true
+        file_url:
+          type: string
+          nullable: true
+          readOnly: true
+          description: Signed link (minutes).
+      required:
+      - asks_again
+      - body
+      - body_text
+      - change_note
+      - created_at
+      - file_type
+      - file_url
+      - has_file
+      - id
+      - is_draft
+      - number
+      - published_at
+      - published_by
+      - updated_at
+    HrPolicyVersionRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        number:
+          type: integer
+        published_at:
+          type: string
+          format: date-time
+          nullable: true
+        asks_again:
+          type: boolean
+      required:
+      - asks_again
+      - id
+      - number
+      - published_at
+    HrPolicyWriteRequest:
+      type: object
+      description: A policy's settings; on create also the first draft's text.
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 150
+        category:
+          $ref: '#/components/schemas/HrPolicyCategoryEnum'
+        position_ids:
+          type: array
+          items:
+            type: integer
+        branch_ids:
+          type: array
+          items:
+            type: integer
+        requires_ack:
+          type: boolean
+        ack_within_days:
+          type: integer
+          maximum: 90
+          minimum: 1
+        is_active:
+          type: boolean
+        body:
+          type: string
+        change_note:
+          type: string
+          maxLength: 300
     HrPreview:
       type: object
       properties:
@@ -41633,6 +44409,18 @@ components:
       - termination_note
       - termination_reason
       - tin
+    HrQuestionKindEnum:
+      enum:
+      - text
+      - choice
+      - yes_no
+      - number
+      type: string
+      description: |-
+        * `text` - Text
+        * `choice` - Choice
+        * `yes_no` - Yes or no
+        * `number` - Number
     HrRequiredDocument:
       type: object
       properties:
@@ -41797,6 +44585,251 @@ components:
       - hired
       - left
       - month
+    HrVacancy:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/HrVacancyStatusEnum'
+          readOnly: true
+        accepting:
+          type: boolean
+          readOnly: true
+          description: The link takes applications today.
+        position:
+          allOf:
+          - $ref: '#/components/schemas/HrNamed'
+          nullable: true
+          readOnly: true
+        role:
+          allOf:
+          - $ref: '#/components/schemas/HrNamed'
+          nullable: true
+          readOnly: true
+          description: 'The access a person hired for it gets: the position''s role,
+            else the default.'
+        branch:
+          allOf:
+          - $ref: '#/components/schemas/HrBranchRef'
+          nullable: true
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+        salary_from:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        salary_to:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        currency:
+          type: string
+          readOnly: true
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrVacancyQuestion'
+          readOnly: true
+        asks_document:
+          type: boolean
+          readOnly: true
+        opens_on:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        closes_on:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        link:
+          type: string
+          readOnly: true
+          description: '"" until the bot username is set.'
+        qr_link:
+          type: string
+          readOnly: true
+          description: The link the QR code carries (its applicants count apart).
+        link_opens:
+          type: integer
+          readOnly: true
+        counts:
+          allOf:
+          - $ref: '#/components/schemas/HrApplicantStageCounts'
+          readOnly: true
+        created_by:
+          allOf:
+          - $ref: '#/components/schemas/HrPersonRef'
+          nullable: true
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        closed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        hire_blocker:
+          type: string
+          nullable: true
+          readOnly: true
+          description: 'Why the viewer can''t hire for it (null: they can).'
+      required:
+      - accepting
+      - asks_document
+      - branch
+      - closed_at
+      - closes_on
+      - counts
+      - created_at
+      - created_by
+      - currency
+      - description
+      - hire_blocker
+      - id
+      - link
+      - link_opens
+      - opens_on
+      - position
+      - published_at
+      - qr_link
+      - questions
+      - role
+      - salary_from
+      - salary_to
+      - status
+      - title
+    HrVacancyQuestion:
+      type: object
+      properties:
+        id:
+          type: string
+          maxLength: 16
+        text:
+          type: string
+          maxLength: 200
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/HrQuestionKindEnum'
+          default: text
+        required:
+          type: boolean
+          default: true
+        options:
+          type: array
+          items:
+            type: string
+            maxLength: 40
+          description: The buttons of a choice question (2 to 6).
+          maxItems: 6
+      required:
+      - text
+    HrVacancyQuestionRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          maxLength: 16
+        text:
+          type: string
+          minLength: 1
+          maxLength: 200
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/HrQuestionKindEnum'
+          default: text
+        required:
+          type: boolean
+          default: true
+        options:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 40
+          description: The buttons of a choice question (2 to 6).
+          maxItems: 6
+      required:
+      - text
+    HrVacancyStatusEnum:
+      enum:
+      - draft
+      - open
+      - paused
+      - closed
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `open` - Open
+        * `paused` - Paused
+        * `closed` - Closed
+    HrVacancyWriteRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 120
+        position_id:
+          type: integer
+          nullable: true
+        branch_id:
+          type: integer
+          nullable: true
+          description: 'Empty: any branch (needs every branch).'
+        description:
+          type: string
+          maxLength: 2000
+        salary_from:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        salary_to:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrVacancyQuestionRequest'
+        asks_document:
+          type: boolean
+        opens_on:
+          type: string
+          format: date
+          nullable: true
+        closes_on:
+          type: string
+          format: date
+          nullable: true
+        publish:
+          type: boolean
+          default: false
+          description: Open it to applicants at once (new ones only).
+      required:
+      - title
     ImportUploadRequest:
       type: object
       properties:
@@ -49213,6 +52246,150 @@ components:
       description: |-
         * `calendar` - Calendar days
         * `work_days` - Working days
+    LifecycleCareer:
+      type: object
+      description: |-
+        Person 360's career: when they were hired, their job changes (applied and to come) and
+        their leaving.
+      properties:
+        hired_on:
+          type: string
+          format: date
+          nullable: true
+        changes:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleJobChange'
+        leavings:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleLeavingRow'
+      required:
+      - changes
+      - hired_on
+      - leavings
+    LifecycleCurrentJob:
+      type: object
+      description: 'Someone''s job now, for the "Change job" dialog: the pay only
+        for payroll.view.'
+      properties:
+        member:
+          $ref: '#/components/schemas/HrPersonRef'
+        position:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleNamed'
+          nullable: true
+        home_branch:
+          allOf:
+          - $ref: '#/components/schemas/HrBranchRef'
+          nullable: true
+        branches:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrBranchRef'
+        department:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleNamed'
+          nullable: true
+        role:
+          type: string
+          nullable: true
+        pay:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleJobPay'
+          nullable: true
+        may_change_pay:
+          type: boolean
+          description: payroll is on and you manage pay
+        departments:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleNamed'
+        open_changes:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleOpenChange'
+      required:
+      - branches
+      - department
+      - departments
+      - home_branch
+      - may_change_pay
+      - member
+      - open_changes
+      - pay
+      - position
+      - role
+    LifecycleExitInterview:
+      type: object
+      properties:
+        reason:
+          $ref: '#/components/schemas/LifecycleExitReasonEnum'
+        better:
+          type: string
+        recommend:
+          type: string
+          description: yes, maybe, no or empty.
+        answered_at:
+          type: string
+          format: date-time
+      required:
+      - answered_at
+      - better
+      - reason
+      - recommend
+    LifecycleExitReasonEnum:
+      enum:
+      - pay
+      - schedule
+      - workload
+      - team
+      - growth
+      - moving
+      - studies
+      - health
+      - family
+      - other
+      type: string
+      description: |-
+        * `pay` - pay
+        * `schedule` - schedule
+        * `workload` - workload
+        * `team` - team
+        * `growth` - growth
+        * `moving` - moving
+        * `studies` - studies
+        * `health` - health
+        * `family` - family
+        * `other` - other
+    LifecycleFinalPayslip:
+      type: object
+      properties:
+        id:
+          type: integer
+        status:
+          type: string
+          description: The payroll run's status.
+        period:
+          type: string
+          format: date
+        last_day:
+          type: string
+          format: date
+          nullable: true
+        net:
+          type: string
+          nullable: true
+          description: Only with payroll.view.
+        currency:
+          type: string
+      required:
+      - currency
+      - id
+      - last_day
+      - net
+      - period
+      - status
     LifecycleFine:
       type: object
       properties:
@@ -49240,6 +52417,845 @@ components:
           pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
       required:
       - amount
+    LifecycleHandoverAddKindEnum:
+      enum:
+      - keys
+      - documents
+      - other
+      type: string
+      description: |-
+        * `keys` - keys
+        * `documents` - documents
+        * `other` - other
+    LifecycleHandoverAddRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleHandoverAddKindEnum'
+          default: other
+      required:
+      - title
+    LifecycleHandoverItem:
+      type: object
+      description: |-
+        One thing to hand over. `done`: ticked off, or done by itself (`auto`): equipment no
+        longer held, no open tasks left.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleHandoverKindEnum'
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        asset_id:
+          type: integer
+          readOnly: true
+          nullable: true
+        done:
+          type: boolean
+          readOnly: true
+        ticked:
+          type: boolean
+          readOnly: true
+        auto:
+          type: boolean
+          readOnly: true
+          description: Done without being ticked off.
+        held:
+          type: boolean
+          nullable: true
+          readOnly: true
+          description: Equipment they still hold (else null).
+        open_tasks:
+          type: integer
+          nullable: true
+          readOnly: true
+          description: 'The tasks item: how many are open.'
+        note:
+          type: string
+          readOnly: true
+        done_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        done_by:
+          allOf:
+          - $ref: '#/components/schemas/HrPersonRef'
+          nullable: true
+          readOnly: true
+      required:
+      - asset_id
+      - auto
+      - done
+      - done_at
+      - done_by
+      - held
+      - id
+      - kind
+      - note
+      - open_tasks
+      - ticked
+      - title
+    LifecycleHandoverKindEnum:
+      enum:
+      - equipment
+      - tasks
+      - keys
+      - documents
+      - other
+      type: string
+      description: |-
+        * `equipment` - Equipment
+        * `tasks` - Open tasks
+        * `keys` - Keys
+        * `documents` - Documents
+        * `other` - Other
+    LifecycleHandoverProgress:
+      type: object
+      properties:
+        done:
+          type: integer
+        total:
+          type: integer
+      required:
+      - done
+      - total
+    LifecycleJobChange:
+      type: object
+      description: 'A job change: who, from when, what it was and what it becomes
+        (pay for payroll.view).'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        member:
+          allOf:
+          - $ref: '#/components/schemas/HrPersonRef'
+          readOnly: true
+        position_now:
+          type: string
+          nullable: true
+          readOnly: true
+          description: Their job title today.
+        home_branch:
+          allOf:
+          - $ref: '#/components/schemas/HrBranchRef'
+          nullable: true
+          readOnly: true
+        member_status:
+          type: string
+          readOnly: true
+        effective_on:
+          type: string
+          format: date
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleJobChangeStatusEnum'
+          readOnly: true
+        parts:
+          type: array
+          items:
+            type: string
+          readOnly: true
+        before:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleJobSide'
+          readOnly: true
+        after:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleJobSide'
+          readOnly: true
+        has_pay:
+          type: boolean
+          readOnly: true
+          description: The pay changes (shown or not).
+        reason:
+          type: string
+          readOnly: true
+        proposed_by:
+          allOf:
+          - $ref: '#/components/schemas/HrPersonRef'
+          nullable: true
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        decided_by:
+          allOf:
+          - $ref: '#/components/schemas/HrPersonRef'
+          nullable: true
+          readOnly: true
+        decided_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        decision_note:
+          type: string
+          readOnly: true
+        applied_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        error:
+          type: string
+          readOnly: true
+        upcoming:
+          type: boolean
+          readOnly: true
+          description: Approved, its day still to come.
+        can:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleJobChangeActions'
+          readOnly: true
+      required:
+      - after
+      - applied_at
+      - before
+      - can
+      - created_at
+      - decided_at
+      - decided_by
+      - decision_note
+      - effective_on
+      - error
+      - has_pay
+      - home_branch
+      - id
+      - member
+      - member_status
+      - parts
+      - position_now
+      - proposed_by
+      - reason
+      - status
+      - upcoming
+    LifecycleJobChangeActions:
+      type: object
+      properties:
+        decide:
+          type: boolean
+        cancel:
+          type: boolean
+        retry:
+          type: boolean
+      required:
+      - cancel
+      - decide
+      - retry
+    LifecycleJobChangeCounts:
+      type: object
+      properties:
+        proposed:
+          type: integer
+        upcoming:
+          type: integer
+        applied:
+          type: integer
+        closed:
+          type: integer
+      required:
+      - applied
+      - closed
+      - proposed
+      - upcoming
+    LifecycleJobChangeReasonRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 300
+    LifecycleJobChangeStatusEnum:
+      enum:
+      - proposed
+      - approved
+      - applied
+      - rejected
+      - cancelled
+      type: string
+      description: |-
+        * `proposed` - Waiting for approval
+        * `approved` - Approved
+        * `applied` - Applied
+        * `rejected` - Rejected
+        * `cancelled` - Cancelled
+    LifecycleJobChangeWritePayTypeEnum:
+      enum:
+      - monthly
+      - daily
+      - hourly
+      - per_task
+      type: string
+      description: |-
+        * `monthly` - monthly
+        * `daily` - daily
+        * `hourly` - hourly
+        * `per_task` - per_task
+    LifecycleJobChangeWriteRequest:
+      type: object
+      description: |-
+        What changes from when. Leave a part out to keep it; `department_id: null` takes them out
+        of their department, `position_id: null` leaves them without a position.
+      properties:
+        member_id:
+          type: integer
+        effective_on:
+          type: string
+          format: date
+          description: The day it takes effect (today or later).
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        position_id:
+          type: integer
+          nullable: true
+        branch_id:
+          type: integer
+          description: The new home branch.
+        department_id:
+          type: integer
+          nullable: true
+        pay_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        pay_type:
+          oneOf:
+          - $ref: '#/components/schemas/LifecycleJobChangeWritePayTypeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        approve:
+          type: boolean
+          default: false
+          description: Approve it at once when you may.
+      required:
+      - effective_on
+      - member_id
+      - reason
+    LifecycleJobPay:
+      type: object
+      properties:
+        amount:
+          type: string
+          description: Money as a string, e.g. "5200000.00".
+        currency:
+          type: string
+        pay_type:
+          type: string
+          description: monthly, daily, hourly or per_task.
+      required:
+      - amount
+      - currency
+      - pay_type
+    LifecycleJobSide:
+      type: object
+      description: 'A job as it was or became: the pay only for payroll.view.'
+      properties:
+        position:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleNamed'
+          nullable: true
+        branch:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleNamed'
+          nullable: true
+        branches:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleNamed'
+        department:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleNamed'
+          nullable: true
+        role:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleNamed'
+          nullable: true
+        pay:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleJobPay'
+          nullable: true
+      required:
+      - branch
+      - branches
+      - department
+      - pay
+      - position
+      - role
+    LifecycleLeaveAgreeRequest:
+      type: object
+      properties:
+        last_day:
+          type: string
+          format: date
+          description: Their last working day; by default the one they asked for.
+        leave_days:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        final_payslip:
+          type: boolean
+          nullable: true
+    LifecycleLeaveReasonRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 300
+    LifecycleLeaveStartRequest:
+      type: object
+      properties:
+        member_id:
+          type: integer
+        kind:
+          $ref: '#/components/schemas/LifecycleLeavingKindEnum'
+        last_day:
+          type: string
+          format: date
+          description: Their last working day (today or later).
+        reason:
+          type: string
+          maxLength: 2000
+        leave_days:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          description: Unused leave days the final payslip pays out.
+        final_payslip:
+          type: boolean
+          default: true
+      required:
+      - kind
+      - last_day
+      - member_id
+    LifecycleLeaving:
+      type: object
+      description: |-
+        A leaving with everything: the reason, what happened when, the handover list, the
+        person's answers, HR's notes and the final payslip (its amount for payroll.view).
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        member:
+          allOf:
+          - $ref: '#/components/schemas/HrPersonRef'
+          readOnly: true
+        position:
+          type: string
+          nullable: true
+          readOnly: true
+        home_branch:
+          allOf:
+          - $ref: '#/components/schemas/HrBranchRef'
+          nullable: true
+          readOnly: true
+        member_status:
+          type: string
+          readOnly: true
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleLeavingKindEnum'
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleLeavingStatusEnum'
+          readOnly: true
+        initiated_by:
+          type: string
+          readOnly: true
+          description: employee or company
+        requested_at:
+          type: string
+          format: date-time
+          readOnly: true
+        wished_last_day:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        last_day:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        left_on:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        notice_days:
+          type: integer
+          nullable: true
+          readOnly: true
+        handover:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleHandoverProgress'
+          readOnly: true
+        error:
+          type: string
+          readOnly: true
+        can_manage:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        reason:
+          type: string
+          readOnly: true
+        requested_by:
+          allOf:
+          - $ref: '#/components/schemas/HrPersonRef'
+          nullable: true
+          readOnly: true
+        agreed_by:
+          allOf:
+          - $ref: '#/components/schemas/HrPersonRef'
+          nullable: true
+          readOnly: true
+        agreed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        closed_by:
+          allOf:
+          - $ref: '#/components/schemas/HrPersonRef'
+          nullable: true
+          readOnly: true
+        closed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        close_reason:
+          type: string
+          readOnly: true
+        completed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        completed_by:
+          allOf:
+          - $ref: '#/components/schemas/HrPersonRef'
+          nullable: true
+          readOnly: true
+        final_payslip:
+          type: boolean
+          readOnly: true
+        leave_days:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          readOnly: true
+        rehire:
+          readOnly: true
+          oneOf:
+          - $ref: '#/components/schemas/LifecycleRehireEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        notes:
+          type: string
+          readOnly: true
+        exit_interview:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleExitInterview'
+          nullable: true
+          readOnly: true
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleLeavingEvent'
+          readOnly: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleHandoverItem'
+          readOnly: true
+        blockers:
+          type: array
+          items:
+            type: string
+          readOnly: true
+          description: What would stop the offboarding now.
+        left_open:
+          readOnly: true
+        final_run:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleFinalPayslip'
+          nullable: true
+          readOnly: true
+        can:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleLeavingActions'
+          readOnly: true
+      required:
+      - agreed_at
+      - agreed_by
+      - blockers
+      - can
+      - can_manage
+      - close_reason
+      - closed_at
+      - closed_by
+      - completed_at
+      - completed_by
+      - created_at
+      - error
+      - events
+      - exit_interview
+      - final_payslip
+      - final_run
+      - handover
+      - home_branch
+      - id
+      - initiated_by
+      - items
+      - kind
+      - last_day
+      - leave_days
+      - left_on
+      - left_open
+      - member
+      - member_status
+      - notes
+      - notice_days
+      - position
+      - reason
+      - rehire
+      - requested_at
+      - requested_by
+      - status
+      - wished_last_day
+    LifecycleLeavingActions:
+      type: object
+      properties:
+        manage:
+          type: boolean
+        agree:
+          type: boolean
+        decline:
+          type: boolean
+        withdraw:
+          type: boolean
+        handover:
+          type: boolean
+        retry:
+          type: boolean
+      required:
+      - agree
+      - decline
+      - handover
+      - manage
+      - retry
+      - withdraw
+    LifecycleLeavingCounts:
+      type: object
+      properties:
+        requested:
+          type: integer
+        agreed:
+          type: integer
+        completed:
+          type: integer
+        closed:
+          type: integer
+      required:
+      - agreed
+      - closed
+      - completed
+      - requested
+    LifecycleLeavingEvent:
+      type: object
+      properties:
+        kind:
+          type: string
+          description: requested, started, agreed, moved, declined, withdrawn, completed,
+            left
+        at:
+          type: string
+          format: date-time
+        by:
+          type: integer
+          nullable: true
+          description: 'Member id; null: the system.'
+        name:
+          type: string
+        day:
+          type: string
+          format: date
+          nullable: true
+        note:
+          type: string
+      required:
+      - at
+      - by
+      - day
+      - kind
+      - name
+      - note
+    LifecycleLeavingKindEnum:
+      enum:
+      - resignation
+      - company
+      - contract_end
+      - other
+      type: string
+      description: |-
+        * `resignation` - Resignation
+        * `company` - By the company
+        * `contract_end` - End of contract
+        * `other` - Other
+    LifecycleLeavingRow:
+      type: object
+      description: 'A leaving in the list: who, why, the days and how far the handover
+        is.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        member:
+          allOf:
+          - $ref: '#/components/schemas/HrPersonRef'
+          readOnly: true
+        position:
+          type: string
+          nullable: true
+          readOnly: true
+        home_branch:
+          allOf:
+          - $ref: '#/components/schemas/HrBranchRef'
+          nullable: true
+          readOnly: true
+        member_status:
+          type: string
+          readOnly: true
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleLeavingKindEnum'
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleLeavingStatusEnum'
+          readOnly: true
+        initiated_by:
+          type: string
+          readOnly: true
+          description: employee or company
+        requested_at:
+          type: string
+          format: date-time
+          readOnly: true
+        wished_last_day:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        last_day:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        left_on:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        notice_days:
+          type: integer
+          nullable: true
+          readOnly: true
+        handover:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleHandoverProgress'
+          readOnly: true
+        error:
+          type: string
+          readOnly: true
+        can_manage:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - can_manage
+      - created_at
+      - error
+      - handover
+      - home_branch
+      - id
+      - initiated_by
+      - kind
+      - last_day
+      - left_on
+      - member
+      - member_status
+      - notice_days
+      - position
+      - requested_at
+      - status
+      - wished_last_day
+    LifecycleLeavingStatusEnum:
+      enum:
+      - requested
+      - agreed
+      - completed
+      - withdrawn
+      - declined
+      type: string
+      description: |-
+        * `requested` - Requested
+        * `agreed` - Last day agreed
+        * `completed` - Left
+        * `withdrawn` - Withdrawn
+        * `declined` - Declined
+    LifecycleNamed:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
+    LifecycleOpenChange:
+      type: object
+      properties:
+        id:
+          type: integer
+        effective_on:
+          type: string
+          format: date
+        status:
+          type: string
+        parts:
+          type: array
+          items:
+            type: string
+      required:
+      - effective_on
+      - id
+      - parts
+      - status
     LifecycleRecord:
       type: object
       description: A disciplinary record as HR sees it.
@@ -49460,6 +53476,16 @@ components:
           pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
           nullable: true
           description: Also propose this fine in payroll.
+    LifecycleRehireEnum:
+      enum:
+      - 'yes'
+      - maybe
+      - 'no'
+      type: string
+      description: |-
+        * `yes` - Yes
+        * `maybe` - Maybe
+        * `no` - No
     LifecycleSuspendRequest:
       type: object
       properties:
@@ -51309,6 +55335,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/HistoryRecord'
+    PaginatedHrApplicantList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrApplicant'
     PaginatedHrContractList:
       type: object
       required:
@@ -51355,6 +55404,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/HrDocument'
+    PaginatedHrVacancyList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrVacancy'
     PaginatedInstallmentList:
       type: object
       required:
@@ -51562,6 +55634,52 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/LearningVideo'
+    PaginatedLifecycleJobChangeList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleJobChange'
+    PaginatedLifecycleLeavingRowList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleLeavingRow'
     PaginatedLifecycleRecordList:
       type: object
       required:
@@ -53148,6 +57266,37 @@ components:
           type: string
           minLength: 1
           maxLength: 20
+    PatchedHrPolicyWriteRequest:
+      type: object
+      description: A policy's settings; on create also the first draft's text.
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 150
+        category:
+          $ref: '#/components/schemas/HrPolicyCategoryEnum'
+        position_ids:
+          type: array
+          items:
+            type: integer
+        branch_ids:
+          type: array
+          items:
+            type: integer
+        requires_ack:
+          type: boolean
+        ack_within_days:
+          type: integer
+          maximum: 90
+          minimum: 1
+        is_active:
+          type: boolean
+        body:
+          type: string
+        change_note:
+          type: string
+          maxLength: 300
     PatchedHrProfileUpdateRequest:
       type: object
       description: What HR changes. IDs go in as typed (spaces are fine) and come
@@ -53280,6 +57429,51 @@ components:
           minimum: 1
         unqualified_seller_alert:
           type: boolean
+    PatchedHrVacancyPatchRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 120
+        position_id:
+          type: integer
+          nullable: true
+        branch_id:
+          type: integer
+          nullable: true
+          description: 'Empty: any branch (needs every branch).'
+        description:
+          type: string
+          maxLength: 2000
+        salary_from:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        salary_to:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrVacancyQuestionRequest'
+        asks_document:
+          type: boolean
+        opens_on:
+          type: string
+          format: date
+          nullable: true
+        closes_on:
+          type: string
+          format: date
+          nullable: true
+        publish:
+          type: boolean
+          default: false
+          description: Open it to applicants at once (new ones only).
     PatchedInventoryCategoryRequest:
       type: object
       properties:
@@ -53964,6 +58158,35 @@ components:
       type: object
       properties:
         required:
+          type: boolean
+    PatchedLifecycleHandoverSetRequest:
+      type: object
+      properties:
+        done:
+          type: boolean
+        note:
+          type: string
+          maxLength: 300
+    PatchedLifecycleLeaveUpdateRequest:
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/LifecycleLeavingKindEnum'
+        reason:
+          type: string
+          maxLength: 2000
+        notes:
+          type: string
+          maxLength: 4000
+        rehire:
+          oneOf:
+          - $ref: '#/components/schemas/LifecycleRehireEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        leave_days:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        final_payslip:
           type: boolean
     PatchedLifecycleRecordWriteRequest:
       type: object

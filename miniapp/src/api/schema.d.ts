@@ -674,6 +674,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/companies/{company_id}/hr/policies/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The rules that apply to me: late and waiting ones first, then the signed ones. */
+        get: operations["v1_companies_hr_policies_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/hr/policies/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description One rule to read: its text in force, and whether and when I signed it. */
+        get: operations["v1_companies_hr_policies_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/hr/policies/{id}/file/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description A short-lived link to the rule's file (Telegram opens it outside the app). */
+        get: operations["v1_companies_hr_policies_file_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/hr/policies/versions/{id}/acknowledge/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description 'I have read it and agree' for the version in force. */
+        post: operations["v1_companies_hr_policies_versions_acknowledge_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/companies/{company_id}/hr/profile/": {
         parameters: {
             query?: never;
@@ -1116,6 +1184,70 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["v1_companies_learning_quizzes_attempts_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/lifecycle/career/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["v1_companies_lifecycle_career_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/lifecycle/leaving/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["v1_companies_lifecycle_leaving_retrieve"];
+        put?: never;
+        post: operations["v1_companies_lifecycle_leaving_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/lifecycle/leaving/{id}/exit/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["v1_companies_lifecycle_leaving_exit_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/lifecycle/leaving/{id}/withdraw/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["v1_companies_lifecycle_leaving_withdraw_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3195,6 +3327,8 @@ export interface components {
          * @enum {string}
          */
         AttendanceSwapStatusEnum: "requested" | "accepted" | "approved" | "rejected" | "cancelled" | "expired";
+        /** @enum {unknown} */
+        BlankEnum: "";
         BlockerReportRequest: {
             reason_code: components["schemas"]["ReasonCodeEnum"];
             /** @default  */
@@ -3756,6 +3890,55 @@ export interface components {
             /** Format: binary */
             file: string;
         };
+        /** @description A policy in my list. */
+        HrMyPolicy: {
+            id: number;
+            title: string;
+            category: components["schemas"]["HrPolicyCategoryEnum"];
+            /** @description The version in force. */
+            number: number;
+            /** Format: date-time */
+            published_at: string;
+            state: components["schemas"]["HrMyPolicyStateEnum"];
+            /** Format: date */
+            due_on: string | null;
+            /** Format: date-time */
+            signed_at: string | null;
+            signed_number: number | null;
+            has_file: boolean;
+        };
+        /** @description One of my policies to read (and sign): the text in force and what changed in it. */
+        HrMyPolicyDetail: {
+            id: number;
+            title: string;
+            category: components["schemas"]["HrPolicyCategoryEnum"];
+            /** @description The version in force. */
+            number: number;
+            /** Format: date-time */
+            published_at: string;
+            state: components["schemas"]["HrMyPolicyStateEnum"];
+            /** Format: date */
+            due_on: string | null;
+            /** Format: date-time */
+            signed_at: string | null;
+            signed_number: number | null;
+            has_file: boolean;
+            /** @description Sign this version. */
+            version_id: number;
+            body: string;
+            change_note: string;
+            /** @description False when the version in force is a small edit of the one signed. */
+            asks_again: boolean;
+            file_type: (components["schemas"]["HrPolicyFileTypeEnum"] | components["schemas"]["NullEnum"]) | null;
+        };
+        /**
+         * @description * `waiting` - waiting
+         *     * `late` - late
+         *     * `signed` - signed
+         *     * `to_read` - to_read
+         * @enum {string}
+         */
+        HrMyPolicyStateEnum: "waiting" | "late" | "signed" | "to_read";
         /** @description Someone's own profile: their IDs and card masked back. */
         HrMyProfile: {
             readonly first_name: string;
@@ -3792,6 +3975,21 @@ export interface components {
             name: string;
             photo_url: string | null;
         };
+        /**
+         * @description * `dispensing` - Dispensing
+         *     * `storage` - Storage
+         *     * `safety` - Safety
+         *     * `conduct` - Conduct
+         *     * `other` - Other
+         * @enum {string}
+         */
+        HrPolicyCategoryEnum: "dispensing" | "storage" | "safety" | "conduct" | "other";
+        /**
+         * @description * `pdf` - pdf
+         *     * `image` - image
+         * @enum {string}
+         */
+        HrPolicyFileTypeEnum: "pdf" | "image";
         InboxPerson: {
             id: number;
             name: string;
@@ -4744,8 +4942,156 @@ export interface components {
             width: number;
             height: number;
         };
+        LifecycleExitAnswerRequest: {
+            reason: components["schemas"]["LifecycleExitReasonEnum"];
+            better?: string;
+            recommend?: components["schemas"]["LifecycleRecommendEnum"] | components["schemas"]["BlankEnum"];
+        };
+        LifecycleExitInterview: {
+            reason: components["schemas"]["LifecycleExitReasonEnum"];
+            better: string;
+            /** @description yes, maybe, no or empty. */
+            recommend: string;
+            /** Format: date-time */
+            answered_at: string;
+        };
+        /**
+         * @description * `pay` - pay
+         *     * `schedule` - schedule
+         *     * `workload` - workload
+         *     * `team` - team
+         *     * `growth` - growth
+         *     * `moving` - moving
+         *     * `studies` - studies
+         *     * `health` - health
+         *     * `family` - family
+         *     * `other` - other
+         * @enum {string}
+         */
+        LifecycleExitReasonEnum: "pay" | "schedule" | "workload" | "team" | "growth" | "moving" | "studies" | "health" | "family" | "other";
         LifecycleExplainRequest: {
             text: string;
+        };
+        /**
+         * @description * `equipment` - Equipment
+         *     * `tasks` - Open tasks
+         *     * `keys` - Keys
+         *     * `documents` - Documents
+         *     * `other` - Other
+         * @enum {string}
+         */
+        LifecycleHandoverKindEnum: "equipment" | "tasks" | "keys" | "documents" | "other";
+        /**
+         * @description * `proposed` - Waiting for approval
+         *     * `approved` - Approved
+         *     * `applied` - Applied
+         *     * `rejected` - Rejected
+         *     * `cancelled` - Cancelled
+         * @enum {string}
+         */
+        LifecycleJobChangeStatusEnum: "proposed" | "approved" | "applied" | "rejected" | "cancelled";
+        LifecycleJobPay: {
+            /** @description Money as a string, e.g. "5200000.00". */
+            amount: string;
+            currency: string;
+            /** @description monthly, daily, hourly or per_task. */
+            pay_type: string;
+        };
+        /** @description A job as it was or became: the pay only for payroll.view. */
+        LifecycleJobSide: {
+            position: components["schemas"]["LifecycleNamed"] | null;
+            branch: components["schemas"]["LifecycleNamed"] | null;
+            branches: components["schemas"]["LifecycleNamed"][];
+            department: components["schemas"]["LifecycleNamed"] | null;
+            role: components["schemas"]["LifecycleNamed"] | null;
+            pay: components["schemas"]["LifecycleJobPay"] | null;
+        };
+        LifecycleLeaveRequestRequest: {
+            /**
+             * Format: date
+             * @description My last working day (today or later).
+             */
+            wished_last_day: string;
+            reason?: string;
+        };
+        /**
+         * @description * `resignation` - Resignation
+         *     * `company` - By the company
+         *     * `contract_end` - End of contract
+         *     * `other` - Other
+         * @enum {string}
+         */
+        LifecycleLeavingKindEnum: "resignation" | "company" | "contract_end" | "other";
+        /**
+         * @description * `requested` - Requested
+         *     * `agreed` - Last day agreed
+         *     * `completed` - Left
+         *     * `withdrawn` - Withdrawn
+         *     * `declined` - Declined
+         * @enum {string}
+         */
+        LifecycleLeavingStatusEnum: "requested" | "agreed" | "completed" | "withdrawn" | "declined";
+        LifecycleMyCareer: {
+            /** Format: date */
+            hired_on: string | null;
+            position: string | null;
+            branch: string | null;
+            department: string | null;
+            changes: components["schemas"]["LifecycleMyJobChange"][];
+        };
+        LifecycleMyHandoverItem: {
+            readonly id: number;
+            readonly kind: components["schemas"]["LifecycleHandoverKindEnum"];
+            readonly title: string;
+            readonly done: boolean;
+            readonly open_tasks: number | null;
+        };
+        /** @description One of my job changes: what it was and became, my own pay included. */
+        LifecycleMyJobChange: {
+            readonly id: number;
+            /** Format: date */
+            readonly effective_on: string;
+            readonly status: components["schemas"]["LifecycleJobChangeStatusEnum"];
+            readonly parts: string[];
+            readonly before: components["schemas"]["LifecycleJobSide"];
+            readonly after: components["schemas"]["LifecycleJobSide"];
+            /** Format: date-time */
+            readonly applied_at: string | null;
+        };
+        /** @description My leaving as I read it: no HR notes, nothing about others. */
+        LifecycleMyLeaving: {
+            readonly id: number;
+            readonly kind: components["schemas"]["LifecycleLeavingKindEnum"];
+            readonly status: components["schemas"]["LifecycleLeavingStatusEnum"];
+            /** @description I asked for it (a resignation). */
+            readonly mine: boolean;
+            /** Format: date */
+            readonly wished_last_day: string | null;
+            /** Format: date */
+            readonly last_day: string | null;
+            /** Format: date */
+            readonly left_on: string | null;
+            readonly reason: string;
+            /** Format: date-time */
+            readonly requested_at: string;
+            /** Format: date-time */
+            readonly agreed_at: string | null;
+            readonly agreed_by: string | null;
+            readonly close_reason: string;
+            readonly closed_by_me: boolean;
+            readonly notice_days: number | null;
+            readonly handover: components["schemas"]["LifecycleMyHandoverItem"][];
+            readonly exit_interview: components["schemas"]["LifecycleExitInterview"] | null;
+            readonly can_withdraw: boolean;
+            readonly can_answer: boolean;
+        };
+        LifecycleMyLeavingState: {
+            current: components["schemas"]["LifecycleMyLeaving"] | null;
+            can_request: boolean;
+            /** @description The usual notice, in days. */
+            notice_days: number;
+            /** Format: date */
+            today: string;
         };
         /** @description A record as the person reads it: no evidence file, no fine amount. */
         LifecycleMyRecord: {
@@ -4772,6 +5118,17 @@ export interface components {
             readonly has_fine: boolean;
             readonly withdraw_reason: string;
         };
+        LifecycleNamed: {
+            id: number;
+            name: string;
+        };
+        /**
+         * @description * `yes` - yes
+         *     * `maybe` - maybe
+         *     * `no` - no
+         * @enum {string}
+         */
+        LifecycleRecommendEnum: "yes" | "maybe" | "no";
         /**
          * @description * `lateness` - Lateness
          *     * `absence` - Absence
@@ -7808,6 +8165,93 @@ export interface operations {
             };
         };
     };
+    v1_companies_hr_policies_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HrMyPolicy"][];
+                };
+            };
+        };
+    };
+    v1_companies_hr_policies_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HrMyPolicyDetail"];
+                };
+            };
+        };
+    };
+    v1_companies_hr_policies_file_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HrFileLink"];
+                };
+            };
+        };
+    };
+    v1_companies_hr_policies_versions_acknowledge_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HrMyPolicyDetail"];
+                };
+            };
+        };
+    };
     v1_companies_hr_profile_retrieve: {
         parameters: {
             query?: never;
@@ -8507,6 +8951,125 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LearningAttemptPlay"];
+                };
+            };
+        };
+    };
+    v1_companies_lifecycle_career_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LifecycleMyCareer"];
+                };
+            };
+        };
+    };
+    v1_companies_lifecycle_leaving_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LifecycleMyLeavingState"];
+                };
+            };
+        };
+    };
+    v1_companies_lifecycle_leaving_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LifecycleLeaveRequestRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["LifecycleLeaveRequestRequest"];
+                "multipart/form-data": components["schemas"]["LifecycleLeaveRequestRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LifecycleMyLeavingState"];
+                };
+            };
+        };
+    };
+    v1_companies_lifecycle_leaving_exit_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LifecycleExitAnswerRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["LifecycleExitAnswerRequest"];
+                "multipart/form-data": components["schemas"]["LifecycleExitAnswerRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LifecycleMyLeavingState"];
+                };
+            };
+        };
+    };
+    v1_companies_lifecycle_leaving_withdraw_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LifecycleMyLeavingState"];
                 };
             };
         };
