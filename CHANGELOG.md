@@ -1,5 +1,57 @@
 # Changelog
 
+## 0.7.0 — 2026-11-10
+
+### Hiring (HR › Hiring)
+- Post a vacancy (position, branch, pay, up to eight questions, a diploma photo if you need one)
+  and share its bot link or QR code: download the QR, print an A4 poster, or send the link in
+  Telegram. Applicants open it in the employee bot, answer the questions one by one, share their
+  contact and, when asked, a photo of their diploma or certificate.
+- Each vacancy has its board: New, Screening, Interview, Offer, Hired, and Turned down on demand.
+  Move people by dragging, with the keyboard or with the arrow on a card. An interview, an offer
+  or a refusal can tell the applicant in Telegram, in their language.
+- **Hire** in one tap: the applicant joins with the vacancy's position, branch and role and goes
+  through the usual account setup. When you can't hire someone (a role you may not give, for one)
+  the page says why.
+- New applicants show as a badge on Hiring, and whoever hires for that branch hears about them in
+  the inbox and in Telegram.
+
+### Policies (HR › Policies)
+- Publish the company's rules (dispensing, storage and temperature, cash discipline…) with the
+  positions and branches they apply to and the days people have to sign. Everyone they apply to
+  reads them in the app and signs with **O‘qidim va roziman** (I have read and agree).
+- A new version asks everyone again; a small edit (a typo) keeps the signatures. Any two versions
+  can be compared word by word.
+- Each policy shows who signed and when, who is waiting and who is late, with **Remind**. A
+  reminder goes the day before the deadline, and a late person's manager hears about it the day
+  after. New staff are asked as soon as they join.
+- Person 360 › HR shows where each person stands. In the app, Rules is under Me, and Home shows
+  what is left to sign.
+
+### Leaving (People movement › Leaving)
+- An employee asks to leave in the app, with the last day they wish for and, if they like, why.
+  The request reaches HR in the inbox and in Telegram with Agree and Decline; HR can also start a
+  leaving themselves.
+- Agreeing makes a handover list: the equipment the person holds, their open tasks, keys and
+  documents. Items handed back in Assets and tasks finished tick themselves.
+- On the last day's evening the person's access ends by itself, payroll's final settlement
+  prepares the final payslip, and the handover list is kept as it was. The person can withdraw
+  until the day before; HR can call it off with a reason. Exit answers and "would hire again" stay
+  private to HR.
+
+### Job changes (People movement › Job changes)
+- Propose a new position, home branch, department or pay from a day. Once approved, it applies by
+  itself on that day through the usual services (the role follows the position, pay goes through
+  payroll's pay change) and shows in the person's Career timeline on Person 360 and in **My
+  history** in the app.
+- Approving takes the matching permissions (people for position, branch and department, payroll
+  for pay). Nobody approves a change to their own job, and only an owner changes an owner's.
+
+### Also
+- Ask AI can tell who is leaving and when, and which job changes are coming: names and dates only,
+  never reasons or pay.
+- The status page's Uzbek text uses the proper ‘ marks.
+
 ## 0.6.2 — 2026-11-10
 
 ### Face ID: its own Telegram bot
