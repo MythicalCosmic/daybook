@@ -136,11 +136,11 @@ describe("api", () => {
     expect(kbKeys.all(4)).toEqual([4, "knowledge"]);
   });
 
-  it("registers as the catalog says, with a widget, commands, settings, the tasks slot and the lesson notes", () => {
+  it("registers as the catalog says, with a widget, commands, settings, the tasks slot, the lesson notes and HR's policy text", () => {
     expect(module).toMatchObject({ id: "knowledge", group: "comms", order: 40, hotkey: "k", invalidates: ["knowledge"] });
     expect(module.widgets?.map((w) => w.id)).toEqual(["knowledge.reading"]);
     expect(module.settings?.map((s) => s.id)).toEqual(["knowledge"]);
-    expect(Object.keys(module.extensions ?? {})).toEqual(["tasks.drawer.actions", "learning.lesson.notes"]);
+    expect(Object.keys(module.extensions ?? {})).toEqual(["tasks.drawer.actions", "learning.lesson.notes", "hr.policy.body"]);
     expect(module.deepLinks?.kb?.("12")).toBe("knowledge/p/12");
   });
 });

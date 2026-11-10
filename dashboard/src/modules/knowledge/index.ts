@@ -69,10 +69,12 @@ export default defineModule({
     },
   ],
   // The tasks drawer shows "How to do this" for pages linked to the task (package B hosts it).
-  // Learning's lesson editor writes its notes in this editor (docs/PLAN-LEARNING.md §11).
+  // Learning's lesson editor writes its notes in this editor (docs/PLAN-LEARNING.md §11), and HR
+  // its policies' text.
   extensions: {
     "tasks.drawer.actions": [defineAsyncComponent(() => import("./components/HowToSlot.vue"))],
     "learning.lesson.notes": [defineAsyncComponent(() => import("./components/LessonNotes.vue"))],
+    "hr.policy.body": [defineAsyncComponent(() => import("./components/LessonNotes.vue"))],
   },
   // Telegram `startapp=kb_12` opens page 12.
   deepLinks: {

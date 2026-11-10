@@ -170,6 +170,8 @@ export const EXTENSION_POINTS = [
   "attendance.today.faces",
   /** Learning's lesson editor, the notes: knowledge's editor, or its prose for a reader (context: html, editable, placeholder, update, upload; PLAN-LEARNING §11). */
   "learning.lesson.notes",
+  /** HR's policy editor, the text: knowledge's editor, without pictures (context: html, editable, placeholder, update). */
+  "hr.policy.body",
 ] as const;
 
 export type ExtensionPoint = (typeof EXTENSION_POINTS)[number];

@@ -14,6 +14,7 @@ from apps.core.files import register_file_check
 from apps.hr import notify, providers, queries, services
 from apps.hr.audit_actions import HRAction
 from apps.hr.models import EmployeeDocument, EmployeeProfile
+from apps.hr.policies import hooks as _policies  # noqa: F401  (policies register their own)
 from apps.inbox.registry import register_action, register_kind
 from apps.members.permissions import Perm
 from apps.members.signals import member_approved, member_left

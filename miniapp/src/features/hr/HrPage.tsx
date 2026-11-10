@@ -2,7 +2,7 @@
  * "Hujjatlarim" (Me → My documents): who I am here, my contract and documents (with what needs
  * me), my details with the few I may change, and my emergency contacts.
  */
-import { FilePen, FolderOpen, Phone, Plus } from "lucide-react";
+import { FilePen, FolderOpen, Phone, Plus, ScrollText } from "lucide-react";
 
 import { useI18n } from "../../i18n";
 import { dayMonthLong, dayMonthYear } from "../../lib/time";
@@ -12,6 +12,7 @@ import { Avatar, Badge, Button, Card, ListCard, ListRow, LoadError, PageHeader, 
 import { useFeatureOpen } from "../useFeatureOpen";
 import { useContract, useDocuments, useProfile, type Profile } from "./api";
 import { MAX_CONTACTS, needingAttention } from "./lib";
+import { toSign, useMyPolicies } from "./policies";
 import { attentionText, shortMask, useHrT, type HrKey } from "./text";
 import "./hr.css";
 
@@ -24,6 +25,8 @@ export default function HrPage() {
   const profile = useProfile(member.companyId);
   const contract = useContract(member.companyId);
   const documents = useDocuments(member.companyId);
+  const policies = useMyPolicies(member.companyId);
+  const pending = toSign(policies.data);
   const header = <PageHeader kicker={member.company.name} title={t("me.documents")} onBack={navigation.pop} />;
 
   if (!profile.data) {
@@ -67,6 +70,25 @@ export default function HrPage() {
           value={documents.data ? String(documents.data.length) : undefined}
           onClick={() => go.page("documents")}
         />
+        {policies.data && policies.data.length > 0 && (
+          <ListRow
+            icon={ScrollText}
+            title={t("row.policies")}
+            subtitle={pending.length === 0 ? t("row.policiesAll") : pending.length === 1 ? pending[0]!.title : t("home.policies", { count: pending.length })}
+            alert={pending.some((row) => row.state === "late")}
+            className="hr-wrap"
+            value={
+              pending.length ? (
+                <Badge tone="accent" size="small">
+                  {t("row.policiesSign")}
+                </Badge>
+              ) : (
+                String(policies.data.length)
+              )
+            }
+            onClick={() => go.page("policies")}
+          />
+        )}
       </ListCard>
 
       <SectionHead action={{ label: t("details.edit"), onClick: () => go.sheet("profile") }}>{t("section.details")}</SectionHead>

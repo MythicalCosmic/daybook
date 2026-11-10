@@ -3,6 +3,7 @@
 from django.urls import path
 
 from apps.hr import api
+from apps.hr.policies import urls as policies
 
 urlpatterns = [
     path("hr/profile/", api.MyProfileView.as_view(), name="hr-my-profile"),
@@ -25,4 +26,5 @@ urlpatterns = [
         api.AcknowledgeContractView.as_view(),
         name="hr-my-contract-acknowledge",
     ),
+    *policies.urlpatterns,
 ]

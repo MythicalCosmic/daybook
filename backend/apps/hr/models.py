@@ -638,3 +638,148 @@ class ApplicantEvent(TenantModel):
 
     def __str__(self):
         return f"{self.get_kind_display()} {self.to_stage}".strip()
+
+
+# Policies (docs/PLAN-OWNER.md §3.11; built in v11 by package Q) ----------------------------
+#
+# A policy is a company rule people read and sign ("Dori berish qoidalari"). Its text lives in
+# numbered versions; at most one version is a draft (not published yet). Publishing a version
+# that asks again makes everyone the policy applies to owe a signature for it: one
+# `PolicyAcknowledgement` row per person, waiting until they sign in the mini app. A small
+# edit (a typo) is published without asking again: the signatures of the version before count.
+
+
+class PolicyCategory(models.TextChoices):
+    DISPENSING = "dispensing", _("Dispensing")
+    STORAGE = "storage", _("Storage")
+    SAFETY = "safety", _("Safety")
+    CONDUCT = "conduct", _("Conduct")
+    OTHER = "other", _("Other")
+
+
+class Policy(TenantModel):
+    """A company rule. It applies to the approved people in `positions` (none: every
+    position) who work in one of `branches` (none: every branch)."""
+
+    title = models.CharField(max_length=150)
+    category = models.CharField(
+        max_length=16, choices=PolicyCategory.choices, default=PolicyCategory.OTHER
+    )
+    positions = models.ManyToManyField(Position, blank=True, related_name="+")
+    branches = models.ManyToManyField("companies.Branch", blank=True, related_name="+")
+    requires_ack = models.BooleanField(default=True)
+    ack_within_days = models.PositiveSmallIntegerField(
+        default=7, validators=[MinValueValidator(1), MaxValueValidator(90)]
+    )
+    is_active = models.BooleanField(default=True)
+    # The newest published version (what people read), and the newest published one that
+    # asked everyone to sign (what signatures are owed for). Empty until the first publish.
+    current_version = models.ForeignKey(
+        "PolicyVersion", on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    ack_version = models.ForeignKey(
+        "PolicyVersion", on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+
+    class Meta:
+        ordering = ["title", "pk"]
+        verbose_name_plural = "policies"
+        indexes = [models.Index(fields=["company", "is_active"])]
+
+    def __str__(self):
+        return self.title
+
+
+class PolicyVersion(TenantModel):
+    """One text of a policy: sanitized HTML from the dashboard editor (the knowledge base's
+    allow-list, without pictures), its plain text for search and comparing versions, and a
+    private file (the signed order as a PDF, a scan)."""
+
+    policy = models.ForeignKey(Policy, on_delete=models.CASCADE, related_name="versions")
+    number = models.PositiveIntegerField()
+    body = models.TextField(blank=True)
+    body_text = models.TextField(blank=True)
+    file = models.FileField(
+        storage=private_storage, upload_to=private_upload_to("hr/policies"), blank=True
+    )
+    change_note = models.CharField(max_length=300, blank=True)
+    # False for a small edit: nobody is asked again, the version before's signatures count.
+    asks_again = models.BooleanField(default=True)
+    published_at = models.DateTimeField(null=True, blank=True)
+    published_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+
+    class Meta:
+        ordering = ["-number"]
+        constraints = [
+            models.UniqueConstraint(fields=["policy", "number"], name="hr_unique_policy_version"),
+            models.UniqueConstraint(
+                fields=["policy"],
+                condition=Q(published_at__isnull=True),
+                name="hr_one_policy_draft",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.policy} v{self.number}"
+
+    @property
+    def is_draft(self) -> bool:
+        return self.published_at is None
+
+
+class PolicyAcknowledgement(models.Model):
+    """`membership` owes a signature for `version` (one that asked for it) since `asked_at`,
+    due by the end of `due_on` (the company's day), and gave it at `acknowledged_at`.
+    `signed_version` is the text they read and agreed to: `version` itself, or a small edit
+    published after it."""
+
+    version = models.ForeignKey(
+        PolicyVersion, on_delete=models.CASCADE, related_name="acknowledgements"
+    )
+    membership = models.ForeignKey(
+        Membership, on_delete=models.CASCADE, related_name="policy_acknowledgements"
+    )
+    asked_at = models.DateTimeField()
+    due_on = models.DateField()
+    # When the person was told (the publish notice, or the one a newcomer gets), reminded
+    # last, and when their manager heard they were late: each goes out once.
+    notified_at = models.DateTimeField(null=True, blank=True)
+    reminded_at = models.DateTimeField(null=True, blank=True)
+    late_notified_at = models.DateTimeField(null=True, blank=True)
+    acknowledged_at = models.DateTimeField(null=True, blank=True)
+    signed_version = models.ForeignKey(
+        PolicyVersion, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+
+    class Meta:
+        ordering = ["pk"]
+        constraints = [
+            models.UniqueConstraint(fields=["version", "membership"], name="hr_unique_policy_ack"),
+        ]
+        indexes = [
+            models.Index(fields=["version", "acknowledged_at"]),
+            models.Index(fields=["membership", "acknowledged_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.membership} · {self.version}"

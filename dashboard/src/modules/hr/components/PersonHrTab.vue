@@ -24,6 +24,7 @@ import { useCompanyId, useCompanyStore } from "@/stores/company";
 
 import { hrApi, useContracts, useDocuments, useProfile, useWarnDays } from "../api";
 import { CONTRACT_TONES, groupDigits, hrAccess, idDisplay, onProbation, SENSITIVE_FIELDS } from "../lib";
+import PersonPolicies from "../policies/PersonPolicies.vue";
 import type { HrDocument, HrSensitive, SensitiveField } from "../types";
 import ContractFormDialog from "./ContractFormDialog.vue";
 import DaysChip from "./DaysChip.vue";
@@ -245,6 +246,9 @@ const contractLink = computed(() => (contract.value ? { path: `/c/${company.curr
           </li>
         </ul>
       </section>
+
+      <!-- Policies: what the person signed, and what they still owe -->
+      <PersonPolicies :member-id="memberId" />
     </div>
 
     <ProfileEditDrawer v-if="canEdit" v-model:open="editing" :profile="profile" />

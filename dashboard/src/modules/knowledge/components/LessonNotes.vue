@@ -1,9 +1,10 @@
 <script setup lang="ts">
 /**
  * A lesson's notes in the learning module (extension point `learning.lesson.notes`,
- * docs/PLAN-LEARNING.md §11): the knowledge base's editor for whoever may change the lesson, its
- * prose for everyone else. The lesson editor passes `{ html, editable, placeholder, update,
- * upload }`: `update` takes the edited HTML, `upload` answers a picture (lesson notes take none).
+ * docs/PLAN-LEARNING.md §11), and a policy's text in HR (`hr.policy.body`): the knowledge base's
+ * editor for whoever may change it, its prose for everyone else. The host passes `{ html,
+ * editable, placeholder, update, upload }`: `update` takes the edited HTML, `upload` answers a
+ * picture; without one the editor has no picture button (lesson notes and policies take none).
  */
 import { computed } from "vue";
 
@@ -15,10 +16,7 @@ const props = withDefaults(defineProps<{ context?: Record<string, unknown> }>(),
 const html = computed(() => (typeof props.context.html === "string" ? props.context.html : ""));
 const editable = computed(() => props.context.editable === true);
 const placeholder = computed(() => (typeof props.context.placeholder === "string" ? props.context.placeholder : undefined));
-const refuse = async (): Promise<{ id: number; url: string }> => {
-  throw new Error("lesson notes take no pictures");
-};
-const upload = computed(() => (props.context.upload as ((file: File) => Promise<{ id: number; url: string }>) | undefined) ?? refuse);
+const upload = computed(() => props.context.upload as ((file: File) => Promise<{ id: number; url: string }>) | undefined);
 
 function update(value: string): void {
   (props.context.update as ((value: string) => void) | undefined)?.(value);

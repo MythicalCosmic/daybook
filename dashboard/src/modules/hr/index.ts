@@ -2,12 +2,12 @@
  * HR (plan §3.11, §4.10, §6.2; package G's dashboard): the overview of what needs attention
  * (expiring documents, contracts ending, probation ending, birthdays), documents with the
  * compliance matrix, contracts and their templates, celebrations, and pharmacist coverage (§14.9:
- * its page, the roster's gaps in `attendance.roster.coverage`, the Overview card) and hiring
- * (vacancies with a bot link and QR code, each one's pipeline board; `hiring/`); policies come
- * later. Adds the "HR" tab to Person 360 and the HR panel to Settings. Kept tiny:
+ * its page, the roster's gaps in `attendance.roster.coverage`, the Overview card), hiring
+ * (vacancies with a bot link and QR code, each one's pipeline board; `hiring/`) and policies
+ * people read and sign. Adds the "HR" tab to Person 360 and the HR panel to Settings. Kept tiny:
  * pages and the API load on first use. Whoever runs the roster (attendance.view) sees Coverage.
  */
-import { BriefcaseBusiness, FilePlus2, FileSignature, IdCard, ShieldCheck } from "@lucide/vue";
+import { BriefcaseBusiness, FilePlus2, FileSignature, IdCard, ScrollText, ShieldCheck } from "@lucide/vue";
 import { defineAsyncComponent } from "vue";
 
 import { defineModule } from "@/core/modules";
@@ -33,7 +33,8 @@ export default defineModule({
     { key: "contracts", title: "hr.nav.contracts", to: "hr/contracts", perm: "hr.view" },
     { key: "templates", title: "hr.nav.templates", to: "hr/contract-templates", perm: "hr.manage" },
     { key: "celebrations", title: "hr.nav.celebrations", to: "hr/celebrations", perm: "hr.view" },
-    { key: "policies", title: "hr.nav.policies", to: "hr/policies", perm: "hr.view" },
+    // The badge: people late with a policy's signature.
+    { key: "policies", title: "hr.nav.policies", to: "hr/policies", perm: "hr.view", badge: counter("hr.policies") },
     // The badge: applicants nobody has looked at yet.
     { key: "hiring", title: "hr.nav.hiring", to: "hr/hiring", perm: "hr.hiring", badge: counter("hr.applicants") },
   ],
@@ -71,6 +72,14 @@ export default defineModule({
       perm: "hr.hiring",
       keywords: ["vacancy", "hiring", "job", "vakansiya", "ishga olish", "вакансия", "найм", "farmatsevt"],
       run: () => ctx.go("hr/hiring?new=1"),
+    },
+    {
+      id: "hr.policy",
+      title: ctx.t("hr.cmd.policy"),
+      icon: ScrollText,
+      perm: "hr.manage",
+      keywords: ["policy", "rules", "qoida", "qoidalar", "правило", "правила", "imzo", "подпись", "dori berish", "saqlash"],
+      run: () => ctx.go("hr/policies/new"),
     },
   ],
   widgets: [
@@ -111,6 +120,7 @@ export default defineModule({
     document: (id) => (/^\d+$/.test(id) ? `hr/documents?document=${id}` : "hr/documents"),
     coverage: (id) => (/^\d+$/.test(id) ? `hr/coverage?branch=${id}` : "hr/coverage"),
     vacancy: (id) => (/^\d+$/.test(id) ? `hr/hiring/${id}` : "hr/hiring"),
+    policy: (id) => (/^\d+$/.test(id) ? `hr/policies/${id}` : "hr/policies"),
   },
   messages: (language) => import(`./i18n/${language}.json`),
 });

@@ -1,0 +1,335 @@
+/* A policy's text as people read it (the same look as the knowledge base's pages, where the text
+   is written), and the comparison of two versions. Only design tokens; sizes from the type scale. */
+
+.hr-prose {
+  color: var(--c-text);
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.hr-prose > :first-child {
+  margin-top: 0;
+}
+
+.hr-prose > :last-child {
+  margin-bottom: 0;
+}
+
+.hr-prose p {
+  margin: 0 0 0.85em;
+}
+
+.hr-prose h1,
+.hr-prose h2,
+.hr-prose h3,
+.hr-prose h4 {
+  color: var(--c-text);
+  font-weight: 650;
+  letter-spacing: -0.012em;
+  line-height: 1.3;
+}
+
+.hr-prose h1 {
+  font-size: var(--text-xl);
+  margin: 1.6em 0 0.6em;
+}
+
+.hr-prose h2 {
+  font-size: var(--text-lg);
+  margin: 1.5em 0 0.55em;
+}
+
+.hr-prose h3 {
+  font-size: var(--text-md);
+  margin: 1.35em 0 0.45em;
+}
+
+.hr-prose h4 {
+  font-size: var(--text-base);
+  margin: 1.2em 0 0.4em;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--c-muted);
+}
+
+.hr-prose strong,
+.hr-prose b {
+  font-weight: 650;
+}
+
+.hr-prose a {
+  color: var(--c-accent-fg);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--c-primary) 45%, transparent);
+  text-underline-offset: 3px;
+}
+
+.hr-prose code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: var(--c-surface-2);
+  border: 1px solid var(--c-border);
+  border-radius: 5px;
+  padding: 0.1em 0.35em;
+}
+
+.hr-prose pre {
+  background: var(--c-surface-2);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-card);
+  padding: 0.9em 1.1em;
+  margin: 0 0 1em;
+  overflow-x: auto;
+  font-size: 0.85rem;
+}
+
+.hr-prose pre code {
+  background: none;
+  border: 0;
+  padding: 0;
+}
+
+.hr-prose blockquote {
+  margin: 0 0 1em;
+  padding: 0.2em 0 0.2em 1em;
+  border-left: 3px solid var(--c-border-strong);
+  color: var(--c-muted);
+  font-style: italic;
+}
+
+.hr-prose hr {
+  border: 0;
+  border-top: 1px solid var(--c-border);
+  margin: 1.8em 0;
+}
+
+.hr-prose ul,
+.hr-prose ol {
+  margin: 0 0 1em;
+  padding-left: 1.4em;
+}
+
+.hr-prose ul {
+  list-style: disc;
+}
+
+.hr-prose ol {
+  list-style: decimal;
+}
+
+.hr-prose li {
+  margin: 0.2em 0;
+}
+
+.hr-prose li > p {
+  margin: 0;
+}
+
+.hr-prose li::marker {
+  color: var(--c-subtle);
+}
+
+.hr-prose ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0.1em;
+}
+
+.hr-prose ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6em;
+}
+
+.hr-prose ul[data-type="taskList"] li > label {
+  flex: none;
+  margin-top: 0.3em;
+}
+
+.hr-prose ul[data-type="taskList"] input[type="checkbox"] {
+  appearance: none;
+  width: 1.05em;
+  height: 1.05em;
+  border-radius: 5px;
+  border: 1.5px solid var(--c-border-strong);
+  background: var(--c-surface);
+  display: grid;
+  place-content: center;
+}
+
+.hr-prose ul[data-type="taskList"] input[type="checkbox"]:checked {
+  background: var(--c-success);
+  border-color: var(--c-success);
+}
+
+.hr-prose div[data-callout] {
+  --callout: var(--c-info);
+  --callout-soft: var(--c-info-soft);
+  position: relative;
+  margin: 0 0 1em;
+  padding: 0.8em 1em 0.8em 2.85em;
+  border-radius: var(--r-card);
+  background: var(--callout-soft);
+  border: 1px solid color-mix(in srgb, var(--callout) 22%, transparent);
+}
+
+.hr-prose div[data-callout]::before {
+  content: "i";
+  position: absolute;
+  left: 0.95em;
+  top: 0.95em;
+  width: 1.25em;
+  height: 1.25em;
+  border-radius: 999px;
+  background: var(--callout);
+  color: var(--c-surface);
+  font-size: 0.8em;
+  font-weight: 700;
+  font-style: normal;
+  display: grid;
+  place-items: center;
+  line-height: 1;
+}
+
+.hr-prose div[data-callout] > :last-child {
+  margin-bottom: 0;
+}
+
+.hr-prose div[data-callout="success"] {
+  --callout: var(--c-success);
+  --callout-soft: var(--c-success-soft);
+}
+
+.hr-prose div[data-callout="warning"],
+.hr-prose div[data-callout="danger"] {
+  --callout: var(--c-warning);
+  --callout-soft: var(--c-warning-soft);
+}
+
+.hr-prose div[data-callout="warning"]::before,
+.hr-prose div[data-callout="danger"]::before {
+  content: "!";
+}
+
+.hr-prose div[data-callout="danger"] {
+  --callout: var(--c-danger);
+  --callout-soft: var(--c-danger-soft);
+}
+
+.hr-prose div[data-callout="note"] {
+  --callout: var(--c-muted);
+  --callout-soft: var(--c-surface-2);
+}
+
+.hr-prose table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-card);
+  margin: 0 0 1.1em;
+  overflow: hidden;
+  font-size: 0.9em;
+}
+
+.hr-prose th,
+.hr-prose td {
+  padding: 0.55em 0.8em;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.hr-prose th + th,
+.hr-prose td + td {
+  border-left: 1px solid var(--c-border);
+}
+
+.hr-prose tr:last-child > td {
+  border-bottom: 0;
+}
+
+.hr-prose th {
+  background: var(--c-surface-2);
+  font-weight: 600;
+  color: var(--c-text);
+}
+
+.hr-prose td > p,
+.hr-prose th > p {
+  margin: 0;
+}
+
+/* A wide table scrolls in its own box; the box keeps the table's space below it (its overflow stops
+   the margins from collapsing into the heading's). */
+.hr-prose-scroll {
+  overflow-x: auto;
+  margin: 0 0 1.1em;
+}
+
+.hr-prose-scroll > table {
+  margin: 0;
+}
+
+/* The editor's own text area when knowledge's editor isn't available (a plain one). */
+.hr-prose[contenteditable="true"] {
+  min-height: 320px;
+  outline: none;
+}
+
+.hr-prose[contenteditable="true"] p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: var(--c-subtle);
+  pointer-events: none;
+}
+
+/* Comparing versions ------------------------------------------------------------------------ */
+
+.hr-diff-block {
+  border-left: 3px solid transparent;
+  border-radius: 6px;
+  padding: 0.35em 0.75em;
+  margin: 0 0 0.35em;
+  line-height: 1.65;
+  font-size: 0.9375rem;
+}
+
+.hr-diff-block[data-kind="same"] {
+  color: var(--c-muted);
+}
+
+.hr-diff-block[data-kind="added"] {
+  background: var(--c-success-soft);
+  border-left-color: var(--c-success);
+}
+
+.hr-diff-block[data-kind="removed"] {
+  background: var(--c-danger-soft);
+  border-left-color: var(--c-danger);
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, var(--c-danger) 60%, transparent);
+  color: var(--c-muted);
+}
+
+.hr-diff-block[data-kind="changed"] {
+  background: var(--c-surface-2);
+  border-left-color: var(--c-warning);
+}
+
+.hr-diff-block ins {
+  background: color-mix(in srgb, var(--c-success) 22%, transparent);
+  color: var(--c-text);
+  text-decoration: none;
+  border-radius: 3px;
+  padding: 0 0.1em;
+}
+
+.hr-diff-block del {
+  background: color-mix(in srgb, var(--c-danger) 18%, transparent);
+  color: var(--c-muted);
+  text-decoration: line-through;
+  border-radius: 3px;
+  padding: 0 0.1em;
+}
