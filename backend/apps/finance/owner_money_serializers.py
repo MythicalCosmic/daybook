@@ -105,6 +105,8 @@ class SuggestionSerializer(serializers.Serializer):
     buffer = money_out()
     low = LowPointSerializer()
     below_buffer_on = serializers.DateField(allow_null=True)
+    profit_average = money_out(help_text="Net profit per month over the last 3 full months.")
+    above_profit = serializers.BooleanField(help_text="The monthly amount is more than that.")
     basis = serializers.DictField()
 
 

@@ -132,7 +132,7 @@ class TakeView(OwnerMoneyMixin, OwnerAPIView):
             )
         except owner_draw.OverSafe as error:
             raise exceptions.ValidationError(
-                {"amount": [str(error)], "safe": [str(error.safe)], "code": ["over_safe"]}
+                {"amount": [str(error)], "safe": str(error.safe), "code": "over_safe"}
             ) from None
         return self._done(row)
 

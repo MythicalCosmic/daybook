@@ -439,6 +439,35 @@ def test_the_suggestion_keeps_90_days_above_the_buffer(fin, boss, bank, today):
     assert data["below_buffer_on"] is None
 
 
+def test_the_suggestion_counts_the_payroll_the_forecast_cant_see(
+    fin, boss, bank, today, isolated_registries
+):
+    fin.features = ["finance", "payroll"]
+    fin.save(update_fields=["features"])
+    opening(fin, boss, bank, "100000000", today - timedelta(days=1))
+    owner_draw.update_settings(fin, by=boss, cash_buffer="10000000")
+    registry.COMPANY_FACTS._entries.pop("payroll", None)
+    registry.COMPANY_FACTS.add(
+        CompanyFactsProvider(
+            "payroll",
+            None,
+            None,
+            None,
+            lambda company, range_, member: {
+                "next_run_on": (today + timedelta(days=12)).isoformat(),
+                "next_run_amount": "20000000.00",
+            },
+        )
+    )
+
+    data = owner_draw.suggested_monthly(fin, today)
+
+    # Three pay days of 20 mln within the 90 days: 100 - 60 - 3 draws >= 10.
+    assert data["monthly"] == D("10000000.00")
+    assert data["profit_average"] == 0
+    assert data["above_profit"] is True
+
+
 def test_no_suggestion_when_the_forecast_is_already_below_the_buffer(fin, boss, bank, today):
     opening(fin, boss, bank, "5000000", today - timedelta(days=1))
     owner_draw.update_settings(fin, by=boss, cash_buffer="10000000")
@@ -489,8 +518,8 @@ def test_take_and_put_through_the_api(ledger, boss, bank, owner_api, today):
         url(ledger, "owner-money/take/"), {"account": bank.pk, "amount": "130000000"}, format="json"
     )
     assert over.status_code == 400
-    assert over.json()["code"] == ["over_safe"]
-    assert over.json()["safe"] == ["128000000.00"]
+    assert over.json()["code"] == "over_safe"
+    assert over.json()["safe"] == "128000000.00"
 
     taken = client.post(
         url(ledger, "owner-money/take/"),

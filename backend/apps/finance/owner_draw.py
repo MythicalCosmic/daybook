@@ -75,6 +75,7 @@ FIXED_DAYS = 90
 MONTH_DAYS = 30
 SUGGEST_DAYS = 90
 SUGGEST_MONTHS = 3
+PROFIT_MONTHS = 3  # the full months whose average net profit the suggestion is shown against
 MIN_HORIZON, MAX_HORIZON = 7, 90
 
 
@@ -724,10 +725,12 @@ def suggested_monthly(company, on: date | None = None) -> dict:
     dates = [day for day in dates if day <= today + timedelta(days=SUGGEST_DAYS)]
     best: Decimal | None = None
     below_on = None
-    points = [
-        (date.fromisoformat(point["date"]), Decimal(point["balance"]) - personal)
-        for point in forecast["points"]
-    ]
+    payroll = _unbooked_payroll(company, today, today + timedelta(days=SUGGEST_DAYS))
+    points = []
+    for point in forecast["points"]:
+        day = date.fromisoformat(point["date"])
+        later_pay = sum((amount for pay_day, amount in payroll if pay_day <= day), ZERO)
+        points.append((day, Decimal(point["balance"]) - personal - later_pay))
     for day, balance in points:
         taken = sum(1 for draw_day in dates if draw_day <= day)
         room = balance - buffer
@@ -745,6 +748,10 @@ def suggested_monthly(company, on: date | None = None) -> dict:
         after = balance - monthly * sum(1 for draw_day in dates if draw_day <= day)
         if low_balance is None or after < low_balance:
             low_day, low_balance = day, after
+    months = history(company, PROFIT_MONTHS + 1, today)[:-1]
+    profit_average = quantize(
+        sum((row["profit"] for row in months), ZERO) / Decimal(max(len(months), 1))
+    )
     return {
         "today": today,
         "currency": company.base_currency,
@@ -754,8 +761,30 @@ def suggested_monthly(company, on: date | None = None) -> dict:
         "buffer": quantize(buffer),
         "low": {"date": low_day, "balance": quantize(low_balance or ZERO)},
         "below_buffer_on": below_on,
+        # Taking more than the business earns comes out of its capital, whatever the cash says.
+        "profit_average": profit_average,
+        "above_profit": monthly > max(profit_average, ZERO),
         "basis": forecast["basis"],
     }
+
+
+def _unbooked_payroll(company, today: date, until: date) -> list[tuple[date, Decimal]]:
+    """The pay days the forecast can't see yet (their runs aren't booked): payroll's figure on
+    each, without the run whose pay is already owed (that one the forecast has)."""
+    pay_days = [(day, amount) for day, amount in payroll_estimates(company, today) if day <= until]
+    if not pay_days:
+        return []
+    booked = sum(
+        (
+            item.amount
+            for item in planning.items(company, today, until, branch_ids=None)
+            if item.kind == "payroll" and item.amount is not None
+        ),
+        ZERO,
+    )
+    if booked and booked >= pay_days[0][1]:
+        pay_days = pay_days[1:]
+    return pay_days
 
 
 def round_down(amount: Decimal, currency: str) -> Decimal:

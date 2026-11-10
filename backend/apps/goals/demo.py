@@ -21,6 +21,10 @@ D = Decimal
 ROMAN = ("I", "II", "III", "IV")
 
 
+def seed(company, people, now) -> None:
+    """Nothing before the other demos: goals measure what they book (see `finish`)."""
+
+
 def finish(company, people, now) -> None:
     if company.slug == demo_plan.DISTRIBUTOR:
         return
