@@ -5,7 +5,7 @@
 from django.urls import path
 from rest_framework.routers import SimpleRouter
 
-from apps.finance import owner_api, planning_api
+from apps.finance import owner_api, owner_money_api, planning_api
 
 router = SimpleRouter()
 router.register("finance/accounts", owner_api.AccountViewSet, basename="finance-account")
@@ -56,8 +56,73 @@ planning = [
     ),
 ]
 
+# v11: the owner's money, partners and dividends (owner_money_api).
+owner_money = [
+    path(
+        "finance/owner-money/", owner_money_api.OwnerMoneyView.as_view(), name="finance-owner-money"
+    ),
+    path(
+        "finance/owner-money/take/",
+        owner_money_api.TakeView.as_view(),
+        name="finance-owner-money-take",
+    ),
+    path(
+        "finance/owner-money/put/",
+        owner_money_api.PutView.as_view(),
+        name="finance-owner-money-put",
+    ),
+    path(
+        "finance/owner-money/settings/",
+        owner_money_api.OwnerMoneySettingsView.as_view(),
+        name="finance-owner-money-settings",
+    ),
+    path(
+        "finance/owner-money/purchases/",
+        owner_money_api.PurchasesView.as_view(),
+        name="finance-owner-money-purchases",
+    ),
+    path(
+        "finance/owner-money/purchases/<int:pk>/",
+        owner_money_api.PurchaseView.as_view(),
+        name="finance-owner-money-purchase",
+    ),
+    path("finance/partners/", owner_money_api.PartnersView.as_view(), name="finance-partners"),
+    path(
+        "finance/partners/profit-share/",
+        owner_money_api.ProfitShareView.as_view(),
+        name="finance-partners-profit-share",
+    ),
+    path("finance/dividends/", owner_money_api.DividendsView.as_view(), name="finance-dividends"),
+    path(
+        "finance/dividends/suggest/",
+        owner_money_api.DividendSuggestView.as_view(),
+        name="finance-dividends-suggest",
+    ),
+    path(
+        "finance/dividends/<int:pk>/",
+        owner_money_api.DividendView.as_view(),
+        name="finance-dividend",
+    ),
+    path(
+        "finance/dividends/<int:pk>/pay/",
+        owner_money_api.DividendPayView.as_view(),
+        name="finance-dividend-pay",
+    ),
+    path(
+        "finance/dividends/<int:pk>/cancel/",
+        owner_money_api.DividendCancelView.as_view(),
+        name="finance-dividend-cancel",
+    ),
+    path(
+        "finance/dividends/<int:pk>/lines/<int:line_id>/undo/",
+        owner_money_api.DividendUndoView.as_view(),
+        name="finance-dividend-undo",
+    ),
+]
+
 urlpatterns = [
     *planning,
+    *owner_money,
     path("finance/overview/", owner_api.OverviewView.as_view(), name="finance-overview"),
     path("finance/options/", owner_api.OptionsView.as_view(), name="finance-options"),
     path("finance/receipts/", owner_api.ReceiptUploadView.as_view(), name="finance-receipts"),

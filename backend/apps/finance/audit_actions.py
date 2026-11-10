@@ -56,3 +56,13 @@ class FinanceAction(models.TextChoices):
     CLAIM_REJECTED = "finance.claim_rejected", _("Rejected an expense claim")
     CLAIM_PAID = "finance.claim_paid", _("Paid back an expense claim")
     CLAIM_CANCELLED = "finance.claim_cancelled", _("Cancelled an expense claim")
+    # The owner's money (v11): planned purchases, partners and dividends.
+    PURCHASE_PLANNED = "finance.purchase_planned", _("Planned a purchase")
+    PURCHASE_UPDATED = "finance.purchase_updated", _("Changed a planned purchase")
+    PURCHASE_REMOVED = "finance.purchase_removed", _("Removed a planned purchase")
+    PARTNERS_SET = "finance.partners_set", _("Set the partners and their shares")
+    DIVIDEND_CREATED = "finance.dividend_created", _("Prepared a dividend")
+    DIVIDEND_UPDATED = "finance.dividend_updated", _("Changed a dividend")
+    DIVIDEND_PAID = "finance.dividend_paid", _("Paid a dividend")
+    DIVIDEND_UNDONE = "finance.dividend_undone", _("Took back a dividend payment")
+    DIVIDEND_CANCELLED = "finance.dividend_cancelled", _("Cancelled a dividend")
