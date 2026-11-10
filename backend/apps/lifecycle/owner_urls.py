@@ -4,7 +4,7 @@ An optional `root_urlpatterns` list is mounted at `/api/v1/owner/` instead, for 
 owner endpoints outside a company.
 """
 
-from django.urls import path
+from django.urls import include, path
 from rest_framework.routers import SimpleRouter
 
 from apps.lifecycle import owner_api
@@ -30,4 +30,6 @@ urlpatterns = [
         owner_api.CareerView.as_view(),
         name="lifecycle-career",
     ),
+    # The org chart and equipment (package B, v11).
+    path("", include("apps.lifecycle.orgchart.owner_urls")),
 ]
