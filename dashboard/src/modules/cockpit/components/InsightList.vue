@@ -14,7 +14,12 @@ import UiButton from "@/components/UiButton.vue";
 import type { CockpitInsights } from "../api";
 import InsightCard from "./InsightCard.vue";
 
-const props = withDefaults(defineProps<{ insights: CockpitInsights; allowed?: boolean; focus?: number | null; first?: number }>(), { allowed: true, focus: null, first: 4 });
+const props = withDefaults(defineProps<{ insights: CockpitInsights; allowed?: boolean; focus?: number | null; first?: number; wide?: boolean }>(), {
+  allowed: true,
+  focus: null,
+  first: 4,
+  wide: false,
+});
 
 const { t } = useI18n();
 const open = ref(false);
@@ -47,9 +52,9 @@ watch(() => props.focus, reveal);
     <EmptyState v-if="!allowed" class="border-t border-line" size="sm" :title="t('cockpit.insights.noAccess')" />
     <EmptyState v-else-if="!insights.items.length" class="border-t border-line" size="sm" tone="success" :title="t('cockpit.insights.empty')" :description="t('cockpit.insights.emptyBody')" />
     <template v-else>
-      <div ref="list" class="border-t border-line">
-        <TransitionGroup name="list" tag="div" class="relative flex flex-col divide-y divide-line">
-          <InsightCard v-for="insight in shown" :key="insight.id" :insight="insight" :focused="insight.id === focus" />
+      <div ref="list" :class="['border-t border-line', wide && 'lg:border-t-0 lg:px-4 lg:pb-4']">
+        <TransitionGroup name="list" tag="div" :class="['relative flex flex-col divide-y divide-line', wide && 'lg:grid lg:gap-3 lg:divide-y-0 xl:grid-cols-2']">
+          <InsightCard v-for="insight in shown" :key="insight.id" :insight="insight" :focused="insight.id === focus" :boxed="wide" />
         </TransitionGroup>
       </div>
       <footer v-if="hidden > 0 || open" class="border-t border-line px-4 py-2">

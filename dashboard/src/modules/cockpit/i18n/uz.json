@@ -20,7 +20,7 @@
   "cockpit.kpi.vsSameDays": "o‘tgan oyning shu kunlariga nisbatan",
   "cockpit.kpi.vsMonthBefore": "undan oldingi oyga nisbatan",
   "cockpit.kpi.cash": "Hozirgi pul",
-  "cockpit.kpi.cashLow": "Eng past nuqta: {amount}, sana: {date}",
+  "cockpit.kpi.cashLow": "Eng past: {amount} ({date})",
   "cockpit.kpi.runway": "Pul yetadi",
   "cockpit.kpi.runwayDays": "{n} kun | {n} kun | {n} kun",
   "cockpit.kpi.runwaySpending": "odatdagi xarajat bilan (kuniga {amount})",

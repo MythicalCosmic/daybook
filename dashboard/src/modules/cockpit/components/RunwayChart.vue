@@ -51,7 +51,9 @@ const option = computed(() => {
     type: "line",
     name: t("cockpit.cash.lowSeries"),
     data: days.map((_, index) => (index === lowIndex ? low : null)),
+    // A lone point on a 90-day axis: ECharts' "auto" would thin it away with the label.
     showSymbol: true,
+    showAllSymbol: true,
     symbol: "circle",
     symbolSize: 11,
     itemStyle: { color, borderColor: palette.surface, borderWidth: 3, shadowBlur: 0 },

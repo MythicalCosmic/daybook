@@ -20,7 +20,7 @@
   "cockpit.kpi.vsSameDays": "к тем же дням прошлого месяца",
   "cockpit.kpi.vsMonthBefore": "к предыдущему месяцу",
   "cockpit.kpi.cash": "Деньги сейчас",
-  "cockpit.kpi.cashLow": "Минимум {amount}, дата: {date}",
+  "cockpit.kpi.cashLow": "Минимум {amount} ({date})",
   "cockpit.kpi.runway": "Денег хватит",
   "cockpit.kpi.runwayDays": "на {n} день | на {n} дня | на {n} дней",
   "cockpit.kpi.runwaySpending": "при обычных расходах {amount} в день",

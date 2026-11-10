@@ -61,10 +61,11 @@ const percent = (value: string | null) => (value === null ? "—" : fmt.percent(
       <StatusPill :tone="STATE_TONE[state.state]" :label="t(`cockpit.branches.state.${state.state}`)" size="sm" />
     </header>
 
-    <div class="flex items-end justify-between gap-4">
+    <!-- The figure keeps its whole line on a narrow card; the trend then goes under it. -->
+    <div class="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
       <div class="min-w-0">
         <p class="text-xs font-medium text-muted">{{ t("cockpit.branches.profit") }}</p>
-        <p :class="['mt-0.5 truncate text-2xl font-semibold leading-8 tabular-nums', losing ? 'text-danger' : 'text-fg']" data-profit>
+        <p :class="['mt-0.5 whitespace-nowrap text-2xl font-semibold leading-8 tabular-nums', losing ? 'text-danger' : 'text-fg']" data-profit>
           <MoneyText :value="figures.profit" compact decimals="never" />
         </p>
         <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted">
@@ -73,8 +74,8 @@ const percent = (value: string | null) => (value === null ? "—" : fmt.percent(
           <DeltaBadge v-else-if="change !== null" :value="change" size="sm" />
         </div>
       </div>
-      <div v-if="trend.length > 1" class="flex shrink-0 flex-col items-end gap-1">
-        <SparkLine :data="trend" :color="STATE_COLOR[state.state]" :width="112" :height="40" :label="t('cockpit.branches.trendLabel', { name: branch.name })" />
+      <div v-if="trend.length > 1" class="ml-auto flex shrink-0 flex-col items-end gap-1">
+        <SparkLine :data="trend" :color="STATE_COLOR[state.state]" :width="92" :height="36" :label="t('cockpit.branches.trendLabel', { name: branch.name })" />
         <span v-if="last" class="text-[11px] tabular-nums text-subtle">
           {{ t("cockpit.branches.lastMonth", { month: fmt.day(monthDay(last.month), "monthYear"), amount: fmt.money(last.profit, undefined, { compact: true }) }) }}
         </span>

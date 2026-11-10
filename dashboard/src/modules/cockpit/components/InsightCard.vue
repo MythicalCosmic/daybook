@@ -20,7 +20,7 @@ import { useCompanyStore } from "@/stores/company";
 import { useInsightAction, useMakeTask, type Insight } from "../api";
 import { SEVERITY_TONE } from "../lib";
 
-const props = defineProps<{ insight: Insight; focused?: boolean }>();
+const props = defineProps<{ insight: Insight; focused?: boolean; boxed?: boolean }>();
 
 const { t } = useI18n();
 const company = useCompanyStore();
@@ -78,7 +78,11 @@ async function dismiss(): Promise<void> {
 
 <template>
   <article
-    :class="['relative flex gap-3 py-4 pl-5 pr-4 transition-colors', focused && 'bg-accent-soft/40']"
+    :class="[
+      'relative flex gap-3 py-4 pl-5 pr-4 transition-colors',
+      boxed && 'lg:overflow-hidden lg:rounded-[12px] lg:border lg:border-line lg:bg-surface lg:hover:border-line-strong',
+      focused && 'bg-accent-soft/40 ring-2 ring-[var(--c-primary)]/30',
+    ]"
     :data-insight="insight.id"
     :data-severity="insight.severity"
     :data-status="insight.status"

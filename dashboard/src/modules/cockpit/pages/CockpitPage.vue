@@ -36,7 +36,7 @@ import BranchCard from "../components/BranchCard.vue";
 import DecisionList from "../components/DecisionList.vue";
 import InsightList from "../components/InsightList.vue";
 import RunwayChart from "../components/RunwayChart.vue";
-import { lowKind, rankBranches, topCosts } from "../lib";
+import { decisionGroups, lowKind, rankBranches, topCosts } from "../lib";
 
 const { t } = useI18n();
 const fmt = useFormat();
@@ -80,6 +80,15 @@ const unassignedCosts = computed(() => (unassigned.value ? unassigned.value.cost
 const totalCosts = computed(() => (total.value ? topCosts(total.value, 4) : []));
 
 const runwayValue = computed(() => cash.value?.runway.days ?? null);
+/** "People 6 · Time off 3": the two biggest kinds of what waits. */
+const waitingHint = computed(() =>
+  data.value
+    ? decisionGroups(data.value.decisions)
+        .slice(0, 2)
+        .map((group) => `${t(`cockpit.decisions.group.${group.group}`)} ${group.count}`)
+        .join(" · ")
+    : "",
+);
 const kpis = computed(() => {
   const items = [];
   if (total.value) {
@@ -130,7 +139,7 @@ const kpis = computed(() => {
     label: t("cockpit.kpi.decisions"),
     value: waiting,
     icon: Gavel,
-    hint: waiting ? t("cockpit.kpi.decisionsHint", { n: waiting }, waiting) : t("cockpit.kpi.decisionsNone"),
+    hint: waiting ? waitingHint.value : t("cockpit.kpi.decisionsNone"),
   });
   return items;
 });
@@ -203,15 +212,19 @@ const financePath = computed(() => `/c/${company.currentId}/finance`);
     <ErrorState v-else-if="cockpit.isError.value" class="ui-card" :title="t('cockpit.error')" :error="cockpit.error.value" :retry="() => cockpit.refetch()" />
 
     <template v-else-if="data">
-      <KpiStrip :items="kpis" :columns="kpis.length > 3 ? 4 : kpis.length === 3 ? 3 : 2" phone="grid" data-headline />
+      <!-- Without money the decisions card carries its own count: no strip of one number. -->
+      <KpiStrip v-if="money" :items="kpis" :columns="kpis.length > 3 ? 4 : kpis.length === 3 ? 3 : 2" phone="grid" data-headline />
 
       <InlineAlert v-if="!data.can.money && financeOff" tone="neutral" :title="t('cockpit.financeOff.title')" :description="t('cockpit.financeOff.body')" />
       <InlineAlert v-else-if="!data.can.money" tone="neutral" :title="t('cockpit.noMoney.title')" :description="t('cockpit.noMoney.body')" data-no-money />
 
-      <div class="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(320px,380px)] lg:items-start">
-        <!-- Money: the left column on a wide screen, after what needs the owner on a phone. -->
-        <div class="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-4">
-          <section v-if="money" class="order-3 flex min-w-0 flex-col gap-3 lg:order-none" :aria-label="t('cockpit.branches.title')" data-branches>
+      <!--
+        A phone reads what needs the owner first (decisions, insights), then the money. A wide
+        screen puts the pharmacies beside the decisions, then the cash line and the insights
+        across the page, where their sentences stay short.
+      -->
+      <div class="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(320px,380px)]">
+        <section v-if="money" class="order-3 flex min-w-0 flex-col gap-3 lg:order-none lg:col-start-1 lg:row-start-1" :aria-label="t('cockpit.branches.title')" data-branches>
             <div class="flex flex-wrap items-end justify-between gap-x-4 gap-y-1 px-1">
               <div class="min-w-0">
                 <h2 class="text-base font-semibold text-fg">{{ t("cockpit.branches.title") }}</h2>
@@ -254,9 +267,9 @@ const financePath = computed(() => `/c/${company.currentId}/finance`);
                 }}
               </p>
             </div>
-          </section>
+        </section>
 
-          <section v-if="cash" class="ui-card order-4 flex min-w-0 flex-col lg:order-none" :aria-label="t('cockpit.cash.title')" data-runway>
+        <section v-if="cash" class="ui-card order-4 flex min-w-0 flex-col lg:order-none lg:col-span-2 lg:row-start-2" :aria-label="t('cockpit.cash.title')" data-runway>
             <header class="flex flex-wrap items-start gap-x-4 gap-y-1 px-4 pb-1 pt-4">
               <div class="min-w-0 flex-1">
                 <h2 class="text-base font-semibold text-fg">{{ t("cockpit.cash.title") }}</h2>
@@ -266,29 +279,44 @@ const financePath = computed(() => `/c/${company.currentId}/finance`);
                 <CalendarClock :size="13" aria-hidden="true" />{{ t("cockpit.cash.calendar") }}
               </RouterLink>
             </header>
-            <div class="px-4">
-              <InlineAlert :tone="lowTone" size="sm" :title="lowLine" :description="bufferLine" class="mt-2" data-low />
+            <div class="flex min-w-0 flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_320px]">
+              <div class="min-w-0 px-2 pb-2 pt-1 lg:order-1"><RunwayChart :cash="cash" height="260px" /></div>
+              <aside class="order-first flex min-w-0 flex-col gap-3 px-4 pt-2 lg:order-2 lg:border-l lg:border-line lg:pb-4 lg:pt-1">
+                <InlineAlert :tone="lowTone" size="sm" :title="lowLine" :description="bufferLine" data-low />
+                <div v-if="cash.low.causes.length" class="hidden lg:block">
+                  <p class="mb-2 text-xs font-medium text-muted">{{ t("cockpit.cash.causes") }}</p>
+                  <ul class="flex flex-col gap-2">
+                    <li v-for="cause in cash.low.causes" :key="`${cause.title}:${cause.date}`" class="flex flex-col gap-0.5 text-sm" data-cause>
+                      <span class="flex items-baseline justify-between gap-3">
+                        <span class="min-w-0 truncate text-fg" :title="cause.title">{{ cause.title }}</span>
+                        <span class="shrink-0 font-semibold tabular-nums text-fg">−<MoneyText :value="cause.amount" compact decimals="never" /></span>
+                      </span>
+                      <span class="text-xs text-subtle">{{ fmt.day(cause.date, "short") }} · {{ t(`cockpit.cash.kind.${cause.kind}`) }}<template v-if="cause.overdue"> · {{ t("cockpit.cash.overdue") }}</template></span>
+                    </li>
+                  </ul>
+                </div>
+              </aside>
             </div>
-            <div class="px-2 pb-2 pt-1"><RunwayChart :cash="cash" height="250px" /></div>
-            <div v-if="cash.low.causes.length" class="border-t border-line px-4 py-3">
+            <div v-if="cash.low.causes.length" class="border-t border-line px-4 py-3 lg:hidden">
               <p class="mb-2 text-xs font-medium text-muted">{{ t("cockpit.cash.causes") }}</p>
               <ul class="flex flex-col gap-1.5">
-                <li v-for="cause in cash.low.causes" :key="`${cause.title}:${cause.date}`" class="flex items-center gap-3 text-sm" data-cause>
+                <li v-for="cause in cash.low.causes" :key="`${cause.title}:${cause.date}`" class="flex items-center gap-3 text-sm" data-cause-phone>
                   <span class="w-12 shrink-0 text-xs tabular-nums text-subtle">{{ fmt.day(cause.date, "short") }}</span>
                   <span class="min-w-0 flex-1 truncate text-fg" :title="cause.title">{{ cause.title }}</span>
-                  <span class="hidden shrink-0 text-xs text-muted sm:inline">{{ t(`cockpit.cash.kind.${cause.kind}`) }}<template v-if="cause.overdue"> · {{ t("cockpit.cash.overdue") }}</template></span>
                   <span class="shrink-0 font-semibold tabular-nums text-fg">−<MoneyText :value="cause.amount" compact decimals="never" /></span>
                 </li>
               </ul>
             </div>
-          </section>
-        </div>
+        </section>
 
-        <!-- What needs the owner: the right column, first on a phone. -->
-        <div class="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-4">
-          <DecisionList :decisions="data.decisions" class="order-1 lg:order-none" />
-          <InsightList :insights="data.insights" :allowed="data.can.insights" :focus="focus" class="order-2 lg:order-none" />
-        </div>
+        <DecisionList :decisions="data.decisions" :limit="5" :class="['order-1 lg:order-none', money ? 'lg:col-start-2 lg:row-start-1' : 'lg:col-start-2 lg:row-start-1 lg:self-start']" />
+        <InsightList
+          :insights="data.insights"
+          :allowed="data.can.insights"
+          :focus="focus"
+          :wide="!!money"
+          :class="['order-2 lg:order-none', money ? 'lg:col-span-2 lg:row-start-3' : 'lg:col-start-1 lg:row-start-1 lg:self-start']"
+        />
       </div>
     </template>
   </div>

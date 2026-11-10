@@ -22,7 +22,7 @@ import { useCompanyStore } from "@/stores/company";
 import { useDecision, type CockpitDecisions, type Decision } from "../api";
 import { companyUrl, decisionGroups } from "../lib";
 
-const props = defineProps<{ decisions: CockpitDecisions }>();
+const props = withDefaults(defineProps<{ decisions: CockpitDecisions; limit?: number }>(), { limit: 8 });
 
 const { t } = useI18n();
 const company = useCompanyStore();
@@ -44,8 +44,12 @@ const ICONS: Record<string, Component> = {
 
 const groups = computed(() => decisionGroups(props.decisions));
 const chosen = ref<string | null>(null);
-const items = computed(() => props.decisions.items.filter((item) => !chosen.value || item.group === chosen.value));
-const more = computed(() => Math.max(0, props.decisions.total - props.decisions.items.length));
+const items = computed(() => props.decisions.items.filter((item) => !chosen.value || item.group === chosen.value).slice(0, props.limit));
+/** What the list doesn't show: in the chosen kind, or in all of them. */
+const more = computed(() => {
+  const waiting = chosen.value ? (groups.value.find((group) => group.group === chosen.value)?.count ?? 0) : props.decisions.total;
+  return Math.max(0, waiting - items.value.length);
+});
 const inbox = computed(() => `/c/${company.currentId}/inbox`);
 const pending = ref<string | null>(null);
 const keyOf = (item: Decision) => `${item.kind}:${item.id}`;
