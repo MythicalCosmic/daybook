@@ -75,14 +75,14 @@ async function drop(row: PlannedPurchase): Promise<void> {
     <ul v-else class="-mx-2 flex flex-col">
       <li v-for="row in rows" :key="row.id" class="group flex items-center gap-3 rounded-[10px] px-2 py-2 hover:bg-highlight" :data-purchase="row.id">
         <div class="min-w-0 flex-1">
-          <p class="truncate text-sm font-semibold" :class="row.kept ? 'text-fg' : 'text-muted'" :title="row.title">{{ row.title }}</p>
+          <p class="line-clamp-2 text-sm font-semibold leading-snug" :class="row.kept ? 'text-fg' : 'text-muted'" :title="row.title">{{ row.title }}</p>
           <p class="truncate text-xs text-muted">
-            {{ row.due_on ? fmt.day(row.due_on, "medium") : t("finance.myMoney.noDate") }} ·
+            {{ row.due_on ? fmt.day(row.due_on, "short") : t("finance.myMoney.noDate") }} ·
             <span :class="row.kept ? 'text-info' : ''">{{ row.kept ? t("finance.myMoney.keptBack") : t("finance.myMoney.notYet") }}</span>
           </p>
         </div>
         <span class="shrink-0 text-sm font-semibold tabular-nums" :class="row.kept ? 'text-fg' : 'text-muted'"><MoneyText :value="row.amount" compact /></span>
-        <div v-if="canWrite" class="flex shrink-0 items-center gap-0.5 opacity-100 transition-opacity sm:opacity-0 sm:group-focus-within:opacity-100 sm:group-hover:opacity-100">
+        <div v-if="canWrite" class="flex shrink-0 items-center gap-0.5 sm:hidden sm:group-focus-within:flex sm:group-hover:flex">
           <IconButton :icon="Check" :label="t('finance.myMoney.markBought', { title: row.title })" size="sm" data-bought @click="bought(row)" />
           <IconButton :icon="Trash2" :label="t('finance.myMoney.removePurchase', { title: row.title })" size="sm" data-remove @click="drop(row)" />
         </div>

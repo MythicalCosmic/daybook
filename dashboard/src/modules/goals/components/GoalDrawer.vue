@@ -37,12 +37,12 @@ const chart = computed(() => {
   if (!row) return null;
   const points = row.series.filter((point) => point.value !== null);
   const categories = points.map((point) => point.on);
-  const series: Array<{ name: string; data: Array<string | number | null>; color?: string; dashed?: boolean }> = [
-    { name: t(`goals.metric.${row.metric}`), data: points.map((point) => point.value), color: "var(--c-primary)" },
+  const series: Array<{ name: string; data: Array<string | number | null>; dashed?: boolean }> = [
+    { name: t(`goals.metric.${row.metric}`), data: points.map((point) => point.value) },
   ];
   if (row.kind === "sum" || row.kind === "rate") {
     const total = days(row.starts_on, row.ends_on);
-    series.push({ name: t("goals.paceNeeded"), data: points.map((point) => ((Number(row.target) * days(row.starts_on, point.on)) / total).toFixed(2)), color: "var(--c-subtle)", dashed: true });
+    series.push({ name: t("goals.paceNeeded"), data: points.map((point) => ((Number(row.target) * days(row.starts_on, point.on)) / total).toFixed(2)), dashed: true });
   }
   return { categories, series, target: row.kind === "sum" || row.kind === "rate" ? null : { value: row.target, label: t("goals.target") } };
 });
@@ -53,7 +53,7 @@ const details = computed(() => {
     { key: "period", label: t("goals.period"), value: `${fmt.day(row.starts_on, "medium")} – ${fmt.day(row.ends_on, "medium")}` },
     { key: "target", label: row.better === "down" ? t("goals.ceiling") : t("goals.target"), value: show.value(row, row.target, { full: true }) },
     { key: "now", label: t("goals.now"), value: show.value(row, row.value, { full: true }) },
-    ...(row.kind === "sum" || row.kind === "rate" ? [{ key: "pace", label: t("goals.pace"), value: show.value(row, row.forecast, { full: true }) }] : []),
+    ...(row.kind === "sum" || row.kind === "rate" ? [{ key: "pace", label: t("goals.pace"), value: show.value(row, row.forecast) }] : []),
     ...(row.kind === "level" ? [{ key: "baseline", label: t("goals.onDayOne"), value: show.value(row, row.baseline) }] : []),
     { key: "where", label: t("goals.where"), value: row.branch?.name ?? t("goals.wholeCompany") },
     { key: "owner", label: t("goals.owner"), value: row.owner?.name ?? "—" },
@@ -65,8 +65,8 @@ const details = computed(() => {
 <template>
   <UiDrawer query-key="goal" :title="goal?.title ?? t('goals.title')" :description="goal ? t(`goals.metric.${goal.metric}`) : undefined" size="lg">
     <ErrorState v-if="query.isError.value" :error="query.error.value" :retry="() => query.refetch()" />
-    <div v-else-if="!goal" class="flex flex-col gap-3"><SkeletonBlock height="96px" /><SkeletonBlock height="220px" /></div>
-    <div v-else class="flex flex-col gap-5" :data-goal-drawer="goal.id">
+    <div v-else-if="!goal" class="flex flex-col gap-3 p-5"><SkeletonBlock height="96px" /><SkeletonBlock height="220px" /></div>
+    <div v-else class="flex flex-col gap-5 p-5" :data-goal-drawer="goal.id">
       <div class="flex items-center gap-4">
         <ProgressRing :value="Math.min(Number(goal.progress ?? 0), 100)" :size="96" :stroke="9" :tone="ringTone(goal)">
           <span class="text-md font-semibold tabular-nums text-fg">{{ fmt.number(goal.progress ?? 0, 0) }}%</span>

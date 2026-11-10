@@ -15,7 +15,7 @@ from apps.finance import owner_draw, partners, queries, services
 from apps.finance.models import Debt, MoneyAccount
 
 D = Decimal
-INVESTOR = "Rustam Qodirov"
+INVESTOR = "Farhod Ergashev"
 LOAN_PAYMENT = D("6700000")
 PAY_DAY = 5
 
