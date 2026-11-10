@@ -46,7 +46,9 @@ import "../../prose.css";
 import { buildExtensions, CALLOUT_TONES, inTable, type CalloutTone, type TableCommand } from "./extensions";
 
 const model = defineModel<string>({ default: "" });
-const props = withDefaults(defineProps<{ upload: (file: File) => Promise<{ id: number; url: string }>; placeholder?: string; autofocus?: boolean }>(), {
+// Without `upload` the text takes no pictures: no picture button, and pasted files are left alone.
+const props = withDefaults(defineProps<{ upload?: (file: File) => Promise<{ id: number; url: string }>; placeholder?: string; autofocus?: boolean }>(), {
+  upload: undefined,
   placeholder: undefined,
   autofocus: false,
 });
@@ -114,6 +116,7 @@ watch(model, (html) => {
 onBeforeUnmount(() => editor.value?.destroy());
 
 function takeImages(files: FileList | null | undefined): boolean {
+  if (!props.upload) return false;
   const images = Array.from(files ?? []).filter((file) => file.type.startsWith("image/"));
   if (!images.length) return false;
   for (const file of images) void addImage(file);
@@ -125,6 +128,7 @@ async function addImage(file: File): Promise<void> {
     toast.error(t("knowledge.editor.imageTooBig"));
     return;
   }
+  if (!props.upload) return;
   uploading.value += 1;
   try {
     const image = await props.upload(file);
@@ -254,7 +258,7 @@ defineExpose({ focus: () => editor.value?.commands.focus("end") });
       </DropdownMenu>
       <span class="mx-1 h-5 w-px bg-line" aria-hidden="true" />
       <IconButton :icon="Table2" :label="t('knowledge.editor.table')" :size="tool" :active="tableActive" @click="editor?.chain().focus().insertTable(3, 3).run()" />
-      <IconButton :icon="ImagePlus" :label="t('knowledge.editor.image')" :size="tool" :loading="uploading > 0" @click="fileInput?.click()" />
+      <IconButton v-if="upload" :icon="ImagePlus" :label="t('knowledge.editor.image')" :size="tool" :loading="uploading > 0" @click="fileInput?.click()" />
       <IconButton :icon="Minus" :label="t('knowledge.editor.divider')" :size="tool" @click="editor?.chain().focus().setHorizontalRule().run()" />
       <span class="flex-1" />
       <template v-if="tableActive">
@@ -277,7 +281,7 @@ defineExpose({ focus: () => editor.value?.commands.focus("end") });
       </template>
       <IconButton :icon="Undo2" :label="t('knowledge.editor.undo')" shortcut="mod+z" :size="tool" :disabled="!editor?.can().undo()" @click="editor?.chain().focus().undo().run()" />
       <IconButton :icon="Redo2" :label="t('knowledge.editor.redo')" shortcut="mod+shift+z" :size="tool" :disabled="!editor?.can().redo()" @click="editor?.chain().focus().redo().run()" />
-      <input ref="fileInput" type="file" accept="image/*" class="hidden" multiple @change="onFile" />
+      <input v-if="upload" ref="fileInput" type="file" accept="image/*" class="hidden" multiple @change="onFile" />
     </div>
     <div v-if="uploading" class="mb-3 flex items-center gap-2 text-sm text-muted" aria-live="polite"><UiSpinner :size="14" />{{ t("knowledge.editor.uploading") }}</div>
     <EditorContent :editor="editor" class="min-w-0" />
