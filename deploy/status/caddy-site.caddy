@@ -1,0 +1,7 @@
+# The status page on vps8's shared Caddy: installed as /config/sites.d/daybook-status.caddy inside
+# the caddy-caddy-1 container (the host Caddyfile ends with `import /config/sites.d/*.caddy`),
+# so the Alpha POS Caddyfile is never edited. Only site blocks belong here.
+status.169.58.114.63.nip.io {
+	encode zstd gzip
+	reverse_proxy daybook-status:8080
+}
