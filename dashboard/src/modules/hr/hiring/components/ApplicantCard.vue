@@ -32,18 +32,16 @@ function answer(row: Answer): string {
 
 <template>
   <article class="flex flex-col gap-2" data-applicant-card :data-applicant="applicant.id">
-    <div class="flex items-start gap-2.5">
-      <UserAvatar :name="applicant.name" :size="32" />
+    <div class="flex items-start gap-2">
+      <UserAvatar :name="applicant.name" :size="28" class="mt-0.5" />
       <button type="button" class="min-w-0 flex-1 text-left outline-none" @click.stop="emit('open', applicant)">
-        <span class="block truncate text-sm font-semibold text-fg hover:text-primary">{{ applicant.name }}</span>
-        <span class="block truncate text-xs text-muted">
-          {{ fmt.relative(applicant.created_at) }}<template v-if="applicant.phone"> · {{ formatPhone(applicant.phone) }}</template>
-        </span>
+        <span class="block truncate text-sm font-semibold text-fg hover:text-primary" :title="applicant.name">{{ applicant.name }}</span>
+        <span v-if="applicant.phone" class="block truncate text-xs tabular-nums text-muted">{{ formatPhone(applicant.phone) }}</span>
       </button>
       <UiTooltip v-if="canAct && next" :content="t('hr.hiring.card.moveTo', { stage: t(`hr.hiring.stage.${next}`) })">
         <button
           type="button"
-          class="pressable -mr-1 -mt-0.5 grid size-7 shrink-0 place-items-center rounded-[8px] text-subtle opacity-70 transition-opacity hover:bg-highlight hover:text-fg group-hover/card:opacity-100"
+          class="pressable -mr-1.5 -mt-0.5 grid size-6 shrink-0 place-items-center rounded-[7px] text-subtle opacity-70 transition-opacity hover:bg-highlight hover:text-fg group-hover/card:opacity-100"
           :aria-label="t('hr.hiring.card.moveTo', { stage: t(`hr.hiring.stage.${next}`) })"
           data-advance
           @click.stop="emit('advance', applicant)"
@@ -58,7 +56,8 @@ function answer(row: Answer): string {
         <dd :class="['max-w-[55%] shrink-0 truncate font-semibold', row.kind === 'yes_no' && row.answer === 'no' ? 'text-danger' : 'text-fg']" :title="answer(row)">{{ answer(row) }}</dd>
       </div>
     </dl>
-    <div v-if="applicant.source === 'qr' || applicant.has_document || applicant.member" class="flex flex-wrap items-center gap-1.5">
+    <div class="flex flex-wrap items-center gap-1.5">
+      <span class="mr-auto text-[11px] text-subtle" :title="fmt.instant(applicant.created_at)">{{ fmt.relative(applicant.created_at) }}</span>
       <span v-if="applicant.source === 'qr'" class="inline-flex h-5 items-center gap-1 rounded-full bg-info-soft px-2 text-[11px] font-semibold text-info"><QrCode :size="11" aria-hidden="true" />{{ t("hr.hiring.source.qr") }}</span>
       <span v-if="applicant.has_document" class="inline-flex h-5 items-center gap-1 rounded-full bg-accent-soft px-2 text-[11px] font-semibold text-accent-fg"><FileImage :size="11" aria-hidden="true" />{{ t("hr.hiring.card.document") }}</span>
       <span v-if="applicant.member" class="inline-flex h-5 items-center gap-1 rounded-full bg-success-soft px-2 text-[11px] font-semibold text-success"><UserCheck :size="11" aria-hidden="true" />{{ t("hr.hiring.card.onTeam") }}</span>

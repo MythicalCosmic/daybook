@@ -124,7 +124,7 @@ function decide(mode: "move" | "reject" | "hire", target?: (typeof PIPELINE)[num
 </script>
 
 <template>
-  <UiDrawer query-key="applicant" size="lg" :title="applicant?.name ?? t('hr.hiring.drawer.title')">
+  <UiDrawer query-key="applicant" size="lg" :title="vacancy ? t('hr.hiring.drawer.titleFor', { vacancy: vacancy.title }) : t('hr.hiring.drawer.title')">
     <div class="p-5">
       <div v-if="query.isPending.value && id" class="flex flex-col gap-4">
         <SkeletonBlock height="56px" />
@@ -164,9 +164,12 @@ function decide(mode: "move" | "reject" | "hire", target?: (typeof PIPELINE)[num
           <ol v-else class="flex items-center gap-1" data-track>
             <li v-for="(stage, index) in track" :key="stage" class="flex min-w-0 flex-1 flex-col gap-1.5">
               <span :class="['h-1.5 rounded-full transition-colors', index <= reached ? (current.stage === 'hired' ? 'bg-success' : 'bg-primary') : 'bg-surface-2 dark:bg-surface-3']" />
-              <span :class="['truncate text-[11px] font-semibold', index === reached ? 'text-fg' : 'text-subtle']">{{ t(`hr.hiring.stage.${stage}`) }}</span>
+              <span :class="['truncate text-[11px] font-semibold max-sm:hidden', index === reached ? 'text-fg' : 'text-subtle']">{{ t(`hr.hiring.stage.${stage}`) }}</span>
             </li>
           </ol>
+          <p v-if="current.stage !== 'rejected' && reached >= 0" class="mt-1.5 text-xs font-semibold text-fg sm:hidden" data-step>
+            {{ t("hr.hiring.drawer.stepOf", { n: reached + 1, total: track.length, stage: t(`hr.hiring.stage.${current.stage}`) }) }}
+          </p>
           <RouterLink
             v-if="current.member"
             :to="`/c/${company.currentId}/people/${current.member.id}`"

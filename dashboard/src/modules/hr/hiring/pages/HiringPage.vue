@@ -185,7 +185,7 @@ const steps = computed(() => [
     </section>
 
     <div v-else-if="vacancies.length" class="flex flex-col gap-4">
-      <KpiStrip :items="kpis" :columns="4" phone="grid" />
+      <KpiStrip :items="kpis" :columns="4" phone="compact" />
       <div v-if="shown.length" class="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3" data-vacancies>
         <VacancyCard v-for="vacancy in shown" :key="vacancy.id" :vacancy="vacancy" @share="share" @edit="edit" @status="setStatus" @remove="remove" />
       </div>

@@ -17,7 +17,7 @@ import UiButton from "@/components/UiButton.vue";
 import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore, useCompanyToday } from "@/stores/company";
 
-import { STATE_TONES, inProgress, vacancyState } from "../lib";
+import { STATE_TONES, inProgress, salaryText, vacancyState } from "../lib";
 import type { Vacancy } from "../types";
 import StageBar from "./StageBar.vue";
 
@@ -32,13 +32,7 @@ const today = useCompanyToday();
 const state = computed(() => vacancyState(props.vacancy, today.value));
 const to = computed(() => `/c/${company.currentId}/hr/hiring/${props.vacancy.id}`);
 const working = computed(() => inProgress(props.vacancy.counts));
-const salary = computed(() => {
-  const { salary_from: low, salary_to: high, currency } = props.vacancy;
-  if (low && high) return low === high ? fmt.money(low, currency) : `${fmt.money(low, currency, { currencyDisplay: "none" })} – ${fmt.money(high, currency)}`;
-  if (low) return t("hr.hiring.salaryFrom", { amount: fmt.money(low, currency) });
-  if (high) return t("hr.hiring.salaryUpTo", { amount: fmt.money(high, currency) });
-  return null;
-});
+const salary = computed(() => salaryText(props.vacancy, fmt.money, t));
 const dates = computed(() => {
   const v = props.vacancy;
   if (state.value === "scheduled" && v.opens_on) return t("hr.hiring.opensOn", { date: fmt.day(v.opens_on, "short") });

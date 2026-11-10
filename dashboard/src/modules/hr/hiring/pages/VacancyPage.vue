@@ -6,7 +6,8 @@
  * Phones get a list by stage instead of the board (and so does "List" on a desktop). A card opens
  * the applicant's panel (`?applicant=`): answers, diploma photo, notes, history and the next step.
  */
-import { ArrowRight, Briefcase, CalendarClock, Columns3, EllipsisVertical, Inbox, Link2, ListFilter, MapPin, MessagesSquare, Pause, Pencil, Play, Rows3, Search, Share2, UserCheck, Wallet, XCircle } from "@lucide/vue";
+import { ArrowRight, Briefcase, CalendarClock, Columns3, EllipsisVertical, EyeOff, Inbox, Link2, ListFilter, MapPin, MessagesSquare, Pause, Pencil, Play, Rows3, Search, Share2, UserCheck, UserX, Wallet, XCircle } from "@lucide/vue";
+import { useElementSize } from "@vueuse/core";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
@@ -39,7 +40,7 @@ import ApplicantDrawer from "../components/ApplicantDrawer.vue";
 import DecisionDialog, { type Decision } from "../components/DecisionDialog.vue";
 import ShareDialog from "../components/ShareDialog.vue";
 import VacancyFormDialog from "../components/VacancyFormDialog.vue";
-import { STAGE_COLORS, STATE_TONES, canDrop, inProgress, nextStage, toldByDefault, vacancyState } from "../lib";
+import { STAGE_COLORS, STATE_TONES, canDrop, inProgress, nextStage, salaryText, toldByDefault, vacancyState } from "../lib";
 import { STAGES, type Applicant, type PipelineStage, type Stage } from "../types";
 
 const { t } = useI18n();
@@ -76,7 +77,19 @@ const filtered = computed(() => {
   );
 });
 const stageCount = (stage: Stage) => applicants.value.filter((row) => row.stage === stage).length;
-const columns = computed<KanbanColumn[]>(() => STAGES.map((stage) => ({ id: stage, title: t(`hr.hiring.stage.${stage}`), color: STAGE_COLORS[stage] })));
+// The board fits the page: the turned-down column shows on demand, and the columns share the width.
+const showRejected = useRouteState("rejected", rs.boolean(false));
+const rejectedCount = computed(() => stageCount("rejected"));
+const columns = computed<KanbanColumn[]>(() =>
+  STAGES.filter((stage) => stage !== "rejected" || showRejected.value).map((stage) => ({ id: stage, title: t(`hr.hiring.stage.${stage}`), color: STAGE_COLORS[stage] })),
+);
+const boardBox = ref<HTMLElement | null>(null);
+const { width: boardWidth } = useElementSize(boardBox);
+const columnWidth = computed(() => {
+  const count = columns.value.length;
+  const room = boardWidth.value || 1100;
+  return Math.round(Math.min(288, Math.max(208, (room - 12 * (count - 1)) / count)));
+});
 const groups = computed(() =>
   STAGES.filter((stage) => stageFilter.value === "all" || stage === stageFilter.value)
     .map((stage) => ({ stage, rows: filtered.value.filter((row) => row.stage === stage) }))
@@ -88,14 +101,7 @@ const stageOptions = computed(() => [
 ]);
 
 const state = computed(() => (vacancy.value ? vacancyState(vacancy.value, today.value) : "draft"));
-const salary = computed(() => {
-  const v = vacancy.value;
-  if (!v) return null;
-  if (v.salary_from && v.salary_to) return v.salary_from === v.salary_to ? fmt.money(v.salary_from, v.currency) : `${fmt.money(v.salary_from, v.currency, { currencyDisplay: "none" })} – ${fmt.money(v.salary_to, v.currency)}`;
-  if (v.salary_from) return t("hr.hiring.salaryFrom", { amount: fmt.money(v.salary_from, v.currency) });
-  if (v.salary_to) return t("hr.hiring.salaryUpTo", { amount: fmt.money(v.salary_to, v.currency) });
-  return null;
-});
+const salary = computed(() => (vacancy.value ? salaryText(vacancy.value, fmt.money, t) : null));
 const dates = computed(() => {
   const v = vacancy.value;
   if (!v) return null;
@@ -245,11 +251,14 @@ const menu = computed<MenuEntry[]>(() => {
       </div>
 
       <div v-else-if="vacancy" class="flex flex-col gap-4">
-        <KpiStrip :items="kpis" :columns="4" phone="grid" />
+        <KpiStrip :items="kpis" :columns="4" phone="compact" />
 
         <div v-if="applicants.length" class="flex flex-wrap items-center gap-2">
           <TextInput v-model="search" :icon="Search" size="sm" clearable :debounce="150" :placeholder="t('hr.hiring.searchApplicants')" class="w-full sm:w-[280px]" />
           <span class="flex-1" />
+          <UiButton v-if="!showList && rejectedCount" size="sm" variant="ghost" :icon="showRejected ? EyeOff : UserX" data-toggle-rejected @click="showRejected = !showRejected">
+            {{ showRejected ? t("hr.hiring.hideRejected") : t("hr.hiring.showRejected", { n: rejectedCount }) }}
+          </UiButton>
           <SegmentedControl
             v-if="!isPhone"
             v-model="layout"
@@ -270,24 +279,25 @@ const menu = computed<MenuEntry[]>(() => {
         </div>
 
         <!-- The board -->
-        <KanbanBoard
-          v-else-if="!showList"
-          :columns="columns"
-          :items="filtered"
-          :item-key="(row: Applicant) => row.id"
-          :column-of="(row: Applicant) => row.stage"
-          :can-drop="canDrop"
-          :sortable="false"
-          :column-width="272"
-          height="calc(100dvh - 330px)"
-          data-board
-          @move="onMove"
-        >
-          <template #card="{ item }">
-            <ApplicantCard :applicant="item" class="cursor-pointer" @click="open(item)" @open="open" @advance="advance" />
-          </template>
-          <template #empty="{ column }">{{ t(`hr.hiring.columnEmpty.${column.id}`) }}</template>
-        </KanbanBoard>
+        <div v-else-if="!showList" ref="boardBox" class="min-w-0">
+          <KanbanBoard
+            :columns="columns"
+            :items="filtered"
+            :item-key="(row: Applicant) => row.id"
+            :column-of="(row: Applicant) => row.stage"
+            :can-drop="canDrop"
+            :sortable="false"
+            :column-width="columnWidth"
+            height="calc(100dvh - 330px)"
+            data-board
+            @move="onMove"
+          >
+            <template #card="{ item }">
+              <ApplicantCard :applicant="item" class="cursor-pointer" @click="open(item)" @open="open" @advance="advance" />
+            </template>
+            <template #empty="{ column }">{{ t(`hr.hiring.columnEmpty.${column.id}`) }}</template>
+          </KanbanBoard>
+        </div>
 
         <!-- The list, by stage (phones, and "List") -->
         <div v-else class="flex flex-col gap-3" data-list>

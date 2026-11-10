@@ -76,6 +76,17 @@ export const STATE_TONES: Record<VacancyState, StatusTone> = {
   closed: "neutral",
 };
 
+type MoneyFormat = (value: string, currency: Vacancy["currency"], options?: { currencyDisplay?: "label" | "none" }) => string;
+
+/** "4 500 000 – 6 000 000 so‘m", "from 4 500 000 so‘m", "up to …", or null without pay. */
+export function salaryText(vacancy: Pick<Vacancy, "salary_from" | "salary_to" | "currency">, money: MoneyFormat, t: (key: string, values: Record<string, string>) => string): string | null {
+  const { salary_from: low, salary_to: high, currency } = vacancy;
+  if (low && high) return low === high ? money(low, currency) : `${money(low, currency, { currencyDisplay: "none" })} – ${money(high, currency)}`;
+  if (low) return t("hr.hiring.salaryFrom", { amount: money(low, currency) });
+  if (high) return t("hr.hiring.salaryUpTo", { amount: money(high, currency) });
+  return null;
+}
+
 /** Applicants still on the way (neither hired nor turned down). */
 export function inProgress(counts: Vacancy["counts"]): number {
   return counts.new + counts.screening + counts.interview + counts.offer;

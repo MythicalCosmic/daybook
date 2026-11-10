@@ -23,6 +23,7 @@ import {
   nextStage,
   pharmacistQuestions,
   questionProblem,
+  salaryText,
   stageSegments,
   toldByDefault,
   toDrafts,
@@ -170,6 +171,11 @@ describe("hiring rules", () => {
     expect(formatPhone("+998901234401")).toBe("+998 90 123 44 01");
     expect(formatPhone("+7 912 000")).toBe("+7 912 000");
     expect(highlights([{ id: "a", text: "A", kind: "text", answer: "" }, ...applicant().answers]).map((row) => row.id)).toEqual(["qa1", "qa2"]);
+    const money = (value: string, _currency: string, options?: { currencyDisplay?: "label" | "none" }) => (options?.currencyDisplay === "none" ? value : `${value} UZS`);
+    const t = (key: string, values: Record<string, string>) => `${key}:${values.amount}`;
+    expect(salaryText({ salary_from: "3", salary_to: "4", currency: "UZS" }, money, t)).toBe("3 – 4 UZS");
+    expect(salaryText({ salary_from: "3", salary_to: null, currency: "UZS" }, money, t)).toBe("hr.hiring.salaryFrom:3 UZS");
+    expect(salaryText({ salary_from: null, salary_to: null, currency: "UZS" }, money, t)).toBeNull();
   });
 
   it("checks the form and cleans the questions for the server", () => {
@@ -300,6 +306,10 @@ describe("Vacancy page", () => {
     expect(column("new").text()).toContain("Dilfuza Raximova");
     expect(column("new").text()).toContain("Kunduzgi");
     expect(column("interview").text()).toContain("Sanjar Qosimov");
+    // The turned-down column waits behind its toggle, so the pipeline fits the page.
+    expect(column("rejected").exists()).toBe(false);
+    await wrapper.find("[data-toggle-rejected]").trigger("click");
+    await flushPromises();
     expect(column("rejected").text()).toContain("Diplom yo‘q");
     expect(wrapper.text()).toContain("47"); // the link's openings
   });

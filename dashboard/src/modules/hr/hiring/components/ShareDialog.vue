@@ -12,9 +12,10 @@ import InlineAlert from "@/components/InlineAlert.vue";
 import UiButton from "@/components/UiButton.vue";
 import UiDialog from "@/components/UiDialog.vue";
 import { toast } from "@/components/useToast";
+import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore, useCompanyToday } from "@/stores/company";
 
-import { vacancyState } from "../lib";
+import { salaryText, vacancyState } from "../lib";
 import type { Vacancy } from "../types";
 
 const QrCode = defineAsyncComponent(() => import("@/components/QrCode.vue"));
@@ -24,6 +25,7 @@ const props = defineProps<{ vacancy: Vacancy | null }>();
 const emit = defineEmits<{ publish: [vacancy: Vacancy] }>();
 
 const { t } = useI18n();
+const fmt = useFormat();
 const company = useCompanyStore();
 const today = useCompanyToday();
 const copied = ref(false);
@@ -37,6 +39,7 @@ const shareUrl = computed(() => {
   return `https://t.me/share/url?url=${encodeURIComponent(vacancy.link)}&text=${encodeURIComponent(text)}`;
 });
 const filename = computed(() => `${props.vacancy?.title ?? "vacancy"}-qr`);
+const salaryLine = computed(() => (props.vacancy ? (salaryText(props.vacancy, fmt.money, t) ?? "") : ""));
 
 async function copy(): Promise<void> {
   const link = props.vacancy?.link;
@@ -52,8 +55,42 @@ async function copy(): Promise<void> {
   }
 }
 
-function print(): void {
-  window.print();
+const escape = (text: string) => text.replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]!);
+
+/** An A4 poster for the pharmacy door: the company, the job, the pay, a large QR code. */
+async function printPoster(): Promise<void> {
+  const vacancy = props.vacancy;
+  if (!vacancy?.qr_link) return;
+  const QR = await import("qrcode");
+  const image = await QR.toDataURL(vacancy.qr_link, { width: 1100, margin: 2, errorCorrectionLevel: "Q", color: { dark: "#201e1d", light: "#ffffff" } });
+  const sheet = window.open("", "_blank");
+  if (!sheet) {
+    toast.info(t("hr.hiring.share.popupBlocked"));
+    return;
+  }
+  const meta = [vacancy.branch?.name, salaryLine.value].filter(Boolean).map((part) => escape(part!)).join(" · ");
+  sheet.document.write(`<!doctype html><html lang="${fmt.lang.value}"><head><meta charset="utf-8"><title>${escape(vacancy.title)}</title><style>
+@page { size: A4; margin: 16mm; }
+body { margin: 0; font-family: Figtree, system-ui, sans-serif; color: #201e1d; text-align: center; }
+.company { margin-top: 6mm; font-size: 22px; color: #6b6359; }
+.hiring { margin-top: 12mm; font-size: 18px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: #a85a27; }
+h1 { margin: 4mm 0 3mm; font-size: 56px; line-height: 1.1; }
+.meta { font-size: 22px; color: #6b6359; }
+img { display: block; width: 118mm; height: 118mm; margin: 12mm auto 6mm; }
+.scan { font-size: 26px; font-weight: 600; }
+.link { margin-top: 4mm; font-size: 13px; color: #8c857a; word-break: break-all; }
+</style></head><body>
+<div class="company">${escape(company.current?.name ?? "")}</div>
+<div class="hiring">${escape(t("hr.hiring.poster.hiring"))}</div>
+<h1>${escape(vacancy.title)}</h1>
+<div class="meta">${meta}</div>
+<img src="${image}" alt="">
+<div class="scan">${escape(t("hr.hiring.poster.scan"))}</div>
+<div class="link">${escape(vacancy.qr_link)}</div>
+</body></html>`);
+  sheet.document.close();
+  sheet.focus();
+  window.setTimeout(() => sheet.print(), 300);
 }
 </script>
 
@@ -82,7 +119,7 @@ function print(): void {
             <div class="flex flex-wrap gap-2">
               <UiButton size="sm" :icon="Send" :href="shareUrl" target="_blank">{{ t("hr.hiring.share.telegram") }}</UiButton>
               <UiButton size="sm" variant="ghost" :icon="ExternalLink" :href="vacancy.link" target="_blank">{{ t("hr.hiring.share.openBot") }}</UiButton>
-              <UiButton size="sm" variant="ghost" :icon="Printer" class="max-sm:hidden" @click="print">{{ t("hr.hiring.share.print") }}</UiButton>
+              <UiButton size="sm" variant="ghost" :icon="Printer" class="max-sm:hidden" data-poster @click="printPoster">{{ t("hr.hiring.share.print") }}</UiButton>
             </div>
             <ul class="flex flex-col gap-1.5 rounded-[10px] bg-surface-2/60 p-3 text-sm text-muted dark:bg-surface-2">
               <li>{{ t("hr.hiring.share.tipPoster") }}</li>

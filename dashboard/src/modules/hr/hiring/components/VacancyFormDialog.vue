@@ -191,8 +191,8 @@ async function submit(publish: boolean): Promise<void> {
         <TextArea v-model="form.description" :rows="3" :max-rows="8" autosize :maxlength="2000" :placeholder="t('hr.hiring.form.descriptionPlaceholder')" />
       </FormField>
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <FormField :label="t('hr.hiring.field.salaryFrom')" optional>
-          <MoneyInput v-model="form.salary_from" :placeholder="t('hr.hiring.form.salaryPlaceholder')" />
+        <FormField :label="t('hr.hiring.field.salaryFrom')" :hint="t('hr.hiring.form.salaryPlaceholder')" optional>
+          <MoneyInput v-model="form.salary_from" />
         </FormField>
         <FormField :label="t('hr.hiring.field.salaryTo')" :error="errors.salary_to" optional>
           <MoneyInput v-model="form.salary_to" :invalid="!!errors.salary_to" />

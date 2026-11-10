@@ -101,6 +101,14 @@ const placeholder = computed(() => {
   if (d.mode === "move") return t(`hr.hiring.decide.placeholder.${d.stage === "interview" || d.stage === "offer" ? d.stage : "other"}`);
   return t(`hr.hiring.decide.placeholder.${d.mode}`);
 });
+const confirmLabel = computed(() => {
+  const d = decision.value;
+  if (!d) return "";
+  if (d.mode !== "move") return t(`hr.hiring.action.${d.mode}`);
+  if (d.stage === "interview" && form.notify) return t("hr.hiring.action.invite");
+  if (d.stage === "offer" && form.notify) return t("hr.hiring.action.offer");
+  return t("hr.hiring.action.move");
+});
 /** A move to screening or back says nothing unless there's a message for them. */
 const silentMove = computed(() => decision.value?.mode === "move" && !toldByDefault(decision.value.stage));
 
@@ -239,7 +247,7 @@ function close(): void {
         data-decide
         @click="confirm"
       >
-        {{ decision?.mode === "hire" ? t("hr.hiring.action.hire") : decision?.mode === "reject" ? t("hr.hiring.action.reject") : t("hr.hiring.action.move") }}
+        {{ confirmLabel }}
       </UiButton>
     </template>
   </UiDialog>
