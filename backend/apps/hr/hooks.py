@@ -5,6 +5,7 @@ Imported by `AppConfig.ready()`; register a function only once it exists.
 
 from django.utils.translation import gettext_lazy as _
 
+import apps.hr.hiring.hooks  # noqa: F401 (hiring registers its own)
 from apps.audit import registry as audit_registry
 from apps.audit.redaction import SECRET
 from apps.console import registry

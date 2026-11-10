@@ -4,7 +4,7 @@ An optional `root_urlpatterns` list is mounted at `/api/v1/owner/` instead, for 
 owner endpoints outside a company.
 """
 
-from django.urls import path
+from django.urls import include, path
 from rest_framework.routers import SimpleRouter
 
 from apps.hr import owner_api
@@ -42,4 +42,6 @@ urlpatterns = [
         name="hr-sensitive",
     ),
     *router.urls,
+    # Hiring: vacancies and applicants (apps.hr.hiring).
+    path("", include("apps.hr.hiring.owner_urls")),
 ]
