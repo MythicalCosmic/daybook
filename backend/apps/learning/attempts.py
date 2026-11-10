@@ -28,6 +28,7 @@ result, as the quiz's `show_answers` allows.
 from __future__ import annotations
 
 import logging
+import random
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -270,9 +271,12 @@ def start(
     assignment: Assignment | None = None,
     entry: CheckEntry | None = None,
     now: datetime | None = None,
+    rng: random.Random | None = None,
 ) -> tuple[Attempt, bool]:
     """The attempt in progress (resumed), or a new one with a fresh draw; whether it is new.
-    DomainError says why one can't start; NotAllowed when they may not take the quiz."""
+    DomainError says why one can't start; NotAllowed when they may not take the quiz. `rng`
+    draws the questions and orders their options (a seeded one makes the demo repeatable);
+    without it the draw is truly random."""
     now = now or timezone.now()
     with transaction.atomic():
         # One start at a time per person: two taps never make two attempts.
@@ -283,7 +287,7 @@ def start(
         if not found.can_start:
             raise DomainError(found.reason)
         entry, assignment = found.entry, found.assignment
-        questions = quizzes.draw(quiz, member)
+        questions = quizzes.draw(quiz, member, rng=rng)
         if not questions:
             raise DomainError(REASONS["empty"]())
         items = [
@@ -292,7 +296,7 @@ def start(
                 "kind": question.kind,
                 "points": question.points,
                 "order": grading.shown_order(
-                    question.kind, question.data, shuffle=quiz.shuffle_options
+                    question.kind, question.data, shuffle=quiz.shuffle_options, rng=rng
                 ),
             }
             for question in questions

@@ -529,10 +529,12 @@ QUESTIONS = [
     ),
 ]
 
-# How likely each learner gets a topic right (the story), by the people's keys.
+# How likely each learner gets a topic right (the story), by the people's keys. The story's
+# two facts are sure, not likely, however few cold-chain questions a draw gives them: Madina
+# gets every cold-chain question right (she could coach it) and Alisher none.
 SKILL = {
-    "madina": {COLD: 0.97, RX: 0.93, STORAGE: 0.92, GOODS: 0.9, TILL: 0.88},
-    "worker": {COLD: 0.3, RX: 0.75, STORAGE: 0.62, GOODS: 0.78, TILL: 0.4},
+    "madina": {COLD: 1.0, RX: 0.93, STORAGE: 0.92, GOODS: 0.9, TILL: 0.88},
+    "worker": {COLD: 0.0, RX: 0.75, STORAGE: 0.62, GOODS: 0.78, TILL: 0.4},
     "nigora": {COLD: 0.72, RX: 0.35, STORAGE: 0.75, GOODS: 0.7, TILL: 0.42},
     "jasur": {COLD: 0.62, RX: 0.5, STORAGE: 0.6, GOODS: 0.65, TILL: 0.55},
 }
@@ -736,7 +738,7 @@ def _history(company, people, plan, tests, rng, now) -> None:
             at = plan.at_work(key, day, afternoon)
             with demo_time.moment(at):
                 try:
-                    attempt, _new = attempts.start(tests[quiz], member, now=at)
+                    attempt, _new = attempts.start(tests[quiz], member, now=at, rng=rng)
                 except DomainError, attempts.NotAllowed:
                     continue  # used up, or the wait: the story goes on
                 take(attempt, key, rng, topics_by_id, at + timedelta(minutes=rng.randint(4, 9)))
@@ -774,13 +776,16 @@ def _rounds(company, people, plan, check, rng, now) -> None:
             if at >= min(now, round_.due_at):
                 continue
             with demo_time.moment(at):
-                attempt, _new = attempts.start(check.quiz, entry.membership, entry=entry, now=at)
+                attempt, _new = attempts.start(
+                    check.quiz, entry.membership, entry=entry, now=at, rng=rng
+                )
                 take(attempt, key, rng, topics_by_id, at + timedelta(minutes=rng.randint(3, 8)))
-        if round_.due_at <= now:
+        if round_.due_at <= now and not current:
             with demo_time.moment(round_.due_at):
                 checks.close_round(round_, round_.due_at)
         elif round_.due_at < now + timedelta(hours=20):
-            # Late in the week the open round would close before anyone sees it: one more day.
+            # Late in the week this week's round would close (or has closed) before anyone sees
+            # it open: it stays open one more day.
             CheckRound.objects.filter(pk=round_.pk).update(due_at=now + timedelta(hours=30))
     check.refresh_from_db()
     RegularCheck.objects.filter(pk=check.pk).update(next_run_at=checks.next_occurrence(check, now))
