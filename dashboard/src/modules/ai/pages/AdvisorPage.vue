@@ -71,6 +71,8 @@ const nextFor = computed(() => {
 });
 const empty = computed(() => emptyKey(meta.value));
 const chatShown = computed(() => !!meta.value?.chat);
+/** On a phone the chat is its own tab: the header keeps only the title, the chat fills the rest. */
+const chatTab = computed(() => isPhone.value && chatShown.value && view.value === "chat");
 const chatTeaser = computed(() => !!meta.value && !meta.value.chat && company.can("ai.use"));
 const older = computed(() => (history.data.value ?? []).filter((row) => row.id !== review.value?.id));
 
@@ -130,8 +132,8 @@ const settingsOpen = ref(false);
 
 <template>
   <div class="flex min-w-0 flex-col gap-4 md:gap-5">
-    <PageHeader :title="t('ai.advisor.title')" :description="t('ai.advisor.description')">
-      <template #actions>
+    <PageHeader :title="t('ai.advisor.title')" :description="chatTab ? undefined : t('ai.advisor.description')">
+      <template v-if="!chatTab" #actions>
         <UiButton variant="ghost" :size="isPhone ? 'lg' : 'md'" :icon="Bot" :to="agentLink" class="max-sm:flex-1" data-testid="advisor-agent-link">{{ t("ai.advisor.agentPage") }}</UiButton>
         <UiButton v-if="meta?.can_configure" :size="isPhone ? 'lg' : 'md'" :icon="Settings2" class="max-sm:flex-1" data-testid="advisor-settings" @click="settingsOpen = true">{{ t("ai.advisor.settings.button") }}</UiButton>
         <UiButton
@@ -148,7 +150,7 @@ const settingsOpen = ref(false);
           {{ waiting ? t("ai.advisor.writing") : review ? t("ai.advisor.rewrite") : t("ai.advisor.writeNow") }}
         </UiButton>
       </template>
-      <template v-if="meta" #meta>
+      <template v-if="meta && !chatTab" #meta>
         <StatusPill :tone="meta.writer === 'ai' ? 'primary' : 'neutral'" :icon="meta.writer === 'ai' ? Sparkles : undefined" :label="t(meta.writer === 'ai' ? 'ai.advisor.writerAi' : 'ai.advisor.writerTemplate')" data-testid="advisor-writer-pill" />
         <span v-if="nextText" class="inline-flex items-center gap-1.5 text-sm text-muted">
           <CalendarClock :size="14" aria-hidden="true" />{{ t("ai.advisor.next", { time: nextText }) }}
@@ -225,7 +227,7 @@ const settingsOpen = ref(false);
         <AdvisorChat
           :agent-name="agentName"
           :on="advisorOn"
-          class="h-[calc(100dvh-var(--topbar-h)-var(--tabbar-h)-var(--safe-bottom)-11rem)] min-h-[420px] sm:h-[640px] xl:h-[calc(100dvh-var(--topbar-h)-3.5rem)] xl:max-h-[880px] xl:min-h-[520px]"
+          class="h-[calc(100dvh-var(--topbar-h)-var(--tabbar-h)-var(--safe-bottom)-8.25rem)] min-h-[380px] sm:h-[640px] xl:h-[calc(100dvh-var(--topbar-h)-3.5rem)] xl:max-h-[880px] xl:min-h-[520px]"
         />
       </aside>
       <aside v-else-if="chatTeaser" class="min-w-0">
@@ -243,7 +245,7 @@ const settingsOpen = ref(false);
     </div>
 
     <UiDrawer v-model:open="settingsOpen" :title="t('ai.advisor.settings.title')" :description="t('ai.advisor.settings.description')" size="md">
-      <BriefingSettingsForm />
+      <div class="p-4 md:p-5"><BriefingSettingsForm /></div>
     </UiDrawer>
   </div>
 </template>
