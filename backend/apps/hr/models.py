@@ -7,6 +7,8 @@ and their contracts. Passport, PINFL, card numbers and HR notes are stored encry
 findable without decrypting anything.
 """
 
+import secrets
+
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -437,3 +439,202 @@ class Celebration(TenantModel):
 
     def __str__(self):
         return f"{self.get_kind_display()} {self.day}"
+
+
+# Hiring (package G, v11): vacancies with a bot link, and each applicant's way to the hire ------
+
+
+class QuestionKind(models.TextChoices):
+    """How an applicant answers one of a vacancy's questions in the bot."""
+
+    TEXT = "text", _("Text")
+    CHOICE = "choice", _("Choice")
+    YES_NO = "yes_no", _("Yes or no")
+    NUMBER = "number", _("Number")
+
+
+VACANCY_CODE_ALPHABET = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+
+
+def new_vacancy_code() -> str:
+    """Ten letters and digits nobody misreads on a poster (no 0/O, 1/l/I)."""
+    return "".join(secrets.choice(VACANCY_CODE_ALPHABET) for _ in range(10))
+
+
+class Vacancy(TenantModel):
+    """A job opening with a link to the employee bot (`/start job_<code>`, also as a QR code):
+    whoever opens it reads the vacancy, answers its questions, shares their phone number and
+    becomes an applicant. Hiring one makes them a member with the vacancy's position and branch.
+
+    `questions` is a short list of `{"id", "text", "kind", "required", "options"}`
+    (apps.hr.hiring.questions checks it); `asks_document` adds a photo of a diploma or a
+    certificate at the end (a pharmacist's vacancy, docs/PLAN-OWNER.md §14.9)."""
+
+    class Status(models.TextChoices):
+        DRAFT = "draft", _("Draft")
+        OPEN = "open", _("Open")
+        PAUSED = "paused", _("Paused")
+        CLOSED = "closed", _("Closed")
+
+    START_PREFIX = "job_"
+    # Appended to the code in the QR code's link, so applicants who scanned a poster count apart.
+    QR_SUFFIX = "-q"
+
+    title = models.CharField(max_length=120)
+    position = models.ForeignKey(
+        Position, on_delete=models.SET_NULL, null=True, blank=True, related_name="vacancies"
+    )
+    branch = models.ForeignKey(
+        "companies.Branch",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="vacancies",
+    )
+    description = models.TextField(max_length=2000, blank=True)
+    salary_from = models.DecimalField(max_digits=18, decimal_places=2, null=True, blank=True)
+    salary_to = models.DecimalField(max_digits=18, decimal_places=2, null=True, blank=True)
+    questions = models.JSONField(default=list, blank=True)
+    asks_document = models.BooleanField(default=False)
+    status = models.CharField(max_length=8, choices=Status.choices, default=Status.DRAFT)
+    opens_on = models.DateField(null=True, blank=True)
+    closes_on = models.DateField(null=True, blank=True)
+    code = models.CharField(max_length=16, unique=True, default=new_vacancy_code, editable=False)
+    # How many times someone opened the link in the bot (the same person counts once a day).
+    link_opens = models.PositiveIntegerField(default=0)
+    created_by = models.ForeignKey(
+        Membership, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    published_at = models.DateTimeField(null=True, blank=True)
+    closed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at", "-pk"]
+        verbose_name_plural = "vacancies"
+        indexes = [models.Index(fields=["company", "status"])]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(salary_from__isnull=True)
+                | Q(salary_to__isnull=True)
+                | Q(salary_to__gte=models.F("salary_from")),
+                name="hr_vacancy_salary_range",
+            ),
+            models.CheckConstraint(
+                condition=Q(opens_on__isnull=True)
+                | Q(closes_on__isnull=True)
+                | Q(closes_on__gte=models.F("opens_on")),
+                name="hr_vacancy_dates",
+            ),
+        ]
+
+    def __str__(self):
+        return self.title
+
+    def start_param(self, *, qr: bool = False) -> str:
+        return f"{self.START_PREFIX}{self.code}{self.QR_SUFFIX if qr else ''}"
+
+    def bot_link(self, *, qr: bool = False) -> str:
+        """The t.me link that opens the vacancy in the employee bot ("" until its username is
+        set)."""
+        if not settings.EMPLOYEE_BOT_USERNAME:
+            return ""
+        return f"https://t.me/{settings.EMPLOYEE_BOT_USERNAME}?start={self.start_param(qr=qr)}"
+
+
+class Applicant(TenantModel):
+    """Someone who applied for a vacancy in the bot: their name, the phone number they shared,
+    their answers, and where they are on the way to the hire."""
+
+    class Stage(models.TextChoices):
+        NEW = "new", _("New")
+        SCREENING = "screening", _("Screening")
+        INTERVIEW = "interview", _("Interview")
+        OFFER = "offer", _("Offer")
+        HIRED = "hired", _("Hired")
+        REJECTED = "rejected", _("Rejected")
+
+    class Source(models.TextChoices):
+        LINK = "link", _("Link")
+        QR = "qr", _("QR code")
+
+    # RESTRICT, not PROTECT: a vacancy with applicants is never deleted on its own, but a whole
+    # company (the demo reset) takes both with it.
+    vacancy = models.ForeignKey(Vacancy, on_delete=models.RESTRICT, related_name="applicants")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="applications",
+    )
+    name = models.CharField(max_length=150)
+    phone = models.CharField(max_length=20, blank=True)
+    telegram_username = models.CharField(max_length=64, blank=True)
+    # The language they applied in (what the bot says to them follows their account's).
+    language = models.CharField(max_length=2, choices=Language.choices, default=Language.UZ)
+    # [{"id", "text", "kind", "answer"}]: the questions as they read them, with their answers.
+    answers = models.JSONField(default=list, blank=True)
+    # A photo of their diploma or certificate, when the vacancy asked for one.
+    document = models.FileField(
+        storage=private_storage, upload_to=private_upload_to("hr/applicants"), blank=True
+    )
+    stage = models.CharField(max_length=12, choices=Stage.choices, default=Stage.NEW)
+    stage_changed_at = models.DateTimeField(null=True, blank=True)
+    source = models.CharField(max_length=8, choices=Source.choices, default=Source.LINK)
+    rejected_reason = models.CharField(max_length=200, blank=True)
+    # Set by the hire: the membership the applicant became.
+    membership = models.ForeignKey(
+        Membership, on_delete=models.SET_NULL, null=True, blank=True, related_name="applications"
+    )
+    hired_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at", "-pk"]
+        indexes = [
+            models.Index(fields=["company", "stage"]),
+            models.Index(fields=["vacancy", "stage"]),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["vacancy", "user"],
+                condition=Q(user__isnull=False),
+                name="hr_one_application_per_person",
+            ),
+        ]
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def is_open(self) -> bool:
+        """Still on the way: neither hired nor turned down."""
+        return self.stage not in (self.Stage.HIRED, self.Stage.REJECTED)
+
+
+class ApplicantEvent(TenantModel):
+    """What happened to an application, oldest first: it came in, it moved from one stage to
+    another (by whom, with what the applicant was told), and the hiring team's notes."""
+
+    class Kind(models.TextChoices):
+        APPLIED = "applied", _("Applied")
+        MOVED = "moved", _("Moved")
+        NOTE = "note", _("Note")
+
+    applicant = models.ForeignKey(Applicant, on_delete=models.CASCADE, related_name="events")
+    kind = models.CharField(max_length=8, choices=Kind.choices)
+    from_stage = models.CharField(max_length=12, choices=Applicant.Stage.choices, blank=True)
+    to_stage = models.CharField(max_length=12, choices=Applicant.Stage.choices, blank=True)
+    # A note, or the reason an applicant was turned down.
+    text = models.TextField(max_length=2000, blank=True)
+    # What the bot told the applicant about it ("" when they weren't told).
+    message = models.TextField(max_length=1000, blank=True)
+    notified = models.BooleanField(default=False)
+    by = models.ForeignKey(
+        Membership, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+
+    class Meta:
+        ordering = ["created_at", "pk"]
+
+    def __str__(self):
+        return f"{self.get_kind_display()} {self.to_stage}".strip()
