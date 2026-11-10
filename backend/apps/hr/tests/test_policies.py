@@ -423,7 +423,7 @@ def test_the_late_badge_search_and_export_follow_the_scope(
     rows = list(exporters.rows(staff.lead, {"policy": rules.pk}))
     assert [(row["person"], row["status"]) for row in rows] == [
         ("Ali Valiyev", "Signed"),
-        ("Vali Aliyev", "Late"),
+        ("Vali Aliyev", "Signature overdue"),
     ]
     late_only = list(exporters.rows(staff.accountant, {"state": "late"}))
     assert {row["person"] for row in late_only} == {"Vali Aliyev", "Sara Tosheva"}

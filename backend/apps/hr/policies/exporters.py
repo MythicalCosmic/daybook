@@ -35,8 +35,8 @@ def rows(member, params: dict):
     day = queries.today(member.company)
     labels = {
         queries.SIGNED: _("Signed"),
-        queries.WAITING: _("Waiting"),
-        queries.LATE: _("Late"),
+        queries.WAITING: _("Waiting for a signature"),
+        queries.LATE: _("Signature overdue"),
     }
     found = (
         queries.policies(member.company, branch_ids=branch_ids)
