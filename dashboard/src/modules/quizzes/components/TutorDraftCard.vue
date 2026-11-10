@@ -122,19 +122,22 @@ async function discardQuiz(): Promise<void> {
 
     <!-- Draft questions. -->
     <template v-else-if="card.kind === 'questions'">
-      <header class="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3">
-        <span class="grid size-9 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent-fg"><ListChecks :size="17" aria-hidden="true" /></span>
-        <div class="min-w-0 flex-1 basis-40">
-          <p class="text-sm font-semibold text-fg">{{ t("quizzes.tutorDrafts.questionsTitle", { n: card.questions.length }, card.questions.length) }}</p>
-          <p class="truncate text-xs text-muted">
-            <span v-if="card.title">{{ t("quizzes.tutorDrafts.from", { title: card.title }) }}</span>
-            <span v-if="card.title && (drafts.length || inUse)"> · </span>
-            <span v-if="drafts.length">{{ t("quizzes.tutorDrafts.left", { n: drafts.length }) }}</span>
-            <span v-if="drafts.length && inUse"> · </span>
-            <span v-if="inUse">{{ t("quizzes.tutorDrafts.inUse", { n: inUse }) }}</span>
-          </p>
+      <header class="flex flex-col gap-2 px-4 py-3">
+        <div class="flex items-center gap-3">
+          <span class="grid size-9 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent-fg"><ListChecks :size="17" aria-hidden="true" /></span>
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-semibold text-fg">{{ t("quizzes.tutorDrafts.questionsTitle", { n: card.questions.length }, card.questions.length) }}</p>
+            <p class="truncate text-xs text-muted">
+              <span v-if="card.title">{{ t("quizzes.tutorDrafts.from", { title: card.title }) }}</span>
+              <span v-if="card.title && (drafts.length || inUse)"> · </span>
+              <span v-if="drafts.length">{{ t("quizzes.tutorDrafts.left", { n: drafts.length }) }}</span>
+              <span v-if="drafts.length && inUse"> · </span>
+              <span v-if="inUse">{{ t("quizzes.tutorDrafts.inUse", { n: inUse }) }}</span>
+            </p>
+          </div>
         </div>
-        <div v-if="drafts.length > 1" class="flex shrink-0 gap-1 max-sm:w-full">
+        <!-- Lined up with the title: the card's own actions, for every draft left at once. -->
+        <div v-if="drafts.length > 1" class="flex items-center gap-1 pl-12">
           <UiButton size="sm" variant="secondary" :icon="CheckCheck" :loading="busy === 'approve'" :disabled="!!busy" data-testid="draft-approve-all" @click="approveAll">{{ t("quizzes.tutorDrafts.approveAll") }}</UiButton>
           <UiButton size="sm" variant="ghost" :icon="Trash2" :disabled="!!busy" :aria-label="t('quizzes.tutorDrafts.discardAll')" :title="t('quizzes.tutorDrafts.discardAll')" data-testid="draft-discard-all" @click="discardRest" />
         </div>
@@ -156,7 +159,10 @@ async function discardQuiz(): Promise<void> {
             <div v-if="item.question.state === 'draft'" class="mt-3 flex flex-wrap gap-1.5">
               <UiButton size="sm" variant="primary" :icon="Check" :loading="busy === `approve:${item.id}`" :disabled="!!busy" data-testid="draft-approve" @click="approve(item)">{{ t("quizzes.tutorDrafts.approve") }}</UiButton>
               <UiButton size="sm" variant="secondary" :icon="PenLine" :disabled="!!busy" data-testid="draft-edit" @click="emit('edit', item.question)">{{ t("quizzes.tutorDrafts.edit") }}</UiButton>
-              <UiButton size="sm" variant="ghost" :icon="Trash2" :loading="busy === `discard:${item.id}`" :disabled="!!busy" data-testid="draft-discard" @click="discard(item)">{{ t("quizzes.tutorDrafts.discard") }}</UiButton>
+              <!-- On a phone only the bin shows, so the three fit on one line. -->
+              <UiButton size="sm" variant="ghost" :icon="Trash2" :loading="busy === `discard:${item.id}`" :disabled="!!busy" :title="t('quizzes.tutorDrafts.discard')" data-testid="draft-discard" @click="discard(item)">
+                <span class="max-sm:sr-only">{{ t("quizzes.tutorDrafts.discard") }}</span>
+              </UiButton>
             </div>
           </template>
         </li>
@@ -172,6 +178,19 @@ async function discardQuiz(): Promise<void> {
           <p class="text-xs text-muted">{{ t("quizzes.tutorDrafts.quizTitle") }}</p>
         </div>
         <StatusPill v-if="quiz" size="sm" :tone="QUIZ_TONE[quiz.status]" :label="t(`quizzes.status.${quiz.status}`)" />
+        <UiButton
+          v-if="quiz?.status === 'draft'"
+          size="sm"
+          variant="ghost"
+          class="-mr-1.5 shrink-0"
+          :icon="Trash2"
+          :loading="busy === 'discard'"
+          :disabled="!!busy"
+          :aria-label="t('quizzes.tutorDrafts.discardQuiz')"
+          :title="t('quizzes.tutorDrafts.discardQuiz')"
+          data-testid="draft-discard-quiz"
+          @click="discardQuiz"
+        />
       </header>
       <p v-if="!quiz" class="border-t border-line px-4 py-3 text-sm text-muted">{{ t("quizzes.tutorDrafts.quizDeleted") }}</p>
       <template v-else>
@@ -193,7 +212,6 @@ async function discardQuiz(): Promise<void> {
         <div class="flex flex-wrap items-center gap-1.5 border-t border-line px-4 py-3">
           <UiButton v-if="quiz.status === 'draft'" size="sm" variant="primary" :icon="Check" :loading="busy === 'publish'" :disabled="!!busy" data-testid="draft-publish" @click="publish">{{ t("quizzes.tutorDrafts.publish") }}</UiButton>
           <UiButton size="sm" variant="secondary" :icon="ExternalLink" :to="quizLink" data-testid="draft-open-quiz">{{ t("quizzes.tutorDrafts.openQuiz") }}</UiButton>
-          <UiButton v-if="quiz.status === 'draft'" size="sm" variant="ghost" :icon="Trash2" :loading="busy === 'discard'" :disabled="!!busy" data-testid="draft-discard-quiz" @click="discardQuiz">{{ t("quizzes.tutorDrafts.discard") }}</UiButton>
           <p v-if="quiz.status === 'draft' && drafts.length" class="w-full text-xs text-muted">{{ t("quizzes.tutorDrafts.publishHint") }}</p>
         </div>
       </template>

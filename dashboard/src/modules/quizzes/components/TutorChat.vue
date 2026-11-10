@@ -72,7 +72,8 @@ const thread = computed<Entry[]>(() => {
   for (const card of cards.value) {
     if (card.message_id !== null && ids.has(card.message_id)) continue;
     if (working.value && card.message_id === null) continue; // the live turn's: shown below
-    const at = entries.findLastIndex((entry) => entry.message !== null && entry.message.created_at <= card.created_at);
+    const made = Date.parse(card.created_at);
+    const at = entries.findLastIndex((entry) => entry.message !== null && Date.parse(entry.message.created_at) <= made);
     entries.splice(at + 1, 0, { key: `c${card.id}`, message: null, cards: [card] });
   }
   return entries;
@@ -215,9 +216,11 @@ function edit(question: Question): void {
       <span class="grid size-9 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent-fg"><GraduationCap :size="18" aria-hidden="true" /></span>
       <div class="min-w-0 flex-1">
         <h2 class="truncate text-sm font-semibold text-fg">{{ t("quizzes.tutor.ask") }}</h2>
-        <p class="truncate text-xs text-muted">{{ canDraft ? t("quizzes.chat.draftsHint") : t("quizzes.chat.hint") }}</p>
+        <p class="line-clamp-2 text-xs text-muted">{{ canDraft ? t("quizzes.chat.draftsHint") : t("quizzes.chat.hint") }}</p>
       </div>
-      <UiButton size="sm" variant="ghost" :icon="MessageSquarePlus" :disabled="working" data-testid="tutor-new-chat" @click="startNew">{{ t("quizzes.chat.new") }}</UiButton>
+      <UiButton size="sm" variant="ghost" class="shrink-0" :icon="MessageSquarePlus" :disabled="working" :title="t('quizzes.chat.new')" data-testid="tutor-new-chat" @click="startNew">
+        <span class="max-sm:sr-only">{{ t("quizzes.chat.new") }}</span>
+      </UiButton>
     </header>
 
     <div ref="box" class="min-h-0 flex-1 overflow-y-auto overscroll-contain" role="log" aria-live="polite" :aria-label="t('quizzes.chat.thread')" data-testid="tutor-thread" @scroll.passive="onScroll">

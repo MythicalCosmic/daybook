@@ -153,7 +153,7 @@ const agent = computed(() => tutor.data.value?.agent ?? null);
         </div>
 
         <div
-          class="ui-card flex h-[calc(100dvh-var(--topbar-h)-var(--safe-top)-var(--tabbar-h)-var(--safe-bottom)-2rem)] max-h-[820px] min-h-[440px] flex-col overflow-hidden xl:h-auto xl:max-h-none xl:min-h-0"
+          class="ui-card flex h-[calc(100dvh-var(--topbar-h)-var(--safe-top)-var(--tabbar-h)-var(--safe-bottom)-3rem)] max-h-[820px] min-h-[440px] flex-col overflow-hidden xl:h-auto xl:max-h-none xl:min-h-0"
           data-testid="tutor-chat-panel"
         >
           <TutorChat v-if="agent?.chat" />

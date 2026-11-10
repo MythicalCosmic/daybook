@@ -25,13 +25,14 @@ from __future__ import annotations
 
 import logging
 import random
+import re
 import time
 from dataclasses import dataclass
 from typing import Literal
 
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.utils import translation
+from django.utils import timezone, translation
 from django.utils.functional import Promise
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy, ngettext
@@ -458,15 +459,18 @@ def _card(draft: TutorDraft, rows: dict, previews: dict) -> dict:
         for pk in draft.question_ids
     ]
     quiz = draft.quiz
+    state, error = draft.state, draft.error
+    if state == TutorDraft.State.RUNNING and _lost(draft):
+        state, error = TutorDraft.State.FAILED, _("The questions couldn't be written: try again.")
     return {
         "id": draft.pk,
         "kind": draft.kind,
-        "state": draft.state,
+        "state": state,
         "turn_id": draft.turn_id,
         "message_id": draft.turn.message_id,
         "count": draft.count,
         "title": draft.title,
-        "error": draft.error,
+        "error": error,
         "created_at": draft.created_at,
         "questions": items,
         "quiz": {
@@ -482,6 +486,14 @@ def _card(draft: TutorDraft, rows: dict, previews: dict) -> dict:
         if quiz is not None
         else None,
     }
+
+
+def _lost(draft: TutorDraft) -> bool:
+    """A card still "being written" whose turn ended, or that is far older than any drafting
+    call (its job died with a worker): it says it failed, so the chat stops waiting for it."""
+    from apps.ai.chat import STALE_AFTER, WORKING
+
+    return draft.turn.status not in WORKING or draft.created_at < timezone.now() - STALE_AFTER
 
 
 # The person's decisions -------------------------------------------------------------------
@@ -574,6 +586,8 @@ MAKE = (
 FAKE_COUNT = 3
 FAKE_PASS = 70
 FAKE_MINUTES = 10
+# Where a page's title stops naming its subject: "Sovuq zanjir: +2...+8 °C".
+TITLE_HEAD = re.compile(r"\s*[:–—(]")
 
 
 def wants_drafts(asked: str) -> bool:
@@ -643,7 +657,8 @@ def _fake_call(ctx, turn, name: str, tool_input: dict, steps: list[dict]) -> dic
 
 
 def _fake_page(ctx: ToolContext, asked: str):
-    """A page with text the asker may read: one named in the question, else one on the
+    """A page with text the asker may read: one the question names (its title, or the title
+    before a colon: "Sovuq zanjir: +2...+8 °C"), else one on a topic it names, else one on the
     weakest topic, else the first."""
     pages = list(
         knowledge_queries.readable_pages(ctx.membership)
@@ -654,12 +669,21 @@ def _fake_page(ctx: ToolContext, asked: str):
     if not pages:
         return None
     words = asked.casefold()
-    named = [page for page in pages if page.title.casefold() in words]
-    if named:
-        return named[0]
+
+    def head(title: str) -> str:
+        return TITLE_HEAD.split(title, maxsplit=1)[0].strip().casefold()
+
+    for page in pages:
+        if page.title.casefold() in words or (
+            len(head(page.title)) > 3 and head(page.title) in words
+        ):
+            return page
     weakest = skills.weakest_topics(ctx.company, branch_ids=ctx.branch_ids, limit=3)
-    for column in weakest:
+    for wanted in (
+        lambda topic: topic.name.casefold() in words,
+        lambda topic: any(column["topic"] == topic for column in weakest),
+    ):
         for page in pages:
-            if column["topic"] in page.topics.all():
+            if any(wanted(topic) for topic in page.topics.all()):
                 return page
     return pages[0]

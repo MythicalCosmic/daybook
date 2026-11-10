@@ -428,6 +428,24 @@ def test_the_cards_show_each_question_as_it_will_look(owner_api, pharmacy, manag
     assert quiz["quiz"]["audience_all"] is True and quiz["quiz"]["pass_percent"] == 70
 
 
+def test_a_card_left_writing_by_a_turn_that_ended_says_it_failed(pharmacy, manager):
+    turn = talk(manager)
+    TutorDraft.objects.create(
+        company=pharmacy,
+        conversation=turn.conversation,
+        turn=turn,
+        tool_use_id="toolu_1",
+        kind="questions",
+        count=3,
+        created_by=manager,
+    )
+    [card] = tutor_tools.cards(turn.conversation, manager.user)
+    assert card["state"] == "running"  # its turn still works
+    AITurn.objects.filter(pk=turn.pk).update(status="failed")
+    [card] = tutor_tools.cards(turn.conversation, manager.user)
+    assert card["state"] == "failed" and card["error"]
+
+
 def test_approving_one_question_and_then_the_rest(owner_api, pharmacy, manager, drafted):
     turn, ids = drafted
     client = owner_api(manager)
@@ -768,6 +786,23 @@ def test_without_claude_the_tutor_drafts_from_a_page_when_asked(
     chat.run_turn(other.pk)
     other.refresh_from_db()
     assert TutorDraft.objects.count() == 2
+
+
+def test_without_claude_the_page_the_question_names_is_written_from(pharmacy, manager, settings):
+    settings.AI_FAKE = True
+    ai_on(pharmacy)
+    may_ask(manager)
+    space = SpaceFactory(company=pharmacy)
+    PageFactory(space=space, title="Retsept qoidalari", body=sanitize.clean(COLD_CHAIN))
+    cold = PageFactory(
+        space=space, title="Sovuq zanjir: +2...+8 °C", body=sanitize.clean(COLD_CHAIN)
+    )
+    conversation = chat.start_conversation(manager, agent="tutor")
+    turn = chat.start_turn(conversation, by=manager, text="Sovuq zanjir bo‘yicha savollar tuz")
+
+    chat.run_turn(turn.pk)
+
+    assert set(Question.objects.values_list("page", flat=True)) == {cold.pk}
 
 
 # The demo ---------------------------------------------------------------------------------
