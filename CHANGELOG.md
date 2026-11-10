@@ -1,5 +1,50 @@
 # Changelog
 
+## 0.8.0 — 2026-11-11
+
+### Egasi paneli: the owner's page for the morning
+- A new first page for owners, and where they land after signing in. Profit this month by
+  pharmacy (revenue, gross margin, costs, profit and margin against last month), ranked, with a
+  trend line and a green, amber or red state. Costs not tied to a pharmacy show apart.
+- Cash now, how many days it lasts, and the next 90 days as a line with the low point marked,
+  next to the payments that cause it ("23 Nov: 109.7 mln, 40 mln under your buffer").
+- **Waiting for your decision**: join requests, expense claims, time off, overtime, advances,
+  bonuses and fines, write-offs, requests to leave and job changes, each with its own one-tap
+  buttons, here or in Telegram.
+- **What the numbers say**: checks run at 07:00, 13:00 and 19:00 (company time): cash falling
+  under your buffer within 30 days, a pharmacy's margin or profit falling, an expense jumping
+  above its 8-week average, overdue debts piling up (owed to you or by you), stock growing while
+  sales fall, staff costs taking a bigger share. Each says why, with the numbers, and what to do:
+  acknowledge, dismiss or make it a task. Urgent ones also go to the owner bot, outside quiet
+  hours.
+- A manager sees only their pharmacies; nobody without access to finance sees money.
+
+### Maslahatchi: the business advisor
+- Every Monday at 08:00, a weekly review in the owner bot and on AI › Maslahatchi: what went
+  well, what went wrong and three suggestions, each tied to the week's numbers. Claude writes it
+  only from those numbers and every figure is checked; without AI it is written from templates.
+  A monthly review comes on the 1st.
+- **Maslahatchidan so‘rang**: a chat that knows the numbers you may see (finance, sales, stock,
+  people) and can try "what if" on the cash forecast, such as a new pharmacy's rent from January.
+- A new chibi in the agents' room, in a navy suit with a briefcase.
+
+### Mening pulim: the owner's money
+- **Safe to take**: business cash minus everything due in the next 30 days (bills, taxes,
+  distributors, loan instalments, payroll), minus your buffer (a month of fixed costs unless you
+  set it) and planned purchases, never below zero, with every reason listed. This month's draws,
+  six months of profit against draws, and a monthly amount the forecast can carry.
+- Take money out or put it in from the page; above the safe amount it asks you to confirm.
+- **Partners and dividends**: shares that always add up to 100%, a dividend round suggested from
+  the period's profit and split by shares, each part paid as an owner draw, and a profit-share
+  report per partner.
+- The buffer is one setting: the cockpit's cash warning uses the same amount.
+
+### Maqsadlar: business goals
+- Goals measured from the company's own numbers, never typed by hand: revenue, gross and net
+  profit, margin, pharmacies open, headcount, staff turnover, average check, late arrivals and
+  training completion. Each shows its progress, a forecast to the end of its period and whether
+  it is on track, at risk or off track; the owner bot says when a goal turns at risk.
+
 ## 0.7.0 — 2026-11-10
 
 ### Hiring (HR › Hiring)
