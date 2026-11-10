@@ -185,8 +185,9 @@ def seed(company, people, now) -> None:
         assignment = services.issue(
             asset, by=owner, membership=person, on=today - timedelta(days=40), condition=condition
         )
-        if person is not people["jasur"]:
-            services.acknowledge(assignment, by=person)
+        # Confirmed in the app; the one thing still waiting is Kamola's new coat (the
+        # lifecycle's equipment demo).
+        services.acknowledge(assignment, by=person)
 
     # Upkeep and its history.
     services.record_service(fridge, by=owner, on=today - timedelta(days=150), note="Freon")

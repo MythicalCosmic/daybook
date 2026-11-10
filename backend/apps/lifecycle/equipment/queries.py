@@ -12,7 +12,7 @@ from collections import defaultdict
 from datetime import date, timedelta
 from decimal import Decimal
 
-from django.db.models import Count, Prefetch, Q
+from django.db.models import Count, Exists, OuterRef, Prefetch, Q
 
 from apps.assets.models import Asset, AssetAssignment, AssetCategory, AssetFile
 from apps.console.perms import AnyOf, holds
@@ -263,11 +263,32 @@ def can(company, viewer: Membership) -> dict:
     }
 
 
+def personal_categories(company):
+    """The categories of things people are given: low-value ones (uniforms, keys), the
+    equipment suggestions (phones, tablets, scanners), and any category something was ever
+    given out of (the manager's laptop, the courier's scooter). Never the register's fridges,
+    shelves or renovation."""
+    from apps.lifecycle.equipment.services import SUGGESTION_CODES
+
+    handed = AssetAssignment.objects.filter(company=company, asset__category=OuterRef("pk"))
+    return (
+        AssetCategory.objects.for_company(company)
+        .exclude(kind=AssetCategory.Kind.INTANGIBLE)
+        .filter(
+            Q(kind=AssetCategory.Kind.LOW_VALUE)
+            | Q(system_code__in=list(SUGGESTION_CODES))
+            | Exists(handed)
+        )
+    )
+
+
 def stock_rows(company, viewer: Membership, *, status: str = "stock", branch: int | None = None):
-    """Assets in the viewer's branches: in stock (nobody holds them, not under repair), given
-    out, or all of them that are still the company's."""
+    """Things people are given (`personal_categories`) in the viewer's branches: in stock
+    (nobody holds them, not under repair), given out, or all that are still the company's."""
     branch_ids = scope.branch_ids(viewer)
-    rows = Asset.objects.for_company(company).filter(LIVE)
+    rows = Asset.objects.for_company(company).filter(
+        LIVE, category__in=personal_categories(company)
+    )
     if branch_ids is not None:
         rows = rows.filter(branch_id__in=branch_ids)
     if branch is not None:
@@ -338,7 +359,7 @@ def categories(company, viewer: Membership) -> dict:
     if branch_ids is not None:
         live &= Q(assets__branch_id__in=branch_ids)
     rows = (
-        AssetCategory.objects.for_company(company)
+        personal_categories(company)
         .filter(is_active=True)
         .annotate(
             stock=Count(

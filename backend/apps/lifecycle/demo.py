@@ -24,6 +24,7 @@ from apps.core import demo_plan as plan
 from apps.core.demo_time import moment
 from apps.core.exceptions import DomainError
 from apps.lifecycle import job_changes, notify, services, terminations
+from apps.lifecycle.equipment import demo as equipment_demo
 from apps.lifecycle.models import HandoverItem, Termination
 from apps.members.models import Membership, Position
 
@@ -74,6 +75,9 @@ def seed(company, people, now) -> None:
         except DomainError:  # payroll isn't in (or is off): the warning alone
             record = services.issue(alisher, by=head, **fridge)
         notify.record_issued(record.pk)
+
+    # Who holds which uniforms, keys and devices (before the leaving story lists Jasur's).
+    equipment_demo.seed(company, people, now)
 
 
 # Leaving and job changes ---------------------------------------------------------------------
