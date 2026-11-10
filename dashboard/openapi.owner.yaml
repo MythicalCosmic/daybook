@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: 911 Trello API
-  version: 0.6.1
+  version: 0.6.2
   description: API for the employee mini app and the owner dashboard.
 paths:
   /api/v1/owner/auth/dev-login/:
@@ -6338,6 +6338,105 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaginatedExporterList'
+          description: ''
+  /api/v1/owner/companies/{company_id}/faceid/bot/:
+    get:
+      operationId: companies_faceid_bot_retrieve
+      description: |-
+        The company's Face ID bot: PUT a BotFather token (checked with Telegram's getMe, kept
+        encrypted, never shown again), DELETE to remove it. Everything Face ID sends to Telegram
+        goes through it while it is connected.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FaceIdBot'
+          description: ''
+    put:
+      operationId: companies_faceid_bot_update
+      description: |-
+        The company's Face ID bot: PUT a BotFather token (checked with Telegram's getMe, kept
+        encrypted, never shown again), DELETE to remove it. Everything Face ID sends to Telegram
+        goes through it while it is connected.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FaceIdBotTokenRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FaceIdBotTokenRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FaceIdBotTokenRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FaceIdBot'
+          description: ''
+    delete:
+      operationId: companies_faceid_bot_destroy
+      description: |-
+        The company's Face ID bot: PUT a BotFather token (checked with Telegram's getMe, kept
+        encrypted, never shown again), DELETE to remove it. Everything Face ID sends to Telegram
+        goes through it while it is connected.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/faceid/bot/test/:
+    post:
+      operationId: companies_faceid_bot_test_create
+      description: A test message from the Face ID bot to you.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FaceIdBotSent'
           description: ''
   /api/v1/owner/companies/{company_id}/faceid/devices/:
     get:
@@ -38238,6 +38337,107 @@ components:
           type: boolean
       required:
       - approve
+    FaceIdBot:
+      type: object
+      description: 'The Face ID bot as the dashboard shows it: never the token.'
+      properties:
+        configured:
+          type: boolean
+        bot_username:
+          type: string
+          nullable: true
+        bot_name:
+          type: string
+          nullable: true
+        status:
+          $ref: '#/components/schemas/DavomatBotStatusEnum'
+        checked_at:
+          type: string
+          format: date-time
+          nullable: true
+        start_url:
+          type: string
+          nullable: true
+          description: t.me link with ?start.
+        started:
+          type: integer
+          description: Recipients who pressed Start.
+        pending:
+          type: array
+          items:
+            $ref: '#/components/schemas/FaceIdBotPerson'
+          description: Recipients who still have to.
+      required:
+      - bot_name
+      - bot_username
+      - checked_at
+      - configured
+      - pending
+      - start_url
+      - started
+      - status
+    FaceIdBotPerson:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        role:
+          allOf:
+          - $ref: '#/components/schemas/FaceIdBotPersonRoleEnum'
+          description: |-
+            manager: scans and unknown faces; employee: their own check-ins.
+
+            * `manager` - manager
+            * `employee` - employee
+        state:
+          allOf:
+          - $ref: '#/components/schemas/FaceIdBotPersonStateEnum'
+          description: |-
+            waiting: hasn't pressed Start yet; refused: Telegram said no (403).
+
+            * `waiting` - waiting
+            * `refused` - refused
+      required:
+      - id
+      - name
+      - role
+      - state
+    FaceIdBotPersonRoleEnum:
+      enum:
+      - manager
+      - employee
+      type: string
+      description: |-
+        * `manager` - manager
+        * `employee` - employee
+    FaceIdBotPersonStateEnum:
+      enum:
+      - waiting
+      - refused
+      type: string
+      description: |-
+        * `waiting` - waiting
+        * `refused` - refused
+    FaceIdBotSent:
+      type: object
+      properties:
+        sent:
+          type: boolean
+      required:
+      - sent
+    FaceIdBotTokenRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          writeOnly: true
+          minLength: 1
+          description: From BotFather.
+          maxLength: 200
+      required:
+      - token
     FaceIdDevice:
       type: object
       properties:

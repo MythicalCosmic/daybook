@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-10 09:02+0500\n"
+"POT-Creation-Date: 2026-11-10 11:49+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -1420,6 +1420,10 @@ msgstr "Создал AI-агента"
 #: backend/apps/ai/audit_actions.py
 msgid "Deleted an AI agent"
 msgstr "Удалил AI-агента"
+
+#: backend/apps/ai/audit_actions.py
+msgid "Deleted an Ask AI conversation"
+msgstr "Удалил разговор в Ask AI"
 
 #: backend/apps/ai/bot_messages.py
 msgid "Listening…"
@@ -6420,15 +6424,15 @@ msgstr "Активен"
 msgid "Yes"
 msgstr "Да"
 
-#: backend/apps/davomat/models.py
+#: backend/apps/davomat/models.py backend/apps/faceid/models.py
 msgid "Connected"
 msgstr "Подключён"
 
-#: backend/apps/davomat/models.py
+#: backend/apps/davomat/models.py backend/apps/faceid/models.py
 msgid "Telegram refuses the token"
 msgstr "Telegram не принимает токен"
 
-#: backend/apps/davomat/models.py
+#: backend/apps/davomat/models.py backend/apps/faceid/models.py
 msgid "Not connected"
 msgstr "Не подключён"
 
@@ -6513,6 +6517,7 @@ msgid "Employees"
 msgstr "Сотрудники"
 
 #: backend/apps/davomat/owner_api.py backend/apps/davomat/services.py
+#: backend/apps/faceid/bot.py
 msgid "Paste the token BotFather gave you."
 msgstr "Вставьте токен, который выдал BotFather."
 
@@ -6520,7 +6525,7 @@ msgstr "Вставьте токен, который выдал BotFather."
 msgid "Connect the Telegram bot first."
 msgstr "Сначала подключите Telegram-бота."
 
-#: backend/apps/davomat/owner_api.py
+#: backend/apps/davomat/owner_api.py backend/apps/faceid/bot.py
 msgid "Link your Telegram first, then try again."
 msgstr "Сначала привяжите свой Telegram, затем повторите."
 
@@ -6529,7 +6534,7 @@ msgstr "Сначала привяжите свой Telegram, затем повт
 msgid "Test message from %(product)s."
 msgstr "Тестовое сообщение от %(product)s."
 
-#: backend/apps/davomat/owner_api.py
+#: backend/apps/davomat/owner_api.py backend/apps/faceid/bot.py
 msgid "Telegram doesn't accept the bot's token any more. Paste a new one."
 msgstr "Telegram больше не принимает токен бота. Вставьте новый."
 
@@ -6538,6 +6543,7 @@ msgid "Open the bot in Telegram, press Start, then try again."
 msgstr "Откройте бота в Telegram, нажмите «Запустить» и повторите."
 
 #: backend/apps/davomat/owner_api.py backend/apps/davomat/services.py
+#: backend/apps/faceid/bot.py
 msgid "Telegram can't be reached right now. Try again in a minute."
 msgstr "Сейчас нет связи с Telegram. Повторите через минуту."
 
@@ -6663,7 +6669,7 @@ msgstr "Этот номер не принадлежит этому сотруд�
 msgid "Employee %(number)s"
 msgstr "Сотрудник %(number)s"
 
-#: backend/apps/davomat/services.py
+#: backend/apps/davomat/services.py backend/apps/faceid/bot.py
 msgid "Telegram doesn't accept this token. Copy it from BotFather again."
 msgstr "Telegram не принимает этот токен. Скопируйте его из BotFather ещё раз."
 
@@ -6835,6 +6841,41 @@ msgstr "Номер Face ID отложен"
 #: backend/apps/faceid/audit_actions.py
 msgid "Sent a test Face ID scan"
 msgstr "Отправлено тестовое сканирование Face ID"
+
+#: backend/apps/faceid/audit_actions.py
+msgid "Connected the Face ID bot"
+msgstr "Подключил бота Face ID"
+
+#: backend/apps/faceid/audit_actions.py
+msgid "Removed the Face ID bot"
+msgstr "Удалил бота Face ID"
+
+#: backend/apps/faceid/bot.py
+msgid "This bot already works for another company. Make a new one."
+msgstr "Этот бот уже работает в другой компании. Создайте нового."
+
+#: backend/apps/faceid/bot.py
+msgid "Connect the Face ID bot first."
+msgstr "Сначала подключите бота Face ID."
+
+#: backend/apps/faceid/bot.py
+#, python-format
+msgid "Test message from the Face ID bot of %(company)s."
+msgstr "Тестовое сообщение от бота Face ID компании %(company)s."
+
+#: backend/apps/faceid/bot.py
+#, python-format
+msgid "Open @%(bot)s in Telegram, press Start, then try again."
+msgstr "Откройте @%(bot)s в Telegram, нажмите «Запустить» и повторите."
+
+#: backend/apps/faceid/bot.py
+#, python-format
+msgid ""
+"Hello. This is the Face ID bot of %(company)s. Face ID notices (who came, "
+"unknown faces, your own check-ins) will come here."
+msgstr ""
+"Здравствуйте. Это бот Face ID компании %(company)s. Уведомления Face ID (кто "
+"пришёл, незнакомые лица, ваши отметки) будут приходить сюда."
 
 #: backend/apps/faceid/bot_messages.py
 #, python-format

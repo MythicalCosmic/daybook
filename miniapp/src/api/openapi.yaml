@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: 911 Trello API
-  version: 0.6.1
+  version: 0.6.2
   description: API for the employee mini app and the owner dashboard.
 paths:
   /api/v1/auth/telegram/:

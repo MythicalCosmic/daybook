@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.6.2 — 2026-11-10
+
+### Face ID: its own Telegram bot
+- **Face ID › Settings › Telegram bot**: paste a bot's token (from @BotFather) and everything Face
+  ID sends goes through it: scans with their photo, unknown faces, numbers not linked yet, each
+  person's own check-in message and the arrival posts in groups (where the bot was added; elsewhere
+  the employee bot still posts them). The token is checked with Telegram, kept encrypted and never
+  shown again; a test message, a new token or removing the bot are one click.
+- Telegram lets a bot write only to people who pressed **Start** in it: the card shows who still
+  has to, with a link and a QR code to share. The bot welcomes them in their language.
+- Without a Face ID bot nothing changes: the usual bots send these messages.
+
+### Ask AI: delete a conversation
+- A bin on each conversation in the list (and in the phone's history), and **Delete** at the top of
+  an open conversation, after a confirm. The conversation and its messages are gone for good.
+
+### Status page and alerts
+- `deploy/status`: a monitor on a second server checks Daybook and Davomat every minute (health,
+  the dashboard, the terminals' address, certificates), shows a public status page with 90 days
+  of uptime and incidents, and tells a Telegram chat when something goes down and when it's back.
+
 ## 0.6.1 — 2026-11-10
 
 ### Face ID: today's scans first when a terminal is connected
