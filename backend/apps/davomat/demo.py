@@ -33,7 +33,7 @@ from apps.core import demo_time
 from apps.davomat import services
 from apps.faceid import hikvision, hikvision_sample
 from apps.faceid import services as faceid
-from apps.faceid.models import FaceDevice
+from apps.faceid.models import FaceDevice, FaceIdSettings
 from apps.inbox.models import Notification
 from apps.members import departments
 from apps.members import services as members
@@ -180,6 +180,10 @@ def build(
         attendance.assign_schedule(company, schedule, ids, by=owner, effective_from=start)
         attendance.generate_shifts(company, start=start, days=days_back + 1, member_ids=ids)
     devices = _terminals(company, branches, now)
+    with demo_time.moment(now - timedelta(days=30)):
+        # Its people scan when they come and when they leave: the departures from 18:00 on are
+        # part of the demo (the default is "arrival": people scan only when they come).
+        faceid.update_settings(company, by=owner, scan_mode=FaceIdSettings.ScanMode.BOTH)
     built = Built(company, owner, manager, people, devices, scanning)
     # Oydin is on leave from today (a family wedding); her shifts say so.
     with demo_time.moment(now - timedelta(days=2)):

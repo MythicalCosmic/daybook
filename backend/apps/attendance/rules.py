@@ -15,6 +15,11 @@ BREAK_AFTER_MINUTES = 4 * 60
 DOUBLE_TAP_SECONDS = 120
 # How long an unscheduled check-in may stay open before it is closed for the person.
 UNSCHEDULED_AUTO_CLOSE_HOURS = 16
+# A work day without a shift starts at this local time: a terminal's scan from then on, on a
+# later day than an open unscheduled check-in and at least NEW_DAY_AFTER_HOURS after it, is the
+# new day's arrival (yesterday's check-in is closed first), never a departure.
+DAY_STARTS = time(5, 0)
+NEW_DAY_AFTER_HOURS = 8
 # "Still working?" is asked this long after the shift's end.
 STILL_WORKING_AFTER_MINUTES = 60
 # How far apart, at most, the coordinates a check-in may come with can be from the branch

@@ -12,6 +12,7 @@ from apps.companies.models import Company
 from apps.core import demo_time
 from apps.davomat import demo, queries
 from apps.davomat.models import Employee
+from apps.faceid import conf as faceid_conf
 from apps.faceid.models import FaceDevice, FaceEvent
 from apps.inbox.models import Notification
 from apps.members.models import Membership
@@ -39,6 +40,9 @@ def test_the_demo_organization(built):
     ]
     assert FaceDevice.objects.filter(company=company).count() == 2
     assert demo.is_demo(company)
+    # Its people scan when they come and when they leave.
+    assert faceid_conf.get_settings(company).scan_mode == "both"
+    assert FaceEvent.objects.filter(company=company, action="checked_out").exists()
     employees = queries.employees(company, branch_ids=None)
     # Fifteen, the newcomer the terminal added, the director and the branch manager.
     assert employees.count() == 18

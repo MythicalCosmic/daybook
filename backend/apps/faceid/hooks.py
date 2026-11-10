@@ -6,11 +6,12 @@ snapshots, `attendance.manage` runs the terminals, numbers and settings.
 
 from django.utils.translation import gettext_lazy as _
 
+from apps.attendance import services as attendance
 from apps.audit import registry as audit_registry
 from apps.audit.redaction import SECRET
 from apps.console import registry
 from apps.core.files import register_file_check
-from apps.faceid import providers
+from apps.faceid import conf, providers
 from apps.faceid.audit_actions import FaceIdAction
 from apps.faceid.models import FaceDevice
 from apps.inbox.registry import register_kind
@@ -20,6 +21,9 @@ VIEW, MANAGE = Perm.ATTENDANCE_VIEW, Perm.ATTENDANCE_MANAGE
 FEATURE = "face_id"
 
 audit_registry.register(FaceIdAction)
+
+# Where people scan only when they come, the terminals' check-ins close quietly.
+attendance.register_arrivals_only(conf.arrivals_only)
 audit_registry.register_sensitive(FaceDevice, {"token": SECRET})
 
 # The live feed (any scan), the numbers nobody is linked to (the nav badge), the settings.

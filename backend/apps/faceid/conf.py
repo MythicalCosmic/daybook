@@ -22,3 +22,11 @@ def counts_attendance(company, settings: FaceIdSettings | None = None) -> bool:
     Face ID's attendance switch is on."""
     settings = settings or get_settings(company)
     return settings.attendance and company.has_feature(Feature.ATTENDANCE)
+
+
+def arrivals_only(company, settings: FaceIdSettings | None = None) -> bool:
+    """Whether people scan only when they come (`scan_mode` "arrival", the default): a one-door
+    terminal's later scans are only seen, and the terminal's check-ins close quietly (attendance
+    asks through `register_arrivals_only`, in hooks.py)."""
+    settings = settings or get_settings(company)
+    return settings.scan_mode == FaceIdSettings.ScanMode.ARRIVAL
