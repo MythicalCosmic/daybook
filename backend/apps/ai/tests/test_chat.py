@@ -375,6 +375,61 @@ def test_chat_needs_ai_use_and_is_private(owner_api, owner, company, member, set
     assert seen.status_code == 404
 
 
+def test_an_owner_deletes_their_conversation_with_its_messages(
+    owner_api, owner, company, settings, django_capture_on_commit_callbacks
+):
+    from apps.ai.audit_actions import AIAction
+    from apps.ai.models import AIConversation
+    from apps.audit.models import AuditLog
+
+    settings.AI_FAKE = True
+    client = owner_api(owner)
+    conversation, _turn = ask(client, company, "Salom", django_capture_on_commit_callbacks)
+    assert AIMessage.objects.filter(conversation_id=conversation["id"]).exists()
+
+    response = client.delete(url(company, f"conversations/{conversation['id']}/"))
+
+    assert response.status_code == 204
+    assert not AIConversation.objects.filter(pk=conversation["id"]).exists()
+    assert not AIMessage.objects.filter(conversation_id=conversation["id"]).exists()
+    assert not AITurn.objects.filter(conversation_id=conversation["id"]).exists()
+    assert client.get(url(company, "conversations/")).json() == []
+    row = AuditLog.objects.get(action=AIAction.CONVERSATION_DELETED)
+    assert row.company_id == company.pk
+    assert row.actor == owner.user
+
+
+def test_nobody_deletes_another_persons_conversation(owner_api, owner, company, member, settings):
+    from apps.ai.models import AIConversation
+
+    settings.AI_FAKE = True
+    conversation = owner_api(owner).post(url(company, "conversations/")).json()
+    other_owner = member.registered(company, "Owner")
+
+    response = owner_api(other_owner).delete(url(company, f"conversations/{conversation['id']}/"))
+
+    assert response.status_code == 404
+    assert AIConversation.objects.filter(pk=conversation["id"]).exists()
+
+
+def test_a_conversation_is_not_found_through_another_company(
+    owner_api, owner, company, member, ai_on, settings
+):
+    from apps.ai.models import AIConversation
+    from apps.companies.tests.factories import CompanyFactory
+
+    settings.AI_FAKE = True
+    conversation = owner_api(owner).post(url(company, "conversations/")).json()
+    other = CompanyFactory()
+    ai_on(other)
+    other_owner = member.registered(other, "Owner")
+
+    response = owner_api(other_owner).delete(url(other, f"conversations/{conversation['id']}/"))
+
+    assert response.status_code == 404
+    assert AIConversation.objects.filter(pk=conversation["id"]).exists()
+
+
 def test_without_claude_chat_is_off(owner_api, owner, company):
     client = owner_api(owner)
 

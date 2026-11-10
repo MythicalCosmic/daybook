@@ -851,6 +851,16 @@ class ConversationListView(ChatAccess):
         return Response(AIConversationSerializer(_conversation_row(conversation)).data, status=201)
 
 
+class ConversationDetailView(ChatAccess):
+    @extend_schema(request=None, responses={204: None})
+    def delete(self, request, company_id, conversation_id):
+        try:
+            chat.delete_conversation(self.conversation(conversation_id), by=self.membership)
+        except chat.TurnRefused as exc:
+            return _refused(exc)
+        return Response(status=204)
+
+
 class ConversationMessagesView(ChatAccess):
     @extend_schema(responses=AIChatMessageSerializer(many=True))
     def get(self, request, company_id, conversation_id):

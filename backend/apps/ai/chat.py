@@ -105,6 +105,25 @@ def start_conversation(by: Membership, *, agent: str = "") -> AIConversation:
 
 
 @transaction.atomic
+def delete_conversation(conversation: AIConversation, *, by: Membership) -> None:
+    """Delete `by`'s own conversation with its messages and turns (a turn still being
+    answered finds itself gone and stops)."""
+    from apps.ai.audit_actions import AIAction
+    from apps.audit import services as audit
+
+    if conversation.membership_id != by.pk:
+        raise TurnRefused("not_found", _("This conversation isn't yours."), 404)
+    audit.record(
+        AIAction.CONVERSATION_DELETED,
+        company_id=conversation.company_id,
+        actor=by.user,
+        target=conversation,
+        turns=conversation.turn_count,
+    )
+    conversation.delete()
+
+
+@transaction.atomic
 def start_turn(
     conversation: AIConversation, *, by: Membership, text: str, page: str = ""
 ) -> AITurn:
