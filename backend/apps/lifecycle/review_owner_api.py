@@ -13,6 +13,7 @@
 
     GET    PATCH lifecycle/reviews/{id}/              the review (its reviewer and owners)
     POST   lifecycle/reviews/{id}/publish/ · …/reviewer/ {reviewer_id}
+    POST   lifecycle/reviews/{id}/draft-summary/      Claude's suggested summary (AI on)
     DELETE lifecycle/reviews/{id}/                    take them out of the round
     PATCH  lifecycle/review-goals/{id}/ {progress, status, note}
     GET    lifecycle/people/{member_id}/reviews/      Person 360's career line
@@ -24,6 +25,7 @@ the HR module is off. The rules are apps.lifecycle.reviews'.
 from datetime import date
 
 from django.db.models import Q
+from django.utils import translation
 from django.utils.translation import gettext as _
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import mixins, status
@@ -33,7 +35,7 @@ from rest_framework.response import Response
 
 from apps.console.base import OwnerAPIView, OwnerViewSet
 from apps.hr import queries as hr_queries
-from apps.lifecycle import review_queries, reviews
+from apps.lifecycle import review_ai, review_queries, reviews
 from apps.lifecycle import review_serializers as rs
 from apps.lifecycle.models import Review, ReviewCycle, ReviewGoal
 from apps.lifecycle.owner_api import ModuleOn
@@ -337,6 +339,15 @@ class ReviewViewSet(
     def publish(self, request, company_id, pk):
         review = reviews.publish(self.readable(), by=self.membership)
         return Response(self.shown(review))
+
+    @extend_schema(request=None, responses=rs.SummaryDraftSerializer)
+    @action(detail=True, methods=["post"], url_path="draft-summary")
+    def draft_summary(self, request, company_id, pk):
+        """Claude's suggested summary for the reviewer (nothing is saved)."""
+        summary, engine = review_ai.draft(
+            self.readable(), by=self.membership, language=translation.get_language() or ""
+        )
+        return Response(rs.SummaryDraftSerializer({"summary": summary, "engine": engine}).data)
 
     @extend_schema(request=rs.ReassignSerializer, responses=rs.ReviewRowSerializer)
     @action(detail=True, methods=["post"])

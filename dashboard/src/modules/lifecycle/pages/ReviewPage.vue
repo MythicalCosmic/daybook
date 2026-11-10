@@ -6,9 +6,10 @@
  * what follows (none, a raise, a bonus, a promotion, an improvement plan). The draft saves itself
  * as they go; Publish sends it to the person and turns the outcome into proposals that wait for
  * the usual approval. Owners read it; once published it shows where the outcome stands and the
- * plan's goals.
+ * plan's goals. With the AI module on, Claude may suggest the summary from the answers and the
+ * numbers (an editable draft, never a rating or an outcome).
  */
-import { CircleCheck, Eye, EyeOff, Lock, MessageSquareQuote, Send, Sparkles, UserRound } from "@lucide/vue";
+import { CircleCheck, Eye, EyeOff, Lock, MessageSquareQuote, Send, Sparkles, UserRound, WandSparkles } from "@lucide/vue";
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
@@ -32,7 +33,7 @@ import OutcomeEditor from "../components/reviews/OutcomeEditor.vue";
 import OutcomeState from "../components/reviews/OutcomeState.vue";
 import RatingPills from "../components/reviews/RatingPills.vue";
 import { reviewsApi, useReview, useReviewMutation, useSaveReview } from "../reviews/api";
-import { average, managerForm, managerPayload, OUTCOME_TONES, publishProblems, ratingTone, suggestedRating, type ManagerForm } from "../reviews/lib";
+import { answeredCount, average, managerForm, managerPayload, OUTCOME_TONES, publishProblems, ratingTone, suggestedRating, type ManagerForm } from "../reviews/lib";
 import type { Review } from "../reviews/types";
 
 const { t } = useI18n();
@@ -128,6 +129,34 @@ async function runPublish(): Promise<void> {
   await flush();
   await publish.mutateAsync(review.value.id);
   toast.success(t("lifecycle.reviews.published", { name: review.value.member.name }));
+}
+
+// "Draft with AI": Claude's suggestion goes into the summary box as the reviewer's own draft (it
+// saves like their words and changes freely); it follows the answers as saved, so they go first.
+const drafting = useReviewMutation((cid, id: number) => reviewsApi.draftSummary(cid, id), { refresh: false });
+const drafted = ref(false);
+const mayDraft = computed(() => writable.value && !!review.value?.can.draft_summary);
+const hasAnswers = computed(() => !!form.value && answeredCount(form.value.answers, questions.value) > 0);
+async function runDraft(): Promise<void> {
+  if (!review.value || !form.value || !hasAnswers.value) return;
+  if (form.value.summary.trim()) {
+    const answer = await confirm({
+      title: t("lifecycle.reviews.draftReplaceTitle"),
+      message: t("lifecycle.reviews.draftReplaceBody"),
+      confirmLabel: t("lifecycle.reviews.draftReplace"),
+      icon: WandSparkles,
+    });
+    if (!answer) return;
+  }
+  try {
+    await flush();
+    const result = await drafting.mutateAsync(review.value.id);
+    if (!form.value) return;
+    form.value.summary = result.summary;
+    drafted.value = true;
+  } catch {
+    // The request's own toast says what went wrong; the summary stays as it was.
+  }
 }
 
 const selfHidden = computed(() => review.value && !review.value.self_part.visible);
@@ -268,9 +297,16 @@ const stageNote = computed(() => {
             <RatingPills :model-value="form.rating" :readonly="!writable" :label="t('lifecycle.reviews.overall')" @update:model-value="pickRating" />
             <p v-if="writable && suggestion" class="mt-1 text-xs text-subtle">{{ t("lifecycle.reviews.suggestion", { value: fmt.number(myAverage ?? 0, 1) }) }}</p>
             <div class="mt-4">
-              <label class="mb-1.5 block text-sm font-medium text-fg" for="review-summary">{{ t("lifecycle.reviews.summary") }}</label>
+              <div class="mb-1.5 flex min-h-8 items-center justify-between gap-2">
+                <label class="block text-sm font-medium text-fg" for="review-summary">{{ t("lifecycle.reviews.summary") }}</label>
+                <UiButton v-if="mayDraft" size="sm" variant="ghost" :icon="WandSparkles" :loading="drafting.isPending.value" :disabled="!hasAnswers" data-draft-summary @click="runDraft">{{ t("lifecycle.reviews.draftSummary") }}</UiButton>
+              </div>
               <TextArea v-if="writable" id="review-summary" v-model="form.summary" :rows="3" autosize :max-rows="10" :maxlength="2000" :placeholder="t('lifecycle.reviews.summaryPlaceholder')" />
               <p v-else class="whitespace-pre-line text-sm text-fg">{{ form.summary || "—" }}</p>
+              <p v-if="mayDraft && drafted" class="mt-1.5 flex items-start gap-1.5 text-xs text-muted" data-drafted>
+                <Sparkles :size="12" class="mt-0.5 shrink-0 text-primary" aria-hidden="true" />{{ t("lifecycle.reviews.draftedHint") }}
+              </p>
+              <p v-else-if="mayDraft && !hasAnswers" class="mt-1.5 text-xs text-subtle">{{ t("lifecycle.reviews.draftNeedsAnswers") }}</p>
             </div>
           </section>
 

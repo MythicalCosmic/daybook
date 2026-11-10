@@ -11,12 +11,24 @@ from datetime import date
 from decimal import Decimal
 
 import pytest
+from django.utils import translation
 
+from apps.ai import availability, conf
+from apps.ai.fakes import FakeAnthropic
+from apps.ai.models import AIUsage
+from apps.companies.models import Feature
 from apps.hr.tests.conftest import local
 from apps.inbox.models import Notification
-from apps.lifecycle import job_changes, review_kpis, review_notify, review_queries, reviews
+from apps.lifecycle import (
+    job_changes,
+    review_ai,
+    review_kpis,
+    review_notify,
+    review_queries,
+    reviews,
+)
 from apps.lifecycle.models import DisciplinaryRecord, JobChange, Review, ReviewCycle, ReviewGoal
-from apps.members.models import AccessRole, Department, Position
+from apps.members.models import AccessRole, Department, Membership, Position
 from apps.members.permissions import Perm
 
 pytestmark = pytest.mark.django_db
@@ -742,3 +754,176 @@ def test_the_calendar_the_badge_and_the_export(shop, team, opened, run):
     assert rows[0]["rating"] == 4 and rows[0]["bonus"] is None
     # The owner can read every review; the accountant none.
     assert list(review_queries.export_rows(team.accountant, {})) == []
+
+
+# "Draft my summary" ----------------------------------------------------------------------------
+# Claude Haiku 5.5 suggests the summary from the questions, both sides' answers and the numbers
+# only (no name, no pay), through the AI client and its budget; nothing is saved; only while the
+# AI module is on, to the reviewer who may use AI; a refusal, the day's cap, AI_FAKE's draft.
+
+SAID = "Kassa doim to‘g‘ri chiqdi"
+NOTED = "Muddati o‘tayotgan dorilarni o‘z vaqtida qaytardi"
+
+
+@pytest.fixture
+def fake_claude(monkeypatch, settings):
+    settings.ANTHROPIC_API_KEY = "sk-test"
+    settings.AI_FAKE = False
+    fake = FakeAnthropic()
+    monkeypatch.setattr("apps.ai.client.get_client", lambda: fake)
+    availability.reset_breaker()
+    return fake
+
+
+def ai_on(company, manager: Membership | None = None) -> None:
+    """The AI module on with an owner's consent; the manager's role may use AI."""
+    company.features = sorted({*company.features, Feature.AI})
+    company.save(update_fields=["features"])
+    row = conf.get_settings(company)
+    row.enabled = True
+    row.save()
+    if manager is not None:
+        role = manager.role
+        role.permissions = sorted({*role.permissions, Perm.AI_USE})
+        role.save(update_fields=["permissions"])
+
+
+def written(shop, team, opened, run) -> Review:
+    """Ali sent his answers; the manager rated every question and left a comment on one."""
+    first = next(q["id"] for q in opened.questions if q["kind"] == "rating")
+    own = all_ratings(opened, 4)
+    own[first]["text"] = SAID
+    reviews.send_self(review_of(opened, team.ali), by=team.ali, answers=own)
+    to_reviewers(shop, opened, run)
+    answers = all_ratings(opened, 5)
+    answers[first]["text"] = NOTED
+    reviews.save_manager(review_of(opened, team.ali), by=team.manager, answers=answers)
+    return review_of(opened, team.ali)
+
+
+def draft_url(company, review) -> str:
+    return f"{review_url(company, review)}draft-summary/"
+
+
+def test_the_reviewer_gets_a_suggestion_from_the_answers_and_numbers_only(
+    shop, paid, opened, owner_api, run, fake_claude
+):
+    team = paid
+    ai_on(shop, team.manager)
+    review = written(shop, team, opened, run)
+    client = owner_api(team.manager)
+    assert client.get(review_url(shop, review)).json()["can"]["draft_summary"] is True
+
+    said = "Siz kassani  doim to‘g‘ri yuritdingiz.\nKeyingi chorakda o‘qishga e’tibor bering."
+    fake_claude.script(FakeAnthropic.json({"summary": said}, model="claude-haiku-5-5"))
+    response = client.post(draft_url(shop, review), format="json")
+    assert response.status_code == 200, response.content
+    # One paragraph, spaces tidied.
+    assert response.json() == {"summary": " ".join(said.split()), "engine": "claude"}
+
+    [request] = fake_claude.requests
+    assert request["model"] == "claude-haiku-5-5"
+    assert request["output_config"]["effort"] == "low"
+    assert request["output_config"]["format"]["type"] == "json_schema"
+    # Thinking stays adaptive (left out), no sampling settings, no fallback on Haiku.
+    for absent in ("temperature", "top_p", "top_k", "thinking", "fallbacks"):
+        assert absent not in request
+    text = request["messages"][0]["content"][0]["text"]
+    assert SAID in text and NOTED in text
+    assert 'rating="4"' in text and 'rating="5"' in text
+    assert "Shared tasks" in text or "Disciplinary records" in text
+    # Never the person's name or their pay.
+    assert str(team.ali).split()[0] not in text
+    assert "5200000" not in text and "5 200 000" not in text
+    # Nothing is saved until the reviewer keeps it; the call is counted on the budget.
+    assert Review.objects.get(pk=review.pk).summary == ""
+    usage = AIUsage.objects.get(company=shop)
+    assert usage.feature == review_ai.FEATURE and usage.membership_id == team.manager.pk
+
+
+def test_the_draft_is_in_the_readers_language_and_waits_for_the_persons_answers(
+    shop, team, opened, run
+):
+    to_reviewers(shop, opened, run)
+    review = review_of(opened, team.vali)
+    text = review_ai.prompt(review, language="ru", viewer=team.manager)
+    assert "<language>Russian</language>" in text
+    # Vali never sent his answers: his side reads "no answer".
+    assert text.count("<employee>no answer</employee>") == len(opened.questions)
+
+
+def test_no_draft_without_ai_for_someone_else_or_before_the_reviewers_part(
+    shop, team, opened, owner_api, run, fake_claude
+):
+    # The self stage: nothing to write yet.
+    ai_on(shop, team.manager)
+    review = review_of(opened, team.ali)
+    client = owner_api(team.manager)
+    assert client.get(review_url(shop, review)).json()["can"]["draft_summary"] is False
+    assert client.post(draft_url(shop, review)).status_code == 403
+
+    review = written(shop, team, opened, run)
+    # The owner reads Ali's review but doesn't write it.
+    owner = owner_api(team.owner)
+    assert owner.get(review_url(shop, review)).json()["can"]["draft_summary"] is False
+    assert owner.post(draft_url(shop, review)).status_code == 403
+
+    # The AI module off: no button, and asking anyway says so.
+    row = conf.get_settings(shop)
+    row.enabled = False
+    row.save()
+    assert client.get(review_url(shop, review)).json()["can"]["draft_summary"] is False
+    response = client.post(draft_url(shop, review))
+    assert response.status_code == 400
+    assert "isn't available" in response.json()["detail"]
+
+    # On again, but the manager's role may not use AI.
+    row.enabled = True
+    row.save()
+    role = team.manager.role
+    role.permissions = [perm for perm in role.permissions if perm != Perm.AI_USE]
+    role.save(update_fields=["permissions"])
+    assert client.get(review_url(shop, review)).json()["can"]["draft_summary"] is False
+    assert client.post(draft_url(shop, review)).status_code == 403
+    assert fake_claude.requests == []
+
+
+def test_a_refusal_and_the_days_cap_leave_the_summary_to_the_reviewer(
+    shop, team, opened, owner_api, run, fake_claude, monkeypatch
+):
+    ai_on(shop, team.manager)
+    review = written(shop, team, opened, run)
+    client = owner_api(team.manager)
+    fake_claude.script(FakeAnthropic.refusal(model="claude-haiku-5-5"))
+    response = client.post(draft_url(shop, review))
+    assert response.status_code == 400
+    assert "couldn't write a draft" in response.json()["detail"]
+
+    monkeypatch.setattr(review_ai, "DRAFTS_A_DAY", 1)
+    response = client.post(draft_url(shop, review))
+    assert response.status_code == 400
+    assert "enough drafts" in response.json()["detail"]
+    assert len(fake_claude.requests) == 1
+
+
+def test_with_ai_fake_a_canned_draft_follows_the_reviewers_ratings(
+    shop, team, opened, owner_api, run, settings
+):
+    settings.ANTHROPIC_API_KEY = ""
+    settings.AI_FAKE = True
+    ai_on(shop, team.manager)
+    review = written(shop, team, opened, run)
+    rated = [q["id"] for q in opened.questions if q["kind"] == "rating"]
+    answers = dict(review.manager_answers)
+    answers[rated[-1]] = {"rating": 3, "text": ""}
+    reviews.save_manager(review, by=team.manager, answers=answers)
+    response = owner_api(team.manager).post(draft_url(shop, review))
+    assert response.status_code == 200, response.content
+    data = response.json()
+    assert data["engine"] == "fake"
+    # The best rated question's subject first, the weakest next, in the reader's language.
+    with translation.override(response["Content-Language"]):
+        topics = {q["id"]: q["text"].split(":")[0].lower() for q in reviews.shown_questions(opened)}
+    summary = data["summary"].lower()
+    assert summary.index(topics[rated[0]]) < summary.index(topics[rated[-1]])
+    assert not AIUsage.objects.filter(company=shop).exists()

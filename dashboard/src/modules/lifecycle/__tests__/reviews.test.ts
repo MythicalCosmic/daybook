@@ -84,7 +84,7 @@ function review(overrides: Partial<Review> = {}): Review {
     published_by: null,
     acknowledged_at: null,
     earlier: [],
-    can: { write: true, pay: true, reassign: true, remove: true, goals: false },
+    can: { write: true, pay: true, reassign: true, remove: true, goals: false, draft_summary: false },
     ...overrides,
   };
 }
@@ -263,12 +263,42 @@ describe("the reviewer's page", () => {
   });
 
   it("keeps the person's answers hidden before the reviewers' part, and reads a review it doesn't write", async () => {
-    const hidden = review({ round: { ...review().round, status: "self" }, self_part: { visible: false, state: "sent", sent_at: null, answers: null, average: null }, kpis: null, can: { write: false, pay: true, reassign: false, remove: false, goals: false } });
+    const hidden = review({ round: { ...review().round, status: "self" }, self_part: { visible: false, state: "sent", sent_at: null, answers: null, average: null }, kpis: null, can: { write: false, pay: true, reassign: false, remove: false, goals: false, draft_summary: false } });
     stub({ "GET lifecycle/reviews/41/": hidden });
     const wrapper = await open();
     expect(wrapper.get('[data-question="q1"] [data-their-answer]').text()).toContain(en["lifecycle.reviews.hiddenShort"]);
     expect(wrapper.text()).toContain(en["lifecycle.reviews.kpis.later"]);
     expect(wrapper.findAll("button").some((button) => button.text() === en["lifecycle.reviews.publish"])).toBe(false);
+  });
+
+  it("drafts the summary with AI once something is rated, asking before it replaces the reviewer's words", async () => {
+    const rated = review({ manager_answers: { q1: { rating: 5, text: "" } }, summary: "Mening fikrim", manager_state: "draft", can: { ...review().can, draft_summary: true } });
+    const draft = "Siz kassani doim to‘g‘ri yuritdingiz. Keyingi chorakda o‘qishga e’tibor bering.";
+    const calls = stub({ "GET lifecycle/reviews/41/": rated, "PATCH lifecycle/reviews/41/": rated, "POST lifecycle/reviews/41/draft-summary/": { summary: draft, engine: "claude" } });
+    const wrapper = await open();
+    const button = wrapper.get("[data-draft-summary]");
+    expect(button.text()).toBe(en["lifecycle.reviews.draftSummary"]);
+
+    await button.trigger("click");
+    await flushPromises();
+    const [request] = confirmQueue.value;
+    expect(request!.request.title).toBe(en["lifecycle.reviews.draftReplaceTitle"]);
+    settleConfirm(request!.id, { reason: "" }, 0);
+    await flushPromises();
+    await flushPromises();
+    expect(calls.some((call) => call.method === "POST" && call.url === "lifecycle/reviews/41/draft-summary/")).toBe(true);
+    expect((wrapper.get("#review-summary").element as HTMLTextAreaElement).value).toBe(draft);
+    expect(wrapper.get("[data-drafted]").text()).toBe(en["lifecycle.reviews.draftedHint"]);
+    // It saves as the reviewer's own draft: nothing more.
+    await wait(800);
+    await flushPromises();
+    expect(calls.filter((call) => call.method === "PATCH").at(-1)?.body).toMatchObject({ summary: draft });
+  });
+
+  it("offers no AI draft while the company's AI is off", async () => {
+    stub({ "GET lifecycle/reviews/41/": review() });
+    const wrapper = await open();
+    expect(wrapper.find("[data-draft-summary]").exists()).toBe(false);
   });
 });
 

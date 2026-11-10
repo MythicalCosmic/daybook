@@ -8,7 +8,7 @@ from rest_framework import serializers
 
 from apps.core.money import MoneySerializerField
 from apps.hr.serializers import BranchRefSerializer, PersonRefSerializer
-from apps.lifecycle import review_queries, reviews
+from apps.lifecycle import review_ai, review_queries, reviews
 from apps.lifecycle.models import JobChange, Review, ReviewCycle, ReviewGoal
 from apps.members.permissions import Perm
 from apps.members.queries import branch_ref, person_ref
@@ -558,6 +558,9 @@ class ReviewCanSerializer(serializers.Serializer):
     reassign = serializers.BooleanField()
     remove = serializers.BooleanField()
     goals = serializers.BooleanField(help_text="May mark the plan's goals.")
+    draft_summary = serializers.BooleanField(
+        help_text="May ask Claude for a suggested summary (AI on, ai.use)."
+    )
 
     class Meta:
         ref_name = "LifecycleReviewCan"
@@ -800,12 +803,14 @@ class ReviewSerializer(serializers.ModelSerializer):
         viewer = self._viewer()
         run = reviews.may_run(viewer, review.cycle)
         unpublished = review.published_at is None and review.cycle.status != "closed"
+        write = reviews.may_write(viewer, review)
         return {
-            "write": reviews.may_write(viewer, review),
+            "write": write,
             "pay": reviews.may_propose_pay(viewer),
             "reassign": run and unpublished,
             "remove": run and unpublished,
             "goals": review.published_at is not None and reviews.may_read(viewer, review),
+            "draft_summary": write and review_ai.available(review, viewer),
         }
 
 
@@ -833,6 +838,14 @@ class ReassignSerializer(serializers.Serializer):
 
     class Meta:
         ref_name = "LifecycleReviewReassign"
+
+
+class SummaryDraftSerializer(serializers.Serializer):
+    summary = serializers.CharField(help_text="A suggestion for the reviewer to read and change.")
+    engine = serializers.CharField(help_text="claude, or fake (AI_FAKE's canned draft).")
+
+    class Meta:
+        ref_name = "LifecycleReviewSummaryDraft"
 
 
 # Results -------------------------------------------------------------------------------------

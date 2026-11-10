@@ -12,7 +12,7 @@ import { qk } from "@/api/keys";
 import { useCompanyId } from "@/stores/company";
 
 import { MODULE } from "../api";
-import type { CareerReview, Goal, ManagerInput, Preview, Question, Results, Review, ReviewRow, Round, RoundInput, RoundStatus, RoundUpdate, RowParams } from "./types";
+import type { CareerReview, Goal, ManagerInput, Preview, Question, Results, Review, ReviewRow, Round, RoundInput, RoundStatus, RoundUpdate, RowParams, SummaryDraft } from "./types";
 
 const path = (cid: number, rest: string) => ownerPath(cid, `lifecycle/${rest}`);
 
@@ -35,6 +35,7 @@ export const reviewsApi = {
   review: (cid: number, id: number, signal?: AbortSignal) => http.get<Review>(path(cid, `reviews/${id}/`), undefined, { signal }),
   saveReview: (cid: number, id: number, input: ManagerInput) => http.patch<Review>(path(cid, `reviews/${id}/`), input),
   publish: (cid: number, id: number) => http.post<Review>(path(cid, `reviews/${id}/publish/`)),
+  draftSummary: (cid: number, id: number) => http.post<SummaryDraft>(path(cid, `reviews/${id}/draft-summary/`)),
   reassign: (cid: number, id: number, reviewerId: number) => http.post<ReviewRow>(path(cid, `reviews/${id}/reviewer/`), { reviewer_id: reviewerId }),
   remove: (cid: number, id: number) => http.delete<void>(path(cid, `reviews/${id}/`)),
   updateGoal: (cid: number, id: number, input: { progress?: string | null; status?: Goal["status"]; note?: string }) => http.patch<Goal>(path(cid, `review-goals/${id}/`), input),

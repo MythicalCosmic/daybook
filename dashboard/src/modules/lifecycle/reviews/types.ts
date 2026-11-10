@@ -222,7 +222,15 @@ export interface Review {
   published_by: PersonRef | null;
   acknowledged_at: string | null;
   earlier: { id: number; round: string; period_end: string; rating: number | null; outcome: Outcome; published_at: string }[];
-  can: { write: boolean; pay: boolean; reassign: boolean; remove: boolean; goals: boolean };
+  /** draft_summary: Claude may suggest the summary (the AI module on, ai.use). */
+  can: { write: boolean; pay: boolean; reassign: boolean; remove: boolean; goals: boolean; draft_summary: boolean };
+}
+
+/** Claude's suggested summary: nothing is saved until the reviewer keeps it. */
+export interface SummaryDraft {
+  summary: string;
+  /** "claude", or "fake" (AI_FAKE's canned draft in development). */
+  engine: string;
 }
 
 export interface ManagerInput {
