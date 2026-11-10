@@ -151,6 +151,9 @@ Davomat xabarlarini tashkilotning o‘z boti orqali yuboradi:
 1. Telegramda **@BotFather** botini oching, `/newbot` buyrug‘ini yuboring, botga nom bering
    («Namuna Davomat») va `bot` bilan tugaydigan foydalanuvchi nomini tanlang
    (`namuna_davomat_bot`). BotFather **token** bilan javob beradi, masalan: `7123456789:AAH…`.
+   Botning rasmi uchun **@BotFather** botida `/setuserpic` buyrug‘ini yuboring, botingizni tanlang
+   va `deploy/davomat/brand/telegram-avatar.png` faylini (Davomat belgisi) yoki tashkilot logotipini
+   yuboring.
 2. Sozlamalar › **Telegram** › tokenni joylang › Tekshirish va saqlash. Davomat uni darhol Telegram
    orqali tekshiradi va bot nomini ko‘rsatadi. Bot bir daqiqa ichida o‘zi ishga tushadi.
 3. **Odamlarning Telegramini ulang**: xodim yoki foydalanuvchi sahifasidagi **Telegramni ulash**

@@ -139,7 +139,8 @@ Davomat sends its messages through the organization's own bot:
 
 1. In Telegram, open **@BotFather**, send `/newbot`, give it a name ("Namuna Davomat") and a
    username ending in `bot` (`namuna_davomat_bot`). BotFather replies with a **token** like
-   `7123456789:AAH…`.
+   `7123456789:AAH…`. For the bot's picture, send BotFather `/setuserpic`, choose the bot and send
+   `deploy/davomat/brand/telegram-avatar.png` (Davomat's mark) or the organization's logo.
 2. Settings › **Telegram** › paste the token › Save. Davomat checks it with Telegram at once and
    shows the bot's name. The bot starts by itself within a minute.
 3. **Link people**: on an employee's or a user's page, **Link Telegram** gives a one-time link and
