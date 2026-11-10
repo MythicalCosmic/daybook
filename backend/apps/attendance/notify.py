@@ -28,7 +28,8 @@ from apps.groups.models import GroupEvent
 from apps.inbox import services as inbox
 from apps.inbox.services import NotificationAction
 from apps.members.models import Membership
-from apps.notifications.tasks import send_telegram_message
+from apps.notifications import routes
+from apps.notifications.tasks import send_routed_message, send_telegram_message
 from apps.notifications.telegram import BotName, serialize_markup
 
 logger = logging.getLogger(__name__)
@@ -57,14 +58,25 @@ def mark_once(company_id: int, key: str) -> bool:
     return True
 
 
-def send_direct(member: Membership, render) -> bool:
+def send_direct(member: Membership, render, *, channel: str = "") -> bool:
     """A message from the employee bot to `member` (approved, with Telegram), rendered in
-    their language by `render() -> (text, markup)`."""
+    their language by `render() -> (text, markup)`. With `channel` ("faceid"), through the
+    company's own bot for it when it has one (`apps.notifications.routes`)."""
     user = member.user
     if member.status != Membership.Status.APPROVED or not user.telegram_id:
         return False
     with translation.override(user.language):
         text, markup = render()
+    if channel and routes.active(channel, member.company_id):
+        send_routed_message.delay(
+            channel,
+            member.company_id,
+            BotName.EMPLOYEE,
+            user.telegram_id,
+            text,
+            serialize_markup(markup),
+        )
+        return True
     send_telegram_message.delay(BotName.EMPLOYEE, user.telegram_id, text, serialize_markup(markup))
     return True
 
@@ -723,7 +735,7 @@ def scan_message(record_id: int, *, checked_in: bool) -> bool:
     if record is None:
         return False
     render = bot_messages.face_checked_in if checked_in else bot_messages.face_checked_out
-    return send_direct(record.membership, lambda: (render(record), None))
+    return send_direct(record.membership, lambda: (render(record), None), channel="faceid")
 
 
 def nudge_pre_shift(shift: WorkShift) -> bool:

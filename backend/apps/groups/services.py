@@ -22,6 +22,7 @@ from apps.groups.models import (
 from apps.members import services as members
 from apps.members.models import Membership, Position
 from apps.members.permissions import Perm
+from apps.notifications import routes
 
 
 def broadcast(
@@ -33,6 +34,7 @@ def broadcast(
     branch_id: int | None = None,
     photo: str | None = None,
     photo_storage: str = "default",
+    channel: str = "",
 ) -> int:
     """Post `text` (HTML, already in the company's language) to every group of the company
     that wants `event`. Returns how many groups it was queued for.
@@ -42,7 +44,9 @@ def broadcast(
     filter and groups of that branch. News about nobody in particular (no positions, no
     branch) reaches every group that wants the event. An event whose module is off goes
     nowhere. `photo` is a path in `photo_storage` ("default" public media or "private").
-    Posts are queued once the caller's transaction commits (at once outside one).
+    Posts are queued once the caller's transaction commits (at once outside one). `channel`
+    ("faceid"): posted by the company's own bot for it when it is in the group
+    (`apps.notifications.routes`).
     """
     if photo_storage not in ("default", "private"):
         raise ValueError(f"Unknown storage {photo_storage!r}.")
@@ -61,11 +65,17 @@ def broadcast(
     if branch_id is not None:
         groups = groups.filter(Q(branches=None) | Q(branches=branch_id))
     group_ids = list(groups.values_list("pk", flat=True).distinct())
+    if channel and not routes.active(channel, company_id):
+        channel = ""  # No own bot for it: posted exactly as before.
     for group_id in group_ids:
         # After the caller's transaction commits, like every other job: a change that is
         # rolled back never reaches a group.
         transaction.on_commit(
             partial(group_jobs.queue_post, group_id, (text, None), photo, photo_storage)
+            if not channel
+            else partial(
+                group_jobs.queue_post, group_id, (text, None), photo, photo_storage, channel
+            )
         )
     return len(group_ids)
 

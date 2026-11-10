@@ -175,3 +175,19 @@ export interface FaceIdSettings {
   repeat_minutes: number;
   photo_days: number;
 }
+
+export type BotStatus = "ok" | "invalid" | "not_set";
+
+/** The company's Face ID bot (`faceid/bot/`): never its token. */
+export interface FaceIdBot {
+  configured: boolean;
+  bot_username: string | null;
+  bot_name: string | null;
+  status: BotStatus;
+  checked_at: string | null;
+  /** t.me/<bot>?start=faceid, to share or show as a QR code. */
+  start_url: string | null;
+  started: number;
+  /** People Face ID writes to who haven't pressed Start yet ("refused": Telegram said no). */
+  pending: Array<{ id: number; name: string; role: "manager" | "employee"; state: "waiting" | "refused" }>;
+}

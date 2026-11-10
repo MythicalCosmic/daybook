@@ -30,7 +30,7 @@ from apps.attendance import queries as attendance_queries
 from apps.companies.models import Branch
 from apps.console.base import OwnerAPIView, OwnerViewSet
 from apps.core.files import signed_url
-from apps.faceid import conf, hikvision, services
+from apps.faceid import bot, conf, hikvision, services
 from apps.faceid import serializers as s
 from apps.faceid.models import FaceDevice, FaceEvent, FaceIdSettings, FaceLink
 from apps.members import scope
@@ -707,3 +707,68 @@ class SettingsView(FaceIdOn, OwnerAPIView):
             self.company, by=self.membership, **serializer.validated_data
         )
         return Response(s.SettingsSerializer(row).data)
+
+
+# The Face ID bot ------------------------------------------------------------------------------
+
+
+def bot_payload(company) -> dict:
+    row = conf.get_settings(company)
+    people = bot.recipients(company) if row.bot_username else []
+    return {
+        "configured": bool(row.bot_token and row.bot_username),
+        "bot_username": row.bot_username or None,
+        "bot_name": row.bot_name or None,
+        "status": row.bot_status,
+        "checked_at": row.bot_checked_at,
+        "start_url": bot.start_url(row) or None,
+        "started": sum(person.state == "started" for person in people),
+        "pending": [
+            {
+                "id": person.member.pk,
+                "name": person.member.full_name,
+                "role": person.role,
+                "state": person.state,
+            }
+            for person in people
+            if person.state != "started"
+        ],
+    }
+
+
+class BotView(FaceIdOn, OwnerAPIView):
+    """The company's Face ID bot: PUT a BotFather token (checked with Telegram's getMe, kept
+    encrypted, never shown again), DELETE to remove it. Everything Face ID sends to Telegram
+    goes through it while it is connected."""
+
+    perm = MANAGE
+
+    @extend_schema(responses=s.BotSerializer)
+    def get(self, request, company_id):
+        return Response(bot_payload(self.company))
+
+    @extend_schema(request=s.BotTokenSerializer, responses=s.BotSerializer)
+    def put(self, request, company_id):
+        serializer = s.BotTokenSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            bot.connect(self.company, by=self.membership, token=serializer.validated_data["token"])
+        except bot.TokenError as exc:
+            raise ValidationError({"token": [str(exc)]}) from exc
+        return Response(bot_payload(self.company))
+
+    @extend_schema(request=None, responses={204: None})
+    def delete(self, request, company_id):
+        bot.disconnect(self.company, by=self.membership)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class BotTestView(FaceIdOn, OwnerAPIView):
+    """A test message from the Face ID bot to you."""
+
+    perm = MANAGE
+
+    @extend_schema(request=None, responses=s.BotSentSerializer)
+    def post(self, request, company_id):
+        bot.send_test(self.company, request.user)
+        return Response({"sent": True})

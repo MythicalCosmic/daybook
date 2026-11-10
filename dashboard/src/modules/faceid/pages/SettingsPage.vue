@@ -26,6 +26,7 @@ import { toast } from "@/components/useToast";
 import { useCompanyId, useCompanyStore } from "@/stores/company";
 
 import { saveSettings, useRefresh, useSettings } from "../api";
+import BotCard from "../components/BotCard.vue";
 import type { FaceIdSettings, ScanMode, TelegramMode } from "../types";
 
 const { t } = useI18n();
@@ -119,6 +120,8 @@ async function save(): Promise<void> {
           <ToggleSwitch v-model="draft.alert_strangers" layout="row" class="px-4 py-3 md:px-5" :label="t('faceid.settings.strangers')" :description="t('faceid.settings.strangersHint')" />
         </div>
       </PageSection>
+
+      <BotCard />
 
       <PageSection variant="card" flush :heading-level="2" :title="t('faceid.settings.privacyTitle')" :description="t('faceid.settings.privacyHint')">
         <div class="flex flex-col divide-y divide-line">

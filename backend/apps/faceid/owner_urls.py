@@ -4,6 +4,8 @@ from django.urls import path
 from rest_framework.routers import SimpleRouter
 
 from apps.faceid.owner_api import (
+    BotTestView,
+    BotView,
     DeviceViewSet,
     EventViewSet,
     IgnoreView,
@@ -23,5 +25,7 @@ urlpatterns = [
     path("faceid/people/", PeopleView.as_view(), name="faceid-people"),
     path("faceid/people/ignore/", IgnoreView.as_view(), name="faceid-people-ignore"),
     path("faceid/settings/", SettingsView.as_view(), name="faceid-settings"),
+    path("faceid/bot/", BotView.as_view(), name="faceid-bot"),
+    path("faceid/bot/test/", BotTestView.as_view(), name="faceid-bot-test"),
     *router.urls,
 ]

@@ -222,3 +222,52 @@ class StatusSerializer(serializers.Serializer):
 
     class Meta:
         ref_name = "FaceIdStatus"
+
+
+# The Face ID bot -----------------------------------------------------------------------------
+
+
+class BotTokenSerializer(serializers.Serializer):
+    token = serializers.CharField(write_only=True, max_length=200, help_text="From BotFather.")
+
+    class Meta:
+        ref_name = "FaceIdBotToken"
+
+
+class BotPersonSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    role = serializers.ChoiceField(
+        choices=[("manager", "manager"), ("employee", "employee")],
+        help_text="manager: scans and unknown faces; employee: their own check-ins.",
+    )
+    state = serializers.ChoiceField(
+        choices=[("waiting", "waiting"), ("refused", "refused")],
+        help_text="waiting: hasn't pressed Start yet; refused: Telegram said no (403).",
+    )
+
+    class Meta:
+        ref_name = "FaceIdBotPerson"
+
+
+class BotSerializer(serializers.Serializer):
+    """The Face ID bot as the dashboard shows it: never the token."""
+
+    configured = serializers.BooleanField()
+    bot_username = serializers.CharField(allow_null=True)
+    bot_name = serializers.CharField(allow_null=True)
+    status = serializers.ChoiceField(FaceIdSettings.BotStatus.choices)
+    checked_at = serializers.DateTimeField(allow_null=True)
+    start_url = serializers.CharField(allow_null=True, help_text="t.me link with ?start.")
+    started = serializers.IntegerField(help_text="Recipients who pressed Start.")
+    pending = BotPersonSerializer(many=True, help_text="Recipients who still have to.")
+
+    class Meta:
+        ref_name = "FaceIdBot"
+
+
+class BotSentSerializer(serializers.Serializer):
+    sent = serializers.BooleanField()
+
+    class Meta:
+        ref_name = "FaceIdBotSent"

@@ -12,7 +12,7 @@ import { downloadFile } from "@/lib/csv";
 import { useCompanyId } from "@/stores/company";
 
 import { CATCHUP_FILE } from "./lib";
-import type { Device, DeviceInput, FaceIdSettings, KnownPerson, Link, Page, Scan, ScanParams, Setup, Status } from "./types";
+import type { Device, DeviceInput, FaceIdBot, FaceIdSettings, KnownPerson, Link, Page, Scan, ScanParams, Setup, Status } from "./types";
 
 export const MODULE = "faceid";
 
@@ -36,6 +36,10 @@ export const createLink = (companyId: number, employeeNo: string, memberId: numb
 export const deleteLink = (companyId: number, id: number) => http.delete(path(companyId, `links/${id}/`));
 export const getSettings = (companyId: number, signal?: AbortSignal) => http.get<FaceIdSettings>(path(companyId, "settings/"), undefined, { signal });
 export const saveSettings = (companyId: number, body: Partial<FaceIdSettings>) => http.patch<FaceIdSettings>(path(companyId, "settings/"), body);
+export const getBot = (companyId: number, signal?: AbortSignal) => http.get<FaceIdBot>(path(companyId, "bot/"), undefined, { signal });
+export const saveBotToken = (companyId: number, token: string) => http.put<FaceIdBot>(path(companyId, "bot/"), { token });
+export const removeBot = (companyId: number) => http.delete<void>(path(companyId, "bot/"));
+export const testBot = (companyId: number) => http.post<{ sent: boolean }>(path(companyId, "bot/test/"));
 
 /**
  * Saves `catchup.py`, the helper that sends a terminal's newest scans while it still uploads its
@@ -58,6 +62,7 @@ export const faceKeys = {
   people: (companyId: number, linked: string) => qk(companyId, MODULE, "people", { linked }),
   links: (companyId: number, params: object) => qk(companyId, MODULE, "links", { ...params }),
   settings: (companyId: number) => qk(companyId, MODULE, "settings"),
+  bot: (companyId: number) => qk(companyId, MODULE, "bot"),
 };
 
 // ─── Queries ────────────────────────────────────────────────────────────────
@@ -130,6 +135,15 @@ export function useSettings() {
   return useQuery({
     queryKey: computed(() => faceKeys.settings(companyId.value)),
     queryFn: ({ signal }) => getSettings(companyId.value, signal),
+    enabled: computed(() => companyId.value > 0),
+  });
+}
+
+export function useBot() {
+  const companyId = useCompanyId();
+  return useQuery({
+    queryKey: computed(() => faceKeys.bot(companyId.value)),
+    queryFn: ({ signal }) => getBot(companyId.value, signal),
     enabled: computed(() => companyId.value > 0),
   });
 }

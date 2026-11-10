@@ -19,6 +19,7 @@ from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
 from apps.companies.models import Branch, Company, TenantModel
+from apps.core.crypto import EncryptedTextField
 from apps.core.models import TimeStampedModel
 from apps.core.storage import private_storage, private_upload_to
 from apps.faceid.hikvision import number_key
@@ -37,6 +38,11 @@ class FaceIdSettings(TimeStampedModel):
     class ScanMode(models.TextChoices):
         ARRIVAL = "arrival", _("People scan only when they come")
         BOTH = "both", _("People scan when they come and when they leave")
+
+    class BotStatus(models.TextChoices):
+        OK = "ok", _("Connected")
+        INVALID = "invalid", _("Telegram refuses the token")
+        NOT_SET = "not_set", _("Not connected")
 
     company = models.OneToOneField(
         Company, on_delete=models.CASCADE, related_name="faceid_settings"
@@ -85,6 +91,19 @@ class FaceIdSettings(TimeStampedModel):
         validators=[MaxValueValidator(365)],
         help_text=_("Snapshots are deleted after this many days. 0: none are kept."),
     )
+
+    # The company's own Face ID bot (`apps.faceid.bot`): when connected, everything Face ID sends
+    # to Telegram goes through it. The token is kept encrypted and never shown again.
+    bot_token = EncryptedTextField(plain_max_length=100, blank=True)
+    bot_id = models.PositiveBigIntegerField(null=True, blank=True)
+    bot_username = models.CharField(max_length=64, blank=True)
+    bot_name = models.CharField(max_length=128, blank=True)
+    bot_status = models.CharField(
+        max_length=8, choices=BotStatus.choices, default=BotStatus.NOT_SET, db_default="not_set"
+    )
+    bot_checked_at = models.DateTimeField(null=True, blank=True)
+    # The poller's place in the bot's updates (`getUpdates` offset), reset with the token.
+    bot_offset = models.BigIntegerField(default=0, db_default=0)
 
     class Meta:
         verbose_name = _("Face ID settings")
@@ -293,3 +312,36 @@ class FaceLink(TenantModel):
         if kwargs.get("update_fields") is not None:
             kwargs["update_fields"] = {*kwargs["update_fields"], "number_key"}
         super().save(*args, **kwargs)
+
+
+class FaceBotChat(TenantModel):
+    """Someone the company's Face ID bot may write to (or tried to): Telegram lets a bot write
+    only to people who pressed Start in it. `started_at` is set by /start (or a delivered
+    message); `refused_at` by Telegram's 403. Refused and not started since: nothing is sent
+    until they press Start."""
+
+    telegram_id = models.BigIntegerField()
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    started_at = models.DateTimeField(null=True, blank=True)
+    refused_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["company", "telegram_id"], name="faceid_bot_chat_once")
+        ]
+
+    def __str__(self):
+        return f"{self.telegram_id} · {self.company_id}"
+
+    @property
+    def refused(self) -> bool:
+        """Telegram said no (403) and they haven't pressed Start since."""
+        if self.refused_at is None:
+            return False
+        return self.started_at is None or self.started_at < self.refused_at

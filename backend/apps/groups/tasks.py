@@ -20,7 +20,7 @@ from apps.groups import bot_messages, reports
 from apps.groups.models import GroupEvent, GroupReport, TelegramGroup
 from apps.members.bot_messages import BotMessage
 from apps.members.models import Membership, Position
-from apps.notifications import telegram
+from apps.notifications import routes, telegram
 from apps.notifications.telegram import BotName, serialize_markup
 from apps.reports.periods import in_window
 from apps.tasks.models import Task
@@ -38,10 +38,30 @@ POST_GAP = timedelta(seconds=3)
     retry_backoff=True,
     max_retries=5,
 )
-def post_to_group(self, group_id, text, reply_markup=None, photo=None, photo_storage="default"):
+def post_to_group(
+    self, group_id, text, reply_markup=None, photo=None, photo_storage="default", channel=""
+):
     group = TelegramGroup.objects.filter(pk=group_id, is_active=True).first()
     if group is None:
         return
+    if channel:
+        # The company's own bot for the channel (Face ID's) when it is in the group; it answers
+        # None otherwise and the employee bot posts, as before.
+        try:
+            routed = routes.route(
+                channel,
+                group.company_id,
+                group.chat_id,
+                text,
+                reply_markup,
+                photo,
+                photo_storage,
+                group=True,
+            )
+        except TelegramRetryAfter as exc:
+            raise self.retry(countdown=exc.retry_after) from exc
+        if routed is not None:
+            return
     extra = {"photo_storage": photo_storage} if photo_storage != "default" else {}
     try:
         telegram.send_message(BotName.EMPLOYEE, group.chat_id, text, reply_markup, photo, **extra)
@@ -58,7 +78,11 @@ def post_to_group(self, group_id, text, reply_markup=None, photo=None, photo_sto
 
 
 def queue_post(
-    group_id: int, message: BotMessage, photo: str | None = None, photo_storage: str = "default"
+    group_id: int,
+    message: BotMessage,
+    photo: str | None = None,
+    photo_storage: str = "default",
+    channel: str = "",
 ) -> None:
     """Queue a post, spaced after the group's earlier ones so a burst doesn't hit the limit.
     `photo` is a path in `photo_storage` ("default" public media, or "private")."""
@@ -78,7 +102,11 @@ def queue_post(
     args = (group_id, text, serialize_markup(markup), photo)
     if photo_storage != "default":
         args = (*args, photo_storage)
-    post_to_group.apply_async(args, countdown=(slot - now).total_seconds())
+    countdown = (slot - now).total_seconds()
+    if channel:
+        post_to_group.apply_async(args, {"channel": channel}, countdown=countdown)
+    else:
+        post_to_group.apply_async(args, countdown=countdown)
 
 
 def _post(
