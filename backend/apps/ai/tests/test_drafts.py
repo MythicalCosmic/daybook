@@ -1,6 +1,7 @@
 """Task drafts end to end: start, listen, understand, create, cancel, undo, expire."""
 
-from datetime import timedelta
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import pytest
 from django.utils import timezone, translation
@@ -56,8 +57,10 @@ def test_typed_text_becomes_ready_drafts(team, django_capture_on_commit_callback
 
 
 def test_applying_creates_the_tasks_through_the_task_services(
-    team, django_capture_on_commit_callbacks
+    team, django_capture_on_commit_callbacks, freeze
 ):
+    # A morning, so "bugun kechqurun" (tonight) is still ahead whatever the clock says.
+    freeze(datetime(2026, 11, 3, 10, 0, tzinfo=ZoneInfo("Asia/Tashkent")))
     draft = start(team["manager"], django_capture_on_commit_callbacks, text=SAID)
 
     with django_capture_on_commit_callbacks(execute=True):
