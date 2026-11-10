@@ -1,9 +1,12 @@
 """The owner dashboard and the mini app, served next to the API (apps.core.spa)."""
 
+import re
+from pathlib import Path
+
 import pytest
 from django.http import HttpResponse
 
-from apps.core import miniapp
+from apps.core import miniapp, spa
 from apps.core.spa import DASHBOARD_CSP, SpaWhiteNoiseMiddleware
 
 INDEX = b'<!doctype html><script type="module" src="/dashboard/assets/index-BJyE8SXe.js"></script>'
@@ -147,6 +150,18 @@ BOOT = (
     b'<div class="boot" aria-hidden="true">\n        <svg viewBox="0 0 50 50">'
     b'<circle cx="21" cy="21" r="21" fill="#c67139"/></svg></div></div></body></html>'
 )
+
+
+def test_davomat_first_paint_draws_the_dashboards_own_mark():
+    """spa.py's copy of the mark is core/brand.ts's davomatMark(): same colors, same shapes."""
+    source = Path(__file__).resolve().parents[4] / "dashboard" / "src" / "core" / "brand.ts"
+    if not source.exists():  # an image without the dashboard's sources
+        pytest.skip("no dashboard sources here")
+    brand = source.read_text(encoding="utf-8")
+    block = re.search(r"export const DAVOMAT_MARK = \{(.*?)\} as const;", brand, re.S)
+    assert block is not None
+    for value in re.findall(r'"([^"]+)"', block.group(1)):
+        assert value in spa.DAVOMAT_MARK, value
 
 
 def test_davomat_never_flashes_daybooks_splash(client, dashboard, settings):

@@ -81,16 +81,20 @@ MiniAppWhiteNoiseMiddleware = SpaWhiteNoiseMiddleware
 
 # Davomat's first paint (docs/DAVOMAT.md): until the app has asked which edition this is, the page
 # is the built index.html, Daybook's. A Davomat install answers with its own title, mark and canvas,
-# so it never flashes Daybook's splash. The mark is core/brand.ts's davomatMark().
+# so it never flashes Daybook's splash. The mark is core/brand.ts's davomatMark() (a test keeps the
+# two in step): a white D with a check cut into it, on an indigo tile.
 DAVOMAT_MARK = (
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><defs><linearGradient id="dg" '
-    'x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6af6"/><stop offset="1" '
-    'stop-color="#3f3bd0"/></linearGradient></defs><rect width="48" height="48" rx="13" '
-    'fill="url(#dg)"/><path d="M13.5 19.5v-3.2a2.8 2.8 0 0 1 2.8-2.8h3.2M28.5 13.5h3.2a2.8 2.8 '
-    "0 0 1 2.8 2.8v3.2M34.5 28.5v3.2a2.8 2.8 0 0 1-2.8 2.8h-3.2M19.5 34.5h-3.2a2.8 2.8 0 0 1-2.8-"
-    '2.8v-3.2" fill="none" stroke="#fff" stroke-opacity=".82" stroke-width="2.6" '
-    'stroke-linecap="round"/><path d="M18.6 24.4l3.9 3.9 7.9-8.3" fill="none" stroke="#fff" '
-    'stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    'gradientUnits="userSpaceOnUse" x1="7.2" y1="0" x2="40.8" y2="48"><stop offset="0" '
+    'stop-color="#6c69f7"/><stop offset="1" stop-color="#4136d6"/></linearGradient>'
+    '<linearGradient id="dh" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" '
+    'stop-opacity=".2"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/></linearGradient>'
+    '</defs><rect width="48" height="48" rx="13.5" fill="url(#dg)"/><path d="M14 15.5A3.5 3.5 0 0 '
+    '1 17.5 12H22a12 12 0 0 1 0 24h-4.5A3.5 3.5 0 0 1 14 32.5Z" fill="#fff"/><path d="M18.6 '
+    '24.3l3.4 3.4 6.8-7.1" fill="none" stroke="url(#dg)" stroke-width="3.4" stroke-linecap="round" '
+    'stroke-linejoin="round"/><rect width="48" height="48" rx="13.5" fill="url(#dh)"/><rect '
+    'x=".5" y=".5" width="47" height="47" rx="13" fill="none" stroke="#fff" stroke-opacity=".1"/>'
+    "</svg>"
 )
 BOOT_MARK = re.compile(rb'(<div class="boot"[^>]*>\s*)<svg\b.*?</svg>', re.S)
 

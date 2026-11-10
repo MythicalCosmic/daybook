@@ -323,10 +323,9 @@ const organizationName = computed(() => editionInfo.value.organization?.name ?? 
 </template>
 
 <style scoped>
+/* One calm light from the top, in the brand's own color (as on the sign-in page's panel). */
 .glow {
-  background:
-    radial-gradient(44rem 30rem at 12% 0%, color-mix(in srgb, var(--c-primary) 12%, transparent), transparent 70%),
-    radial-gradient(40rem 28rem at 92% 96%, color-mix(in srgb, var(--c-chart-2) 11%, transparent), transparent 70%);
+  background: radial-gradient(64rem 28rem at 50% -8%, color-mix(in srgb, var(--c-primary) 11%, transparent), transparent 72%);
 }
 .step-enter-active,
 .step-leave-active {
