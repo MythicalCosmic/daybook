@@ -82,6 +82,20 @@ services:
   stream:
     ports: !reset []
 
+  # The companies' own Face ID bots (apps/faceid/bot.py): answers /start in each one so Face ID's
+  # messages can reach the person. Reads the tokens every round: a token pasted, changed or
+  # removed in Face ID › Settings needs no restart. With no company bot it just idles.
+  faceid_bot:
+    extends:
+      file: docker-compose.yml
+      service: beat
+    command: python manage.py faceid_bot
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
   # Speech to text for voice tasks (deploy/stt): Whisper on the CPU behind an OpenAI-compatible
   # endpoint that only the app's containers reach, at AI_SPEECH_URL=http://stt:8000/v1. The models
   # download into their volume on the first start (~4.5 GB, a few minutes); until then /health

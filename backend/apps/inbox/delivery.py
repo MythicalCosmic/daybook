@@ -4,7 +4,10 @@ A plain module: `inbox.tasks` and `inbox.services` both use it, and it imports n
 
 Which bot: owner-audience kinds go through the owner bot when it is configured
 (`OWNER_BOT_TOKEN`) and the person started it and hasn't blocked it; everything else, and the
-fallback when the owner bot refuses, goes through the employee bot.
+fallback when the owner bot refuses, goes through the employee bot. Kinds of a module with a
+company bot of its own (`apps.notifications.routes`: "faceid.*" and the company's Face ID bot)
+go through that bot when the company has one; a person who never pressed Start in it gets the
+in-app copy only (no fallback, no retry).
 """
 
 import logging
@@ -18,7 +21,7 @@ from apps.accounts.models import User
 from apps.inbox import bot_messages, registry
 from apps.inbox.models import Notification
 from apps.members.models import Membership
-from apps.notifications import telegram
+from apps.notifications import routes, telegram
 from apps.notifications.tasks import edit_telegram_message
 from apps.notifications.telegram import BotName, serialize_markup
 
@@ -73,6 +76,24 @@ def deliver(notification_id: int, *, photo: str | None = None, photo_storage: st
     audience = kind.audience if kind else "employee"
     with translation.override(user.language):
         text, markup = bot_messages.notification(item, audience=audience)
+    channel = routes.channel_of(item.kind)
+    if channel:
+        # The company's own bot for this module (Face ID's): it answers None when there is none.
+        routed = routes.route(
+            channel,
+            item.company_id,
+            user.telegram_id,
+            text,
+            serialize_markup(markup),
+            photo,
+            photo_storage,
+        )
+        if routed is not None:
+            Notification.objects.filter(pk=item.pk).update(
+                telegram_sent_at=timezone.now(),
+                telegram_chat_id=user.telegram_id if routed.message_id else None,
+            )
+            return
     for bot in bots_for(user, audience, item.recipient):
         try:
             message_id = telegram.send_message(

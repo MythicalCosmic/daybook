@@ -9,7 +9,7 @@ from aiogram.exceptions import (
 )
 from celery import shared_task
 
-from apps.notifications import telegram
+from apps.notifications import routes, telegram
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +36,39 @@ def send_telegram_message(
         logger.info("Chat %s blocked the %s bot or never started it", chat_id, bot)
     except TelegramBadRequest as exc:
         # E.g. "chat not found": nobody with that id ever opened the bot. Sending again won't help.
+        logger.warning("Message to chat %s not delivered: %s", chat_id, exc)
+
+
+@shared_task(**RETRYING)
+def send_routed_message(
+    self,
+    channel,
+    company_id,
+    bot,
+    chat_id,
+    text,
+    reply_markup=None,
+    photo=None,
+    photo_storage="default",
+):
+    """`send_telegram_message`, through the company's own bot for `channel` when it has one
+    (`apps.notifications.routes`), else through `bot` as before."""
+    try:
+        routed = routes.route(
+            channel, company_id, chat_id, text, reply_markup, photo, photo_storage
+        )
+    except TelegramRetryAfter as exc:
+        raise self.retry(countdown=exc.retry_after) from exc
+    if routed is not None:
+        return
+    extra = {"photo_storage": photo_storage} if photo_storage != "default" else {}
+    try:
+        telegram.send_message(bot, chat_id, text, reply_markup, photo, **extra)
+    except TelegramRetryAfter as exc:
+        raise self.retry(countdown=exc.retry_after) from exc
+    except TelegramForbiddenError:
+        logger.info("Chat %s blocked the %s bot or never started it", chat_id, bot)
+    except TelegramBadRequest as exc:
         logger.warning("Message to chat %s not delivered: %s", chat_id, exc)
 
 

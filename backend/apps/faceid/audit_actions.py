@@ -15,3 +15,5 @@ class FaceIdAction(models.TextChoices):
     UNLINKED = "faceid.unlinked", _("Removed a Face ID number")
     IGNORED = "faceid.ignored", _("Set a Face ID number aside")
     SIMULATED = "faceid.simulated", _("Sent a test Face ID scan")
+    BOT_CONNECTED = "faceid.bot_connected", _("Connected the Face ID bot")
+    BOT_REMOVED = "faceid.bot_removed", _("Removed the Face ID bot")

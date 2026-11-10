@@ -99,6 +99,7 @@ When HTTPS works, set `DJANGO_SECURE_HSTS_SECONDS=31536000` in `.env` and run `m
 | `beat` | Celery beat: daily tasks, reminders, digests, reports and every module's schedule |
 | `employee_bot` | the employee bot, polling Telegram |
 | `owner_bot` | the owner bot, polling Telegram; idle when `OWNER_BOT_TOKEN` is empty |
+| `faceid_bot` | the companies' own Face ID bots (`manage.py faceid_bot`, `apps/faceid/bot.py`): answers /start in each one so Face ID's messages can reach that person. Reads the tokens every few seconds, so a token pasted, changed or removed in Face ID › Settings needs no restart; idle while no company has one |
 | `db`, `redis` | PostgreSQL and Redis |
 | `backup` | a compressed database dump and an archive of the private files every night |
 

@@ -4,6 +4,7 @@ import "@/core/modules";
 import { flushPromises } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { confirmQueue, settleConfirm } from "@/components/useConfirm";
 import { toasts } from "@/components/useToast";
 import { mergeModuleMessages } from "@/i18n";
 import { useCompanyStore } from "@/stores/company";
@@ -12,6 +13,7 @@ import { json, manager, me } from "@/test/fixtures";
 import { mountWithProviders, testApp } from "@/test/plugins";
 
 import { createDevice, createLink, faceKeys, ignoreNumber, listPeople, listScans, regenerate, saveSettings, simulate } from "../api";
+import BotCard from "../components/BotCard.vue";
 import CatchupHint from "../components/CatchupHint.vue";
 import HistoryNote from "../components/HistoryNote.vue";
 import ScanItem from "../components/ScanItem.vue";
@@ -23,7 +25,7 @@ import module from "../index";
 import { actionChip, catchupCommand, clockOf, freshIds, initials, peak, scanName } from "../lib";
 import PeoplePage from "../pages/PeoplePage.vue";
 import SettingsPage from "../pages/SettingsPage.vue";
-import type { Device, DeviceHistory, FaceIdSettings, KnownPerson, Scan, Setup } from "../types";
+import type { Device, DeviceHistory, FaceIdBot, FaceIdSettings, KnownPerson, Scan, Setup } from "../types";
 
 interface Call {
   method: string;
@@ -463,5 +465,102 @@ describe("Get today's scans now", () => {
     expect(document.body.textContent).toContain("Connected: old history first");
     expect(document.body.textContent).not.toContain("Get today's scans now");
     second.wrapper.unmount();
+  });
+});
+
+describe("BotCard (Face ID › Settings › Telegram bot)", () => {
+  const none: FaceIdBot = { configured: false, bot_username: null, bot_name: null, status: "not_set", checked_at: null, start_url: null, started: 0, pending: [] };
+  const live: FaceIdBot = {
+    configured: true,
+    bot_username: "pharm_faceid_bot",
+    bot_name: "Pharm Face ID",
+    status: "ok",
+    checked_at: "2026-11-10T09:00:00+05:00",
+    start_url: "https://t.me/pharm_faceid_bot?start=faceid",
+    started: 3,
+    pending: [
+      { id: 7, name: "Mushtariy Karimova", role: "employee", state: "waiting" },
+      { id: 8, name: "Aziza Rahimova", role: "manager", state: "refused" },
+    ],
+  };
+
+  async function open(bot: FaceIdBot, put?: (call: Call) => Response) {
+    const calls = stubApi({
+      "GET faceid/bot/": () => json(bot),
+      "PUT faceid/bot/": put ?? (() => json(live)),
+      "DELETE faceid/bot/": () => new Response(null, { status: 204 }),
+      "POST faceid/bot/test/": () => json({ sent: true }),
+    });
+    const app = await testApp("/c/1/faceid/settings");
+    const { wrapper } = mountWithProviders(BotCard, { plugins: app.plugins });
+    await flushPromises();
+    return { calls, wrapper };
+  }
+
+  const tokenInput = (wrapper: Awaited<ReturnType<typeof open>>["wrapper"]) => wrapper.get("[data-token-form] input");
+
+  it("takes a token once and then shows the bot, never the token", async () => {
+    const { calls, wrapper } = await open(none);
+    expect(wrapper.get("[data-status]").attributes("data-status")).toBe("not_set");
+    expect(wrapper.text()).toContain("No Face ID bot yet");
+    await tokenInput(wrapper).setValue(" 123456:AAFake ");
+    await wrapper.get("[data-token-form]").trigger("submit");
+    await flushPromises();
+    const put = calls.find((call) => call.method === "PUT");
+    expect(put?.body).toEqual({ token: "123456:AAFake" });
+    expect(wrapper.find("[data-token-form]").exists()).toBe(false);
+    expect(wrapper.get("[data-username]").text()).toBe("@pharm_faceid_bot");
+    expect(wrapper.text()).not.toContain("123456:AAFake");
+    expect(toasts.at(-1)?.title).toBe("Face ID bot @pharm_faceid_bot connected");
+  });
+
+  it("puts Telegram's refusal under the token", async () => {
+    const { wrapper } = await open(none, () => json({ token: ["Telegram doesn't accept this token. Copy it from BotFather again."] }, 400));
+    await tokenInput(wrapper).setValue("1:bad");
+    await wrapper.get("[data-token-form]").trigger("submit");
+    await flushPromises();
+    expect(wrapper.text()).toContain("Telegram doesn't accept this token.");
+    expect(wrapper.find("[data-token-form]").exists()).toBe(true);
+  });
+
+  it("lists who still has to press Start, with the link to share", async () => {
+    const { wrapper } = await open(live);
+    expect(wrapper.get("[data-start-url]").text()).toBe("https://t.me/pharm_faceid_bot?start=faceid");
+    expect(wrapper.get("[data-start-counts]").text()).toBe("Started: 3 · Still to press Start: 2");
+    const rows = wrapper.findAll("[data-pending] li").map((row) => row.text());
+    expect(rows).toEqual(["Mushtariy KarimovaGets their own check-insHasn't pressed Start", "Aziza RahimovaGets scans and alertsTelegram refused"]);
+  });
+
+  it("says when everyone has started", async () => {
+    const { wrapper } = await open({ ...live, pending: [] });
+    expect(wrapper.find("[data-all-started]").exists()).toBe(true);
+  });
+
+  it("sends a test and removes the bot after a confirm", async () => {
+    const { calls, wrapper } = await open(live);
+    await wrapper.get("[data-send-test]").trigger("click");
+    await flushPromises();
+    expect(calls.some((call) => call.method === "POST" && call.url.endsWith("faceid/bot/test/"))).toBe(true);
+    expect(wrapper.get("[data-test-result]").text()).toContain("Sent.");
+
+    await wrapper.get("[data-remove]").trigger("click");
+    await flushPromises();
+    const [request] = confirmQueue.value;
+    settleConfirm(request!.id, { reason: "" }, 0);
+    await flushPromises();
+    await flushPromises();
+    expect(calls.some((call) => call.method === "DELETE")).toBe(true);
+    expect(wrapper.get("[data-status]").attributes("data-status")).toBe("not_set");
+  });
+
+  it("has every text in Uzbek and Russian", () => {
+    const keys = Object.keys(en).filter((key) => key.startsWith("faceid.bot."));
+    expect(keys.length).toBeGreaterThan(30);
+    for (const key of keys) {
+      expect((uz as Record<string, string>)[key], key).toBeTruthy();
+      expect((ru as Record<string, string>)[key], key).toBeTruthy();
+    }
+    expect(uz["faceid.bot.title"]).toBe("Face ID boti");
+    expect(ru["faceid.bot.title"]).toBe("Бот Face ID");
   });
 });

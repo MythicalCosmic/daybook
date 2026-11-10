@@ -77,6 +77,23 @@ def send_message(
     return asyncio.run(_send(token, chat_id, text, _deserialize_markup(reply_markup), image))
 
 
+def send_with_token(
+    token: str,
+    chat_id: int,
+    text: str,
+    reply_markup: dict | None = None,
+    photo: str | None = None,
+    photo_storage: str = "default",
+) -> int | None:
+    """`send_message` through a bot that isn't one of the two shared ones (a company's own bot,
+    e.g. Face ID's): the caller holds its token. None when nothing was sent (a dry run)."""
+    if settings.TELEGRAM_DRY_RUN:
+        logger.info("Dry run, not sent to %s via a company bot: %s", chat_id, text)
+        return None
+    image = _read(photo, photo_storage) if photo else None
+    return asyncio.run(_send(token, chat_id, text, _deserialize_markup(reply_markup), image))
+
+
 def send_document(
     bot: str,
     chat_id: int,

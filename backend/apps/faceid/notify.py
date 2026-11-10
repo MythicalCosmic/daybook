@@ -82,6 +82,7 @@ def scan(event_id: int, *, arrival: bool) -> None:
             branch_id=event.device.branch_id,
             photo=event.photo.name if settings.group_photos and event.photo else None,
             photo_storage="private",
+            channel="faceid",
         )
 
 
