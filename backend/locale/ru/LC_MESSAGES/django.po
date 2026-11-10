@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-10 17:52+0500\n"
+"POT-Creation-Date: 2026-11-11 00:18+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -14,8 +14,9 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=4; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || (n%100>=11 && n%100<=14)? 2 : 3);\n"
 
-#: backend/apps/accounts/admin.py backend/apps/davomat/importing.py
-#: backend/apps/inventory/models.py backend/apps/members/providers.py
+#: backend/apps/accounts/admin.py backend/apps/briefings/models.py
+#: backend/apps/davomat/importing.py backend/apps/inventory/models.py
+#: backend/apps/members/providers.py
 msgid "Telegram"
 msgstr "Telegram"
 
@@ -472,6 +473,117 @@ msgstr "Стоимость (USD)"
 msgid "AI usage: %(usd)s USD"
 msgstr "Расход AI: %(usd)s USD"
 
+#: backend/apps/ai/agents/advisor.py
+msgid ""
+"Writes the weekly and monthly business reviews; answers questions any time"
+msgstr ""
+"Пишет еженедельные и ежемесячные бизнес-обзоры; отвечает на вопросы в любое "
+"время"
+
+#: backend/apps/ai/agents/advisor.py
+msgid "Weekly business review"
+msgstr "Еженедельный бизнес-обзор"
+
+#: backend/apps/ai/agents/advisor.py
+msgid "Monthly business review"
+msgstr "Ежемесячный бизнес-обзор"
+
+#: backend/apps/ai/agents/advisor.py
+#, python-format
+msgid "Reviews written so far: %(count)s"
+msgid_plural "Reviews written so far: %(count)s"
+msgstr[0] "Написано обзоров: %(count)s"
+msgstr[1] "Написано обзоров: %(count)s"
+msgstr[2] "Написано обзоров: %(count)s"
+
+#: backend/apps/ai/agents/advisor.py
+msgid "There is no business review yet: the first one comes on Monday morning."
+msgstr "Бизнес-обзора пока нет: первый придёт в понедельник утром."
+
+#: backend/apps/ai/agents/advisor.py
+#, python-format
+msgid ""
+"One more pharmacy that costs about %(cost)s a month to run: the lowest "
+"balance would be %(low)s (%(date)s)."
+msgstr ""
+"Ещё одна аптека с расходами на содержание около %(cost)s в месяц: минимальный"
+" остаток составил бы %(low)s (%(date)s)."
+
+#: backend/apps/ai/agents/advisor.py
+#, python-format
+msgid ""
+"On %(date)s the money would run out: not yet, or only with a loan or a "
+"partner."
+msgstr ""
+"%(date)s деньги закончились бы: пока рано, или только с кредитом или "
+"партнёром."
+
+#: backend/apps/ai/agents/advisor.py
+#, python-format
+msgid ""
+"Even then the money lasts the next %(days)s day: it fits, as long as the new "
+"pharmacy starts selling soon."
+msgid_plural ""
+"Even then the money lasts the next %(days)s days: it fits, as long as the new"
+" pharmacy starts selling soon."
+msgstr[0] ""
+"Даже тогда денег хватит на ближайший %(days)s день: это по силам, если новая "
+"аптека скоро начнёт продавать."
+msgstr[1] ""
+"Даже тогда денег хватит на ближайшие %(days)s дня: это по силам, если новая "
+"аптека скоро начнёт продавать."
+msgstr[2] ""
+"Даже тогда денег хватит на ближайшие %(days)s дней: это по силам, если новая "
+"аптека скоро начнёт продавать."
+
+#: backend/apps/ai/agents/advisor.py
+msgid "Advisor"
+msgstr "Советник"
+
+#: backend/apps/ai/agents/advisor.py
+msgid ""
+"Your business advisor: every Monday morning the weekly review of the business"
+" (what went well, what went wrong and three concrete suggestions, each tied "
+"to a number), the monthly one on the first, and answers about the business "
+"any time: can I afford a second pharmacy, where is my money going."
+msgstr ""
+"Ваш бизнес-советник: каждый понедельник утром еженедельный обзор бизнеса (что"
+" получилось, что пошло не так и три конкретных предложения, каждое опирается "
+"на цифру), первого числа ежемесячный, и ответы о бизнесе в любое время: "
+"потяну ли я вторую аптеку, куда уходят мои деньги."
+
+#: backend/apps/ai/agents/advisor.py
+msgid "The business review"
+msgstr "Бизнес-обзор"
+
+#: backend/apps/ai/agents/advisor.py
+msgid "Ask the advisor"
+msgstr "Спросить советника"
+
+#: backend/apps/ai/agents/advisor.py
+#, python-format
+msgid "Sent the weekly business review to %(count)s person"
+msgid_plural "Sent the weekly business review to %(count)s people"
+msgstr[0] "Еженедельный бизнес-обзор отправлен %(count)s человеку"
+msgstr[1] "Еженедельный бизнес-обзор отправлен %(count)s людям"
+msgstr[2] "Еженедельный бизнес-обзор отправлен %(count)s людям"
+
+#: backend/apps/ai/agents/advisor.py
+#, python-format
+msgid "Sent the monthly business review to %(count)s person"
+msgid_plural "Sent the monthly business review to %(count)s people"
+msgstr[0] "Ежемесячный бизнес-обзор отправлен %(count)s человеку"
+msgstr[1] "Ежемесячный бизнес-обзор отправлен %(count)s людям"
+msgstr[2] "Ежемесячный бизнес-обзор отправлен %(count)s людям"
+
+#: backend/apps/ai/agents/advisor.py
+#, python-format
+msgid "Wrote last week's business review again (%(count)s copy)"
+msgid_plural "Wrote last week's business review again (%(count)s copies)"
+msgstr[0] "Обзор прошлой недели написан заново (копий: %(count)s)"
+msgstr[1] "Обзор прошлой недели написан заново (копий: %(count)s)"
+msgstr[2] "Обзор прошлой недели написан заново (копий: %(count)s)"
+
 #: backend/apps/ai/agents/custom.py
 #, python-format
 msgid "Sent the report. To: %(to)s"
@@ -520,7 +632,8 @@ msgstr ""
 "управления"
 
 #: backend/apps/ai/agents/custom.py backend/apps/ai/models.py
-#: backend/apps/tasks/hooks.py owner_bot/ownerbot/brief.py
+#: backend/apps/insights/models.py backend/apps/tasks/hooks.py
+#: owner_bot/ownerbot/brief.py
 msgid "Tasks"
 msgstr "Задачи"
 
@@ -546,7 +659,7 @@ msgid "Stock and medicines"
 msgstr "Склад и препараты"
 
 #: backend/apps/ai/agents/custom.py backend/apps/companies/models.py
-#: owner_bot/ownerbot/brief.py
+#: backend/apps/insights/models.py owner_bot/ownerbot/brief.py
 msgid "Finance"
 msgstr "Финансы"
 
@@ -555,6 +668,7 @@ msgid "HR and documents"
 msgstr "Кадры и документы"
 
 #: backend/apps/ai/agents/custom.py backend/apps/companies/models.py
+#: backend/apps/finance/owner_draw.py backend/apps/insights/models.py
 msgid "Payroll"
 msgstr "Зарплата"
 
@@ -1187,7 +1301,7 @@ msgstr "Не больше %(max)s."
 msgid "Pick one of the options."
 msgstr "Выберите один из вариантов."
 
-#: backend/apps/ai/agents/registry.py
+#: backend/apps/ai/agents/registry.py backend/apps/briefings/services.py
 msgid "Unknown setting."
 msgstr "Неизвестная настройка."
 
@@ -1932,8 +2046,9 @@ msgstr "Бот для владельцев"
 msgid "Mini app"
 msgstr "Мини-приложение"
 
-#: backend/apps/ai/models.py backend/apps/finance/models.py
-#: backend/apps/sales/models.py owner_bot/ownerbot/commands.py
+#: backend/apps/ai/models.py backend/apps/briefings/models.py
+#: backend/apps/finance/models.py backend/apps/sales/models.py
+#: owner_bot/ownerbot/commands.py
 msgid "Dashboard"
 msgstr "Панель управления"
 
@@ -2117,6 +2232,7 @@ msgid "Success"
 msgstr "Успех"
 
 #: backend/apps/ai/models.py backend/apps/inbox/models.py
+#: backend/apps/insights/models.py
 msgid "Warning"
 msgstr "Предупреждение"
 
@@ -2344,10 +2460,10 @@ msgstr "%(status)s · прочитали %(read)d из %(total)d"
 msgid "Announcement: %(title)s · %(read)d of %(total)d read"
 msgstr "Объявление: %(title)s · прочитали %(read)d из %(total)d"
 
-#: backend/apps/announcements/models.py backend/apps/hr/models.py
-#: backend/apps/hr/policies/queries.py backend/apps/inventory/models.py
-#: backend/apps/knowledge/providers.py backend/apps/learning/models.py
-#: backend/apps/sales/models.py
+#: backend/apps/announcements/models.py backend/apps/finance/models.py
+#: backend/apps/hr/models.py backend/apps/hr/policies/queries.py
+#: backend/apps/inventory/models.py backend/apps/knowledge/providers.py
+#: backend/apps/learning/models.py backend/apps/sales/models.py
 msgid "Draft"
 msgstr "Черновик"
 
@@ -3115,8 +3231,8 @@ msgstr ""
 #: backend/apps/assets/owner_api.py backend/apps/assets/services.py
 #: backend/apps/attendance/owner_api.py backend/apps/davomat/owner_api.py
 #: backend/apps/faceid/owner_api.py backend/apps/hr/hiring/owner_api.py
-#: backend/apps/hr/owner_api.py backend/apps/inventory/api.py
-#: backend/apps/inventory/owner_api.py
+#: backend/apps/hr/owner_api.py backend/apps/insights/owner_api.py
+#: backend/apps/inventory/api.py backend/apps/inventory/owner_api.py
 #: backend/apps/learning/owner_api_courses.py
 #: backend/apps/lifecycle/owner_api.py backend/apps/payroll/owner_api.py
 #: backend/apps/recognition/owner_api.py
@@ -3824,7 +3940,8 @@ msgid "It ends after it was issued."
 msgstr "Дата окончания должна быть позже выдачи."
 
 #: backend/apps/attendance/actions.py backend/apps/finance/claims.py
-#: backend/apps/finance/reminders.py backend/apps/payroll/actions.py
+#: backend/apps/finance/reminders.py backend/apps/insights/notify.py
+#: backend/apps/payroll/actions.py
 msgid "This isn't available any more."
 msgstr "Это больше недоступно."
 
@@ -4448,9 +4565,10 @@ msgstr "Запланирована"
 
 #: backend/apps/attendance/models.py backend/apps/finance/models.py
 #: backend/apps/hr/models.py backend/apps/inbox/bot_messages.py
-#: backend/apps/inventory/models.py backend/apps/learning/models.py
-#: backend/apps/projects/models.py backend/apps/reminders/bot_messages.py
-#: backend/apps/sales/models.py backend/apps/tasks/bot_messages.py
+#: backend/apps/insights/models.py backend/apps/inventory/models.py
+#: backend/apps/learning/models.py backend/apps/projects/models.py
+#: backend/apps/reminders/bot_messages.py backend/apps/sales/models.py
+#: backend/apps/tasks/bot_messages.py
 msgid "Open"
 msgstr "Открыть"
 
@@ -5034,7 +5152,8 @@ msgstr "Дней в отпуске"
 msgid "Hours worked"
 msgstr "Отработанные часы"
 
-#: backend/apps/attendance/reports.py backend/apps/payroll/models.py
+#: backend/apps/attendance/reports.py backend/apps/goals/models.py
+#: backend/apps/payroll/models.py
 msgid "Late arrivals"
 msgstr "Опоздания"
 
@@ -5058,7 +5177,8 @@ msgstr "Явка, %"
 msgid "Department"
 msgstr "Отдел"
 
-#: backend/apps/attendance/reports.py owner_bot/ownerbot/brief.py
+#: backend/apps/attendance/reports.py backend/apps/insights/models.py
+#: owner_bot/ownerbot/brief.py
 msgid "People"
 msgstr "Сотрудники"
 
@@ -5633,6 +5753,584 @@ msgstr "Это поле обязательно."
 msgid "A record id is required."
 msgstr "Нужен ID записи."
 
+#: backend/apps/briefings/ai_tools.py
+msgid ""
+"The latest business review the advisor wrote for the asker: its numbers "
+"(revenue, margins and profit per pharmacy against the period before and the "
+"usual level, cash and the forecast's lowest point, expenses that jumped, "
+"overdue debts, slow stock, lateness), what went well and wrong, and its "
+"suggestions"
+msgstr ""
+"Последний бизнес-обзор советника: его цифры (выручка, маржа и прибыль каждой "
+"аптеки в сравнении с прошлым периодом и обычным уровнем, деньги и минимальный"
+" остаток по прогнозу, резко выросшие расходы, просроченные долги, медленно "
+"продающийся запас, опоздания), что получилось и что пошло не так, и его "
+"предложения"
+
+#: backend/apps/briefings/ai_tools.py
+msgid ""
+"What if: the cash forecast with a monthly cost or income added from a date "
+"(and a one-time outlay): the lowest balance, the first day below zero and how"
+" many days the money lasts, before and after"
+msgstr ""
+"Что если: прогноз денег с ежемесячным расходом или доходом с указанной даты "
+"(и разовым платежом): минимальный остаток, первый день ниже нуля и на сколько"
+" дней хватит денег, до и после"
+
+#: backend/apps/briefings/audit_actions.py
+msgid "Changed when the business reviews go out"
+msgstr "Изменил время отправки бизнес-обзоров"
+
+#: backend/apps/briefings/audit_actions.py
+msgid "Had a business review written again"
+msgstr "Заказал повторное написание бизнес-обзора"
+
+#: backend/apps/briefings/hooks.py
+msgid "The weekly business review"
+msgstr "Еженедельный бизнес-обзор"
+
+#: backend/apps/briefings/hooks.py
+msgid "The monthly business review"
+msgstr "Ежемесячный бизнес-обзор"
+
+#: backend/apps/briefings/models.py
+msgid "Owners"
+msgstr "Владельцы"
+
+#: backend/apps/briefings/models.py
+msgid "Everyone who sees reports"
+msgstr "Все, кто видит отчёты"
+
+#: backend/apps/briefings/models.py
+msgid "The weekly business review, for the week before."
+msgstr "Еженедельный бизнес-обзор за прошлую неделю."
+
+#: backend/apps/briefings/models.py
+msgid "The monthly business review, on the first day of the month."
+msgstr "Ежемесячный бизнес-обзор, в первый день месяца."
+
+#: backend/apps/briefings/models.py
+msgid "The day the weekly review goes out."
+msgstr "День отправки еженедельного обзора."
+
+#: backend/apps/briefings/models.py
+msgid "When the reviews go out, in the company's time."
+msgstr "Время отправки обзоров по времени компании."
+
+#: backend/apps/briefings/models.py
+msgid "Weekly review"
+msgstr "Еженедельный обзор"
+
+#: backend/apps/briefings/models.py
+msgid "Monthly review"
+msgstr "Ежемесячный обзор"
+
+#: backend/apps/briefings/models.py backend/apps/learning/models.py
+msgid "Claude"
+msgstr "Claude"
+
+#: backend/apps/briefings/models.py backend/apps/insights/models.py
+msgid "Template"
+msgstr "Шаблон"
+
+#: backend/apps/briefings/reviews.py
+msgid "There is nothing to review yet: no money moved and nothing was sold."
+msgstr "Пока нечего разбирать: не было ни движения денег, ни продаж."
+
+#: backend/apps/briefings/services.py
+msgid "You can't change the business reviews."
+msgstr "Вы не можете менять бизнес-обзоры."
+
+#: backend/apps/briefings/services.py
+#, python-format
+msgid "That's all for today (%(limit)s): write it again tomorrow."
+msgstr "На сегодня всё (%(limit)s): напишите заново завтра."
+
+#: backend/apps/briefings/services.py
+msgid "There is nothing for a business review in what you can see."
+msgstr "В данных, которые вы видите, нет ничего для бизнес-обзора."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "Revenue grew to %(amount)s: %(pct)s above the usual level."
+msgstr "Выручка выросла до %(amount)s: на %(pct)s выше обычного."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "Revenue fell to %(amount)s: %(pct)s below the usual level."
+msgstr "Выручка снизилась до %(amount)s: на %(pct)s ниже обычного."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "Revenue grew to %(amount)s: %(pct)s more than the period before."
+msgstr ""
+"Выручка выросла до %(amount)s: на %(pct)s больше, чем в прошлом периоде."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "Revenue fell to %(amount)s: %(pct)s less than the period before."
+msgstr ""
+"Выручка снизилась до %(amount)s: на %(pct)s меньше, чем в прошлом периоде."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "Gross margin rose to %(now)s (it was %(before)s)."
+msgstr "Валовая маржа выросла до %(now)s (было %(before)s)."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "Gross margin fell to %(now)s (it was %(before)s)."
+msgstr "Валовая маржа снизилась до %(now)s (было %(before)s)."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "Profit grew to %(amount)s (usually %(usual)s)."
+msgstr "Прибыль выросла до %(amount)s (обычно %(usual)s)."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "Profit fell to %(amount)s (usually %(usual)s)."
+msgstr "Прибыль снизилась до %(amount)s (обычно %(usual)s)."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "The period closed at a loss: %(amount)s."
+msgstr "Период закрыт с убытком: %(amount)s."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "%(branch)s: a loss of %(amount)s."
+msgstr "%(branch)s: убыток %(amount)s."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "%(branch)s: gross margin up to %(now)s (it was %(before)s)."
+msgstr "%(branch)s: валовая маржа выросла до %(now)s (было %(before)s)."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "%(branch)s: gross margin down to %(now)s (it was %(before)s)."
+msgstr "%(branch)s: валовая маржа снизилась до %(now)s (было %(before)s)."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "%(group)s: %(amount)s, a new expense this period."
+msgstr "%(group)s: %(amount)s, новый расход в этом периоде."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid ""
+"%(group)s: %(amount)s, %(pct)s above the usual level (usually %(usual)s)."
+msgstr "%(group)s: %(amount)s, на %(pct)s больше обычного (обычно %(usual)s)."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid ""
+"Staff costs took a smaller share of revenue: %(now)s (usually %(usual)s)."
+msgstr ""
+"Доля расходов на персонал в выручке снизилась: %(now)s (обычно %(usual)s)."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "Staff costs took %(now)s of revenue (usually %(usual)s)."
+msgstr "Расходы на персонал составили %(now)s выручки (обычно %(usual)s)."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "Cash runs short: the forecast balance on %(date)s is %(amount)s."
+msgstr "Денег не хватает: по прогнозу остаток на %(date)s составит %(amount)s."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid ""
+"At the current pace the money lasts %(days)s day: the balance goes below zero"
+" on %(date)s."
+msgid_plural ""
+"At the current pace the money lasts %(days)s days: the balance goes below "
+"zero on %(date)s."
+msgstr[0] ""
+"При нынешнем темпе денег хватит на %(days)s день: остаток уйдёт в минус "
+"%(date)s."
+msgstr[1] ""
+"При нынешнем темпе денег хватит на %(days)s дня: остаток уйдёт в минус "
+"%(date)s."
+msgstr[2] ""
+"При нынешнем темпе денег хватит на %(days)s дней: остаток уйдёт в минус "
+"%(date)s."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid ""
+"There is money for the next %(days)s day: the lowest forecast balance is "
+"%(amount)s (%(date)s)."
+msgid_plural ""
+"There is money for the next %(days)s days: the lowest forecast balance is "
+"%(amount)s (%(date)s)."
+msgstr[0] ""
+"Денег хватает на ближайший %(days)s день: минимальный остаток по прогнозу "
+"%(amount)s (%(date)s)."
+msgstr[1] ""
+"Денег хватает на ближайшие %(days)s дня: минимальный остаток по прогнозу "
+"%(amount)s (%(date)s)."
+msgstr[2] ""
+"Денег хватает на ближайшие %(days)s дней: минимальный остаток по прогнозу "
+"%(amount)s (%(date)s)."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "Overdue customer debts: %(count)s, %(amount)s in all."
+msgstr "Просроченные долги покупателей: %(count)s на сумму %(amount)s."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "Overdue payments to distributors: %(count)s, %(amount)s in all."
+msgstr "Просроченные платежи дистрибьюторам: %(count)s на сумму %(amount)s."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "The average receipt rose to %(amount)s: %(pct)s above the usual level."
+msgstr "Средний чек вырос до %(amount)s: на %(pct)s выше обычного."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "The average receipt fell to %(amount)s: %(pct)s below the usual level."
+msgstr "Средний чек снизился до %(amount)s: на %(pct)s ниже обычного."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid ""
+"The average receipt rose to %(amount)s: %(pct)s more than the period before."
+msgstr ""
+"Средний чек вырос до %(amount)s: на %(pct)s больше, чем в прошлом периоде."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid ""
+"The average receipt fell to %(amount)s: %(pct)s less than the period before."
+msgstr ""
+"Средний чек снизился до %(amount)s: на %(pct)s меньше, чем в прошлом периоде."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "Receipts: %(count)s, %(pct)s more than usual."
+msgstr "Чеков: %(count)s, на %(pct)s больше обычного."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "Receipts: %(count)s, %(pct)s fewer than usual."
+msgstr "Чеков: %(count)s, на %(pct)s меньше обычного."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "Receipts: %(count)s, %(pct)s more than the period before."
+msgstr "Чеков: %(count)s, на %(pct)s больше, чем в прошлом периоде."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "Receipts: %(count)s, %(pct)s fewer than the period before."
+msgstr "Чеков: %(count)s, на %(pct)s меньше, чем в прошлом периоде."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "The shifts came up short in cash: %(amount)s."
+msgstr "Недостача наличных по сменам: %(amount)s."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "%(item)s: at the recent pace the stock lasts %(days)s day."
+msgid_plural "%(item)s: at the recent pace the stock lasts %(days)s days."
+msgstr[0] "%(item)s: при нынешних продажах запаса хватит на %(days)s день."
+msgstr[1] "%(item)s: при нынешних продажах запаса хватит на %(days)s дня."
+msgstr[2] "%(item)s: при нынешних продажах запаса хватит на %(days)s дней."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "%(item)s: no sales in %(days)s day, %(quantity)s on hand."
+msgid_plural "%(item)s: no sales in %(days)s days, %(quantity)s on hand."
+msgstr[0] "%(item)s: не продавался %(days)s день, в наличии %(quantity)s."
+msgstr[1] "%(item)s: не продавался %(days)s дня, в наличии %(quantity)s."
+msgstr[2] "%(item)s: не продавался %(days)s дней, в наличии %(quantity)s."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "Batches expiring within %(days)s day: %(count)s, worth %(amount)s."
+msgid_plural ""
+"Batches expiring within %(days)s days: %(count)s, worth %(amount)s."
+msgstr[0] ""
+"Серий со сроком годности до %(days)s дня: %(count)s на сумму %(amount)s."
+msgstr[1] ""
+"Серий со сроком годности до %(days)s дней: %(count)s на сумму %(amount)s."
+msgstr[2] ""
+"Серий со сроком годности до %(days)s дней: %(count)s на сумму %(amount)s."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "Batches expiring within %(days)s day: %(count)s."
+msgid_plural "Batches expiring within %(days)s days: %(count)s."
+msgstr[0] "Серий со сроком годности до %(days)s дня: %(count)s."
+msgstr[1] "Серий со сроком годности до %(days)s дней: %(count)s."
+msgstr[2] "Серий со сроком годности до %(days)s дней: %(count)s."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "Late arrivals: %(count)s (usually %(usual)s)."
+msgstr "Опозданий: %(count)s (обычно %(usual)s)."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "Fewer late arrivals: %(count)s (usually %(usual)s)."
+msgstr "Опозданий меньше: %(count)s (обычно %(usual)s)."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "Left the team: %(names)s."
+msgstr "Из команды ушли: %(names)s."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "Open alert: %(title)s"
+msgstr "Открытое предупреждение: %(title)s"
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid ""
+"Plan the cash for %(date)s: move a payment to a distributor or collect what "
+"customers owe before then."
+msgstr ""
+"Спланируйте деньги на %(date)s: перенесите платёж дистрибьютору или соберите "
+"долги покупателей заранее."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid ""
+"Cut spending or bring money in sooner: on %(date)s the balance goes below "
+"zero."
+msgstr ""
+"Сократите расходы или ускорьте поступления: %(date)s остаток уйдёт в минус."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid ""
+"Call the customers who owe %(amount)s past due and agree on payment dates."
+msgstr ""
+"Позвоните покупателям с просроченным долгом на %(amount)s и договоритесь о "
+"сроках оплаты."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid ""
+"Agree new dates with the distributors for %(amount)s of overdue payments."
+msgstr ""
+"Согласуйте с дистрибьюторами новые сроки по просроченным платежам на "
+"%(amount)s."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid ""
+"%(branch)s: check purchase prices and discounts, the gross margin is %(now)s "
+"now."
+msgstr ""
+"%(branch)s: проверьте закупочные цены и скидки, валовая маржа сейчас %(now)s."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "%(branch)s: go through its costs line by line, the loss is %(amount)s."
+msgstr "%(branch)s: разберите расходы по статьям, убыток %(amount)s."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "%(group)s: find out what this new %(amount)s was for."
+msgstr "%(group)s: выясните, на что ушли эти новые %(amount)s."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "%(group)s: look into it, %(amount)s against %(usual)s usually."
+msgstr "%(group)s: разберитесь, %(amount)s при обычных %(usual)s."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "Check overtime and the roster: staff costs took %(now)s of revenue."
+msgstr ""
+"Проверьте переработки и график: расходы на персонал составили %(now)s "
+"выручки."
+
+#: backend/apps/briefings/writing.py
+msgid ""
+"Find out why revenue fell: check the out-of-stock list (defektura) and the "
+"opening hours."
+msgstr "Выясните, почему упала выручка: проверьте дефектуру и часы работы."
+
+#: backend/apps/briefings/writing.py
+msgid "Compare purchase prices with the weeks before and review the markups."
+msgstr "Сравните закупочные цены с прошлыми неделями и пересмотрите наценки."
+
+#: backend/apps/briefings/writing.py
+msgid "Go through the period's costs, the biggest groups first."
+msgstr "Разберите расходы периода, начиная с самых крупных статей."
+
+#: backend/apps/briefings/writing.py
+msgid "Check what was out of stock and how the prices compare."
+msgstr "Проверьте, чего не было в наличии и как соотносятся цены."
+
+#: backend/apps/briefings/writing.py
+msgid "Check the shifts with cash differences and talk to the cashiers."
+msgstr "Проверьте смены с расхождениями по кассе и поговорите с кассирами."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "%(item)s: order less, or move part of it to another pharmacy."
+msgstr "%(item)s: закажите меньше или переместите часть в другую аптеку."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid ""
+"%(item)s: move it to a pharmacy where it sells, or return it to the "
+"distributor."
+msgstr ""
+"%(item)s: переместите в аптеку, где есть спрос, или верните дистрибьютору."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "Sell or move first the batches that expire within %(days)s day."
+msgid_plural "Sell or move first the batches that expire within %(days)s days."
+msgstr[0] ""
+"В первую очередь продайте или переместите серии, у которых срок истекает в "
+"течение %(days)s дня."
+msgstr[1] ""
+"В первую очередь продайте или переместите серии, у которых срок истекает в "
+"течение %(days)s дней."
+msgstr[2] ""
+"В первую очередь продайте или переместите серии, у которых срок истекает в "
+"течение %(days)s дней."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "Talk to the team about lateness: %(count)s late arrivals."
+msgstr "Поговорите с командой об опозданиях: их было %(count)s."
+
+#: backend/apps/briefings/writing.py
+msgid ""
+"Plan the shifts without the people who left, and start hiring if needed."
+msgstr "Перестройте график без ушедших и при необходимости начните подбор."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "Look at the alert: %(title)s"
+msgstr "Посмотрите предупреждение: %(title)s"
+
+#: backend/apps/briefings/writing.py
+msgid "Open the cash plan"
+msgstr "Открыть план денег"
+
+#: backend/apps/briefings/writing.py
+msgid "Open the debts"
+msgstr "Открыть долги"
+
+#: backend/apps/briefings/writing.py
+msgid "Open the pharmacy's report"
+msgstr "Открыть отчёт аптеки"
+
+#: backend/apps/briefings/writing.py
+msgid "Open the expense"
+msgstr "Открыть статью расходов"
+
+#: backend/apps/briefings/writing.py
+msgid "Open the stock"
+msgstr "Открыть остатки"
+
+#: backend/apps/briefings/writing.py
+msgid "Open expiry dates"
+msgstr "Открыть сроки годности"
+
+#: backend/apps/briefings/writing.py
+msgid "Open attendance"
+msgstr "Открыть посещаемость"
+
+#: backend/apps/briefings/writing.py
+msgid "Open the team"
+msgstr "Открыть команду"
+
+#: backend/apps/briefings/writing.py
+msgid "Open sales"
+msgstr "Открыть продажи"
+
+#: backend/apps/briefings/writing.py
+msgid "Open the alert"
+msgstr "Открыть предупреждение"
+
+#: backend/apps/briefings/writing.py
+msgid "Open the report"
+msgstr "Открыть отчёт"
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "%(period)s: revenue %(amount)s."
+msgstr "%(period)s: выручка %(amount)s."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "Week of %(period)s: revenue %(amount)s."
+msgstr "Неделя %(period)s: выручка %(amount)s."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "%(period)s: revenue %(amount)s, down %(pct)s on the month before."
+msgstr "%(period)s: выручка %(amount)s, на %(pct)s меньше, чем месяцем ранее."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid ""
+"Week of %(period)s: revenue %(amount)s, down %(pct)s on the week before."
+msgstr ""
+"Неделя %(period)s: выручка %(amount)s, на %(pct)s меньше, чем неделей ранее."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "%(period)s: revenue %(amount)s, up %(pct)s on the month before."
+msgstr "%(period)s: выручка %(amount)s, на %(pct)s больше, чем месяцем ранее."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "Week of %(period)s: revenue %(amount)s, up %(pct)s on the week before."
+msgstr ""
+"Неделя %(period)s: выручка %(amount)s, на %(pct)s больше, чем неделей ранее."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "%(period)s: nothing unusual."
+msgstr "%(period)s: ничего необычного."
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "Week of %(period)s: nothing unusual."
+msgstr "Неделя %(period)s: ничего необычного."
+
+#: backend/apps/briefings/writing.py
+msgid "What went well"
+msgstr "Что получилось"
+
+#: backend/apps/briefings/writing.py
+msgid "What went wrong"
+msgstr "Что пошло не так"
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "Monthly business review: %(period)s"
+msgstr "Ежемесячный бизнес-обзор: %(period)s"
+
+#: backend/apps/briefings/writing.py
+#, python-format
+msgid "Weekly business review: %(period)s"
+msgstr "Еженедельный бизнес-обзор: %(period)s"
+
+#: backend/apps/briefings/writing.py
+msgid "What to do this month"
+msgstr "Что сделать в этом месяце"
+
+#: backend/apps/briefings/writing.py
+msgid "What to do this week"
+msgstr "Что сделать на этой неделе"
+
 #: backend/apps/companies/admin.py
 msgid "Members"
 msgstr "Сотрудники"
@@ -5776,6 +6474,7 @@ msgid "Stock"
 msgstr "Склад"
 
 #: backend/apps/companies/models.py backend/apps/hr/providers.py
+#: backend/apps/insights/models.py
 msgid "HR"
 msgstr "Кадры"
 
@@ -6437,8 +7136,9 @@ msgstr ""
 msgid "Left"
 msgstr "Не в компании"
 
-#: backend/apps/davomat/importing.py backend/apps/learning/models.py
-#: backend/apps/members/models.py backend/apps/projects/models.py
+#: backend/apps/davomat/importing.py backend/apps/goals/models.py
+#: backend/apps/learning/models.py backend/apps/members/models.py
+#: backend/apps/projects/models.py
 msgid "Active"
 msgstr "Активен"
 
@@ -7471,6 +8171,42 @@ msgstr "Возместил расходы по заявке"
 msgid "Cancelled an expense claim"
 msgstr "Отменил заявку на возмещение расходов"
 
+#: backend/apps/finance/audit_actions.py
+msgid "Planned a purchase"
+msgstr "Запланировал покупку"
+
+#: backend/apps/finance/audit_actions.py
+msgid "Changed a planned purchase"
+msgstr "Изменил плановую покупку"
+
+#: backend/apps/finance/audit_actions.py
+msgid "Removed a planned purchase"
+msgstr "Удалил плановую покупку"
+
+#: backend/apps/finance/audit_actions.py
+msgid "Set the partners and their shares"
+msgstr "Задал партнёров и их доли"
+
+#: backend/apps/finance/audit_actions.py
+msgid "Prepared a dividend"
+msgstr "Подготовил дивиденд"
+
+#: backend/apps/finance/audit_actions.py
+msgid "Changed a dividend"
+msgstr "Изменил дивиденд"
+
+#: backend/apps/finance/audit_actions.py
+msgid "Paid a dividend"
+msgstr "Выплатил дивиденд"
+
+#: backend/apps/finance/audit_actions.py
+msgid "Took back a dividend payment"
+msgstr "Отменил выплату дивиденда"
+
+#: backend/apps/finance/audit_actions.py
+msgid "Cancelled a dividend"
+msgstr "Отменил дивиденд"
+
 #: backend/apps/finance/bot_messages.py
 #, python-format
 msgid "Big expense: %(amount)s · %(category)s"
@@ -7688,7 +8424,8 @@ msgid "Expense rejected."
 msgstr "Расход отклонён."
 
 #: backend/apps/finance/defaults.py backend/apps/groups/models.py
-#: backend/apps/sales/hooks.py owner_bot/ownerbot/brief.py
+#: backend/apps/insights/models.py backend/apps/sales/hooks.py
+#: owner_bot/ownerbot/brief.py
 msgid "Sales"
 msgstr "Продажи"
 
@@ -8053,6 +8790,10 @@ msgid "Expense claim"
 msgstr "Заявка на возмещение расходов"
 
 #: backend/apps/finance/hooks.py
+msgid "Dividend"
+msgstr "Дивиденд"
+
+#: backend/apps/finance/hooks.py
 msgid "Expense claims to approve"
 msgstr "Расходы сотрудников на утверждение"
 
@@ -8223,6 +8964,18 @@ msgstr "Одна базовая расчётная величина в сума�
 #: backend/apps/finance/models.py
 msgid "When someone confirmed the tax regime."
 msgstr "Когда подтвердили налоговый режим."
+
+#: backend/apps/finance/models.py
+msgid ""
+"Money that always stays in the business, in the base currency. Empty: one "
+"month of fixed costs."
+msgstr ""
+"Деньги, которые всегда остаются в бизнесе, в базовой валюте. Пусто — "
+"постоянные расходы за месяц."
+
+#: backend/apps/finance/models.py
+msgid "How many days of payments due the safe amount to take keeps back."
+msgstr "За сколько дней платежи откладываются из безопасной суммы изъятия."
 
 #: backend/apps/finance/models.py
 msgid "UZS per 1 unit of the currency."
@@ -8624,6 +9377,36 @@ msgstr "Возмещено"
 msgid "Telegram bot"
 msgstr "Telegram-бот"
 
+#: backend/apps/finance/models.py
+msgid "When it will be bought. Empty: some time soon."
+msgstr "Когда будет куплено. Пусто — в ближайшее время."
+
+#: backend/apps/finance/models.py
+msgid "Bought or dropped: no longer kept back."
+msgstr "Куплено или отменено: больше не откладывается."
+
+#: backend/apps/finance/models.py
+msgid "When the partner works here too. Empty: only the name."
+msgstr "Если партнёр работает в компании. Пусто — только имя."
+
+#: backend/apps/finance/models.py
+msgid "Percent of the business."
+msgstr "Доля в бизнесе, в процентах."
+
+#: backend/apps/finance/models.py backend/apps/sales/models.py
+msgid "Partly paid"
+msgstr "Оплачен частично"
+
+#: backend/apps/finance/models.py
+msgid "The period's net profit when the round was made."
+msgstr "Чистая прибыль периода на момент расчёта дивиденда."
+
+#: backend/apps/finance/models.py
+msgid "The owner draw that paid it; voiding it makes the line unpaid again."
+msgstr ""
+"Изъятие собственника, которым это выплачено; если его аннулировать, часть "
+"снова станет невыплаченной."
+
 #: backend/apps/finance/owner_api.py
 msgid "The finance module is off for this company."
 msgstr "Модуль «Финансы» для этой компании выключен."
@@ -8632,11 +9415,12 @@ msgstr "Модуль «Финансы» для этой компании вык�
 msgid "Pick a counterparty."
 msgstr "Выберите контрагента."
 
-#: backend/apps/finance/owner_api.py
+#: backend/apps/finance/owner_api.py backend/apps/finance/owner_money_api.py
 msgid "Pick a person of the company."
 msgstr "Выберите сотрудника компании."
 
-#: backend/apps/finance/owner_api.py backend/apps/sales/owner_api.py
+#: backend/apps/finance/owner_api.py backend/apps/goals/owner_api.py
+#: backend/apps/sales/owner_api.py
 msgid "Pick one of your branches."
 msgstr "Выберите один из ваших филиалов."
 
@@ -8735,6 +9519,90 @@ msgstr "Используйте receivable или payable."
 msgid "Staff (hidden)"
 msgstr "Сотрудники (скрыты)"
 
+#: backend/apps/finance/owner_draw.py
+#, python-format
+msgid "%(count)s payment"
+msgid_plural "%(count)s payments"
+msgstr[0] "%(count)s платёж"
+msgstr[1] "%(count)s платежа"
+msgstr[2] "%(count)s платежей"
+
+#: backend/apps/finance/owner_draw.py
+msgid "Pay owed to the team"
+msgstr "Зарплата к выплате команде"
+
+#: backend/apps/finance/owner_draw.py
+#, python-format
+msgid "%(count)s line"
+msgid_plural "%(count)s lines"
+msgstr[0] "%(count)s строка"
+msgstr[1] "%(count)s строки"
+msgstr[2] "%(count)s строк"
+
+#: backend/apps/finance/owner_draw.py backend/apps/payroll/providers.py
+msgid "Pay day"
+msgstr "День зарплаты"
+
+#: backend/apps/finance/owner_draw.py
+msgid "Say what you plan to buy."
+msgstr "Укажите, что планируете купить."
+
+#: backend/apps/finance/owner_draw.py backend/apps/finance/planning_api.py
+msgid "Give a number of days."
+msgstr "Укажите число дней."
+
+#: backend/apps/finance/owner_draw.py
+#, python-format
+msgid "From %(min)s to %(max)s days."
+msgstr "От %(min)s до %(max)s дней."
+
+#: backend/apps/finance/owner_draw.py
+#, python-format
+msgid ""
+"That is more than is safe to take out today (%(safe)s). Confirm to take it."
+msgstr ""
+"Это больше, чем сегодня безопасно забрать (%(safe)s). Подтвердите, чтобы "
+"забрать."
+
+#: backend/apps/finance/owner_draw.py
+msgid "Taken by the owner"
+msgstr "Изъято собственником"
+
+#: backend/apps/finance/owner_draw.py
+msgid "Put in by the owner"
+msgstr "Внесено собственником"
+
+#: backend/apps/finance/owner_draw.py
+msgid ""
+"Take money from or put it into a cash desk, safe, bank account, card or "
+"wallet."
+msgstr ""
+"Забирайте или вносите деньги через кассу, сейф, банковский счёт, карту или "
+"кошелёк."
+
+#: backend/apps/finance/owner_money_api.py
+msgid ""
+"The owner's money is the whole company's: it needs access to every branch."
+msgstr ""
+"Деньги собственника относятся ко всей компании: нужен доступ ко всем "
+"филиалам."
+
+#: backend/apps/finance/owner_money_api.py
+msgid "Pick one of the business accounts."
+msgstr "Выберите один из счетов бизнеса."
+
+#: backend/apps/finance/owner_money_api.py backend/apps/tasks/owner_api.py
+msgid "Pick a branch."
+msgstr "Выберите филиал."
+
+#: backend/apps/finance/owner_money_api.py backend/apps/goals/owner_api.py
+msgid "A day like 2026-10-01."
+msgstr "Дата в виде 2026-10-01."
+
+#: backend/apps/finance/owner_money_api.py backend/apps/finance/partners.py
+msgid "The period ends before it starts."
+msgstr "Период заканчивается раньше, чем начинается."
+
 #: backend/apps/finance/owner_serializers.py
 msgid "Pick who owes or is owed: a counterparty or an employee."
 msgstr "Выберите, кто должен или кому должны: контрагента или сотрудника."
@@ -8743,6 +9611,92 @@ msgstr "Выберите, кто должен или кому должны: ко
 #: backend/apps/sales/services.py
 msgid "Pick the account."
 msgstr "Выберите счёт."
+
+#: backend/apps/finance/partners.py
+#, python-format
+msgid ""
+"The partners changed on %(date)s: a new change starts on that day or later."
+msgstr ""
+"Партнёры менялись %(date)s: новое изменение начинается в этот день или позже."
+
+#: backend/apps/finance/partners.py
+#, python-format
+msgid ""
+"A dividend already uses the shares that start on %(date)s: pick a later day."
+msgstr ""
+"Доли, действующие с %(date)s, уже используются в дивиденде: выберите более "
+"позднюю дату."
+
+#: backend/apps/finance/partners.py
+msgid "Add at least one partner."
+msgstr "Добавьте хотя бы одного партнёра."
+
+#: backend/apps/finance/partners.py
+#, python-format
+msgid "At most %(n)s partners."
+msgstr "Не больше %(n)s партнёров."
+
+#: backend/apps/finance/partners.py
+msgid "Give each partner a name or pick a person."
+msgstr "Укажите имя каждого партнёра или выберите сотрудника."
+
+#: backend/apps/finance/partners.py
+#, python-format
+msgid "%(name)s is listed twice."
+msgstr "%(name)s указан дважды."
+
+#: backend/apps/finance/partners.py
+#, python-format
+msgid "The shares add up to %(total)s %%; they must make exactly 100 %%."
+msgstr "Сумма долей — %(total)s %%, а должна быть ровно 100 %%."
+
+#: backend/apps/finance/partners.py
+msgid "Enter each share as a percentage."
+msgstr "Укажите каждую долю в процентах."
+
+#: backend/apps/finance/partners.py
+msgid "A share is more than 0 and at most 100 %."
+msgstr "Доля больше 0 и не больше 100 %."
+
+#: backend/apps/finance/partners.py
+msgid "Add the partners and their shares first."
+msgstr "Сначала добавьте партнёров и их доли."
+
+#: backend/apps/finance/partners.py
+msgid "Only a dividend with nothing paid yet can be changed."
+msgstr "Изменить можно только дивиденд, по которому ещё ничего не выплачено."
+
+#: backend/apps/finance/partners.py
+msgid "This dividend was cancelled."
+msgstr "Этот дивиденд отменён."
+
+#: backend/apps/finance/partners.py
+msgid "Pay dividends from a cash desk, safe, bank account, card or wallet."
+msgstr ""
+"Выплачивайте дивиденды из кассы, сейфа, с банковского счёта, карты или "
+"кошелька."
+
+#: backend/apps/finance/partners.py
+#, python-format
+msgid "Pay dividends from an account in %(currency)s."
+msgstr "Выплачивайте дивиденды со счёта в валюте %(currency)s."
+
+#: backend/apps/finance/partners.py
+msgid "Everything of this dividend is already paid."
+msgstr "Этот дивиденд уже полностью выплачен."
+
+#: backend/apps/finance/partners.py
+#, python-format
+msgid "Dividend for %(period)s: %(name)s"
+msgstr "Дивиденд за %(period)s: %(name)s"
+
+#: backend/apps/finance/partners.py
+msgid "This part isn't paid."
+msgstr "Эта часть не выплачена."
+
+#: backend/apps/finance/partners.py
+msgid "Part of this dividend is paid: take those payments back first."
+msgstr "Часть дивиденда уже выплачена: сначала отмените эти выплаты."
 
 #: backend/apps/finance/payables.py
 #, python-format
@@ -8773,10 +9727,6 @@ msgid_plural "%(count)s people"
 msgstr[0] "%(count)s человек"
 msgstr[1] "%(count)s человека"
 msgstr[2] "%(count)s человек"
-
-#: backend/apps/finance/planning_api.py
-msgid "Give a number of days."
-msgstr "Укажите число дней."
 
 #: backend/apps/finance/planning_api.py
 #, python-format
@@ -9501,6 +10451,246 @@ msgstr "Типичные сроки уплаты; уточните их у бу�
 #: backend/apps/finance/tax_calendar.py
 msgid "There is no tax calendar for that regime."
 msgstr "Для этого режима нет налогового календаря."
+
+#: backend/apps/goals/audit_actions.py
+msgid "Set a business goal"
+msgstr "Поставил бизнес-цель"
+
+#: backend/apps/goals/audit_actions.py
+msgid "Changed a business goal"
+msgstr "Изменил бизнес-цель"
+
+#: backend/apps/goals/audit_actions.py
+msgid "Archived a business goal"
+msgstr "Отправил бизнес-цель в архив"
+
+#: backend/apps/goals/audit_actions.py
+msgid "Brought back a business goal"
+msgstr "Вернул бизнес-цель из архива"
+
+#: backend/apps/goals/audit_actions.py
+msgid "Deleted a business goal"
+msgstr "Удалил бизнес-цель"
+
+#: backend/apps/goals/bot_messages.py
+#, python-format
+msgid "Goal off track: %(title)s"
+msgstr "Цель отстаёт: %(title)s"
+
+#: backend/apps/goals/bot_messages.py
+#, python-format
+msgid "Goal at risk: %(title)s"
+msgstr "Цель под угрозой: %(title)s"
+
+#: backend/apps/goals/bot_messages.py
+#, python-format
+msgid "%(metric)s now: %(value)s. Target: %(target)s."
+msgstr "%(metric)s сейчас: %(value)s. Цель: %(target)s."
+
+#: backend/apps/goals/bot_messages.py
+#, python-format
+msgid "At this pace by the end: %(forecast)s."
+msgstr "При таком темпе к концу срока: %(forecast)s."
+
+#: backend/apps/goals/bot_messages.py
+#, python-format
+msgid "Deadline: %(date)s."
+msgstr "Срок: %(date)s."
+
+#: backend/apps/goals/hooks.py
+msgid "Business goals at risk"
+msgstr "Бизнес-цели под угрозой"
+
+#: backend/apps/goals/metrics.py
+msgid "Income in the profit and loss statement."
+msgstr "Доходы по отчёту о прибылях и убытках."
+
+#: backend/apps/goals/metrics.py
+msgid "Income less the cost of medicines and goods."
+msgstr "Доходы минус стоимость препаратов и товаров."
+
+#: backend/apps/goals/metrics.py
+msgid "Income less every expense, as the profit and loss statement shows it."
+msgstr "Доходы минус все расходы, как в отчёте о прибылях и убытках."
+
+#: backend/apps/goals/metrics.py
+msgid "Net profit as a percent of income."
+msgstr "Доля чистой прибыли в доходах."
+
+#: backend/apps/goals/metrics.py
+msgid "Pharmacies and warehouses that work."
+msgstr "Работающие аптеки и склады."
+
+#: backend/apps/goals/metrics.py
+msgid "People employed, as HR counts them."
+msgstr "Сотрудники в штате, как их считает HR."
+
+#: backend/apps/goals/metrics.py
+msgid "People who left, per the average headcount of the period."
+msgstr "Уволившиеся к средней численности за период."
+
+#: backend/apps/goals/metrics.py
+msgid "Net sales per receipt."
+msgstr "Чистые продажи на один чек."
+
+#: backend/apps/goals/metrics.py
+msgid "Late check-ins per day someone came in."
+msgstr "Опоздания к числу явок."
+
+#: backend/apps/goals/metrics.py
+msgid "People who finished every mandatory course."
+msgstr "Прошедшие все обязательные курсы."
+
+#: backend/apps/goals/models.py
+msgid "Revenue"
+msgstr "Выручка"
+
+#: backend/apps/goals/models.py
+msgid "Gross profit"
+msgstr "Валовая прибыль"
+
+#: backend/apps/goals/models.py
+msgid "Net profit"
+msgstr "Чистая прибыль"
+
+#: backend/apps/goals/models.py
+msgid "Net margin"
+msgstr "Чистая рентабельность"
+
+#: backend/apps/goals/models.py
+msgid "Branches open"
+msgstr "Количество филиалов"
+
+#: backend/apps/goals/models.py
+msgid "Headcount"
+msgstr "Численность"
+
+#: backend/apps/goals/models.py
+msgid "Staff turnover"
+msgstr "Текучесть кадров"
+
+#: backend/apps/goals/models.py backend/apps/sales/hooks.py
+msgid "Average check"
+msgstr "Средний чек"
+
+#: backend/apps/goals/models.py
+msgid "Training completed"
+msgstr "Обучение пройдено"
+
+#: backend/apps/goals/models.py
+msgid "Achieved"
+msgstr "Достигнута"
+
+#: backend/apps/goals/models.py backend/apps/reports/hooks.py
+msgid "Missed"
+msgstr "Не выполнено"
+
+#: backend/apps/goals/models.py backend/apps/hr/policies/queries.py
+#: backend/apps/learning/models.py
+msgid "Archived"
+msgstr "В архиве"
+
+#: backend/apps/goals/models.py backend/apps/learning/models.py
+msgid "Not started"
+msgstr "Не начат"
+
+#: backend/apps/goals/models.py backend/apps/projects/jobs.py
+#: backend/apps/projects/models.py
+msgid "On track"
+msgstr "По плану"
+
+#: backend/apps/goals/models.py backend/apps/projects/jobs.py
+#: backend/apps/projects/models.py
+msgid "At risk"
+msgstr "Под угрозой"
+
+#: backend/apps/goals/models.py backend/apps/projects/jobs.py
+#: backend/apps/projects/models.py
+msgid "Off track"
+msgstr "Отстаёт"
+
+#: backend/apps/goals/models.py
+msgid "No data"
+msgstr "Нет данных"
+
+#: backend/apps/goals/models.py
+msgid "In the metric's unit: so‘m, percent or a count."
+msgstr "В единицах показателя: сумы, проценты или количество."
+
+#: backend/apps/goals/models.py
+msgid "Empty: the whole company."
+msgstr "Пусто — вся компания."
+
+#: backend/apps/goals/models.py
+msgid "Who answers for it."
+msgstr "Кто отвечает."
+
+#: backend/apps/goals/models.py
+msgid "Where a level metric (branches, headcount, training) stood on day one."
+msgstr "Уровень показателя (филиалы, численность, обучение) в первый день."
+
+#: backend/apps/goals/owner_api.py
+msgid "Pick one of your branches: company-wide goals need every one."
+msgstr ""
+"Выберите один из своих филиалов: для целей всей компании нужен доступ ко "
+"всем."
+
+#: backend/apps/goals/owner_api.py backend/apps/sales/owner_api.py
+#: backend/apps/sales/serializers.py
+msgid "Pick someone from the team."
+msgstr "Выберите человека из команды."
+
+#: backend/apps/goals/owner_api.py
+msgid "active, done or archived."
+msgstr "active, done или archived."
+
+#: backend/apps/goals/owner_api.py
+msgid "You don't see the numbers this goal measures."
+msgstr "Вам не видны показатели, которые измеряет эта цель."
+
+#: backend/apps/goals/owner_api.py backend/apps/goals/services.py
+msgid "Pick what the goal measures."
+msgstr "Выберите, что измеряет цель."
+
+#: backend/apps/goals/owner_api.py backend/apps/goals/services.py
+msgid "The goal ends before it starts."
+msgstr "Цель заканчивается раньше, чем начинается."
+
+#: backend/apps/goals/services.py
+msgid "Switch on the module this goal measures first."
+msgstr "Сначала включите модуль, который измеряет эта цель."
+
+#: backend/apps/goals/services.py
+msgid "This goal is for the whole company."
+msgstr "Эта цель — для всей компании."
+
+#: backend/apps/goals/services.py
+msgid "Bring the goal back before changing it."
+msgstr "Перед изменением верните цель из архива."
+
+#: backend/apps/goals/services.py
+msgid "Everything in a goal must belong to the same company."
+msgstr "Всё в цели должно относиться к одной компании."
+
+#: backend/apps/goals/services.py
+msgid "Give the goal a name."
+msgstr "Дайте цели название."
+
+#: backend/apps/goals/services.py
+msgid "Enter the target as a number."
+msgstr "Введите цель числом."
+
+#: backend/apps/goals/services.py
+msgid "A percent target is at most 100."
+msgstr "Цель в процентах — не больше 100."
+
+#: backend/apps/goals/services.py
+msgid "The target must be more than zero."
+msgstr "Цель должна быть больше нуля."
+
+#: backend/apps/goals/services.py
+msgid "A goal runs for two years at most."
+msgstr "Цель ставится не больше чем на два года."
 
 #: backend/apps/groups/bot_messages.py
 #, python-format
@@ -10850,7 +12040,8 @@ msgstr "Банковский перевод"
 msgid "Resigned"
 msgstr "По собственному желанию"
 
-#: backend/apps/hr/models.py
+#: backend/apps/hr/models.py backend/apps/insights/models.py
+#: backend/apps/insights/services.py
 msgid "Dismissed"
 msgstr "По инициативе работодателя"
 
@@ -11238,10 +12429,6 @@ msgstr "Укажите название правила."
 msgid "Version %(number)d"
 msgstr "Версия %(number)d"
 
-#: backend/apps/hr/policies/queries.py backend/apps/learning/models.py
-msgid "Archived"
-msgstr "В архиве"
-
 #: backend/apps/hr/policies/services.py
 msgid "A published policy can't be deleted. Archive it instead."
 msgstr "Опубликованное правило нельзя удалить. Перенесите его в архив."
@@ -11563,6 +12750,7 @@ msgid "The last day can't be before the contract starts."
 msgstr "Последний день не может быть раньше начала договора."
 
 #: backend/apps/inbox/bot_handlers.py backend/apps/inbox/services.py
+#: backend/apps/insights/services.py
 #: employee_bot/bot/handlers/admin/approvals.py
 #: employee_bot/bot/handlers/company.py employee_bot/bot/middlewares/access.py
 msgid "You don't have access to this."
@@ -11648,6 +12836,412 @@ msgstr "Это действие больше недоступно."
 #: backend/apps/inbox/services.py backend/apps/sales/services.py
 msgid "Please give a reason."
 msgstr "Пожалуйста, укажите причину."
+
+#: backend/apps/insights/ai_tools.py
+msgid "What the checks noticed: open insights with their numbers"
+msgstr "Что заметили проверки: открытые сигналы с цифрами"
+
+#: backend/apps/insights/audit_actions.py
+msgid "Marked an insight as seen"
+msgstr "Отметил сигнал как просмотренный"
+
+#: backend/apps/insights/audit_actions.py
+msgid "Dismissed an insight"
+msgstr "Скрыл сигнал"
+
+#: backend/apps/insights/audit_actions.py
+msgid "Marked an insight as resolved"
+msgstr "Отметил сигнал как решённый"
+
+#: backend/apps/insights/audit_actions.py
+msgid "Made a task from an insight"
+msgstr "Сделал задачу из сигнала"
+
+#: backend/apps/insights/audit_actions.py
+msgid "Changed the insight settings"
+msgstr "Изменил настройки сигналов"
+
+#: backend/apps/insights/audit_actions.py
+msgid "Ran the insight checks now"
+msgstr "Запустил проверку сигналов"
+
+#: backend/apps/insights/engine.py
+msgid "No longer the case"
+msgstr "Больше не актуально"
+
+#: backend/apps/insights/hooks.py
+msgid "Urgent insight"
+msgstr "Срочный сигнал"
+
+#: backend/apps/insights/models.py
+msgid "Only big changes"
+msgstr "Только крупные изменения"
+
+#: backend/apps/insights/models.py backend/apps/projects/models.py
+#: backend/apps/tasks/models.py
+msgid "Normal"
+msgstr "Обычный"
+
+#: backend/apps/insights/models.py
+msgid "Small changes too"
+msgstr "И небольшие изменения"
+
+#: backend/apps/insights/models.py
+msgid "Kinds of insight the company doesn't want."
+msgstr "Виды сигналов, которые компании не нужны."
+
+#: backend/apps/insights/models.py
+msgid "No Telegram messages from this time…"
+msgstr "С этого времени сообщения в Telegram не отправляются…"
+
+#: backend/apps/insights/models.py
+msgid "…until this time."
+msgstr "…до этого времени."
+
+#: backend/apps/insights/models.py
+msgid "Send urgent insights to the owner bot."
+msgstr "Отправлять срочные сигналы в бот владельца."
+
+#: backend/apps/insights/models.py
+msgid "An expense jump smaller than this isn't worth a word."
+msgstr "О росте расхода меньше этой суммы не сообщается."
+
+#: backend/apps/insights/models.py
+msgid "Cash low point under the buffer"
+msgstr "Минимум денег ниже запаса"
+
+#: backend/apps/insights/models.py
+msgid "A branch's profit or margin falling"
+msgstr "Прибыль или рентабельность аптеки падает"
+
+#: backend/apps/insights/models.py
+msgid "An expense category jumping"
+msgstr "Резкий рост статьи расходов"
+
+#: backend/apps/insights/models.py
+msgid "Overdue money owed to us piling up"
+msgstr "Растёт просроченная дебиторская задолженность"
+
+#: backend/apps/insights/models.py
+msgid "Overdue bills to suppliers piling up"
+msgstr "Растут просроченные платежи дистрибьюторам"
+
+#: backend/apps/insights/models.py
+msgid "Stock growing while sales fall"
+msgstr "Остатки растут, а продажи падают"
+
+#: backend/apps/insights/models.py
+msgid "Staff cost share rising"
+msgstr "Растёт доля расходов на персонал"
+
+#: backend/apps/insights/models.py
+msgid "Information"
+msgstr "Информация"
+
+#: backend/apps/insights/models.py backend/apps/tasks/models.py
+msgid "Urgent"
+msgstr "Срочный"
+
+#: backend/apps/insights/models.py backend/apps/insights/services.py
+msgid "Seen"
+msgstr "Просмотрено"
+
+#: backend/apps/insights/models.py backend/apps/insights/services.py
+#: backend/apps/learning/models.py
+msgid "Resolved"
+msgstr "Решено"
+
+#: backend/apps/insights/models.py
+msgid "AI"
+msgstr "ИИ"
+
+#: backend/apps/insights/notify.py
+msgid "Got it"
+msgstr "Понятно"
+
+#: backend/apps/insights/notify.py
+msgid "Make it a task"
+msgstr "Сделать задачей"
+
+#: backend/apps/insights/notify.py
+msgid "Marked as seen."
+msgstr "Отмечено как просмотренное."
+
+#: backend/apps/insights/notify.py
+#, python-format
+msgid "Task added: %(title)s"
+msgstr "Задача добавлена: %(title)s"
+
+#: backend/apps/insights/owner_api.py
+msgid "Pick one of the listed values."
+msgstr "Выберите одно из значений списка."
+
+#: backend/apps/insights/owner_api.py
+msgid "Pick someone you see."
+msgstr "Выберите сотрудника, которого вы видите."
+
+#: backend/apps/insights/services.py
+msgid "Made a task"
+msgstr "Сделана задача"
+
+#: backend/apps/insights/services.py
+msgid "This insight is no longer open."
+msgstr "Этот сигнал уже не открыт."
+
+#: backend/apps/insights/services.py
+msgid "A task for this insight already exists."
+msgstr "Задача по этому сигналу уже есть."
+
+#: backend/apps/insights/services.py
+msgid "Pick someone from this company."
+msgstr "Выберите сотрудника этой компании."
+
+#: backend/apps/insights/services.py
+#, python-format
+msgid "Unknown kinds: %(kinds)s"
+msgstr "Неизвестные виды: %(kinds)s"
+
+#: backend/apps/insights/texts.py
+#, python-format
+msgid "%(title)s %(amount)s (%(date)s)"
+msgstr "%(title)s %(amount)s (%(date)s)"
+
+#: backend/apps/insights/texts.py
+#, python-format
+msgid "Biggest payments before it: %(list)s."
+msgstr "Крупнейшие платежи перед этим: %(list)s."
+
+#: backend/apps/insights/texts.py
+#, python-format
+msgid "Cash runs out on %(date)s"
+msgstr "Деньги закончатся %(date)s"
+
+#: backend/apps/insights/texts.py
+#, python-format
+msgid ""
+"The forecast goes below zero on %(zero)s and reaches %(amount)s on %(date)s. "
+"Cash now: %(now)s."
+msgstr ""
+"По прогнозу деньги уйдут в минус %(zero)s, минимум %(amount)s — %(date)s. "
+"Деньги сейчас: %(now)s."
+
+#: backend/apps/insights/texts.py
+#, python-format
+msgid "Cash drops to %(amount)s on %(date)s"
+msgstr "%(date)s денег станет %(amount)s"
+
+#: backend/apps/insights/texts.py
+#, python-format
+msgid ""
+"On %(date)s the accounts hold %(amount)s, %(short)s less than your buffer of "
+"%(buffer)s. Cash now: %(now)s."
+msgstr ""
+"%(date)s на счетах будет %(amount)s — на %(short)s меньше вашего запаса "
+"%(buffer)s. Деньги сейчас: %(now)s."
+
+#: backend/apps/insights/texts.py
+#, python-format
+msgid ""
+"Move a supplier payment to a later date, collect what customers owe, or put "
+"money in before %(date)s."
+msgstr ""
+"Перенесите платёж дистрибьютору, соберите долги покупателей или внесите "
+"деньги до %(date)s."
+
+#: backend/apps/insights/texts.py
+#, python-format
+msgid ""
+"Plan the payments of that week: move one if you can, or collect what "
+"customers owe before %(date)s."
+msgstr ""
+"Спланируйте платежи этой недели: перенесите один, если можно, или соберите "
+"долги покупателей до %(date)s."
+
+#: backend/apps/insights/texts.py
+#, python-format
+msgid "%(branch)s is losing money"
+msgstr "«%(branch)s» работает в убыток"
+
+#: backend/apps/insights/texts.py
+#, python-format
+msgid "%(branch)s: margin fell to %(margin)s%%"
+msgstr "%(branch)s: рентабельность упала до %(margin)s%%"
+
+#: backend/apps/insights/texts.py
+#, python-format
+msgid ""
+"Last month: profit %(profit)s, margin %(margin)s%%. The month before: profit "
+"%(profit_previous)s, margin %(previous)s%%. Revenue: %(revenue)s, was "
+"%(revenue_previous)s."
+msgstr ""
+"Прошлый месяц: прибыль %(profit)s, рентабельность %(margin)s%%. Месяц до "
+"этого: прибыль %(profit_previous)s, рентабельность %(previous)s%%. Выручка: "
+"%(revenue)s, было %(revenue_previous)s."
+
+#: backend/apps/insights/texts.py
+#, python-format
+msgid ""
+"This month so far: profit %(profit)s, margin %(margin)s%%. The same days last"
+" month: profit %(profit_previous)s, margin %(previous)s%%. Revenue: "
+"%(revenue)s, was %(revenue_previous)s."
+msgstr ""
+"В этом месяце пока: прибыль %(profit)s, рентабельность %(margin)s%%. Те же "
+"дни прошлого месяца: прибыль %(profit_previous)s, рентабельность "
+"%(previous)s%%. Выручка: %(revenue)s, было %(revenue_previous)s."
+
+#: backend/apps/insights/texts.py
+#, python-format
+msgid "Revenue fell by %(change)s%%."
+msgstr "Выручка снизилась на %(change)s%%."
+
+#: backend/apps/insights/texts.py
+#, python-format
+msgid "%(name)s %(share)s%% (was %(previous)s%%)"
+msgstr "%(name)s %(share)s%% (было %(previous)s%%)"
+
+#: backend/apps/insights/texts.py
+#, python-format
+msgid "Costs that took a bigger share of revenue: %(list)s."
+msgstr "Расходы, чья доля в выручке выросла: %(list)s."
+
+#: backend/apps/insights/texts.py
+#, python-format
+msgid "Open the P&L of %(branch)s and check its sales and biggest costs."
+msgstr ""
+"Откройте отчёт о прибылях аптеки «%(branch)s» и проверьте её продажи и "
+"крупнейшие расходы."
+
+#: backend/apps/insights/texts.py
+#, python-format
+msgid "%(category)s: %(amount)s in 7 days"
+msgstr "%(category)s: %(amount)s за 7 дней"
+
+#: backend/apps/insights/texts.py
+#, python-format
+msgid ""
+"The last 7 days: %(amount)s. A usual week (the average of the 8 weeks "
+"before): %(average)s. That is %(ratio)s times as much."
+msgstr ""
+"Последние 7 дней: %(amount)s. Обычная неделя (среднее за 8 недель до этого): "
+"%(average)s. Это в %(ratio)s раза больше."
+
+#: backend/apps/insights/texts.py
+#, python-format
+msgid "Check the %(category)s entries of the last week and who made them."
+msgstr ""
+"Проверьте записи статьи «%(category)s» за последнюю неделю и кто их внёс."
+
+#: backend/apps/insights/texts.py
+#, python-format
+msgid "%(name)s %(amount)s, %(days)s day late"
+msgid_plural "%(name)s %(amount)s, %(days)s days late"
+msgstr[0] "%(name)s %(amount)s, просрочено на %(days)s день"
+msgstr[1] "%(name)s %(amount)s, просрочено на %(days)s дня"
+msgstr[2] "%(name)s %(amount)s, просрочено на %(days)s дней"
+
+#: backend/apps/insights/texts.py
+#, python-format
+msgid "Customers are late with %(amount)s"
+msgstr "Покупатели просрочили %(amount)s"
+
+#: backend/apps/insights/texts.py
+#, python-format
+msgid ""
+"Overdue debts to you: %(count)s, the oldest %(days)s day late. Biggest: "
+"%(parties)s."
+msgid_plural ""
+"Overdue debts to you: %(count)s, the oldest %(days)s days late. Biggest: "
+"%(parties)s."
+msgstr[0] ""
+"Просроченных долгов перед вами: %(count)s, самый старый просрочен на %(days)s"
+" день. Крупнейшие: %(parties)s."
+msgstr[1] ""
+"Просроченных долгов перед вами: %(count)s, самый старый просрочен на %(days)s"
+" дня. Крупнейшие: %(parties)s."
+msgstr[2] ""
+"Просроченных долгов перед вами: %(count)s, самый старый просрочен на %(days)s"
+" дней. Крупнейшие: %(parties)s."
+
+#: backend/apps/insights/texts.py
+msgid "Call the customers who are late and agree on a date to pay."
+msgstr "Позвоните опаздывающим покупателям и договоритесь о дате оплаты."
+
+#: backend/apps/insights/texts.py
+#, python-format
+msgid "Supplier bills overdue: %(amount)s"
+msgstr "Просрочено платежей дистрибьюторам: %(amount)s"
+
+#: backend/apps/insights/texts.py
+#, python-format
+msgid ""
+"Overdue bills: %(count)s, the oldest %(days)s day late. Biggest: %(parties)s."
+msgid_plural ""
+"Overdue bills: %(count)s, the oldest %(days)s days late. Biggest: "
+"%(parties)s."
+msgstr[0] ""
+"Просроченных счетов: %(count)s, самый старый просрочен на %(days)s день. "
+"Крупнейшие: %(parties)s."
+msgstr[1] ""
+"Просроченных счетов: %(count)s, самый старый просрочен на %(days)s дня. "
+"Крупнейшие: %(parties)s."
+msgstr[2] ""
+"Просроченных счетов: %(count)s, самый старый просрочен на %(days)s дней. "
+"Крупнейшие: %(parties)s."
+
+#: backend/apps/insights/texts.py
+msgid ""
+"Pay them or agree on new dates with the suppliers before deliveries stop."
+msgstr ""
+"Оплатите их или договоритесь с дистрибьюторами о новых сроках, пока поставки "
+"не остановились."
+
+#: backend/apps/insights/texts.py
+#, python-format
+msgid "%(branch)s: stock up %(stock)s%%, sales down %(sales)s%%"
+msgstr "%(branch)s: остатки +%(stock)s%%, продажи −%(sales)s%%"
+
+#: backend/apps/insights/texts.py
+#, python-format
+msgid "Stock up %(stock)s%%, sales down %(sales)s%%"
+msgstr "Остатки +%(stock)s%%, продажи −%(sales)s%%"
+
+#: backend/apps/insights/texts.py
+#, python-format
+msgid ""
+"Stock at cost: %(now)s, four weeks ago %(before)s. Sales of the last four "
+"weeks: %(sales_now)s, the four weeks before: %(sales_before)s."
+msgstr ""
+"Остатки по себестоимости: %(now)s, четыре недели назад: %(before)s. Продажи "
+"за последние четыре недели: %(sales_now)s, за четыре недели до этого: "
+"%(sales_before)s."
+
+#: backend/apps/insights/texts.py
+msgid ""
+"Order less of what sells slowly and check the slow movers and expiry dates."
+msgstr ""
+"Заказывайте меньше медленно продающегося товара, проверьте неликвиды и сроки "
+"годности."
+
+#: backend/apps/insights/texts.py
+#, python-format
+msgid "Staff costs: %(share)s%% of revenue"
+msgstr "Расходы на персонал: %(share)s%% выручки"
+
+#: backend/apps/insights/texts.py
+#, python-format
+msgid ""
+"%(month)s: salaries and payroll taxes %(cost)s, revenue %(revenue)s. That is "
+"%(share)s%%, against %(baseline)s%% on average in the months before."
+msgstr ""
+"%(month)s: зарплаты и налоги с них %(cost)s, выручка %(revenue)s. Это "
+"%(share)s%% против %(baseline)s%% в среднем за предыдущие месяцы."
+
+#: backend/apps/insights/texts.py
+msgid ""
+"Compare hours and shifts with sales, and look at overtime and new hires."
+msgstr ""
+"Сравните часы и смены с продажами, посмотрите на переработки и новых "
+"сотрудников."
 
 #: backend/apps/inventory/ai_tools.py
 msgid ""
@@ -15310,10 +16904,6 @@ msgstr "Страница"
 msgid "Quiz"
 msgstr "Тест"
 
-#: backend/apps/learning/models.py
-msgid "Not started"
-msgstr "Не начат"
-
 #: backend/apps/learning/models.py backend/apps/projects/models.py
 msgid "Completed"
 msgstr "Завершён"
@@ -15413,10 +17003,6 @@ msgid "Regular check"
 msgstr "Регулярная проверка"
 
 #: backend/apps/learning/models.py
-msgid "Claude"
-msgstr "Claude"
-
-#: backend/apps/learning/models.py
 msgid "Questions left out: not valid, or a number not in the text."
 msgstr "Отброшенные вопросы: с ошибкой или с числом, которого нет в тексте."
 
@@ -15443,10 +17029,6 @@ msgstr "Сказать спасибо"
 #: backend/apps/learning/models.py
 msgid "Late with mandatory training"
 msgstr "Просрочено обязательное обучение"
-
-#: backend/apps/learning/models.py
-msgid "Resolved"
-msgstr "Решено"
 
 #: backend/apps/learning/notify_courses.py
 #, python-format
@@ -19312,10 +20894,6 @@ msgid "Paid on"
 msgstr "Дата выплаты"
 
 #: backend/apps/payroll/providers.py
-msgid "Pay day"
-msgstr "День зарплаты"
-
-#: backend/apps/payroll/providers.py
 msgid "Advance day"
 msgstr "День аванса"
 
@@ -20054,18 +21632,6 @@ msgstr "%(key)s · %(project)s: срок был %(day)s."
 msgid "How is %(key)s going?"
 msgstr "Как идут дела в проекте %(key)s?"
 
-#: backend/apps/projects/jobs.py backend/apps/projects/models.py
-msgid "On track"
-msgstr "По плану"
-
-#: backend/apps/projects/jobs.py backend/apps/projects/models.py
-msgid "At risk"
-msgstr "Под угрозой"
-
-#: backend/apps/projects/jobs.py backend/apps/projects/models.py
-msgid "Off track"
-msgstr "Отстаёт"
-
 #: backend/apps/projects/jobs.py
 #, python-format
 msgid "%(name)s: post this week's update. Tap a status, or write a fuller one."
@@ -20093,10 +21659,6 @@ msgstr "Приостановлен"
 #: backend/apps/projects/models.py backend/apps/tasks/models.py
 msgid "Low"
 msgstr "Низкий"
-
-#: backend/apps/projects/models.py backend/apps/tasks/models.py
-msgid "Normal"
-msgstr "Обычный"
 
 #: backend/apps/projects/models.py backend/apps/tasks/models.py
 msgid "High"
@@ -21167,10 +22729,6 @@ msgid "Open the app"
 msgstr "Открыть приложение"
 
 #: backend/apps/reports/hooks.py
-msgid "Missed"
-msgstr "Не выполнено"
-
-#: backend/apps/reports/hooks.py
 msgid "Average delay, min"
 msgstr "Средняя просрочка, мин"
 
@@ -21866,10 +23424,6 @@ msgid "Receipts"
 msgstr "Чеки"
 
 #: backend/apps/sales/hooks.py
-msgid "Average check"
-msgstr "Средний чек"
-
-#: backend/apps/sales/hooks.py
 msgid "Cash difference"
 msgstr "Расхождение в кассе"
 
@@ -22422,10 +23976,6 @@ msgid "What the customer paid for the line, after the discount."
 msgstr "Сколько покупатель заплатил за строку, после скидки."
 
 #: backend/apps/sales/models.py
-msgid "Partly paid"
-msgstr "Оплачен частично"
-
-#: backend/apps/sales/models.py
 msgid "The id of the e-invoice (e-faktura), when typed."
 msgstr "Номер электронного счёта-фактуры (e-faktura), если введён."
 
@@ -22489,10 +24039,6 @@ msgstr "Выберите одну из своих касс."
 #: backend/apps/sales/owner_api.py
 msgid "A month like 2026-10."
 msgstr "Месяц в формате 2026-10."
-
-#: backend/apps/sales/owner_api.py backend/apps/sales/serializers.py
-msgid "Pick someone from the team."
-msgstr "Выберите человека из команды."
 
 #: backend/apps/sales/owner_api.py
 msgid "Unknown grouping."
@@ -24380,10 +25926,6 @@ msgid "Done"
 msgstr "Выполнена"
 
 #: backend/apps/tasks/models.py
-msgid "Urgent"
-msgstr "Срочный"
-
-#: backend/apps/tasks/models.py
 msgid "Out of stock"
 msgstr "Нет товара"
 
@@ -24544,10 +26086,6 @@ msgstr "Укажите даты начала (from) и конца (to)."
 #, python-format
 msgid "Pick at most %(days)d days."
 msgstr "Выберите период не больше %(days)d дней."
-
-#: backend/apps/tasks/owner_api.py
-msgid "Pick a branch."
-msgstr "Выберите филиал."
 
 #: backend/apps/tasks/owner_api.py
 msgid "Give the month as YYYY-MM."
