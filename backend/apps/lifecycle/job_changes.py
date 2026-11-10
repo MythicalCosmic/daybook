@@ -403,7 +403,10 @@ def _apply(change: JobChange, *, actor: Membership | None) -> None:
     change.save()
     details = _shown(change)
     if before.get("role") != change.after.get("role"):
-        details["role"] = [before.get("role"), change.after.get("role")]
+        details["role"] = [
+            (before.get("role") or {}).get("name"),
+            (change.after.get("role") or {}).get("name"),
+        ]
     _audit(LifecycleAction.CHANGE_APPLIED, change, actor, **details)
     transaction.on_commit(partial(tasks.notify_change_applied.delay, change.pk))
 
@@ -462,16 +465,45 @@ def _ref(row) -> dict | None:
 
 
 def snapshot(membership: Membership, *, on: date) -> dict:
-    """What the person's job is: position, home branch, branches, department, role, and the
-    pay in force on `on` (None without payroll)."""
+    """What the person's job is: position, home branch, branches, department and role (each
+    {id, name}), and the pay in force on `on` (None without payroll)."""
+    branches = sorted(membership.branches.all(), key=lambda branch: (branch.order, branch.pk))
     return {
         "position": _ref(membership.position),
         "branch": _ref(membership.home_branch),
-        "branches": sorted(branch.name for branch in membership.branches.all()),
+        "branches": [_ref(branch) for branch in branches],
         "department": _ref(membership.department),
-        "role": membership.role.name if membership.role else None,
+        "role": _ref(membership.role),
         "pay": integrations.current_pay(membership, on=on),
     }
+
+
+LIVE = ("position", "branch", "department", "role")
+
+
+def live_names(changes) -> dict[tuple[str, int], str]:
+    """The names positions, branches, departments and roles in `changes` have now (one was
+    renamed since: the history reads today's name), by (kind, id)."""
+    from apps.companies.models import Branch
+    from apps.members.models import AccessRole, Department, Position
+
+    ids: dict[str, set[int]] = {kind: set() for kind in LIVE}
+    for change in changes:
+        for side in (change.before or {}, change.after or {}):
+            for kind in LIVE:
+                ref = side.get(kind)
+                if isinstance(ref, dict) and ref.get("id"):
+                    ids[kind].add(ref["id"])
+            for ref in side.get("branches") or []:
+                if isinstance(ref, dict) and ref.get("id"):
+                    ids["branch"].add(ref["id"])
+    models = {"position": Position, "branch": Branch, "department": Department, "role": AccessRole}
+    names = {}
+    for kind, model in models.items():
+        if ids[kind]:
+            for pk, name in model.objects.filter(pk__in=ids[kind]).values_list("pk", "name"):
+                names[(kind, pk)] = name
+    return names
 
 
 def _target(change: JobChange, before: dict) -> dict:

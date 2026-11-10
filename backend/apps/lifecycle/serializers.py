@@ -2,6 +2,7 @@
 `membership` (the viewer) and `today`. A fine's amount and anyone's pay show only with
 `payroll.view` (the person sees their own in the mini app)."""
 
+from django.db.models import QuerySet
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
@@ -664,25 +665,48 @@ class JobSideSerializer(serializers.Serializer):
 
     position = NamedRefSerializer(allow_null=True)
     branch = NamedRefSerializer(allow_null=True)
-    branches = serializers.ListField(child=serializers.CharField())
+    branches = NamedRefSerializer(many=True)
     department = NamedRefSerializer(allow_null=True)
-    role = serializers.CharField(allow_null=True)
+    role = NamedRefSerializer(allow_null=True)
     pay = JobPaySerializer(allow_null=True)
 
     class Meta:
         ref_name = "LifecycleJobSide"
 
 
-def job_side(data: dict | None, *, show_pay: bool) -> dict:
+def _live(kind: str, ref, names: dict) -> dict | None:
+    if not isinstance(ref, dict):
+        return None
+    return {"id": ref.get("id"), "name": names.get((kind, ref.get("id")), ref.get("name") or "")}
+
+
+def job_side(data: dict | None, *, show_pay: bool, names: dict) -> dict:
+    """One side of a change as the client reads it: today's names, the pay only when shown."""
     data = dict(data or {})
     return {
-        "position": data.get("position"),
-        "branch": data.get("branch"),
-        "branches": list(data.get("branches") or []),
-        "department": data.get("department"),
-        "role": data.get("role"),
+        "position": _live("position", data.get("position"), names),
+        "branch": _live("branch", data.get("branch"), names),
+        "branches": [
+            found
+            for found in (_live("branch", ref, names) for ref in data.get("branches") or [])
+            if found is not None
+        ],
+        "department": _live("department", data.get("department"), names),
+        "role": _live("role", data.get("role"), names),
         "pay": data.get("pay") if show_pay else None,
     }
+
+
+def _names(serializer, change: JobChange) -> dict:
+    """Today's names for the changes being shown, read once per response."""
+    context = serializer.context
+    if "names" not in context:
+        root = serializer.root.instance if serializer.root is not None else None
+        changes = list(root) if isinstance(root, (list, tuple, QuerySet)) else [change]
+        if change not in changes:
+            changes.append(change)
+        context["names"] = job_changes.live_names(changes)
+    return context["names"]
 
 
 class JobChangeActionsSerializer(serializers.Serializer):
@@ -755,11 +779,11 @@ class JobChangeSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(JobSideSerializer)
     def get_before(self, change: JobChange) -> dict:
-        return job_side(change.before, show_pay=self._show_pay())
+        return job_side(change.before, show_pay=self._show_pay(), names=_names(self, change))
 
     @extend_schema_field(JobSideSerializer)
     def get_after(self, change: JobChange) -> dict:
-        return job_side(change.after, show_pay=self._show_pay())
+        return job_side(change.after, show_pay=self._show_pay(), names=_names(self, change))
 
     def get_has_pay(self, change: JobChange) -> bool:
         return "pay" in (change.parts or [])
@@ -1023,11 +1047,11 @@ class MyJobChangeSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(JobSideSerializer)
     def get_before(self, change: JobChange) -> dict:
-        return job_side(change.before, show_pay=True)
+        return job_side(change.before, show_pay=True, names=_names(self, change))
 
     @extend_schema_field(JobSideSerializer)
     def get_after(self, change: JobChange) -> dict:
-        return job_side(change.after, show_pay=True)
+        return job_side(change.after, show_pay=True, names=_names(self, change))
 
 
 class MyCareerSerializer(serializers.Serializer):
