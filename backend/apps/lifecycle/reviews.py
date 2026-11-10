@@ -8,10 +8,13 @@ answers, their reviewer's part and the outcome.
 - **Opening it** (`open_cycle`) makes a `Review` for everyone in it with their reviewer
   (`reviewer_for`: the nearest head above them who runs reviews, else their pharmacy's manager,
   else an owner) and tells each of them in the employee bot. The day before the self deadline
-  whoever hasn't answered hears again; the day after it the reviewers' part begins (`advance`,
-  also by hand), and the reviewers hear how many wait for them.
+  whoever hasn't answered hears again. After the deadline whoever hasn't answered is late (and
+  may still answer); the round's runner reminds them and starts the reviewers' part
+  (`advance`), which otherwise begins by itself `GRACE_DAYS` after the deadline. The reviewers
+  hear how many wait for them.
 - **Self review**: `save_self` keeps the person's draft as they go, `send_self` sends it (every
-  rating answered). Their answers stay hidden from the reviewer until the reviewers' part.
+  rating answered), late too until their review is published. Their answers stay hidden from
+  the reviewer until the reviewers' part.
 - **The reviewer's part**: `open_for_reviewer` takes the person's numbers for the period once
   (`review_kpis.snapshot`), so they never change later; `save_manager` keeps the draft (answers,
   rating, summary, outcome); `publish` checks it and turns the outcome into proposals that wait
@@ -74,6 +77,9 @@ PAY_OUTCOMES = (Outcome.RAISE, Outcome.BONUS)
 CHANGE_OUTCOMES = (Outcome.RAISE, Outcome.PROMOTION)
 # The day-before reminders go out from this hour, in the company's time.
 REMIND_AT = time(10, 0)
+# Days after the self deadline the late ones still have before the reviewers' part begins by
+# itself (the round's runner may start it sooner).
+GRACE_DAYS = 3
 UNSET = object()
 
 # A pharmacy's questions, ready to use (`key` keeps one in each reader's language until its
@@ -329,13 +335,17 @@ def audience(
     positions=(),
     branches=(),
     branch_ids: list[int] | None,
+    period_end: date | None = None,
 ) -> QuerySet[Membership]:
-    """Who a round takes in: approved people who finished joining, in `positions` and/or
-    `branches` (none of either: everyone), inside `branch_ids`; owners and people whose last
-    day is already agreed are left out."""
+    """Who a round takes in: approved people who finished joining (by the end of the period,
+    when given), in `positions` and/or `branches` (none of either: everyone), inside
+    `branch_ids`; owners and people whose last day is already agreed are left out."""
     rows = hr_queries.people(
         company, branch_ids=branch_ids, statuses=(Membership.Status.APPROVED,)
     ).filter(onboarded_at__isnull=False)
+    if period_end is not None:
+        after = datetime.combine(period_end + timedelta(days=1), time.min)
+        rows = rows.filter(onboarded_at__lt=after.replace(tzinfo=ZoneInfo(company.timezone)))
     rows = rows.exclude(role__is_owner=True)
     position_ids = [getattr(position, "pk", position) for position in positions]
     if position_ids:
@@ -357,6 +367,7 @@ def audience_of(cycle: ReviewCycle, *, branch_ids: list[int] | None) -> QuerySet
         positions=list(cycle.positions.values_list("pk", flat=True)),
         branches=list(cycle.branches.values_list("pk", flat=True)),
         branch_ids=branch_ids,
+        period_end=cycle.period_end,
     )
 
 
@@ -389,11 +400,17 @@ def reviewer_for(
 
 
 def preview(
-    company, *, by: Membership, positions=(), branches=()
+    company, *, by: Membership, positions=(), branches=(), period_end: date | None = None
 ) -> list[tuple[Membership, Membership | None]]:
     """(person, their reviewer) for a round with these filters, as `by` would open it."""
     people = list(
-        audience(company, positions=positions, branches=branches, branch_ids=scope.branch_ids(by))
+        audience(
+            company,
+            positions=positions,
+            branches=branches,
+            branch_ids=scope.branch_ids(by),
+            period_end=period_end,
+        )
         .select_related("user", "role", "position", "home_branch__manager__role", "company")
         .prefetch_related("branches")
     )
@@ -588,8 +605,8 @@ def open_cycle(cycle: ReviewCycle, *, by: Membership) -> ReviewCycle:
 
 @transaction.atomic
 def advance(cycle: ReviewCycle, *, by: Membership | None = None) -> ReviewCycle:
-    """The reviewers' part begins (by hand, or the day after the self deadline): the people's
-    answers reach their reviewers, who hear how many reviews wait for them."""
+    """The reviewers' part begins (by hand, or by itself `GRACE_DAYS` after the self deadline):
+    the people's answers reach their reviewers, who hear how many reviews wait for them."""
     cycle = _lock_cycle(cycle)
     if by is not None:
         _ensure_run(cycle, by)
@@ -677,9 +694,9 @@ def remind(cycle: ReviewCycle, *, by: Membership, rows=None) -> dict:
 
 def run_due(now: datetime | None = None) -> int:
     """The job (every 15 minutes, in each company's time): the day-before reminders from 10:00,
-    and the reviewers' part from the day after the self deadline. Idempotent: each reminder
-    goes out once (the day is kept on the round), a round moves on once. Returns how many
-    rounds it touched."""
+    and the reviewers' part once `GRACE_DAYS` have passed after the self deadline. Idempotent:
+    each reminder goes out once (the day is kept on the round), a round moves on once. Returns
+    how many rounds it touched."""
     now = now or timezone.now()
     touched = 0
     rows = ReviewCycle.objects.filter(status__in=OPEN, company__is_active=True).select_related(
@@ -692,7 +709,7 @@ def run_due(now: datetime | None = None) -> int:
         local = timezone.localtime(now, ZoneInfo(company.timezone))
         today = local.date()
         if cycle.status == Status.SELF:
-            if today > cycle.self_due_on:
+            if today >= reviewers_begin_on(cycle):
                 advance(cycle)
                 touched += 1
                 continue
@@ -707,6 +724,11 @@ def run_due(now: datetime | None = None) -> int:
             transaction.on_commit(partial(tasks.notify_review_reminders.delay, cycle.pk))
             touched += 1
     return touched
+
+
+def reviewers_begin_on(cycle: ReviewCycle) -> date:
+    """The day the reviewers' part begins by itself if nobody starts it sooner."""
+    return cycle.self_due_on + timedelta(days=GRACE_DAYS + 1)
 
 
 def _remind_now(sent_on: date | None, deadline: date, began: datetime | None, local) -> bool:

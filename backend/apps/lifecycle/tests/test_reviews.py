@@ -176,6 +176,12 @@ def test_the_audience_is_positions_and_branches_without_owners_and_people_leavin
     people = set(reviews.audience_of(cycle, branch_ids=None).values_list("pk", flat=True))
     assert people == {team.ali.pk, team.sara.pk}
 
+    # Nor someone who joined after the period: Sara came on 1 October.
+    team.sara.onboarded_at = local(date(2026, 10, 1), 9)
+    team.sara.save(update_fields=["onboarded_at"])
+    people = set(reviews.audience_of(cycle, branch_ids=None).values_list("pk", flat=True))
+    assert people == {team.ali.pk}
+
 
 def test_a_reviewer_is_the_nearest_head_who_runs_reviews_else_the_branch_manager(
     shop, team, chilonzor, yunusobod, member, run
@@ -292,18 +298,23 @@ def test_the_person_hears_again_the_day_before_their_deadline_then_the_reviewers
     assert run(reviews.run_due, local(date(2026, 10, 27), 10, 20)) == 0
     assert Notification.objects.filter(kind=review_notify.REVIEW).count() == before + 5
 
-    # The day after the deadline the reviewers' part begins, and the reviewers hear.
-    assert run(reviews.run_due, local(date(2026, 10, 29), 0, 7)) == 1
+    # After the deadline whoever didn't answer is late, and may still answer for three days.
+    assert run(reviews.run_due, local(date(2026, 10, 29), 0, 7)) == 0
+    opened.refresh_from_db()
+    assert opened.status == "self"
+    late = reviews.late(opened, opened.reviews.all(), today=date(2026, 10, 29))
+    assert review_of(opened, team.ali).pk in late
+    assert review_of(opened, team.vali).pk not in late
+    reviews.send_self(review_of(opened, team.ali), by=team.ali, answers=all_ratings(opened))
+
+    # Then the reviewers' part begins by itself, and the reviewers hear.
+    assert run(reviews.run_due, local(date(2026, 11, 1), 0, 7)) == 1
     opened.refresh_from_db()
     assert opened.status == "manager"
     notice = Notification.objects.get(kind=review_notify.TO_WRITE, recipient=team.manager)
     assert notice.title == "Reviews to write: 2026, 3rd quarter"
     assert notice.body == "2 people wait for your review. Deadline: 04.11.2026."
     assert notice.url == f"/c/{shop.pk}/lifecycle/reviews/{opened.pk}?mine=1"
-    # Late now: whoever didn't answer.
-    late = reviews.late(opened, opened.reviews.all(), today=date(2026, 10, 29))
-    assert review_of(opened, team.ali).pk in late
-    assert review_of(opened, team.vali).pk not in late
 
 
 def test_remind_nudges_whoever_is_behind_once_a_day(shop, team, opened, owner_api, run):

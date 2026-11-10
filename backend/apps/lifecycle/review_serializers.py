@@ -115,6 +115,9 @@ class RoundSerializer(serializers.ModelSerializer):
     questions = serializers.SerializerMethodField()
     progress = serializers.SerializerMethodField()
     mine = serializers.SerializerMethodField(help_text="Reviews waiting for the viewer to write.")
+    reviewers_begin_on = serializers.SerializerMethodField(
+        help_text="Before the reviewers' part: the day it begins by itself."
+    )
     created_by = serializers.SerializerMethodField()
     can = serializers.SerializerMethodField()
 
@@ -128,6 +131,7 @@ class RoundSerializer(serializers.ModelSerializer):
             "status",
             "self_due_on",
             "manager_due_on",
+            "reviewers_begin_on",
             "audience",
             "questions",
             "progress",
@@ -175,6 +179,12 @@ class RoundSerializer(serializers.ModelSerializer):
             for review in self._rows(cycle)
             if review.reviewer_id == viewer.pk and review.published_at is None
         )
+
+    @extend_schema_field(serializers.DateField(allow_null=True))
+    def get_reviewers_begin_on(self, cycle: ReviewCycle):
+        if cycle.status not in (ReviewCycle.Status.DRAFT, ReviewCycle.Status.SELF):
+            return None
+        return reviews.reviewers_begin_on(cycle)
 
     @extend_schema_field(PersonRefSerializer(allow_null=True))
     def get_created_by(self, cycle: ReviewCycle) -> dict | None:

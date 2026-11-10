@@ -23,7 +23,7 @@ from django.utils import timezone
 from apps.core import demo_plan as plan
 from apps.core.demo_time import moment
 from apps.core.exceptions import DomainError
-from apps.lifecycle import job_changes, notify, services, terminations
+from apps.lifecycle import job_changes, notify, review_demo, services, terminations
 from apps.lifecycle.models import HandoverItem, Termination
 from apps.members.models import Membership, Position
 
@@ -110,6 +110,8 @@ def finish(company, people, now) -> None:
     their pay, Nodira's final payslip)."""
     story = plan.Plan(company, people, now)
     owner = people["owner"]
+    # Performance reviews first: last quarter's rounds came before Jasur asked to leave.
+    review_demo.seed(company, story, owner)
     _nodira_left(company, story, owner)
     _jasur_leaving(story, owner, people["jasur"])
     _job_changes(company, story, owner)

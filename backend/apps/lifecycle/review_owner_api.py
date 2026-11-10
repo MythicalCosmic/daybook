@@ -21,6 +21,8 @@ Company- and branch-scoped (a review outside what the viewer may read answers 40
 the HR module is off. The rules are apps.lifecycle.reviews'.
 """
 
+from datetime import date
+
 from django.db.models import Q
 from django.utils.translation import gettext as _
 from drf_spectacular.utils import OpenApiParameter, extend_schema
@@ -214,17 +216,25 @@ class RoundViewSet(
         parameters=[
             OpenApiParameter("position", int, many=True),
             OpenApiParameter("branch", int, many=True),
+            OpenApiParameter("period_end", str, description="Who had joined by then (YYYY-MM-DD)."),
         ],
         responses=rs.PreviewSerializer,
     )
     @action(detail=False, methods=["get"])
     def preview(self, request, company_id):
         params = request.query_params
+        period_end = None
+        if value := params.get("period_end"):
+            try:
+                period_end = date.fromisoformat(value)
+            except ValueError as exc:
+                raise ValidationError({"period_end": [_("Give a day as YYYY-MM-DD.")]}) from exc
         found = reviews.preview(
             self.company,
             by=self.membership,
             positions=_ids(params, "position"),
             branches=_ids(params, "branch"),
+            period_end=period_end,
         )
         counts: dict[int | None, list] = {}
         for _person, reviewer in found:
