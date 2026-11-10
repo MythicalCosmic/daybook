@@ -75,3 +75,30 @@
 .hr-date {
   margin-top: 10px;
 }
+
+/* A rule's page: "What changed" in this version, above the text. */
+.hr-change {
+  gap: 4px;
+  padding: 14px 16px;
+}
+
+.hr-change-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.hr-change-text {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+/* The version beside the state under a rule's title. */
+.hr-badges > span:not(:first-child) {
+  align-self: center;
+  font-size: 13.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
