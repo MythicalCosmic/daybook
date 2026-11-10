@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-11 00:44+0500\n"
+"POT-Creation-Date: 2026-11-11 01:51+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -2615,6 +2615,7 @@ msgstr ""
 "простаивающие деньги"
 
 #: backend/apps/assets/api.py backend/apps/assets/owner_api.py
+#: backend/apps/lifecycle/equipment/owner_api.py
 msgid "Assets aren't switched on for this company."
 msgstr "Для этой компании модуль основных средств не включён."
 
@@ -3167,6 +3168,18 @@ msgstr "Проверьте и подтвердите получение в пр�
 
 #: backend/apps/assets/notify.py
 #, python-format
+msgid "You were given %(count)d thing: %(things)s"
+msgid_plural "You were given %(count)d things: %(things)s"
+msgstr[0] "Вам выдан %(count)d предмет: %(things)s"
+msgstr[1] "Вам выдано %(count)d предмета: %(things)s"
+msgstr[2] "Вам выдано %(count)d предметов: %(things)s"
+
+#: backend/apps/assets/notify.py
+msgid "Check them and confirm in the app that you have them."
+msgstr "Проверьте и подтвердите получение в приложении."
+
+#: backend/apps/assets/notify.py
+#, python-format
 msgid "Warranty ends %(day)s: %(asset)s"
 msgstr "Гарантия заканчивается %(day)s: %(asset)s"
 
@@ -3234,12 +3247,14 @@ msgstr ""
 #: backend/apps/hr/owner_api.py backend/apps/insights/owner_api.py
 #: backend/apps/inventory/api.py backend/apps/inventory/owner_api.py
 #: backend/apps/learning/owner_api_courses.py
+#: backend/apps/lifecycle/equipment/owner_api.py
 #: backend/apps/lifecycle/owner_api.py backend/apps/payroll/owner_api.py
 #: backend/apps/recognition/owner_api.py
 msgid "Give a number."
 msgstr "Укажите число."
 
 #: backend/apps/assets/owner_api.py backend/apps/inventory/owner_api.py
+#: backend/apps/lifecycle/equipment/owner_api.py
 msgid "Pick a branch you work with."
 msgstr "Выберите филиал, с которым вы работаете."
 
@@ -3248,6 +3263,8 @@ msgid "Pick someone of this company."
 msgstr "Выберите сотрудника этой компании."
 
 #: backend/apps/assets/owner_api.py
+#: backend/apps/lifecycle/equipment/owner_api.py
+#: backend/apps/lifecycle/equipment/services.py
 msgid "Pick a category of this company."
 msgstr "Выберите категорию этой компании."
 
@@ -3268,6 +3285,7 @@ msgid "Pick a category."
 msgstr "Выберите категорию."
 
 #: backend/apps/assets/owner_api.py
+#: backend/apps/lifecycle/equipment/owner_api.py
 msgid "Pick the branch it is at."
 msgstr "Выберите филиал, где оно находится."
 
@@ -3450,7 +3468,7 @@ msgid "In service from"
 msgstr "В эксплуатации с"
 
 #: backend/apps/assets/providers.py backend/apps/assets/services.py
-#: backend/apps/sales/hooks.py
+#: backend/apps/lifecycle/equipment/services.py backend/apps/sales/hooks.py
 msgid "Cost"
 msgstr "Стоимость"
 
@@ -3495,12 +3513,12 @@ msgstr "Следующее обслуживание"
 msgid "Next instrument check"
 msgstr "Следующая поверка"
 
-#: backend/apps/assets/services.py
+#: backend/apps/assets/services.py backend/apps/lifecycle/equipment/services.py
 #, python-format
 msgid "%(field)s: give an amount."
 msgstr "%(field)s: укажите сумму."
 
-#: backend/apps/assets/services.py
+#: backend/apps/assets/services.py backend/apps/lifecycle/equipment/services.py
 #, python-format
 msgid "%(field)s: give an amount above zero."
 msgstr "%(field)s: укажите сумму больше нуля."
@@ -3510,7 +3528,7 @@ msgstr "%(field)s: укажите сумму больше нуля."
 msgid "%(field)s: that amount is too large."
 msgstr "%(field)s: слишком большая сумма."
 
-#: backend/apps/assets/services.py
+#: backend/apps/assets/services.py backend/apps/lifecycle/equipment/services.py
 msgid "Pick something of this company."
 msgstr "Выберите что-то из этой компании."
 
@@ -3524,7 +3542,7 @@ msgstr "%(field)s не может быть в будущем."
 msgid "%(field)s: check the year."
 msgstr "%(field)s: проверьте год."
 
-#: backend/apps/assets/services.py
+#: backend/apps/assets/services.py backend/apps/lifecycle/equipment/services.py
 #, python-format
 msgid "%(person)s isn't an active member."
 msgstr "%(person)s — не активный сотрудник."
@@ -3567,6 +3585,7 @@ msgstr "Предупреждать можно за 1–180 дней."
 
 #: backend/apps/assets/services.py backend/apps/finance/services.py
 #: backend/apps/inventory/services.py
+#: backend/apps/lifecycle/equipment/owner_api.py
 msgid "Give the category a name."
 msgstr "Укажите название категории."
 
@@ -3574,7 +3593,7 @@ msgstr "Укажите название категории."
 msgid "There is already a category with this name."
 msgstr "Категория с таким названием уже есть."
 
-#: backend/apps/assets/services.py
+#: backend/apps/assets/services.py backend/apps/lifecycle/equipment/services.py
 msgid "Pick a kind from the list."
 msgstr "Выберите вид из списка."
 
@@ -3692,7 +3711,7 @@ msgstr "Цена"
 msgid "Pick a currency from the list."
 msgstr "Выберите валюту из списка."
 
-#: backend/apps/assets/services.py
+#: backend/apps/assets/services.py backend/apps/lifecycle/equipment/services.py
 msgid "Give what it cost."
 msgstr "Укажите стоимость."
 
@@ -3793,7 +3812,7 @@ msgstr "Выберите состояние из списка."
 msgid "Only the person who got it can confirm it."
 msgstr "Подтвердить может только получивший."
 
-#: backend/apps/assets/services.py
+#: backend/apps/assets/services.py backend/apps/lifecycle/equipment/services.py
 msgid "It was already handed back."
 msgstr "Оно уже возвращено."
 
@@ -17906,6 +17925,158 @@ msgstr "Отдел: %(name)s"
 msgid "Your pay changes too: see it in the app."
 msgstr "Меняется и ваша оплата: посмотрите в приложении."
 
+#: backend/apps/lifecycle/equipment/audit_actions.py
+msgid "Gave equipment"
+msgstr "Выдано имущество"
+
+#: backend/apps/lifecycle/equipment/audit_actions.py
+msgid "Took equipment back"
+msgstr "Имущество принято обратно"
+
+#: backend/apps/lifecycle/equipment/audit_actions.py
+msgid "Wrote off equipment that wasn't handed back"
+msgstr "Списано невозвращённое имущество"
+
+#: backend/apps/lifecycle/equipment/audit_actions.py
+msgid "Wrote off damaged equipment"
+msgstr "Списано повреждённое имущество"
+
+#: backend/apps/lifecycle/equipment/audit_actions.py
+msgid "Proposed a deduction for equipment"
+msgstr "Предложено удержание за имущество"
+
+#: backend/apps/lifecycle/equipment/audit_actions.py
+msgid "Added equipment to give out"
+msgstr "Добавлено имущество для выдачи"
+
+#: backend/apps/lifecycle/equipment/owner_api.py
+msgid "In stock, given out or all."
+msgstr "На складе, выдано или всё."
+
+#: backend/apps/lifecycle/equipment/owner_api.py
+msgid "Pick things in stock in your branches: one was given meanwhile."
+msgstr ""
+"Выберите предметы со склада ваших филиалов: один из них только что выдали."
+
+#: backend/apps/lifecycle/equipment/services.py
+msgid "Lab coats"
+msgstr "Халаты"
+
+#: backend/apps/lifecycle/equipment/services.py
+msgid "Badges"
+msgstr "Бейджи"
+
+#: backend/apps/lifecycle/equipment/services.py
+#: backend/apps/lifecycle/models.py
+msgid "Keys"
+msgstr "Ключи"
+
+#: backend/apps/lifecycle/equipment/services.py
+msgid "Cash-box keys"
+msgstr "Ключи от кассы"
+
+#: backend/apps/lifecycle/equipment/services.py
+msgid "Phones"
+msgstr "Телефоны"
+
+#: backend/apps/lifecycle/equipment/services.py
+msgid "Tablets"
+msgstr "Планшеты"
+
+#: backend/apps/lifecycle/equipment/services.py
+msgid "Barcode scanners"
+msgstr "Сканеры штрихкодов"
+
+#: backend/apps/lifecycle/equipment/services.py
+msgid "The day can't be in the future."
+msgstr "День не может быть в будущем."
+
+#: backend/apps/lifecycle/equipment/services.py
+msgid "Pick what to give."
+msgstr "Выберите, что выдать."
+
+#: backend/apps/lifecycle/equipment/services.py
+#, python-format
+msgid "Give at most %(count)s things at a time."
+msgstr "За один раз можно выдать не больше %(count)s предметов."
+
+#: backend/apps/lifecycle/equipment/services.py
+msgid "Say whether it came back or was lost."
+msgstr "Укажите, вернули предмет или он утерян."
+
+#: backend/apps/lifecycle/equipment/services.py
+#| msgctxt "payroll"
+msgid "Deduction"
+msgstr "Удержание"
+
+#: backend/apps/lifecycle/equipment/services.py
+msgid "Only people who manage assets write off a device."
+msgstr "Списать устройство может только тот, кто управляет имуществом."
+
+#: backend/apps/lifecycle/equipment/services.py
+#, python-format
+msgid "Not handed back by %(person)s."
+msgstr "Не возвращено: %(person)s."
+
+#: backend/apps/lifecycle/equipment/services.py
+msgid "Only something damaged is written off when it comes back."
+msgstr "При возврате списывается только повреждённый предмет."
+
+#: backend/apps/lifecycle/equipment/services.py
+#, python-format
+msgid "Came back damaged from %(person)s."
+msgstr "Возвращено с повреждением, вернул сотрудник: %(person)s."
+
+#: backend/apps/lifecycle/equipment/services.py
+msgid "Payroll is off for this company, so nothing can be deducted."
+msgstr ""
+"В этой компании выключен модуль зарплаты, поэтому удержать ничего нельзя."
+
+#: backend/apps/lifecycle/equipment/services.py
+#, python-format
+msgid "%(person)s has left: a deduction is proposed before the last day."
+msgstr ""
+"Сотрудник уже уволился: %(person)s. Удержание предлагают до последнего "
+"рабочего дня."
+
+#: backend/apps/lifecycle/equipment/services.py
+msgid "Deduction: give an amount above zero."
+msgstr "Удержание: укажите сумму больше нуля."
+
+#: backend/apps/lifecycle/equipment/services.py
+msgid "A deduction for it is already with payroll."
+msgstr "Удержание за этот предмет уже передано в расчёт зарплаты."
+
+#: backend/apps/lifecycle/equipment/services.py
+#, python-format
+msgid "Equipment not handed back or damaged: %(item)s"
+msgstr "Имущество не возвращено или повреждено: %(item)s"
+
+#: backend/apps/lifecycle/equipment/services.py
+msgid "Say what it is."
+msgstr "Укажите, что это."
+
+#: backend/apps/lifecycle/equipment/services.py
+msgid "Give how many."
+msgstr "Укажите количество."
+
+#: backend/apps/lifecycle/equipment/services.py
+#, python-format
+msgid "Add 1 to %(count)s at a time."
+msgstr "За один раз можно добавить от 1 до %(count)s."
+
+#: backend/apps/lifecycle/equipment/services.py
+msgid "Devices are added by people who manage assets."
+msgstr "Устройства добавляют те, кто управляет имуществом."
+
+#: backend/apps/lifecycle/equipment/services.py
+msgid "Add devices one at a time, each with its serial number."
+msgstr "Добавляйте устройства по одному, каждое со своим серийным номером."
+
+#: backend/apps/lifecycle/equipment/services.py
+msgid "Pick one of the suggestions."
+msgstr "Выберите один из вариантов."
+
 #: backend/apps/lifecycle/hooks.py
 msgid "Warnings and reprimands"
 msgstr "Предупреждения и выговоры"
@@ -18181,10 +18352,6 @@ msgstr "Возможно"
 #: backend/apps/lifecycle/models.py
 msgid "Open tasks"
 msgstr "Открытые задачи"
-
-#: backend/apps/lifecycle/models.py
-msgid "Keys"
-msgstr "Ключи"
 
 #: backend/apps/lifecycle/models.py
 msgid "Documents"

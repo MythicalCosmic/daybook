@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-11 00:44+0500\n"
+"POT-Creation-Date: 2026-11-11 01:51+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -2555,6 +2555,7 @@ msgstr ""
 "yaqinlashgan ta’mirlar, bekor turgan pul"
 
 #: backend/apps/assets/api.py backend/apps/assets/owner_api.py
+#: backend/apps/lifecycle/equipment/owner_api.py
 msgid "Assets aren't switched on for this company."
 msgstr "Bu kompaniyada asosiy vositalar moduli yoqilmagan."
 
@@ -3107,6 +3108,16 @@ msgstr "Tekshiring va ilovada qabul qilganingizni tasdiqlang."
 
 #: backend/apps/assets/notify.py
 #, python-format
+msgid "You were given %(count)d thing: %(things)s"
+msgid_plural "You were given %(count)d things: %(things)s"
+msgstr[0] "Sizga %(count)d ta narsa berildi: %(things)s"
+
+#: backend/apps/assets/notify.py
+msgid "Check them and confirm in the app that you have them."
+msgstr "Tekshiring va ilovada qabul qilganingizni tasdiqlang."
+
+#: backend/apps/assets/notify.py
+#, python-format
 msgid "Warranty ends %(day)s: %(asset)s"
 msgstr "Kafolat tugaydi (%(day)s): %(asset)s"
 
@@ -3179,12 +3190,14 @@ msgstr ""
 #: backend/apps/hr/owner_api.py backend/apps/insights/owner_api.py
 #: backend/apps/inventory/api.py backend/apps/inventory/owner_api.py
 #: backend/apps/learning/owner_api_courses.py
+#: backend/apps/lifecycle/equipment/owner_api.py
 #: backend/apps/lifecycle/owner_api.py backend/apps/payroll/owner_api.py
 #: backend/apps/recognition/owner_api.py
 msgid "Give a number."
 msgstr "Son kiriting."
 
 #: backend/apps/assets/owner_api.py backend/apps/inventory/owner_api.py
+#: backend/apps/lifecycle/equipment/owner_api.py
 msgid "Pick a branch you work with."
 msgstr "O‘zingiz ishlaydigan filialni tanlang."
 
@@ -3193,6 +3206,8 @@ msgid "Pick someone of this company."
 msgstr "Shu kompaniya xodimini tanlang."
 
 #: backend/apps/assets/owner_api.py
+#: backend/apps/lifecycle/equipment/owner_api.py
+#: backend/apps/lifecycle/equipment/services.py
 msgid "Pick a category of this company."
 msgstr "Shu kompaniya toifasini tanlang."
 
@@ -3213,6 +3228,7 @@ msgid "Pick a category."
 msgstr "Toifani tanlang."
 
 #: backend/apps/assets/owner_api.py
+#: backend/apps/lifecycle/equipment/owner_api.py
 msgid "Pick the branch it is at."
 msgstr "Qaysi filialda turganini tanlang."
 
@@ -3393,7 +3409,7 @@ msgid "In service from"
 msgstr "Foydalanishga topshirilgan"
 
 #: backend/apps/assets/providers.py backend/apps/assets/services.py
-#: backend/apps/sales/hooks.py
+#: backend/apps/lifecycle/equipment/services.py backend/apps/sales/hooks.py
 msgid "Cost"
 msgstr "Qiymati"
 
@@ -3438,12 +3454,12 @@ msgstr "Navbatdagi texnik xizmat"
 msgid "Next instrument check"
 msgstr "Navbatdagi qiyoslash"
 
-#: backend/apps/assets/services.py
+#: backend/apps/assets/services.py backend/apps/lifecycle/equipment/services.py
 #, python-format
 msgid "%(field)s: give an amount."
 msgstr "%(field)s: summani kiriting."
 
-#: backend/apps/assets/services.py
+#: backend/apps/assets/services.py backend/apps/lifecycle/equipment/services.py
 #, python-format
 msgid "%(field)s: give an amount above zero."
 msgstr "%(field)s: noldan katta summa kiriting."
@@ -3453,7 +3469,7 @@ msgstr "%(field)s: noldan katta summa kiriting."
 msgid "%(field)s: that amount is too large."
 msgstr "%(field)s: summa juda katta."
 
-#: backend/apps/assets/services.py
+#: backend/apps/assets/services.py backend/apps/lifecycle/equipment/services.py
 msgid "Pick something of this company."
 msgstr "Shu kompaniyaga tegishlisini tanlang."
 
@@ -3467,7 +3483,7 @@ msgstr "%(field)s kelajakdagi sana bo‘la olmaydi."
 msgid "%(field)s: check the year."
 msgstr "%(field)s: yilni tekshiring."
 
-#: backend/apps/assets/services.py
+#: backend/apps/assets/services.py backend/apps/lifecycle/equipment/services.py
 #, python-format
 msgid "%(person)s isn't an active member."
 msgstr "%(person)s faol xodim emas."
@@ -3510,6 +3526,7 @@ msgstr "1–180 kun oldin ogohlantirish mumkin."
 
 #: backend/apps/assets/services.py backend/apps/finance/services.py
 #: backend/apps/inventory/services.py
+#: backend/apps/lifecycle/equipment/owner_api.py
 msgid "Give the category a name."
 msgstr "Toifaga nom bering."
 
@@ -3517,7 +3534,7 @@ msgstr "Toifaga nom bering."
 msgid "There is already a category with this name."
 msgstr "Bunday nomli toifa allaqachon bor."
 
-#: backend/apps/assets/services.py
+#: backend/apps/assets/services.py backend/apps/lifecycle/equipment/services.py
 msgid "Pick a kind from the list."
 msgstr "Ro‘yxatdan turini tanlang."
 
@@ -3637,7 +3654,7 @@ msgstr "Narxi"
 msgid "Pick a currency from the list."
 msgstr "Ro‘yxatdan valyutani tanlang."
 
-#: backend/apps/assets/services.py
+#: backend/apps/assets/services.py backend/apps/lifecycle/equipment/services.py
 msgid "Give what it cost."
 msgstr "Qiymatini kiriting."
 
@@ -3738,7 +3755,7 @@ msgstr "Ro‘yxatdan holatni tanlang."
 msgid "Only the person who got it can confirm it."
 msgstr "Faqat olgan xodim tasdiqlay oladi."
 
-#: backend/apps/assets/services.py
+#: backend/apps/assets/services.py backend/apps/lifecycle/equipment/services.py
 msgid "It was already handed back."
 msgstr "U allaqachon qaytarilgan."
 
@@ -17865,6 +17882,160 @@ msgstr "Bo‘lim: %(name)s"
 msgid "Your pay changes too: see it in the app."
 msgstr "Maoshingiz ham o‘zgaradi: uni ilovada ko‘ring."
 
+#: backend/apps/lifecycle/equipment/audit_actions.py
+msgid "Gave equipment"
+msgstr "Jihoz berildi"
+
+#: backend/apps/lifecycle/equipment/audit_actions.py
+msgid "Took equipment back"
+msgstr "Jihoz qaytarib olindi"
+
+#: backend/apps/lifecycle/equipment/audit_actions.py
+msgid "Wrote off equipment that wasn't handed back"
+msgstr "Qaytarilmagan jihoz hisobdan chiqarildi"
+
+#: backend/apps/lifecycle/equipment/audit_actions.py
+msgid "Wrote off damaged equipment"
+msgstr "Shikastlangan jihoz hisobdan chiqarildi"
+
+#: backend/apps/lifecycle/equipment/audit_actions.py
+msgid "Proposed a deduction for equipment"
+msgstr "Jihoz uchun ushlab qolish taklif qilindi"
+
+#: backend/apps/lifecycle/equipment/audit_actions.py
+msgid "Added equipment to give out"
+msgstr "Beriladigan jihoz qo‘shildi"
+
+#: backend/apps/lifecycle/equipment/owner_api.py
+msgid "In stock, given out or all."
+msgstr "Omborda, berilgan yoki hammasi."
+
+#: backend/apps/lifecycle/equipment/owner_api.py
+msgid "Pick things in stock in your branches: one was given meanwhile."
+msgstr ""
+"Filiallaringiz omboridagi narsalarni tanlang: ulardan biri hozirgina berib "
+"bo‘lingan."
+
+#: backend/apps/lifecycle/equipment/services.py
+msgid "Lab coats"
+msgstr "Xalatlar"
+
+#: backend/apps/lifecycle/equipment/services.py
+msgid "Badges"
+msgstr "Beyjlar"
+
+#: backend/apps/lifecycle/equipment/services.py
+#: backend/apps/lifecycle/models.py
+msgid "Keys"
+msgstr "Kalitlar"
+
+#: backend/apps/lifecycle/equipment/services.py
+msgid "Cash-box keys"
+msgstr "Kassa kalitlari"
+
+#: backend/apps/lifecycle/equipment/services.py
+msgid "Phones"
+msgstr "Telefonlar"
+
+#: backend/apps/lifecycle/equipment/services.py
+msgid "Tablets"
+msgstr "Planshetlar"
+
+#: backend/apps/lifecycle/equipment/services.py
+msgid "Barcode scanners"
+msgstr "Shtrix-kod skanerlari"
+
+#: backend/apps/lifecycle/equipment/services.py
+msgid "The day can't be in the future."
+msgstr "Kun kelajakda bo‘lishi mumkin emas."
+
+#: backend/apps/lifecycle/equipment/services.py
+msgid "Pick what to give."
+msgstr "Nima berilishini tanlang."
+
+#: backend/apps/lifecycle/equipment/services.py
+#, python-format
+msgid "Give at most %(count)s things at a time."
+msgstr "Bir martada ko‘pi bilan %(count)s ta narsa bering."
+
+#: backend/apps/lifecycle/equipment/services.py
+msgid "Say whether it came back or was lost."
+msgstr "Qaytarildimi yoki yo‘qoldimi, belgilang."
+
+#: backend/apps/lifecycle/equipment/services.py
+#| msgctxt "payroll"
+msgid "Deduction"
+msgstr "Ushlanma"
+
+#: backend/apps/lifecycle/equipment/services.py
+msgid "Only people who manage assets write off a device."
+msgstr "Qurilmani faqat jihozlarni boshqaradiganlar hisobdan chiqaradi."
+
+#: backend/apps/lifecycle/equipment/services.py
+#, python-format
+msgid "Not handed back by %(person)s."
+msgstr "Qaytarmadi: %(person)s."
+
+#: backend/apps/lifecycle/equipment/services.py
+msgid "Only something damaged is written off when it comes back."
+msgstr "Qaytganda faqat shikastlangan narsa hisobdan chiqariladi."
+
+#: backend/apps/lifecycle/equipment/services.py
+#, python-format
+msgid "Came back damaged from %(person)s."
+msgstr "Shikastlangan holda qaytdi (qaytaruvchi: %(person)s)."
+
+#: backend/apps/lifecycle/equipment/services.py
+msgid "Payroll is off for this company, so nothing can be deducted."
+msgstr ""
+"Bu kompaniyada ish haqi moduli o‘chirilgan, shuning uchun hech narsa ushlab "
+"qolinmaydi."
+
+#: backend/apps/lifecycle/equipment/services.py
+#, python-format
+msgid "%(person)s has left: a deduction is proposed before the last day."
+msgstr ""
+"Ishdan ketgan: %(person)s. Ushlab qolish oxirgi ish kunidan oldin taklif "
+"qilinadi."
+
+#: backend/apps/lifecycle/equipment/services.py
+msgid "Deduction: give an amount above zero."
+msgstr "Ushlab qolish: noldan katta summa kiriting."
+
+#: backend/apps/lifecycle/equipment/services.py
+msgid "A deduction for it is already with payroll."
+msgstr "Bu narsa uchun ushlab qolish allaqachon ish haqi bo‘limida."
+
+#: backend/apps/lifecycle/equipment/services.py
+#, python-format
+msgid "Equipment not handed back or damaged: %(item)s"
+msgstr "Jihoz qaytarilmadi yoki shikastlandi: %(item)s"
+
+#: backend/apps/lifecycle/equipment/services.py
+msgid "Say what it is."
+msgstr "Bu nima ekanini yozing."
+
+#: backend/apps/lifecycle/equipment/services.py
+msgid "Give how many."
+msgstr "Nechta ekanini kiriting."
+
+#: backend/apps/lifecycle/equipment/services.py
+#, python-format
+msgid "Add 1 to %(count)s at a time."
+msgstr "Bir martada 1 tadan %(count)s tagacha qo‘shing."
+
+#: backend/apps/lifecycle/equipment/services.py
+msgid "Devices are added by people who manage assets."
+msgstr "Qurilmalarni jihozlarni boshqaradiganlar qo‘shadi."
+
+#: backend/apps/lifecycle/equipment/services.py
+msgid "Add devices one at a time, each with its serial number."
+msgstr "Qurilmalarni bittadan, har birini seriya raqami bilan qo‘shing."
+
+#: backend/apps/lifecycle/equipment/services.py
+msgid "Pick one of the suggestions."
+msgstr "Takliflardan birini tanlang."
+
 #: backend/apps/lifecycle/hooks.py
 msgid "Warnings and reprimands"
 msgstr "Ogohlantirish va hayfsanlar"
@@ -18143,10 +18314,6 @@ msgstr "Balki"
 #: backend/apps/lifecycle/models.py
 msgid "Open tasks"
 msgstr "Ochiq vazifalar"
-
-#: backend/apps/lifecycle/models.py
-msgid "Keys"
-msgstr "Kalitlar"
 
 #: backend/apps/lifecycle/models.py
 msgid "Documents"
