@@ -1,8 +1,24 @@
 /** Navigation helpers shared by the guards, the company switcher and the palette. */
 import type { RouteLocationNormalizedLoaded, Router } from "vue-router";
 
+import type { Company } from "@/api/types";
+import { canAccessRecords } from "@/core/access";
+
 function isCatchAll(path: string): boolean {
   return path.includes("pathMatch");
+}
+
+/**
+ * Where "/" opens a company: for an owner, the page a module marks `meta.ownerLanding` (Egasi
+ * paneli) when they may open it; otherwise, and for everyone else, the company's front page.
+ */
+export function landingPath(router: Router, company: Company | undefined, companyId: number): string {
+  const home = `/c/${companyId}`;
+  if (!company?.is_owner) return home;
+  const record = router.getRoutes().find((route) => route.meta.ownerLanding && route.name !== undefined);
+  if (!record) return home;
+  const resolved = router.resolve({ name: record.name, params: { companyId: String(companyId) } });
+  return canAccessRecords(resolved.matched, company) ? resolved.path : home;
 }
 
 /**

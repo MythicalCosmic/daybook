@@ -42,7 +42,8 @@ export interface CatalogEntry {
 }
 
 export const CATALOG: readonly CatalogEntry[] = [
-  // Overview
+  // Overview. Egasi paneli first (v11): the owner's morning page, and their landing page.
+  { id: "cockpit", group: "overview", order: 5, pkg: "P (v11)", perm: ["finance.view", "reports.view"], hotkey: "e", pages: [{ id: "owner", to: "owner" }] },
   { id: "overview", group: "overview", order: 10, pkg: "W0 → N", hotkey: "o", pages: [{ id: "today", to: "" }] },
   { id: "inbox", group: "overview", order: 20, pkg: "W0", hotkey: "i", badge: "console.queue", pages: [{ id: "inbox", to: "inbox" }] },
 
