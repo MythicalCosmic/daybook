@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-11 00:18+0500\n"
+"POT-Creation-Date: 2026-11-11 00:44+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -15994,6 +15994,16 @@ msgstr ""
 
 #: backend/apps/learning/ai_tools_quizzes.py
 msgid ""
+"The question bank: questions in use and drafts with their kind, topic, "
+"difficulty and how often they were answered right (never the right answers), "
+"newest first"
+msgstr ""
+"Банк вопросов: используемые вопросы и черновики, их тип, тема, сложность и "
+"как часто на них отвечали правильно (без самих правильных ответов), сначала "
+"новые"
+
+#: backend/apps/learning/ai_tools_quizzes.py
+msgid ""
 "Regular checks: each active check's schedule and its latest round (people, "
 "answered, passed, who hasn't answered), and how the last rounds went"
 msgstr ""
@@ -16195,6 +16205,14 @@ msgstr "Регулярная проверка возобновлена"
 #: backend/apps/learning/audit_actions.py
 msgid "Changed the question of the day"
 msgstr "Изменены настройки вопроса дня"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Had the tutor draft questions in a chat"
+msgstr "Поручил наставнику составить черновики вопросов в чате"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Had the tutor draft a quiz in a chat"
+msgstr "Поручил наставнику составить черновик теста в чате"
 
 #: backend/apps/learning/bot_messages.py backend/apps/learning/models.py
 #: backend/apps/recognition/models.py
@@ -16408,6 +16426,10 @@ msgid "Pick a page or a lesson to write questions from."
 msgstr "Выберите страницу или урок, по которым писать вопросы."
 
 #: backend/apps/learning/drafting.py
+msgid "Pick a page or a lesson, not both."
+msgstr "Выберите страницу или урок, но не оба сразу."
+
+#: backend/apps/learning/drafting.py backend/apps/learning/tutor_tools.py
 msgid "Pick a page or a lesson of this company."
 msgstr "Выберите страницу или урок этой компании."
 
@@ -16427,6 +16449,14 @@ msgstr "Выберите сложность вопроса."
 #: backend/apps/learning/drafting.py
 msgid "There is no text to write questions from."
 msgstr "Нет текста, по которому можно написать вопросы."
+
+#: backend/apps/learning/drafting.py
+msgid "Without AI, questions are written only from a page or a lesson."
+msgstr "Без ИИ вопросы пишутся только по странице или уроку."
+
+#: backend/apps/learning/drafting.py backend/apps/learning/tutor_tools.py
+msgid "The questions couldn't be written: try again."
+msgstr "Не удалось написать вопросы: попробуйте ещё раз."
 
 #: backend/apps/learning/drafting.py
 #, python-format
@@ -17030,6 +17060,18 @@ msgstr "Сказать спасибо"
 msgid "Late with mandatory training"
 msgstr "Просрочено обязательное обучение"
 
+#: backend/apps/learning/models.py
+msgid "Questions"
+msgstr "Вопросы"
+
+#: backend/apps/learning/models.py
+msgid "Being written"
+msgstr "Пишется"
+
+#: backend/apps/learning/models.py
+msgid "Questions asked for."
+msgstr "Сколько вопросов запрошено."
+
 #: backend/apps/learning/notify_courses.py
 #, python-format
 msgid "%(course)s, due %(date)s"
@@ -17480,6 +17522,78 @@ msgstr "Чтобы расшифровывать видео, включите И�
 #: backend/apps/learning/transcripts.py
 msgid "No speech service is set up on this server."
 msgstr "На этом сервере не настроен сервис распознавания речи."
+
+#: backend/apps/learning/tutor_tools.py
+msgid "No question passed the bank's checks."
+msgstr "Ни один вопрос не прошёл проверку банка вопросов."
+
+#: backend/apps/learning/tutor_tools.py
+msgid "Writing draft questions"
+msgstr "Пишу черновики вопросов"
+
+#: backend/apps/learning/tutor_tools.py
+msgid "Putting a draft quiz together"
+msgstr "Собираю черновик теста"
+
+#: backend/apps/learning/tutor_tools.py
+msgid "Pick questions of this card."
+msgstr "Выберите вопросы из этой карточки."
+
+#: backend/apps/learning/tutor_tools.py
+msgid "This quiz was deleted."
+msgstr "Этот тест удалён."
+
+#: backend/apps/learning/tutor_tools.py
+msgid "This quiz is archived: restore it on its page first."
+msgstr "Этот тест в архиве: сначала восстановите его на его странице."
+
+#: backend/apps/learning/tutor_tools.py
+msgid "This quiz is published: archive it on its page instead."
+msgstr ""
+"Этот тест опубликован: вместо удаления отправьте его в архив на его странице."
+
+#: backend/apps/learning/tutor_tools.py
+msgid "This question is in use now: archive it on the questions page."
+msgstr ""
+"Этот вопрос уже используется: отправьте его в архив на странице вопросов."
+
+#: backend/apps/learning/tutor_tools.py
+msgid ""
+"There is no knowledge base page to write questions from yet: add one first."
+msgstr ""
+"В базе знаний пока нет страницы, по которой можно написать вопросы: сначала "
+"добавьте её."
+
+#: backend/apps/learning/tutor_tools.py
+#, python-format
+msgid "I couldn't write questions from the page %(page)s."
+msgstr "Не удалось написать вопросы по странице «%(page)s»."
+
+#: backend/apps/learning/tutor_tools.py
+#, python-format
+msgid "From the page %(page)s I drafted %(count)s question."
+msgid_plural "From the page %(page)s I drafted %(count)s questions."
+msgstr[0] "По странице «%(page)s» я подготовил %(count)s черновик вопроса."
+msgstr[1] "По странице «%(page)s» я подготовил %(count)s черновика вопросов."
+msgstr[2] "По странице «%(page)s» я подготовил %(count)s черновиков вопросов."
+
+#: backend/apps/learning/tutor_tools.py
+#, python-format
+msgid "Test: %(page)s"
+msgstr "Тест: %(page)s"
+
+#: backend/apps/learning/tutor_tools.py
+#, python-format
+msgid "They make up a draft test: pass mark %(pass)s %%, %(minutes)s minutes."
+msgstr ""
+"Из них я собрал черновик теста: проходной балл %(pass)s %%, время %(minutes)s"
+" мин."
+
+#: backend/apps/learning/tutor_tools.py
+msgid "Nothing is in use yet: approve, edit or discard each card below."
+msgstr ""
+"Пока ничего не используется: подтвердите, измените или удалите каждую "
+"карточку ниже."
 
 #: backend/apps/lifecycle/ai_tools.py
 msgid ""
