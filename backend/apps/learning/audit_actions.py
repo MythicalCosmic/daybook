@@ -50,3 +50,8 @@ class QuizAction(models.TextChoices):
     CHECK_PAUSED = "learning.check_paused", _("Paused a regular check")
     CHECK_RESUMED = "learning.check_resumed", _("Restarted a regular check")
     DAILY_CHANGED = "learning.daily_changed", _("Changed the question of the day")
+    TUTOR_QUESTIONS_DRAFTED = (
+        "learning.tutor_questions_drafted",
+        _("Had the tutor draft questions in a chat"),
+    )
+    TUTOR_QUIZ_DRAFTED = "learning.tutor_quiz_drafted", _("Had the tutor draft a quiz in a chat")

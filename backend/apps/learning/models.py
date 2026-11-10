@@ -816,3 +816,46 @@ class TutorSuggestion(TenantModel):
 
 # Published, not archived: what reaches people.
 LIVE = Q(status=Status.PUBLISHED, archived_at__isnull=True)
+
+
+# The tutor chat's drafts (package h, v11) -------------------------------------------------
+
+
+class TutorDraft(TenantModel):
+    """What one draft tool call of "Ask the tutor" made (apps.learning.tutor_tools): questions
+    for the bank, or a quiz. All of it stays a draft until the person approves it in the chat.
+    The ids stay when a draft is deleted, so the chat's card can say it was discarded."""
+
+    class Kind(models.TextChoices):
+        QUESTIONS = "questions", _("Questions")
+        QUIZ = "quiz", _("Quiz")
+
+    class State(models.TextChoices):
+        RUNNING = "running", _("Being written")
+        DONE = "done", _("Done")
+        FAILED = "failed", _("Failed")
+
+    conversation = models.ForeignKey(
+        "ai.AIConversation", on_delete=models.CASCADE, related_name="tutor_drafts"
+    )
+    turn = models.ForeignKey("ai.AITurn", on_delete=models.CASCADE, related_name="tutor_drafts")
+    tool_use_id = models.CharField(max_length=64)
+    kind = models.CharField(max_length=10, choices=Kind.choices)
+    state = models.CharField(max_length=8, choices=State.choices, default=State.RUNNING)
+    count = models.PositiveSmallIntegerField(default=0, help_text=_("Questions asked for."))
+    title = models.CharField(max_length=200, blank=True)
+    question_ids = ArrayField(models.PositiveIntegerField(), default=list, blank=True)
+    job = models.ForeignKey(
+        QuestionDraftJob, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    quiz = models.ForeignKey(
+        Quiz, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    error = models.CharField(max_length=300, blank=True)
+    created_by = models.ForeignKey(
+        Membership, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+
+    class Meta:
+        ordering = ["created_at", "pk"]
+        indexes = [models.Index(fields=["company", "conversation"])]

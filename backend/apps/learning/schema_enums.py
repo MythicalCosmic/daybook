@@ -25,4 +25,6 @@ ENUM_NAME_OVERRIDES = {
     "LearningDraftEngineEnum": "apps.learning.models.QuestionDraftJob.Engine",
     "LearningSuggestionKindEnum": "apps.learning.models.TutorSuggestion.Kind",
     "LearningSuggestionStateEnum": "apps.learning.models.TutorSuggestion.State",
+    "LearningTutorDraftKindEnum": "apps.learning.models.TutorDraft.Kind",
+    "LearningTutorDraftStateEnum": "apps.learning.models.TutorDraft.State",
 }

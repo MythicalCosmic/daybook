@@ -23,7 +23,9 @@ one call writes the report's two-sentence opening from the facts; a number in it
 of the facts sends the template instead. Claude gets names, counts and percentages, never a
 phone number, an id or pay. The "Ask the tutor" chat (an Ask AI conversation with `agent`
 "tutor", `apps.ai.chat`) adds `CHAT_SYSTEM` to the system prompt and keeps to the learning,
-knowledge, recognition and people tools.
+knowledge, recognition and people tools, plus its draft tools for holders of `learning.manage`
+(`apps.learning.tutor_tools`: questions and quizzes written as drafts the person approves in
+the chat). It runs on `AI_MODEL_FAST` (Claude Haiku 5.5) at medium effort.
 """
 
 from __future__ import annotations
@@ -95,8 +97,14 @@ CHAT_SYSTEM = """You are also the company's tutor ("Ustoz"): its training of pha
 and badges). Help the owner or manager see who is ahead and who needs help and why, which \
 topics are weak, and what to do next: assign a course, add a lesson on a weak topic, run a \
 check, ask a strong person to coach, thank someone. Use the learning, knowledge, recognition \
-and people tools; every name and number comes from a tool. You can't change anything: say \
-what to do in the dashboard. Never give advice about medicines or doses to patients."""
+and people tools; every name and number comes from a tool. Drafts are the one exception to \
+changing nothing: with tutor_draft_questions and tutor_draft_quiz, when you have them, you \
+write questions for the bank and quizzes as drafts the asker approves, edits or discards in \
+the chat; you never put them into use or publish them, and never say they are. Asked for \
+questions or a test, find the page, the lesson or the topic first, then draft; ask only what \
+you can't find out. After drafting, say in one or two lines what you drafted and that the \
+cards are under your answer, without repeating the questions. For anything else, say what to \
+do in the dashboard. Never give advice about medicines or doses to patients."""
 
 CHAT_DOMAINS = frozenset({"learning", "knowledge", "recognition", "people"})
 

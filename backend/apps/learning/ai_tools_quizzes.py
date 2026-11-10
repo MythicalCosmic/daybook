@@ -4,12 +4,14 @@ imported by `ai_tools.py`.
 Each wraps a query and registers with `apps.ai.tools.registry.ai_tool` (domain "learning",
 feature "learning", perm `learning.view`; names start with `learning_`). They keep to the
 asker's branches (`ctx.branch_ids`) and give names, counts and percentages, never a phone
-number or pay.
+number or pay. `learning_questions` (the bank, for the tutor's draft quizzes) needs
+`learning.manage`, like the bank's own pages, and never gives a right answer.
 """
 
 from __future__ import annotations
 
 from datetime import timedelta
+from typing import Literal
 
 from django.utils import translation
 from django.utils.translation import gettext_lazy as _
@@ -17,7 +19,7 @@ from pydantic import BaseModel, Field
 
 from apps.ai.tools.registry import ToolContext, ToolResult, ai_tool
 from apps.learning import quiz_queries, skills, suggestions
-from apps.learning.models import CheckRound, Quiz, RegularCheck, Status
+from apps.learning.models import CheckRound, Question, Quiz, RegularCheck, Status
 from apps.members.permissions import Perm
 
 DOMAIN = "learning"
@@ -166,6 +168,50 @@ def learning_suggestions(ctx: ToolContext, args: LearningSuggestionsInput) -> To
             for row in found[:50]
         ]
     return ToolResult(rows=rows, total=found.count(), as_of=ctx.now)
+
+
+class LearningQuestionsInput(BaseModel):
+    topic_id: int | None = Field(None, description="Only the questions of this topic.")
+    state: Literal["draft", "active"] | None = Field(
+        None, description="draft or active (in use); leave it out for both."
+    )
+    kind: Literal["single", "multi", "true_false", "order", "match", "text", "number"] | None = None
+    words: str | None = Field(None, max_length=100, description="Words of the question's text.")
+    limit: int = Field(20, ge=1, le=50)
+
+
+@ai_tool(
+    "learning_questions",
+    domain=DOMAIN,
+    perm=Perm.LEARNING_MANAGE,
+    label=_(
+        "The question bank: questions in use and drafts with their kind, topic, difficulty and "
+        "how often they were answered right (never the right answers), newest first"
+    ),
+    input=LearningQuestionsInput,
+    feature=FEATURE,
+)
+def learning_questions(ctx: ToolContext, args: LearningQuestionsInput) -> ToolResult:
+    rows = quiz_queries.questions(
+        ctx.company, topic=args.topic_id, kind=args.kind, state=args.state, q=args.words
+    ).exclude(state=Question.State.ARCHIVED)
+    total = rows.count()
+    found = []
+    for row in rows.select_related("topic")[: args.limit]:
+        found.append(
+            {
+                "id": row.pk,
+                "kind": row.kind,
+                "text": row.text[:200],
+                "topic": row.topic.name if row.topic_id else None,
+                "topic_id": row.topic_id,
+                "difficulty": row.difficulty,
+                "state": row.state,
+                "answered": row.answered,
+                "right_percent": round(row.correct / row.answered * 100) if row.answered else None,
+            }
+        )
+    return ToolResult(rows=found, total=total, as_of=ctx.now)
 
 
 class LearningChecksInput(BaseModel):
