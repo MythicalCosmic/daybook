@@ -7,7 +7,7 @@
  */
 import type { RouteRecordRaw } from "vue-router";
 
-export const REPORTS = ["pnl", "cash-flow", "balances", "debts-aging", "category-trend"] as const;
+export const REPORTS = ["pnl", "cash-flow", "balance-sheet", "balances", "debts-aging", "category-trend"] as const;
 export type ReportId = (typeof REPORTS)[number];
 
 export const SETTINGS_TABS = ["categories", "rates", "period", "preferences"] as const;
@@ -94,7 +94,7 @@ export const routes: RouteRecordRaw[] = [
     meta: { title: "finance.nav.reports", perm: "finance.view" },
   },
   {
-    path: "finance/reports/:report(pnl|cash-flow|balances|debts-aging|category-trend)",
+    path: "finance/reports/:report(pnl|cash-flow|balance-sheet|balances|debts-aging|category-trend)",
     name: "finance.reports",
     component: () => import("./pages/ReportsPage.vue"),
     meta: { title: "finance.nav.reports", perm: "finance.view" },

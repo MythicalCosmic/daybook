@@ -18,6 +18,7 @@ import { REPORTS, type ReportId } from "../routes";
 const views: Record<ReportId, ReturnType<typeof defineAsyncComponent>> = {
   pnl: defineAsyncComponent(() => import("../components/reports/PnlReport.vue")),
   "cash-flow": defineAsyncComponent(() => import("../components/reports/CashFlowReport.vue")),
+  "balance-sheet": defineAsyncComponent(() => import("../components/statements/BalanceSheetReport.vue")),
   balances: defineAsyncComponent(() => import("../components/reports/BalancesReport.vue")),
   "debts-aging": defineAsyncComponent(() => import("../components/reports/AgingReport.vue")),
   "category-trend": defineAsyncComponent(() => import("../components/reports/CategoryTrendReport.vue")),

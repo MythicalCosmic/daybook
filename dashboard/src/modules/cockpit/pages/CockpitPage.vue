@@ -15,6 +15,7 @@ import { useI18n } from "vue-i18n";
 import { RouterLink, useRoute } from "vue-router";
 
 import ErrorState from "@/components/ErrorState.vue";
+import ExtensionSlot from "@/components/ExtensionSlot.vue";
 import InlineAlert from "@/components/InlineAlert.vue";
 import KpiStrip from "@/components/KpiStrip.vue";
 import MoneyText from "@/components/MoneyText.vue";
@@ -189,6 +190,7 @@ const financePath = computed(() => `/c/${company.currentId}/finance`);
   <div class="flex flex-col gap-4">
     <PageHeader :title="greeting" :description="subtitle">
       <template #actions>
+        <ExtensionSlot name="cockpit.header.actions" as="none" :context="{ companyId: company.currentId }" />
         <SegmentedControl
           v-if="money"
           v-model="period"

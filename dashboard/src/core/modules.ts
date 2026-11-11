@@ -158,6 +158,8 @@ export const EXTENSION_POINTS = [
   "comms.composer.tools",
   "finance.quickadd.receipt",
   "finance.transactions.toolbar",
+  /** Egasi paneli's header, before its own buttons: finance's "Prepare a report" for a bank (context: companyId; v12). */
+  "cockpit.header.actions",
   "sales.shift.detail",
   "payroll.run.toolbar",
   /** Above the roster grid: HR's pharmacist coverage gaps for the week (context: companyId, branchId, week; §14.5). */

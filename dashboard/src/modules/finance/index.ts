@@ -7,7 +7,7 @@
  *
  * Kept tiny: pages, widgets, the dialog and the API load lazily.
  */
-import { ArrowLeftRight, BookOpenCheck, CalendarClock, ChartColumn, HandCoins, Landmark, Lock, PiggyBank, ReceiptText, TrendingDown, TrendingUp, Truck } from "@lucide/vue";
+import { ArrowLeftRight, BookOpenCheck, CalendarClock, ChartColumn, FileText, HandCoins, Landmark, Lock, PiggyBank, ReceiptText, TrendingDown, TrendingUp, Truck } from "@lucide/vue";
 import { defineAsyncComponent } from "vue";
 
 import { defineModule } from "@/core/modules";
@@ -95,6 +95,19 @@ export default defineModule({
           },
         ]
       : []),
+    // v12: the report for a bank, a partner or a buyer (it needs the export permission too).
+    ...(ctx.can("data.export")
+      ? [
+          {
+            id: "finance.prepare-report",
+            title: ctx.t("finance.cmd.prepareReport"),
+            icon: FileText,
+            keywords: ["hisobot", "bank", "investor", "balans", "отчёт", "баланс", "statement", "balance sheet"],
+            perm: VIEW,
+            run: () => ctx.go("finance/reports/balance-sheet?prepare=1"),
+          },
+        ]
+      : []),
     {
       id: "finance.pnl",
       title: ctx.t("finance.cmd.pnl"),
@@ -176,6 +189,8 @@ export default defineModule({
   ],
   extensions: {
     "shell.topbar.end": [defineAsyncComponent(() => import("./components/QuickAddLauncher.vue"))],
+    // v12: "Hisobot tayyorlash" on Egasi paneli (the button checks finance.view and data.export).
+    "cockpit.header.actions": [defineAsyncComponent(() => import("./components/statements/PrepareReportButton.vue"))],
   },
   deepLinks: {
     txn: (id) => (/^\d+$/.test(id) ? `finance/transactions?txn=${id}` : null),
