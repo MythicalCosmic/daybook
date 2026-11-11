@@ -2,7 +2,9 @@
 
 Telegram signs it with the token of the bot that opened the app, so the employee mini app is
 checked against the employee bot and the owner dashboard (opened from the owner bot) against
-the owner bot. `max_age` is how old the data may be, in seconds: the mini app allows a day
+the owner bot. In the Davomat edition the web app opens from the organization's own bot, whose
+token is saved in Settings (`apps.davomat`): `bot="davomat"`, refused in any other edition.
+`max_age` is how old the data may be, in seconds: the mini app allows a day
 (`MINIAPP_INIT_DATA_MAX_AGE`), owner sign-in an hour (`OWNER_INIT_DATA_MAX_AGE`).
 """
 
@@ -13,7 +15,7 @@ from aiogram.utils.web_app import WebAppUser, safe_parse_webapp_init_data
 from django.conf import settings
 from django.utils import timezone
 
-Bot = Literal["employee", "owner"]
+Bot = Literal["employee", "owner", "davomat"]
 
 
 class InvalidInitData(Exception):
@@ -29,6 +31,9 @@ def validate_init_data(
         default_max_age = settings.MINIAPP_INIT_DATA_MAX_AGE
     elif bot == "owner":
         token = settings.OWNER_BOT_TOKEN
+        default_max_age = settings.OWNER_INIT_DATA_MAX_AGE
+    elif bot == "davomat":
+        token = davomat_bot_token()
         default_max_age = settings.OWNER_INIT_DATA_MAX_AGE
     else:
         raise ValueError(f"Unknown bot {bot!r}.")
@@ -47,3 +52,13 @@ def validate_init_data(
     if age < -timedelta(minutes=5):
         raise InvalidInitData("Init data is dated in the future.")
     return data.user
+
+
+def davomat_bot_token() -> str:
+    """The Davomat organization's own bot token (decrypted), only in that edition: anywhere else
+    no launch data is ever taken as signed by it."""
+    if settings.EDITION != "davomat":
+        return ""
+    from apps.davomat.queries import bot_token
+
+    return bot_token()

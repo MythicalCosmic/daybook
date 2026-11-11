@@ -1,5 +1,5 @@
 """The edition switch and the first run (docs/DAVOMAT.md §1.1): `GET edition/`,
-`POST edition/setup/` and `manage.py davomat_init`; Telegram sign-in is gone in Davomat."""
+`POST edition/setup/` and `manage.py davomat_init`; Telegram login links are gone in Davomat."""
 
 from io import StringIO
 
@@ -265,16 +265,21 @@ def test_davomat_init_says_what_is_wrong_with_the_password(db):
         )
 
 
-# Telegram sign-in is gone --------------------------------------------------------------------
+# Telegram login links are gone; the Mini App signs in with the organization's bot ----------
 
 
 @pytest.mark.parametrize(
-    "path",
-    ["auth/telegram/", "auth/login-links/", "auth/login-links/x/", "auth/login-links/x/claim/"],
+    "path", ["auth/login-links/", "auth/login-links/x/", "auth/login-links/x/claim/"]
 )
-def test_telegram_sign_in_answers_404_in_davomat(client, davomat, path):
+def test_telegram_login_links_answer_404_in_davomat(client, davomat, path):
     assert client.post(f"{API}/{path}", {}, **DASHBOARD).status_code == 404
     assert client.get(f"{API}/{path}").status_code in (404, 405)
+
+
+def test_the_mini_app_sign_in_exists_in_davomat(client, davomat):
+    # apps/signin/tests/test_telegram_login.py signs in with the organization's bot.
+    assert client.post(f"{API}/auth/telegram/", {"init_data": "x"}).status_code == 401
+    assert client.post(f"{API}/auth/telegram/refresh/", {"refresh": "x"}).status_code == 401
 
 
 def test_telegram_sign_in_stays_in_daybook(client, settings):

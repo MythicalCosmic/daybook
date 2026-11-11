@@ -133,6 +133,21 @@ describe("request", () => {
     configureHttp({ relogin: undefined });
   });
 
+  it("keeps the session when the Telegram relogin couldn't reach the server", async () => {
+    configureHttp({
+      relogin: async () => {
+        throw new Error("offline");
+      },
+    });
+    vi.stubGlobal("fetch", vi.fn(async () => json({ detail: "expired" }, 401)));
+    const error = (await http.patch("/owner/me/", {}).catch((e: unknown) => e)) as ApiError;
+    expect(error.isNetwork).toBe(true);
+    expect(ended).not.toHaveBeenCalled();
+    expect(token).toBe("old");
+    expect(errors.map((e) => e.status)).toEqual([0]);
+    configureHttp({ relogin: undefined });
+  });
+
   it("ends the session when the refresh is refused", async () => {
     vi.stubGlobal(
       "fetch",

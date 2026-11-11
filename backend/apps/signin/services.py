@@ -1,11 +1,15 @@
 """Owner sessions: who may sign in, issuing tokens, rotating refresh tokens, logging out.
 
-Two ways in (docs/PLAN-OWNER.md §7):
+Two ways in (docs/PLAN-OWNER.md §7), both a `DeviceSession` with a rotating refresh token and
+access tokens naming the session (`sid`):
 
-- **Desktop** (`issue_session`): a `DeviceSession`, an owner refresh token in an httpOnly
-  cookie scoped to `/api/v1/owner/auth/`, and an access token naming the session (`sid`).
-- **Inside Telegram** (`issue_access`): an access token only; no cookie, no refresh token, no
-  session (Telegram Web runs the dashboard in a cross-site iframe, where the cookie never goes).
+- **Desktop** (`issue_session`): the refresh token in an httpOnly cookie scoped to
+  `/api/v1/owner/auth/`.
+- **Inside Telegram** (`issue_session(..., telegram=True)`, after Mini App initData): the
+  refresh token in the response body, kept by the page (Telegram Web runs the dashboard in a
+  cross-site iframe, where the cookie never goes) and sent back to `telegram/refresh/`. So the
+  console stays signed in past the hour initData is good for, until the session is revoked or
+  left idle for `REFRESH_TOKEN_LIFETIME`.
 
 Refresh tokens rotate on every use and the old one is blacklisted. Presenting a replaced token
 again means someone else holds the newest one: the whole session is revoked. The one exception
@@ -34,6 +38,8 @@ from apps.members.permissions import Perm
 from apps.signin.models import DeviceSession
 from apps.signin.tokens import (
     SESSION_CLAIM,
+    VIA_CLAIM,
+    VIA_TELEGRAM,
     OwnerAccessToken,
     OwnerRefreshToken,
     owner_token_backend,
@@ -45,10 +51,14 @@ REFRESH_COOKIE = "owner_refresh"
 REFRESH_COOKIE_PATH = "/api/v1/owner/auth/"
 # Two tabs refreshing at once both send the same token; the slower one is not a thief.
 REUSE_GRACE = timedelta(seconds=30)
+# What a Telegram session's User-Agent starts with: the devices list reads "Telegram · iOS"
+# (apps.signin.devices) although only Android's webview names Telegram itself.
+MINI_APP_AGENT = "Telegram Mini App"
 
 
 class RefreshFailed(Exception):
-    """The refresh cookie can't be used (missing, expired, revoked, reused or no access)."""
+    """The refresh token can't be used (missing, expired, revoked, reused, of the other kind,
+    or no access)."""
 
 
 def can_sign_in(user: User) -> bool:
@@ -79,13 +89,12 @@ def client_ip(request) -> str | None:
         return None
 
 
-def user_agent(request) -> str:
-    return request.META.get("HTTP_USER_AGENT", "")[:300]
-
-
-def issue_access(user: User) -> str:
-    """An owner access token without a session: the Telegram Mini App path."""
-    return str(OwnerAccessToken.for_user(user))
+def user_agent(request, *, telegram: bool = False) -> str:
+    """The request's User-Agent; a Telegram session's starts with `MINI_APP_AGENT`."""
+    agent = request.META.get("HTTP_USER_AGENT", "")
+    if telegram:
+        agent = f"{MINI_APP_AGENT} {agent}".strip()
+    return agent[:300]
 
 
 @dataclass(frozen=True)
@@ -96,16 +105,30 @@ class IssuedSession:
 
 
 @transaction.atomic
-def issue_session(user: User, request) -> IssuedSession:
-    """A new desktop session for `user`: the caller must have checked `can_sign_in`."""
+def issue_session(user: User, request, *, telegram: bool = False) -> IssuedSession:
+    """A new session for `user`: the caller must have checked `can_sign_in`.
+
+    `telegram`: the dashboard opened as a Telegram Mini App, whose refresh token the page keeps
+    (no cookie). Each launch signs in afresh, since the page's storage ends with it, so the new
+    session replaces the person's earlier Telegram session on the same device: the devices list
+    keeps one row per phone rather than one per launch."""
+    agent = user_agent(request, telegram=telegram)
+    if telegram:
+        _end_sessions(
+            DeviceSession.objects.select_for_update().filter(
+                user=user, user_agent=agent, revoked_at__isnull=True
+            )
+        )
     refresh = OwnerRefreshToken.for_user(user)
     session = DeviceSession.objects.create(
         user=user,
         refresh_jti=refresh[jwt_settings.JTI_CLAIM],
-        user_agent=user_agent(request),
+        user_agent=agent,
         ip=client_ip(request),
     )
     refresh[SESSION_CLAIM] = session.pk
+    if telegram:
+        refresh[VIA_CLAIM] = VIA_TELEGRAM
     return IssuedSession(access=str(refresh.access_token), refresh=str(refresh), session=session)
 
 
@@ -133,10 +156,14 @@ def clear_refresh_cookie(response) -> None:
     response.delete_cookie(REFRESH_COOKIE, path=REFRESH_COOKIE_PATH, samesite="Strict")
 
 
-def rotate(raw: str, request) -> tuple[str, str | None]:
+def rotate(raw: str, request, *, telegram: bool = False) -> tuple[str, str | None]:
     """Exchange a refresh token for `(access, new refresh)`; the refresh is None within the
-    reuse grace. Raises `RefreshFailed`; a reused token also revokes its session."""
+    reuse grace. `telegram`: it came in the body from the Mini App (`telegram/refresh/`), where
+    only a Telegram session's token is taken, as only a cookie session's is at `refresh/`.
+    Raises `RefreshFailed`; a reused token also revokes its session."""
     payload = _verified_payload(raw)
+    if (payload.get(VIA_CLAIM) == VIA_TELEGRAM) != telegram:
+        raise RefreshFailed("A refresh token of the other kind.")
     now = timezone.now()
     reused = None
     with transaction.atomic():
@@ -153,11 +180,13 @@ def rotate(raw: str, request) -> tuple[str, str | None]:
         jti = payload[jwt_settings.JTI_CLAIM]
         blacklisted = BlacklistedToken.objects.filter(token__jti=jti).exists()
         if jti == session.refresh_jti and not blacklisted:
-            return _rotate(session, raw, request, now)
+            return _rotate(session, raw, request, now, telegram=telegram)
         in_grace = session.rotated_at is not None and now - session.rotated_at <= REUSE_GRACE
         if jti == session.previous_jti and in_grace:
             access = OwnerAccessToken.for_user(session.user)
             access[SESSION_CLAIM] = session.pk
+            if telegram:
+                access[VIA_CLAIM] = VIA_TELEGRAM
             session.last_seen_at = now
             session.save(update_fields=["last_seen_at"])
             return str(access), None
@@ -168,7 +197,8 @@ def rotate(raw: str, request) -> tuple[str, str | None]:
 
 
 def logout(raw: str | None) -> None:
-    """Blacklist the cookie's token and end its session. Unusable tokens are ignored."""
+    """Blacklist the refresh token (the cookie's, or the one a Telegram page kept) and end its
+    session. Unusable tokens are ignored."""
     if not raw:
         return
     try:
@@ -238,13 +268,15 @@ class InitDataRefused(Exception):
 
 def user_from_init_data(init_data: str) -> User:
     """The person behind Telegram Mini App `init_data` (§7.2): signed by the owner bot, or by
-    the employee bot as a fallback, at most `OWNER_INIT_DATA_MAX_AGE` old, and allowed into
-    the dashboard. Raises InitDataRefused."""
+    the employee bot as a fallback (in the Davomat edition first by the organization's own
+    bot), at most `OWNER_INIT_DATA_MAX_AGE` old, and allowed into the dashboard. Raises
+    InitDataRefused."""
     from apps.accounts.services import sync_telegram_user
     from apps.accounts.telegram_auth import InvalidInitData, validate_init_data
 
+    davomat = settings.EDITION == "davomat"
     web_user = None
-    for bot in ("owner", "employee"):
+    for bot in ("davomat", "owner", "employee") if davomat else ("owner", "employee"):
         try:
             web_user = validate_init_data(
                 init_data, bot=bot, max_age=settings.OWNER_INIT_DATA_MAX_AGE
@@ -255,15 +287,19 @@ def user_from_init_data(init_data: str) -> User:
     if web_user is None:
         raise InitDataRefused("init_data_invalid")
     # Nobody is created here: only people who already belong to a company may get in.
-    if not User.objects.filter(telegram_id=web_user.id).exists():
+    user = User.objects.filter(telegram_id=web_user.id).first()
+    if user is None:
         raise InitDataRefused("no_access")
-    user = sync_telegram_user(
-        telegram_id=web_user.id,
-        username=web_user.username,
-        first_name=web_user.first_name,
-        last_name=web_user.last_name,
-        language_code=None,
-    )
+    if not davomat:
+        # In Davomat the names are the ones the administrator typed (a one-time link joined
+        # this Telegram to them): Telegram's profile never replaces them.
+        user = sync_telegram_user(
+            telegram_id=web_user.id,
+            username=web_user.username,
+            first_name=web_user.first_name,
+            last_name=web_user.last_name,
+            language_code=None,
+        )
     if not can_sign_in(user):
         raise InitDataRefused("no_access")
     return user
@@ -298,17 +334,20 @@ def _verified_payload(raw: str) -> dict:
     return payload
 
 
-def _rotate(session: DeviceSession, raw: str, request, now) -> tuple[str, str]:
+def _rotate(session: DeviceSession, raw: str, request, now, *, telegram: bool) -> tuple[str, str]:
     old = OwnerRefreshToken(raw)
     new = OwnerRefreshToken.for_user(session.user)
     new[SESSION_CLAIM] = session.pk
+    if telegram:
+        new[VIA_CLAIM] = VIA_TELEGRAM
     old.blacklist()
     session.previous_jti = session.refresh_jti
     session.refresh_jti = new[jwt_settings.JTI_CLAIM]
     session.rotated_at = now
     session.last_seen_at = now
     session.ip = client_ip(request) or session.ip
-    session.user_agent = user_agent(request) or session.user_agent
+    if request.META.get("HTTP_USER_AGENT"):
+        session.user_agent = user_agent(request, telegram=telegram)
     session.save(
         update_fields=[
             "previous_jti",
@@ -326,6 +365,12 @@ def _revoke(session: DeviceSession, now) -> None:
     session.revoked_at = now
     session.save(update_fields=["revoked_at"])
     _blacklist_jtis([jti for jti in (session.refresh_jti, session.previous_jti) if jti])
+
+
+def _end_sessions(sessions) -> None:
+    now = timezone.now()
+    for session in sessions:
+        _revoke(session, now)
 
 
 def _blacklist_jtis(jtis: list[str]) -> None:

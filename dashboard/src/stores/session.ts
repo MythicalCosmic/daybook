@@ -1,6 +1,7 @@
 /**
  * The signed-in person. The access token lives only in memory (plan §7.3); the refresh token is an
- * httpOnly cookie the browser sends to /api/v1/owner/auth/ by itself.
+ * httpOnly cookie the browser sends to /api/v1/owner/auth/ by itself, or inside Telegram the one
+ * TelegramBridge keeps (memory and sessionStorage).
  */
 import { defineStore } from "pinia";
 import { computed, ref, shallowRef } from "vue";
@@ -31,8 +32,9 @@ export const useSessionStore = defineStore("session", () => {
   }
 
   /**
-   * Runs once per page load. `refreshAccess` uses the refresh cookie on the desktop and posts
-   * Telegram's initData inside Telegram (http's `relogin`). A failure leaves the person signed out.
+   * Runs once per page load. `refreshAccess` uses the refresh cookie on the desktop and, inside
+   * Telegram, the kept refresh token or else initData (http's `relogin`). A failure leaves the
+   * person signed out.
    */
   function boot(): Promise<void> {
     booting ??= (async () => {
@@ -65,7 +67,10 @@ export const useSessionStore = defineStore("session", () => {
   /** Signs out here even when the server can't be reached: the caller goes on to the login page. */
   async function logout(): Promise<void> {
     try {
-      await shellApi.logout();
+      // Inside Telegram the session's refresh token is the page's, not a cookie. (Imported here:
+      // the bridge reads the UI store, which reads this one.)
+      const { endTelegramSession, telegram } = await import("@/shell/TelegramBridge");
+      await (telegram().inside ? endTelegramSession() : shellApi.logout());
     } catch {
       // The session ends in this tab either way; an error here stopped the redirect.
     } finally {

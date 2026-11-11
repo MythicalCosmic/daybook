@@ -1,8 +1,9 @@
 <script setup lang="ts">
 /**
- * Settings › Your account: who is signed in (name, username, role), a new password (the current one
- * first; the server's validators decide what is strong enough), and this person's language and
- * appearance. Everyone has it, whatever their role.
+ * Settings › Your account: who is signed in (name, username, role), their own Telegram once the
+ * organization's bot is connected (the bot's messages and the web app inside Telegram), a new
+ * password (the current one first; the server's validators decide what is strong enough), and this
+ * person's language and appearance. Everyone has it, whatever their role.
  */
 import { Monitor, Moon, ShieldCheck, Sun } from "@lucide/vue";
 import { useQueryClient } from "@tanstack/vue-query";
@@ -16,6 +17,7 @@ import FormField from "@/components/FormField.vue";
 import InlineAlert from "@/components/InlineAlert.vue";
 import PageSection from "@/components/PageSection.vue";
 import SegmentedControl from "@/components/SegmentedControl.vue";
+import StatusPill from "@/components/StatusPill.vue";
 import UiButton from "@/components/UiButton.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
 import { toast } from "@/components/useToast";
@@ -28,6 +30,7 @@ import { useUiStore, type ThemeMode } from "@/stores/ui";
 
 import { changePassword } from "../api";
 import PasswordField from "../components/fields/PasswordField.vue";
+import MyTelegramLink from "../components/settings/MyTelegramLink.vue";
 import { roleLabel } from "../components/settings/roles";
 import SecretInput from "../components/settings/SecretInput.vue";
 import { MIN_LENGTH } from "../lib/password";
@@ -40,6 +43,11 @@ const client = useQueryClient();
 
 const user = computed(() => session.me?.user ?? null);
 const name = computed(() => user.value?.full_name || [user.value?.first_name, user.value?.last_name].filter(Boolean).join(" ") || user.value?.username || "");
+
+// ─── Your Telegram ────────────────────────────────────────────────────────────
+
+const telegramReady = computed(() => editionInfo.value.telegram.configured);
+const telegramLinked = computed(() => (user.value?.telegram_id ?? null) !== null);
 
 // ─── Password ─────────────────────────────────────────────────────────────────
 
@@ -110,6 +118,14 @@ const theme = computed<ThemeMode>({ get: () => ui.themeMode, set: (mode) => ui.s
         {{ t("davomat.account.signedInto", { organization: company.current?.name ?? editionInfo.organization?.name ?? "" }) }}
       </p>
     </section>
+
+    <!-- Your Telegram: the bot's messages, and the web app inside Telegram -->
+    <PageSection v-if="telegramReady" variant="card" :title="t('davomat.account.telegram.title')" :description="t('davomat.account.telegram.hint')" data-my-telegram>
+      <div class="flex flex-wrap items-center gap-3">
+        <StatusPill :tone="telegramLinked ? 'success' : 'warning'" :label="telegramLinked ? t('davomat.account.telegram.linked') : t('davomat.account.telegram.notLinked')" size="sm" />
+        <MyTelegramLink :linked="telegramLinked" />
+      </div>
+    </PageSection>
 
     <!-- Password -->
     <PageSection variant="card" :title="t('davomat.account.password.title')" :description="t('davomat.account.password.hint')">

@@ -23,8 +23,9 @@ from apps.accounts.telegram_chat import (
     LANGUAGES,
     PICK_TITLE,
 )
-from davomat_bot import bot_messages, commands
+from davomat_bot import bot_messages
 from davomat_bot.callbacks import HomeLanguage, PickLanguage
+from davomat_bot.handlers.start import relabel
 from davomat_bot.middlewares.person import Person
 
 router = Router(name="language")
@@ -70,12 +71,7 @@ async def pick_language(
     await callback.answer(LANGUAGE_NAMES[code])
     with suppress(TelegramAPIError):
         await callback.message.delete()
-    await commands.relabel(
-        bot,
-        callback.message.chat.id,
-        language=code,
-        manager=bot_messages.sees_attendance(person.member),
-    )
+    await relabel(bot, callback.message.chat.id, person, code)
     await callback.message.answer(CHANGED_SHORT[code])
 
 
@@ -114,9 +110,4 @@ async def home_language(
     with suppress(TelegramAPIError):
         await callback.message.edit_text(text, reply_markup=markup)
     if person.user is not None:
-        await commands.relabel(
-            bot,
-            callback.message.chat.id,
-            language=code,
-            manager=bot_messages.sees_attendance(person.member),
-        )
+        await relabel(bot, callback.message.chat.id, person, code)

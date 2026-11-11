@@ -472,6 +472,10 @@
   "shell.telegram.endedTitle": "Сессия закончилась",
   "shell.telegram.endedBody": "Откройте панель снова из бота, чтобы продолжить.",
   "shell.telegram.close": "Закрыть",
+  "shell.telegram.offlineTitle": "Нет связи",
+  "shell.telegram.offlineBody": "Не удалось связаться с сервером. Проверьте интернет и попробуйте ещё раз.",
+  "shell.telegram.noAccessTitle": "Нет доступа",
+  "shell.telegram.noAccessBody": "У этого аккаунта Telegram пока нет доступа к приложению. Попросите администратора дать доступ или привязать ваш Telegram.",
 
   "shell.overlay.close": "Закрыть",
   "common.reasonNotePlaceholder": "Можно добавить подробности",

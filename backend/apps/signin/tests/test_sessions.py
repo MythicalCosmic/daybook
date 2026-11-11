@@ -205,9 +205,18 @@ def test_log_out_everywhere_ends_every_session_and_token(client, owner):
     ).exists()
 
 
-def test_telegram_sign_in_gets_an_access_token_without_a_session(owner):
-    access = OwnerAccessToken(services.issue_access(owner.user))
+def test_a_telegram_session_is_a_session_whose_tokens_say_so(owner):
+    request = RequestFactory().post("/", HTTP_USER_AGENT="Chrome on Windows")
 
-    assert "sid" not in access
-    assert not DeviceSession.objects.exists()
-    assert not OutstandingToken.objects.exists()
+    issued = services.issue_session(owner.user, request, telegram=True)
+
+    refresh_token = OwnerRefreshToken(issued.refresh)
+    assert refresh_token["sid"] == issued.session.pk and refresh_token["via"] == "telegram"
+    assert OwnerAccessToken(issued.access)["via"] == "telegram"
+    assert issued.session.user_agent == "Telegram Mini App Chrome on Windows"
+    # The cookie's rotation refuses it (and ends nothing); the body's takes it.
+    with pytest.raises(services.RefreshFailed):
+        services.rotate(issued.refresh, request)
+    access, new = services.rotate(issued.refresh, request, telegram=True)
+    assert OwnerRefreshToken(new)["via"] == "telegram"
+    assert OwnerAccessToken(access)["sid"] == issued.session.pk

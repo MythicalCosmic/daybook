@@ -3,13 +3,16 @@
 POST login-links/                 a QR / deep link with a match number (public)
 GET  login-links/{id}/            {status} for the browser holding the poll token
 POST login-links/{id}/claim/      once, when approved: {access} + the refresh cookie
-POST telegram/                    Mini App initData → {access}, no cookie (inside Telegram)
-POST refresh/ · logout/           the refresh cookie (rotation, reuse detection)
+POST telegram/                    Mini App initData → {access, refresh}, no cookie (inside Telegram)
+POST telegram/refresh/            {refresh} → {access, refresh}: the Mini App's session, rotating
+POST refresh/ · logout/           the refresh cookie (rotation, reuse detection); logout also
+                                  takes {refresh} in the body (inside Telegram)
 POST dev-login/                   development only
 GET  sessions/ · POST sessions/{id}/revoke/ · POST sessions/revoke-all/
 """
 
 from django.conf import settings
+from django.contrib.auth.models import update_last_login
 from django.http import Http404
 from django.utils.translation import gettext as _
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
@@ -32,8 +35,9 @@ POLL_HEADER = "X-Login-Poll"
 
 
 class TelegramSignIn:
-    """Signing in through Telegram (login links, Mini App initData). The Davomat edition signs
-    in with passwords only (docs/DAVOMAT.md §1.2): there these endpoints don't exist."""
+    """Signing in on the desktop through a Telegram bot (login links). The Davomat edition
+    signs in with passwords there (docs/DAVOMAT.md §1.2), so these endpoints don't exist in it;
+    the Mini App sign-in (`telegram/`, `telegram/refresh/`) works in both editions."""
 
     def initial(self, request, *args, **kwargs):
         if settings.EDITION == "davomat":
@@ -43,6 +47,30 @@ class TelegramSignIn:
 
 class AccessSerializer(serializers.Serializer):
     access = serializers.CharField(help_text="Owner access token (aud=dashboard), 15 minutes.")
+
+
+class TelegramSessionSerializer(serializers.Serializer):
+    access = serializers.CharField(help_text="Owner access token (aud=dashboard), 15 minutes.")
+    refresh = serializers.CharField(
+        allow_null=True,
+        help_text=(
+            "The session's refresh token (7 days, rotates on every use): keep it in the page "
+            "and post it to telegram/refresh/ for the next access token. null when a refresh "
+            "came within the reuse grace: keep the one you have."
+        ),
+    )
+
+
+class TelegramRefreshSerializer(serializers.Serializer):
+    refresh = serializers.CharField(max_length=2048)
+
+
+class LogoutSerializer(serializers.Serializer):
+    refresh = serializers.CharField(
+        required=False,
+        max_length=2048,
+        help_text="Inside Telegram (no cookie): the refresh token the page kept.",
+    )
 
 
 class DevLoginSerializer(serializers.Serializer):
@@ -110,11 +138,16 @@ def _session_of(raw: str | None) -> str | None:
 
 
 class LogoutView(CookieAuthView):
-    """End this browser's session and clear the refresh cookie."""
+    """End this browser's session and clear the refresh cookie. Inside Telegram there is no
+    cookie: the page posts the refresh token it kept, `{"refresh": "…"}`."""
 
-    @extend_schema(request=None, responses={204: None})
+    @extend_schema(request=LogoutSerializer, responses={204: None})
     def post(self, request):
-        services.logout(request.COOKIES.get(services.REFRESH_COOKIE))
+        raw = request.COOKIES.get(services.REFRESH_COOKIE)
+        if not raw:
+            body = request.data.get("refresh") if hasattr(request.data, "get") else None
+            raw = body if isinstance(body, str) else None
+        services.logout(raw)
         response = Response(status=status.HTTP_204_NO_CONTENT)
         services.clear_refresh_cookie(response)
         return response
@@ -269,17 +302,20 @@ def _claim_message(code: str) -> str:
     }.get(code, _("This sign-in can't be used. Start again."))
 
 
-# Inside Telegram (Mini App initData; no cookie, no session) ----------------------------------
+# Inside Telegram (Mini App initData; the refresh token in the body, never a cookie) ----------
 
 
 class TelegramLoginSerializer(serializers.Serializer):
     init_data = serializers.CharField(max_length=4096)
 
 
-class TelegramLoginView(TelegramSignIn, APIView):
-    """Sign in with `Telegram.WebApp.initData` (owner bot, else employee bot), at most
-    `OWNER_INIT_DATA_MAX_AGE` old. Answers an access token only; post the same initData again
-    when it runs out."""
+class TelegramLoginView(APIView):
+    """Sign in with `Telegram.WebApp.initData` (owner bot, else employee bot; in the Davomat
+    edition the organization's own bot first), at most `OWNER_INIT_DATA_MAX_AGE` old: a
+    session whose refresh token comes in the body (Telegram
+    Web runs the dashboard in a cross-site iframe, where no cookie arrives). The page keeps it
+    and gets every next access token from `telegram/refresh/`, so the console stays signed in
+    after the hour initData is good for."""
 
     authentication_classes = ()
     permission_classes = (AllowAny,)
@@ -294,7 +330,7 @@ class TelegramLoginView(TelegramSignIn, APIView):
     @extend_schema(
         request=TelegramLoginSerializer,
         responses={
-            200: AccessSerializer,
+            200: TelegramSessionSerializer,
             401: OpenApiResponse(description="Invalid or old initData."),
             403: OpenApiResponse(description="No dashboard access."),
         },
@@ -318,7 +354,51 @@ class TelegramLoginView(TelegramSignIn, APIView):
                 status=status.HTTP_401_UNAUTHORIZED,
             )
         throttle_person(self, request, "owner_telegram", user.telegram_id)
-        return Response({"access": services.issue_access(user)})
+        issued = services.issue_session(user, request, telegram=True)
+        update_last_login(None, user)
+        return Response({"access": issued.access, "refresh": issued.refresh})
+
+
+class TelegramRefreshView(APIView):
+    """The Mini App's next access token: `{"refresh"}` (the token the page kept) is rotated as
+    the desktop's cookie is (`services.rotate`: reuse detection, revocation, the devices list),
+    with the same limits per session and per address. No cookie and no Origin check: the token
+    in the body is the credential, so there is nothing to forge."""
+
+    authentication_classes = ()
+    permission_classes = (AllowAny,)
+    throttle_classes = (AddressRateThrottle,)
+    address_throttle_scope = "owner_auth_address"
+
+    def get_authenticate_header(self, request):
+        # A refused token is a 401: the page falls back to initData, else shows "session ended".
+        return 'Bearer realm="dashboard"'
+
+    @extend_schema(
+        request=TelegramRefreshSerializer,
+        responses={
+            200: TelegramSessionSerializer,
+            401: OpenApiResponse(description="The session has ended (code: session_ended)."),
+        },
+        description=(
+            "Rotates a Telegram session's refresh token. A token used twice ends its session; "
+            "a desktop (cookie) session's token is refused here."
+        ),
+    )
+    def post(self, request):
+        serializer = TelegramRefreshSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        raw = serializer.validated_data["refresh"]
+        if session := _session_of(raw):
+            throttle_person(self, request, "owner_refresh", session)
+        try:
+            access, refresh = services.rotate(raw, request, telegram=True)
+        except services.RefreshFailed:
+            return Response(
+                {"detail": _("Your session has ended. Sign in again."), "code": "session_ended"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+        return Response({"access": access, "refresh": refresh})
 
 
 # Device sessions ------------------------------------------------------------------------------
@@ -379,7 +459,7 @@ def session_row(session: DeviceSession, current: int | None) -> dict:
 
 
 class SessionsView(SessionUserView):
-    """Browsers signed in to the dashboard as you (inside Telegram there is no session)."""
+    """Browsers and Telegram apps signed in to the dashboard as you ("Telegram · Android")."""
 
     @extend_schema(responses=DeviceSessionSerializer(many=True))
     def get(self, request):

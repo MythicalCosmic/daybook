@@ -22,20 +22,97 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * The session (`POST auth/telegram/`, apps.accounts): an access token (1 hour) and a refresh token
+ * (7 days, rotating; `auth/telegram/refresh/`). Init data is good for a day; the refresh token
+ * keeps an open app signed in past that, so "session ended" only shows when both are refused.
+ * Written by hand until the schema types are generated again.
+ */
+export interface TelegramSession {
+  access: string;
+  refresh: string;
+}
+
+/** Where the refresh token waits across reloads of the webview (sessionStorage: it ends with it). */
+export const SESSION_KEY = "daybook.app.telegramSession";
+
 let accessToken: string | null = null;
+let refreshToken: string | null = null;
 let login: Promise<void> | null = null;
 
-/** Exchange Telegram's init data for a JWT. Concurrent callers share one request. */
+/** Whose launch data this is: a token another Telegram account left in this tab is never used. */
+function telegramUserId(): number | null {
+  try {
+    const user = JSON.parse(new URLSearchParams(initData()).get("user") ?? "null") as { id?: number } | null;
+    return typeof user?.id === "number" ? user.id : null;
+  } catch {
+    return null;
+  }
+}
+
+function keptRefresh(): string | null {
+  if (refreshToken) return refreshToken;
+  try {
+    const raw = window.sessionStorage.getItem(SESSION_KEY);
+    const kept = raw ? (JSON.parse(raw) as { user?: number | null; refresh?: unknown }) : null;
+    if (kept && typeof kept.refresh === "string" && (kept.user ?? null) === telegramUserId()) refreshToken = kept.refresh;
+  } catch {
+    // Storage blocked or garbled: memory only.
+  }
+  return refreshToken;
+}
+
+function keepSession(session: { access: string; refresh?: string | null }): void {
+  accessToken = session.access;
+  if (!session.refresh) return;
+  refreshToken = session.refresh;
+  try {
+    window.sessionStorage.setItem(SESSION_KEY, JSON.stringify({ user: telegramUserId(), refresh: session.refresh }));
+  } catch {
+    // Storage blocked: it lives in memory until the webview reloads.
+  }
+}
+
+function forgetRefresh(): void {
+  refreshToken = null;
+  try {
+    window.sessionStorage.removeItem(SESSION_KEY);
+  } catch {
+    // Nothing kept there.
+  }
+}
+
+function postJson(path: string, body: unknown): Promise<Response> {
+  return fetch(`${BASE}${path}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+}
+
+/** The kept refresh token's next session: false when refused (spent, expired, switched off). */
+async function refreshSession(token: string): Promise<boolean> {
+  const response = await postJson("/auth/telegram/refresh/", { refresh: token });
+  if (response.ok) {
+    keepSession((await response.json()) as TelegramSession);
+    return true;
+  }
+  if (response.status === 400 || response.status === 401 || response.status === 403) {
+    forgetRefresh();
+    return false;
+  }
+  // Busy or restarting: not a refusal, so the token stays for the next try.
+  throw new ApiError(response.status, await readBody(response));
+}
+
+/**
+ * A session: the kept refresh token first, else Telegram's init data. Concurrent callers share
+ * one request. Throws ApiError (401 when both were refused) or the network's TypeError.
+ */
 function ensureLogin(): Promise<void> {
   login ??= (async () => {
     try {
-      const response = await fetch(`${BASE}/auth/telegram/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ init_data: initData() }),
-      });
+      const kept = keptRefresh();
+      if (kept && (await refreshSession(kept))) return;
+      const response = await postJson("/auth/telegram/", { init_data: initData() });
       if (!response.ok) throw new ApiError(response.status, await readBody(response));
-      accessToken = ((await response.json()) as { access: string }).access;
+      keepSession((await response.json()) as TelegramSession);
     } finally {
       login = null;
     }
@@ -50,7 +127,7 @@ export async function api<T>(path: string, options: Options = {}): Promise<T> {
   if (!accessToken) await ensureLogin();
   let response = await send(path, options);
   if (response.status === 401) {
-    // The access token expired: sign in again with the init data and retry once.
+    // The access token expired: the refresh token (else the init data) gets a new one; retry once.
     accessToken = null;
     await ensureLogin();
     response = await send(path, options);

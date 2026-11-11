@@ -317,7 +317,7 @@
   "davomat.setup.done.later": "Umumiy ko‘rinishga o‘tish",
   "davomat.setup.done.next": "Keyingi qadamlar",
   "davomat.setup.done.nextTeam": "Xodimlarni qo‘shing yoki ro‘yxatni yuklang",
-  "davomat.setup.done.nextTelegram": "Telegram botingizni ulang",
+  "davomat.setup.done.nextTelegram": "Telegram botni ulang va o‘z Telegramingizni ulang: har bir kelish sizga surati bilan keladi",
   "davomat.setup.done.nextTerminal": "Face ID terminalini ulang",
   "davomat.setup.done.terminal": "Birinchi terminalni qo‘shish",
   "davomat.setup.done.title": "Hammasi tayyor, {name}",
@@ -512,8 +512,8 @@
   "davomat.telegram.me.dialogHint": "Kodni telefon kamerasi bilan skanerlang yoki havolani shu qurilmada oching.",
   "davomat.telegram.me.dialogTitle": "Telegramingizni ulang",
   "davomat.telegram.me.link": "Telegramimni ulash",
-  "davomat.telegram.me.linked": "Ulangan. Bot sizga kelganlar, kechikishlar va kunlik hisobotni yozadi.",
-  "davomat.telegram.me.notLinked": "Hali ulanmagan. Xabarlarni o‘zingiz olish uchun kodni telefoningiz bilan skanerlang.",
+  "davomat.telegram.me.linked": "Ulangan. Bot sizga kelganlarni surati bilan, kechikishlar va kunlik hisobotni yozadi. Undagi Davomat tugmasi bu ilovani Telegramning o‘zida ochadi.",
+  "davomat.telegram.me.notLinked": "Hali ulanmagan. Har bir kelishni surati bilan, o‘zingiznikini ham, olish uchun ulang.",
   "davomat.telegram.me.relink": "Boshqa hisobni ulash",
   "davomat.telegram.me.title": "Sizning Telegramingiz",
   "davomat.telegram.openBot": "Botni ochish",
@@ -678,5 +678,11 @@
   "davomat.employee.timeline.now": "Hozir",
   "davomat.employee.timeline.summary": "Keldi: {in} · Ketdi: {out} · Ishda: {worked}",
   "davomat.employee.timeline.stillIn": "Keldi: {in} · hozir ishda",
-  "davomat.employee.timeline.none": "Bu kuni skan yo‘q"
+  "davomat.employee.timeline.none": "Bu kuni skan yo‘q",
+  "davomat.telegram.me.callout.title": "Kelganlar haqidagi xabarlar sizga hali kelmayapti",
+  "davomat.telegram.me.callout.body": "Bot faqat Telegramini ulaganlarga yozadi. Har bir skanerlashni surati bilan, o‘zingiznikini ham, olish uchun Telegramingizni ulang: botda Davomat tugmasi ham paydo bo‘ladi.",
+  "davomat.account.telegram.title": "Telegram",
+  "davomat.account.telegram.hint": "Bot xabarlarini (kelganlar surati bilan, o‘zingiz ham) olish va Davomatni Telegramning o‘zida parolsiz ochish uchun Telegramingizni ulang.",
+  "davomat.account.telegram.linked": "Ulangan",
+  "davomat.account.telegram.notLinked": "Ulanmagan"
 }

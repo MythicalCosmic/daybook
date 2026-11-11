@@ -317,7 +317,7 @@
   "davomat.setup.done.later": "Go to the overview",
   "davomat.setup.done.next": "Next steps",
   "davomat.setup.done.nextTeam": "Add employees or import a list",
-  "davomat.setup.done.nextTelegram": "Connect your Telegram bot",
+  "davomat.setup.done.nextTelegram": "Connect the Telegram bot and link your own Telegram: every arrival comes to you with the photo",
   "davomat.setup.done.nextTerminal": "Connect a Face ID terminal",
   "davomat.setup.done.terminal": "Add your first terminal",
   "davomat.setup.done.title": "All set, {name}",
@@ -512,8 +512,8 @@
   "davomat.telegram.me.dialogHint": "Scan the code with your phone’s camera, or open the link on this device.",
   "davomat.telegram.me.dialogTitle": "Link your Telegram",
   "davomat.telegram.me.link": "Link my Telegram",
-  "davomat.telegram.me.linked": "Linked. The bot writes to you: arrivals, lateness and the daily summary.",
-  "davomat.telegram.me.notLinked": "Not linked yet. Scan a code with your phone to get the messages yourself.",
+  "davomat.telegram.me.linked": "Linked. The bot writes to you: arrivals with the photo, lateness and the daily summary. Its Davomat button opens this app in Telegram.",
+  "davomat.telegram.me.notLinked": "Not linked yet. Link it to get every arrival with the photo, your own scans included.",
   "davomat.telegram.me.relink": "Link another account",
   "davomat.telegram.me.title": "Your Telegram",
   "davomat.telegram.openBot": "Open the bot",
@@ -678,5 +678,11 @@
   "davomat.employee.timeline.now": "Now",
   "davomat.employee.timeline.summary": "In {in} · Out {out} · {worked} at work",
   "davomat.employee.timeline.stillIn": "In {in} · still here",
-  "davomat.employee.timeline.none": "No scans this day"
+  "davomat.employee.timeline.none": "No scans this day",
+  "davomat.telegram.me.callout.title": "Arrivals don’t come to you yet",
+  "davomat.telegram.me.callout.body": "The bot writes only to people who linked their Telegram. Link yours to get every scan with the photo, your own included, and the Davomat button in the bot.",
+  "davomat.account.telegram.title": "Telegram",
+  "davomat.account.telegram.hint": "Link your Telegram to get the bot’s messages (arrivals with the photo, your own included) and open Davomat inside Telegram, no password needed.",
+  "davomat.account.telegram.linked": "Linked",
+  "davomat.account.telegram.notLinked": "Not linked"
 }

@@ -37,6 +37,18 @@ def _seeing(company, branch_id: int, perm: Perm) -> list[Membership]:
     return [holder for holder in holders if scope.allows(scope.branch_ids(holder), branch_id)]
 
 
+def _admins_first(people: list[Membership]) -> list[Membership]:
+    """Owners, then whoever manages roles (administrators), then the rest: the order the
+    messages go out in. Nobody is left out, the person who scanned included."""
+    return sorted(
+        people,
+        key=lambda person: (
+            not (person.role is not None and person.role.is_owner),
+            not person.has_perm(Perm.ROLES_MANAGE),
+        ),
+    )
+
+
 def _url(event: FaceEvent, query: str = "") -> str:
     return f"/c/{event.company_id}/faceid{query}"
 
@@ -50,14 +62,16 @@ def _record(event: FaceEvent):
 
 
 def scan(event_id: int, *, arrival: bool) -> None:
-    """ "Mushtariy · 08:00 · Kirish" with the snapshot, to those who see the branch's attendance;
-    an arrival also goes to the branch's attendance groups when the settings say so."""
+    """ "Mushtariy · 08:00 · Kirish" with the snapshot, to those who see the branch's attendance
+    (owners and administrators first; the person who scanned too, when they are one of them: an
+    admin who also scans hears their own arrival); an arrival also goes to the branch's
+    attendance groups when the settings say so."""
     event = _event(event_id)
     if event is None:
         return
     settings = conf.get_settings(event.company)
     record = _record(event)
-    recipients = _seeing(event.company, event.device.branch_id, Perm.ATTENDANCE_VIEW)
+    recipients = _admins_first(_seeing(event.company, event.device.branch_id, Perm.ATTENDANCE_VIEW))
     inbox.notify(
         recipients,
         "faceid.scan",

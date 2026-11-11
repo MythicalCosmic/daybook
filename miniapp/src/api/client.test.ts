@@ -103,3 +103,133 @@ describe("apiForm", () => {
     expect((failure as InstanceType<typeof ApiError>).detail).toBe("Over your limit.");
   });
 });
+
+describe("the session", () => {
+  const SIGN_IN = "/api/v1/auth/telegram/";
+  const REFRESH = "/api/v1/auth/telegram/refresh/";
+  const KEY = "daybook.app.telegramSession";
+  let calls: { url: string; body: Record<string, unknown> | null }[];
+  let routes: Record<string, (body: Record<string, unknown>) => Response>;
+
+  beforeEach(() => {
+    vi.resetModules();
+    sessionStorage.clear();
+    calls = [];
+    routes = {};
+    vi.stubEnv("VITE_DEV_INIT_DATA", "user=%7B%22id%22%3A4242%7D&hash=abc");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init: RequestInit) => {
+        const body = typeof init.body === "string" ? (JSON.parse(init.body) as Record<string, unknown>) : null;
+        calls.push({ url, body });
+        const route = routes[url];
+        if (route) return route(body ?? {});
+        const auth = (init.headers as Record<string, string>).Authorization;
+        return auth === "Bearer stale" ? json({ detail: "expired" }, 401) : json({ ok: true, auth });
+      }),
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+    sessionStorage.clear();
+  });
+
+  const kept = () => JSON.parse(sessionStorage.getItem(KEY) ?? "null") as { user: number; refresh: string } | null;
+  const refused = () => json({ detail: "Your session has ended. Sign in again.", code: "token_not_valid" }, 401);
+
+  it("signs in with the init data and keeps the refresh token for this person", async () => {
+    routes[SIGN_IN] = () => json({ access: "a1", refresh: "r1" });
+    const { api } = await import("./client");
+
+    await expect(api("/me/")).resolves.toEqual({ ok: true, auth: "Bearer a1" });
+
+    expect(kept()).toEqual({ user: 4242, refresh: "r1" });
+  });
+
+  it("gets the next access token with the refresh token, not the init data, and keeps the new one", async () => {
+    sessionStorage.setItem(KEY, JSON.stringify({ user: 4242, refresh: "r1" }));
+    routes[REFRESH] = (body) => (body.refresh === "r1" ? json({ access: "a2", refresh: "r2" }) : refused());
+    const { api } = await import("./client");
+
+    await expect(api("/me/")).resolves.toEqual({ ok: true, auth: "Bearer a2" });
+
+    expect(calls.map((call) => call.url)).toEqual([REFRESH, "/api/v1/me/"]);
+    expect(kept()?.refresh).toBe("r2");
+  });
+
+  it("refreshes after a 401 and retries once", async () => {
+    routes[SIGN_IN] = () => json({ access: "stale", refresh: "r1" });
+    routes[REFRESH] = () => json({ access: "a2", refresh: "r2" });
+    const { api } = await import("./client");
+
+    await expect(api("/me/")).resolves.toEqual({ ok: true, auth: "Bearer a2" });
+
+    expect(calls.map((call) => call.url)).toEqual([SIGN_IN, "/api/v1/me/", REFRESH, "/api/v1/me/"]);
+  });
+
+  it("falls back to the init data when the refresh token is refused", async () => {
+    sessionStorage.setItem(KEY, JSON.stringify({ user: 4242, refresh: "spent" }));
+    routes[REFRESH] = refused;
+    routes[SIGN_IN] = () => json({ access: "a3", refresh: "r3" });
+    const { api } = await import("./client");
+
+    await expect(api("/me/")).resolves.toEqual({ ok: true, auth: "Bearer a3" });
+
+    expect(calls.map((call) => call.url)).toEqual([REFRESH, SIGN_IN, "/api/v1/me/"]);
+    expect(kept()?.refresh).toBe("r3");
+  });
+
+  it("fails with 401 only when both are refused", async () => {
+    sessionStorage.setItem(KEY, JSON.stringify({ user: 4242, refresh: "spent" }));
+    routes[REFRESH] = refused;
+    routes[SIGN_IN] = () => json({ detail: "Init data has expired. Reopen the app." }, 401);
+    const { api, ApiError } = await import("./client");
+
+    const failure = await api("/me/").catch((error: unknown) => error);
+
+    expect(failure).toBeInstanceOf(ApiError);
+    expect((failure as InstanceType<typeof ApiError>).status).toBe(401);
+    expect(kept()).toBeNull();
+  });
+
+  it("keeps the token when the server is only busy", async () => {
+    sessionStorage.setItem(KEY, JSON.stringify({ user: 4242, refresh: "r1" }));
+    routes[REFRESH] = () => json({ detail: "Bad gateway" }, 502);
+    const { api, ApiError } = await import("./client");
+
+    const failure = await api("/me/").catch((error: unknown) => error);
+
+    expect((failure as InstanceType<typeof ApiError>).status).toBe(502);
+    expect(kept()?.refresh).toBe("r1");
+    expect(calls.map((call) => call.url)).toEqual([REFRESH]);
+  });
+
+  it("never uses a token another Telegram account left in this tab", async () => {
+    sessionStorage.setItem(KEY, JSON.stringify({ user: 99, refresh: "theirs" }));
+    routes[SIGN_IN] = () => json({ access: "a1", refresh: "r1" });
+    const { api } = await import("./client");
+
+    await api("/me/");
+
+    expect(calls.map((call) => call.url)).toEqual([SIGN_IN, "/api/v1/me/"]);
+  });
+
+  it("works in memory when sessionStorage is blocked", async () => {
+    const blocked = () => {
+      throw new DOMException("Blocked", "SecurityError");
+    };
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(blocked);
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(blocked);
+    vi.spyOn(Storage.prototype, "removeItem").mockImplementation(blocked);
+    routes[SIGN_IN] = () => json({ access: "stale", refresh: "r1" });
+    routes[REFRESH] = (body) => (body.refresh === "r1" ? json({ access: "a2", refresh: "r2" }) : refused());
+    const { api } = await import("./client");
+
+    await expect(api("/me/")).resolves.toEqual({ ok: true, auth: "Bearer a2" });
+
+    expect(calls.map((call) => call.url)).toEqual([SIGN_IN, "/api/v1/me/", REFRESH, "/api/v1/me/"]);
+  });
+});

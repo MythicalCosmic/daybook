@@ -15,7 +15,7 @@ import { applyEdition, registerDevModules, type DashboardModule } from "./core/m
 import { endForgottenSession } from "./core/remember";
 import { currentLanguage, isLanguage, loadLanguage, setLanguage } from "./i18n";
 import { readStored } from "./lib/storage";
-import { bindTelegram, detectTelegram } from "./shell/TelegramBridge";
+import { bindTelegram, detectTelegram, telegram } from "./shell/TelegramBridge";
 
 async function start(): Promise<void> {
   // The shell's strings in this browser's language load alongside everything below (the account's
@@ -45,8 +45,9 @@ async function start(): Promise<void> {
     // Before anyone chose a language in this browser, the organization's language.
     const chosen = readStored<string | null>("language", null);
     if (!isLanguage(chosen) && info.default_language !== currentLanguage()) strings = setLanguage(info.default_language).catch(() => undefined);
-    // "Remember me" was unticked and the browser closed since: start signed out.
-    await endForgottenSession();
+    // "Remember me" was unticked and the browser closed since: start signed out. Not inside
+    // Telegram, whose session is the Telegram account's, not a password's.
+    if (!telegram().inside) await endForgottenSession();
   }
 
   const app = createApp(App);

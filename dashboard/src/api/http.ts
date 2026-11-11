@@ -137,8 +137,10 @@ export interface HttpConfig {
   getLanguage: () => string;
   /**
    * Gets a new access token another way than the refresh cookie. Inside Telegram there is no
-   * cookie path (Telegram Web runs the console in a cross-site iframe), so TelegramBridge posts
-   * initData again (plan §6.5).
+   * cookie path (Telegram Web runs the console in a cross-site iframe), so TelegramBridge uses the
+   * refresh token it kept, then initData (plan §6.5). Null when refused (the session is over);
+   * throws when the server couldn't be asked, which the request reports as offline, the session
+   * kept for the next try.
    */
   relogin?: () => Promise<string | null>;
   /** Refresh failed: the session is over. */
@@ -161,31 +163,35 @@ export function configureHttp(next: Partial<HttpConfig>): void {
 
 let refreshing: Promise<string | null> | null = null;
 
-/** One refresh at a time: every 401 that arrives meanwhile waits for the same call. */
+/**
+ * One refresh at a time: every 401 that arrives meanwhile waits for the same call. Null when the
+ * session is over; rejects only when `relogin` couldn't ask the server (offline inside Telegram).
+ */
 export function refreshAccess(): Promise<string | null> {
   refreshing ??= (async () => {
     try {
-      if (config.relogin) {
-        const token = await config.relogin();
-        if (token) config.setToken(token);
-        return token;
-      }
-      const response = await fetch(apiUrl("/owner/auth/refresh/"), {
-        method: "POST",
-        credentials: "same-origin",
-        headers: { "X-Requested-With": "dashboard", "Accept-Language": config.getLanguage(), Accept: "application/json" },
-      });
-      if (!response.ok) return null;
-      const body = (await response.json()) as AccessResponse;
-      config.setToken(body.access);
-      return body.access;
-    } catch {
-      return null;
+      const token = config.relogin ? await config.relogin() : await refreshWithCookie();
+      if (token) config.setToken(token);
+      return token;
     } finally {
       refreshing = null;
     }
   })();
   return refreshing;
+}
+
+async function refreshWithCookie(): Promise<string | null> {
+  try {
+    const response = await fetch(apiUrl("/owner/auth/refresh/"), {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "X-Requested-With": "dashboard", "Accept-Language": config.getLanguage(), Accept: "application/json" },
+    });
+    if (!response.ok) return null;
+    return ((await response.json()) as AccessResponse).access;
+  } catch {
+    return null;
+  }
 }
 
 function send(url: string, options: RequestOptions, token: string | null): Promise<Response> {

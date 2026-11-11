@@ -22,7 +22,7 @@ def authenticate(api: APIClient, user: User) -> APIClient:
     return api
 
 
-def test_init_data_is_exchanged_for_an_access_token_only(api, settings):
+def test_init_data_is_exchanged_for_an_access_and_a_refresh_token(api, settings):
     settings.EMPLOYEE_BOT_TOKEN = BOT_TOKEN
 
     response = api.post(
@@ -30,8 +30,11 @@ def test_init_data_is_exchanged_for_an_access_token_only(api, settings):
     )
 
     assert response.status_code == 200
-    assert set(response.data) == {"access"}
-    assert not OutstandingToken.objects.exists()  # no blacklist row per app launch
+    assert set(response.data) == {"access", "refresh"}
+    # simplejwt's own refresh token (apps/accounts/tests/test_telegram_refresh.py rotates it).
+    refresh = RefreshToken(response.data["refresh"])
+    assert refresh["token_type"] == "refresh" and "aud" not in refresh
+    assert OutstandingToken.objects.filter(jti=refresh["jti"]).exists()
     user = User.objects.get(telegram_id=42)
     assert user.telegram_username == "ali"
 

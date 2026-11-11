@@ -39,7 +39,7 @@ All under `/api/v1/owner/` (the dashboard's API, cookie session as today). JSON,
 ### 1.2 Password sign-in (D1)
 - `POST auth/password/` `{username, password}` → session response (as `TelegramLoginView`/`DevLoginView` give: `services.session_response(user, request)`), 400 `{detail: "Wrong username or password."}` (same for unknown users), 429 after 5 failures per username+IP in 15 minutes. Works in both editions (Daybook users may set a password later).
 - `POST auth/password/change/` `{current, new}` → 204 (new ≥ 8 characters, not too common: Django's validators).
-- In the davomat edition the Telegram login endpoints answer 404.
+- In the davomat edition the Telegram login-link endpoints (`auth/login-links/…`) answer 404. The Mini App sign-in works (v12): `POST auth/telegram/` `{init_data}` takes launch data signed by the organization's own bot (its token from Settings; then the Daybook bots, if any) and answers `{access, refresh}` (no cookie); `POST auth/telegram/refresh/` `{refresh}` rotates it (`{access, refresh|null}`, 401 `session_ended`); `POST auth/logout/` `{refresh}` ends it. Only people who linked their Telegram and use the web app get in (403 `no_access` otherwise); their names are never replaced by Telegram's.
 
 ### 1.3 Users (D1) — `companies/{c}/users/`
 - List/create/retrieve/update/deactivate; `POST users/{id}/password/` `{password}` (admin sets one).
@@ -57,6 +57,7 @@ All under `/api/v1/owner/` (the dashboard's API, cookie session as today). JSON,
 - `POST companies/{c}/telegram/test/` → sends "Test message from Davomat" to the caller if linked (400 otherwise).
 - `POST companies/{c}/employees/{id}/telegram-link/` and `POST companies/{c}/users/{id}/telegram-link/` → `{url: "https://t.me/<bot>?start=link_<code>", code, expires_at}` (24 h, one use); `DELETE` unlinks.
 - In the davomat edition every notification goes through the one bot (`apps.notifications.telegram._token` returns the organization's token for both bot names; `inbox.delivery.bots_for` → `[OWNER]`), to whoever linked their Telegram.
+- The web app as a Mini App (v12): a linked person who uses the web app (`dashboard.access`) gets the bot's menu button beside the message field ("Davomat", the product name), opening `DASHBOARD_URL/c/<id>` inside Telegram, signed in without a password; the bot's "Open Davomat" buttons are Mini App buttons too. Everyone else keeps the commands menu. Set when a link is claimed, on `/start` and a language change, and once per token version for everyone linked when the bot starts. Needs an https `DASHBOARD_URL`.
 
 ### 1.6 Reports (D4) — `companies/{c}/attendance/reports/`
 - `GET summary/?from&to&branch&department` → per person rows `{employee, days_scheduled, days_present, days_absent, days_leave, worked_minutes, late_count, late_minutes, early_leave_count, overtime_minutes, punctuality_percent}` + totals; `GET departments/`, `GET branches/` (the same, grouped); `GET trend/?from&to` (per day: present, late, absent); `GET punctuality/?from&to` (ranking). `?format=xlsx|pdf` exports (the exports registry).
