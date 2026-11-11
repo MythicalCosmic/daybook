@@ -94,6 +94,7 @@ const row = (overrides: Partial<ContractRow> = {}): ContractRow => ({
   responsible: null,
   status: "active",
   starts_on: "2025-01-22",
+  term_starts_on: "2026-01-22",
   ends_on: "2027-01-21",
   auto_renews: true,
   notice_deadline: "2026-11-22",

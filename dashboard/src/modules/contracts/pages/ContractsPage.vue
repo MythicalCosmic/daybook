@@ -188,7 +188,8 @@ function clear(): void {
           <li v-for="row in group.rows" :key="row.id">
             <RouterLink
               :to="link(row)"
-              class="group flex items-center gap-3.5 px-4 py-3.5 transition-colors hover:bg-surface-2/60 focus-visible:bg-surface-2/60 focus-visible:outline-none"
+              class="group relative flex items-center gap-3.5 px-4 py-3.5 transition-colors hover:bg-surface-2/60 focus-visible:bg-surface-2/60 focus-visible:outline-none"
+              :class="row.attention && 'bg-warning-soft/40'"
               :data-testid="`contract-row-${row.id}`"
             >
               <span class="grid size-10 shrink-0 place-items-center rounded-[11px]" :class="KIND_TILES[row.kind]">
@@ -205,19 +206,26 @@ function clear(): void {
                 <TermBar
                   class="max-w-[420px]"
                   compact
-                  :starts-on="row.starts_on"
+                  :starts-on="row.term_starts_on"
                   :ends-on="row.ends_on"
                   :today="today"
                   :status="row.status"
                   :auto-renews="row.auto_renews"
                 />
+                <!-- Phones: the money and the next date under the name. -->
+                <span class="flex flex-wrap items-center gap-x-3 gap-y-1 sm:hidden">
+                  <span v-if="row.amount" class="text-sm font-semibold tabular-nums text-fg">
+                    <MoneyText :value="row.amount" :currency="row.currency" decimals="auto" />
+                    <span class="ml-1 text-xs font-normal text-muted">{{ t(`contracts.per.${row.period}`) }}</span>
+                  </span>
+                  <StatusPill size="sm" variant="plain" :tone="dayTone(row)" :icon="CalendarClock" :label="when(row)" />
+                </span>
               </span>
               <span class="hidden shrink-0 flex-col items-end gap-1 sm:flex">
                 <span v-if="row.amount" class="text-sm font-semibold tabular-nums text-fg">
                   <MoneyText :value="row.amount" :currency="row.currency" decimals="auto" />
                   <span class="ml-1 text-xs font-normal text-muted">{{ t(`contracts.per.${row.period}`) }}</span>
                 </span>
-                <span v-else class="text-sm text-subtle">—</span>
                 <StatusPill size="sm" variant="plain" :tone="dayTone(row)" :icon="CalendarClock" :label="when(row)" />
               </span>
               <ChevronRight :size="16" class="shrink-0 text-subtle transition-transform group-hover:translate-x-0.5" aria-hidden="true" />

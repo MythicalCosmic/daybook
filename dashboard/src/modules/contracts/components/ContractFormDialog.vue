@@ -6,7 +6,7 @@
  * Finance taken over so the rent isn't counted twice). A new contract can take its signed scan
  * and annexes right away (PDF or pictures).
  */
-import { Building2, CalendarClock, Paperclip, Wallet } from "@lucide/vue";
+import { CalendarClock, Check, Paperclip, Wallet } from "@lucide/vue";
 import { computed, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -329,7 +329,7 @@ async function save(): Promise<void> {
 
     <template #footer>
       <UiButton variant="ghost" @click="open = false">{{ t("common.cancel") }}</UiButton>
-      <UiButton variant="primary" :icon="Building2" :loading="saving" data-testid="contract-save" @click="save">{{ editing ? t("contracts.form.save") : t("contracts.form.add") }}</UiButton>
+      <UiButton variant="primary" :icon="Check" :loading="saving" data-testid="contract-save" @click="save">{{ editing ? t("contracts.form.save") : t("contracts.form.add") }}</UiButton>
     </template>
   </UiDialog>
 </template>

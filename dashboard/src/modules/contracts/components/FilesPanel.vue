@@ -59,7 +59,7 @@ function open(file: ContractFile): void {
 const adding = ref<File[]>([]);
 const addKind = ref<ContractFileKind>(props.contract.file_list.some((file) => file.kind === "signed") ? "annex" : "signed");
 const uploading = ref(false);
-const kinds = computed(() => (["signed", "annex", "other"] as ContractFileKind[]).map((value) => ({ value, label: t(`contracts.fileKind.${value}`) })));
+const kinds = computed(() => (["signed", "annex", "other"] as ContractFileKind[]).map((value) => ({ value, label: t(`contracts.fileKindShort.${value}`) })));
 
 async function upload(chosen: File[]): Promise<void> {
   if (!chosen.length) return;

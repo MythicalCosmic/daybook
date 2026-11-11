@@ -37,7 +37,7 @@ import TermBar from "../components/TermBar.vue";
 import { daysUntil, KIND_ICONS, KIND_TILES, STATUS_TONES } from "../lib";
 import type { DateKey } from "../types";
 
-const { t } = useI18n();
+const { t, te } = useI18n();
 const fmt = useFormat();
 const route = useRoute();
 const router = useRouter();
@@ -181,6 +181,47 @@ const DATE_ICONS: Record<DateKey, typeof CircleDot> = {
   terminated: Ban,
 };
 
+// The history in the reader's words: field names, kinds, statuses and days.
+const auditLabels = computed(() => ({
+  kind: t("contracts.field.kind"),
+  title: t("contracts.field.title"),
+  counterparty: t("contracts.field.counterparty"),
+  number: t("contracts.field.number"),
+  branch: t("contracts.field.branch"),
+  signed_on: t("contracts.field.signedOn"),
+  starts_on: t("contracts.field.startsOn"),
+  ends_on: t("contracts.field.endsOn"),
+  auto_renews: t("contracts.field.autoRenews"),
+  renewal_months: t("contracts.field.renewalMonths"),
+  notice_days: t("contracts.field.noticeDays"),
+  amount: t("contracts.field.amount"),
+  period: t("contracts.field.period"),
+  currency: t("contracts.field.currency"),
+  payment_day: t("contracts.field.paymentDay"),
+  notes: t("contracts.field.notes"),
+  status: t("contracts.field.status"),
+  responsible: t("contracts.field.responsible"),
+  in_forecast: t("contracts.field.inForecast"),
+  label: t("contracts.field.label"),
+  renewal_confirmed_for: t("contracts.audit.confirmed"),
+  from: t("contracts.audit.from"),
+  to: t("contracts.audit.to"),
+  on: t("contracts.action.lastDay"),
+  reason: t("contracts.action.reason"),
+  auto: t("contracts.audit.auto"),
+}));
+const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
+
+function auditValue(field: string, value: unknown): string | null {
+  if (typeof value === "boolean") return value ? t("contracts.audit.yes") : t("contracts.audit.no");
+  if (typeof value !== "string") return null;
+  if (ISO_DAY.test(value)) return fmt.day(value, "medium");
+  if (field === "kind") return te(`contracts.kind.${value}`) ? t(`contracts.kind.${value}`) : te(`contracts.fileKind.${value}`) ? t(`contracts.fileKind.${value}`) : null;
+  if ((field === "status" || field === "from" || field === "to") && te(`contracts.status.${value}`)) return t(`contracts.status.${value}`);
+  if (field === "period" && te(`contracts.period.${value}`)) return t(`contracts.period.${value}`);
+  return null;
+}
+
 const payments = computed(() => contract.value?.payments ?? null);
 const nextBill = computed(() => payments.value?.next ?? null);
 </script>
@@ -228,7 +269,8 @@ const nextBill = computed(() => payments.value?.next ?? null);
             </div>
           </div>
           <TermBar
-            :starts-on="contract.starts_on"
+            :starts-on="contract.term_starts_on"
+            :renewed="contract.term_starts_on !== contract.starts_on"
             :ends-on="contract.ends_on"
             :today="today"
             :notice="contract.status === 'active' || contract.status === 'ending' ? contract.notice_deadline : null"
@@ -329,7 +371,7 @@ const nextBill = computed(() => payments.value?.next ?? null);
             </PageSection>
 
             <PageSection variant="card" :title="t('contracts.one.history')">
-              <AuditTrail target-type="businesscontract" :target-id="contract.id" :page-size="10" />
+              <AuditTrail target-type="businesscontract" :target-id="contract.id" :page-size="10" :field-labels="auditLabels" :format-value="auditValue" />
             </PageSection>
           </aside>
         </div>

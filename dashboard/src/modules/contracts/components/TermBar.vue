@@ -21,9 +21,11 @@ const props = withDefaults(
     notice?: string | null;
     status: ContractStatus;
     autoRenews?: boolean;
+    /** `startsOn` is the last renewal (the current term), not the contract's first day. */
+    renewed?: boolean;
     compact?: boolean;
   }>(),
-  { notice: null, autoRenews: false, compact: false },
+  { notice: null, autoRenews: false, renewed: false, compact: false },
 );
 
 const { t } = useI18n();
@@ -31,6 +33,8 @@ const fmt = useFormat();
 
 const progress = computed(() => termProgress(props.startsOn, props.endsOn, props.today));
 const noticeAt = computed(() => termPosition(props.startsOn, props.endsOn, props.notice));
+/** The notice label sits under its marker, kept clear of the start and end labels. */
+const noticeLabelAt = computed(() => (noticeAt.value === null ? null : Math.min(80, Math.max(20, noticeAt.value))));
 const left = computed(() => (props.endsOn ? daysUntil(props.endsOn, props.today) : null));
 const fill = computed(() => {
   if (props.status === "terminated" || props.status === "ended") return "bg-subtle";
@@ -59,14 +63,14 @@ const fill = computed(() => {
         :title="t('contracts.term.today')"
       />
     </div>
-    <div v-if="!compact" class="mt-2 flex items-start justify-between gap-3 text-xs">
+    <div v-if="!compact" class="relative mt-2 flex items-start justify-between gap-3 text-xs">
       <span class="text-muted">
-        <span class="block text-subtle">{{ t("contracts.term.start") }}</span>
+        <span class="block text-subtle">{{ renewed ? t("contracts.term.since") : t("contracts.term.start") }}</span>
         <span class="font-medium tabular-nums text-fg">{{ startsOn ? fmt.day(startsOn, "medium") : "—" }}</span>
       </span>
-      <span v-if="notice && noticeAt !== null" class="text-center text-muted">
-        <span class="block text-subtle">{{ t("contracts.term.noticeShort") }}</span>
-        <span class="font-medium tabular-nums text-warning">{{ fmt.day(notice, "medium") }}</span>
+      <span v-if="notice && noticeLabelAt !== null" class="absolute top-0 hidden -translate-x-1/2 text-center text-muted sm:block" :style="{ left: `${noticeLabelAt}%` }">
+        <span class="block whitespace-nowrap text-subtle">{{ t("contracts.term.noticeShort") }}</span>
+        <span class="whitespace-nowrap font-medium tabular-nums text-warning">{{ fmt.day(notice, "medium") }}</span>
       </span>
       <span class="text-right text-muted">
         <span class="block text-subtle">{{ autoRenews ? t("contracts.term.renews") : t("contracts.term.end") }}</span>

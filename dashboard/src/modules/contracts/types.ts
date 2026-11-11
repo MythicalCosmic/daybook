@@ -30,6 +30,8 @@ export interface ContractRow {
   responsible: Ref | null;
   status: ContractStatus;
   starts_on: string | null;
+  /** The current term's first day: the last renewal, else the start. */
+  term_starts_on: string | null;
   ends_on: string | null;
   auto_renews: boolean;
   notice_deadline: string | null;

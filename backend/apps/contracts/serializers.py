@@ -116,6 +116,9 @@ class RowSerializer(serializers.Serializer):
     responsible = Ref(allow_null=True)
     status = serializers.ChoiceField(choices=Status.choices)
     starts_on = serializers.DateField(allow_null=True)
+    term_starts_on = serializers.DateField(
+        allow_null=True, help_text="The current term's first day: the last renewal, else the start."
+    )
     ends_on = serializers.DateField(allow_null=True)
     auto_renews = serializers.BooleanField()
     notice_deadline = serializers.DateField(allow_null=True)
@@ -283,6 +286,21 @@ def _attention(contract: BusinessContract, today: date, settings) -> str | None:
     return None
 
 
+def term_start(contract: BusinessContract) -> date | None:
+    """The current term's first day: the last renewal (inside the contract's dates), else its
+    start. A lease renewed every year shows this year's term, not the years since it began."""
+    renewed = contract.last_renewed_on
+    if renewed is None or contract.starts_on is None or renewed < contract.starts_on:
+        return contract.starts_on
+    if contract.ends_on is not None and renewed > contract.ends_on:
+        return contract.starts_on
+    return renewed
+
+
+# The signed contract first, then its annexes, then the rest.
+FILE_ORDER = {ContractFile.Kind.SIGNED: 0, ContractFile.Kind.ANNEX: 1, ContractFile.Kind.OTHER: 2}
+
+
 def row_of(contract: BusinessContract, *, today: date, settings, files: int | None = None) -> dict:
     key_day = queries.key_day(contract) if contract.status in BusinessContract.IN_FORCE else None
     if key_day is None:
@@ -297,6 +315,7 @@ def row_of(contract: BusinessContract, *, today: date, settings, files: int | No
         "responsible": ref(contract.responsible),
         "status": contract.status,
         "starts_on": contract.starts_on,
+        "term_starts_on": term_start(contract),
         "ends_on": contract.ends_on,
         "auto_renews": contract.auto_renews,
         "notice_deadline": contract.notice_deadline,
@@ -349,7 +368,10 @@ def rule_of(rule) -> dict | None:
 def detail_of(
     contract: BusinessContract, *, user, today: date, settings, branch_ids, can_manage: bool
 ) -> dict:
-    files = list(contract.files.select_related("uploaded_by"))
+    files = sorted(
+        contract.files.select_related("uploaded_by"),
+        key=lambda row: (FILE_ORDER.get(row.kind, 9), row.created_at, row.pk),
+    )
     data = row_of(contract, today=today, settings=settings, files=len(files))
     payments = None
     if contract.company.has_feature("finance"):

@@ -184,7 +184,7 @@ def create_contract(
         kind=contract.kind,
         status=contract.status,
         ends_on=_iso(contract.ends_on),
-        rule=contract.rule_id,
+        in_forecast=contract.rule_id is not None,
     )
     _bump(company, ledger=touched)
     return contract
@@ -401,7 +401,7 @@ def add_file(
         uploaded_by=_user(by),
     )
     row.file.save(clean.name, clean, save=True)
-    _audit(ContractsAction.FILE_ADDED, contract, by, file=row.pk, kind=kind, label=row.label)
+    _audit(ContractsAction.FILE_ADDED, contract, by, kind=kind, **_label(row))
     _bump(contract.company)
     return row
 
@@ -410,7 +410,7 @@ def add_file(
 def remove_file(row: ContractFile, *, by: Membership) -> None:
     contract = row.contract
     name = row.file.name if row.file else ""
-    _audit(ContractsAction.FILE_REMOVED, contract, by, file=row.pk, kind=row.kind, label=row.label)
+    _audit(ContractsAction.FILE_REMOVED, contract, by, kind=row.kind, **_label(row))
     row.delete()
     if name:
         from apps.core.storage import private_storage
@@ -739,8 +739,8 @@ def _snapshot(contract: BusinessContract) -> dict:
     return {
         "kind": contract.kind,
         "title": contract.title,
-        "branch": contract.branch_id,
-        "counterparty": contract.counterparty_id,
+        "branch": contract.branch.name if contract.branch_id else None,
+        "counterparty": contract.counterparty.name if contract.counterparty_id else None,
         "number": contract.number,
         "signed_on": _iso(contract.signed_on),
         "starts_on": _iso(contract.starts_on),
@@ -755,9 +755,8 @@ def _snapshot(contract: BusinessContract) -> dict:
         "payment_day": contract.payment_day,
         "notes": contract.notes,
         "status": contract.status,
-        "responsible": contract.responsible_id,
+        "responsible": contract.responsible.name if contract.responsible_id else None,
         "in_forecast": contract.in_forecast,
-        "rule": contract.rule_id,
     }
 
 
@@ -773,6 +772,10 @@ def _user(by: Membership | None):
     return by.user if by is not None else None
 
 
+def _label(row: ContractFile) -> dict:
+    return {"label": row.label} if row.label else {}
+
+
 def _audit(action, contract: BusinessContract, by: Membership | None, **details) -> None:
     """Only people who see money see a contract's history (amounts and payments)."""
     audit.record(
@@ -781,7 +784,6 @@ def _audit(action, contract: BusinessContract, by: Membership | None, **details)
         actor=_user(by),
         target=contract,
         required_perm=Perm.FINANCE_VIEW,
-        title=contract.title,
         **details,
     )
 
