@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.8.2 — 2026-11-12
+
+### Reports for banks and investors
+- **Balans**: the balance sheet as of any day (cash and bank, what you're owed, stock at cost,
+  equipment at book value; suppliers, loans due within a year and later, taxes, staff, dividends;
+  the owner's money and retained earnings), every line explained, gaps in the books named.
+- **Hisobot tayyorlash** (Finance › Hisobotlar, Egasi paneli): a clean PDF for a bank, a partner or
+  a buyer, in Uzbek, Russian or English: a summary page, profit and loss (with last year's period),
+  cash flow, the balance sheet and notes; built in the background, downloads by itself, or comes
+  to your Telegram.
+- **What the business is worth**: a range from two methods with their formulas (profit before
+  depreciation, interest and equipment × a multiple you can change; assets less debts).
+
+### Loans, taxes and contracts
+- **Loans**: the bank's terms (annuity, equal principal, interest-free, grace months, or the bank's
+  own schedule), each payment split into principal and interest (only interest is a cost), early
+  repayment, a reminder before each payment with "Paid from…" in Telegram, late payments on Egasi
+  paneli, and every instalment in the cash forecast on its own day.
+- **Supplier payment terms**: 30 days after delivery, or a day of the next month; bills and goods
+  received on credit take their due date from them; "Overdue to suppliers".
+- **Tax calendar** for your regime (VAT, simplified VAT, profit tax, personal income tax, social
+  tax, property and land tax): each deadline with an estimate from the books and its formula, a
+  reminder before it, "paid" linked to the payment; every rule cites its article of the Tax Code.
+  Turnover tax against VAT on your last 12 months. Always: check with your accountant.
+- **Contracts**: leases and supplier and service contracts with their scans, a reminder before each
+  ends or before its notice deadline (keep renewing / give notice, also in Telegram), rent in the
+  cash forecast, a warning on Egasi paneli for a lease ending soon.
+
+### Truer numbers and a quieter buddy
+- The cash forecast counts payroll that isn't booked yet ("Payroll (estimate)"), so the cockpit's
+  runway and low point, cash alerts, the weekly advisor and What-if no longer show more cash than
+  there is; "safe to take" never counts the same salary twice.
+- The AI buddy never stands over buttons, fields or bars, and hides while a dialog is open.
+- The demo reads Uzbek everywhere from the start; its new pharmacy's fit-out is an investment and
+  its rent deposit is owed back.
+
 ## 0.8.1 — 2026-11-12
 
 ### Davomat inside Telegram
