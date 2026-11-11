@@ -472,6 +472,10 @@
   "shell.telegram.endedTitle": "Sessiya tugadi",
   "shell.telegram.endedBody": "Davom etish uchun panelni botdan qaytadan oching.",
   "shell.telegram.close": "Yopish",
+  "shell.telegram.offlineTitle": "Aloqa yo‘q",
+  "shell.telegram.offlineBody": "Serverga ulanib bo‘lmadi. Internetni tekshirib, qayta urinib ko‘ring.",
+  "shell.telegram.noAccessTitle": "Ruxsat yo‘q",
+  "shell.telegram.noAccessBody": "Bu Telegram hisobining bu ilovaga hali ruxsati yo‘q. Administratoringizdan ruxsat berishni yoki Telegramingizni ulashni so‘rang.",
 
   "shell.overlay.close": "Yopish",
   "common.reasonNotePlaceholder": "Xohlasangiz, tafsilot qo‘shing",

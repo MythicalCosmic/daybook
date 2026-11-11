@@ -47,6 +47,17 @@ export function withoutQueueItem(view: QueueView, item: { kind: string; id: numb
   };
 }
 
+/**
+ * The Telegram session (`POST owner/auth/telegram/` and `telegram/refresh/`, apps.signin): the
+ * refresh token comes in the body (no cookie inside Telegram), rotating; `refresh` is null when a
+ * refresh came within the reuse grace (keep the one you have). Written by hand until the schema
+ * types are generated again.
+ */
+export interface TelegramSession {
+  access: string;
+  refresh: string | null;
+}
+
 export const shellApi = {
   me: () => http.get<Me>("/owner/me/"),
   setLanguage: (language: Language) => http.patch<Me>("/owner/me/", { language }, { toast: false }),
@@ -56,8 +67,12 @@ export const shellApi = {
   devLogin: (telegramId: number) =>
     request<AccessResponse>("/owner/auth/dev-login/", { method: "POST", json: { telegram_id: telegramId }, anonymous: true }),
   telegramLogin: (initData: string) =>
-    request<AccessResponse>("/owner/auth/telegram/", { method: "POST", json: { init_data: initData }, anonymous: true, toast: false }),
-  logout: () => request<void>("/owner/auth/logout/", { method: "POST", json: {}, anonymous: true, toast: false }),
+    request<TelegramSession>("/owner/auth/telegram/", { method: "POST", json: { init_data: initData }, anonymous: true, toast: false }),
+  telegramRefresh: (refresh: string) =>
+    request<TelegramSession>("/owner/auth/telegram/refresh/", { method: "POST", json: { refresh }, anonymous: true, toast: false }),
+  /** The cookie's session; inside Telegram the refresh token the page kept (`refresh`). */
+  logout: (refresh?: string | null) =>
+    request<void>("/owner/auth/logout/", { method: "POST", json: refresh ? { refresh } : {}, anonymous: true, toast: false }),
 
   pulse: (companyId: number, signal?: AbortSignal) => http.get<Pulse>(ownerPath(companyId, "pulse/"), undefined, { signal }),
   search: (companyId: number, q: string, signal?: AbortSignal) =>

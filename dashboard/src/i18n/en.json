@@ -472,6 +472,10 @@
   "shell.telegram.endedTitle": "Session ended",
   "shell.telegram.endedBody": "Reopen the dashboard from the bot to continue.",
   "shell.telegram.close": "Close",
+  "shell.telegram.offlineTitle": "No connection",
+  "shell.telegram.offlineBody": "The server couldn’t be reached. Check the internet and try again.",
+  "shell.telegram.noAccessTitle": "No access",
+  "shell.telegram.noAccessBody": "This Telegram account has no access to this app yet. Ask your administrator to give you access or to link your Telegram.",
 
   "shell.overlay.close": "Close",
   "common.reasonNotePlaceholder": "Add a detail, if you like",
