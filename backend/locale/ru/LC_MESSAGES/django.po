@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-12 02:41+0500\n"
+"POT-Creation-Date: 2026-11-12 02:56+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -3983,8 +3983,8 @@ msgid "It ends after it was issued."
 msgstr "Дата окончания должна быть позже выдачи."
 
 #: backend/apps/attendance/actions.py backend/apps/finance/claims.py
-#: backend/apps/finance/reminders.py backend/apps/insights/notify.py
-#: backend/apps/payroll/actions.py
+#: backend/apps/finance/loans.py backend/apps/finance/reminders.py
+#: backend/apps/insights/notify.py backend/apps/payroll/actions.py
 msgid "This isn't available any more."
 msgstr "Это больше недоступно."
 
@@ -8906,6 +8906,34 @@ msgstr "Подготовлен отчёт для банка или инвест�
 msgid "Changed how the business is valued"
 msgstr "Изменена оценка бизнеса"
 
+#: backend/apps/finance/audit_actions.py
+msgid "Recorded a loan"
+msgstr "Добавил кредит"
+
+#: backend/apps/finance/audit_actions.py
+msgid "Changed a loan's schedule"
+msgstr "Изменил график кредита"
+
+#: backend/apps/finance/audit_actions.py
+msgid "Paid a loan instalment"
+msgstr "Оплатил платёж по кредиту"
+
+#: backend/apps/finance/audit_actions.py
+msgid "Repaid part of a loan early"
+msgstr "Досрочно погасил часть кредита"
+
+#: backend/apps/finance/audit_actions.py
+msgid "Took back a loan payment"
+msgstr "Отменил платёж по кредиту"
+
+#: backend/apps/finance/audit_actions.py
+msgid "Marked a tax deadline done"
+msgstr "Отметил налоговый срок выполненным"
+
+#: backend/apps/finance/audit_actions.py
+msgid "Took back a tax deadline mark"
+msgstr "Снял отметку налогового срока"
+
 #: backend/apps/finance/bot_messages.py
 #, python-format
 msgid "Big expense: %(amount)s · %(category)s"
@@ -9224,6 +9252,14 @@ msgstr "Списание основных средств"
 msgid "Sale of fixed assets"
 msgstr "Продажа основных средств"
 
+#: backend/apps/finance/defaults.py
+msgid "Loan interest"
+msgstr "Проценты по кредитам"
+
+#: backend/apps/finance/defaults.py
+msgid "Interest received"
+msgstr "Полученные проценты"
+
 #: backend/apps/finance/defaults.py backend/apps/finance/models.py
 msgid "Cash desk"
 msgstr "Касса"
@@ -9509,6 +9545,14 @@ msgstr "Заявка на возмещение расходов"
 msgid "Dividend"
 msgstr "Дивиденд"
 
+#: backend/apps/finance/hooks.py backend/apps/finance/models.py
+msgid "Loan"
+msgstr "Заём"
+
+#: backend/apps/finance/hooks.py
+msgid "Tax calendar"
+msgstr "Налоговый календарь"
+
 #: backend/apps/finance/hooks.py
 msgid "Expense claims to approve"
 msgstr "Расходы сотрудников на утверждение"
@@ -9516,6 +9560,10 @@ msgstr "Расходы сотрудников на утверждение"
 #: backend/apps/finance/hooks.py
 msgid "Debt due dates"
 msgstr "Сроки погашения долгов"
+
+#: backend/apps/finance/hooks.py
+msgid "Tax deadlines"
+msgstr "Налоговые сроки"
 
 #: backend/apps/finance/hooks.py
 msgid "Money they hold"
@@ -9597,8 +9645,236 @@ msgid "Overdue debts you are responsible for"
 msgstr "Просроченные долги, за которые вы отвечаете"
 
 #: backend/apps/finance/hooks.py
+msgid "Loan payments due"
+msgstr "Платежи по кредитам"
+
+#: backend/apps/finance/hooks.py
 msgid "Budget alerts"
 msgstr "Предупреждения по бюджету"
+
+#: backend/apps/finance/loan_math.py
+msgid "No payments to spread the loan over."
+msgstr "Нет платежей, на которые разделить кредит."
+
+#: backend/apps/finance/loan_math.py backend/apps/sales/services.py
+msgid "The amount must be more than zero."
+msgstr "Сумма должна быть больше нуля."
+
+#: backend/apps/finance/loan_math.py
+msgid "The term is 1 to 600 months."
+msgstr "Срок от 1 до 600 месяцев."
+
+#: backend/apps/finance/loan_math.py
+msgid "The grace months must be fewer than the payments."
+msgstr "Льготных месяцев должно быть меньше, чем платежей."
+
+#: backend/apps/finance/loan_math.py
+msgid "The annual rate is 0 to 100 per cent."
+msgstr "Годовая ставка от 0 до 100 %."
+
+#: backend/apps/finance/loan_math.py backend/apps/finance/loans.py
+msgid "Pick how the loan is repaid."
+msgstr "Выберите способ погашения."
+
+#: backend/apps/finance/loan_math.py backend/apps/finance/loans.py
+msgid "The first payment comes after the loan starts."
+msgstr "Первый платёж должен быть после выдачи кредита."
+
+#: backend/apps/finance/loan_math.py backend/apps/finance/loans.py
+msgid "No payments are left to plan: pay the last one instead."
+msgstr "Не осталось платежей для пересчёта: оплатите последний."
+
+#: backend/apps/finance/loan_math.py backend/apps/finance/loans_api.py
+msgid "Add at least one payment."
+msgstr "Добавьте хотя бы один платёж."
+
+#: backend/apps/finance/loan_math.py
+msgid "A payment's parts can't be negative."
+msgstr "Части платежа не могут быть отрицательными."
+
+#: backend/apps/finance/loan_math.py
+msgid "Every payment must be more than zero."
+msgstr "Каждый платёж должен быть больше нуля."
+
+#: backend/apps/finance/loan_math.py
+msgid "The payments must be in date order."
+msgstr "Платежи должны идти по датам."
+
+#: backend/apps/finance/loan_math.py
+msgid "The principal parts must add up to the loan."
+msgstr "Сумма основного долга должна совпадать с суммой кредита."
+
+#: backend/apps/finance/loans.py
+msgid "Pick whether the loan was taken or given."
+msgstr "Укажите, кредит получен или выдан."
+
+#: backend/apps/finance/loans.py
+msgid "Pick the bank or the person of the loan."
+msgstr "Выберите банк или человека по кредиту."
+
+#: backend/apps/finance/loans.py
+msgid "Pick how the interest is counted."
+msgstr "Выберите, как начисляются проценты."
+
+#: backend/apps/finance/loans.py
+msgid "Only a loan taken has a fee to pay."
+msgstr "Комиссия бывает только у полученного кредита."
+
+#: backend/apps/finance/loans.py
+msgid "A fee is paid from an account: pick where the money arrived."
+msgstr "Комиссия платится со счёта: выберите, куда поступили деньги."
+
+#: backend/apps/finance/loans.py
+msgid "A payment can't be before the loan starts."
+msgstr "Платёж не может быть раньше выдачи кредита."
+
+#: backend/apps/finance/loans.py
+msgid "Loan fee"
+msgstr "Комиссия по кредиту"
+
+#: backend/apps/finance/loans.py
+msgid "This loan is settled or cancelled."
+msgstr "Этот кредит погашен или отменён."
+
+#: backend/apps/finance/loans.py
+msgid ""
+"Payments were made on this loan: its schedule changes only by an early "
+"repayment."
+msgstr ""
+"По кредиту уже были платежи: график меняется только досрочным погашением."
+
+#: backend/apps/finance/loans.py
+#, python-format
+msgid "The loan is in %(currency)s: pay it from an account in %(currency)s."
+msgstr "Кредит в валюте %(currency)s: оплатите со счёта в %(currency)s."
+
+#: backend/apps/finance/loans.py
+msgid "This debt has no loan terms."
+msgstr "У этого долга нет условий кредита."
+
+#: backend/apps/finance/loans.py
+msgid "This payment isn't in the loan's schedule any more."
+msgstr "Этого платежа больше нет в графике."
+
+#: backend/apps/finance/loans.py
+msgid "Nothing is left to pay on this payment."
+msgstr "По этому платежу ничего не осталось."
+
+#: backend/apps/finance/loans.py
+#, python-format
+msgid ""
+"That's more than the %(left)s of principal left on this payment: repay the "
+"rest early instead."
+msgstr ""
+"Это больше остатка основного долга по платежу (%(left)s): остальное погасите "
+"досрочно."
+
+#: backend/apps/finance/loans.py
+#, python-format
+msgid "Loan payment %(n)s"
+msgstr "Платёж по кредиту № %(n)s"
+
+#: backend/apps/finance/loans.py
+msgid "Pick smaller payments or a shorter term."
+msgstr "Выберите меньший платёж или короче срок."
+
+#: backend/apps/finance/loans.py backend/apps/finance/services.py
+#: backend/apps/payroll/services.py
+#, python-format
+msgid "That's more than the %(left)s still owed."
+msgstr "Это больше оставшегося долга (%(left)s)."
+
+#: backend/apps/finance/loans.py
+msgid "Pay the payments that are already due first."
+msgstr "Сначала оплатите платежи, срок которых уже наступил."
+
+#: backend/apps/finance/loans.py
+msgid "Pay the payments in their order first."
+msgstr "Сначала оплатите платежи по порядку."
+
+#: backend/apps/finance/loans.py
+msgid "That only pays a payment ahead: use Pay on that payment."
+msgstr "Это лишь оплата платежа заранее: нажмите «Оплатить» у этого платежа."
+
+#: backend/apps/finance/loans.py
+msgid "Early repayment of a loan"
+msgstr "Досрочное погашение кредита"
+
+#: backend/apps/finance/loans.py
+msgid "This entry isn't a payment of this loan."
+msgstr "Эта проводка не платёж по этому кредиту."
+
+#: backend/apps/finance/loans.py
+msgid "An early repayment can't be taken back here."
+msgstr "Досрочное погашение здесь отменить нельзя."
+
+#: backend/apps/finance/loans.py
+msgid "This payment was already taken back."
+msgstr "Этот платёж уже отменён."
+
+#: backend/apps/finance/loans.py backend/apps/finance/reminders.py
+#, python-format
+msgid "Paid from %(account)s"
+msgstr "Оплачено со счёта %(account)s"
+
+#: backend/apps/finance/loans.py
+#, python-format
+msgid "Loan payment: %(party)s"
+msgstr "Платёж по кредиту: %(party)s"
+
+#: backend/apps/finance/loans.py
+#, python-format
+msgid "Loan repayment to us: %(party)s"
+msgstr "Нам возвращают займ: %(party)s"
+
+#: backend/apps/finance/loans.py
+#, python-format
+msgid "Principal %(principal)s, interest %(interest)s."
+msgstr "Основной долг %(principal)s, проценты %(interest)s."
+
+#: backend/apps/finance/loans.py
+#, python-format
+msgid "Still owed after it: %(balance)s."
+msgstr "Остаток после него: %(balance)s."
+
+#: backend/apps/finance/loans.py
+msgid "Open the dashboard to pick the account."
+msgstr "Откройте панель, чтобы выбрать счёт."
+
+#: backend/apps/finance/loans.py backend/apps/finance/reminders.py
+#, python-format
+msgid "You can't record payments on %(account)s."
+msgstr "Вы не можете записывать платежи на счёт %(account)s."
+
+#: backend/apps/finance/loans.py backend/apps/finance/recurring.py
+#: backend/apps/finance/reminders.py
+msgid "Already paid."
+msgstr "Уже оплачено."
+
+#: backend/apps/finance/loans.py backend/apps/finance/reminders.py
+#, python-format
+msgid "Paid from %(account)s."
+msgstr "Оплачено со счёта %(account)s."
+
+#: backend/apps/finance/loans.py
+msgid "Loan taken"
+msgstr "Полученный кредит"
+
+#: backend/apps/finance/loans.py
+msgid "Loan given"
+msgstr "Выданный займ"
+
+#: backend/apps/finance/loans_api.py
+msgid "A loan from before the books needs finance.manage."
+msgstr "Для кредита до начала учёта нужно право finance.manage."
+
+#: backend/apps/finance/loans_api.py
+msgid "Pick the first payment's day."
+msgstr "Выберите дату первого платежа."
+
+#: backend/apps/finance/loans_api.py
+msgid "Pick one of its payments."
+msgstr "Выберите один из его платежей."
 
 #: backend/apps/finance/models.py backend/apps/finance/services.py
 msgid "A colour like #1f8a70."
@@ -9621,6 +9897,7 @@ msgid "In cash by whoever approves"
 msgstr "Наличными, выдаёт тот, кто одобрил"
 
 #: backend/apps/finance/models.py backend/apps/finance/tax_calendar.py
+#: backend/apps/finance/tax_rules.py
 msgid "Turnover tax"
 msgstr "Налог с оборота"
 
@@ -9628,7 +9905,7 @@ msgstr "Налог с оборота"
 msgid "VAT 12 %"
 msgstr "НДС 12 %"
 
-#: backend/apps/finance/models.py
+#: backend/apps/finance/models.py backend/apps/finance/tax_rules.py
 msgid "Simplified VAT 6 %"
 msgstr "Упрощённый НДС 6 %"
 
@@ -9707,6 +9984,34 @@ msgstr "Нижний множитель годового дохода. Пуст�
 #: backend/apps/finance/models.py
 msgid "The higher multiple of a year's earnings. Empty: the default."
 msgstr "Верхний множитель годового дохода. Пусто: по умолчанию."
+
+#: backend/apps/finance/models.py
+msgid ""
+"Days before a loan payment that owners are reminded. 0: on the day only."
+msgstr ""
+"За сколько дней до платежа по кредиту напоминать владельцам. 0 — только в сам"
+" день."
+
+#: backend/apps/finance/models.py
+msgid ""
+"Days before a tax deadline that owners are reminded. 0: on the day only."
+msgstr ""
+"За сколько дней до налогового срока напоминать владельцам. 0 — только в сам "
+"день."
+
+#: backend/apps/finance/models.py
+msgid ""
+"The company owns buildings or premises: property tax is on its calendar."
+msgstr ""
+"У компании есть свои здания или помещения: налог на имущество в календаре."
+
+#: backend/apps/finance/models.py
+msgid "The company holds land: land tax is on its calendar."
+msgstr "У компании есть земля: земельный налог в календаре."
+
+#: backend/apps/finance/models.py
+msgid "The turnover tax rate. Confirm with your accountant."
+msgstr "Ставка налога с оборота. Сверьте с бухгалтером."
 
 #: backend/apps/finance/models.py
 msgid "UZS per 1 unit of the currency."
@@ -9823,16 +10128,20 @@ msgid "Printed on invoices."
 msgstr "Печатаются в счетах."
 
 #: backend/apps/finance/models.py
+msgid "Goods on credit are paid this many days after delivery."
+msgstr "Товар в долг оплачивается через столько дней после поставки."
+
+#: backend/apps/finance/models.py
+msgid "Goods on credit are paid on this day of the month after delivery."
+msgstr "Товар в долг оплачивается в это число месяца после поставки."
+
+#: backend/apps/finance/models.py
 msgid "Goods or services on credit"
 msgstr "Товары или услуги в долг"
 
 #: backend/apps/finance/models.py
 msgid "Bill"
 msgstr "Счёт к оплате"
-
-#: backend/apps/finance/models.py
-msgid "Loan"
-msgstr "Заём"
 
 #: backend/apps/finance/models.py
 msgid "Salary advance"
@@ -10006,8 +10315,16 @@ msgid "A 400 px preview of a picture; empty for a PDF."
 msgstr "Уменьшенная копия изображения (400 px); для PDF пусто."
 
 #: backend/apps/finance/models.py
-msgid "In the debt's currency."
-msgstr "В валюте долга."
+msgid "In the debt's currency: the part of the debt (principal)."
+msgstr "В валюте долга: часть самого долга (основной долг)."
+
+#: backend/apps/finance/models.py
+msgid "A loan's interest paid with it, in the debt's currency."
+msgstr "Проценты по кредиту в этом платеже, в валюте долга."
+
+#: backend/apps/finance/models.py
+msgid "An early repayment."
+msgstr "Досрочное погашение."
 
 #: backend/apps/finance/models.py
 msgid "Reminder: pay it yourself"
@@ -10161,6 +10478,63 @@ msgstr "Выбранные филиалы и множители оценки."
 #: backend/apps/finance/models.py
 msgid "Also send the PDF to the requester in Telegram."
 msgstr "Также отправить PDF запросившему в Telegram."
+
+#: backend/apps/finance/models.py
+msgid "Equal payments (annuity)"
+msgstr "Равные платежи (аннуитет)"
+
+#: backend/apps/finance/models.py
+msgid "Equal principal, payments fall"
+msgstr "Равный основной долг, платежи уменьшаются"
+
+#: backend/apps/finance/models.py
+msgid "The bank's own schedule"
+msgstr "Собственный график банка"
+
+#: backend/apps/finance/models.py
+msgid "A twelfth of the annual rate each month"
+msgstr "Каждый месяц 1/12 годовой ставки"
+
+#: backend/apps/finance/models.py
+msgid "By the actual days, out of 365"
+msgstr "По фактическим дням из 365"
+
+#: backend/apps/finance/models.py
+msgid "The annual interest rate, in per cent. 0: no interest."
+msgstr "Годовая ставка, в процентах. 0 — без процентов."
+
+#: backend/apps/finance/models.py
+msgid "The first payment's day; the rest monthly."
+msgstr "Дата первого платежа; остальные ежемесячно."
+
+#: backend/apps/finance/models.py
+msgid "The first payments pay interest only."
+msgstr "Первые платежи — только проценты."
+
+#: backend/apps/finance/models.py
+msgid "A one-off fee at the start, in the loan's currency."
+msgstr "Разовая комиссия при выдаче, в валюте кредита."
+
+#: backend/apps/finance/models.py
+msgid ""
+"Where the money arrived (or left from); the usual account of its payments."
+msgstr "Куда поступили (или откуда ушли) деньги; обычный счёт платежей."
+
+#: backend/apps/finance/models.py
+msgid "Filed"
+msgstr "Сдано"
+
+#: backend/apps/finance/models.py
+msgid "The rule's key in tax_rules."
+msgstr "Ключ правила в tax_rules."
+
+#: backend/apps/finance/models.py
+msgid "The payment in the ledger."
+msgstr "Платёж в учёте."
+
+#: backend/apps/finance/models.py
+msgid "What was paid, in the base currency."
+msgstr "Сколько оплачено, в базовой валюте."
 
 #: backend/apps/finance/owner_api.py
 msgid "The finance module is off for this company."
@@ -10479,6 +10853,11 @@ msgstr[0] "%(count)s человек"
 msgstr[1] "%(count)s человека"
 msgstr[2] "%(count)s человек"
 
+#: backend/apps/finance/planning.py
+#, python-format
+msgid "Payment %(n)s of %(count)s"
+msgstr "Платёж %(n)s из %(count)s"
+
 #: backend/apps/finance/planning.py backend/apps/payroll/providers.py
 msgid "Pay day"
 msgstr "День зарплаты"
@@ -10598,10 +10977,6 @@ msgstr "Это уже обработано."
 msgid "This payment is posted automatically: run it instead."
 msgstr "Этот платёж проводится автоматически: проведите его сейчас."
 
-#: backend/apps/finance/recurring.py backend/apps/finance/reminders.py
-msgid "Already paid."
-msgstr "Уже оплачено."
-
 #: backend/apps/finance/recurring.py
 msgid "A bill is paid with the amount you paid, not run."
 msgstr ""
@@ -10636,7 +11011,7 @@ msgstr "Повтор раз в 1–24 периода."
 msgid "Pick a weekday from 1 (Monday) to 7 (Sunday)."
 msgstr "Выберите день недели от 1 (понедельник) до 7 (воскресенье)."
 
-#: backend/apps/finance/recurring.py
+#: backend/apps/finance/recurring.py backend/apps/finance/services.py
 msgid "Remind 0 to 30 days before."
 msgstr "Напоминать за 0–30 дней."
 
@@ -10687,11 +11062,6 @@ msgid "The amount varies: enter what you paid when you pay it."
 msgstr "Сумма меняется: при оплате укажите, сколько заплатили."
 
 #: backend/apps/finance/reminders.py
-#, python-format
-msgid "Paid from %(account)s"
-msgstr "Оплачено со счёта %(account)s"
-
-#: backend/apps/finance/reminders.py
 msgid "Tomorrow"
 msgstr "Завтра"
 
@@ -10737,16 +11107,6 @@ msgstr[2] "%(count)s долгов под вашим контролем: срок
 #: backend/apps/finance/reminders.py
 msgid "Open the dashboard to enter the amount."
 msgstr "Откройте панель управления, чтобы ввести сумму."
-
-#: backend/apps/finance/reminders.py
-#, python-format
-msgid "You can't record payments on %(account)s."
-msgstr "Вы не можете записывать платежи на счёт %(account)s."
-
-#: backend/apps/finance/reminders.py
-#, python-format
-msgid "Paid from %(account)s."
-msgstr "Оплачено со счёта %(account)s."
 
 #: backend/apps/finance/reminders.py
 msgid "I'll remind you tomorrow."
@@ -10894,11 +11254,6 @@ msgstr "В валюте самого долга обе суммы должны �
 msgid "That's too little to settle any of the debt."
 msgstr "Этого слишком мало, чтобы погасить хоть часть долга."
 
-#: backend/apps/finance/services.py backend/apps/payroll/services.py
-#, python-format
-msgid "That's more than the %(left)s still owed."
-msgstr "Это больше оставшегося долга (%(left)s)."
-
 #: backend/apps/finance/services.py
 msgid "A debt can't be written off before the day it was issued."
 msgstr "Долг нельзя списать раньше даты его возникновения."
@@ -11016,6 +11371,18 @@ msgstr "Номер в формате +998 90 123 45 67."
 #: backend/apps/finance/services.py backend/apps/hr/ids.py
 msgid "A taxpayer number has 9 digits (a person's PINFL 14)."
 msgstr "ИНН состоит из 9 цифр (ПИНФЛ физического лица — из 14)."
+
+#: backend/apps/finance/services.py
+msgid "Payment terms are 1 to 365 days after delivery."
+msgstr "Срок оплаты от 1 до 365 дней после поставки."
+
+#: backend/apps/finance/services.py
+msgid "The payment day is 1 to 31."
+msgstr "Число оплаты от 1 до 31."
+
+#: backend/apps/finance/services.py
+msgid "Pick days after delivery or a day of the next month, not both."
+msgstr "Выберите дни после поставки или число следующего месяца, но не оба."
 
 #: backend/apps/finance/services.py
 msgid "Another counterparty already has this phone number."
@@ -11712,7 +12079,7 @@ msgstr "Оценить весь бизнес может только тот, к�
 msgid "Pick Uzbek, Russian or English."
 msgstr "Выберите узбекский, русский или английский."
 
-#: backend/apps/finance/tax_calendar.py
+#: backend/apps/finance/tax_calendar.py backend/apps/finance/tax_rules.py
 msgid "VAT (QQS)"
 msgstr "НДС"
 
@@ -11720,11 +12087,11 @@ msgstr "НДС"
 msgid "Simplified VAT"
 msgstr "Упрощённый НДС"
 
-#: backend/apps/finance/tax_calendar.py
+#: backend/apps/finance/tax_calendar.py backend/apps/finance/tax_rules.py
 msgid "Profit tax"
 msgstr "Налог на прибыль"
 
-#: backend/apps/finance/tax_calendar.py
+#: backend/apps/finance/tax_calendar.py backend/apps/finance/tax_rules.py
 msgid "Personal income tax (JShDS)"
 msgstr "НДФЛ"
 
@@ -11732,7 +12099,8 @@ msgstr "НДФЛ"
 msgid "Pension contributions (INPS)"
 msgstr "Пенсионные взносы (ИНПС)"
 
-#: backend/apps/finance/tax_calendar.py backend/apps/payroll/finance_bridge.py
+#: backend/apps/finance/tax_calendar.py backend/apps/finance/tax_rules.py
+#: backend/apps/payroll/finance_bridge.py
 msgid "Social tax"
 msgstr "Социальный налог"
 
@@ -11743,6 +12111,229 @@ msgstr "Типичные сроки уплаты; уточните их у бу�
 #: backend/apps/finance/tax_calendar.py
 msgid "There is no tax calendar for that regime."
 msgstr "Для этого режима нет налогового календаря."
+
+#: backend/apps/finance/tax_rules.py
+msgid "Property tax"
+msgstr "Налог на имущество"
+
+#: backend/apps/finance/tax_rules.py
+msgid "Land tax"
+msgstr "Земельный налог"
+
+#: backend/apps/finance/tax_rules.py
+msgid "VAT return and payment"
+msgstr "Отчёт и уплата НДС"
+
+#: backend/apps/finance/tax_rules.py
+msgid "Simplified VAT return and payment"
+msgstr "Отчёт и уплата упрощённого НДС"
+
+#: backend/apps/finance/tax_rules.py
+msgid "The decree sets no day of its own yet: the VAT day is shown."
+msgstr "Указ пока не задаёт свой срок: показан срок НДС."
+
+#: backend/apps/finance/tax_rules.py
+msgid "Turnover tax return and payment"
+msgstr "Отчёт и уплата налога с оборота"
+
+#: backend/apps/finance/tax_rules.py
+msgid "Turnover tax: the year's return"
+msgstr "Налог с оборота: годовой отчёт"
+
+#: backend/apps/finance/tax_rules.py
+msgid "Profit tax return and payment"
+msgstr "Отчёт и уплата налога на прибыль"
+
+#: backend/apps/finance/tax_rules.py
+msgid "Profit tax: the year's return and payment"
+msgstr "Налог на прибыль: годовой отчёт и уплата"
+
+#: backend/apps/finance/tax_rules.py
+msgid "Profit tax advance"
+msgstr "Аванс по налогу на прибыль"
+
+#: backend/apps/finance/tax_rules.py
+msgid "Income tax withheld: calculation and payment"
+msgstr "Удержанный НДФЛ: расчёт и уплата"
+
+#: backend/apps/finance/tax_rules.py
+msgid "Pay it together with the salaries, by this day at the latest."
+msgstr "Платите вместе с зарплатой, не позднее этого дня."
+
+#: backend/apps/finance/tax_rules.py
+msgid "Social tax return and payment"
+msgstr "Отчёт и уплата социального налога"
+
+#: backend/apps/finance/tax_rules.py
+msgid "Income and social tax: the year's returns"
+msgstr "НДФЛ и социальный налог: годовые отчёты"
+
+#: backend/apps/finance/tax_rules.py
+msgid "Property tax: the year's estimate"
+msgstr "Налог на имущество: справка за год"
+
+#: backend/apps/finance/tax_rules.py
+msgid "Property tax advance"
+msgstr "Аванс по налогу на имущество"
+
+#: backend/apps/finance/tax_rules.py
+msgid "Property tax: the year's return and payment"
+msgstr "Налог на имущество: годовой отчёт и уплата"
+
+#: backend/apps/finance/tax_rules.py
+msgid "Land tax return"
+msgstr "Отчёт по земельному налогу"
+
+#: backend/apps/finance/tax_rules.py
+msgid "Land tax payment"
+msgstr "Уплата земельного налога"
+
+#: backend/apps/finance/taxes.py
+msgid "Check with your accountant."
+msgstr "Сверьте с бухгалтером."
+
+#: backend/apps/finance/taxes.py
+msgid "Booked as a tax debt"
+msgstr "Проведено как налоговый долг"
+
+#: backend/apps/finance/taxes.py
+#, python-format
+msgid ""
+"VAT in sales %(output)s less VAT in goods bought %(input)s (%(rate)s %% "
+"inside prices)"
+msgstr ""
+"НДС в продажах %(output)s минус НДС в закупках %(input)s (%(rate)s %% в цене)"
+
+#: backend/apps/finance/taxes.py
+#, python-format
+msgid "%(rate)s %% inside sales of %(income)s, no VAT credit"
+msgstr "%(rate)s %% в продажах %(income)s, без зачёта НДС"
+
+#: backend/apps/finance/taxes.py
+#, python-format
+msgid "%(rate)s %% of income %(income)s"
+msgstr "%(rate)s %% от дохода %(income)s"
+
+#: backend/apps/finance/taxes.py
+#, python-format
+msgid "%(rate)s %% of the quarter's profit before taxes %(profit)s"
+msgstr "%(rate)s %% от прибыли квартала до налогов %(profit)s"
+
+#: backend/apps/finance/taxes.py
+#, python-format
+msgid "%(rate)s %% of salaries %(salaries)s"
+msgstr "%(rate)s %% от зарплат %(salaries)s"
+
+#: backend/apps/finance/taxes.py backend/apps/finance/taxes_api.py
+msgid "There is no such tax deadline."
+msgstr "Такого налогового срока нет."
+
+#: backend/apps/finance/taxes.py
+msgid "Link a payment or record one, not both."
+msgstr "Свяжите платёж или внесите новый, но не оба."
+
+#: backend/apps/finance/taxes.py
+msgid "Pick a payment that went out."
+msgstr "Выберите исходящий платёж."
+
+#: backend/apps/finance/taxes.py
+msgid "Enter how much was paid."
+msgstr "Укажите, сколько оплачено."
+
+#: backend/apps/finance/taxes.py
+msgid "This deadline is already marked."
+msgstr "Этот срок уже отмечен."
+
+#: backend/apps/finance/taxes.py
+msgid "Tax mark taken back"
+msgstr "Налоговая отметка снята"
+
+#: backend/apps/finance/taxes.py
+#, python-format
+msgid "Q%(quarter)s %(year)s"
+msgstr "%(quarter)s кв. %(year)s"
+
+#: backend/apps/finance/taxes.py
+msgid "File the return and pay"
+msgstr "Сдать отчёт и оплатить"
+
+#: backend/apps/finance/taxes.py
+msgid "File the return"
+msgstr "Сдать отчёт"
+
+#: backend/apps/finance/taxes.py
+#: backend/apps/payroll/templates/payroll/payslip.html
+msgid "Pay"
+msgstr "Оплата"
+
+#: backend/apps/finance/taxes.py
+msgid ""
+"Since 1 April 2025 a business that sells medicines can't pay turnover tax "
+"(Tax Code art. 461, part 2, item 14): VAT and profit tax, or the simplified 6"
+" % VAT."
+msgstr ""
+"С 1 апреля 2025 года бизнес, торгующий лекарствами, не может платить налог с "
+"оборота (НК, ст. 461, ч. 2, п. 14): НДС и налог на прибыль или упрощённый НДС"
+" 6 %."
+
+#: backend/apps/finance/taxes.py
+msgid ""
+"Not for a business that sells medicines (Tax Code art. 461, part 2, item 14)."
+msgstr "Не для бизнеса, торгующего лекарствами (НК, ст. 461, ч. 2, п. 14)."
+
+#: backend/apps/finance/taxes.py
+msgid "Income is over the threshold: VAT is due from the day it is reached."
+msgstr "Доход выше порога: НДС платится со дня превышения."
+
+#: backend/apps/finance/taxes.py
+#, python-format
+msgid "%(rate)s %% × income %(income)s"
+msgstr "%(rate)s %% × доход %(income)s"
+
+#: backend/apps/finance/taxes.py
+#, python-format
+msgid ""
+"%(rate)s/%(gross)s of sales %(income)s less %(rate)s/%(gross)s of goods "
+"bought %(goods)s"
+msgstr ""
+"%(rate)s/%(gross)s от продаж %(income)s минус %(rate)s/%(gross)s от закупок "
+"%(goods)s"
+
+#: backend/apps/finance/taxes.py
+#, python-format
+msgid "%(rate)s %% × profit before taxes %(profit)s"
+msgstr "%(rate)s %% × прибыль до налогов %(profit)s"
+
+#: backend/apps/finance/taxes.py
+#, python-format
+msgid "%(rate)s/%(gross)s of sales %(income)s, no VAT credit, no profit tax"
+msgstr ""
+"%(rate)s/%(gross)s от продаж %(income)s, без зачёта НДС и налога на прибыль"
+
+#: backend/apps/finance/taxes.py
+msgid ""
+"Prices include VAT, and every purchase of goods comes with a VAT invoice."
+msgstr "Цены включают НДС, а каждая закупка идёт со счёт-фактурой с НДС."
+
+#: backend/apps/finance/taxes.py
+msgid ""
+"Payroll, property and land taxes are the same under every regime and left "
+"out."
+msgstr ""
+"Налоги с зарплаты, на имущество и землю одинаковы при любом режиме и не "
+"учтены."
+
+#: backend/apps/finance/taxes.py
+msgid "Taxes booked as expenses are added back to the profit."
+msgstr "Налоги, проведённые как расходы, добавлены обратно к прибыли."
+
+#: backend/apps/finance/taxes_api.py
+msgid "Only someone who sees every branch sees the company's taxes."
+msgstr "Налоги компании видит только тот, кто видит все филиалы."
+
+#: backend/apps/finance/taxes_api.py
+msgid "Pick one of the payments."
+msgstr "Выберите один из платежей."
 
 #: backend/apps/finance/templates/finance/statements/balance.html
 #, python-format
@@ -12277,6 +12868,19 @@ msgid ""
 msgstr ""
 "Это оценка по собственному учёту компании, а не заключение лицензированного "
 "оценщика."
+
+#: backend/apps/finance/terms.py
+#, python-format
+msgid "%(days)s day after delivery"
+msgid_plural "%(days)s days after delivery"
+msgstr[0] "%(days)s день после поставки"
+msgstr[1] "%(days)s дня после поставки"
+msgstr[2] "%(days)s дней после поставки"
+
+#: backend/apps/finance/terms.py
+#, python-format
+msgid "Day %(day)s of the next month"
+msgstr "%(day)s-е число следующего месяца"
 
 #: backend/apps/goals/audit_actions.py
 msgid "Set a business goal"
@@ -14710,6 +15314,10 @@ msgid "Staff cost share rising"
 msgstr "Растёт доля расходов на персонал"
 
 #: backend/apps/insights/models.py
+msgid "A loan payment overdue"
+msgstr "Просрочен платёж по кредиту"
+
+#: backend/apps/insights/models.py
 msgid "A lease ending, or a renewal to decide"
 msgstr "Аренда заканчивается или нужно решить о продлении"
 
@@ -14973,6 +15581,36 @@ msgid ""
 msgstr ""
 "Оплатите их или договоритесь с дистрибьюторами о новых сроках, пока поставки "
 "не остановились."
+
+#: backend/apps/insights/texts.py
+#, python-format
+msgid "Loan payments overdue: %(amount)s"
+msgstr "Просрочены платежи по кредитам: %(amount)s"
+
+#: backend/apps/insights/texts.py
+#, python-format
+msgid ""
+"Overdue loan payments: %(count)s, the oldest %(days)s day late. Lenders: "
+"%(parties)s."
+msgid_plural ""
+"Overdue loan payments: %(count)s, the oldest %(days)s days late. Lenders: "
+"%(parties)s."
+msgstr[0] ""
+"Просроченных платежей: %(count)s, самый старый просрочен на %(days)s день. "
+"Кредиторы: %(parties)s."
+msgstr[1] ""
+"Просроченных платежей: %(count)s, самый старый просрочен на %(days)s дня. "
+"Кредиторы: %(parties)s."
+msgstr[2] ""
+"Просроченных платежей: %(count)s, самый старый просрочен на %(days)s дней. "
+"Кредиторы: %(parties)s."
+
+#: backend/apps/insights/texts.py
+msgid ""
+"Pay them now: a bank charges penalty interest, and lateness stays on record."
+msgstr ""
+"Оплатите сейчас: банк начисляет штрафные проценты, а просрочка остаётся в "
+"истории."
 
 #: backend/apps/insights/texts.py
 #, python-format
@@ -23925,10 +24563,6 @@ msgid "%(company)s: your final payslip for %(month)s, %(amount)s"
 msgstr "%(company)s: ваш окончательный расчёт за %(month)s, %(amount)s"
 
 #: backend/apps/payroll/templates/payroll/payslip.html
-msgid "Pay"
-msgstr "Оплата"
-
-#: backend/apps/payroll/templates/payroll/payslip.html
 #, python-format
 msgid "Paid %(paid_on)s"
 msgstr "Выплачено: %(paid_on)s"
@@ -26780,10 +27414,6 @@ msgstr "Неизвестная категория."
 #: backend/apps/sales/services.py
 msgid "Enter an amount."
 msgstr "Введите сумму."
-
-#: backend/apps/sales/services.py
-msgid "The amount must be more than zero."
-msgstr "Сумма должна быть больше нуля."
 
 #: backend/apps/sales/services.py
 msgid "The cash count isn't readable."

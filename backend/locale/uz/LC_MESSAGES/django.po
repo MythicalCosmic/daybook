@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-12 02:41+0500\n"
+"POT-Creation-Date: 2026-11-12 02:56+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -3930,8 +3930,8 @@ msgid "It ends after it was issued."
 msgstr "Tugash sanasi berilgan sanadan keyin bo‘lishi kerak."
 
 #: backend/apps/attendance/actions.py backend/apps/finance/claims.py
-#: backend/apps/finance/reminders.py backend/apps/insights/notify.py
-#: backend/apps/payroll/actions.py
+#: backend/apps/finance/loans.py backend/apps/finance/reminders.py
+#: backend/apps/insights/notify.py backend/apps/payroll/actions.py
 msgid "This isn't available any more."
 msgstr "Bu endi mavjud emas."
 
@@ -8875,6 +8875,34 @@ msgstr "Bank yoki investorlar uchun hisobot tayyorladi"
 msgid "Changed how the business is valued"
 msgstr "Biznesni baholash usulini o‘zgartirdi"
 
+#: backend/apps/finance/audit_actions.py
+msgid "Recorded a loan"
+msgstr "Kredit qo‘shdi"
+
+#: backend/apps/finance/audit_actions.py
+msgid "Changed a loan's schedule"
+msgstr "Kredit jadvalini o‘zgartirdi"
+
+#: backend/apps/finance/audit_actions.py
+msgid "Paid a loan instalment"
+msgstr "Kredit to‘lovini to‘ladi"
+
+#: backend/apps/finance/audit_actions.py
+msgid "Repaid part of a loan early"
+msgstr "Kreditning bir qismini muddatidan oldin to‘ladi"
+
+#: backend/apps/finance/audit_actions.py
+msgid "Took back a loan payment"
+msgstr "Kredit to‘lovini bekor qildi"
+
+#: backend/apps/finance/audit_actions.py
+msgid "Marked a tax deadline done"
+msgstr "Soliq muddatini bajarildi deb belgiladi"
+
+#: backend/apps/finance/audit_actions.py
+msgid "Took back a tax deadline mark"
+msgstr "Soliq muddati belgisini bekor qildi"
+
 #: backend/apps/finance/bot_messages.py
 #, python-format
 msgid "Big expense: %(amount)s · %(category)s"
@@ -9198,6 +9226,14 @@ msgstr "Asosiy vositalarni hisobdan chiqarish"
 msgid "Sale of fixed assets"
 msgstr "Asosiy vositalar sotuvi"
 
+#: backend/apps/finance/defaults.py
+msgid "Loan interest"
+msgstr "Kredit foizlari"
+
+#: backend/apps/finance/defaults.py
+msgid "Interest received"
+msgstr "Olingan foizlar"
+
 #: backend/apps/finance/defaults.py backend/apps/finance/models.py
 msgid "Cash desk"
 msgstr "Kassa"
@@ -9483,6 +9519,14 @@ msgstr "Xarajat"
 msgid "Dividend"
 msgstr "Dividend"
 
+#: backend/apps/finance/hooks.py backend/apps/finance/models.py
+msgid "Loan"
+msgstr "Kredit"
+
+#: backend/apps/finance/hooks.py
+msgid "Tax calendar"
+msgstr "Soliq kalendari"
+
 #: backend/apps/finance/hooks.py
 msgid "Expense claims to approve"
 msgstr "Tasdiqlanishi kerak bo‘lgan xarajatlar"
@@ -9490,6 +9534,10 @@ msgstr "Tasdiqlanishi kerak bo‘lgan xarajatlar"
 #: backend/apps/finance/hooks.py
 msgid "Debt due dates"
 msgstr "Qarz to‘lash muddatlari"
+
+#: backend/apps/finance/hooks.py
+msgid "Tax deadlines"
+msgstr "Soliq muddatlari"
 
 #: backend/apps/finance/hooks.py
 msgid "Money they hold"
@@ -9573,8 +9621,240 @@ msgid "Overdue debts you are responsible for"
 msgstr "Siz javobgar bo‘lgan muddati o‘tgan qarzlar"
 
 #: backend/apps/finance/hooks.py
+msgid "Loan payments due"
+msgstr "Kredit to‘lovlari"
+
+#: backend/apps/finance/hooks.py
 msgid "Budget alerts"
 msgstr "Byudjet ogohlantirishlari"
+
+#: backend/apps/finance/loan_math.py
+msgid "No payments to spread the loan over."
+msgstr "Kreditni taqsimlash uchun to‘lovlar yo‘q."
+
+#: backend/apps/finance/loan_math.py backend/apps/sales/services.py
+msgid "The amount must be more than zero."
+msgstr "Summa noldan katta bo‘lishi kerak."
+
+#: backend/apps/finance/loan_math.py
+msgid "The term is 1 to 600 months."
+msgstr "Muddat 1 oydan 600 oygacha."
+
+#: backend/apps/finance/loan_math.py
+msgid "The grace months must be fewer than the payments."
+msgstr "Imtiyozli oylar to‘lovlar sonidan kam bo‘lishi kerak."
+
+#: backend/apps/finance/loan_math.py
+msgid "The annual rate is 0 to 100 per cent."
+msgstr "Yillik stavka 0 dan 100 foizgacha."
+
+#: backend/apps/finance/loan_math.py backend/apps/finance/loans.py
+msgid "Pick how the loan is repaid."
+msgstr "Kredit qanday qaytarilishini tanlang."
+
+#: backend/apps/finance/loan_math.py backend/apps/finance/loans.py
+msgid "The first payment comes after the loan starts."
+msgstr "Birinchi to‘lov kredit boshlangandan keyin bo‘ladi."
+
+#: backend/apps/finance/loan_math.py backend/apps/finance/loans.py
+msgid "No payments are left to plan: pay the last one instead."
+msgstr "Rejalashtiriladigan to‘lov qolmadi: oxirgisini to‘lang."
+
+#: backend/apps/finance/loan_math.py backend/apps/finance/loans_api.py
+msgid "Add at least one payment."
+msgstr "Kamida bitta to‘lov qo‘shing."
+
+#: backend/apps/finance/loan_math.py
+msgid "A payment's parts can't be negative."
+msgstr "To‘lov qismlari manfiy bo‘lishi mumkin emas."
+
+#: backend/apps/finance/loan_math.py
+msgid "Every payment must be more than zero."
+msgstr "Har bir to‘lov noldan katta bo‘lishi kerak."
+
+#: backend/apps/finance/loan_math.py
+msgid "The payments must be in date order."
+msgstr "To‘lovlar sana tartibida bo‘lishi kerak."
+
+#: backend/apps/finance/loan_math.py
+msgid "The principal parts must add up to the loan."
+msgstr "Asosiy qarz qismlari kredit summasiga teng bo‘lishi kerak."
+
+#: backend/apps/finance/loans.py
+msgid "Pick whether the loan was taken or given."
+msgstr "Kredit olinganmi yoki berilganmi, tanlang."
+
+#: backend/apps/finance/loans.py
+msgid "Pick the bank or the person of the loan."
+msgstr "Kredit bo‘yicha bank yoki shaxsni tanlang."
+
+#: backend/apps/finance/loans.py
+msgid "Pick how the interest is counted."
+msgstr "Foiz qanday hisoblanishini tanlang."
+
+#: backend/apps/finance/loans.py
+msgid "Only a loan taken has a fee to pay."
+msgstr "Komissiya faqat olingan kredit uchun to‘lanadi."
+
+#: backend/apps/finance/loans.py
+msgid "A fee is paid from an account: pick where the money arrived."
+msgstr "Komissiya hisobdan to‘lanadi: pul tushgan hisobni tanlang."
+
+#: backend/apps/finance/loans.py
+msgid "A payment can't be before the loan starts."
+msgstr "To‘lov kredit boshlanishidan oldin bo‘lishi mumkin emas."
+
+#: backend/apps/finance/loans.py
+msgid "Loan fee"
+msgstr "Kredit komissiyasi"
+
+#: backend/apps/finance/loans.py
+msgid "This loan is settled or cancelled."
+msgstr "Bu kredit yopilgan yoki bekor qilingan."
+
+#: backend/apps/finance/loans.py
+msgid ""
+"Payments were made on this loan: its schedule changes only by an early "
+"repayment."
+msgstr ""
+"Bu kredit bo‘yicha to‘lovlar qilingan: jadval faqat muddatidan oldin to‘lash "
+"orqali o‘zgaradi."
+
+#: backend/apps/finance/loans.py
+#, python-format
+msgid "The loan is in %(currency)s: pay it from an account in %(currency)s."
+msgstr ""
+"Kredit valyutasi: %(currency)s. To‘lov hisobining valyutasi ham %(currency)s "
+"bo‘lsin."
+
+#: backend/apps/finance/loans.py
+msgid "This debt has no loan terms."
+msgstr "Bu qarzda kredit shartlari yo‘q."
+
+#: backend/apps/finance/loans.py
+msgid "This payment isn't in the loan's schedule any more."
+msgstr "Bu to‘lov endi kredit jadvalida yo‘q."
+
+#: backend/apps/finance/loans.py
+msgid "Nothing is left to pay on this payment."
+msgstr "Bu to‘lov bo‘yicha to‘lanadigan narsa qolmadi."
+
+#: backend/apps/finance/loans.py
+#, python-format
+msgid ""
+"That's more than the %(left)s of principal left on this payment: repay the "
+"rest early instead."
+msgstr ""
+"Bu to‘lovdagi asosiy qarz qoldig‘idan ko‘p (qoldiq: %(left)s): ortig‘ini "
+"muddatidan oldin to‘lang."
+
+#: backend/apps/finance/loans.py
+#, python-format
+msgid "Loan payment %(n)s"
+msgstr "Kredit to‘lovi № %(n)s"
+
+#: backend/apps/finance/loans.py
+msgid "Pick smaller payments or a shorter term."
+msgstr "Kichikroq to‘lovlarni yoki qisqaroq muddatni tanlang."
+
+#: backend/apps/finance/loans.py backend/apps/finance/services.py
+#: backend/apps/payroll/services.py
+#, python-format
+msgid "That's more than the %(left)s still owed."
+msgstr "Bu qolgan qarzdan (%(left)s) ko‘p."
+
+#: backend/apps/finance/loans.py
+msgid "Pay the payments that are already due first."
+msgstr "Avval muddati kelgan to‘lovlarni to‘lang."
+
+#: backend/apps/finance/loans.py
+msgid "Pay the payments in their order first."
+msgstr "Avval to‘lovlarni navbati bilan to‘lang."
+
+#: backend/apps/finance/loans.py
+msgid "That only pays a payment ahead: use Pay on that payment."
+msgstr ""
+"Bu faqat to‘lovni oldindan to‘laydi: o‘sha to‘lovda «To‘lash»ni bosing."
+
+#: backend/apps/finance/loans.py
+msgid "Early repayment of a loan"
+msgstr "Kreditni muddatidan oldin to‘lash"
+
+#: backend/apps/finance/loans.py
+msgid "This entry isn't a payment of this loan."
+msgstr "Bu yozuv ushbu kredit to‘lovi emas."
+
+#: backend/apps/finance/loans.py
+msgid "An early repayment can't be taken back here."
+msgstr "Muddatidan oldin to‘lovni bu yerda bekor qilib bo‘lmaydi."
+
+#: backend/apps/finance/loans.py
+msgid "This payment was already taken back."
+msgstr "Bu to‘lov allaqachon bekor qilingan."
+
+#: backend/apps/finance/loans.py backend/apps/finance/reminders.py
+#, python-format
+msgid "Paid from %(account)s"
+msgstr "To‘landi, hisob: %(account)s"
+
+#: backend/apps/finance/loans.py
+#, python-format
+msgid "Loan payment: %(party)s"
+msgstr "Kredit to‘lovi: %(party)s"
+
+#: backend/apps/finance/loans.py
+#, python-format
+msgid "Loan repayment to us: %(party)s"
+msgstr "Bizga qarz qaytarilishi: %(party)s"
+
+#: backend/apps/finance/loans.py
+#, python-format
+msgid "Principal %(principal)s, interest %(interest)s."
+msgstr "Asosiy qarz: %(principal)s, foiz: %(interest)s."
+
+#: backend/apps/finance/loans.py
+#, python-format
+msgid "Still owed after it: %(balance)s."
+msgstr "Undan keyingi qoldiq: %(balance)s."
+
+#: backend/apps/finance/loans.py
+msgid "Open the dashboard to pick the account."
+msgstr "Hisobni tanlash uchun boshqaruv panelini oching."
+
+#: backend/apps/finance/loans.py backend/apps/finance/reminders.py
+#, python-format
+msgid "You can't record payments on %(account)s."
+msgstr "Siz bu hisobga to‘lov yoza olmaysiz: %(account)s."
+
+#: backend/apps/finance/loans.py backend/apps/finance/recurring.py
+#: backend/apps/finance/reminders.py
+msgid "Already paid."
+msgstr "Allaqachon to‘langan."
+
+#: backend/apps/finance/loans.py backend/apps/finance/reminders.py
+#, python-format
+msgid "Paid from %(account)s."
+msgstr "To‘landi, hisob: %(account)s."
+
+#: backend/apps/finance/loans.py
+msgid "Loan taken"
+msgstr "Olingan kredit"
+
+#: backend/apps/finance/loans.py
+msgid "Loan given"
+msgstr "Berilgan qarz"
+
+#: backend/apps/finance/loans_api.py
+msgid "A loan from before the books needs finance.manage."
+msgstr "Hisobdan oldingi kredit uchun finance.manage huquqi kerak."
+
+#: backend/apps/finance/loans_api.py
+msgid "Pick the first payment's day."
+msgstr "Birinchi to‘lov sanasini tanlang."
+
+#: backend/apps/finance/loans_api.py
+msgid "Pick one of its payments."
+msgstr "Uning to‘lovlaridan birini tanlang."
 
 #: backend/apps/finance/models.py backend/apps/finance/services.py
 msgid "A colour like #1f8a70."
@@ -9597,6 +9877,7 @@ msgid "In cash by whoever approves"
 msgstr "Naqd pulda, tasdiqlagan odam beradi"
 
 #: backend/apps/finance/models.py backend/apps/finance/tax_calendar.py
+#: backend/apps/finance/tax_rules.py
 msgid "Turnover tax"
 msgstr "Aylanmadan olinadigan soliq"
 
@@ -9604,7 +9885,7 @@ msgstr "Aylanmadan olinadigan soliq"
 msgid "VAT 12 %"
 msgstr "QQS 12 %"
 
-#: backend/apps/finance/models.py
+#: backend/apps/finance/models.py backend/apps/finance/tax_rules.py
 msgid "Simplified VAT 6 %"
 msgstr "Soddalashtirilgan QQS 6 %"
 
@@ -9688,6 +9969,31 @@ msgstr "Yillik daromadning quyi koeffitsiyenti. Bo‘sh bo‘lsa: standart qiyma
 msgid "The higher multiple of a year's earnings. Empty: the default."
 msgstr ""
 "Yillik daromadning yuqori koeffitsiyenti. Bo‘sh bo‘lsa: standart qiymat."
+
+#: backend/apps/finance/models.py
+msgid ""
+"Days before a loan payment that owners are reminded. 0: on the day only."
+msgstr ""
+"Kredit to‘lovidan necha kun oldin egalarga eslatiladi. 0: faqat o‘sha kuni."
+
+#: backend/apps/finance/models.py
+msgid ""
+"Days before a tax deadline that owners are reminded. 0: on the day only."
+msgstr ""
+"Soliq muddatidan necha kun oldin egalarga eslatiladi. 0: faqat o‘sha kuni."
+
+#: backend/apps/finance/models.py
+msgid ""
+"The company owns buildings or premises: property tax is on its calendar."
+msgstr "Korxonaning o‘z binosi bor: mol-mulk solig‘i kalendarda."
+
+#: backend/apps/finance/models.py
+msgid "The company holds land: land tax is on its calendar."
+msgstr "Korxonaning yer uchastkasi bor: yer solig‘i kalendarda."
+
+#: backend/apps/finance/models.py
+msgid "The turnover tax rate. Confirm with your accountant."
+msgstr "Aylanma soliq stavkasi. Buxgalteringiz bilan tekshiring."
 
 #: backend/apps/finance/models.py
 msgid "UZS per 1 unit of the currency."
@@ -9809,16 +10115,21 @@ msgid "Printed on invoices."
 msgstr "Hisob-fakturalarda chop etiladi."
 
 #: backend/apps/finance/models.py
+msgid "Goods on credit are paid this many days after delivery."
+msgstr "Nasiyaga olingan tovar yetkazilgandan shuncha kun keyin to‘lanadi."
+
+#: backend/apps/finance/models.py
+msgid "Goods on credit are paid on this day of the month after delivery."
+msgstr ""
+"Nasiyaga olingan tovar yetkazilgandan keyingi oyning shu sanasida to‘lanadi."
+
+#: backend/apps/finance/models.py
 msgid "Goods or services on credit"
 msgstr "Nasiyaga tovar yoki xizmat"
 
 #: backend/apps/finance/models.py
 msgid "Bill"
 msgstr "Hisob-faktura"
-
-#: backend/apps/finance/models.py
-msgid "Loan"
-msgstr "Kredit"
 
 #: backend/apps/finance/models.py
 msgid "Salary advance"
@@ -9998,8 +10309,16 @@ msgid "A 400 px preview of a picture; empty for a PDF."
 msgstr "Rasmning 400 px o‘lchamdagi kichik nusxasi; PDF uchun bo‘sh."
 
 #: backend/apps/finance/models.py
-msgid "In the debt's currency."
-msgstr "Qarz valyutasida."
+msgid "In the debt's currency: the part of the debt (principal)."
+msgstr "Qarz valyutasida: qarzning qismi (asosiy qarz)."
+
+#: backend/apps/finance/models.py
+msgid "A loan's interest paid with it, in the debt's currency."
+msgstr "U bilan to‘lanadigan kredit foizi, qarz valyutasida."
+
+#: backend/apps/finance/models.py
+msgid "An early repayment."
+msgstr "Muddatidan oldin to‘lov."
 
 #: backend/apps/finance/models.py
 msgid "Reminder: pay it yourself"
@@ -10154,6 +10473,63 @@ msgstr "So‘ralgan filiallar va baholash koeffitsiyentlari."
 #: backend/apps/finance/models.py
 msgid "Also send the PDF to the requester in Telegram."
 msgstr "PDF faylni so‘ragan kishiga Telegramda ham yuborish."
+
+#: backend/apps/finance/models.py
+msgid "Equal payments (annuity)"
+msgstr "Teng to‘lovlar (annuitet)"
+
+#: backend/apps/finance/models.py
+msgid "Equal principal, payments fall"
+msgstr "Teng asosiy qarz, to‘lovlar kamayadi"
+
+#: backend/apps/finance/models.py
+msgid "The bank's own schedule"
+msgstr "Bankning o‘z jadvali"
+
+#: backend/apps/finance/models.py
+msgid "A twelfth of the annual rate each month"
+msgstr "Har oy yillik stavkaning o‘n ikkidan biri"
+
+#: backend/apps/finance/models.py
+msgid "By the actual days, out of 365"
+msgstr "Haqiqiy kunlar bo‘yicha, 365 kundan"
+
+#: backend/apps/finance/models.py
+msgid "The annual interest rate, in per cent. 0: no interest."
+msgstr "Yillik foiz stavkasi, foizda. 0: foizsiz."
+
+#: backend/apps/finance/models.py
+msgid "The first payment's day; the rest monthly."
+msgstr "Birinchi to‘lov sanasi; qolganlari har oy."
+
+#: backend/apps/finance/models.py
+msgid "The first payments pay interest only."
+msgstr "Birinchi to‘lovlarda faqat foiz to‘lanadi."
+
+#: backend/apps/finance/models.py
+msgid "A one-off fee at the start, in the loan's currency."
+msgstr "Boshida bir martalik komissiya, kredit valyutasida."
+
+#: backend/apps/finance/models.py
+msgid ""
+"Where the money arrived (or left from); the usual account of its payments."
+msgstr "Pul tushgan (yoki chiqqan) hisob; to‘lovlarning odatdagi hisobi."
+
+#: backend/apps/finance/models.py
+msgid "Filed"
+msgstr "Topshirilgan"
+
+#: backend/apps/finance/models.py
+msgid "The rule's key in tax_rules."
+msgstr "tax_rules dagi qoida kaliti."
+
+#: backend/apps/finance/models.py
+msgid "The payment in the ledger."
+msgstr "Hisobdagi to‘lov."
+
+#: backend/apps/finance/models.py
+msgid "What was paid, in the base currency."
+msgstr "To‘langan summa, asosiy valyutada."
 
 #: backend/apps/finance/owner_api.py
 msgid "The finance module is off for this company."
@@ -10467,6 +10843,11 @@ msgid "%(count)s person"
 msgid_plural "%(count)s people"
 msgstr[0] "%(count)s kishi"
 
+#: backend/apps/finance/planning.py
+#, python-format
+msgid "Payment %(n)s of %(count)s"
+msgstr "To‘lov: %(n)s / %(count)s"
+
 #: backend/apps/finance/planning.py backend/apps/payroll/providers.py
 msgid "Pay day"
 msgstr "Ish haqi kuni"
@@ -10587,10 +10968,6 @@ msgstr "Bu allaqachon hal qilingan."
 msgid "This payment is posted automatically: run it instead."
 msgstr "Bu to‘lov avtomatik o‘tkaziladi: uni hozir o‘tkazing."
 
-#: backend/apps/finance/recurring.py backend/apps/finance/reminders.py
-msgid "Already paid."
-msgstr "Allaqachon to‘langan."
-
 #: backend/apps/finance/recurring.py
 msgid "A bill is paid with the amount you paid, not run."
 msgstr "Hisob siz to‘lagan summa bilan to‘lanadi, avtomatik o‘tkazilmaydi."
@@ -10623,7 +11000,7 @@ msgstr "Takrorlash oralig‘i: 1–24 davr."
 msgid "Pick a weekday from 1 (Monday) to 7 (Sunday)."
 msgstr "Hafta kunini tanlang: 1 (dushanba) dan 7 (yakshanba) gacha."
 
-#: backend/apps/finance/recurring.py
+#: backend/apps/finance/recurring.py backend/apps/finance/services.py
 msgid "Remind 0 to 30 days before."
 msgstr "Necha kun oldin eslatish: 0–30."
 
@@ -10674,11 +11051,6 @@ msgid "The amount varies: enter what you paid when you pay it."
 msgstr "Summa o‘zgarib turadi: to‘laganingizda haqiqiy summani kiriting."
 
 #: backend/apps/finance/reminders.py
-#, python-format
-msgid "Paid from %(account)s"
-msgstr "To‘landi, hisob: %(account)s"
-
-#: backend/apps/finance/reminders.py
 msgid "Tomorrow"
 msgstr "Ertaga"
 
@@ -10720,16 +11092,6 @@ msgstr[0] "Siz kuzatadigan qarzlar muddati yetdi yoki o‘tdi: %(count)s ta"
 #: backend/apps/finance/reminders.py
 msgid "Open the dashboard to enter the amount."
 msgstr "Summani kiritish uchun boshqaruv panelini oching."
-
-#: backend/apps/finance/reminders.py
-#, python-format
-msgid "You can't record payments on %(account)s."
-msgstr "Siz bu hisobga to‘lov yoza olmaysiz: %(account)s."
-
-#: backend/apps/finance/reminders.py
-#, python-format
-msgid "Paid from %(account)s."
-msgstr "To‘landi, hisob: %(account)s."
 
 #: backend/apps/finance/reminders.py
 msgid "I'll remind you tomorrow."
@@ -10884,11 +11246,6 @@ msgstr "Qarzning o‘z valyutasida ikkala summa bir xil bo‘lishi kerak."
 msgid "That's too little to settle any of the debt."
 msgstr "Bu summa qarzning biror qismini ham yopishga yetmaydi."
 
-#: backend/apps/finance/services.py backend/apps/payroll/services.py
-#, python-format
-msgid "That's more than the %(left)s still owed."
-msgstr "Bu qolgan qarzdan (%(left)s) ko‘p."
-
 #: backend/apps/finance/services.py
 msgid "A debt can't be written off before the day it was issued."
 msgstr "Qarzni u paydo bo‘lgan kundan oldin hisobdan chiqarib bo‘lmaydi."
@@ -11009,6 +11366,20 @@ msgstr "+998 90 123 45 67 ko‘rinishidagi raqam."
 #: backend/apps/finance/services.py backend/apps/hr/ids.py
 msgid "A taxpayer number has 9 digits (a person's PINFL 14)."
 msgstr "STIR 9 ta raqamdan iborat (jismoniy shaxsning PINFL raqami — 14 ta)."
+
+#: backend/apps/finance/services.py
+msgid "Payment terms are 1 to 365 days after delivery."
+msgstr "To‘lov muddati yetkazilgandan keyin 1 kundan 365 kungacha."
+
+#: backend/apps/finance/services.py
+msgid "The payment day is 1 to 31."
+msgstr "To‘lov sanasi 1 dan 31 gacha."
+
+#: backend/apps/finance/services.py
+msgid "Pick days after delivery or a day of the next month, not both."
+msgstr ""
+"Yetkazilgandan keyingi kunlarni yoki keyingi oy sanasini tanlang, ikkalasini "
+"emas."
 
 #: backend/apps/finance/services.py
 msgid "Another counterparty already has this phone number."
@@ -11707,7 +12078,7 @@ msgstr ""
 msgid "Pick Uzbek, Russian or English."
 msgstr "O‘zbek, rus yoki ingliz tilini tanlang."
 
-#: backend/apps/finance/tax_calendar.py
+#: backend/apps/finance/tax_calendar.py backend/apps/finance/tax_rules.py
 msgid "VAT (QQS)"
 msgstr "QQS"
 
@@ -11715,11 +12086,11 @@ msgstr "QQS"
 msgid "Simplified VAT"
 msgstr "Soddalashtirilgan QQS"
 
-#: backend/apps/finance/tax_calendar.py
+#: backend/apps/finance/tax_calendar.py backend/apps/finance/tax_rules.py
 msgid "Profit tax"
 msgstr "Foyda solig‘i"
 
-#: backend/apps/finance/tax_calendar.py
+#: backend/apps/finance/tax_calendar.py backend/apps/finance/tax_rules.py
 msgid "Personal income tax (JShDS)"
 msgstr "Jismoniy shaxslar daromad solig‘i (JShDS)"
 
@@ -11727,7 +12098,8 @@ msgstr "Jismoniy shaxslar daromad solig‘i (JShDS)"
 msgid "Pension contributions (INPS)"
 msgstr "Pensiya badallari (INPS)"
 
-#: backend/apps/finance/tax_calendar.py backend/apps/payroll/finance_bridge.py
+#: backend/apps/finance/tax_calendar.py backend/apps/finance/tax_rules.py
+#: backend/apps/payroll/finance_bridge.py
 msgid "Social tax"
 msgstr "Ijtimoiy soliq"
 
@@ -11738,6 +12110,235 @@ msgstr "Odatiy to‘lov muddatlari; buxgalteringiz bilan aniqlashtiring."
 #: backend/apps/finance/tax_calendar.py
 msgid "There is no tax calendar for that regime."
 msgstr "Bu rejim uchun soliq kalendari yo‘q."
+
+#: backend/apps/finance/tax_rules.py
+msgid "Property tax"
+msgstr "Mol-mulk solig‘i"
+
+#: backend/apps/finance/tax_rules.py
+msgid "Land tax"
+msgstr "Yer solig‘i"
+
+#: backend/apps/finance/tax_rules.py
+msgid "VAT return and payment"
+msgstr "QQS hisoboti va to‘lovi"
+
+#: backend/apps/finance/tax_rules.py
+msgid "Simplified VAT return and payment"
+msgstr "Soddalashtirilgan QQS hisoboti va to‘lovi"
+
+#: backend/apps/finance/tax_rules.py
+msgid "The decree sets no day of its own yet: the VAT day is shown."
+msgstr "Farmonda hali alohida sana yo‘q: QQS sanasi ko‘rsatilgan."
+
+#: backend/apps/finance/tax_rules.py
+msgid "Turnover tax return and payment"
+msgstr "Aylanma soliq hisoboti va to‘lovi"
+
+#: backend/apps/finance/tax_rules.py
+msgid "Turnover tax: the year's return"
+msgstr "Aylanma soliq: yillik hisobot"
+
+#: backend/apps/finance/tax_rules.py
+msgid "Profit tax return and payment"
+msgstr "Foyda solig‘i hisoboti va to‘lovi"
+
+#: backend/apps/finance/tax_rules.py
+msgid "Profit tax: the year's return and payment"
+msgstr "Foyda solig‘i: yillik hisobot va to‘lov"
+
+#: backend/apps/finance/tax_rules.py
+msgid "Profit tax advance"
+msgstr "Foyda solig‘i bo‘yicha avans"
+
+#: backend/apps/finance/tax_rules.py
+msgid "Income tax withheld: calculation and payment"
+msgstr "Ushlangan JShDS: hisob-kitob va to‘lov"
+
+#: backend/apps/finance/tax_rules.py
+msgid "Pay it together with the salaries, by this day at the latest."
+msgstr "Ish haqi bilan birga, eng kechi shu kuni to‘lang."
+
+#: backend/apps/finance/tax_rules.py
+msgid "Social tax return and payment"
+msgstr "Ijtimoiy soliq hisoboti va to‘lovi"
+
+#: backend/apps/finance/tax_rules.py
+msgid "Income and social tax: the year's returns"
+msgstr "JShDS va ijtimoiy soliq: yillik hisobotlar"
+
+#: backend/apps/finance/tax_rules.py
+msgid "Property tax: the year's estimate"
+msgstr "Mol-mulk solig‘i: yillik ma’lumotnoma"
+
+#: backend/apps/finance/tax_rules.py
+msgid "Property tax advance"
+msgstr "Mol-mulk solig‘i bo‘yicha avans"
+
+#: backend/apps/finance/tax_rules.py
+msgid "Property tax: the year's return and payment"
+msgstr "Mol-mulk solig‘i: yillik hisobot va to‘lov"
+
+#: backend/apps/finance/tax_rules.py
+msgid "Land tax return"
+msgstr "Yer solig‘i hisoboti"
+
+#: backend/apps/finance/tax_rules.py
+msgid "Land tax payment"
+msgstr "Yer solig‘i to‘lovi"
+
+#: backend/apps/finance/taxes.py
+msgid "Check with your accountant."
+msgstr "Buxgalteringiz bilan tekshiring."
+
+#: backend/apps/finance/taxes.py
+msgid "Booked as a tax debt"
+msgstr "Soliq qarzi sifatida yozilgan"
+
+#: backend/apps/finance/taxes.py
+#, python-format
+msgid ""
+"VAT in sales %(output)s less VAT in goods bought %(input)s (%(rate)s %% "
+"inside prices)"
+msgstr ""
+"Sotuvdagi QQS: %(output)s, xarid qilingan tovarlardagi QQS: %(input)s "
+"(narxlar ichida %(rate)s %%)"
+
+#: backend/apps/finance/taxes.py
+#, python-format
+msgid "%(rate)s %% inside sales of %(income)s, no VAT credit"
+msgstr "Sotuv ichida %(rate)s %%, sotuv: %(income)s, QQS hisobga olinmaydi"
+
+#: backend/apps/finance/taxes.py
+#, python-format
+msgid "%(rate)s %% of income %(income)s"
+msgstr "Daromadning %(rate)s %% qismi, daromad: %(income)s"
+
+#: backend/apps/finance/taxes.py
+#, python-format
+msgid "%(rate)s %% of the quarter's profit before taxes %(profit)s"
+msgstr "Chorakdagi soliqqacha foydaning %(rate)s %% qismi, foyda: %(profit)s"
+
+#: backend/apps/finance/taxes.py
+#, python-format
+msgid "%(rate)s %% of salaries %(salaries)s"
+msgstr "Ish haqining %(rate)s %% qismi, ish haqi: %(salaries)s"
+
+#: backend/apps/finance/taxes.py backend/apps/finance/taxes_api.py
+msgid "There is no such tax deadline."
+msgstr "Bunday soliq muddati yo‘q."
+
+#: backend/apps/finance/taxes.py
+msgid "Link a payment or record one, not both."
+msgstr "To‘lovni bog‘lang yoki kiriting, ikkalasini emas."
+
+#: backend/apps/finance/taxes.py
+msgid "Pick a payment that went out."
+msgstr "Chiqib ketgan to‘lovni tanlang."
+
+#: backend/apps/finance/taxes.py
+msgid "Enter how much was paid."
+msgstr "Qancha to‘langanini kiriting."
+
+#: backend/apps/finance/taxes.py
+msgid "This deadline is already marked."
+msgstr "Bu muddat allaqachon belgilangan."
+
+#: backend/apps/finance/taxes.py
+msgid "Tax mark taken back"
+msgstr "Soliq belgisi bekor qilindi"
+
+#: backend/apps/finance/taxes.py
+#, python-format
+msgid "Q%(quarter)s %(year)s"
+msgstr "%(year)s, %(quarter)s-chorak"
+
+#: backend/apps/finance/taxes.py
+msgid "File the return and pay"
+msgstr "Hisobot topshirish va to‘lash"
+
+#: backend/apps/finance/taxes.py
+msgid "File the return"
+msgstr "Hisobot topshirish"
+
+#: backend/apps/finance/taxes.py
+#: backend/apps/payroll/templates/payroll/payslip.html
+msgid "Pay"
+msgstr "Ish haqi turi"
+
+#: backend/apps/finance/taxes.py
+msgid ""
+"Since 1 April 2025 a business that sells medicines can't pay turnover tax "
+"(Tax Code art. 461, part 2, item 14): VAT and profit tax, or the simplified 6"
+" % VAT."
+msgstr ""
+"2025-yil 1-apreldan dori vositalari sotadigan korxona aylanma soliq to‘lay "
+"olmaydi (Soliq kodeksi, 461-modda, 2-qism, 14-band): QQS va foyda solig‘i "
+"yoki soddalashtirilgan 6 % QQS."
+
+#: backend/apps/finance/taxes.py
+msgid ""
+"Not for a business that sells medicines (Tax Code art. 461, part 2, item 14)."
+msgstr ""
+"Dori vositalari sotadigan korxona uchun emas (Soliq kodeksi, 461-modda, "
+"2-qism, 14-band)."
+
+#: backend/apps/finance/taxes.py
+msgid "Income is over the threshold: VAT is due from the day it is reached."
+msgstr "Daromad chegaradan oshgan: QQS o‘sha kundan to‘lanadi."
+
+#: backend/apps/finance/taxes.py
+#, python-format
+msgid "%(rate)s %% × income %(income)s"
+msgstr "%(rate)s %% × daromad (%(income)s)"
+
+#: backend/apps/finance/taxes.py
+#, python-format
+msgid ""
+"%(rate)s/%(gross)s of sales %(income)s less %(rate)s/%(gross)s of goods "
+"bought %(goods)s"
+msgstr ""
+"Sotuvning %(rate)s/%(gross)s qismi (sotuv: %(income)s) minus xaridning "
+"%(rate)s/%(gross)s qismi (xarid: %(goods)s)"
+
+#: backend/apps/finance/taxes.py
+#, python-format
+msgid "%(rate)s %% × profit before taxes %(profit)s"
+msgstr "%(rate)s %% × soliqqacha foyda (%(profit)s)"
+
+#: backend/apps/finance/taxes.py
+#, python-format
+msgid "%(rate)s/%(gross)s of sales %(income)s, no VAT credit, no profit tax"
+msgstr ""
+"Sotuvning %(rate)s/%(gross)s qismi (sotuv: %(income)s), QQS hisobga "
+"olinmaydi, foyda solig‘i yo‘q"
+
+#: backend/apps/finance/taxes.py
+msgid ""
+"Prices include VAT, and every purchase of goods comes with a VAT invoice."
+msgstr ""
+"Narxlarga QQS kiritilgan va har bir tovar xaridi QQS bilan hisob-fakturaga "
+"ega."
+
+#: backend/apps/finance/taxes.py
+msgid ""
+"Payroll, property and land taxes are the same under every regime and left "
+"out."
+msgstr ""
+"Ish haqi, mol-mulk va yer soliqlari har qanday rejimda bir xil, ular hisobga "
+"olinmagan."
+
+#: backend/apps/finance/taxes.py
+msgid "Taxes booked as expenses are added back to the profit."
+msgstr "Xarajat sifatida yozilgan soliqlar foydaga qaytarib qo‘shilgan."
+
+#: backend/apps/finance/taxes_api.py
+msgid "Only someone who sees every branch sees the company's taxes."
+msgstr "Korxona soliqlarini faqat barcha filiallarni ko‘radigan xodim ko‘radi."
+
+#: backend/apps/finance/taxes_api.py
+msgid "Pick one of the payments."
+msgstr "To‘lovlardan birini tanlang."
 
 #: backend/apps/finance/templates/finance/statements/balance.html
 #, python-format
@@ -12274,6 +12875,17 @@ msgid ""
 msgstr ""
 "Bu kompaniyaning o‘z hisobi asosidagi taxmin, litsenziyali baholovchining "
 "xulosasi emas."
+
+#: backend/apps/finance/terms.py
+#, python-format
+msgid "%(days)s day after delivery"
+msgid_plural "%(days)s days after delivery"
+msgstr[0] "Yetkazilgandan keyin %(days)s kun"
+
+#: backend/apps/finance/terms.py
+#, python-format
+msgid "Day %(day)s of the next month"
+msgstr "Keyingi oyning sanasi: %(day)s"
 
 #: backend/apps/goals/audit_actions.py
 msgid "Set a business goal"
@@ -14705,6 +15317,10 @@ msgid "Staff cost share rising"
 msgstr "Xodimlar xarajati ulushi o‘smoqda"
 
 #: backend/apps/insights/models.py
+msgid "A loan payment overdue"
+msgstr "Kredit to‘lovi kechikkan"
+
+#: backend/apps/insights/models.py
 msgid "A lease ending, or a renewal to decide"
 msgstr "Ijara tugayapti yoki uzaytirish bo‘yicha qaror kerak"
 
@@ -14956,6 +15572,28 @@ msgid ""
 msgstr ""
 "Yetkazib berish to‘xtamasidan oldin ularni to‘lang yoki distribyutorlar bilan"
 " yangi sanalarni kelishib oling."
+
+#: backend/apps/insights/texts.py
+#, python-format
+msgid "Loan payments overdue: %(amount)s"
+msgstr "Muddati o‘tgan kredit to‘lovlari: %(amount)s"
+
+#: backend/apps/insights/texts.py
+#, python-format
+msgid ""
+"Overdue loan payments: %(count)s, the oldest %(days)s day late. Lenders: "
+"%(parties)s."
+msgid_plural ""
+"Overdue loan payments: %(count)s, the oldest %(days)s days late. Lenders: "
+"%(parties)s."
+msgstr[0] ""
+"Muddati o‘tgan kredit to‘lovlari: %(count)s ta, eng eskisi kechikkan kunlar: "
+"%(days)s. Kreditorlar: %(parties)s."
+
+#: backend/apps/insights/texts.py
+msgid ""
+"Pay them now: a bank charges penalty interest, and lateness stays on record."
+msgstr "Hozir to‘lang: bank jarima foizi oladi, kechikish esa tarixda qoladi."
 
 #: backend/apps/insights/texts.py
 #, python-format
@@ -23879,10 +24517,6 @@ msgid "%(company)s: your final payslip for %(month)s, %(amount)s"
 msgstr "%(company)s: %(month)s uchun yakuniy hisob-varaqingiz, %(amount)s"
 
 #: backend/apps/payroll/templates/payroll/payslip.html
-msgid "Pay"
-msgstr "Ish haqi turi"
-
-#: backend/apps/payroll/templates/payroll/payslip.html
 #, python-format
 msgid "Paid %(paid_on)s"
 msgstr "To‘langan: %(paid_on)s"
@@ -26742,10 +27376,6 @@ msgstr "Noma’lum toifa."
 #: backend/apps/sales/services.py
 msgid "Enter an amount."
 msgstr "Summani kiriting."
-
-#: backend/apps/sales/services.py
-msgid "The amount must be more than zero."
-msgstr "Summa noldan katta bo‘lishi kerak."
 
 #: backend/apps/sales/services.py
 msgid "The cash count isn't readable."

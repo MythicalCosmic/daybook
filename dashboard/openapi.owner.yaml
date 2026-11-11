@@ -9359,6 +9359,277 @@ paths:
               schema:
                 $ref: '#/components/schemas/Suggest'
           description: ''
+  /api/v1/owner/companies/{company_id}/finance/loans/:
+    get:
+      operationId: finance_loans_list
+      description: The finance module must be on; the shared helpers of every finance
+        view.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceLoanList'
+          description: ''
+    post:
+      operationId: companies_finance_loans_create
+      description: The finance module must be on; the shared helpers of every finance
+        view.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FinanceLoanCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FinanceLoanCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FinanceLoanCreateRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceLoan'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/loans/{id}/:
+    get:
+      operationId: companies_finance_loans_retrieve
+      description: The finance module must be on; the shared helpers of every finance
+        view.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceLoanDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/loans/{id}/pay/:
+    post:
+      operationId: companies_finance_loans_pay_create
+      description: The finance module must be on; the shared helpers of every finance
+        view.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FinanceLoanPayRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FinanceLoanPayRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FinanceLoanPayRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceLoanDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/loans/{id}/repay-early/:
+    post:
+      operationId: companies_finance_loans_repay_early_create
+      description: The finance module must be on; the shared helpers of every finance
+        view.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FinanceLoanEarlyRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FinanceLoanEarlyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FinanceLoanEarlyRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceLoanDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/loans/{id}/schedule/:
+    put:
+      operationId: companies_finance_loans_schedule_update
+      description: The finance module must be on; the shared helpers of every finance
+        view.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FinanceLoanScheduleUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FinanceLoanScheduleUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FinanceLoanScheduleUpdateRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceLoanDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/loans/{id}/undo/:
+    post:
+      operationId: companies_finance_loans_undo_create
+      description: The finance module must be on; the shared helpers of every finance
+        view.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FinanceLoanUndoRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FinanceLoanUndoRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FinanceLoanUndoRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceLoanDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/loans/preview/:
+    post:
+      operationId: companies_finance_loans_preview_create
+      description: The finance module must be on; the shared helpers of every finance
+        view.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FinanceLoanTermsRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FinanceLoanTermsRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FinanceLoanTermsRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceLoanPreview'
+          description: ''
   /api/v1/owner/companies/{company_id}/finance/options/:
     get:
       operationId: companies_finance_options_retrieve
@@ -10730,6 +11001,146 @@ paths:
               schema:
                 $ref: '#/components/schemas/TaxSummary'
           description: ''
+  /api/v1/owner/companies/{company_id}/finance/taxes/:
+    get:
+      operationId: companies_finance_taxes_retrieve
+      description: The finance module must be on; the shared helpers of every finance
+        view.
+      parameters:
+      - in: query
+        name: ahead
+        schema:
+          type: integer
+        description: Months after this one (default 12).
+      - in: query
+        name: back
+        schema:
+          type: integer
+        description: Months before this one (default 1).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceTaxCalendar'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/taxes/candidates/:
+    get:
+      operationId: companies_finance_taxes_candidates_list
+      description: The finance module must be on; the shared helpers of every finance
+        view.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: deadline
+        schema:
+          type: string
+        description: <rule>:<period start>
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FinanceTaxCandidate'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/taxes/compare/:
+    get:
+      operationId: companies_finance_taxes_compare_retrieve
+      description: The finance module must be on; the shared helpers of every finance
+        view.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceTaxCompare'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/taxes/marks/:
+    post:
+      operationId: companies_finance_taxes_marks_create
+      description: The finance module must be on; the shared helpers of every finance
+        view.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FinanceTaxMarkWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FinanceTaxMarkWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FinanceTaxMarkWriteRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceTaxMark'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/taxes/marks/{id}/:
+    delete:
+      operationId: companies_finance_taxes_marks_destroy
+      description: The finance module must be on; the shared helpers of every finance
+        view.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/owner/companies/{company_id}/finance/transactions/:
     get:
       operationId: companies_finance_transactions_list
@@ -14822,6 +15233,7 @@ paths:
           - cash_low
           - contracts_lease_ending
           - expense_spike
+          - loan_overdue
           - overdue_payables
           - overdue_receivables
           - staff_cost
@@ -40578,14 +40990,6 @@ components:
         * `ok` - ok
         * `strong` - strong
         * `unrated` - unrated
-    BasisEnum:
-      enum:
-      - spending
-      - forecast
-      type: string
-      description: |-
-        * `spending` - spending
-        * `forecast` - forecast
     BlankEnum:
       enum:
       - ''
@@ -42267,7 +42671,7 @@ components:
           type: integer
           nullable: true
         basis:
-          $ref: '#/components/schemas/BasisEnum'
+          $ref: '#/components/schemas/CockpitRunwayBasisEnum'
         below_zero_on:
           type: string
           format: date
@@ -42279,6 +42683,14 @@ components:
       - below_zero_on
       - days
       - horizon
+    CockpitRunwayBasisEnum:
+      enum:
+      - spending
+      - forecast
+      type: string
+      description: |-
+        * `spending` - spending
+        * `forecast` - forecast
     CockpitSource:
       type: object
       properties:
@@ -42670,6 +43082,14 @@ components:
       - pay_type
       - pays_task_rates
       - proration
+    ConfidenceEnum:
+      enum:
+      - H
+      - M
+      type: string
+      description: |-
+        * `H` - H
+        * `M` - M
     ConsoleActionMethodEnum:
       enum:
       - POST
@@ -43702,6 +44122,22 @@ components:
           nullable: true
         credit_blocked:
           type: boolean
+        credit_days:
+          type: integer
+          maximum: 365
+          minimum: 1
+          nullable: true
+          description: Goods on credit are paid this many days after delivery.
+        credit_day:
+          type: integer
+          maximum: 31
+          minimum: 1
+          nullable: true
+          description: Goods on credit are paid on this day of the month after delivery.
+        payment_terms:
+          type: string
+          description: The supplier's payment terms in words ("" without terms; v12).
+          readOnly: true
         birthday:
           type: string
           format: date
@@ -43741,6 +44177,7 @@ components:
       - name
       - overdue
       - owes_us
+      - payment_terms
       - we_owe
     CounterpartyWriteRequest:
       type: object
@@ -43782,6 +44219,16 @@ components:
           nullable: true
         credit_blocked:
           type: boolean
+        credit_days:
+          type: integer
+          maximum: 365
+          minimum: 1
+          nullable: true
+        credit_day:
+          type: integer
+          maximum: 31
+          minimum: 1
+          nullable: true
         birthday:
           type: string
           format: date
@@ -46198,6 +46645,640 @@ components:
       - partner
       - share
       - transaction_id
+    FinanceLoan:
+      type: object
+      properties:
+        id:
+          type: integer
+        debt_id:
+          type: integer
+        direction:
+          $ref: '#/components/schemas/FinanceDebtDirectionEnum'
+        direction_label:
+          type: string
+        counterparty:
+          $ref: '#/components/schemas/FinanceRef'
+        branch:
+          allOf:
+          - $ref: '#/components/schemas/FinanceRef'
+          nullable: true
+        account:
+          allOf:
+          - $ref: '#/components/schemas/FinanceAccountRef'
+          nullable: true
+        description:
+          type: string
+        currency:
+          type: string
+        status:
+          $ref: '#/components/schemas/FinanceDebtStatusEnum'
+        is_opening:
+          type: boolean
+        issued_on:
+          type: string
+          format: date
+        ends_on:
+          type: string
+          format: date
+          nullable: true
+        annual_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,3})?$
+        method:
+          $ref: '#/components/schemas/FinanceLoanMethodEnum'
+        method_label:
+          type: string
+        basis:
+          $ref: '#/components/schemas/FinanceLoanBasisEnum'
+        term_months:
+          type: integer
+        first_due_on:
+          type: string
+          format: date
+        grace_months:
+          type: integer
+        fee:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+          description: The principal.
+        owed:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+          description: The principal still owed.
+        paid_principal:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        interest_paid:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        interest_left:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        next:
+          allOf:
+          - $ref: '#/components/schemas/FinanceLoanLine'
+          nullable: true
+        overdue_count:
+          type: integer
+        overdue_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        payments_left:
+          type: integer
+        payments:
+          type: integer
+      required:
+      - account
+      - amount
+      - annual_rate
+      - basis
+      - branch
+      - counterparty
+      - currency
+      - debt_id
+      - description
+      - direction
+      - direction_label
+      - ends_on
+      - fee
+      - first_due_on
+      - grace_months
+      - id
+      - interest_left
+      - interest_paid
+      - is_opening
+      - issued_on
+      - method
+      - method_label
+      - next
+      - overdue_amount
+      - overdue_count
+      - owed
+      - paid_principal
+      - payments
+      - payments_left
+      - status
+      - term_months
+    FinanceLoanBasisEnum:
+      enum:
+      - monthly
+      - actual
+      type: string
+      description: |-
+        * `monthly` - A twelfth of the annual rate each month
+        * `actual` - By the actual days, out of 365
+    FinanceLoanCreateRequest:
+      type: object
+      description: The terms a schedule is made from (or the typed rows of the bank's
+        own schedule).
+      properties:
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        currency:
+          allOf:
+          - $ref: '#/components/schemas/CurrencyEnum'
+          default: UZS
+        issued_on:
+          type: string
+          format: date
+        annual_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,3})?$
+          default: '0.000'
+        method:
+          allOf:
+          - $ref: '#/components/schemas/FinanceLoanMethodEnum'
+          default: annuity
+        basis:
+          allOf:
+          - $ref: '#/components/schemas/FinanceLoanBasisEnum'
+          default: monthly
+        term_months:
+          type: integer
+          maximum: 600
+          minimum: 1
+          default: 12
+        first_due_on:
+          type: string
+          format: date
+          nullable: true
+        grace_months:
+          type: integer
+          maximum: 120
+          minimum: 0
+          default: 0
+        fee:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          default: '0.00'
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/FinanceLoanScheduleRowRequest'
+        direction:
+          allOf:
+          - $ref: '#/components/schemas/FinanceDebtDirectionEnum'
+          default: payable
+        counterparty:
+          type: integer
+        account:
+          type: integer
+          nullable: true
+          description: 'Where the money arrived (or left from). Empty: a loan from
+            before the books.'
+        branch:
+          type: integer
+          nullable: true
+        responsible:
+          type: integer
+          nullable: true
+        description:
+          type: string
+          maxLength: 300
+      required:
+      - amount
+      - counterparty
+      - issued_on
+    FinanceLoanDetail:
+      type: object
+      properties:
+        loan:
+          $ref: '#/components/schemas/FinanceLoan'
+        schedule:
+          type: array
+          items:
+            $ref: '#/components/schemas/FinanceLoanLine'
+        payments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Transaction'
+        can_pay:
+          type: boolean
+        can_edit_schedule:
+          type: boolean
+          description: 'Nothing paid yet: terms can change.'
+        can_undo:
+          type: boolean
+      required:
+      - can_edit_schedule
+      - can_pay
+      - can_undo
+      - loan
+      - payments
+      - schedule
+    FinanceLoanEarlyModeEnum:
+      enum:
+      - payment
+      - term
+      type: string
+      description: |-
+        * `payment` - payment
+        * `term` - term
+    FinanceLoanEarlyRequest:
+      type: object
+      properties:
+        account:
+          type: integer
+        paid_on:
+          type: string
+          format: date
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        interest:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          default: '0.00'
+        mode:
+          allOf:
+          - $ref: '#/components/schemas/FinanceLoanEarlyModeEnum'
+          default: payment
+      required:
+      - account
+      - amount
+      - paid_on
+    FinanceLoanLine:
+      type: object
+      description: One payment of the schedule and what is paid of it.
+      properties:
+        id:
+          type: integer
+        position:
+          type: integer
+        due_on:
+          type: string
+          format: date
+        principal:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        interest:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        payment:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        principal_paid:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        interest_paid:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        rest:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+          description: What is still to pay of it, principal and interest.
+        balance:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+          description: The principal still owed after it.
+        status:
+          $ref: '#/components/schemas/FinanceLoanLineStatusEnum'
+        early:
+          type: boolean
+      required:
+      - balance
+      - due_on
+      - early
+      - id
+      - interest
+      - interest_paid
+      - payment
+      - position
+      - principal
+      - principal_paid
+      - rest
+      - status
+    FinanceLoanLineStatusEnum:
+      enum:
+      - paid
+      - partial
+      - due
+      - overdue
+      type: string
+      description: |-
+        * `paid` - paid
+        * `partial` - partial
+        * `due` - due
+        * `overdue` - overdue
+    FinanceLoanList:
+      type: object
+      properties:
+        currency:
+          type: string
+          description: The base currency of the totals.
+        owed:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+          description: What the company owes on its loans, in the base currency.
+        owed_to_us:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+          description: What is owed to the company on loans it gave.
+        due_30:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+          description: Loan payments due in the next 30 days, in the base currency.
+        overdue:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+          description: Loan payments overdue, in the base currency.
+        loans:
+          type: array
+          items:
+            $ref: '#/components/schemas/FinanceLoan'
+      required:
+      - currency
+      - due_30
+      - loans
+      - overdue
+      - owed
+      - owed_to_us
+    FinanceLoanMethodEnum:
+      enum:
+      - annuity
+      - equal_principal
+      - custom
+      type: string
+      description: |-
+        * `annuity` - Equal payments (annuity)
+        * `equal_principal` - Equal principal, payments fall
+        * `custom` - The bank's own schedule
+    FinanceLoanPayRequest:
+      type: object
+      properties:
+        installment:
+          type: integer
+        account:
+          type: integer
+        paid_on:
+          type: string
+          format: date
+        principal:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        interest:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+      required:
+      - account
+      - installment
+      - paid_on
+    FinanceLoanPreview:
+      type: object
+      properties:
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/FinanceLoanPreviewRow'
+        totals:
+          $ref: '#/components/schemas/FinanceLoanPreviewTotals'
+        first_payment:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        effective_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+          description: Interest and fee per year of the loan's average life, in per
+            cent.
+      required:
+      - effective_rate
+      - first_payment
+      - rows
+      - totals
+    FinanceLoanPreviewRow:
+      type: object
+      properties:
+        position:
+          type: integer
+        due_on:
+          type: string
+          format: date
+        principal:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        interest:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        payment:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        balance:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+      required:
+      - balance
+      - due_on
+      - interest
+      - payment
+      - position
+      - principal
+    FinanceLoanPreviewTotals:
+      type: object
+      properties:
+        principal:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        interest:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        payments:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        fee:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+          description: 'Interest and the fee: what the loan costs.'
+      required:
+      - cost
+      - fee
+      - interest
+      - payments
+      - principal
+    FinanceLoanScheduleRowRequest:
+      type: object
+      properties:
+        due_on:
+          type: string
+          format: date
+        principal:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        interest:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          default: '0.00'
+      required:
+      - due_on
+      - principal
+    FinanceLoanScheduleUpdateRequest:
+      type: object
+      properties:
+        annual_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,3})?$
+        method:
+          $ref: '#/components/schemas/FinanceLoanMethodEnum'
+        basis:
+          $ref: '#/components/schemas/FinanceLoanBasisEnum'
+        term_months:
+          type: integer
+          maximum: 600
+          minimum: 1
+        first_due_on:
+          type: string
+          format: date
+        grace_months:
+          type: integer
+          maximum: 120
+          minimum: 0
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/FinanceLoanScheduleRowRequest'
+    FinanceLoanTermsRequest:
+      type: object
+      description: The terms a schedule is made from (or the typed rows of the bank's
+        own schedule).
+      properties:
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        currency:
+          allOf:
+          - $ref: '#/components/schemas/CurrencyEnum'
+          default: UZS
+        issued_on:
+          type: string
+          format: date
+        annual_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,3})?$
+          default: '0.000'
+        method:
+          allOf:
+          - $ref: '#/components/schemas/FinanceLoanMethodEnum'
+          default: annuity
+        basis:
+          allOf:
+          - $ref: '#/components/schemas/FinanceLoanBasisEnum'
+          default: monthly
+        term_months:
+          type: integer
+          maximum: 600
+          minimum: 1
+          default: 12
+        first_due_on:
+          type: string
+          format: date
+          nullable: true
+        grace_months:
+          type: integer
+          maximum: 120
+          minimum: 0
+          default: 0
+        fee:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          default: '0.00'
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/FinanceLoanScheduleRowRequest'
+      required:
+      - amount
+      - issued_on
+    FinanceLoanUndoRequest:
+      type: object
+      properties:
+        transaction:
+          type: integer
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 300
+      required:
+      - reason
+      - transaction
     FinanceOptions:
       type: object
       properties:
@@ -46598,6 +47679,30 @@ components:
         payroll_on:
           type: boolean
           readOnly: true
+        loan_remind_days:
+          type: integer
+          maximum: 30
+          minimum: 0
+          description: 'Days before a loan payment that owners are reminded. 0: on
+            the day only.'
+        tax_remind_days:
+          type: integer
+          maximum: 30
+          minimum: 0
+          description: 'Days before a tax deadline that owners are reminded. 0: on
+            the day only.'
+        owns_property:
+          type: boolean
+          description: 'The company owns buildings or premises: property tax is on
+            its calendar.'
+        owns_land:
+          type: boolean
+          description: 'The company holds land: land tax is on its calendar.'
+        turnover_tax_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          readOnly: true
       required:
       - approval_threshold
       - base_currency
@@ -46607,6 +47712,7 @@ components:
       - payroll_on
       - receipt_required_over
       - tax_regime_set
+      - turnover_tax_percent
       - vat_percent
     FinanceStatement:
       type: object
@@ -46689,6 +47795,453 @@ components:
         * `bank` - For a bank
         * `partner` - For a partner
         * `sale` - For selling the business
+    FinanceTaxCalendar:
+      type: object
+      properties:
+        today:
+          type: string
+          format: date
+        to:
+          type: string
+          format: date
+        currency:
+          type: string
+        regime:
+          type: string
+        regime_label:
+          type: string
+        profile:
+          $ref: '#/components/schemas/FinanceTaxProfile'
+        remind_days:
+          type: integer
+        warnings:
+          type: array
+          items:
+            type: string
+        deadlines:
+          type: array
+          items:
+            $ref: '#/components/schemas/FinanceTaxDeadline'
+        checked_on:
+          type: string
+          format: date
+        sources:
+          type: array
+          items:
+            $ref: '#/components/schemas/FinanceTaxSource'
+        disclaimer:
+          type: string
+        from:
+          type: string
+          format: date
+      required:
+      - checked_on
+      - currency
+      - deadlines
+      - disclaimer
+      - from
+      - profile
+      - regime
+      - regime_label
+      - remind_days
+      - sources
+      - to
+      - today
+      - warnings
+    FinanceTaxCandidate:
+      type: object
+      properties:
+        id:
+          type: integer
+        occurred_on:
+          type: string
+          format: date
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+          description: Money out, in the base currency (positive).
+        description:
+          type: string
+        account:
+          type: string
+        category:
+          type: string
+          nullable: true
+      required:
+      - account
+      - amount
+      - category
+      - description
+      - id
+      - occurred_on
+    FinanceTaxCompare:
+      type: object
+      properties:
+        to:
+          type: string
+          format: date
+        days:
+          type: integer
+        currency:
+          type: string
+        income:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        goods:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        expense:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        profit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        enough:
+          type: boolean
+          description: The books cover the whole twelve months.
+        threshold:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        threshold_law:
+          type: string
+        over_threshold:
+          type: boolean
+        regime:
+          type: string
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/FinanceTaxCompareOption'
+        assumptions:
+          type: array
+          items:
+            type: string
+        disclaimer:
+          type: string
+        from:
+          type: string
+          format: date
+      required:
+      - assumptions
+      - currency
+      - days
+      - disclaimer
+      - enough
+      - expense
+      - from
+      - goods
+      - income
+      - options
+      - over_threshold
+      - profit
+      - regime
+      - threshold
+      - threshold_law
+      - to
+    FinanceTaxCompareOption:
+      type: object
+      properties:
+        regime:
+          type: string
+        label:
+          type: string
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        parts:
+          type: array
+          items:
+            $ref: '#/components/schemas/FinanceTaxComparePart'
+        available:
+          type: boolean
+        why_not:
+          type: string
+        law:
+          type: string
+        current:
+          type: boolean
+        cheapest:
+          type: boolean
+      required:
+      - available
+      - cheapest
+      - current
+      - label
+      - law
+      - parts
+      - regime
+      - total
+      - why_not
+    FinanceTaxComparePart:
+      type: object
+      properties:
+        name:
+          type: string
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        formula:
+          type: string
+      required:
+      - amount
+      - formula
+      - name
+    FinanceTaxDeadline:
+      type: object
+      properties:
+        key:
+          type: string
+          description: <rule>:<period start>
+        rule:
+          type: string
+        tax:
+          type: string
+        tax_name:
+          type: string
+        name:
+          type: string
+        period:
+          $ref: '#/components/schemas/FinanceTaxDeadlinePeriodEnum'
+        period_start:
+          type: string
+          format: date
+        period_end:
+          type: string
+          format: date
+        period_label:
+          type: string
+        due_on:
+          type: string
+          format: date
+        action:
+          $ref: '#/components/schemas/FinanceTaxDeadlineActionEnum'
+        action_label:
+          type: string
+        estimate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        basis:
+          type: string
+          description: How the estimate is worked out.
+        booked:
+          type: boolean
+          description: The amount is a booked tax debt.
+        currency:
+          type: string
+        status:
+          $ref: '#/components/schemas/FinanceTaxDeadlineStatusEnum'
+        done_on:
+          type: string
+          format: date
+          nullable: true
+        mark_id:
+          type: integer
+          nullable: true
+        paid:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        transaction_id:
+          type: integer
+          nullable: true
+        debt_id:
+          type: integer
+          nullable: true
+        rule_id:
+          type: integer
+          nullable: true
+          description: The recurring tax bill.
+        rate:
+          type: string
+          nullable: true
+        law:
+          type: string
+        url:
+          type: string
+        confidence:
+          $ref: '#/components/schemas/ConfidenceEnum'
+        note:
+          type: string
+      required:
+      - action
+      - action_label
+      - basis
+      - booked
+      - confidence
+      - currency
+      - debt_id
+      - done_on
+      - due_on
+      - estimate
+      - key
+      - law
+      - mark_id
+      - name
+      - note
+      - paid
+      - period
+      - period_end
+      - period_label
+      - period_start
+      - rate
+      - rule
+      - rule_id
+      - status
+      - tax
+      - tax_name
+      - transaction_id
+      - url
+    FinanceTaxDeadlineActionEnum:
+      enum:
+      - file_pay
+      - file
+      - pay
+      type: string
+      description: |-
+        * `file_pay` - file_pay
+        * `file` - file
+        * `pay` - pay
+    FinanceTaxDeadlinePeriodEnum:
+      enum:
+      - month
+      - quarter
+      - year
+      type: string
+      description: |-
+        * `month` - month
+        * `quarter` - quarter
+        * `year` - year
+    FinanceTaxDeadlineStatusEnum:
+      enum:
+      - due
+      - overdue
+      - done
+      type: string
+      description: |-
+        * `due` - due
+        * `overdue` - overdue
+        * `done` - done
+    FinanceTaxMark:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        tax:
+          type: string
+          description: The rule's key in tax_rules.
+          maxLength: 32
+        kind:
+          $ref: '#/components/schemas/FinanceTaxMarkKindEnum'
+        period_start:
+          type: string
+          format: date
+        period_end:
+          type: string
+          format: date
+        due_on:
+          type: string
+          format: date
+        done_on:
+          type: string
+          format: date
+        transaction:
+          type: integer
+          nullable: true
+          description: The payment in the ledger.
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        note:
+          type: string
+          maxLength: 300
+      required:
+      - amount
+      - done_on
+      - due_on
+      - id
+      - kind
+      - period_end
+      - period_start
+      - tax
+    FinanceTaxMarkKindEnum:
+      enum:
+      - pay
+      - file
+      type: string
+      description: |-
+        * `pay` - Paid
+        * `file` - Filed
+    FinanceTaxMarkWriteRequest:
+      type: object
+      properties:
+        rule:
+          type: string
+          minLength: 1
+        period_start:
+          type: string
+          format: date
+        done_on:
+          type: string
+          format: date
+        transaction:
+          type: integer
+          nullable: true
+        account:
+          type: integer
+          nullable: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        note:
+          type: string
+          maxLength: 300
+      required:
+      - done_on
+      - period_start
+      - rule
+    FinanceTaxProfile:
+      type: object
+      properties:
+        payroll:
+          type: boolean
+        property:
+          type: boolean
+        land:
+          type: boolean
+        big_income:
+          type: boolean
+      required:
+      - big_income
+      - land
+      - payroll
+      - property
     FinanceTaxRegimeEnum:
       enum:
       - turnover
@@ -46699,6 +48252,16 @@ components:
         * `turnover` - Turnover tax
         * `vat` - VAT 12 %
         * `vat_simplified` - Simplified VAT 6 %
+    FinanceTaxSource:
+      type: object
+      properties:
+        label:
+          type: string
+        url:
+          type: string
+      required:
+      - label
+      - url
     FinanceTransactionKindEnum:
       enum:
       - income
@@ -50529,6 +52092,7 @@ components:
       - overdue_payables
       - stock_build
       - staff_cost
+      - loan_overdue
       - contracts_lease_ending
       type: string
       description: |-
@@ -50539,6 +52103,7 @@ components:
         * `overdue_payables` - Overdue bills to suppliers piling up
         * `stock_build` - Stock growing while sales fall
         * `staff_cost` - Staff cost share rising
+        * `loan_overdue` - A loan payment overdue
         * `contracts_lease_ending` - A lease ending, or a renewal to decide
     InsightsSensitivityEnum:
       enum:
@@ -50620,7 +52185,7 @@ components:
         paid:
           type: string
         status:
-          $ref: '#/components/schemas/InstallmentStatusEnum'
+          $ref: '#/components/schemas/FinanceLoanLineStatusEnum'
       required:
       - amount
       - due_on
@@ -50640,18 +52205,6 @@ components:
       required:
       - amount
       - due_on
-    InstallmentStatusEnum:
-      enum:
-      - paid
-      - partial
-      - due
-      - overdue
-      type: string
-      description: |-
-        * `paid` - paid
-        * `partial` - partial
-        * `due` - due
-        * `overdue` - overdue
     InstallmentsWriteRequest:
       type: object
       properties:
@@ -65437,6 +66990,16 @@ components:
           nullable: true
         credit_blocked:
           type: boolean
+        credit_days:
+          type: integer
+          maximum: 365
+          minimum: 1
+          nullable: true
+        credit_day:
+          type: integer
+          maximum: 31
+          minimum: 1
+          nullable: true
         birthday:
           type: string
           format: date
@@ -67914,6 +69477,22 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        loan_remind_days:
+          type: integer
+          maximum: 30
+          minimum: 0
+        tax_remind_days:
+          type: integer
+          maximum: 30
+          minimum: 0
+        owns_property:
+          type: boolean
+        owns_land:
+          type: boolean
+        turnover_tax_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
     PatchedShiftPatchRequest:
       type: object
       properties:
