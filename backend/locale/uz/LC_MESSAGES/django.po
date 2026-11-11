@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-12 01:13+0500\n"
+"POT-Creation-Date: 2026-11-12 02:38+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -285,9 +285,10 @@ msgid "Deadline"
 msgstr "Oxirgi muddat"
 
 #: backend/apps/agenda/models.py backend/apps/assets/models.py
-#: backend/apps/faceid/models.py backend/apps/finance/models.py
-#: backend/apps/hr/models.py backend/apps/inventory/models.py
-#: backend/apps/lifecycle/models.py backend/apps/sales/models.py
+#: backend/apps/contracts/models.py backend/apps/faceid/models.py
+#: backend/apps/finance/models.py backend/apps/hr/models.py
+#: backend/apps/inventory/models.py backend/apps/lifecycle/models.py
+#: backend/apps/sales/models.py
 msgid "Other"
 msgstr "Boshqa"
 
@@ -2406,10 +2407,11 @@ msgstr "%(status)s · %(total)d kishidan %(read)d tasi o‘qidi"
 msgid "Announcement: %(title)s · %(read)d of %(total)d read"
 msgstr "E’lon: %(title)s · %(total)d kishidan %(read)d tasi o‘qidi"
 
-#: backend/apps/announcements/models.py backend/apps/finance/models.py
-#: backend/apps/hr/models.py backend/apps/hr/policies/queries.py
-#: backend/apps/inventory/models.py backend/apps/knowledge/providers.py
-#: backend/apps/learning/models.py backend/apps/sales/models.py
+#: backend/apps/announcements/models.py backend/apps/contracts/models.py
+#: backend/apps/finance/models.py backend/apps/hr/models.py
+#: backend/apps/hr/policies/queries.py backend/apps/inventory/models.py
+#: backend/apps/knowledge/providers.py backend/apps/learning/models.py
+#: backend/apps/sales/models.py
 msgid "Draft"
 msgstr "Qoralama"
 
@@ -2532,17 +2534,18 @@ msgstr "E’lonning amal qilish muddati u yuborilgandan keyin tugashi kerak."
 
 #: backend/apps/announcements/services.py backend/apps/attendance/api.py
 #: backend/apps/attendance/services.py backend/apps/console/base.py
-#: backend/apps/davomat/owner_api.py backend/apps/davomat/services.py
-#: backend/apps/finance/api.py backend/apps/finance/claims.py
-#: backend/apps/hr/hiring/services.py backend/apps/hr/policies/services.py
-#: backend/apps/hr/services.py backend/apps/inbox/services.py
-#: backend/apps/inventory/api.py backend/apps/inventory/notify.py
-#: backend/apps/knowledge/owner_api.py backend/apps/lifecycle/job_changes.py
-#: backend/apps/lifecycle/reviews.py backend/apps/lifecycle/services.py
-#: backend/apps/lifecycle/terminations.py backend/apps/members/departments.py
-#: backend/apps/members/join_links.py backend/apps/members/services.py
-#: backend/apps/payroll/runs.py backend/apps/payroll/services.py
-#: backend/apps/sales/handlers.py backend/apps/timeoff/services.py
+#: backend/apps/contracts/notify.py backend/apps/davomat/owner_api.py
+#: backend/apps/davomat/services.py backend/apps/finance/api.py
+#: backend/apps/finance/claims.py backend/apps/hr/hiring/services.py
+#: backend/apps/hr/policies/services.py backend/apps/hr/services.py
+#: backend/apps/inbox/services.py backend/apps/inventory/api.py
+#: backend/apps/inventory/notify.py backend/apps/knowledge/owner_api.py
+#: backend/apps/lifecycle/job_changes.py backend/apps/lifecycle/reviews.py
+#: backend/apps/lifecycle/services.py backend/apps/lifecycle/terminations.py
+#: backend/apps/members/departments.py backend/apps/members/join_links.py
+#: backend/apps/members/services.py backend/apps/payroll/runs.py
+#: backend/apps/payroll/services.py backend/apps/sales/handlers.py
+#: backend/apps/timeoff/services.py
 #: employee_bot/bot/handlers/admin/approvals.py
 msgid "You don't have permission to do this."
 msgstr "Bunga ruxsatingiz yo‘q."
@@ -3191,10 +3194,11 @@ msgstr ""
 "kartasiga yozing."
 
 #: backend/apps/assets/owner_api.py backend/apps/assets/services.py
-#: backend/apps/attendance/owner_api.py backend/apps/davomat/owner_api.py
-#: backend/apps/faceid/owner_api.py backend/apps/hr/hiring/owner_api.py
-#: backend/apps/hr/owner_api.py backend/apps/insights/owner_api.py
-#: backend/apps/inventory/api.py backend/apps/inventory/owner_api.py
+#: backend/apps/attendance/owner_api.py backend/apps/contracts/owner_api.py
+#: backend/apps/davomat/owner_api.py backend/apps/faceid/owner_api.py
+#: backend/apps/hr/hiring/owner_api.py backend/apps/hr/owner_api.py
+#: backend/apps/insights/owner_api.py backend/apps/inventory/api.py
+#: backend/apps/inventory/owner_api.py
 #: backend/apps/learning/owner_api_courses.py
 #: backend/apps/lifecycle/equipment/owner_api.py
 #: backend/apps/lifecycle/owner_api.py backend/apps/payroll/owner_api.py
@@ -3202,13 +3206,14 @@ msgstr ""
 msgid "Give a number."
 msgstr "Son kiriting."
 
-#: backend/apps/assets/owner_api.py backend/apps/inventory/owner_api.py
+#: backend/apps/assets/owner_api.py backend/apps/contracts/owner_api.py
+#: backend/apps/inventory/owner_api.py
 #: backend/apps/lifecycle/equipment/owner_api.py
 msgid "Pick a branch you work with."
 msgstr "O‘zingiz ishlaydigan filialni tanlang."
 
-#: backend/apps/assets/owner_api.py backend/apps/learning/attempts.py
-#: backend/apps/lifecycle/review_owner_api.py
+#: backend/apps/assets/owner_api.py backend/apps/contracts/owner_api.py
+#: backend/apps/learning/attempts.py backend/apps/lifecycle/review_owner_api.py
 msgid "Pick someone of this company."
 msgstr "Shu kompaniya xodimini tanlang."
 
@@ -3243,7 +3248,8 @@ msgstr "Qaysi filialda turganini tanlang."
 msgid "Use its own action for this."
 msgstr "Buning uchun alohida amaldan foydalaning."
 
-#: backend/apps/assets/owner_api.py backend/apps/finance/owner_api.py
+#: backend/apps/assets/owner_api.py backend/apps/contracts/owner_api.py
+#: backend/apps/finance/owner_api.py
 msgid "Pick one of your accounts."
 msgstr "Hisoblaringizdan birini tanlang."
 
@@ -3267,7 +3273,7 @@ msgstr "Ko‘pi bilan besh yillik davrni tanlang."
 msgid "Pick the branch to count."
 msgstr "Inventarizatsiya qilinadigan filialni tanlang."
 
-#: backend/apps/assets/owner_api.py
+#: backend/apps/assets/owner_api.py backend/apps/contracts/owner_api.py
 msgid "Pick the branch it is for."
 msgstr "Qaysi filial uchunligini tanlang."
 
@@ -3373,17 +3379,18 @@ msgstr "Ism"
 msgid "Category"
 msgstr "Toifa"
 
-#: backend/apps/assets/providers.py backend/apps/finance/exporters.py
-#: backend/apps/inventory/providers.py
+#: backend/apps/assets/providers.py backend/apps/contracts/providers.py
+#: backend/apps/finance/exporters.py backend/apps/inventory/providers.py
 #: backend/apps/inventory/templates/inventory/rx_journal.html
 #: backend/apps/tasks/hooks.py
 msgid "Kind"
 msgstr "Turi"
 
 #: backend/apps/assets/providers.py backend/apps/attendance/providers.py
-#: backend/apps/attendance/reports.py backend/apps/davomat/importing.py
-#: backend/apps/finance/exporters.py backend/apps/hr/policies/exporters.py
-#: backend/apps/lifecycle/review_hooks.py backend/apps/payroll/providers.py
+#: backend/apps/attendance/reports.py backend/apps/contracts/providers.py
+#: backend/apps/davomat/importing.py backend/apps/finance/exporters.py
+#: backend/apps/hr/policies/exporters.py backend/apps/lifecycle/review_hooks.py
+#: backend/apps/payroll/providers.py
 #: backend/apps/payroll/templates/payroll/payslip.html
 #: backend/apps/sales/hooks.py backend/apps/tasks/feeds.py
 #: backend/apps/tasks/hooks.py
@@ -3392,7 +3399,8 @@ msgid "Branch"
 msgstr "Filial"
 
 #: backend/apps/assets/providers.py backend/apps/attendance/providers.py
-#: backend/apps/davomat/importing.py backend/apps/finance/exporters.py
+#: backend/apps/contracts/providers.py backend/apps/davomat/importing.py
+#: backend/apps/finance/exporters.py
 #: backend/apps/finance/templates/finance/statements/partners.html
 #: backend/apps/hr/policies/exporters.py backend/apps/inventory/providers.py
 #: backend/apps/members/providers.py backend/apps/payroll/providers.py
@@ -3544,7 +3552,9 @@ msgstr "Toifaga nom bering."
 msgid "There is already a category with this name."
 msgstr "Bunday nomli toifa allaqachon bor."
 
-#: backend/apps/assets/services.py backend/apps/lifecycle/equipment/services.py
+#: backend/apps/assets/services.py backend/apps/contracts/owner_api.py
+#: backend/apps/contracts/services.py
+#: backend/apps/lifecycle/equipment/services.py
 msgid "Pick a kind from the list."
 msgstr "Ro‘yxatdan turini tanlang."
 
@@ -3660,7 +3670,7 @@ msgstr "Vositaga nom bering."
 msgid "Price"
 msgstr "Narxi"
 
-#: backend/apps/assets/services.py
+#: backend/apps/assets/services.py backend/apps/contracts/services.py
 msgid "Pick a currency from the list."
 msgstr "Ro‘yxatdan valyutani tanlang."
 
@@ -3789,7 +3799,8 @@ msgstr "Yaxshilash qiymatini kiriting."
 msgid "The amount must be the whole expense."
 msgstr "Summa butun xarajatga teng bo‘lishi kerak."
 
-#: backend/apps/assets/services.py backend/apps/finance/exporters.py
+#: backend/apps/assets/services.py backend/apps/contracts/providers.py
+#: backend/apps/finance/exporters.py
 #: backend/apps/finance/templates/finance/statements/loans.html
 #: backend/apps/finance/templates/finance/statements/notes.html
 #: backend/apps/finance/templates/finance/statements/partners.html
@@ -3910,7 +3921,7 @@ msgstr "Ro‘yxatdan natijani tanlang."
 msgid "Not found in the count of %(day)s."
 msgstr "%(day)s inventarizatsiyasida topilmadi."
 
-#: backend/apps/assets/services.py
+#: backend/apps/assets/services.py backend/apps/contracts/services.py
 msgid "Warn 1 to 365 days ahead."
 msgstr "Ogohlantirish muddati: 1–365 kun."
 
@@ -6630,8 +6641,8 @@ msgstr "Ijtimoiy dorixona: cheklangan dorilarni ham saqlashi mumkin."
 msgid "In an area where some medicines are dispensed only by e-prescription."
 msgstr "Ba’zi dorilar faqat elektron retsept bilan beriladigan hududda."
 
-#: backend/apps/companies/models.py backend/apps/finance/models.py
-#: backend/apps/members/models.py
+#: backend/apps/companies/models.py backend/apps/contracts/services.py
+#: backend/apps/finance/models.py backend/apps/members/models.py
 msgid "Must belong to the same company."
 msgstr "Xuddi shu kompaniyaga tegishli bo‘lishi kerak."
 
@@ -6866,6 +6877,647 @@ msgstr "Bu ko‘rinishda ma’lumot juda ko‘p, uni saqlab bo‘lmaydi."
 #: backend/apps/console/services.py
 msgid "You already have a view with this name here."
 msgstr "Bu yerda shu nomli ko‘rinishingiz allaqachon bor."
+
+#: backend/apps/contracts/ai_tools.py
+msgid ""
+"Business contracts: leases, suppliers, services, licences and insurance, who "
+"with, until when, the notice deadlines of those that renew by themselves, "
+"what they cost a month, and which end soon"
+msgstr ""
+"Biznes shartnomalari: ijara, yetkazib beruvchilar, xizmatlar, litsenziyalar "
+"va sug‘urta; kim bilan, qachongacha, o‘zi uzayadiganlarning ogohlantirish "
+"muddatlari, oylik narxi va qaysilari tez orada tugaydi"
+
+#: backend/apps/contracts/audit_actions.py
+msgid "Added a contract"
+msgstr "Shartnoma qo‘shdi"
+
+#: backend/apps/contracts/audit_actions.py backend/apps/hr/audit_actions.py
+msgid "Changed a contract"
+msgstr "Shartnomani o‘zgartirdi"
+
+#: backend/apps/contracts/audit_actions.py backend/apps/hr/audit_actions.py
+msgid "Renewed a contract"
+msgstr "Shartnomani uzaytirdi"
+
+#: backend/apps/contracts/audit_actions.py backend/apps/hr/audit_actions.py
+msgid "Terminated a contract"
+msgstr "Shartnomani bekor qildi"
+
+#: backend/apps/contracts/audit_actions.py
+msgid "A contract's status changed"
+msgstr "Shartnoma holati o‘zgardi"
+
+#: backend/apps/contracts/audit_actions.py
+msgid "Deleted a contract"
+msgstr "Shartnomani o‘chirdi"
+
+#: backend/apps/contracts/audit_actions.py
+msgid "Added a contract file"
+msgstr "Shartnomaga fayl qo‘shdi"
+
+#: backend/apps/contracts/audit_actions.py
+msgid "Removed a contract file"
+msgstr "Shartnoma faylini o‘chirdi"
+
+#: backend/apps/contracts/audit_actions.py
+msgid "Changed the contract reminders"
+msgstr "Shartnoma eslatmalarini o‘zgartirdi"
+
+#: backend/apps/contracts/hooks.py
+msgid "Contracts that end or renew: leases, suppliers, services"
+msgstr ""
+"Tugaydigan yoki uzayadigan shartnomalar: ijara, yetkazib beruvchilar, "
+"xizmatlar"
+
+#: backend/apps/contracts/hooks.py
+msgid "Contract renewals"
+msgstr "Shartnomalarni uzaytirish"
+
+#: backend/apps/contracts/hooks.py
+msgid "Contract notice deadlines: keep renewing or give notice"
+msgstr "Shartnomalarni ogohlantirish muddatlari: uzaytirish yoki ogohlantirish"
+
+#: backend/apps/contracts/hooks.py
+msgid "Add your leases and contracts"
+msgstr "Ijara va shartnomalaringizni qo‘shing"
+
+#: backend/apps/contracts/hooks.py
+msgid ""
+"The pharmacy leases and the main supplier and service contracts: the scans in"
+" one place, the rent in the cash forecast, and a reminder before each one "
+"ends."
+msgstr ""
+"Dorixonalar ijarasi, asosiy yetkazib beruvchi va xizmat shartnomalari: "
+"nusxalari bir joyda, ijara pul prognozida, har biri tugashidan oldin eslatma."
+
+#: backend/apps/contracts/hooks.py
+msgid "Contracts register"
+msgstr "Shartnomalar reyestri"
+
+#: backend/apps/contracts/hooks.py backend/apps/contracts/providers.py
+msgid "Contracts"
+msgstr "Shartnomalar"
+
+#: backend/apps/contracts/models.py
+msgid "Days before a contract ends to warn."
+msgstr "Shartnoma tugashidan necha kun oldin ogohlantirish."
+
+#: backend/apps/contracts/models.py
+msgid "Days before the notice deadline of an auto-renewing contract to warn."
+msgstr ""
+"O‘zi uzayadigan shartnomaning ogohlantirish muddatidan necha kun oldin "
+"eslatish."
+
+#: backend/apps/contracts/models.py
+msgid "Lease"
+msgstr "Ijara"
+
+#: backend/apps/contracts/models.py
+msgid "Supply"
+msgstr "Yetkazib berish"
+
+#: backend/apps/contracts/models.py backend/apps/inventory/models.py
+msgid "Service"
+msgstr "Xizmat"
+
+#: backend/apps/contracts/models.py
+msgid "Licence or franchise"
+msgstr "Litsenziya yoki franshiza"
+
+#: backend/apps/contracts/models.py
+msgid "Insurance"
+msgstr "Sug‘urta"
+
+#: backend/apps/contracts/models.py backend/apps/finance/models.py
+msgid "Monthly"
+msgstr "Har oy"
+
+#: backend/apps/contracts/models.py backend/apps/finance/models.py
+msgid "Quarterly"
+msgstr "Har chorakda"
+
+#: backend/apps/contracts/models.py backend/apps/finance/models.py
+msgid "Yearly"
+msgstr "Har yili"
+
+#: backend/apps/contracts/models.py backend/apps/payroll/models.py
+msgid "Once"
+msgstr "Bir marta"
+
+#: backend/apps/contracts/models.py backend/apps/davomat/importing.py
+#: backend/apps/goals/models.py backend/apps/learning/models.py
+#: backend/apps/members/models.py backend/apps/projects/models.py
+msgid "Active"
+msgstr "Faol"
+
+#: backend/apps/contracts/models.py
+msgid "Ending"
+msgstr "Tugayapti"
+
+#: backend/apps/contracts/models.py backend/apps/hr/models.py
+msgid "Ended"
+msgstr "Tugagan"
+
+#: backend/apps/contracts/models.py backend/apps/hr/models.py
+msgid "Terminated"
+msgstr "Bekor qilingan"
+
+#: backend/apps/contracts/models.py backend/apps/goals/models.py
+msgid "Empty: the whole company."
+msgstr "Bo‘sh bo‘lsa, butun kompaniya."
+
+#: backend/apps/contracts/models.py
+msgid "The last day in force. Empty: no end date."
+msgstr "Amal qiladigan oxirgi kun. Bo‘sh: muddatsiz."
+
+#: backend/apps/contracts/models.py
+msgid "Renews by itself unless one side gives notice."
+msgstr "Tomonlardan biri ogohlantirmasa, o‘zi uzayadi."
+
+#: backend/apps/contracts/models.py
+msgid "How long each renewal lasts, in months."
+msgstr "Har bir uzaytirish necha oy davom etadi."
+
+#: backend/apps/contracts/models.py
+msgid "How many days before the end notice must be given."
+msgstr "Tugashidan necha kun oldin ogohlantirish kerak."
+
+#: backend/apps/contracts/models.py
+msgid "The day of the month it is paid, 1 to 31."
+msgstr "Oyning to‘lov kuni, 1–31."
+
+#: backend/apps/contracts/models.py
+msgid "Who looks after it; they hear about its dates too."
+msgstr "Kim mas’ul; muddatlari haqida u ham xabar oladi."
+
+#: backend/apps/contracts/models.py
+msgid ""
+"Its payment is a recurring payment in Finance, so the cash forecast sees it."
+msgstr ""
+"To‘lovi Moliyada takroriy to‘lov sifatida turadi, shuning uchun pul prognozi "
+"uni ko‘radi."
+
+#: backend/apps/contracts/models.py
+msgid "When its end date last moved on (by itself or by hand)."
+msgstr "Tugash sanasi oxirgi marta qachon surilgan (o‘zi yoki qo‘lda)."
+
+#: backend/apps/contracts/models.py
+msgid "The end date whose renewal the owner confirmed: the decision is made."
+msgstr "Egasi uzaytirishni tasdiqlagan tugash sanasi: qaror qabul qilingan."
+
+#: backend/apps/contracts/models.py
+msgid "Signed contract"
+msgstr "Imzolangan shartnoma"
+
+#: backend/apps/contracts/models.py
+msgid "Annex"
+msgstr "Qo‘shimcha kelishuv"
+
+#: backend/apps/contracts/models.py
+msgid "Other document"
+msgstr "Boshqa hujjat"
+
+#: backend/apps/contracts/notify.py
+#, python-format
+msgid "Contract ends today: %(contract)s"
+msgstr "Shartnoma bugun tugaydi: %(contract)s"
+
+#: backend/apps/contracts/notify.py
+#, python-format
+msgid "Contract ends %(day)s: %(contract)s"
+msgstr "Shartnoma tugaydi, %(day)s: %(contract)s"
+
+#: backend/apps/contracts/notify.py
+msgid "Today is its last day. Renewed it? Put the new end date on its page."
+msgstr ""
+"Bugun oxirgi kuni. Uzaytirdingizmi? Yangi tugash sanasini shartnoma "
+"sahifasiga kiriting."
+
+#: backend/apps/contracts/notify.py
+#, python-format
+msgid ""
+"%(count)d day left. Agree the renewal with the landlord in time, or plan the "
+"move."
+msgid_plural ""
+"%(count)d days left. Agree the renewal with the landlord in time, or plan the"
+" move."
+msgstr[0] ""
+"%(count)d kun qoldi. Bino egasi bilan uzaytirishni o‘z vaqtida kelishing yoki"
+" ko‘chishni rejalashtiring."
+
+#: backend/apps/contracts/notify.py
+#, python-format
+msgid "%(count)d day left. Renew it or find a new one in time."
+msgid_plural "%(count)d days left. Renew it or find a new one in time."
+msgstr[0] "%(count)d kun qoldi. O‘z vaqtida uzaytiring yoki yangisini toping."
+
+#: backend/apps/contracts/notify.py
+#, python-format
+msgid "Notice deadline today: %(contract)s"
+msgstr "Ogohlantirish muddati bugun: %(contract)s"
+
+#: backend/apps/contracts/notify.py
+#, python-format
+msgid "Notice deadline %(day)s: %(contract)s"
+msgstr "Ogohlantirish muddati %(day)s: %(contract)s"
+
+#: backend/apps/contracts/notify.py
+#, python-format
+msgid ""
+"Last day to give notice. Otherwise it renews by itself after %(renews)s."
+msgstr ""
+"Ogohlantirishning oxirgi kuni. Aks holda o‘zi uzayadi. Joriy muddat: "
+"%(renews)s."
+
+#: backend/apps/contracts/notify.py
+#, python-format
+msgid ""
+"It renews by itself after %(renews)s. If you don't want that, tell %(party)s "
+"in writing by %(day)s."
+msgstr ""
+"Muddati: %(renews)s. Shundan keyin o‘zi uzayadi. Buni istamasangiz, yozma "
+"ogohlantiring. Kimni: %(party)s. Oxirgi muddat: %(day)s."
+
+#: backend/apps/contracts/notify.py
+#, python-format
+msgid ""
+"It renews by itself after %(renews)s. If you don't want that, tell the other "
+"side in writing by %(day)s."
+msgstr ""
+"Muddati: %(renews)s. Shundan keyin o‘zi uzayadi. Buni istamasangiz, ikkinchi "
+"tomonni yozma ogohlantiring. Oxirgi muddat: %(day)s."
+
+#: backend/apps/contracts/notify.py backend/apps/contracts/providers.py
+msgid "Keep it renewing"
+msgstr "Uzayaversin"
+
+#: backend/apps/contracts/notify.py backend/apps/contracts/providers.py
+msgid "We give notice"
+msgstr "Ogohlantiramiz"
+
+#: backend/apps/contracts/notify.py
+#, python-format
+msgid "Renewed by itself: %(contract)s"
+msgstr "O‘zi uzaydi: %(contract)s"
+
+#: backend/apps/contracts/notify.py
+#, python-format
+msgid "It now runs until %(day)s."
+msgstr "Yangi muddat: %(day)s."
+
+#: backend/apps/contracts/notify.py
+msgid "This contract was deleted."
+msgstr "Bu shartnoma o‘chirilgan."
+
+#: backend/apps/contracts/notify.py
+#, python-format
+msgid "It keeps renewing: until %(day)s, then on."
+msgstr "Shartnoma uzayaveradi. Joriy muddat: %(day)s, keyin yana uzayadi."
+
+#: backend/apps/contracts/notify.py
+#, python-format
+msgid "Noted: it ends on %(day)s. Tell the other side in writing."
+msgstr ""
+"Qayd etildi. Oxirgi kuni: %(day)s. Ikkinchi tomonni yozma ogohlantiring."
+
+#: backend/apps/contracts/owner_api.py
+msgid "Pick a status from the list."
+msgstr "Holatni ro‘yxatdan tanlang."
+
+#: backend/apps/contracts/owner_api.py
+msgid "Give the contract a name."
+msgstr "Shartnomaga nom bering."
+
+#: backend/apps/contracts/owner_api.py
+msgid "Pick a counterparty of this company."
+msgstr "Shu kompaniyaning tomonini tanlang."
+
+#: backend/apps/contracts/owner_api.py backend/apps/finance/api.py
+#: backend/apps/finance/claims.py backend/apps/finance/services.py
+#: backend/apps/projects/services.py
+msgid "Pick an expense category."
+msgstr "Xarajat toifasini tanlang."
+
+#: backend/apps/contracts/owner_api.py
+msgid "Pick one of your recurring payments."
+msgstr "Takroriy to‘lovlaringizdan birini tanlang."
+
+#: backend/apps/contracts/providers.py
+#, python-format
+msgid "Contract renews: %(contract)s"
+msgstr "Shartnoma uzayadi: %(contract)s"
+
+#: backend/apps/contracts/providers.py
+#, python-format
+msgid "Contract ends: %(contract)s"
+msgstr "Shartnoma tugaydi: %(contract)s"
+
+#: backend/apps/contracts/providers.py
+#, python-format
+msgid "Notice deadline: %(contract)s"
+msgstr "Ogohlantirish muddati: %(contract)s"
+
+#: backend/apps/contracts/providers.py
+#, python-format
+msgid "Notice by %(day)s, or it renews after %(renews)s"
+msgstr ""
+"Ogohlantirish muddati: %(day)s. Aks holda o‘zi uzayadi, joriy muddat: "
+"%(renews)s"
+
+#: backend/apps/contracts/providers.py
+#, python-format
+msgid "%(contract)s: notice deadline %(day)s"
+msgstr "%(contract)s: ogohlantirish muddati %(day)s"
+
+#: backend/apps/contracts/providers.py
+#, python-format
+msgid "%(contract)s ends %(day)s"
+msgstr "%(contract)s: tugaydi, %(day)s"
+
+#: backend/apps/contracts/providers.py
+#, python-format
+msgid "And %(count)d more contract"
+msgid_plural "And %(count)d more contracts"
+msgstr[0] "Yana shartnomalar: %(count)d"
+
+#: backend/apps/contracts/providers.py backend/apps/hr/models.py
+msgid "Contract"
+msgstr "Shartnoma"
+
+#: backend/apps/contracts/providers.py
+msgid "Party"
+msgstr "Tomon"
+
+#: backend/apps/contracts/providers.py backend/apps/hr/models.py
+#: backend/apps/learning/models.py
+msgid "Number"
+msgstr "Son"
+
+#: backend/apps/contracts/providers.py backend/apps/hr/policies/exporters.py
+msgid "Signed"
+msgstr "Imzolangan"
+
+#: backend/apps/contracts/providers.py
+msgid "Starts"
+msgstr "Boshlanadi"
+
+#: backend/apps/contracts/providers.py
+msgid "Ends"
+msgstr "Tugaydi"
+
+#: backend/apps/contracts/providers.py
+msgid "Renews by itself"
+msgstr "O‘zi uzayadi"
+
+#: backend/apps/contracts/providers.py
+msgid "Notice deadline"
+msgstr "Ogohlantirish muddati"
+
+#: backend/apps/contracts/providers.py backend/apps/finance/exporters.py
+#: backend/apps/payroll/providers.py backend/apps/sales/hooks.py
+msgid "Currency"
+msgstr "Valyuta"
+
+#: backend/apps/contracts/providers.py backend/apps/finance/exporters.py
+#: backend/apps/finance/models.py backend/apps/sales/hooks.py
+#: backend/apps/sales/models.py
+msgid "Paid"
+msgstr "To‘langan"
+
+#: backend/apps/contracts/providers.py
+msgid "A month"
+msgstr "Oyiga"
+
+#: backend/apps/contracts/providers.py
+msgid "In the cash forecast"
+msgstr "Pul prognozida"
+
+#: backend/apps/contracts/providers.py
+msgid "Looks after it"
+msgstr "Mas’ul"
+
+#: backend/apps/contracts/providers.py
+msgid "Files"
+msgstr "Fayllar"
+
+#: backend/apps/contracts/providers.py backend/apps/finance/statement_pack.py
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "Notes"
+msgstr "Izoh"
+
+#: backend/apps/contracts/providers.py
+#, python-format
+msgid "Rent: %(amount)s a month."
+msgstr "Ijara: oyiga %(amount)s."
+
+#: backend/apps/contracts/providers.py
+#, python-format
+msgid "Rent: %(amount)s a quarter."
+msgstr "Ijara: chorakda %(amount)s."
+
+#: backend/apps/contracts/providers.py
+#, python-format
+msgid "Rent: %(amount)s a year."
+msgstr "Ijara: yiliga %(amount)s."
+
+#: backend/apps/contracts/providers.py
+#, python-format
+msgid "Lease renewal to decide in %(count)d day: %(lease)s"
+msgid_plural "Lease renewal to decide in %(count)d days: %(lease)s"
+msgstr[0] "Ijarani uzaytirish bo‘yicha qarorga %(count)d kun qoldi: %(lease)s"
+
+#: backend/apps/contracts/providers.py
+#, python-format
+msgid ""
+"It renews by itself after %(day)s unless you give notice by %(deadline)s."
+msgstr ""
+"Muddati: %(day)s. Ogohlantirmasangiz, shundan keyin o‘zi uzayadi. "
+"Ogohlantirish muddati: %(deadline)s."
+
+#: backend/apps/contracts/providers.py
+msgid "Decide now: keep it, ask for a better rent, or give notice in writing."
+msgstr ""
+"Hozir qaror qiling: qoldirish, ijarani arzonlashtirishni so‘rash yoki yozma "
+"ogohlantirish."
+
+#: backend/apps/contracts/providers.py
+#, python-format
+msgid "Lease ends in %(count)d day: %(lease)s"
+msgid_plural "Lease ends in %(count)d days: %(lease)s"
+msgstr[0] "Ijara tugashiga %(count)d kun qoldi: %(lease)s"
+
+#: backend/apps/contracts/providers.py
+#, python-format
+msgid "The lease with %(party)s ends on %(day)s."
+msgstr "Ijara shartnomasi tugaydi. Tomon: %(party)s, oxirgi kuni: %(day)s."
+
+#: backend/apps/contracts/providers.py
+#, python-format
+msgid "The lease ends on %(day)s."
+msgstr "Ijara tugaydi. Oxirgi kuni: %(day)s."
+
+#: backend/apps/contracts/providers.py
+msgid ""
+"Agree the renewal with the landlord now, or start looking for a new place: a "
+"move takes time."
+msgstr ""
+"Bino egasi bilan uzaytirishni hozir kelishing yoki yangi joy qidirishni "
+"boshlang: ko‘chish vaqt oladi."
+
+#: backend/apps/contracts/services.py
+msgid "Only a contract that is or was in force can be renewed."
+msgstr "Faqat amalda bo‘lgan shartnomani uzaytirish mumkin."
+
+#: backend/apps/contracts/services.py
+msgid "Pick the new end date."
+msgstr "Yangi tugash sanasini tanlang."
+
+#: backend/apps/contracts/services.py
+msgid "The new end date must be after the current one."
+msgstr "Yangi tugash sanasi hozirgisidan keyin bo‘lishi kerak."
+
+#: backend/apps/contracts/services.py backend/apps/finance/recurring.py
+msgid "It can't end before it starts."
+msgstr "Tugash kuni boshlanishdan oldin bo‘lishi mumkin emas."
+
+#: backend/apps/contracts/services.py
+msgid "The new end date has already passed."
+msgstr "Yangi tugash sanasi allaqachon o‘tib ketgan."
+
+#: backend/apps/contracts/services.py
+msgid "This contract doesn't renew by itself."
+msgstr "Bu shartnoma o‘zi uzaymaydi."
+
+#: backend/apps/contracts/services.py
+msgid "This contract is no longer in force."
+msgstr "Bu shartnoma endi amalda emas."
+
+#: backend/apps/contracts/services.py
+msgid "Only a contract in force can be terminated."
+msgstr "Faqat amaldagi shartnomani bekor qilish mumkin."
+
+#: backend/apps/contracts/services.py
+msgid "Pick the day it ends."
+msgstr "Tugash kunini tanlang."
+
+#: backend/apps/contracts/services.py
+#, python-format
+msgid "It ends on %(day)s anyway."
+msgstr "U baribir tugaydi. Oxirgi kuni: %(day)s."
+
+#: backend/apps/contracts/services.py
+msgid "Pick what the file is from the list."
+msgstr "Fayl turini ro‘yxatdan tanlang."
+
+#: backend/apps/contracts/services.py
+#, python-format
+msgid "A contract keeps at most %(count)d files: remove one first."
+msgstr "Fayllar soni: ko‘pi bilan %(count)d. Avval bittasini o‘chiring."
+
+#: backend/apps/contracts/services.py
+msgid "Warn about a notice deadline 1 to 180 days ahead."
+msgstr "Ogohlantirish muddati haqida 1–180 kun oldin eslating."
+
+#: backend/apps/contracts/services.py
+msgid "This contract already has its recurring payment."
+msgstr "Bu shartnomaning takroriy to‘lovi allaqachon bor."
+
+#: backend/apps/contracts/services.py
+msgid ""
+"Only a contract in force with its payment in the forecast can take one over."
+msgstr ""
+"Takroriy to‘lovni faqat to‘lovi prognozga qo‘shilgan amaldagi shartnoma "
+"o‘ziga olishi mumkin."
+
+#: backend/apps/contracts/services.py
+msgid "Switch Finance on to put this payment in the cash forecast."
+msgstr "Bu to‘lovni pul prognoziga qo‘shish uchun Moliyani yoqing."
+
+#: backend/apps/contracts/services.py
+msgid ""
+"Give the amount and how often it is paid to put it in the cash forecast."
+msgstr ""
+"Pul prognoziga qo‘shish uchun summani va qanchalik tez-tez to‘lanishini "
+"kiriting."
+
+#: backend/apps/contracts/services.py
+msgid "Pick a recurring payment of this company."
+msgstr "Shu kompaniyaning takroriy to‘lovini tanlang."
+
+#: backend/apps/contracts/services.py
+msgid "That recurring payment belongs to another contract."
+msgstr "Bu takroriy to‘lov boshqa shartnomaga tegishli."
+
+#: backend/apps/contracts/services.py
+#, python-format
+msgid "The recurring payment is in %(currency)s, like its account."
+msgstr "Takroriy to‘lov valyutasi hisobniki bilan bir xil: %(currency)s."
+
+#: backend/apps/contracts/services.py backend/apps/finance/recurring.py
+#: backend/apps/finance/services.py backend/apps/payroll/finance_bridge.py
+#, python-format
+msgid "%(account)s holds %(currency)s."
+msgstr "«%(account)s» hisobining valyutasi — %(currency)s."
+
+#: backend/apps/contracts/services.py
+msgid "Pick the expense category of this payment."
+msgstr "Bu to‘lovning xarajat turkumini tanlang."
+
+#: backend/apps/contracts/services.py
+#, python-format
+msgid "Add a %(currency)s account in Finance first: the rent is paid from it."
+msgstr ""
+"Avval Moliyada hisob qo‘shing (valyuta: %(currency)s): ijara undan to‘lanadi."
+
+#: backend/apps/contracts/services.py backend/apps/finance/recurring.py
+#: backend/apps/tasks/services.py
+msgid "Pick someone who works here."
+msgstr "Shu yerda ishlaydigan odamni tanlang."
+
+#: backend/apps/contracts/services.py
+msgid ""
+"A contract is drafted or made active by hand; the rest follows its dates."
+msgstr ""
+"Shartnoma qo‘lda faqat qoralama yoki amalda qilinadi; qolgani sanalariga "
+"qarab o‘zgaradi."
+
+#: backend/apps/contracts/services.py
+msgid "Give the contract a name, like Lease of the Chilonzor pharmacy."
+msgstr "Shartnomaga nom bering, masalan: Chilonzor dorixonasi ijarasi."
+
+#: backend/apps/contracts/services.py
+msgid "Pick how often it is paid."
+msgstr "Qanchalik tez-tez to‘lanishini tanlang."
+
+#: backend/apps/contracts/services.py
+msgid "The amount can't be negative."
+msgstr "Summa manfiy bo‘lmaydi."
+
+#: backend/apps/contracts/services.py backend/apps/finance/recurring.py
+msgid "Pick a day of the month from 1 to 31."
+msgstr "Oyning kunini tanlang: 1–31."
+
+#: backend/apps/contracts/services.py
+msgid "Notice is 0 to 365 days."
+msgstr "Ogohlantirish muddati 0–365 kun."
+
+#: backend/apps/contracts/services.py
+msgid "A renewal lasts 1 to 120 months."
+msgstr "Uzaytirish muddati 1–120 oy."
+
+#: backend/apps/contracts/services.py
+msgid "A contract that renews by itself needs its end date."
+msgstr "O‘zi uzayadigan shartnomaga tugash sanasi kerak."
+
+#: backend/apps/contracts/services.py backend/apps/finance/recurring.py
+#: backend/apps/lifecycle/job_changes.py backend/apps/lifecycle/reviews.py
+msgid "Pick the day it starts."
+msgstr "Boshlanish kunini tanlang."
+
+#: backend/apps/contracts/services.py
+msgid "A one-off payment doesn't repeat: keep it out of the forecast."
+msgstr "Bir martalik to‘lov takrorlanmaydi: uni prognozga qo‘shmang."
 
 #: backend/apps/core/bot_runtime.py davomat_bot/handlers/start.py
 msgid "This message is too old. Open it again from the menu."
@@ -7140,12 +7792,6 @@ msgstr "Ishdan ketgan xodim: %(name)s. Avval uni ishga qaytaring."
 #: backend/apps/members/providers.py
 msgid "Left"
 msgstr "Ketgan"
-
-#: backend/apps/davomat/importing.py backend/apps/goals/models.py
-#: backend/apps/learning/models.py backend/apps/members/models.py
-#: backend/apps/projects/models.py
-msgid "Active"
-msgstr "Faol"
 
 #: backend/apps/davomat/importing.py backend/apps/exports/build.py
 #: backend/apps/hr/hiring/bot.py backend/apps/hr/hiring/questions.py
@@ -7993,11 +8639,6 @@ msgstr "Noma’lum holat."
 msgid "Attach at most %(n)s receipts."
 msgstr "Ko‘pi bilan %(n)s ta chek biriktiring."
 
-#: backend/apps/finance/api.py backend/apps/finance/claims.py
-#: backend/apps/finance/services.py backend/apps/projects/services.py
-msgid "Pick an expense category."
-msgstr "Xarajat toifasini tanlang."
-
 #: backend/apps/finance/audit_actions.py
 msgid "Added a money account"
 msgstr "Pul hisobini qo‘shdi"
@@ -8578,11 +9219,6 @@ msgstr "Kontragent"
 msgid "Description"
 msgstr "Tavsif"
 
-#: backend/apps/finance/exporters.py backend/apps/payroll/providers.py
-#: backend/apps/sales/hooks.py
-msgid "Currency"
-msgstr "Valyuta"
-
 #: backend/apps/finance/exporters.py
 msgid "Rate"
 msgstr "Kurs"
@@ -8675,11 +9311,6 @@ msgstr "Qarz sanasi"
 #: backend/apps/tasks/hooks.py
 msgid "Due"
 msgstr "Muddat"
-
-#: backend/apps/finance/exporters.py backend/apps/finance/models.py
-#: backend/apps/sales/hooks.py backend/apps/sales/models.py
-msgid "Paid"
-msgstr "To‘langan"
 
 #: backend/apps/finance/exporters.py
 msgid "Outstanding"
@@ -9379,18 +10010,6 @@ msgid "Posted automatically"
 msgstr "Avtomatik o‘tkaziladi"
 
 #: backend/apps/finance/models.py
-msgid "Monthly"
-msgstr "Har oy"
-
-#: backend/apps/finance/models.py
-msgid "Quarterly"
-msgstr "Har chorakda"
-
-#: backend/apps/finance/models.py
-msgid "Yearly"
-msgstr "Har yili"
-
-#: backend/apps/finance/models.py
 msgid "The working day before"
 msgstr "Oldingi ish kuni"
 
@@ -9972,12 +10591,6 @@ msgstr "Bu to‘lov avtomatik o‘tkaziladi: uni hozir o‘tkazing."
 msgid "Already paid."
 msgstr "Allaqachon to‘langan."
 
-#: backend/apps/finance/recurring.py backend/apps/finance/services.py
-#: backend/apps/payroll/finance_bridge.py
-#, python-format
-msgid "%(account)s holds %(currency)s."
-msgstr "«%(account)s» hisobining valyutasi — %(currency)s."
-
 #: backend/apps/finance/recurring.py
 msgid "A bill is paid with the amount you paid, not run."
 msgstr "Hisob siz to‘lagan summa bilan to‘lanadi, avtomatik o‘tkazilmaydi."
@@ -10011,10 +10624,6 @@ msgid "Pick a weekday from 1 (Monday) to 7 (Sunday)."
 msgstr "Hafta kunini tanlang: 1 (dushanba) dan 7 (yakshanba) gacha."
 
 #: backend/apps/finance/recurring.py
-msgid "Pick a day of the month from 1 to 31."
-msgstr "Oyning kunini tanlang: 1–31."
-
-#: backend/apps/finance/recurring.py
 msgid "Remind 0 to 30 days before."
 msgstr "Necha kun oldin eslatish: 0–30."
 
@@ -10025,19 +10634,6 @@ msgstr "Avtomatik to‘lov uchun hisob kerak."
 #: backend/apps/finance/recurring.py
 msgid "An automatic payment needs a fixed amount."
 msgstr "Avtomatik to‘lov uchun aniq summa kerak."
-
-#: backend/apps/finance/recurring.py backend/apps/lifecycle/job_changes.py
-#: backend/apps/lifecycle/reviews.py
-msgid "Pick the day it starts."
-msgstr "Boshlanish kunini tanlang."
-
-#: backend/apps/finance/recurring.py
-msgid "It can't end before it starts."
-msgstr "Tugash kuni boshlanishdan oldin bo‘lishi mumkin emas."
-
-#: backend/apps/finance/recurring.py backend/apps/tasks/services.py
-msgid "Pick someone who works here."
-msgstr "Shu yerda ishlaydigan odamni tanlang."
 
 #: backend/apps/finance/recurring.py
 msgid "Pick who pays it, so they get the task."
@@ -10670,11 +11266,6 @@ msgstr "Sheriklar va dividendlar"
 #: backend/apps/finance/templates/finance/statements/valuation.html
 msgid "What the business is worth"
 msgstr "Biznes qancha turadi"
-
-#: backend/apps/finance/statement_pack.py
-#: backend/apps/finance/templates/finance/statements/notes.html
-msgid "Notes"
-msgstr "Izohlar"
 
 #: backend/apps/finance/statement_pack.py
 #, python-format
@@ -11835,10 +12426,6 @@ msgid "In the metric's unit: so‘m, percent or a count."
 msgstr "Ko‘rsatkich birligida: so‘m, foiz yoki son."
 
 #: backend/apps/goals/models.py
-msgid "Empty: the whole company."
-msgstr "Bo‘sh bo‘lsa, butun kompaniya."
-
-#: backend/apps/goals/models.py
 msgid "Who answers for it."
 msgstr "Kim javobgar."
 
@@ -12309,10 +12896,6 @@ msgid "Drew up a contract"
 msgstr "Shartnoma tuzdi"
 
 #: backend/apps/hr/audit_actions.py
-msgid "Changed a contract"
-msgstr "Shartnomani o‘zgartirdi"
-
-#: backend/apps/hr/audit_actions.py
 msgid "Removed a draft contract"
 msgstr "Shartnoma qoralamasini o‘chirdi"
 
@@ -12327,14 +12910,6 @@ msgstr "Shartnomaga o‘zgartish kiritdi"
 #: backend/apps/hr/audit_actions.py
 msgid "Ended a contract"
 msgstr "Shartnomani yakunladi"
-
-#: backend/apps/hr/audit_actions.py
-msgid "Terminated a contract"
-msgstr "Shartnomani bekor qildi"
-
-#: backend/apps/hr/audit_actions.py
-msgid "Renewed a contract"
-msgstr "Shartnomani uzaytirdi"
 
 #: backend/apps/hr/audit_actions.py
 msgid "Confirmed a passed probation"
@@ -13316,10 +13891,6 @@ msgid "Work record book"
 msgstr "Mehnat daftarchasi"
 
 #: backend/apps/hr/models.py
-msgid "Contract"
-msgstr "Shartnoma"
-
-#: backend/apps/hr/models.py
 msgid "Confidentiality agreement"
 msgstr "Maxfiylik to‘g‘risidagi kelishuv"
 
@@ -13368,14 +13939,6 @@ msgid "In force"
 msgstr "Amalda"
 
 #: backend/apps/hr/models.py
-msgid "Ended"
-msgstr "Tugagan"
-
-#: backend/apps/hr/models.py
-msgid "Terminated"
-msgstr "Bekor qilingan"
-
-#: backend/apps/hr/models.py
 msgid "Birthday"
 msgstr "Tug‘ilgan kun"
 
@@ -13394,10 +13957,6 @@ msgstr "Tanlov"
 #: backend/apps/hr/models.py
 msgid "Yes or no"
 msgstr "Ha yoki yo‘q"
-
-#: backend/apps/hr/models.py backend/apps/learning/models.py
-msgid "Number"
-msgstr "Son"
 
 #: backend/apps/hr/models.py backend/apps/learning/models.py
 msgid "Paused"
@@ -13601,10 +14160,6 @@ msgstr "So‘ralgan"
 #: backend/apps/hr/policies/exporters.py
 msgid "Sign by"
 msgstr "Imzolash muddati"
-
-#: backend/apps/hr/policies/exporters.py
-msgid "Signed"
-msgstr "Imzolangan"
 
 #: backend/apps/hr/policies/exporters.py
 msgid "Version signed"
@@ -15171,10 +15726,6 @@ msgstr "Kosmetika va gigiyena"
 #: backend/apps/inventory/models.py
 msgid "Other goods"
 msgstr "Boshqa tovarlar"
-
-#: backend/apps/inventory/models.py
-msgid "Service"
-msgstr "Xizmat"
 
 #: backend/apps/inventory/models.py
 msgid "Tablet"
@@ -22317,10 +22868,6 @@ msgstr "Kechikkan daqiqalar"
 #: backend/apps/payroll/models.py backend/apps/sales/hooks.py
 msgid "Net sales"
 msgstr "Sof savdo"
-
-#: backend/apps/payroll/models.py
-msgid "Once"
-msgstr "Bir marta"
 
 #: backend/apps/payroll/models.py
 msgid "Per unit"

@@ -5731,6 +5731,437 @@ paths:
               schema:
                 $ref: '#/components/schemas/Cockpit'
           description: ''
+  /api/v1/owner/companies/{company_id}/contracts/:
+    get:
+      operationId: companies_contracts_list
+      description: GET (finance.view) / POST (finance.view and finance.manage) `contracts/`.
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: One branch (in scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: ending
+        schema:
+          type: boolean
+        description: Only what ends soon or needs a decision.
+      - in: query
+        name: kind
+        schema:
+          type: string
+          enum:
+          - insurance
+          - lease
+          - licence
+          - other
+          - service
+          - supply
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Title, number or counterparty.
+      - in: query
+        name: status
+        schema:
+          type: string
+        description: 'One status, or `current` (draft, active and ending: the default)
+          or `all`.'
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ContractsRow'
+          description: ''
+    post:
+      operationId: companies_contracts_create
+      description: GET (finance.view) / POST (finance.view and finance.manage) `contracts/`.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContractsWriteRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContractsDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/contracts/{contract_id}/:
+    get:
+      operationId: companies_contracts_retrieve
+      description: GET (read) / PATCH / DELETE (manage) `contracts/{id}/`.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: contract_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContractsDetail'
+          description: ''
+    patch:
+      operationId: companies_contracts_partial_update
+      description: GET (read) / PATCH / DELETE (manage) `contracts/{id}/`.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: contract_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedContractsWriteRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContractsDetail'
+          description: ''
+    delete:
+      operationId: companies_contracts_destroy
+      description: GET (read) / PATCH / DELETE (manage) `contracts/{id}/`.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: contract_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/contracts/{contract_id}/files/:
+    post:
+      operationId: companies_contracts_files_create
+      description: GET (finance.view) / POST (finance.view and finance.manage) `contracts/`.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: contract_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ContractsFileUploadRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ContractsFileUploadRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContractsDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/contracts/{contract_id}/keep-renewing/:
+    post:
+      operationId: companies_contracts_keep_renewing_create
+      description: GET (finance.view) / POST (finance.view and finance.manage) `contracts/`.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: contract_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContractsDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/contracts/{contract_id}/renew/:
+    post:
+      operationId: companies_contracts_renew_create
+      description: GET (finance.view) / POST (finance.view and finance.manage) `contracts/`.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: contract_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContractsRenewRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContractsDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/contracts/{contract_id}/stop-renewing/:
+    post:
+      operationId: companies_contracts_stop_renewing_create
+      description: GET (finance.view) / POST (finance.view and finance.manage) `contracts/`.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: contract_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContractsDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/contracts/{contract_id}/terminate/:
+    post:
+      operationId: companies_contracts_terminate_create
+      description: GET (finance.view) / POST (finance.view and finance.manage) `contracts/`.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: contract_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContractsTerminateRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContractsDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/contracts/files/{file_id}/:
+    delete:
+      operationId: companies_contracts_files_destroy
+      description: Lookups inside the caller's company and branch scope.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: file_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/contracts/options/:
+    get:
+      operationId: companies_contracts_options_retrieve
+      description: |-
+        What the form picks from: expense categories, accounts in scope, recurring payments no
+        contract has yet, and the party directory.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContractsOptions'
+          description: ''
+  /api/v1/owner/companies/{company_id}/contracts/settings/:
+    get:
+      operationId: companies_contracts_settings_retrieve
+      description: Lookups inside the caller's company and branch scope.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContractsSettings'
+          description: ''
+    patch:
+      operationId: companies_contracts_settings_partial_update
+      description: Lookups inside the caller's company and branch scope.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedContractsSettingsRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedContractsSettingsRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedContractsSettingsRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContractsSettings'
+          description: ''
+  /api/v1/owner/companies/{company_id}/contracts/summary/:
+    get:
+      operationId: companies_contracts_summary_retrieve
+      description: Lookups inside the caller's company and branch scope.
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: One branch (in scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContractsSummary'
+          description: ''
   /api/v1/owner/companies/{company_id}/davomat/settings/:
     get:
       operationId: companies_davomat_settings_retrieve
@@ -40014,6 +40445,14 @@ components:
         * `rejected` - Rejected
         * `cancelled` - Cancelled
         * `expired` - Expired
+    AttentionEnum:
+      enum:
+      - ending
+      - notice
+      type: string
+      description: |-
+        * `ending` - ending
+        * `notice` - notice
     AuditRecord:
       type: object
       properties:
@@ -42313,6 +42752,830 @@ components:
             $ref: '#/components/schemas/StreamItem'
       required:
       - items
+    ContractsCan:
+      type: object
+      properties:
+        manage:
+          type: boolean
+      required:
+      - manage
+    ContractsDate:
+      type: object
+      properties:
+        key:
+          $ref: '#/components/schemas/ContractsDateKeyEnum'
+        day:
+          type: string
+          format: date
+        past:
+          type: boolean
+      required:
+      - day
+      - key
+      - past
+    ContractsDateKeyEnum:
+      enum:
+      - signed
+      - starts
+      - renewed
+      - notice
+      - renews
+      - ends
+      - terminated
+      type: string
+      description: |-
+        * `signed` - signed
+        * `starts` - starts
+        * `renewed` - renewed
+        * `notice` - notice
+        * `renews` - renews
+        * `ends` - ends
+        * `terminated` - terminated
+    ContractsDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        kind:
+          $ref: '#/components/schemas/ContractsKindEnum'
+        title:
+          type: string
+        number:
+          type: string
+        branch:
+          allOf:
+          - $ref: '#/components/schemas/ContractsRef'
+          nullable: true
+        counterparty:
+          allOf:
+          - $ref: '#/components/schemas/ContractsRef'
+          nullable: true
+        responsible:
+          allOf:
+          - $ref: '#/components/schemas/ContractsRef'
+          nullable: true
+        status:
+          $ref: '#/components/schemas/ContractsStatusEnum'
+        starts_on:
+          type: string
+          format: date
+          nullable: true
+        term_starts_on:
+          type: string
+          format: date
+          nullable: true
+          description: 'The current term''s first day: the last renewal, else the
+            start.'
+        ends_on:
+          type: string
+          format: date
+          nullable: true
+        auto_renews:
+          type: boolean
+        notice_deadline:
+          type: string
+          format: date
+          nullable: true
+        key_day:
+          type: string
+          format: date
+          nullable: true
+          description: 'The next date that matters: the notice deadline, else the
+            end.'
+        days_left:
+          type: integer
+          nullable: true
+          description: Days to `key_day`.
+        attention:
+          nullable: true
+          description: |-
+            ending: it ends within the warning days; notice: a renewal decision is due.
+
+            * `ending` - ending
+            * `notice` - notice
+          oneOf:
+          - $ref: '#/components/schemas/AttentionEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        period:
+          $ref: '#/components/schemas/ContractsPeriodEnum'
+        currency:
+          type: string
+        per_month:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        in_forecast:
+          type: boolean
+        has_rule:
+          type: boolean
+        files:
+          type: integer
+          description: How many files it has.
+        signed_on:
+          type: string
+          format: date
+          nullable: true
+        renewal_months:
+          type: integer
+        notice_days:
+          type: integer
+        payment_day:
+          type: integer
+          nullable: true
+        notes:
+          type: string
+        terminated_on:
+          type: string
+          format: date
+          nullable: true
+        termination_reason:
+          type: string
+        last_renewed_on:
+          type: string
+          format: date
+          nullable: true
+        renewal_confirmed:
+          type: boolean
+          description: The owner confirmed this term's auto-renewal.
+        file_list:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContractsFile'
+        dates:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContractsDate'
+        rule:
+          allOf:
+          - $ref: '#/components/schemas/ContractsRule'
+          nullable: true
+        payments:
+          allOf:
+          - $ref: '#/components/schemas/ContractsPayments'
+          nullable: true
+          description: Null while the Finance module is off.
+        created_at:
+          type: string
+          format: date-time
+        can:
+          $ref: '#/components/schemas/ContractsCan'
+      required:
+      - amount
+      - attention
+      - auto_renews
+      - branch
+      - can
+      - counterparty
+      - created_at
+      - currency
+      - dates
+      - days_left
+      - ends_on
+      - file_list
+      - files
+      - has_rule
+      - id
+      - in_forecast
+      - key_day
+      - kind
+      - last_renewed_on
+      - notes
+      - notice_days
+      - notice_deadline
+      - number
+      - payment_day
+      - payments
+      - per_month
+      - period
+      - renewal_confirmed
+      - renewal_months
+      - responsible
+      - rule
+      - signed_on
+      - starts_on
+      - status
+      - term_starts_on
+      - terminated_on
+      - termination_reason
+      - title
+    ContractsFile:
+      type: object
+      properties:
+        id:
+          type: integer
+        kind:
+          $ref: '#/components/schemas/ContractsFileKindEnum'
+        label:
+          type: string
+        size:
+          type: integer
+        is_pdf:
+          type: boolean
+        url:
+          type: string
+          description: A signed link, valid for ten minutes.
+        uploaded_by:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+      required:
+      - created_at
+      - id
+      - is_pdf
+      - kind
+      - label
+      - size
+      - uploaded_by
+      - url
+    ContractsFileKindEnum:
+      enum:
+      - signed
+      - annex
+      - other
+      type: string
+      description: |-
+        * `signed` - Signed contract
+        * `annex` - Annex
+        * `other` - Other document
+    ContractsFileUploadRequest:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+        kind:
+          $ref: '#/components/schemas/ContractsFileKindEnum'
+        label:
+          type: string
+          maxLength: 120
+      required:
+      - file
+    ContractsKindEnum:
+      enum:
+      - lease
+      - supply
+      - service
+      - licence
+      - insurance
+      - other
+      type: string
+      description: |-
+        * `lease` - Lease
+        * `supply` - Supply
+        * `service` - Service
+        * `licence` - Licence or franchise
+        * `insurance` - Insurance
+        * `other` - Other
+    ContractsNextBill:
+      type: object
+      properties:
+        due_on:
+          type: string
+          format: date
+          nullable: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        currency:
+          type: string
+      required:
+      - amount
+      - currency
+      - due_on
+    ContractsOptionAccount:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        currency:
+          type: string
+      required:
+      - currency
+      - id
+      - name
+    ContractsOptionCategory:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        system_code:
+          type: string
+      required:
+      - id
+      - name
+      - system_code
+    ContractsOptionParty:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        kind:
+          type: string
+      required:
+      - id
+      - kind
+      - name
+    ContractsOptionRule:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        currency:
+          type: string
+        frequency:
+          type: string
+        counterparty:
+          type: integer
+          nullable: true
+        branch:
+          type: integer
+          nullable: true
+      required:
+      - amount
+      - branch
+      - counterparty
+      - currency
+      - frequency
+      - id
+      - name
+    ContractsOptions:
+      type: object
+      properties:
+        finance:
+          type: boolean
+          description: The Finance module is on.
+        base_currency:
+          type: string
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContractsOptionCategory'
+        accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContractsOptionAccount'
+        rules:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContractsOptionRule'
+          description: Recurring payments no contract has.
+        parties:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContractsOptionParty'
+      required:
+      - accounts
+      - base_currency
+      - categories
+      - finance
+      - parties
+      - rules
+    ContractsPayment:
+      type: object
+      properties:
+        id:
+          type: integer
+        occurred_on:
+          type: string
+          format: date
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        currency:
+          type: string
+        base_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        description:
+          type: string
+        account:
+          type: string
+          nullable: true
+        by_rule:
+          type: boolean
+          description: Paid as a bill of its recurring payment.
+      required:
+      - account
+      - amount
+      - base_amount
+      - by_rule
+      - currency
+      - description
+      - id
+      - occurred_on
+    ContractsPayments:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContractsPayment'
+        count:
+          type: integer
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        this_year:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        currency:
+          type: string
+        last_paid_on:
+          type: string
+          format: date
+          nullable: true
+        next:
+          allOf:
+          - $ref: '#/components/schemas/ContractsNextBill'
+          nullable: true
+      required:
+      - count
+      - currency
+      - items
+      - last_paid_on
+      - next
+      - this_year
+      - total
+    ContractsPeriodEnum:
+      enum:
+      - monthly
+      - quarterly
+      - yearly
+      - once
+      type: string
+      description: |-
+        * `monthly` - Monthly
+        * `quarterly` - Quarterly
+        * `yearly` - Yearly
+        * `once` - Once
+    ContractsRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
+    ContractsRenewRequest:
+      type: object
+      properties:
+        ends_on:
+          type: string
+          format: date
+      required:
+      - ends_on
+    ContractsRow:
+      type: object
+      properties:
+        id:
+          type: integer
+        kind:
+          $ref: '#/components/schemas/ContractsKindEnum'
+        title:
+          type: string
+        number:
+          type: string
+        branch:
+          allOf:
+          - $ref: '#/components/schemas/ContractsRef'
+          nullable: true
+        counterparty:
+          allOf:
+          - $ref: '#/components/schemas/ContractsRef'
+          nullable: true
+        responsible:
+          allOf:
+          - $ref: '#/components/schemas/ContractsRef'
+          nullable: true
+        status:
+          $ref: '#/components/schemas/ContractsStatusEnum'
+        starts_on:
+          type: string
+          format: date
+          nullable: true
+        term_starts_on:
+          type: string
+          format: date
+          nullable: true
+          description: 'The current term''s first day: the last renewal, else the
+            start.'
+        ends_on:
+          type: string
+          format: date
+          nullable: true
+        auto_renews:
+          type: boolean
+        notice_deadline:
+          type: string
+          format: date
+          nullable: true
+        key_day:
+          type: string
+          format: date
+          nullable: true
+          description: 'The next date that matters: the notice deadline, else the
+            end.'
+        days_left:
+          type: integer
+          nullable: true
+          description: Days to `key_day`.
+        attention:
+          nullable: true
+          description: |-
+            ending: it ends within the warning days; notice: a renewal decision is due.
+
+            * `ending` - ending
+            * `notice` - notice
+          oneOf:
+          - $ref: '#/components/schemas/AttentionEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        period:
+          $ref: '#/components/schemas/ContractsPeriodEnum'
+        currency:
+          type: string
+        per_month:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        in_forecast:
+          type: boolean
+        has_rule:
+          type: boolean
+        files:
+          type: integer
+          description: How many files it has.
+      required:
+      - amount
+      - attention
+      - auto_renews
+      - branch
+      - counterparty
+      - currency
+      - days_left
+      - ends_on
+      - files
+      - has_rule
+      - id
+      - in_forecast
+      - key_day
+      - kind
+      - notice_deadline
+      - number
+      - per_month
+      - period
+      - responsible
+      - starts_on
+      - status
+      - term_starts_on
+      - title
+    ContractsRule:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        is_active:
+          type: boolean
+        category:
+          $ref: '#/components/schemas/ContractsRef'
+        account:
+          allOf:
+          - $ref: '#/components/schemas/ContractsRef'
+          nullable: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        currency:
+          type: string
+        frequency:
+          type: string
+        day:
+          type: integer
+        next_due_on:
+          type: string
+          format: date
+          nullable: true
+        ends_on:
+          type: string
+          format: date
+          nullable: true
+      required:
+      - account
+      - amount
+      - category
+      - currency
+      - day
+      - ends_on
+      - frequency
+      - id
+      - is_active
+      - name
+      - next_due_on
+    ContractsSettings:
+      type: object
+      properties:
+        remind_days:
+          type: integer
+          maximum: 365
+          minimum: 1
+        notice_remind_days:
+          type: integer
+          maximum: 180
+          minimum: 1
+    ContractsStatusEnum:
+      enum:
+      - draft
+      - active
+      - ending
+      - ended
+      - terminated
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `active` - Active
+        * `ending` - Ending
+        * `ended` - Ended
+        * `terminated` - Terminated
+    ContractsSummary:
+      type: object
+      properties:
+        today:
+          type: string
+          format: date
+        counts:
+          type: object
+          additionalProperties:
+            type: integer
+          description: By status.
+        total:
+          type: integer
+        in_force:
+          type: integer
+        ending_soon:
+          type: integer
+        notice_due:
+          type: integer
+        monthly_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        currency:
+          type: string
+        unpriced:
+          type: integer
+          description: In force in a currency without a rate today.
+        remind_days:
+          type: integer
+        notice_remind_days:
+          type: integer
+      required:
+      - counts
+      - currency
+      - ending_soon
+      - in_force
+      - monthly_cost
+      - notice_due
+      - notice_remind_days
+      - remind_days
+      - today
+      - total
+      - unpriced
+    ContractsTerminateRequest:
+      type: object
+      properties:
+        'on':
+          type: string
+          format: date
+        reason:
+          type: string
+          maxLength: 300
+      required:
+      - 'on'
+    ContractsWriteRequest:
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/ContractsKindEnum'
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        branch:
+          type: integer
+          nullable: true
+        counterparty:
+          type: integer
+          nullable: true
+        counterparty_name:
+          type: string
+          description: 'A party by name: the existing one called so, or a new one.'
+          maxLength: 200
+        number:
+          type: string
+          maxLength: 64
+        signed_on:
+          type: string
+          format: date
+          nullable: true
+        starts_on:
+          type: string
+          format: date
+          nullable: true
+        ends_on:
+          type: string
+          format: date
+          nullable: true
+        auto_renews:
+          type: boolean
+        renewal_months:
+          type: integer
+          maximum: 120
+          minimum: 1
+        notice_days:
+          type: integer
+          maximum: 365
+          minimum: 0
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        period:
+          $ref: '#/components/schemas/ContractsPeriodEnum'
+        currency:
+          $ref: '#/components/schemas/CurrencyEnum'
+        payment_day:
+          type: integer
+          maximum: 31
+          minimum: 1
+          nullable: true
+        notes:
+          type: string
+          maxLength: 4000
+        status:
+          $ref: '#/components/schemas/ContractsWriteStatusEnum'
+        responsible:
+          type: integer
+          nullable: true
+        in_forecast:
+          type: boolean
+        category:
+          type: integer
+          nullable: true
+          description: The expense category of a new recurring payment (by kind when
+            empty).
+        account:
+          type: integer
+          nullable: true
+          description: The account the recurring payment is paid from.
+        link_rule:
+          type: integer
+          nullable: true
+          description: Take over this existing recurring payment instead of making
+            one.
+    ContractsWriteStatusEnum:
+      enum:
+      - draft
+      - active
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `active` - Active
     CopyPart:
       type: object
       properties:
@@ -64022,6 +65285,99 @@ components:
             $ref: '#/components/schemas/SellsToEnum'
           description: Who the business sells to.
           minItems: 1
+    PatchedContractsSettingsRequest:
+      type: object
+      properties:
+        remind_days:
+          type: integer
+          maximum: 365
+          minimum: 1
+        notice_remind_days:
+          type: integer
+          maximum: 180
+          minimum: 1
+    PatchedContractsWriteRequest:
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/ContractsKindEnum'
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        branch:
+          type: integer
+          nullable: true
+        counterparty:
+          type: integer
+          nullable: true
+        counterparty_name:
+          type: string
+          description: 'A party by name: the existing one called so, or a new one.'
+          maxLength: 200
+        number:
+          type: string
+          maxLength: 64
+        signed_on:
+          type: string
+          format: date
+          nullable: true
+        starts_on:
+          type: string
+          format: date
+          nullable: true
+        ends_on:
+          type: string
+          format: date
+          nullable: true
+        auto_renews:
+          type: boolean
+        renewal_months:
+          type: integer
+          maximum: 120
+          minimum: 1
+        notice_days:
+          type: integer
+          maximum: 365
+          minimum: 0
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        period:
+          $ref: '#/components/schemas/ContractsPeriodEnum'
+        currency:
+          $ref: '#/components/schemas/CurrencyEnum'
+        payment_day:
+          type: integer
+          maximum: 31
+          minimum: 1
+          nullable: true
+        notes:
+          type: string
+          maxLength: 4000
+        status:
+          $ref: '#/components/schemas/ContractsWriteStatusEnum'
+        responsible:
+          type: integer
+          nullable: true
+        in_forecast:
+          type: boolean
+        category:
+          type: integer
+          nullable: true
+          description: The expense category of a new recurring payment (by kind when
+            empty).
+        account:
+          type: integer
+          nullable: true
+          description: The account the recurring payment is paid from.
+        link_rule:
+          type: integer
+          nullable: true
+          description: Take over this existing recurring payment instead of making
+            one.
     PatchedCorrectRequest:
       type: object
       properties:

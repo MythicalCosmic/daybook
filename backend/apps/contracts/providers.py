@@ -16,8 +16,7 @@ from __future__ import annotations
 from datetime import date
 
 from django.utils.translation import gettext as _
-from django.utils.translation import gettext_lazy as _lazy
-from django.utils.translation import ngettext
+from django.utils.translation import gettext_lazy, ngettext
 
 from apps.console.perms import AllOf, holds
 from apps.console.registry import CalendarItem, QueueAction, QueueItem, SearchHit
@@ -250,25 +249,25 @@ def setup_done(company) -> bool:
 # The export -------------------------------------------------------------------------------------
 
 REGISTER_COLUMNS = (
-    ("title", _lazy("Contract")),
-    ("kind", _lazy("Kind")),
-    ("counterparty", _lazy("Party")),
-    ("number", _lazy("Number")),
-    ("branch", _lazy("Branch")),
-    ("status", _lazy("Status")),
-    ("signed_on", _lazy("Signed"), "date"),
-    ("starts_on", _lazy("Starts"), "date"),
-    ("ends_on", _lazy("Ends"), "date"),
-    ("auto_renews", _lazy("Renews by itself"), "bool"),
-    ("notice_deadline", _lazy("Notice deadline"), "date"),
-    ("amount", _lazy("Amount"), "money"),
-    ("currency", _lazy("Currency")),
-    ("period", _lazy("Paid")),
-    ("per_month", _lazy("A month"), "money"),
-    ("in_forecast", _lazy("In the cash forecast"), "bool"),
-    ("responsible", _lazy("Looks after it")),
-    ("files", _lazy("Files"), "number"),
-    ("notes", _lazy("Notes")),
+    ("title", gettext_lazy("Contract")),
+    ("kind", gettext_lazy("Kind")),
+    ("counterparty", gettext_lazy("Party")),
+    ("number", gettext_lazy("Number")),
+    ("branch", gettext_lazy("Branch")),
+    ("status", gettext_lazy("Status")),
+    ("signed_on", gettext_lazy("Signed"), "date"),
+    ("starts_on", gettext_lazy("Starts"), "date"),
+    ("ends_on", gettext_lazy("Ends"), "date"),
+    ("auto_renews", gettext_lazy("Renews by itself"), "bool"),
+    ("notice_deadline", gettext_lazy("Notice deadline"), "date"),
+    ("amount", gettext_lazy("Amount"), "money"),
+    ("currency", gettext_lazy("Currency")),
+    ("period", gettext_lazy("Paid")),
+    ("per_month", gettext_lazy("A month"), "money"),
+    ("in_forecast", gettext_lazy("In the cash forecast"), "bool"),
+    ("responsible", gettext_lazy("Looks after it")),
+    ("files", gettext_lazy("Files"), "number"),
+    ("notes", gettext_lazy("Notes")),
 )
 
 

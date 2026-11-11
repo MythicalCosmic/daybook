@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-12 01:13+0500\n"
+"POT-Creation-Date: 2026-11-12 02:38+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -284,9 +284,10 @@ msgid "Deadline"
 msgstr "Крайний срок"
 
 #: backend/apps/agenda/models.py backend/apps/assets/models.py
-#: backend/apps/faceid/models.py backend/apps/finance/models.py
-#: backend/apps/hr/models.py backend/apps/inventory/models.py
-#: backend/apps/lifecycle/models.py backend/apps/sales/models.py
+#: backend/apps/contracts/models.py backend/apps/faceid/models.py
+#: backend/apps/finance/models.py backend/apps/hr/models.py
+#: backend/apps/inventory/models.py backend/apps/lifecycle/models.py
+#: backend/apps/sales/models.py
 msgid "Other"
 msgstr "Другое"
 
@@ -2465,10 +2466,11 @@ msgstr "%(status)s · прочитали %(read)d из %(total)d"
 msgid "Announcement: %(title)s · %(read)d of %(total)d read"
 msgstr "Объявление: %(title)s · прочитали %(read)d из %(total)d"
 
-#: backend/apps/announcements/models.py backend/apps/finance/models.py
-#: backend/apps/hr/models.py backend/apps/hr/policies/queries.py
-#: backend/apps/inventory/models.py backend/apps/knowledge/providers.py
-#: backend/apps/learning/models.py backend/apps/sales/models.py
+#: backend/apps/announcements/models.py backend/apps/contracts/models.py
+#: backend/apps/finance/models.py backend/apps/hr/models.py
+#: backend/apps/hr/policies/queries.py backend/apps/inventory/models.py
+#: backend/apps/knowledge/providers.py backend/apps/learning/models.py
+#: backend/apps/sales/models.py
 msgid "Draft"
 msgstr "Черновик"
 
@@ -2592,17 +2594,18 @@ msgstr "Срок действия должен заканчиваться пос
 
 #: backend/apps/announcements/services.py backend/apps/attendance/api.py
 #: backend/apps/attendance/services.py backend/apps/console/base.py
-#: backend/apps/davomat/owner_api.py backend/apps/davomat/services.py
-#: backend/apps/finance/api.py backend/apps/finance/claims.py
-#: backend/apps/hr/hiring/services.py backend/apps/hr/policies/services.py
-#: backend/apps/hr/services.py backend/apps/inbox/services.py
-#: backend/apps/inventory/api.py backend/apps/inventory/notify.py
-#: backend/apps/knowledge/owner_api.py backend/apps/lifecycle/job_changes.py
-#: backend/apps/lifecycle/reviews.py backend/apps/lifecycle/services.py
-#: backend/apps/lifecycle/terminations.py backend/apps/members/departments.py
-#: backend/apps/members/join_links.py backend/apps/members/services.py
-#: backend/apps/payroll/runs.py backend/apps/payroll/services.py
-#: backend/apps/sales/handlers.py backend/apps/timeoff/services.py
+#: backend/apps/contracts/notify.py backend/apps/davomat/owner_api.py
+#: backend/apps/davomat/services.py backend/apps/finance/api.py
+#: backend/apps/finance/claims.py backend/apps/hr/hiring/services.py
+#: backend/apps/hr/policies/services.py backend/apps/hr/services.py
+#: backend/apps/inbox/services.py backend/apps/inventory/api.py
+#: backend/apps/inventory/notify.py backend/apps/knowledge/owner_api.py
+#: backend/apps/lifecycle/job_changes.py backend/apps/lifecycle/reviews.py
+#: backend/apps/lifecycle/services.py backend/apps/lifecycle/terminations.py
+#: backend/apps/members/departments.py backend/apps/members/join_links.py
+#: backend/apps/members/services.py backend/apps/payroll/runs.py
+#: backend/apps/payroll/services.py backend/apps/sales/handlers.py
+#: backend/apps/timeoff/services.py
 #: employee_bot/bot/handlers/admin/approvals.py
 msgid "You don't have permission to do this."
 msgstr "У вас нет прав на это действие."
@@ -3248,10 +3251,11 @@ msgstr ""
 "карточке."
 
 #: backend/apps/assets/owner_api.py backend/apps/assets/services.py
-#: backend/apps/attendance/owner_api.py backend/apps/davomat/owner_api.py
-#: backend/apps/faceid/owner_api.py backend/apps/hr/hiring/owner_api.py
-#: backend/apps/hr/owner_api.py backend/apps/insights/owner_api.py
-#: backend/apps/inventory/api.py backend/apps/inventory/owner_api.py
+#: backend/apps/attendance/owner_api.py backend/apps/contracts/owner_api.py
+#: backend/apps/davomat/owner_api.py backend/apps/faceid/owner_api.py
+#: backend/apps/hr/hiring/owner_api.py backend/apps/hr/owner_api.py
+#: backend/apps/insights/owner_api.py backend/apps/inventory/api.py
+#: backend/apps/inventory/owner_api.py
 #: backend/apps/learning/owner_api_courses.py
 #: backend/apps/lifecycle/equipment/owner_api.py
 #: backend/apps/lifecycle/owner_api.py backend/apps/payroll/owner_api.py
@@ -3259,13 +3263,14 @@ msgstr ""
 msgid "Give a number."
 msgstr "Укажите число."
 
-#: backend/apps/assets/owner_api.py backend/apps/inventory/owner_api.py
+#: backend/apps/assets/owner_api.py backend/apps/contracts/owner_api.py
+#: backend/apps/inventory/owner_api.py
 #: backend/apps/lifecycle/equipment/owner_api.py
 msgid "Pick a branch you work with."
 msgstr "Выберите филиал, с которым вы работаете."
 
-#: backend/apps/assets/owner_api.py backend/apps/learning/attempts.py
-#: backend/apps/lifecycle/review_owner_api.py
+#: backend/apps/assets/owner_api.py backend/apps/contracts/owner_api.py
+#: backend/apps/learning/attempts.py backend/apps/lifecycle/review_owner_api.py
 msgid "Pick someone of this company."
 msgstr "Выберите сотрудника этой компании."
 
@@ -3300,7 +3305,8 @@ msgstr "Выберите филиал, где оно находится."
 msgid "Use its own action for this."
 msgstr "Для этого есть отдельное действие."
 
-#: backend/apps/assets/owner_api.py backend/apps/finance/owner_api.py
+#: backend/apps/assets/owner_api.py backend/apps/contracts/owner_api.py
+#: backend/apps/finance/owner_api.py
 msgid "Pick one of your accounts."
 msgstr "Выберите один из ваших счетов."
 
@@ -3324,7 +3330,7 @@ msgstr "Выберите период не больше пяти лет."
 msgid "Pick the branch to count."
 msgstr "Выберите филиал для инвентаризации."
 
-#: backend/apps/assets/owner_api.py
+#: backend/apps/assets/owner_api.py backend/apps/contracts/owner_api.py
 msgid "Pick the branch it is for."
 msgstr "Выберите филиал, для которого оно."
 
@@ -3432,17 +3438,18 @@ msgstr "Имя"
 msgid "Category"
 msgstr "Категория"
 
-#: backend/apps/assets/providers.py backend/apps/finance/exporters.py
-#: backend/apps/inventory/providers.py
+#: backend/apps/assets/providers.py backend/apps/contracts/providers.py
+#: backend/apps/finance/exporters.py backend/apps/inventory/providers.py
 #: backend/apps/inventory/templates/inventory/rx_journal.html
 #: backend/apps/tasks/hooks.py
 msgid "Kind"
 msgstr "Тип"
 
 #: backend/apps/assets/providers.py backend/apps/attendance/providers.py
-#: backend/apps/attendance/reports.py backend/apps/davomat/importing.py
-#: backend/apps/finance/exporters.py backend/apps/hr/policies/exporters.py
-#: backend/apps/lifecycle/review_hooks.py backend/apps/payroll/providers.py
+#: backend/apps/attendance/reports.py backend/apps/contracts/providers.py
+#: backend/apps/davomat/importing.py backend/apps/finance/exporters.py
+#: backend/apps/hr/policies/exporters.py backend/apps/lifecycle/review_hooks.py
+#: backend/apps/payroll/providers.py
 #: backend/apps/payroll/templates/payroll/payslip.html
 #: backend/apps/sales/hooks.py backend/apps/tasks/feeds.py
 #: backend/apps/tasks/hooks.py
@@ -3451,7 +3458,8 @@ msgid "Branch"
 msgstr "Филиал"
 
 #: backend/apps/assets/providers.py backend/apps/attendance/providers.py
-#: backend/apps/davomat/importing.py backend/apps/finance/exporters.py
+#: backend/apps/contracts/providers.py backend/apps/davomat/importing.py
+#: backend/apps/finance/exporters.py
 #: backend/apps/finance/templates/finance/statements/partners.html
 #: backend/apps/hr/policies/exporters.py backend/apps/inventory/providers.py
 #: backend/apps/members/providers.py backend/apps/payroll/providers.py
@@ -3603,7 +3611,9 @@ msgstr "Укажите название категории."
 msgid "There is already a category with this name."
 msgstr "Категория с таким названием уже есть."
 
-#: backend/apps/assets/services.py backend/apps/lifecycle/equipment/services.py
+#: backend/apps/assets/services.py backend/apps/contracts/owner_api.py
+#: backend/apps/contracts/services.py
+#: backend/apps/lifecycle/equipment/services.py
 msgid "Pick a kind from the list."
 msgstr "Выберите вид из списка."
 
@@ -3717,7 +3727,7 @@ msgstr "Укажите название средства."
 msgid "Price"
 msgstr "Цена"
 
-#: backend/apps/assets/services.py
+#: backend/apps/assets/services.py backend/apps/contracts/services.py
 msgid "Pick a currency from the list."
 msgstr "Выберите валюту из списка."
 
@@ -3846,7 +3856,8 @@ msgstr "Укажите стоимость улучшения."
 msgid "The amount must be the whole expense."
 msgstr "Сумма должна равняться всему расходу."
 
-#: backend/apps/assets/services.py backend/apps/finance/exporters.py
+#: backend/apps/assets/services.py backend/apps/contracts/providers.py
+#: backend/apps/finance/exporters.py
 #: backend/apps/finance/templates/finance/statements/loans.html
 #: backend/apps/finance/templates/finance/statements/notes.html
 #: backend/apps/finance/templates/finance/statements/partners.html
@@ -3963,7 +3974,7 @@ msgstr "Выберите результат из списка."
 msgid "Not found in the count of %(day)s."
 msgstr "Не найдено при инвентаризации %(day)s."
 
-#: backend/apps/assets/services.py
+#: backend/apps/assets/services.py backend/apps/contracts/services.py
 msgid "Warn 1 to 365 days ahead."
 msgstr "Предупреждать можно за 1–365 дней."
 
@@ -6672,8 +6683,8 @@ msgid "In an area where some medicines are dispensed only by e-prescription."
 msgstr ""
 "В районе, где некоторые препараты отпускаются только по электронному рецепту."
 
-#: backend/apps/companies/models.py backend/apps/finance/models.py
-#: backend/apps/members/models.py
+#: backend/apps/companies/models.py backend/apps/contracts/services.py
+#: backend/apps/finance/models.py backend/apps/members/models.py
 msgid "Must belong to the same company."
 msgstr "Должно относиться к той же компании."
 
@@ -6902,6 +6913,656 @@ msgstr "В этом виде слишком много данных, его не
 #: backend/apps/console/services.py
 msgid "You already have a view with this name here."
 msgstr "У вас здесь уже есть вид с таким названием."
+
+#: backend/apps/contracts/ai_tools.py
+msgid ""
+"Business contracts: leases, suppliers, services, licences and insurance, who "
+"with, until when, the notice deadlines of those that renew by themselves, "
+"what they cost a month, and which end soon"
+msgstr ""
+"Договоры бизнеса: аренда, поставщики, услуги, лицензии и страхование; с кем, "
+"до какого числа, сроки уведомления по договорам с автопродлением, сколько "
+"стоят в месяц и какие скоро заканчиваются"
+
+#: backend/apps/contracts/audit_actions.py
+msgid "Added a contract"
+msgstr "Добавлен договор"
+
+#: backend/apps/contracts/audit_actions.py backend/apps/hr/audit_actions.py
+msgid "Changed a contract"
+msgstr "Изменён договор"
+
+#: backend/apps/contracts/audit_actions.py backend/apps/hr/audit_actions.py
+msgid "Renewed a contract"
+msgstr "Договор продлён"
+
+#: backend/apps/contracts/audit_actions.py backend/apps/hr/audit_actions.py
+msgid "Terminated a contract"
+msgstr "Договор расторгнут"
+
+#: backend/apps/contracts/audit_actions.py
+msgid "A contract's status changed"
+msgstr "Изменился статус договора"
+
+#: backend/apps/contracts/audit_actions.py
+msgid "Deleted a contract"
+msgstr "Удалён договор"
+
+#: backend/apps/contracts/audit_actions.py
+msgid "Added a contract file"
+msgstr "Добавлен файл договора"
+
+#: backend/apps/contracts/audit_actions.py
+msgid "Removed a contract file"
+msgstr "Удалён файл договора"
+
+#: backend/apps/contracts/audit_actions.py
+msgid "Changed the contract reminders"
+msgstr "Изменены напоминания по договорам"
+
+#: backend/apps/contracts/hooks.py
+msgid "Contracts that end or renew: leases, suppliers, services"
+msgstr ""
+"Договоры, которые заканчиваются или продлеваются: аренда, поставщики, услуги"
+
+#: backend/apps/contracts/hooks.py
+msgid "Contract renewals"
+msgstr "Продление договоров"
+
+#: backend/apps/contracts/hooks.py
+msgid "Contract notice deadlines: keep renewing or give notice"
+msgstr "Сроки уведомления по договорам: продлевать или уведомить"
+
+#: backend/apps/contracts/hooks.py
+msgid "Add your leases and contracts"
+msgstr "Добавьте аренду и договоры"
+
+#: backend/apps/contracts/hooks.py
+msgid ""
+"The pharmacy leases and the main supplier and service contracts: the scans in"
+" one place, the rent in the cash forecast, and a reminder before each one "
+"ends."
+msgstr ""
+"Аренда аптек и главные договоры с поставщиками и подрядчиками: сканы в одном "
+"месте, аренда в прогнозе денег и напоминание до окончания каждого."
+
+#: backend/apps/contracts/hooks.py
+msgid "Contracts register"
+msgstr "Реестр договоров"
+
+#: backend/apps/contracts/hooks.py backend/apps/contracts/providers.py
+msgid "Contracts"
+msgstr "Договоры"
+
+#: backend/apps/contracts/models.py
+msgid "Days before a contract ends to warn."
+msgstr "За сколько дней до окончания договора предупреждать."
+
+#: backend/apps/contracts/models.py
+msgid "Days before the notice deadline of an auto-renewing contract to warn."
+msgstr ""
+"За сколько дней до срока уведомления по договору с автопродлением "
+"предупреждать."
+
+#: backend/apps/contracts/models.py
+msgid "Lease"
+msgstr "Аренда"
+
+#: backend/apps/contracts/models.py
+msgid "Supply"
+msgstr "Поставка"
+
+#: backend/apps/contracts/models.py backend/apps/inventory/models.py
+msgid "Service"
+msgstr "Услуга"
+
+#: backend/apps/contracts/models.py
+msgid "Licence or franchise"
+msgstr "Лицензия или франшиза"
+
+#: backend/apps/contracts/models.py
+msgid "Insurance"
+msgstr "Страхование"
+
+#: backend/apps/contracts/models.py backend/apps/finance/models.py
+msgid "Monthly"
+msgstr "Ежемесячно"
+
+#: backend/apps/contracts/models.py backend/apps/finance/models.py
+msgid "Quarterly"
+msgstr "Ежеквартально"
+
+#: backend/apps/contracts/models.py backend/apps/finance/models.py
+msgid "Yearly"
+msgstr "Ежегодно"
+
+#: backend/apps/contracts/models.py backend/apps/payroll/models.py
+msgid "Once"
+msgstr "Один раз"
+
+#: backend/apps/contracts/models.py backend/apps/davomat/importing.py
+#: backend/apps/goals/models.py backend/apps/learning/models.py
+#: backend/apps/members/models.py backend/apps/projects/models.py
+msgid "Active"
+msgstr "Активен"
+
+#: backend/apps/contracts/models.py
+msgid "Ending"
+msgstr "Заканчивается"
+
+#: backend/apps/contracts/models.py backend/apps/hr/models.py
+msgid "Ended"
+msgstr "Завершён"
+
+#: backend/apps/contracts/models.py backend/apps/hr/models.py
+msgid "Terminated"
+msgstr "Расторгнут"
+
+#: backend/apps/contracts/models.py backend/apps/goals/models.py
+msgid "Empty: the whole company."
+msgstr "Пусто — вся компания."
+
+#: backend/apps/contracts/models.py
+msgid "The last day in force. Empty: no end date."
+msgstr "Последний день действия. Пусто: бессрочный."
+
+#: backend/apps/contracts/models.py
+msgid "Renews by itself unless one side gives notice."
+msgstr "Продлевается сам, если ни одна из сторон не уведомит."
+
+#: backend/apps/contracts/models.py
+msgid "How long each renewal lasts, in months."
+msgstr "Сколько месяцев длится каждое продление."
+
+#: backend/apps/contracts/models.py
+msgid "How many days before the end notice must be given."
+msgstr "За сколько дней до окончания нужно уведомить."
+
+#: backend/apps/contracts/models.py
+msgid "The day of the month it is paid, 1 to 31."
+msgstr "День месяца, когда платится, 1–31."
+
+#: backend/apps/contracts/models.py
+msgid "Who looks after it; they hear about its dates too."
+msgstr "Кто отвечает за договор; он тоже получает напоминания о сроках."
+
+#: backend/apps/contracts/models.py
+msgid ""
+"Its payment is a recurring payment in Finance, so the cash forecast sees it."
+msgstr ""
+"Платёж по договору ведётся в финансах как регулярный, поэтому прогноз денег "
+"его видит."
+
+#: backend/apps/contracts/models.py
+msgid "When its end date last moved on (by itself or by hand)."
+msgstr "Когда дата окончания последний раз сдвигалась (сама или вручную)."
+
+#: backend/apps/contracts/models.py
+msgid "The end date whose renewal the owner confirmed: the decision is made."
+msgstr ""
+"Дата окончания, продление которой владелец подтвердил: решение принято."
+
+#: backend/apps/contracts/models.py
+msgid "Signed contract"
+msgstr "Подписанный договор"
+
+#: backend/apps/contracts/models.py
+msgid "Annex"
+msgstr "Дополнительное соглашение"
+
+#: backend/apps/contracts/models.py
+msgid "Other document"
+msgstr "Другой документ"
+
+#: backend/apps/contracts/notify.py
+#, python-format
+msgid "Contract ends today: %(contract)s"
+msgstr "Договор заканчивается сегодня: %(contract)s"
+
+#: backend/apps/contracts/notify.py
+#, python-format
+msgid "Contract ends %(day)s: %(contract)s"
+msgstr "Договор заканчивается %(day)s: %(contract)s"
+
+#: backend/apps/contracts/notify.py
+msgid "Today is its last day. Renewed it? Put the new end date on its page."
+msgstr ""
+"Сегодня последний день. Продлили? Укажите новую дату окончания на странице "
+"договора."
+
+#: backend/apps/contracts/notify.py
+#, python-format
+msgid ""
+"%(count)d day left. Agree the renewal with the landlord in time, or plan the "
+"move."
+msgid_plural ""
+"%(count)d days left. Agree the renewal with the landlord in time, or plan the"
+" move."
+msgstr[0] ""
+"Остался %(count)d день. Вовремя договоритесь с арендодателем о продлении или "
+"спланируйте переезд."
+msgstr[1] ""
+"Осталось %(count)d дня. Вовремя договоритесь с арендодателем о продлении или "
+"спланируйте переезд."
+msgstr[2] ""
+"Осталось %(count)d дней. Вовремя договоритесь с арендодателем о продлении или"
+" спланируйте переезд."
+
+#: backend/apps/contracts/notify.py
+#, python-format
+msgid "%(count)d day left. Renew it or find a new one in time."
+msgid_plural "%(count)d days left. Renew it or find a new one in time."
+msgstr[0] "Остался %(count)d день. Вовремя продлите договор или найдите новый."
+msgstr[1] "Осталось %(count)d дня. Вовремя продлите договор или найдите новый."
+msgstr[2] ""
+"Осталось %(count)d дней. Вовремя продлите договор или найдите новый."
+
+#: backend/apps/contracts/notify.py
+#, python-format
+msgid "Notice deadline today: %(contract)s"
+msgstr "Срок уведомления сегодня: %(contract)s"
+
+#: backend/apps/contracts/notify.py
+#, python-format
+msgid "Notice deadline %(day)s: %(contract)s"
+msgstr "Срок уведомления %(day)s: %(contract)s"
+
+#: backend/apps/contracts/notify.py
+#, python-format
+msgid ""
+"Last day to give notice. Otherwise it renews by itself after %(renews)s."
+msgstr ""
+"Последний день для уведомления. Иначе договор продлится сам после %(renews)s."
+
+#: backend/apps/contracts/notify.py
+#, python-format
+msgid ""
+"It renews by itself after %(renews)s. If you don't want that, tell %(party)s "
+"in writing by %(day)s."
+msgstr ""
+"Договор продлится сам после %(renews)s. Если вы этого не хотите, письменно "
+"уведомите сторону «%(party)s» до %(day)s."
+
+#: backend/apps/contracts/notify.py
+#, python-format
+msgid ""
+"It renews by itself after %(renews)s. If you don't want that, tell the other "
+"side in writing by %(day)s."
+msgstr ""
+"Договор продлится сам после %(renews)s. Если вы этого не хотите, уведомите "
+"другую сторону письменно до %(day)s."
+
+#: backend/apps/contracts/notify.py backend/apps/contracts/providers.py
+msgid "Keep it renewing"
+msgstr "Пусть продлевается"
+
+#: backend/apps/contracts/notify.py backend/apps/contracts/providers.py
+msgid "We give notice"
+msgstr "Уведомляем"
+
+#: backend/apps/contracts/notify.py
+#, python-format
+msgid "Renewed by itself: %(contract)s"
+msgstr "Продлён автоматически: %(contract)s"
+
+#: backend/apps/contracts/notify.py
+#, python-format
+msgid "It now runs until %(day)s."
+msgstr "Теперь действует до %(day)s."
+
+#: backend/apps/contracts/notify.py
+msgid "This contract was deleted."
+msgstr "Этот договор удалён."
+
+#: backend/apps/contracts/notify.py
+#, python-format
+msgid "It keeps renewing: until %(day)s, then on."
+msgstr "Договор продлевается дальше: до %(day)s и затем снова."
+
+#: backend/apps/contracts/notify.py
+#, python-format
+msgid "Noted: it ends on %(day)s. Tell the other side in writing."
+msgstr ""
+"Отмечено: договор закончится %(day)s. Уведомите другую сторону письменно."
+
+#: backend/apps/contracts/owner_api.py
+msgid "Pick a status from the list."
+msgstr "Выберите статус из списка."
+
+#: backend/apps/contracts/owner_api.py
+msgid "Give the contract a name."
+msgstr "Дайте договору название."
+
+#: backend/apps/contracts/owner_api.py
+msgid "Pick a counterparty of this company."
+msgstr "Выберите контрагента этой компании."
+
+#: backend/apps/contracts/owner_api.py backend/apps/finance/api.py
+#: backend/apps/finance/claims.py backend/apps/finance/services.py
+#: backend/apps/projects/services.py
+msgid "Pick an expense category."
+msgstr "Выберите категорию расхода."
+
+#: backend/apps/contracts/owner_api.py
+msgid "Pick one of your recurring payments."
+msgstr "Выберите один из ваших регулярных платежей."
+
+#: backend/apps/contracts/providers.py
+#, python-format
+msgid "Contract renews: %(contract)s"
+msgstr "Продление договора: %(contract)s"
+
+#: backend/apps/contracts/providers.py
+#, python-format
+msgid "Contract ends: %(contract)s"
+msgstr "Окончание договора: %(contract)s"
+
+#: backend/apps/contracts/providers.py
+#, python-format
+msgid "Notice deadline: %(contract)s"
+msgstr "Срок уведомления: %(contract)s"
+
+#: backend/apps/contracts/providers.py
+#, python-format
+msgid "Notice by %(day)s, or it renews after %(renews)s"
+msgstr "Уведомить до %(day)s, иначе продлится после %(renews)s"
+
+#: backend/apps/contracts/providers.py
+#, python-format
+msgid "%(contract)s: notice deadline %(day)s"
+msgstr "%(contract)s: срок уведомления %(day)s"
+
+#: backend/apps/contracts/providers.py
+#, python-format
+msgid "%(contract)s ends %(day)s"
+msgstr "%(contract)s: заканчивается %(day)s"
+
+#: backend/apps/contracts/providers.py
+#, python-format
+msgid "And %(count)d more contract"
+msgid_plural "And %(count)d more contracts"
+msgstr[0] "И ещё %(count)d договор"
+msgstr[1] "И ещё %(count)d договора"
+msgstr[2] "И ещё %(count)d договоров"
+
+#: backend/apps/contracts/providers.py backend/apps/hr/models.py
+msgid "Contract"
+msgstr "Договор"
+
+#: backend/apps/contracts/providers.py
+msgid "Party"
+msgstr "Сторона"
+
+#: backend/apps/contracts/providers.py backend/apps/hr/models.py
+#: backend/apps/learning/models.py
+msgid "Number"
+msgstr "Число"
+
+#: backend/apps/contracts/providers.py backend/apps/hr/policies/exporters.py
+msgid "Signed"
+msgstr "Подписано"
+
+#: backend/apps/contracts/providers.py
+msgid "Starts"
+msgstr "Начало"
+
+#: backend/apps/contracts/providers.py
+msgid "Ends"
+msgstr "Окончание"
+
+#: backend/apps/contracts/providers.py
+msgid "Renews by itself"
+msgstr "Продлевается сам"
+
+#: backend/apps/contracts/providers.py
+msgid "Notice deadline"
+msgstr "Срок уведомления"
+
+#: backend/apps/contracts/providers.py backend/apps/finance/exporters.py
+#: backend/apps/payroll/providers.py backend/apps/sales/hooks.py
+msgid "Currency"
+msgstr "Валюта"
+
+#: backend/apps/contracts/providers.py backend/apps/finance/exporters.py
+#: backend/apps/finance/models.py backend/apps/sales/hooks.py
+#: backend/apps/sales/models.py
+msgid "Paid"
+msgstr "Погашен"
+
+#: backend/apps/contracts/providers.py
+msgid "A month"
+msgstr "В месяц"
+
+#: backend/apps/contracts/providers.py
+msgid "In the cash forecast"
+msgstr "В прогнозе денег"
+
+#: backend/apps/contracts/providers.py
+msgid "Looks after it"
+msgstr "Ответственный"
+
+#: backend/apps/contracts/providers.py
+msgid "Files"
+msgstr "Файлы"
+
+#: backend/apps/contracts/providers.py backend/apps/finance/statement_pack.py
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "Notes"
+msgstr "Заметки"
+
+#: backend/apps/contracts/providers.py
+#, python-format
+msgid "Rent: %(amount)s a month."
+msgstr "Аренда: %(amount)s в месяц."
+
+#: backend/apps/contracts/providers.py
+#, python-format
+msgid "Rent: %(amount)s a quarter."
+msgstr "Аренда: %(amount)s в квартал."
+
+#: backend/apps/contracts/providers.py
+#, python-format
+msgid "Rent: %(amount)s a year."
+msgstr "Аренда: %(amount)s в год."
+
+#: backend/apps/contracts/providers.py
+#, python-format
+msgid "Lease renewal to decide in %(count)d day: %(lease)s"
+msgid_plural "Lease renewal to decide in %(count)d days: %(lease)s"
+msgstr[0] "До решения о продлении аренды %(count)d день: %(lease)s"
+msgstr[1] "До решения о продлении аренды %(count)d дня: %(lease)s"
+msgstr[2] "До решения о продлении аренды %(count)d дней: %(lease)s"
+
+#: backend/apps/contracts/providers.py
+#, python-format
+msgid ""
+"It renews by itself after %(day)s unless you give notice by %(deadline)s."
+msgstr ""
+"Договор продлится сам после %(day)s, если не уведомить до %(deadline)s."
+
+#: backend/apps/contracts/providers.py
+msgid "Decide now: keep it, ask for a better rent, or give notice in writing."
+msgstr ""
+"Решите сейчас: оставить, попросить ставку пониже или письменно уведомить."
+
+#: backend/apps/contracts/providers.py
+#, python-format
+msgid "Lease ends in %(count)d day: %(lease)s"
+msgid_plural "Lease ends in %(count)d days: %(lease)s"
+msgstr[0] "Аренда заканчивается через %(count)d день: %(lease)s"
+msgstr[1] "Аренда заканчивается через %(count)d дня: %(lease)s"
+msgstr[2] "Аренда заканчивается через %(count)d дней: %(lease)s"
+
+#: backend/apps/contracts/providers.py
+#, python-format
+msgid "The lease with %(party)s ends on %(day)s."
+msgstr "Аренда у «%(party)s» заканчивается %(day)s."
+
+#: backend/apps/contracts/providers.py
+#, python-format
+msgid "The lease ends on %(day)s."
+msgstr "Аренда заканчивается %(day)s."
+
+#: backend/apps/contracts/providers.py
+msgid ""
+"Agree the renewal with the landlord now, or start looking for a new place: a "
+"move takes time."
+msgstr ""
+"Договоритесь о продлении с арендодателем сейчас или начните искать новое "
+"место: переезд требует времени."
+
+#: backend/apps/contracts/services.py
+msgid "Only a contract that is or was in force can be renewed."
+msgstr "Продлить можно только действующий или закончившийся договор."
+
+#: backend/apps/contracts/services.py
+msgid "Pick the new end date."
+msgstr "Выберите новую дату окончания."
+
+#: backend/apps/contracts/services.py
+msgid "The new end date must be after the current one."
+msgstr "Новая дата окончания должна быть позже текущей."
+
+#: backend/apps/contracts/services.py backend/apps/finance/recurring.py
+msgid "It can't end before it starts."
+msgstr "Дата окончания не может быть раньше начала."
+
+#: backend/apps/contracts/services.py
+msgid "The new end date has already passed."
+msgstr "Новая дата окончания уже прошла."
+
+#: backend/apps/contracts/services.py
+msgid "This contract doesn't renew by itself."
+msgstr "Этот договор не продлевается сам."
+
+#: backend/apps/contracts/services.py
+msgid "This contract is no longer in force."
+msgstr "Этот договор больше не действует."
+
+#: backend/apps/contracts/services.py
+msgid "Only a contract in force can be terminated."
+msgstr "Расторгнуть можно только действующий договор."
+
+#: backend/apps/contracts/services.py
+msgid "Pick the day it ends."
+msgstr "Выберите дату окончания."
+
+#: backend/apps/contracts/services.py
+#, python-format
+msgid "It ends on %(day)s anyway."
+msgstr "Договор и так заканчивается %(day)s."
+
+#: backend/apps/contracts/services.py
+msgid "Pick what the file is from the list."
+msgstr "Выберите из списка, что это за файл."
+
+#: backend/apps/contracts/services.py
+#, python-format
+msgid "A contract keeps at most %(count)d files: remove one first."
+msgstr "Файлов у договора: не больше %(count)d. Сначала удалите один."
+
+#: backend/apps/contracts/services.py
+msgid "Warn about a notice deadline 1 to 180 days ahead."
+msgstr "Предупреждать о сроке уведомления за 1–180 дней."
+
+#: backend/apps/contracts/services.py
+msgid "This contract already has its recurring payment."
+msgstr "У этого договора уже есть регулярный платёж."
+
+#: backend/apps/contracts/services.py
+msgid ""
+"Only a contract in force with its payment in the forecast can take one over."
+msgstr ""
+"Взять регулярный платёж может только действующий договор с платежом в "
+"прогнозе."
+
+#: backend/apps/contracts/services.py
+msgid "Switch Finance on to put this payment in the cash forecast."
+msgstr "Включите финансы, чтобы учесть этот платёж в прогнозе денег."
+
+#: backend/apps/contracts/services.py
+msgid ""
+"Give the amount and how often it is paid to put it in the cash forecast."
+msgstr "Укажите сумму и периодичность, чтобы учесть платёж в прогнозе денег."
+
+#: backend/apps/contracts/services.py
+msgid "Pick a recurring payment of this company."
+msgstr "Выберите регулярный платёж этой компании."
+
+#: backend/apps/contracts/services.py
+msgid "That recurring payment belongs to another contract."
+msgstr "Этот регулярный платёж относится к другому договору."
+
+#: backend/apps/contracts/services.py
+#, python-format
+msgid "The recurring payment is in %(currency)s, like its account."
+msgstr "Регулярный платёж в валюте %(currency)s, как и его счёт."
+
+#: backend/apps/contracts/services.py backend/apps/finance/recurring.py
+#: backend/apps/finance/services.py backend/apps/payroll/finance_bridge.py
+#, python-format
+msgid "%(account)s holds %(currency)s."
+msgstr "Валюта счёта «%(account)s» — %(currency)s."
+
+#: backend/apps/contracts/services.py
+msgid "Pick the expense category of this payment."
+msgstr "Выберите статью расходов для этого платежа."
+
+#: backend/apps/contracts/services.py
+#, python-format
+msgid "Add a %(currency)s account in Finance first: the rent is paid from it."
+msgstr ""
+"Сначала добавьте в финансах счёт в валюте %(currency)s: аренда платится с "
+"него."
+
+#: backend/apps/contracts/services.py backend/apps/finance/recurring.py
+#: backend/apps/tasks/services.py
+msgid "Pick someone who works here."
+msgstr "Выберите того, кто здесь работает."
+
+#: backend/apps/contracts/services.py
+msgid ""
+"A contract is drafted or made active by hand; the rest follows its dates."
+msgstr ""
+"Вручную договор можно сделать только черновиком или действующим; остальное "
+"следует из его дат."
+
+#: backend/apps/contracts/services.py
+msgid "Give the contract a name, like Lease of the Chilonzor pharmacy."
+msgstr "Дайте договору название, например: Аренда аптеки на Чиланзаре."
+
+#: backend/apps/contracts/services.py
+msgid "Pick how often it is paid."
+msgstr "Выберите, как часто платится."
+
+#: backend/apps/contracts/services.py
+msgid "The amount can't be negative."
+msgstr "Сумма не может быть отрицательной."
+
+#: backend/apps/contracts/services.py backend/apps/finance/recurring.py
+msgid "Pick a day of the month from 1 to 31."
+msgstr "Выберите число месяца от 1 до 31."
+
+#: backend/apps/contracts/services.py
+msgid "Notice is 0 to 365 days."
+msgstr "Срок уведомления: 0–365 дней."
+
+#: backend/apps/contracts/services.py
+msgid "A renewal lasts 1 to 120 months."
+msgstr "Продление длится 1–120 месяцев."
+
+#: backend/apps/contracts/services.py
+msgid "A contract that renews by itself needs its end date."
+msgstr "Для договора с автопродлением нужна дата окончания."
+
+#: backend/apps/contracts/services.py backend/apps/finance/recurring.py
+#: backend/apps/lifecycle/job_changes.py backend/apps/lifecycle/reviews.py
+msgid "Pick the day it starts."
+msgstr "Выберите дату начала."
+
+#: backend/apps/contracts/services.py
+msgid "A one-off payment doesn't repeat: keep it out of the forecast."
+msgstr "Разовый платёж не повторяется: не включайте его в прогноз."
 
 #: backend/apps/core/bot_runtime.py davomat_bot/handlers/start.py
 msgid "This message is too old. Open it again from the menu."
@@ -7176,12 +7837,6 @@ msgstr ""
 #: backend/apps/members/providers.py
 msgid "Left"
 msgstr "Не в компании"
-
-#: backend/apps/davomat/importing.py backend/apps/goals/models.py
-#: backend/apps/learning/models.py backend/apps/members/models.py
-#: backend/apps/projects/models.py
-msgid "Active"
-msgstr "Активен"
 
 #: backend/apps/davomat/importing.py backend/apps/exports/build.py
 #: backend/apps/hr/hiring/bot.py backend/apps/hr/hiring/questions.py
@@ -8015,11 +8670,6 @@ msgstr "Неизвестный статус."
 msgid "Attach at most %(n)s receipts."
 msgstr "Чеков можно приложить не больше %(n)s."
 
-#: backend/apps/finance/api.py backend/apps/finance/claims.py
-#: backend/apps/finance/services.py backend/apps/projects/services.py
-msgid "Pick an expense category."
-msgstr "Выберите категорию расхода."
-
 #: backend/apps/finance/audit_actions.py
 msgid "Added a money account"
 msgstr "Добавлен денежный счёт"
@@ -8595,11 +9245,6 @@ msgstr "Контрагент"
 msgid "Description"
 msgstr "Описание"
 
-#: backend/apps/finance/exporters.py backend/apps/payroll/providers.py
-#: backend/apps/sales/hooks.py
-msgid "Currency"
-msgstr "Валюта"
-
 #: backend/apps/finance/exporters.py
 msgid "Rate"
 msgstr "Курс"
@@ -8692,11 +9337,6 @@ msgstr "Дата возникновения"
 #: backend/apps/tasks/hooks.py
 msgid "Due"
 msgstr "Срок"
-
-#: backend/apps/finance/exporters.py backend/apps/finance/models.py
-#: backend/apps/sales/hooks.py backend/apps/sales/models.py
-msgid "Paid"
-msgstr "Погашен"
 
 #: backend/apps/finance/exporters.py
 msgid "Outstanding"
@@ -9378,18 +10018,6 @@ msgid "Posted automatically"
 msgstr "Проводится автоматически"
 
 #: backend/apps/finance/models.py
-msgid "Monthly"
-msgstr "Ежемесячно"
-
-#: backend/apps/finance/models.py
-msgid "Quarterly"
-msgstr "Ежеквартально"
-
-#: backend/apps/finance/models.py
-msgid "Yearly"
-msgstr "Ежегодно"
-
-#: backend/apps/finance/models.py
 msgid "The working day before"
 msgstr "Предыдущий рабочий день"
 
@@ -9974,12 +10602,6 @@ msgstr "Этот платёж проводится автоматически: �
 msgid "Already paid."
 msgstr "Уже оплачено."
 
-#: backend/apps/finance/recurring.py backend/apps/finance/services.py
-#: backend/apps/payroll/finance_bridge.py
-#, python-format
-msgid "%(account)s holds %(currency)s."
-msgstr "Валюта счёта «%(account)s» — %(currency)s."
-
 #: backend/apps/finance/recurring.py
 msgid "A bill is paid with the amount you paid, not run."
 msgstr ""
@@ -10015,10 +10637,6 @@ msgid "Pick a weekday from 1 (Monday) to 7 (Sunday)."
 msgstr "Выберите день недели от 1 (понедельник) до 7 (воскресенье)."
 
 #: backend/apps/finance/recurring.py
-msgid "Pick a day of the month from 1 to 31."
-msgstr "Выберите число месяца от 1 до 31."
-
-#: backend/apps/finance/recurring.py
 msgid "Remind 0 to 30 days before."
 msgstr "Напоминать за 0–30 дней."
 
@@ -10029,19 +10647,6 @@ msgstr "Для автоматического платежа нужен счёт
 #: backend/apps/finance/recurring.py
 msgid "An automatic payment needs a fixed amount."
 msgstr "Для автоматического платежа нужна фиксированная сумма."
-
-#: backend/apps/finance/recurring.py backend/apps/lifecycle/job_changes.py
-#: backend/apps/lifecycle/reviews.py
-msgid "Pick the day it starts."
-msgstr "Выберите дату начала."
-
-#: backend/apps/finance/recurring.py
-msgid "It can't end before it starts."
-msgstr "Дата окончания не может быть раньше начала."
-
-#: backend/apps/finance/recurring.py backend/apps/tasks/services.py
-msgid "Pick someone who works here."
-msgstr "Выберите того, кто здесь работает."
 
 #: backend/apps/finance/recurring.py
 msgid "Pick who pays it, so they get the task."
@@ -10661,11 +11266,6 @@ msgstr "Партнёры и дивиденды"
 #: backend/apps/finance/templates/finance/statements/valuation.html
 msgid "What the business is worth"
 msgstr "Сколько стоит бизнес"
-
-#: backend/apps/finance/statement_pack.py
-#: backend/apps/finance/templates/finance/statements/notes.html
-msgid "Notes"
-msgstr "Пояснения"
 
 #: backend/apps/finance/statement_pack.py
 #, python-format
@@ -11828,10 +12428,6 @@ msgid "In the metric's unit: so‘m, percent or a count."
 msgstr "В единицах показателя: сумы, проценты или количество."
 
 #: backend/apps/goals/models.py
-msgid "Empty: the whole company."
-msgstr "Пусто — вся компания."
-
-#: backend/apps/goals/models.py
 msgid "Who answers for it."
 msgstr "Кто отвечает."
 
@@ -12304,10 +12900,6 @@ msgid "Drew up a contract"
 msgstr "Составлен договор"
 
 #: backend/apps/hr/audit_actions.py
-msgid "Changed a contract"
-msgstr "Изменён договор"
-
-#: backend/apps/hr/audit_actions.py
 msgid "Removed a draft contract"
 msgstr "Удалён черновик договора"
 
@@ -12322,14 +12914,6 @@ msgstr "Внесены изменения в договор"
 #: backend/apps/hr/audit_actions.py
 msgid "Ended a contract"
 msgstr "Договор завершён"
-
-#: backend/apps/hr/audit_actions.py
-msgid "Terminated a contract"
-msgstr "Договор расторгнут"
-
-#: backend/apps/hr/audit_actions.py
-msgid "Renewed a contract"
-msgstr "Договор продлён"
 
 #: backend/apps/hr/audit_actions.py
 msgid "Confirmed a passed probation"
@@ -13313,10 +13897,6 @@ msgid "Work record book"
 msgstr "Трудовая книжка"
 
 #: backend/apps/hr/models.py
-msgid "Contract"
-msgstr "Договор"
-
-#: backend/apps/hr/models.py
 msgid "Confidentiality agreement"
 msgstr "Соглашение о неразглашении"
 
@@ -13365,14 +13945,6 @@ msgid "In force"
 msgstr "Действует"
 
 #: backend/apps/hr/models.py
-msgid "Ended"
-msgstr "Завершён"
-
-#: backend/apps/hr/models.py
-msgid "Terminated"
-msgstr "Расторгнут"
-
-#: backend/apps/hr/models.py
 msgid "Birthday"
 msgstr "День рождения"
 
@@ -13391,10 +13963,6 @@ msgstr "Выбор"
 #: backend/apps/hr/models.py
 msgid "Yes or no"
 msgstr "Да или нет"
-
-#: backend/apps/hr/models.py backend/apps/learning/models.py
-msgid "Number"
-msgstr "Число"
 
 #: backend/apps/hr/models.py backend/apps/learning/models.py
 msgid "Paused"
@@ -13598,10 +14166,6 @@ msgstr "Запрошено"
 #: backend/apps/hr/policies/exporters.py
 msgid "Sign by"
 msgstr "Подписать до"
-
-#: backend/apps/hr/policies/exporters.py
-msgid "Signed"
-msgstr "Подписано"
 
 #: backend/apps/hr/policies/exporters.py
 msgid "Version signed"
@@ -15181,10 +15745,6 @@ msgstr "Косметика и гигиена"
 #: backend/apps/inventory/models.py
 msgid "Other goods"
 msgstr "Прочие товары"
-
-#: backend/apps/inventory/models.py
-msgid "Service"
-msgstr "Услуга"
 
 #: backend/apps/inventory/models.py
 msgid "Tablet"
@@ -22358,10 +22918,6 @@ msgstr "Минуты опоздания"
 #: backend/apps/payroll/models.py backend/apps/sales/hooks.py
 msgid "Net sales"
 msgstr "Чистые продажи"
-
-#: backend/apps/payroll/models.py
-msgid "Once"
-msgstr "Один раз"
 
 #: backend/apps/payroll/models.py
 msgid "Per unit"
