@@ -2,6 +2,23 @@
 
 ## 0.8.1 — 2026-11-12
 
+### Davomat inside Telegram
+- Davomat's bot has a real Mini App: the **Davomat** button next to the message field opens the
+  web app inside Telegram, signed in through Telegram (no password). "Open Davomat" buttons open
+  it the same way. People without the web app keep the command menu.
+- **Link my Telegram** for every web user (Settings › Your account), a reminder on Settings ›
+  Telegram until you have, and in the setup wizard's last step: the admin then gets the "who
+  came" message with the photo for everyone who scans, their own scans included. In Davomat a
+  separate Face ID bot token no longer takes those messages to another bot.
+- The session-ended page shows the organization's own name and brand.
+
+### Sessions inside Telegram keep themselves alive
+- The dashboard opened from a bot (Daybook's owner bot, Davomat's bot) no longer says "Session
+  ended" after an hour: a Telegram sign-in is a real session with its own rotating key, listed
+  under your devices ("Telegram · iOS") and ended by "log out everywhere". Being offline is now
+  "No connection" with Try again, not "Session ended".
+- The same for Daybook's employee mini app after a day.
+
 ### Loading that never lies
 - A page never says "nothing here yet" while its data is still on the way: the loading skeleton is
   in place from the first moment (it fades in after 150 ms, so quick answers never flash it).

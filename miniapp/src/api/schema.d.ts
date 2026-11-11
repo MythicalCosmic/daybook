@@ -14,15 +14,40 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * @description Exchange the mini app's Telegram init data for an access token.
+         * @description Exchange the mini app's Telegram init data for an access token and a refresh token.
          *
-         *     Only an access token: the mini app signs in again with fresh init data when it expires,
-         *     so no refresh token (and no blacklist row) is made every time the app opens.
+         *     Init data is good for a day (`MINIAPP_INIT_DATA_MAX_AGE`); the refresh token keeps an open
+         *     app signed in after that (`auth/telegram/refresh/`, rotating, 7 days), so it never says
+         *     "session ended" while someone is using it. They are simplejwt's own tokens (no audience,
+         *     types `access`/`refresh`): never accepted by the dashboard's endpoints, nor theirs here.
          *
          *     Limited per Telegram user once the signature checks out; per address only by a ceiling
          *     that a whole shift behind one mobile operator's NAT address never reaches.
          */
         post: operations["v1_auth_telegram_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/telegram/refresh/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description The mini app's next access token: the refresh token it kept, rotated (the one sent is
+         *     blacklisted). 401 when it is expired, spent, blacklisted or the account is switched off: the
+         *     app then signs in with initData again. An owner (dashboard) token is refused here.
+         *
+         *     Limited per person once the token checks out, per address by the sign-in's ceiling.
+         */
+        post: operations["v1_auth_telegram_refresh_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3000,8 +3025,10 @@ export interface components {
             bot_username: string;
         };
         AccessToken: {
-            /** @description Bearer token for the API. When it expires, sign in with initData again. */
+            /** @description Bearer token for the API (1 hour). When it expires, post `refresh` to auth/telegram/refresh/; when that is refused, sign in with initData again. */
             access: string;
+            /** @description Refresh token (7 days, rotates on every use, blacklisted after): keep it in the page, never in lasting storage. */
+            refresh: string;
         };
         /**
          * @description * `start` - start
@@ -6864,6 +6891,11 @@ export interface components {
             note: string;
             has_photo: boolean;
         };
+        Refreshed: {
+            access: string;
+            /** @description The next refresh token; the one sent is spent. */
+            refresh: string;
+        };
         ReminderInfo: {
             every_minutes: number;
             sent: number;
@@ -7402,6 +7434,9 @@ export interface components {
             /** @description Telegram.WebApp.initData, exactly as received. */
             init_data: string;
         };
+        TelegramRefreshRequest: {
+            refresh: string;
+        };
         TimeOff: {
             readonly id: number;
             /** Format: date */
@@ -7482,6 +7517,31 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AccessToken"];
+                };
+            };
+        };
+    };
+    v1_auth_telegram_refresh_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TelegramRefreshRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["TelegramRefreshRequest"];
+                "multipart/form-data": components["schemas"]["TelegramRefreshRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Refreshed"];
                 };
             };
         };

@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-11 02:27+0500\n"
+"POT-Creation-Date: 2026-11-12 00:57+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -23,6 +23,10 @@ msgstr "Telegram"
 #: backend/apps/accounts/api.py backend/apps/console/owner_api.py
 msgid "You don't work in that company."
 msgstr "Вы не работаете в этой компании."
+
+#: backend/apps/accounts/api.py backend/apps/signin/owner_api.py
+msgid "Your session has ended. Sign in again."
+msgstr "Сеанс завершён. Войдите снова."
 
 #: backend/apps/accounts/models.py
 msgid "Only set from a contact the person shared in Telegram."
@@ -25713,10 +25717,6 @@ msgid "unknown device"
 msgstr "неизвестное устройство"
 
 #: backend/apps/signin/owner_api.py
-msgid "Your session has ended. Sign in again."
-msgstr "Сеанс завершён. Войдите снова."
-
-#: backend/apps/signin/owner_api.py
 msgid "Telegram sign-in isn't set up on this server yet."
 msgstr "Вход через Telegram на этом сервере ещё не настроен."
 
@@ -28053,6 +28053,14 @@ msgstr "Учёт посещаемости не включён."
 #: davomat_bot/bot_messages.py
 msgid "Your arrivals and departures come here, as the terminals see you."
 msgstr "Когда терминал вас видит, ваши приходы и уходы приходят сюда."
+
+#: davomat_bot/bot_messages.py
+msgid ""
+"Reports, schedules and the team are in the Davomat web app: the Davomat "
+"button next to the message field opens it here, no password needed."
+msgstr ""
+"Отчёты, графики и команда — в веб-приложении Davomat: кнопка Davomat рядом с "
+"полем ввода открывает его прямо здесь, без пароля."
 
 #: davomat_bot/bot_messages.py
 msgid "Reports, schedules and the team are in the Davomat web app."

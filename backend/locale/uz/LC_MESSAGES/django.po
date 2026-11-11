@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-11 02:27+0500\n"
+"POT-Creation-Date: 2026-11-12 00:57+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -23,6 +23,10 @@ msgstr "Telegram"
 #: backend/apps/accounts/api.py backend/apps/console/owner_api.py
 msgid "You don't work in that company."
 msgstr "Siz bu kompaniyada ishlamaysiz."
+
+#: backend/apps/accounts/api.py backend/apps/signin/owner_api.py
+msgid "Your session has ended. Sign in again."
+msgstr "Seansingiz tugadi. Qaytadan kiring."
 
 #: backend/apps/accounts/models.py
 msgid "Only set from a contact the person shared in Telegram."
@@ -25696,10 +25700,6 @@ msgid "unknown device"
 msgstr "noma’lum qurilma"
 
 #: backend/apps/signin/owner_api.py
-msgid "Your session has ended. Sign in again."
-msgstr "Seansingiz tugadi. Qaytadan kiring."
-
-#: backend/apps/signin/owner_api.py
 msgid "Telegram sign-in isn't set up on this server yet."
 msgstr "Bu serverda Telegram orqali kirish hali sozlanmagan."
 
@@ -28062,6 +28062,14 @@ msgstr "Davomat yoqilmagan."
 msgid "Your arrivals and departures come here, as the terminals see you."
 msgstr ""
 "Terminal sizni ko‘rganda kelish va ketish vaqtlaringiz shu yerga keladi."
+
+#: davomat_bot/bot_messages.py
+msgid ""
+"Reports, schedules and the team are in the Davomat web app: the Davomat "
+"button next to the message field opens it here, no password needed."
+msgstr ""
+"Hisobotlar, grafiklar va jamoa Davomat veb-ilovasida: xabar maydoni yonidagi "
+"Davomat tugmasi uni shu yerning o‘zida ochadi, parol kerak emas."
 
 #: davomat_bot/bot_messages.py
 msgid "Reports, schedules and the team are in the Davomat web app."

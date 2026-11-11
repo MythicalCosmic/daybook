@@ -8,10 +8,12 @@ paths:
     post:
       operationId: v1_auth_telegram_create
       description: |-
-        Exchange the mini app's Telegram init data for an access token.
+        Exchange the mini app's Telegram init data for an access token and a refresh token.
 
-        Only an access token: the mini app signs in again with fresh init data when it expires,
-        so no refresh token (and no blacklist row) is made every time the app opens.
+        Init data is good for a day (`MINIAPP_INIT_DATA_MAX_AGE`); the refresh token keeps an open
+        app signed in after that (`auth/telegram/refresh/`, rotating, 7 days), so it never says
+        "session ended" while someone is using it. They are simplejwt's own tokens (no audience,
+        types `access`/`refresh`): never accepted by the dashboard's endpoints, nor theirs here.
 
         Limited per Telegram user once the signature checks out; per address only by a ceiling
         that a whole shift behind one mobile operator's NAT address never reaches.
@@ -37,6 +39,38 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AccessToken'
+          description: ''
+  /api/v1/auth/telegram/refresh/:
+    post:
+      operationId: v1_auth_telegram_refresh_create
+      description: |-
+        The mini app's next access token: the refresh token it kept, rotated (the one sent is
+        blacklisted). 401 when it is expired, spent, blacklisted or the account is switched off: the
+        app then signs in with initData again. An owner (dashboard) token is refused here.
+
+        Limited per person once the token checks out, per address by the sign-in's ceiling.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TelegramRefreshRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TelegramRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TelegramRefreshRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Refreshed'
           description: ''
   /api/v1/companies/{company_id}/activity/:
     get:
@@ -6371,10 +6405,16 @@ components:
       properties:
         access:
           type: string
-          description: Bearer token for the API. When it expires, sign in with initData
+          description: Bearer token for the API (1 hour). When it expires, post `refresh`
+            to auth/telegram/refresh/; when that is refused, sign in with initData
             again.
+        refresh:
+          type: string
+          description: 'Refresh token (7 days, rotates on every use, blacklisted after):
+            keep it in the page, never in lasting storage.'
       required:
       - access
+      - refresh
     ActionsEnum:
       enum:
       - start
@@ -15845,6 +15885,17 @@ components:
       - shift_id
       - status
       - worked_minutes
+    Refreshed:
+      type: object
+      properties:
+        access:
+          type: string
+        refresh:
+          type: string
+          description: The next refresh token; the one sent is spent.
+      required:
+      - access
+      - refresh
     ReminderInfo:
       type: object
       properties:
@@ -17105,6 +17156,15 @@ components:
           description: Telegram.WebApp.initData, exactly as received.
       required:
       - init_data
+    TelegramRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+          maxLength: 2048
+      required:
+      - refresh
     TimeOff:
       type: object
       properties:

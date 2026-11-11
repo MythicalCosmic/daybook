@@ -114,9 +114,22 @@ paths:
   /api/v1/owner/auth/logout/:
     post:
       operationId: auth_logout_create
-      description: End this browser's session and clear the refresh cookie.
+      description: |-
+        End this browser's session and clear the refresh cookie. Inside Telegram there is no
+        cookie: the page posts the refresh token it kept, `{"refresh": "…"}`.
       tags:
       - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
       security:
       - {}
       responses:
@@ -200,8 +213,8 @@ paths:
   /api/v1/owner/auth/sessions/:
     get:
       operationId: auth_sessions_list
-      description: Browsers signed in to the dashboard as you (inside Telegram there
-        is no session).
+      description: Browsers and Telegram apps signed in to the dashboard as you ("Telegram
+        · Android").
       tags:
       - auth
       security:
@@ -271,9 +284,12 @@ paths:
     post:
       operationId: auth_telegram_create
       description: |-
-        Sign in with `Telegram.WebApp.initData` (owner bot, else employee bot), at most
-        `OWNER_INIT_DATA_MAX_AGE` old. Answers an access token only; post the same initData again
-        when it runs out.
+        Sign in with `Telegram.WebApp.initData` (owner bot, else employee bot; in the Davomat
+        edition the organization's own bot first), at most `OWNER_INIT_DATA_MAX_AGE` old: a
+        session whose refresh token comes in the body (Telegram
+        Web runs the dashboard in a cross-site iframe, where no cookie arrives). The page keeps it
+        and gets every next access token from `telegram/refresh/`, so the console stays signed in
+        after the hour initData is good for.
       tags:
       - auth
       requestBody:
@@ -295,12 +311,42 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Access'
+                $ref: '#/components/schemas/TelegramSession'
           description: ''
         '401':
           description: Invalid or old initData.
         '403':
           description: No dashboard access.
+  /api/v1/owner/auth/telegram/refresh/:
+    post:
+      operationId: auth_telegram_refresh_create
+      description: Rotates a Telegram session's refresh token. A token used twice
+        ends its session; a desktop (cookie) session's token is refused here.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TelegramRefreshRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TelegramRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TelegramRefreshRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TelegramSession'
+          description: ''
+        '401':
+          description: 'The session has ended (code: session_ended).'
   /api/v1/owner/companies/:
     post:
       operationId: companies_create
@@ -60097,6 +60143,14 @@ components:
         * `denied` - Denied
         * `expired` - Expired
         * `consumed` - Used
+    LogoutRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+          description: 'Inside Telegram (no cookie): the refresh token the page kept.'
+          maxLength: 2048
     LowPoint:
       type: object
       properties:
@@ -76526,6 +76580,31 @@ components:
           maxLength: 4096
       required:
       - init_data
+    TelegramRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+          maxLength: 2048
+      required:
+      - refresh
+    TelegramSession:
+      type: object
+      properties:
+        access:
+          type: string
+          description: Owner access token (aud=dashboard), 15 minutes.
+        refresh:
+          type: string
+          nullable: true
+          description: 'The session''s refresh token (7 days, rotates on every use):
+            keep it in the page and post it to telegram/refresh/ for the next access
+            token. null when a refresh came within the reuse grace: keep the one you
+            have.'
+      required:
+      - access
+      - refresh
     Template:
       type: object
       properties:
