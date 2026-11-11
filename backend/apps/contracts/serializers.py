@@ -2,6 +2,7 @@
 `YYYY-MM-DD`; every component name starts with "Contracts" (see the end of the file)."""
 
 from datetime import date
+from pathlib import PurePosixPath
 
 from rest_framework import serializers
 
@@ -332,6 +333,14 @@ def row_of(contract: BusinessContract, *, today: date, settings, files: int | No
     }
 
 
+def download_name(row: ContractFile) -> str:
+    """ "Chilonzor dorixonasi ijarasi - Signed contract.pdf": what the browser saves it as."""
+    suffix = PurePosixPath(row.file.name).suffix.lower()
+    name = f"{row.contract.title} - {row.label or row.get_kind_display()}"
+    clean = "".join(" " if char in '/\\:*?"<>|' or ord(char) < 32 else char for char in name)
+    return f"{' '.join(clean.split())[:150]}{suffix}"
+
+
 def file_of(row: ContractFile, *, user) -> dict:
     return {
         "id": row.pk,
@@ -340,7 +349,11 @@ def file_of(row: ContractFile, *, user) -> dict:
         "size": row.size,
         "is_pdf": row.file.name.lower().endswith(".pdf"),
         "url": signed_url(
-            row.file, user=user, company_id=row.company_id, check=f"contracts.file:{row.pk}"
+            row.file,
+            user=user,
+            company_id=row.company_id,
+            check=f"contracts.file:{row.pk}",
+            filename=download_name(row),
         ),
         "uploaded_by": row.uploaded_by.get_full_name() if row.uploaded_by_id else None,
         "created_at": row.created_at,

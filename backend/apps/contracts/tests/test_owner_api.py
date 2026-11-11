@@ -280,3 +280,12 @@ def test_the_history_tab_reads_its_audit(shop, owner, owner_api, manager, far, l
     assert "contracts.created" in str(reply.json())
     # A contract outside the manager's branches has no history for them.
     assert history(manager, far).status_code in (403, 404)
+
+
+def test_a_file_downloads_under_a_readable_name(shop, owner, owner_api, client, lease):
+    reply = owner_api(owner).post(
+        f"{base(shop)}/{lease.pk}/files/", {"file": pdf(), "kind": "annex", "label": "Ijara haqi"}
+    )
+    opened = client.get(reply.json()["file_list"][0]["url"])
+    disposition = opened["Content-Disposition"]
+    assert 'filename="Chilonzor dorixonasi ijarasi - Ijara haqi.pdf"' in disposition

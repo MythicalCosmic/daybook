@@ -130,7 +130,7 @@ async function remove(file: ContractFile): Promise<void> {
       <p v-if="uploading" class="flex items-center gap-1.5 text-xs text-muted"><Upload :size="13" aria-hidden="true" />{{ t("contracts.files.uploading") }}</p>
     </div>
 
-    <UiDrawer v-model:open="pdfOpen" :title="viewing ? name(viewing) : ''" size="xl">
+    <UiDrawer v-model:open="pdfOpen" :title="contract.title" size="xl">
       <PdfPreview v-if="viewing" :src="viewing.url" :title="name(viewing)" :filename="`${contract.title} - ${name(viewing)}.pdf`" />
     </UiDrawer>
     <ImageLightbox v-model:open="lightbox" v-model:index="lightboxIndex" :images="pictures.map((file) => ({ src: file.url, alt: name(file) }))" :title="contract.title" />
