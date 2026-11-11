@@ -692,3 +692,44 @@ export function shyStep(x: number, pointerX: number, min: number, max: number, d
   return Math.round(Math.min(max, Math.max(min, target)));
 }
 
+
+// Keeping clear of what people press (components/buddySpace.ts reads the page) -----------------
+
+/** What the drawing covers when its top-left corner is at (x, y): its body and its props, without
+ * the shadow under its feet, so standing on a bar's top edge doesn't count as covering the bar. */
+export function figureBox(x: number, y: number, size: number): Box {
+  const inset = Math.round(size * 0.06);
+  return { left: x + inset, top: y, width: size - 2 * inset, height: Math.max(0, buddyBox(size).feet - 2) };
+}
+
+/** Whether two boxes overlap by more than `margin` pixels both across and down. */
+export function overlaps(a: Box, b: Box, margin = 2): boolean {
+  const across = Math.min(a.left + a.width, b.left + b.width) - Math.max(a.left, b.left);
+  const down = Math.min(a.top + a.height, b.top + b.height) - Math.max(a.top, b.top);
+  return across > margin && down > margin;
+}
+
+/** Places along the floor to try, nearest first: `x` (kept inside [min, max]), then `step`
+ * further each way, and both ends last. */
+export function spotsFrom(x: number, min: number, max: number, step = 32): number[] {
+  const low = Math.round(Math.min(min, max));
+  const high = Math.round(Math.max(min, max));
+  const start = Math.round(Math.min(high, Math.max(low, x)));
+  const found = [start];
+  for (let distance = step; start - distance >= low || start + distance <= high; distance += step) {
+    if (start + distance <= high) found.push(start + distance);
+    if (start - distance >= low) found.push(start - distance);
+  }
+  for (const end of [high, low]) if (!found.includes(end)) found.push(end);
+  return found;
+}
+
+/** Where its feet go at `left` (its width `width`): on the floor (`feet`), or up on a bar docked
+ * above the floor there (a save bar, a selection bar, a chat's composer), never in front of one. */
+export function floorAt(feet: number, bars: readonly Box[], left: number, width: number): number {
+  let line = feet;
+  for (const bar of bars) {
+    if (bar.left < left + width && bar.left + bar.width > left && bar.top < line) line = bar.top;
+  }
+  return Math.round(line);
+}
