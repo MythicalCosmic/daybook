@@ -123,8 +123,21 @@ def test_log_out_every_other_device_keeps_this_one(owner):
     assert laptop.post(REFRESH, **DASHBOARD).status_code == 200
 
 
-def test_inside_telegram_keep_current_still_logs_out_everywhere(owner):
-    # A Telegram token names no session, so there is nothing to keep.
+def test_inside_telegram_keep_current_keeps_the_telegram_session(owner):
+    signed_in(owner.user)
+    request = RequestFactory().post("/", HTTP_USER_AGENT=IPHONE, REMOTE_ADDR="213.230.86.14")
+    telegram = services.issue_session(owner.user, request, telegram=True)
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {telegram.access}")
+
+    response = client.post(f"{SESSIONS}revoke-all/", {"keep_current": True}, format="json")
+
+    assert response.json() == {"revoked": 1, "signed_out": False}
+    assert list(DeviceSession.objects.filter(revoked_at__isnull=True)) == [telegram.session]
+
+
+def test_a_token_naming_no_session_keeps_nothing(owner):
+    # An access token without `sid` (issued inside Telegram before 0.8.x) has nothing to keep.
     signed_in(owner.user)
     client = APIClient()
     client.credentials(HTTP_AUTHORIZATION=f"Bearer {OwnerAccessToken.for_user(owner.user)}")

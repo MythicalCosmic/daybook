@@ -13,6 +13,7 @@ from apps.signin.owner_api import (
     SessionsRevokeAllView,
     SessionsView,
     TelegramLoginView,
+    TelegramRefreshView,
 )
 
 urlpatterns = [
@@ -27,6 +28,7 @@ urlpatterns = [
         name="signin-login-link-claim",
     ),
     path("telegram/", TelegramLoginView.as_view(), name="signin-telegram"),
+    path("telegram/refresh/", TelegramRefreshView.as_view(), name="signin-telegram-refresh"),
     path("sessions/", SessionsView.as_view(), name="signin-sessions"),
     path(
         "sessions/revoke-all/", SessionsRevokeAllView.as_view(), name="signin-sessions-revoke-all"

@@ -1,9 +1,11 @@
 """Owner dashboard tokens: simplejwt tokens with `aud="dashboard"` and their own token types.
 
 - `OwnerAccessToken` (15 minutes, `OWNER_ACCESS_TOKEN_LIFETIME`): the only token
-  `OwnerJWTAuthentication` accepts. Desktop ones carry `sid`, the `DeviceSession` id.
-- `OwnerRefreshToken` (7 days): lives in an httpOnly cookie on the desktop, rotates on every
-  refresh and is blacklisted afterwards. Never issued inside Telegram.
+  `OwnerJWTAuthentication` accepts. It carries `sid`, the `DeviceSession` id.
+- `OwnerRefreshToken` (7 days): rotates on every refresh and is blacklisted afterwards. On the
+  desktop it lives in an httpOnly cookie; inside Telegram (the dashboard as a Mini App, where
+  that cookie never arrives) the page keeps it and sends it in the body. Those carry
+  `via="telegram"`, and each kind is refused where the other one belongs.
 
 The audience is written and checked by a token backend of their own, so a mini app token (no
 `aud`) never opens `/api/v1/owner/…`; and the token types differ from simplejwt's `access` and
@@ -19,6 +21,9 @@ from rest_framework_simplejwt.tokens import RefreshToken, Token
 
 AUDIENCE = "dashboard"
 SESSION_CLAIM = "sid"
+# How the session's refresh token travels: absent for the cookie, VIA_TELEGRAM in the body.
+VIA_CLAIM = "via"
+VIA_TELEGRAM = "telegram"
 
 
 @cache
