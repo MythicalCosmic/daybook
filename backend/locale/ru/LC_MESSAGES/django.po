@@ -7396,7 +7396,7 @@ msgstr[2] "Аренда заканчивается через %(count)d дней
 #: backend/apps/contracts/providers.py
 #, python-format
 msgid "The lease with %(party)s ends on %(day)s."
-msgstr "Аренда у «%(party)s» заканчивается %(day)s."
+msgstr "Договор аренды заканчивается %(day)s. Сторона: %(party)s."
 
 #: backend/apps/contracts/providers.py
 #, python-format

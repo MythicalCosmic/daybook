@@ -27,6 +27,8 @@ class ContractsOverviewInput(BaseModel):
 @ai_tool(
     "contracts_overview",
     domain="finance",
+    # Like every finance tool: the finance domain is open only while Finance is on.
+    feature="finance",
     perm=Perm.FINANCE_VIEW,
     label=_(
         "Business contracts: leases, suppliers, services, licences and insurance, who with, "

@@ -9646,7 +9646,7 @@ msgstr "Imtiyozli oylar to‘lovlar sonidan kam bo‘lishi kerak."
 
 #: backend/apps/finance/loan_math.py
 msgid "The annual rate is 0 to 100 per cent."
-msgstr "Yillik stavka 0 dan 100 foizgacha."
+msgstr "Yillik stavka: 0–100 foiz."
 
 #: backend/apps/finance/loan_math.py backend/apps/finance/loans.py
 msgid "Pick how the loan is repaid."
@@ -11373,7 +11373,7 @@ msgstr "To‘lov muddati yetkazilgandan keyin 1 kundan 365 kungacha."
 
 #: backend/apps/finance/services.py
 msgid "The payment day is 1 to 31."
-msgstr "To‘lov sanasi 1 dan 31 gacha."
+msgstr "To‘lov kuni: 1–31."
 
 #: backend/apps/finance/services.py
 msgid "Pick days after delivery or a day of the next month, not both."
