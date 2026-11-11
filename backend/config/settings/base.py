@@ -73,6 +73,9 @@ INSTALLED_APPS = [
     "apps.agenda",
     "apps.crm",
     "apps.assets",
+    # The business's own contracts (v12): after finance, whose parties and recurring payments
+    # (and demo landlords) they use.
+    "apps.contracts",
     # Business goals (v11): after every app whose numbers they measure, whose demos they read.
     "apps.goals",
     # The Davomat edition (docs/DAVOMAT.md): after attendance and faceid, whose services it uses.
