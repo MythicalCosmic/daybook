@@ -1,0 +1,158 @@
+{% extends "core/base_print.html" %}{% load i18n %}
+{% comment %}
+The statement pack (apps.finance.statement_pack): a cover, a one-page summary, the purpose's own
+pages, the statements and the notes. Every figure arrives formatted; this file only lays it out.
+Built for print in black and white: weight, rules and light fills carry the structure, never colour
+alone; a loss is in brackets.
+{% endcomment %}
+{% block title %}{{ title }} · {{ company.name }}{% endblock %}
+{% block style %}
+@page {
+  size: A4;
+  margin: 17mm 16mm 19mm;
+  @bottom-left { content: element(document-footer); }
+  @bottom-right { content: counter(page) " / " counter(pages); font: 7.5pt "Noto Sans"; color: #8e8579; }
+}
+@page cover {
+  margin: 0;
+  @bottom-left { content: none; }
+  @bottom-right { content: none; }
+}
+html { font-size: 9.4pt; color: #201e1d; line-height: 1.42; }
+.print-footer { color: #8e8579; font-size: 7.5pt; }
+
+/* The cover -------------------------------------------------------------------------------- */
+.cover { page: cover; height: 297mm; position: relative; background: #faf7f2; }
+.cover__band { position: absolute; left: 0; top: 0; bottom: 0; width: 9mm; background: #a85a27; }
+.cover__inner { position: absolute; left: 30mm; right: 22mm; top: 34mm; bottom: 26mm; }
+.cover__brand { font-size: 8pt; letter-spacing: 0.24em; text-transform: uppercase; color: #a85a27; font-weight: 700; }
+.cover__logo { position: absolute; right: 0; top: -6mm; max-height: 18mm; max-width: 48mm; }
+.cover__company { font-size: 27pt; font-weight: 700; line-height: 1.1; margin: 30mm 0 4mm; letter-spacing: -0.01em; }
+.cover__title { font-size: 15pt; color: #6b6359; margin: 0 0 1.5mm; }
+.cover__period { font-size: 15pt; font-weight: 700; color: #8c491a; margin: 0 0 9mm; }
+.cover__purpose { display: inline-block; font-size: 8.5pt; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; border: 0.8pt solid #201e1d; border-radius: 1mm; padding: 1.2mm 2.6mm; }
+.cover__facts { margin-top: 16mm; border-top: 0.6pt solid #d9d1c5; width: 112mm; }
+.cover__facts div { display: flex; justify-content: space-between; border-bottom: 0.6pt solid #d9d1c5; padding: 2.2mm 0; font-size: 9pt; }
+.cover__facts span:first-child { color: #6b6359; }
+.cover__facts span:last-child { font-weight: 700; text-align: right; }
+.cover__toc { position: absolute; left: 0; right: 0; bottom: 30mm; }
+.cover__toc h3 { font-size: 7.5pt; letter-spacing: 0.18em; text-transform: uppercase; color: #8e8579; margin: 0 0 2mm; }
+.cover__toc ol { list-style: none; margin: 0; padding: 0; columns: 2; column-gap: 10mm; font-size: 9pt; }
+.cover__toc li { display: flex; padding: 0.9mm 0; break-inside: avoid; }
+.cover__toc a { color: #201e1d; text-decoration: none; flex: 1; }
+.cover__toc a::after { content: leader(".") target-counter(attr(href), page); color: #8e8579; }
+.cover__note { position: absolute; left: 0; right: 0; bottom: 0; font-size: 8pt; color: #6b6359; border-left: 1.6pt solid #a85a27; padding: 1mm 0 1mm 3.5mm; }
+
+/* Pages and headings -------------------------------------------------------------------------- */
+.page { break-before: page; }
+.after { margin-top: 12mm; }
+table.loans td.name { width: 40mm; }
+table.partners td.name { width: 52mm; }
+table.loans td.next { width: 36mm; white-space: nowrap; }
+.eyebrow { font-size: 7.5pt; letter-spacing: 0.18em; text-transform: uppercase; color: #a85a27; font-weight: 700; margin: 0 0 1mm; }
+h2.section { font-size: 17pt; margin: 0 0 1mm; letter-spacing: -0.01em; }
+.lede { color: #6b6359; font-size: 9pt; margin: 0 0 6mm; }
+h3 { font-size: 10.5pt; margin: 6mm 0 2mm; break-after: avoid; }
+h3 + table, h3 + .table-note { break-before: avoid; }
+.keep { break-inside: avoid; }
+.muted { color: #6b6359; }
+.small { font-size: 8pt; }
+p { orphans: 3; widows: 3; }
+
+/* Tables ----------------------------------------------------------------------------------------- */
+table.fin { width: 100%; border-collapse: collapse; margin: 0 0 3mm; font-size: 8.8pt; }
+table.fin th, table.fin td { padding: 1.45mm 1.6mm; border-bottom: 0.4pt solid #e3ddd3; vertical-align: top; }
+table.fin thead th { font-size: 7.4pt; font-weight: 700; color: #6b6359; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 0.8pt solid #201e1d; vertical-align: bottom; }
+table.fin thead { display: table-header-group; }
+table.fin thead th.num { white-space: normal; }
+table.fin tr { break-inside: avoid; }
+table.fin .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.fin tr.head td { font-weight: 700; font-size: 7.6pt; letter-spacing: 0.06em; text-transform: uppercase; color: #6b6359; padding-top: 3.6mm; border-bottom: 0.4pt solid #cfc6b8; }
+table.fin tr.child td.name { padding-left: 6mm; color: #4a4540; }
+table.fin tr.child td { font-size: 8.3pt; }
+table.fin tr.subtotal td { font-weight: 700; border-top: 0.6pt solid #201e1d; background: #f6f1ea; }
+table.fin tr.total td { font-weight: 700; font-size: 9.6pt; border-top: 0.9pt solid #201e1d; border-bottom: 2.2pt double #201e1d; background: #f1ebe1; }
+table.fin .margin { font-weight: 400; color: #6b6359; font-size: 7.8pt; margin-left: 2mm; }
+table.fin .prev { color: #6b6359; }
+table.fin .change { color: #6b6359; font-size: 8pt; }
+.table-note { font-size: 7.8pt; color: #6b6359; margin: -1mm 0 4mm; }
+
+/* The summary ------------------------------------------------------------------------------------ */
+.tiles { display: flex; flex-wrap: wrap; margin: 0 -1.4mm 5mm; }
+.tile { width: 25%; padding: 0 1.4mm 2.8mm; box-sizing: border-box; }
+.tile__box { border: 0.6pt solid #d9d1c5; border-radius: 1.6mm; padding: 2.8mm 3mm 2.6mm; height: 19mm; box-sizing: border-box; }
+.tile__label { font-size: 7.2pt; text-transform: uppercase; letter-spacing: 0.05em; color: #6b6359; font-weight: 700; }
+.tile__value { font-size: 13.5pt; font-weight: 700; margin-top: 1.2mm; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tile__hint { font-size: 7.4pt; color: #6b6359; margin-top: 0.4mm; }
+.tile--lead .tile__box { border: 1pt solid #201e1d; }
+.chart { border: 0.6pt solid #d9d1c5; border-radius: 1.6mm; padding: 4mm 4mm 2mm; margin: 0 0 5mm; break-inside: avoid; }
+.chart__legend { font-size: 7.6pt; color: #6b6359; margin: 0 0 3mm; }
+.chart__legend span { display: inline-block; width: 2.6mm; height: 2.6mm; vertical-align: -0.3mm; margin: 0 1.2mm 0 3mm; }
+.chart__legend span.rev { background: #e3d8c8; border: 0.4pt solid #8e8579; }
+.chart__legend span.pro { background: #8c491a; }
+.chart__legend span.los { background: #ffffff; border: 0.8pt solid #8c491a; }
+.bars { display: flex; align-items: flex-end; border-bottom: 0.8pt solid #201e1d; margin-left: 22mm; }
+.bars__col { flex: 1; display: flex; justify-content: center; align-items: flex-end; }
+.bar { width: 31%; max-width: 8mm; margin: 0 1.5%; }
+.bar.rev { background: #e3d8c8; border: 0.4pt solid #8e8579; border-bottom: none; }
+.bar.pro { background: #8c491a; }
+.below { display: flex; align-items: flex-start; margin-left: 22mm; }
+.below .bars__col { align-items: flex-start; }
+.bar.los { background: #ffffff; border: 0.8pt solid #8c491a; border-top: none; }
+.bar.ghost { visibility: hidden; }
+table.trend { font-size: 7.4pt; margin-top: 2mm; table-layout: fixed; }
+table.trend td, table.trend th { padding: 1mm 0.6mm; text-align: center; }
+table.trend td:first-child, table.trend th:first-child { width: 22mm; text-align: left; padding-left: 0; }
+.ratios td.what { color: #6b6359; font-size: 8pt; }
+
+/* The value range ------------------------------------------------------------------------------- */
+.verdict { border: 1pt solid #201e1d; border-radius: 1.8mm; padding: 5mm 6mm; margin: 0 0 6mm; background: #faf7f2; break-inside: avoid; }
+.verdict__label { font-size: 7.6pt; letter-spacing: 0.14em; text-transform: uppercase; color: #6b6359; font-weight: 700; }
+.verdict__value { font-size: 19pt; font-weight: 700; margin: 1.5mm 0 1mm; font-variant-numeric: tabular-nums; }
+.verdict__note { font-size: 8.4pt; color: #6b6359; }
+.field { margin: 0 0 6mm; break-inside: avoid; }
+.field__row { display: flex; align-items: center; margin: 0 0 2.6mm; }
+.field__name { width: 32mm; font-size: 8.4pt; font-weight: 700; }
+.field__track { flex: 1; position: relative; height: 7mm; background: #f6f1ea; border-left: 0.6pt solid #201e1d; }
+.field__range { position: absolute; top: 1.2mm; height: 4.6mm; background: #8c491a; }
+.field__point { position: absolute; top: 0.4mm; width: 1.6mm; height: 6.2mm; background: #201e1d; margin-left: -0.8mm; }
+.field__text { width: 46mm; text-align: right; font-size: 8.2pt; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.method { display: flex; margin: 0 -2.5mm; }
+.method > div { flex: 1; padding: 0 2.5mm; }
+.method h3 { margin-top: 0; }
+.caveats { font-size: 8.2pt; color: #4a4540; margin: 2mm 0 0; padding-left: 4mm; }
+.caveats li { margin: 0 0 1.4mm; }
+
+/* Notes and sign-off ---------------------------------------------------------------------------- */
+#notes { counter-reset: note; }
+.note { margin: 0 0 5mm; counter-increment: note; }
+.note h3 { margin-top: 0; }
+.note h3 .no::before { content: counter(note); color: #a85a27; margin-right: 2.4mm; }
+.bullets { margin: 0; padding-left: 4.5mm; font-size: 8.6pt; }
+.bullets li { margin: 0 0 1.2mm; }
+.two { display: flex; margin: 0 -2.5mm; }
+.two > div { flex: 1; padding: 0 2.5mm; }
+.gaps { border: 0.6pt solid #d9d1c5; border-left: 2pt solid #a85a27; padding: 3mm 4mm; font-size: 8.6pt; break-inside: avoid; }
+.gaps li { margin: 0 0 1.2mm; }
+.signoff { display: flex; justify-content: space-between; margin-top: 14mm; break-inside: avoid; }
+.signoff div { width: 46%; border-top: 0.6pt solid #201e1d; padding-top: 1.5mm; font-size: 8pt; color: #6b6359; }
+.check { font-size: 8pt; color: #6b6359; margin: 1mm 0 0; }
+{% endblock %}
+
+{% block footer %}{{ footer }}{% endblock %}
+{% block header %}{% endblock %}
+
+{% block content %}
+{% include "finance/statements/cover.html" %}
+{% include "finance/statements/summary.html" %}
+{% for key in order %}
+  {% if key == "loans" %}{% include "finance/statements/loans.html" %}
+  {% elif key == "partners" %}{% include "finance/statements/partners.html" %}
+  {% elif key == "valuation" %}{% include "finance/statements/valuation.html" %}
+  {% elif key == "pnl" %}{% include "finance/statements/pnl.html" %}
+  {% elif key == "cash_flow" %}{% include "finance/statements/cash_flow.html" %}
+  {% elif key == "balance" %}{% include "finance/statements/balance.html" %}
+  {% elif key == "notes" %}{% include "finance/statements/notes.html" %}
+  {% endif %}
+{% endfor %}
+{% endblock %}

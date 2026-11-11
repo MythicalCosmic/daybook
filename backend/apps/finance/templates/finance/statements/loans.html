@@ -1,0 +1,33 @@
+{% load i18n %}<section class="page" id="loans">
+  <p class="eyebrow">{{ period_text }}</p>
+  <h2 class="section">{% translate "Loans and their payments" %}</h2>
+  <p class="lede">{% blocktranslate with unit=unit %}What the business still owes on its loans, the next payments and what was paid in the period, in {{ unit }}.{% endblocktranslate %}</p>
+  <table class="fin loans">
+    <thead>
+      <tr>
+        <th>{% translate "Lender" %}</th>
+        <th class="num">{% translate "Taken" %}</th>
+        <th class="num">{% translate "Amount" %}</th>
+        <th class="num">{% translate "Left to pay" %}</th>
+        <th>{% translate "Next payments" %}</th>
+        <th class="num">{% translate "Repaid in the period" %}</th>
+        <th class="num">{% translate "Interest in the period" %}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for loan in loans.rows %}
+      <tr>
+        <td class="name"><b>{{ loan.lender }}</b>{% if loan.description %}<div class="small muted">{{ loan.description }}</div>{% endif %}{% if loan.currency %}<div class="small muted">{{ loan.currency }}</div>{% endif %}</td>
+        <td class="num">{{ loan.issued_on }}</td>
+        <td class="num">{{ loan.amount }}</td>
+        <td class="num"><b>{{ loan.left }}</b></td>
+        <td class="small next">{% for payment in loan.next %}<div>{{ payment }}</div>{% empty %}–{% endfor %}</td>
+        <td class="num">{{ loan.paid }}</td>
+        <td class="num">{{ loan.interest }}</td>
+      </tr>
+      {% endfor %}
+      <tr class="total"><td class="name">{% translate "Total" %}</td><td></td><td></td><td class="num">{{ loans.left }}</td><td></td><td class="num">{{ loans.paid }}</td><td class="num">{{ loans.interest }}</td></tr>
+    </tbody>
+  </table>
+  <p class="table-note">{% translate "Interest is what the books link to each loan. The split of what is due within a year and later follows each loan's payment plan." %}</p>
+</section>

@@ -24,4 +24,8 @@ ENUM_NAME_OVERRIDES = {
     "FinanceRecurringOnHolidayEnum": "apps.finance.models.RecurringRule.OnHoliday",
     "FinanceClaimPaidFromEnum": "apps.finance.models.Claim.PaidFrom",
     "FinanceClaimStatusEnum": "apps.finance.models.Claim.Status",
+    # v12: reports for banks and investors.
+    "FinanceStatementPeriodEnum": "apps.finance.models.StatementPack.Period",
+    "FinanceStatementPurposeEnum": "apps.finance.models.StatementPack.Purpose",
+    "FinanceStatementPackStatusEnum": "apps.finance.models.StatementPack.Status",
 }

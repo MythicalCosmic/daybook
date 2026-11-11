@@ -748,6 +748,7 @@ class Ledger:
                 "1400000",
                 self.cat["interest"],
                 counterparty=self.party["bank"],
+                debt=self.loan,  # the loan's interest (statements add it back to earnings)
                 description="Kredit foizi",
             )
         if day == _last_weekday(day):

@@ -1,0 +1,44 @@
+{% load i18n %}<section class="{% if purpose == 'bank' and 'loans' in order %}after{% else %}page{% endif %}" id="cash-flow">
+  <p class="eyebrow">{{ period_text }}</p>
+  <h2 class="section">{% translate "Cash flow" %}</h2>
+  <p class="lede">{% blocktranslate with unit=unit %}Money that came into and left the business's accounts, in {{ unit }}.{% endblocktranslate %}</p>
+  <table class="fin">
+    <thead>
+      <tr><th></th><th class="num">{% translate "Money in" %}</th><th class="num">{% translate "Money out" %}</th><th class="num">{% translate "Net" %}</th></tr>
+    </thead>
+    <tbody>
+      <tr class="subtotal"><td class="name">{% translate "Cash at the start" %}</td><td></td><td></td><td class="num">{{ cash_flow.start_cash }}</td></tr>
+      {% for row in cash_flow.sections %}
+      <tr><td class="name">{{ row.name }}</td><td class="num">{{ row.money_in }}</td><td class="num">{{ row.money_out }}</td><td class="num">{{ row.net }}</td></tr>
+      {% endfor %}
+      <tr class="total"><td class="name">{% translate "Cash at the end" %}</td><td></td><td></td><td class="num">{{ cash_flow.end_cash }}</td></tr>
+    </tbody>
+  </table>
+  <p class="table-note">{% translate "Transfers between the business's own accounts cancel out. Foreign money is valued at the rate of each day it moved; the revaluation line brings it to the rate of the last day." %}</p>
+  {% if cash_flow.previous %}
+  <div class="keep">
+    <h3>{% translate "Against the same period a year before" %}</h3>
+    <table class="fin">
+      <thead><tr><th></th><th class="num">{% translate "Money in" %}</th><th class="num">{% translate "Money out" %}</th><th class="num">{% translate "Net" %}</th></tr></thead>
+      <tbody>
+        <tr><td class="name">{% translate "This period" %}</td><td class="num">{{ cash_flow.totals.money_in }}</td><td class="num">{{ cash_flow.totals.money_out }}</td><td class="num">{{ cash_flow.totals.net }}</td></tr>
+        <tr><td class="name">{% translate "A year before" %}</td><td class="num prev">{{ cash_flow.previous.money_in }}</td><td class="num prev">{{ cash_flow.previous.money_out }}</td><td class="num prev">{{ cash_flow.previous.net }}</td></tr>
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+  {% if cash_flow.months %}
+  <div class="keep">
+    <h3>{% translate "By month" %}</h3>
+    <table class="fin">
+      <thead><tr><th></th><th class="num">{% translate "Money in" %}</th><th class="num">{% translate "Money out" %}</th><th class="num">{% translate "Net" %}</th></tr></thead>
+      <tbody>
+        {% for row in cash_flow.months %}
+        <tr><td class="name">{{ row.name }}</td><td class="num">{{ row.money_in }}</td><td class="num">{{ row.money_out }}</td><td class="num">{{ row.net }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p class="table-note">{% translate "Real money in and out only: transfers, opening balances and the revaluation are left out of the months." %}</p>
+  </div>
+  {% endif %}
+</section>

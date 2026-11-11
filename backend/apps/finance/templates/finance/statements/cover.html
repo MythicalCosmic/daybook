@@ -1,0 +1,23 @@
+{% load i18n %}<section class="cover">
+  <div class="cover__band"></div>
+  <div class="cover__inner">
+    <div class="cover__brand">Daybook</div>
+    {% if logo_src %}<img class="cover__logo" src="{{ logo_src }}" alt="">{% endif %}
+    <h1 class="cover__company">{{ company.name }}</h1>
+    <p class="cover__title">{{ title }}</p>
+    <p class="cover__period">{{ period_text }}</p>
+    <div class="cover__purpose">{{ purpose_text }}</div>
+    <div class="cover__facts">
+      <div><span>{% translate "Period" %}</span><span>{{ range_text }}</span></div>
+      <div><span>{% translate "Prepared on" %}</span><span>{{ prepared_on }}</span></div>
+      {% if prepared_by %}<div><span>{% translate "Prepared by" %}</span><span>{{ prepared_by }}</span></div>{% endif %}
+      {% if branches %}<div><span>{% translate "Branches" %}</span><span>{{ branches }}</span></div>{% endif %}
+      <div><span>{% translate "Amounts in" %}</span><span>{{ unit }}</span></div>
+    </div>
+    <div class="cover__toc">
+      <h3>{% translate "Contents" %}</h3>
+      <ol>{% for anchor, name in toc %}<li><a href="#{{ anchor }}">{{ name }}</a></li>{% endfor %}</ol>
+    </div>
+    <p class="cover__note">{% translate "Prepared from the company's records in Daybook. Not audited." %}</p>
+  </div>
+</section>
