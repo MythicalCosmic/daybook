@@ -159,6 +159,24 @@ class FinanceSettings(models.Model):
         validators=[MinValueValidator(7), MaxValueValidator(90)],
         help_text=_("How many days of payments due the safe amount to take keeps back."),
     )
+    # What the business is worth (v12, `apps.finance.statements.worth`): the range of years of
+    # earnings a buyer would pay. Empty: the conservative default (2 to 3).
+    valuation_multiple_low = models.DecimalField(
+        max_digits=4,
+        decimal_places=1,
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(Decimal("0.5")), MaxValueValidator(Decimal(20))],
+        help_text=_("The lower multiple of a year's earnings. Empty: the default."),
+    )
+    valuation_multiple_high = models.DecimalField(
+        max_digits=4,
+        decimal_places=1,
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(Decimal("0.5")), MaxValueValidator(Decimal(20))],
+        help_text=_("The higher multiple of a year's earnings. Empty: the default."),
+    )
 
     class Meta:
         verbose_name = "finance settings"
@@ -1414,3 +1432,66 @@ class DividendLine(models.Model):
         return self.transaction_id is not None and (
             self.transaction.status == Transaction.Status.POSTED
         )
+
+
+class StatementPack(TenantModel):
+    """A statement pack (v12): the PDF for a bank, a partner or a buyer with the profit and loss,
+    cash flow, balance sheet and notes of a month, quarter or year, built in the background
+    (`apps.finance.statement_pack`) and kept seven days."""
+
+    class Period(models.TextChoices):
+        MONTH = "month", _("Month")
+        QUARTER = "quarter", _("Quarter")
+        YEAR = "year", _("Year")
+
+    class Purpose(models.TextChoices):
+        BANK = "bank", _("For a bank")
+        PARTNER = "partner", _("For a partner")
+        SALE = "sale", _("For selling the business")
+
+    class Status(models.TextChoices):
+        PENDING = "pending", _("Waiting")
+        RUNNING = "running", _("Being prepared")
+        READY = "ready", _("Ready")
+        FAILED = "failed", _("Failed")
+
+    company = models.ForeignKey(
+        Company, on_delete=models.PROTECT, related_name="finance_statement_packs"
+    )
+    requested_by = models.ForeignKey(
+        Membership, on_delete=models.CASCADE, related_name="finance_statement_packs"
+    )
+    period = models.CharField(max_length=8, choices=Period.choices)
+    start = models.DateField()
+    end = models.DateField(help_text=_("The last day covered (today for a period not over)."))
+    purpose = models.CharField(max_length=8, choices=Purpose.choices)
+    language = models.CharField(max_length=2)
+    params = models.JSONField(
+        default=dict, blank=True, help_text=_("Branches and the valuation multiples asked for.")
+    )
+    status = models.CharField(max_length=8, choices=Status.choices, default=Status.PENDING)
+    progress = models.PositiveSmallIntegerField(default=0)
+    pages = models.PositiveSmallIntegerField(null=True, blank=True)
+    file = models.FileField(
+        storage=private_storage, upload_to=private_upload_to("statements"), blank=True
+    )
+    error = models.CharField(max_length=300, blank=True)
+    deliver_telegram = models.BooleanField(
+        default=False, help_text=_("Also send the PDF to the requester in Telegram.")
+    )
+    finished_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at", "-pk"]
+        indexes = [models.Index(fields=["requested_by", "-created_at"])]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(end__gte=F("start")), name="finance_statement_pack_period_order"
+            ),
+            models.CheckConstraint(
+                condition=Q(progress__lte=100), name="finance_statement_pack_progress"
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.purpose} {self.start}–{self.end} ({self.status})"

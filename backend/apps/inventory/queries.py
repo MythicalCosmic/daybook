@@ -16,7 +16,18 @@ from collections import defaultdict
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 
-from django.db.models import Count, F, Min, OuterRef, Q, QuerySet, Subquery, Sum
+from django.db.models import (
+    Count,
+    DecimalField,
+    ExpressionWrapper,
+    F,
+    Min,
+    OuterRef,
+    Q,
+    QuerySet,
+    Subquery,
+    Sum,
+)
 from django.db.models.functions import Coalesce
 
 from apps.companies.models import BranchKind
@@ -400,6 +411,30 @@ def stock_value(company, *, branch_ids: list[int] | None) -> dict:
         cost += engine.value_of(stock.batch, stock.quantity)
         retail += engine.retail_value_of(stock.batch, stock.quantity)
     return {"value": quantize(cost), "retail_value": quantize(retail)}
+
+
+def stock_value_on(company, day: date, *, branch_ids: list[int] | None) -> Decimal:
+    """What was on the shelves at cost at the end of `day` (the company's calendar): the value
+    now less what moved since, each movement at its batch's part cost (the finance statements'
+    balance sheet). Today or later: the value now."""
+    value = stock_value(company, branch_ids=branch_ids)["value"]
+    if day >= engine.local_today(company):
+        return value
+    _start, after = _day_bounds(company, day, day)
+    moved = _scope(
+        StockMovement.objects.for_company(company).filter(
+            at__gte=after, batch__isnull=False, unit_cost__isnull=False
+        ),
+        branch_ids,
+    ).aggregate(
+        total=Sum(
+            ExpressionWrapper(
+                F("quantity") * F("unit_cost"),
+                output_field=DecimalField(max_digits=24, decimal_places=5),
+            )
+        )
+    )["total"]
+    return quantize(value - (moved or ZERO))
 
 
 def expiring_value(company, *, branch_ids: list[int] | None, within_days: int, as_of: date):
