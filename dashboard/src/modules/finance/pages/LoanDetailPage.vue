@@ -135,7 +135,28 @@ async function undo(row: Transaction): Promise<void> {
           <h2 class="min-w-0 flex-1 text-base font-semibold text-fg">{{ t("finance.loans.schedule") }}</h2>
           <span class="text-xs text-muted">{{ t("finance.loans.paymentsLeft", { n: loan.payments_left, total: loan.payments }, loan.payments_left) }}</span>
         </header>
-        <div class="overflow-x-auto">
+        <!-- A phone reads the schedule as a list: date and payment first, its parts under it. -->
+        <ul class="flex flex-col divide-y divide-line sm:hidden" data-schedule-phone>
+          <li v-for="row in schedule" :key="row.id" :class="['flex flex-col gap-1 px-4 py-3', row.id === nextId && 'bg-accent-soft/30']">
+            <div class="flex items-baseline gap-2">
+              <span class="w-6 shrink-0 text-xs tabular-nums text-subtle">{{ row.position }}</span>
+              <span :class="['min-w-0 flex-1 text-sm tabular-nums', row.status === 'paid' ? 'text-muted' : 'text-fg']">
+                {{ fmt.day(row.due_on, "medium") }}<span v-if="row.early" class="ml-1 text-xs font-medium text-accent-fg">{{ t("finance.loans.earlyRow") }}</span>
+              </span>
+              <span :class="['shrink-0 text-sm font-semibold tabular-nums', row.status === 'paid' ? 'text-muted' : 'text-fg']"><MoneyText :value="row.payment" :currency="loan.currency" decimals="never" /></span>
+            </div>
+            <div class="flex flex-wrap items-center gap-x-3 gap-y-1 pl-8 text-xs text-muted">
+              <span>{{ t("finance.loans.col.principal") }}: <MoneyText :value="row.principal" :currency="loan.currency" compact decimals="never" /></span>
+              <span>{{ t("finance.loans.col.interest") }}: <MoneyText :value="row.interest" :currency="loan.currency" compact decimals="never" /></span>
+              <span>{{ t("finance.loans.col.balance") }}: <MoneyText :value="row.balance" :currency="loan.currency" compact decimals="never" /></span>
+            </div>
+            <div class="flex items-center justify-between gap-2 pl-8">
+              <StatusPill :tone="LINE_TONES[row.status]" size="sm" :label="t(`finance.installment.${row.status}`)" />
+              <UiButton v-if="detail?.can_pay && open && row.status !== 'paid' && row.id === nextId" size="sm" :variant="row.status === 'overdue' ? 'primary' : 'secondary'" @click="pay(row)">{{ t("finance.loans.pay") }}</UiButton>
+            </div>
+          </li>
+        </ul>
+        <div class="hidden overflow-x-auto sm:block">
           <table class="w-full min-w-[44rem] text-sm">
             <thead class="bg-surface-2 text-xs text-muted">
               <tr>
@@ -152,7 +173,7 @@ async function undo(row: Transaction): Promise<void> {
             <tbody class="divide-y divide-line">
               <tr v-for="row in schedule" :key="row.id" :class="[row.id === nextId && 'bg-accent-soft/30', row.status === 'paid' && 'text-muted']" :data-line="row.id">
                 <td class="px-3 py-2 tabular-nums text-subtle">{{ row.position }}</td>
-                <td class="px-3 py-2 tabular-nums">
+                <td class="whitespace-nowrap px-3 py-2 tabular-nums">
                   {{ fmt.day(row.due_on, "medium") }}
                   <span v-if="row.early" class="ml-1 text-xs font-medium text-accent-fg">{{ t("finance.loans.earlyRow") }}</span>
                 </td>

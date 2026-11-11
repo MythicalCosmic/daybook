@@ -56,6 +56,11 @@ const groups = computed(() => deadlinesByMonth(upcoming.value.filter((row) => ro
 const overdue = computed(() => upcoming.value.filter((row) => row.status === "overdue"));
 const done = computed(() => deadlinesInOrder((data.value?.deadlines ?? []).filter((row) => row.status === "done" && row.due_on < (data.value?.today ?? ""))));
 const showDone = ref(false);
+/** The next three months open at first; the rest of the year behind one button. */
+const MONTHS_SHOWN = 3;
+const showLater = ref(false);
+const shownGroups = computed(() => (showLater.value ? groups.value : groups.value.slice(0, MONTHS_SHOWN)));
+const laterCount = computed(() => groups.value.slice(MONTHS_SHOWN).reduce((n, group) => n + group.rows.length, 0));
 
 const kpis = computed(() => {
   const d = data.value;
@@ -110,6 +115,7 @@ async function unmark(row: TaxDeadline): Promise<void> {
 
 function focusRow(row: TaxDeadline): void {
   view.value = "list";
+  if (!shownGroups.value.some((group) => group.rows.includes(row))) showLater.value = true;
   focus.value = row.key;
   requestAnimationFrame(() => {
     const el = document.querySelector<HTMLElement>(`[data-deadline="${CSS.escape(row.key)}"]`);
@@ -122,13 +128,15 @@ watch(
     if (!key || !loaded) return;
     const row = byKey.value.get(key);
     if (row && row.status === "done" && row.due_on < loaded.today) showDone.value = true;
+    else if (row && !shownGroups.value.some((group) => group.rows.includes(row))) showLater.value = true;
   },
   { immediate: true },
 );
 
 const monthTitle = (value: string) => fmt.day(`${value}-01`, "monthYear");
 const day = (row: TaxDeadline) => Number(row.due_on.slice(8, 10));
-const weekday = (row: TaxDeadline) => fmt.day(row.due_on, "weekdayShort");
+/** "Du", "Пн", "Mon": the weekday alone, for the date block. */
+const weekday = (row: TaxDeadline) => fmt.day(row.due_on, "weekdayShort").split(",")[0]!.trim();
 const profile = computed(() => {
   const p = data.value?.profile;
   if (!p) return [];
@@ -160,7 +168,7 @@ const profile = computed(() => {
     <div v-else class="flex flex-col gap-4">
       <InlineAlert v-for="warning in data?.warnings ?? []" :key="warning" tone="danger" :icon="AlertTriangle" :title="t('finance.taxes.regimeWarning')" :description="warning" data-regime-warning />
 
-      <KpiStrip :items="kpis" :loading="query.isPending.value" :columns="3" phone="grid" />
+      <KpiStrip :items="kpis" :loading="query.isPending.value" :columns="3" />
 
       <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(300px,360px)]">
         <div class="flex min-w-0 flex-col gap-4">
@@ -193,7 +201,7 @@ const profile = computed(() => {
                   <li :class="['flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3', focus === row.key && 'bg-accent-soft/40']" :data-deadline="row.key">
                     <div class="flex w-12 shrink-0 flex-col items-center rounded-[10px] bg-danger-soft py-1 text-danger">
                       <span class="text-lg font-semibold leading-none tabular-nums">{{ day(row) }}</span>
-                      <span class="text-[10px] uppercase">{{ fmt.day(row.due_on, "monthYear").split(" ")[0] }}</span>
+                      <span class="text-[10px] uppercase">{{ weekday(row) }}</span>
                     </div>
                     <div class="min-w-0 flex-1 basis-56">
                       <p class="text-sm font-semibold text-fg">{{ row.name }}</p>
@@ -206,7 +214,7 @@ const profile = computed(() => {
               </ul>
             </section>
 
-            <section v-for="group in groups" :key="group.month" class="ui-card overflow-hidden" :aria-label="monthTitle(group.month)">
+            <section v-for="group in shownGroups" :key="group.month" class="ui-card overflow-hidden" :aria-label="monthTitle(group.month)">
               <header class="flex items-center gap-2 border-b border-line px-4 py-2.5">
                 <h2 class="min-w-0 flex-1 text-sm font-semibold capitalize text-fg">{{ monthTitle(group.month) }}</h2>
                 <span class="text-xs text-muted">{{ t("finance.taxes.count", { n: group.rows.length }, group.rows.length) }}</span>
@@ -230,11 +238,11 @@ const profile = computed(() => {
                       <RouterLink v-if="row.rule_id" :to="`/c/${cid}/finance/recurring?rule=${row.rule_id}`" class="inline-flex items-center gap-1 hover:text-fg hover:underline"><Repeat :size="11" aria-hidden="true" />{{ t("finance.taxes.byRule") }}</RouterLink>
                     </p>
                   </div>
-                  <div class="flex shrink-0 flex-col items-end gap-1.5 max-sm:w-full max-sm:flex-row max-sm:items-center max-sm:justify-between">
-                    <span v-if="row.status === 'done' && row.paid" class="text-sm font-semibold tabular-nums text-fg"><MoneyText :value="row.paid" :currency="row.currency" decimals="never" /></span>
-                    <span v-else-if="row.estimate" class="text-sm font-semibold tabular-nums text-fg" :title="row.booked ? t('finance.taxes.booked') : t('finance.taxes.estimate')"><template v-if="!row.booked">≈ </template><MoneyText :value="row.estimate" :currency="row.currency" decimals="never" /></span>
-                    <div class="flex items-center gap-1.5">
-                      <StatusPill :tone="TAX_TONES[row.status]" size="sm" :label="row.status === 'done' ? (row.action === 'file' ? t('finance.taxes.filed') : t('finance.taxes.paid')) : t(`finance.taxes.status.${row.status}`)" />
+                  <div class="flex shrink-0 flex-col items-end gap-1.5 max-sm:w-full max-sm:flex-row max-sm:flex-wrap max-sm:items-center max-sm:justify-between">
+                    <span v-if="row.status === 'done' && row.paid" class="whitespace-nowrap text-sm font-semibold tabular-nums text-fg"><MoneyText :value="row.paid" :currency="row.currency" decimals="never" /></span>
+                    <span v-else-if="row.estimate" class="whitespace-nowrap text-sm font-semibold tabular-nums text-fg" :title="row.booked ? t('finance.taxes.booked') : t('finance.taxes.estimate')"><template v-if="!row.booked">≈ </template><MoneyText :value="row.estimate" :currency="row.currency" decimals="never" /></span>
+                    <div class="flex flex-wrap items-center justify-end gap-1.5">
+                      <StatusPill :tone="TAX_TONES[row.status]" size="sm" :class="row.status === 'due' && 'max-sm:hidden'" :label="row.status === 'done' ? (row.action === 'file' ? t('finance.taxes.filed') : t('finance.taxes.paid')) : t(`finance.taxes.status.${row.status}`)" />
                       <UiButton v-if="canMark && row.status !== 'done'" size="sm" variant="secondary" :data-mark="row.key" @click="mark(row)">{{ row.action === "file" ? t("finance.taxes.markFiled") : t("finance.taxes.markPaid") }}</UiButton>
                       <UiButton v-else-if="canManage && row.mark_id" size="sm" variant="ghost" :icon="Undo2" @click="unmark(row)">{{ t("common.undo") }}</UiButton>
                     </div>
@@ -242,6 +250,10 @@ const profile = computed(() => {
                 </li>
               </ul>
             </section>
+
+            <UiButton v-if="!showLater && laterCount" variant="secondary" class="self-start" :icon="CalendarRange" data-show-later @click="showLater = true">
+              {{ t("finance.taxes.showLater", { n: laterCount }, laterCount) }}
+            </UiButton>
 
             <section v-if="done.length" class="flex flex-col gap-2">
               <button type="button" class="inline-flex w-fit items-center gap-1.5 text-sm font-semibold text-muted hover:text-fg" :aria-expanded="showDone" @click="showDone = !showDone">

@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import calendar
 import logging
+from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 from decimal import Decimal
@@ -200,10 +201,12 @@ def working_day(day: date, days_off: set[date]) -> date:
 # The calendar -------------------------------------------------------------------------------
 
 
-def deadlines(company, first: date, last: date, *, today: date | None = None) -> list[Deadline]:
+def deadlines(
+    company, first: date, last: date, *, today: date | None = None, facts: dict | None = None
+) -> list[Deadline]:
     """Every deadline due from `first` to `last`, the soonest first, with estimates and states."""
     today = today or queries.local_today(company)
-    facts = profile(company, today)
+    facts = facts or profile(company, today)
     try:
         days_off = recurring.holidays(company, first, last + timedelta(days=14))
     except Exception:  # the time-off module is optional
@@ -239,7 +242,9 @@ def _fill(company, rows: list[Deadline], today: date, facts: dict) -> None:
             kind=Debt.Kind.TAX,
             direction=Debt.Direction.PAYABLE,
             status__in=(Debt.Status.OPEN, Debt.Status.PAID),
-        ).filter(
+        )
+        .select_related("company")
+        .filter(
             Q(due_on__range=(rows[0].due_on, rows[-1].due_on))
             | Q(
                 source_type="payroll.run",
@@ -256,12 +261,33 @@ def _fill(company, rows: list[Deadline], today: date, facts: dict) -> None:
             company=company, is_active=True, template_key__in=list(TEMPLATE_RULES)
         )
     }
+    # The months each template bill was paid in (its occurrence's due day starts its key).
+    paid_months: dict[int, set[date]] = defaultdict(set)
+    for rule_id, key in Transaction.objects.filter(
+        company=company,
+        source_type=recurring.SOURCE,
+        source_id__in=[rule.pk for rule in templates.values()],
+        status__in=LIVE_STATUSES,
+    ).values_list("source_id", "source_key"):
+        try:
+            paid_months[rule_id].add(date.fromisoformat(key[:10]).replace(day=1))
+        except ValueError:
+            continue
+    settings_row = conf.get_settings(company)
+    figures: dict[tuple[date, date], dict] = {}
+    # A tax debt due on a day stands for that day's deadline only when nothing else is due then
+    # (VAT and profit tax are both due on the 20th: then the debt is not guessed at).
+    paying = defaultdict(int)
     for row in rows:
-        _estimate(company, row, facts)
+        if row.rule.action != "file" and row.rule.key not in PAYROLL_KEYS:
+            paying[row.due_on] += 1
+    for row in rows:
+        if row.period_start <= today:  # a period not begun has no books to estimate from
+            _estimate(company, row, settings_row, figures)
         mark = marks.get((row.rule.key, row.mark_kind, row.period_start))
         if row.rule.key in templates:
             row.rule_id = templates[row.rule.key].pk
-        _booked(row, tax_debts)
+        _booked(row, tax_debts, alone=paying[row.due_on] == 1)
         if mark is not None:
             row.status = "done"
             row.done_on = mark.done_on
@@ -270,15 +296,17 @@ def _fill(company, rows: list[Deadline], today: date, facts: dict) -> None:
             row.transaction_id = mark.transaction_id
         elif row.debt_id is not None and row.status == "done":
             pass  # its tax debt is paid
-        elif row.rule.key in templates and _template_paid(company, templates[row.rule.key], row):
+        elif row.rule.key in templates and _template_paid(
+            templates[row.rule.key], row, paid_months
+        ):
             row.status = "done"
         else:
             row.status = "overdue" if row.due_on < today else "due"
 
 
-def _booked(row: Deadline, tax_debts: list[Debt]) -> None:
+def _booked(row: Deadline, tax_debts: list[Debt], *, alone: bool = True) -> None:
     """A tax debt for this deadline: payroll's tax debts of the period (income and social tax),
-    or the one tax debt due on its day."""
+    or the one tax debt due on its day when this is the only deadline paid that day."""
     if row.rule.action == "file":
         return
     keys = PAYROLL_KEYS.get(row.rule.key)
@@ -296,7 +324,7 @@ def _booked(row: Deadline, tax_debts: list[Debt]) -> None:
             for debt in tax_debts
             if debt.source_type != "payroll.run" and debt.due_on == row.due_on
         ]
-        if len(mine) != 1:
+        if len(mine) != 1 or not alone:
             return
     if not mine:
         return
@@ -309,22 +337,11 @@ def _booked(row: Deadline, tax_debts: list[Debt]) -> None:
         row.paid = row.estimate
 
 
-def _template_paid(company, rule: RecurringRule, row: Deadline) -> bool:
+def _template_paid(rule: RecurringRule, row: Deadline, paid_months: dict) -> bool:
     """The recurring tax bill of that month was paid (or skipped)."""
     month = row.due_on.replace(day=1)
-    keys = Transaction.objects.filter(
-        company=company,
-        source_type=recurring.SOURCE,
-        source_id=rule.pk,
-        status__in=LIVE_STATUSES,
-    ).values_list("source_key", flat=True)
-    for key in keys:
-        try:
-            day = date.fromisoformat(key[:10])
-        except ValueError:
-            continue
-        if day.replace(day=1) == month:
-            return True
+    if month in paid_months.get(rule.pk, ()):
+        return True
     return bool(rule.last_done_on and rule.last_done_on.replace(day=1) >= month)
 
 
@@ -386,17 +403,19 @@ def vat_part(amount: Decimal, percent: Decimal) -> Decimal:
     return quantize(amount * percent / (HUNDRED + percent))
 
 
-def _estimate(company, row: Deadline, facts: dict) -> None:
+def _estimate(company, row: Deadline, settings_row, cache: dict | None = None) -> None:
     rule = row.rule
     if rule.action == "file":
         return
     currency = company.base_currency
-    settings_row = conf.get_settings(company)
     key = rule.key
-    if key in ("vat", "vat_simplified", "turnover", "profit", "income_tax", "social_tax"):
-        figures = books(company, row.period_start, row.period_end)
-    else:
+    if key not in ("vat", "vat_simplified", "turnover", "profit", "income_tax", "social_tax"):
         return  # property, land, profit advances and the year's balance: no estimate
+    period = (row.period_start, row.period_end)
+    cache = cache if cache is not None else {}
+    if period not in cache:
+        cache[period] = books(company, *period)
+    figures = cache[period]
     if key == "vat":
         rate = settings_row.vat_percent or tax_rules.TAXES["vat"].rate
         output = vat_part(figures["income"], rate)
@@ -491,8 +510,8 @@ def mark(
         services._same_company(company, transaction_row)
         if transaction_row.status not in LIVE_STATUSES or transaction_row.base_amount >= 0:
             raise DomainError(_("Pick a payment that went out."))
-    paid = services._money(amount) if amount not in (None, "") else None
-    if account is not None and paid is None:
+    paid = services._money(amount, allow_zero=True) if amount not in (None, "") else None
+    if account is not None and not paid:
         raise DomainError(_("Enter how much was paid."))
     try:
         with transaction.atomic():
@@ -581,7 +600,7 @@ def candidates(company, deadline: Deadline) -> list[Transaction]:
         )
         .filter(taxes | Q(debt__kind=Debt.Kind.TAX))
         .exclude(pk__in=linked)
-        .select_related("account", "category", "counterparty")
+        .select_related("account", "category__parent", "counterparty", "debt")
         .order_by("-occurred_on", "-pk")[:20]
     )
 
@@ -670,7 +689,7 @@ def calendar_view(company, today: date, *, months_back: int = 1, months_ahead: i
     last = _month_end(date(last_year, last_month, 1))
     facts = profile(company, today)
     settings_row = conf.get_settings(company)
-    rows = deadlines(company, first, last, today=today)
+    rows = deadlines(company, first, last, today=today, facts=facts)
     return {
         "today": today,
         "from": first,

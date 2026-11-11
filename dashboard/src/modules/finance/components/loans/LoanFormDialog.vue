@@ -73,6 +73,10 @@ const form = reactive({
   description: "",
 });
 const partySelected = ref<SelectOption<number> | null>(null);
+// The schedule the terms make (declared before `reset`, which the open watcher runs at once).
+const preview = ref<LoanPreview | null>(null);
+const previewing = ref(false);
+const previewError = ref<string | null>(null);
 
 function reset(): void {
   for (const key of Object.keys(errors)) delete errors[key];
@@ -145,9 +149,6 @@ const gap = computed(() => principalGap(form.amount, form.rows));
 
 // The live schedule ------------------------------------------------------------------------------
 
-const preview = ref<LoanPreview | null>(null);
-const previewing = ref(false);
-const previewError = ref<string | null>(null);
 let timer: ReturnType<typeof setTimeout> | null = null;
 let ticket = 0;
 

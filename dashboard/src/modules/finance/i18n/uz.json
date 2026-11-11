@@ -1501,5 +1501,6 @@
   "finance.taxes.compare.lowest": "Eng kami",
   "finance.taxes.compare.perYear": "yiliga",
   "finance.taxes.compare.threshold": "Aylanma soliq chegarasi",
-  "finance.taxes.compare.thresholdNote": "Yillik daromad undan oshsa, o‘sha kundan QQS to‘lanadi ({law})"
+  "finance.taxes.compare.thresholdNote": "Yillik daromad undan oshsa, o‘sha kundan QQS to‘lanadi ({law})",
+  "finance.taxes.showLater": "Keyingi oylarni ko‘rsatish ({n}) | Keyingi oylarni ko‘rsatish ({n}) | Keyingi oylarni ko‘rsatish ({n})"
 }

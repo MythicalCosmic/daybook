@@ -1501,5 +1501,6 @@
   "finance.taxes.compare.lowest": "Lowest",
   "finance.taxes.compare.perYear": "a year",
   "finance.taxes.compare.threshold": "Turnover-tax threshold",
-  "finance.taxes.compare.thresholdNote": "Income over it in a year means VAT from the day it is reached ({law})"
+  "finance.taxes.compare.thresholdNote": "Income over it in a year means VAT from the day it is reached ({law})",
+  "finance.taxes.showLater": "Show the later months ({n}) | Show the later month ({n}) | Show the later months ({n})"
 }

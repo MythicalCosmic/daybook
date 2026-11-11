@@ -1501,5 +1501,6 @@
   "finance.taxes.compare.lowest": "Меньше всего",
   "finance.taxes.compare.perYear": "в год",
   "finance.taxes.compare.threshold": "Порог налога с оборота",
-  "finance.taxes.compare.thresholdNote": "Если доход за год выше, НДС платится со дня превышения ({law})"
+  "finance.taxes.compare.thresholdNote": "Если доход за год выше, НДС платится со дня превышения ({law})",
+  "finance.taxes.showLater": "Показать следующие месяцы ({n}) | Показать следующие месяцы ({n}) | Показать следующие месяцы ({n})"
 }

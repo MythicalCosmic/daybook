@@ -17,12 +17,18 @@ entry waiting for approval and receipts with pictures fill the rest. Pay goes ou
 last weekday with the 12 % social tax on it.
 
 Taxes: the demo assumes the general regime. Its sales, about 18 mln so‘m a day or 6.5 bn a
-year, are above the turnover-tax threshold of 12 000 base values from 01.06.2026 (about 4.9 bn
-so‘m at 412 000 so‘m a base value; docs/PLAN-OWNER.md §14.4 row 28, confirm). So there is no
+year, are above the turnover-tax threshold of 12 000 base values from 01.06.2026 (about 5.3 bn
+so‘m at 440 000 so‘m a base value; `tax_rules`), and a pharmacy can't pay turnover tax anyway
+(Tax Code art. 461 part 2 item 14). So there is no
 turnover tax: each month's VAT (12 % of what the month's sales add to its medicine purchases) is
 owed to the tax office at the month's end and paid on the 20th of the next, and the last
 quarter's profit tax (15 % of its operating profit, without the new pharmacy's fit-out) is due
-on the 25th of the month after it. Wave 2's package I adds the company's tax-regime setting.
+on the 20th of the month after it. Wave 2's package I adds the company's tax-regime setting.
+
+The bank loan (v12, `apps.finance.loans`): 80 mln so‘m at 21 % for 12 months, equal principal,
+a 1 % fee, paid on the 5th: each payment books its principal (a debt payment) and its interest (an
+expense linked to the loan). The distributors' payment terms (30, 45 and 14 days after delivery)
+are on the distributors, so a delivery on credit gets its due date from them.
 
 `finish`, once every app has booked its rows, settles the terminal into the bank for the tills'
 weeks, books the taxes and closes the books up to the end of the month before last.
@@ -41,11 +47,12 @@ from django.db.models import Q, Sum
 from django.utils import translation
 
 from apps.core import demo_plan
-from apps.finance import alerts, defaults, queries, services
+from apps.finance import alerts, defaults, loan_math, loans, queries, services
 from apps.finance.models import (
     Category,
     Counterparty,
     ExchangeRate,
+    Loan,
     MoneyAccount,
     RateSource,
     Transaction,
@@ -86,7 +93,7 @@ SMALL_PAY = {"manager": 9_000_000, "worker": 5_000_000, "cashier": 7_000_000, "d
 VAT, PROFIT_TAX = "QQS (12\u00a0%)", "Foyda solig‘i (15\u00a0%)"
 VAT_SHARE = D(12) / D(112)  # of a price that includes 12 % VAT
 PROFIT_TAX_RATE = D("0.15")
-VAT_DUE_DAY, PROFIT_TAX_DUE_DAY = 20, 25
+VAT_DUE_DAY, PROFIT_TAX_DUE_DAY = 20, 20  # Tax Code arts. 273, 339 (tax_rules)
 TAX_OFFICE = "Soliq inspeksiyasi"
 NEW_PHARMACY = "SRG"  # the projects demo's "Sergeli pharmacy opening"
 
@@ -117,6 +124,10 @@ def finish(company, people, now) -> None:
         from apps.finance import demo_owner
 
         demo_owner.build(company, people, now)
+        # v12: the tax calendar's past deadlines dealt with (demo_credit).
+        from apps.finance import demo_credit
+
+        demo_credit.mark_past_taxes(company, people["owner"], queries.local_today(company, now))
     today = queries.local_today(company, now)
     first_of_last_month = (today.replace(day=1) - timedelta(days=1)).replace(day=1)
     locked_until = first_of_last_month - timedelta(days=1)
@@ -294,6 +305,8 @@ class Ledger:
         self.cat["interest"] = services.create_category(
             self.company, by=by, name="Kredit foizlari", kind=Category.Kind.EXPENSE, color="#a8701c"
         )
+        # Loans book their interest into this one (`loans.INTEREST_CODE`).
+        Category.objects.filter(pk=self.cat["interest"].pk).update(system_code="loan_interest")
 
     def parties(self) -> None:
         by = self.owner
@@ -317,6 +330,7 @@ class Ledger:
                 default_category=medicines,
                 tags=["distribyutor", "30 kun"],
                 notes="To‘lov muddati yetkazilgandan keyin 30 kun.",
+                credit_days=30,
             ),
             "oqtosh": party(
                 "Oqtosh Med Ta’minot",
@@ -326,6 +340,7 @@ class Ledger:
                 default_category=medicines,
                 tags=["distribyutor", "45 kun"],
                 notes="To‘lov muddati 45 kun. Antibiotiklar va gormonlar.",
+                credit_days=45,
             ),
             "tolzor": party(
                 "Tolzor Farm Savdo",
@@ -334,6 +349,7 @@ class Ledger:
                 default_category=self.cat["vitamins"],
                 tags=["distribyutor", "14 kun"],
                 notes="Vitaminlar, gigiyena va tibbiy buyumlar. To‘lov 14 kun ichida.",
+                credit_days=14,
             ),
             "chinorbek": party(
                 "Chinorbek Pharma Logistika",
@@ -494,19 +510,24 @@ class Ledger:
             is_opening=True,
             description="Klinikaning avvalgi nasiyasi",
         )
-        self.loan = services.open_debt(
+        issued = day + timedelta(days=3)
+        self.loan_terms = loans.create(
             self.company,
             by=by,
             direction="payable",
-            kind="loan",
+            counterparty=self.party["bank"],
             amount=D("80000000"),
             currency="UZS",
-            issued_on=day + timedelta(days=3),
-            due_on=day + timedelta(days=3 + 365),
-            counterparty=self.party["bank"],
+            issued_on=issued,
+            annual_rate=D("21"),
+            method=Loan.Method.EQUAL_PRINCIPAL,
+            term_months=12,
+            first_due_on=loan_math.add_months(issued.replace(day=5), 1),
             account=self.bank,
+            fee=D("800000"),
             description="Aylanma mablag‘ uchun kredit, 12 oy",
         )
+        self.loan = self.loan_terms.debt
 
     # A day of business ---------------------------------------------------------------------------
 
@@ -667,7 +688,7 @@ class Ledger:
                 amount=amount,
                 currency="UZS",
                 issued_on=day,
-                due_on=day + timedelta(days=self.terms[key]),
+                # The due date comes from the distributor's payment terms (`terms`).
                 counterparty=self.party[key],
                 category=category,
                 branch=branch,
@@ -739,18 +760,11 @@ class Ledger:
             )
             self.receipt(row, "IJARA SHARTNOMASI", [("Oylik ijara", "9 000 000")], "9 000 000")
         if day.day == 5 and self.loan.status == "open":
-            services.pay_debt(
-                self.loan, by=self.owner, amount=D("6700000"), paid_on=day, account=self.bank
-            )
-            self.expense(
-                day,
-                self.bank,
-                "1400000",
-                self.cat["interest"],
-                counterparty=self.party["bank"],
-                debt=self.loan,  # the loan's interest (statements add it back to earnings)
-                description="Kredit foizi",
-            )
+            # The month's payment: its principal and its interest (linked to the loan, which the
+            # statements add back to earnings).
+            due = self.loan.installments.filter(due_on=day).first()
+            if due is not None:
+                loans.pay(due, by=self.owner, account=self.bank, paid_on=day)
         if day == _last_weekday(day):
             self.salaries(day)
         if day.day == 10:
@@ -1091,7 +1105,7 @@ class Ledger:
 def _book_taxes(company, *, by, bank, start: date, today: date) -> None:
     """The general regime's taxes (see the module's docstring): each finished month's VAT, owed
     at its end and paid on the 20th of the next, and the last finished quarter's profit tax, due
-    on the 25th of the month after it. A tax due before today has been paid on its day, from
+    on the 20th of the month after it. A tax due before today has been paid on its day, from
     `bank`; a due day on a weekend moves to the Monday."""
     office = Counterparty.objects.filter(company=company, name=TAX_OFFICE).first()
     if office is None:
