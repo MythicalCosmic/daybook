@@ -1367,8 +1367,10 @@ def _trend(series: list[dict], fmt: Fmt) -> tuple[dict, list[dict]]:
 
 
 def _plural(value) -> int:
-    """The number ngettext picks a form by: a whole number of the value."""
-    return int(abs(Decimal(value)).quantize(Decimal(1), rounding=ROUND_HALF_UP))
+    """The number ngettext picks a form by. A fraction ("1,4") takes the form of 2: "months" in
+    English, «месяца» in Russian."""
+    shown = abs(Decimal(value)).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP)
+    return int(shown) if shown == shown.to_integral_value() else 2
 
 
 def _compact(value, fmt: Fmt) -> str:

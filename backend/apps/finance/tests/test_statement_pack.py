@@ -153,6 +153,8 @@ def test_the_numbers_read_as_printed(fin):
     assert statement_pack.Fmt("en", "UZS").n(D("1234567")) == "1,234,567"
     assert statement_pack.Fmt("en", "UZS").day(date(2026, 10, 31)) == "31 Oct 2026"
     assert fmt.day(date(2026, 10, 31)) == "31.10.2026"
+    # A fraction takes the plural ("1.4 months", «1,4 месяца»).
+    assert [statement_pack._plural(D(v)) for v in ("1", "1.04", "1.4", "5")] == [1, 1, 2, 5]
 
 
 def test_periods(fin):
