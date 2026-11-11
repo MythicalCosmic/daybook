@@ -71,6 +71,11 @@ class Insight(TenantModel):
         OVERDUE_PAYABLES = "overdue_payables", _("Overdue bills to suppliers piling up")
         STOCK_BUILD = "stock_build", _("Stock growing while sales fall")
         STAFF_COST = "staff_cost", _("Staff cost share rising")
+        # Registered by apps.contracts (its detector, texts and decision source).
+        CONTRACTS_LEASE_ENDING = (
+            "contracts_lease_ending",
+            _("A lease ending, or a renewal to decide"),
+        )
 
     class Domain(models.TextChoices):
         TASKS = "tasks", _("Tasks")

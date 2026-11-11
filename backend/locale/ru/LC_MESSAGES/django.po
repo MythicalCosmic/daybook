@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-12 02:38+0500\n"
+"POT-Creation-Date: 2026-11-12 02:41+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -14708,6 +14708,10 @@ msgstr "Остатки растут, а продажи падают"
 #: backend/apps/insights/models.py
 msgid "Staff cost share rising"
 msgstr "Растёт доля расходов на персонал"
+
+#: backend/apps/insights/models.py
+msgid "A lease ending, or a renewal to decide"
+msgstr "Аренда заканчивается или нужно решить о продлении"
 
 #: backend/apps/insights/models.py
 msgid "Information"

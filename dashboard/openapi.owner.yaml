@@ -14820,6 +14820,7 @@ paths:
           enum:
           - branch_margin
           - cash_low
+          - contracts_lease_ending
           - expense_spike
           - overdue_payables
           - overdue_receivables
@@ -50528,6 +50529,7 @@ components:
       - overdue_payables
       - stock_build
       - staff_cost
+      - contracts_lease_ending
       type: string
       description: |-
         * `cash_low` - Cash low point under the buffer
@@ -50537,6 +50539,7 @@ components:
         * `overdue_payables` - Overdue bills to suppliers piling up
         * `stock_build` - Stock growing while sales fall
         * `staff_cost` - Staff cost share rising
+        * `contracts_lease_ending` - A lease ending, or a renewal to decide
     InsightsSensitivityEnum:
       enum:
       - low

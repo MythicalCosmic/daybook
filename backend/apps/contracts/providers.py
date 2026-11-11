@@ -307,7 +307,7 @@ def register_rows(member: Membership, params: dict):
 
 # The insight ------------------------------------------------------------------------------------
 
-LEASE_KIND = "contracts_lease_ending"
+LEASE_KIND = "contracts_lease_ending"  # Insight.Kind.CONTRACTS_LEASE_ENDING
 LEASE_WINDOW = 60  # days
 LEASE_WARNING = 30  # days: amber from here, blue before
 
