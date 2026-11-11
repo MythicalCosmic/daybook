@@ -23,6 +23,7 @@ import ru from "../i18n/ru.json";
 import uz from "../i18n/uz.json";
 import module from "../index";
 import { actionChip, catchupCommand, clockOf, freshIds, initials, peak, scanName } from "../lib";
+import LivePage from "../pages/LivePage.vue";
 import PeoplePage from "../pages/PeoplePage.vue";
 import SettingsPage from "../pages/SettingsPage.vue";
 import type { Device, DeviceHistory, FaceIdBot, FaceIdSettings, KnownPerson, Scan, Setup } from "../types";
@@ -275,6 +276,55 @@ describe("HistoryNote", () => {
     expect(clock.wrapper.text()).not.toContain("sending its old history");
     const none = mountWithProviders(HistoryNote, { props: { history: { skipped: 0, until: null, active: false, clock_hides: false } }, plugins: app.plugins });
     expect(none.wrapper.text()).toBe("");
+  });
+});
+
+describe("LivePage", () => {
+  const page = (rows: Scan[]) => json({ count: rows.length, next: null, previous: null, results: rows });
+  const status = () => json({ online: 1, total: 1, quiet: 0, devices: [] });
+
+  it("never says there are no scans while they load, and shows them with the pointer over the list", async () => {
+    let release!: () => void;
+    const loaded = new Promise<void>((resolve) => (release = resolve));
+    stubApi({
+      "GET faceid/events/": async () => {
+        await loaded;
+        return page([scan()]);
+      },
+      "GET faceid/status/": status,
+    });
+    const app = await testApp("/c/1/faceid");
+    const { wrapper } = mountWithProviders(LivePage, { plugins: app.plugins });
+    await flushPromises();
+    expect(wrapper.text()).not.toContain(en["faceid.live.emptyTitle"]);
+    // The pointer rests on the list while the first rows arrive: they show anyway.
+    await wrapper.find("section[aria-label]").trigger("pointerenter");
+    release();
+    await vi.waitFor(() => expect(wrapper.text()).toContain("Mushtariy Karimova"));
+    expect(wrapper.text()).not.toContain(en["faceid.live.emptyTitle"]);
+  });
+
+  it("keeps the list (dimmed) while another filter loads, then shows the new rows", async () => {
+    let release!: () => void;
+    let gate: Promise<void> = Promise.resolve();
+    stubApi({
+      "GET faceid/events/": async (call) => {
+        await gate;
+        return call.url.includes("action=") ? page([scan({ id: 2, action: "checked_out", member: { ...scan().member!, id: 8, name: "Zulfiya Qodirova" } })]) : page([scan()]);
+      },
+      "GET faceid/status/": status,
+    });
+    const app = await testApp("/c/1/faceid");
+    const { wrapper } = mountWithProviders(LivePage, { plugins: app.plugins });
+    await vi.waitFor(() => expect(wrapper.text()).toContain("Mushtariy Karimova"));
+    gate = new Promise<void>((resolve) => (release = resolve));
+    await app.router.push("/c/1/faceid?result=out");
+    await vi.waitFor(() => expect(wrapper.find("[aria-busy=true]").exists()).toBe(true));
+    expect(wrapper.text()).toContain("Mushtariy Karimova");
+    expect(wrapper.text()).not.toContain(en["faceid.live.noneFiltered"]);
+    release();
+    await vi.waitFor(() => expect(wrapper.text()).toContain("Zulfiya Qodirova"));
+    expect(wrapper.text()).not.toContain("Mushtariy Karimova");
   });
 });
 

@@ -39,6 +39,7 @@ import SideNav from "./SideNav.vue";
 import { bufferKeysUntilPaletteMounts, loadPalette, prefetchPaletteOnModifier } from "./paletteLoader";
 import { resolveStartParam, telegram } from "./TelegramBridge";
 import TopBar from "./TopBar.vue";
+import TopLoadingBar from "./TopLoadingBar.vue";
 
 const CommandPalette = defineAsyncComponent(loadPalette);
 const InboxDrawer = defineAsyncComponent(() => import("./InboxDrawer.vue"));
@@ -264,10 +265,11 @@ const closeNewCompany = () => (ui.newCompanyOpen = false);
     <div :class="['flex min-w-0 flex-1 flex-col', !isPhone && 'h-dvh py-2 pr-2', !isPhone && !showSidebar && 'pl-2']">
       <div
         :class="[
-          'flex min-h-0 flex-1 flex-col',
+          'relative flex min-h-0 flex-1 flex-col',
           isPhone ? 'bg-canvas' : 'overflow-hidden rounded-[14px] border border-line bg-surface shadow-xs',
         ]"
       >
+        <TopLoadingBar :style="isPhone ? { top: 'var(--safe-top, 0px)' } : undefined" />
         <TopBar
           :phone="isPhone"
           :companyless="companyless"

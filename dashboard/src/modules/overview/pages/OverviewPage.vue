@@ -94,7 +94,8 @@ async function finish(): Promise<void> {
 </script>
 
 <template>
-  <div>
+  <!-- skeleton-now: each widget's cell already showed a placeholder while its code loaded. -->
+  <div class="skeleton-now">
     <PageHeader :title="greeting" :description="subtitle">
       <template v-if="widgets.length" #actions>
         <template v-if="editing">

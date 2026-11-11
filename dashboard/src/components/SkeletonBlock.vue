@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
- * A loading placeholder shaped like the content it stands for. Show it through useDelayedPending
- * so it only appears after 150 ms. `lines` draws a paragraph whose last line is shorter.
+ * A loading placeholder shaped like the content it stands for. Show it through useDelayedPending:
+ * it is in place from the first moment of loading (so no empty state flashes) but fades in only
+ * after 150 ms, so a fast answer never shows it. `lines` draws a paragraph whose last line is shorter.
  */
 withDefaults(
   defineProps<{
@@ -38,6 +39,21 @@ withDefaults(
   background-image: linear-gradient(90deg, transparent 0%, var(--c-skeleton-shine) 50%, transparent 100%);
   background-size: 200% 100%;
   background-repeat: no-repeat;
-  animation: shimmer 1.6s var(--ease-standard) infinite;
+  /* Invisible for the first 150 ms (useDelayedPending's delay), then fades in and shimmers. */
+  animation:
+    skeleton-appear 180ms var(--ease-standard) 150ms both,
+    shimmer 1.6s var(--ease-standard) 150ms infinite;
+}
+/* Inside .skeleton-now (the Overview, whose cells showed a placeholder already) at once. */
+:global(.skeleton-now) .skeleton {
+  animation-delay: 0ms;
+}
+@keyframes skeleton-appear {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 </style>

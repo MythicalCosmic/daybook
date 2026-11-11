@@ -56,12 +56,17 @@ const params = computed(() => ({ date: day.value ?? today.value, device: device.
 const scans = useScans(params);
 const dayScans = useScans(() => ({ date: day.value ?? today.value, page_size: 500 }));
 const status = useStatus();
-const skeleton = useDelayedPending(computed(() => scans.isPending.value));
+// A new filter or day keeps the last list (dimmed) until its own rows arrive (keepPreviousData).
+const switching = computed(() => scans.isPlaceholderData.value);
 
-// The list holds still under the pointer; what arrived meanwhile slides in when it leaves.
+// The list holds still under the pointer; what arrived meanwhile slides in when it leaves. The
+// hold is only for live arrivals: the first rows of a filter or day always show at once.
 const hovering = ref(false);
 const shown = ref<Scan[]>([]);
 const fresh = ref(new Set<number>());
+const skeleton = useDelayedPending(computed(() => scans.isPending.value || (switching.value && !shown.value.length)));
+const paramsKey = computed(() => JSON.stringify(params.value));
+let shownKey: string | null = null;
 let clearFresh: ReturnType<typeof setTimeout> | undefined;
 function apply(rows: Scan[] | undefined): void {
   if (!rows) return;
@@ -73,16 +78,22 @@ function apply(rows: Scan[] | undefined): void {
   clearFresh = setTimeout(() => (fresh.value = new Set()), 1800);
 }
 watch(
-  () => scans.data.value?.results,
-  (rows) => {
+  () => [scans.data.value?.results, switching.value, paramsKey.value] as const,
+  ([rows, placeholder, key]) => {
+    if (!rows || placeholder) return; // nothing yet, or still the previous filter's rows
+    if (key !== shownKey) {
+      shownKey = key;
+      shown.value = rows;
+      fresh.value = new Set();
+      return;
+    }
     if (!hovering.value) apply(rows);
   },
   { immediate: true },
 );
 watch(hovering, (value) => {
-  if (!value) apply(scans.data.value?.results);
+  if (!value && !switching.value) apply(scans.data.value?.results);
 });
-watch(params, () => (shown.value = []));
 onBeforeUnmount(() => clearTimeout(clearFresh));
 
 const kpis = computed(() => {
@@ -140,7 +151,7 @@ function photo(scan: Scan): void {
       </template>
     </PageHeader>
 
-    <KpiStrip :items="kpis" :loading="dayScans.isPending.value" :columns="4" phone="compact" />
+    <KpiStrip :items="kpis" :loading="dayScans.isPending.value || dayScans.isPlaceholderData.value" :columns="4" phone="compact" />
 
     <div class="flex flex-wrap items-center gap-2">
       <DatePicker v-model="day" size="sm" :max="today" :placeholder="t('common.today')" format="weekday" class="w-56 max-sm:w-full" />
@@ -162,7 +173,7 @@ function photo(scan: Scan): void {
       </div>
       <ErrorState v-else-if="scans.isError.value" class="p-6" :error="scans.error.value" :retry="() => scans.refetch()" />
       <EmptyState
-        v-else-if="!shown.length"
+        v-else-if="!shown.length && !switching"
         class="py-12"
         :icon="filtered ? CircleAlert : ScanFace"
         tone="neutral"
@@ -172,7 +183,13 @@ function photo(scan: Scan): void {
         <UiButton v-if="filtered" variant="secondary" size="sm" @click="(result = 'all'), (device = null)">{{ t("faceid.filter.clear") }}</UiButton>
         <UiButton v-else-if="status.data.value && !status.data.value.total && company.can('attendance.manage')" variant="primary" :icon="Plus" :to="`/c/${company.currentId}/faceid/terminals?add=1`">{{ t("faceid.terminals.add") }}</UiButton>
       </EmptyState>
-      <TransitionGroup v-else tag="ul" name="faceid-feed" class="relative divide-y divide-line">
+      <TransitionGroup
+        v-else
+        tag="ul"
+        name="faceid-feed"
+        :class="['relative divide-y divide-line transition-opacity duration-200', switching && 'opacity-60']"
+        :aria-busy="switching || undefined"
+      >
         <ScanItem v-for="scan in shown" :key="scan.id" :scan="scan" :fresh="fresh.has(scan.id)" :show-branch="showBranch" @open="scanId = $event.id" @photo="photo" />
       </TransitionGroup>
       <p v-if="scans.data.value && scans.data.value.count > shown.length && shown.length" class="border-t border-line px-4 py-2.5 text-xs text-subtle">
