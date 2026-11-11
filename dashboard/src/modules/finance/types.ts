@@ -167,6 +167,11 @@ export interface Counterparty {
   default_category: CategoryRef | null;
   credit_limit: Money | null;
   credit_blocked: boolean;
+  /** A supplier's payment terms (v12): days after delivery, or a day of the next month. */
+  credit_days: number | null;
+  credit_day: number | null;
+  /** The terms in words ("30 days after delivery"), "" without terms. */
+  payment_terms: string;
   birthday: string | null;
   tags: string[];
   is_active: boolean;
@@ -190,6 +195,8 @@ export interface CounterpartyInput {
   default_category?: number | null;
   credit_limit?: Money | null;
   credit_blocked?: boolean;
+  credit_days?: number | null;
+  credit_day?: number | null;
   birthday?: string | null;
   tags?: string[];
   is_active?: boolean;
@@ -596,6 +603,14 @@ export interface FinanceSettings {
   tax_regime_set: boolean;
   /** Read-only: the payroll module is on, so claims can be paid back with the payroll. */
   payroll_on: boolean;
+  /** v12: days before a loan payment / a tax deadline that owners are reminded (0–30). */
+  loan_remind_days: number;
+  tax_remind_days: number;
+  /** v12: the company owns premises (property tax) or holds land (land tax). */
+  owns_property: boolean;
+  owns_land: boolean;
+  /** v12: the turnover-tax rate the comparison uses, in per cent. */
+  turnover_tax_percent: string;
 }
 
 // Money planning (package I): budgets, recurring rules, the tax calendar, upcoming payments, the
@@ -828,7 +843,8 @@ export interface PayableDebt extends Debt {
 }
 
 export interface PayableGroup {
-  counterparty: Ref;
+  /** `payment_terms`: the supplier's terms in words (v12), "" without. */
+  counterparty: Ref & { payment_terms?: string };
   total: Money;
   overdue: Money;
   debts: PayableDebt[];

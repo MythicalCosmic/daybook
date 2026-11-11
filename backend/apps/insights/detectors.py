@@ -13,6 +13,7 @@ changes, high: small ones too) and money thresholds with `expense_alert_min_amou
     overdue_payables     overdue supplier bills, piling up
     stock_build          stock value growing while sales fall (stock module)
     staff_cost           salaries and payroll taxes taking a growing share of revenue
+    loan_overdue         a loan payment past its day (v12, `apps.finance.loans`): any amount
 """
 
 from __future__ import annotations
@@ -536,6 +537,49 @@ def overdue_receivables(ctx: Context) -> list[Finding]:
 @detector(Kind.OVERDUE_PAYABLES, domain=Domain.FINANCE, feature="finance")
 def overdue_payables(ctx: Context) -> list[Finding]:
     return _overdue_finding(ctx, Kind.OVERDUE_PAYABLES, "payable")
+
+
+@detector(Kind.LOAN_OVERDUE, domain=Domain.FINANCE, feature="finance")
+def loan_overdue(ctx: Context) -> list[Finding]:
+    """Loan payments the company is late with: a bank charges penalty interest and a late
+    payment marks the credit history, so any amount counts; a month late or two payments late
+    is urgent."""
+    from apps.finance import loans, queries
+
+    rows = loans.overdue(ctx.company, ctx.today, direction="payable")
+    if not rows:
+        return []
+    value = queries.valuation(ctx.company, ctx.today)
+    total = ZERO
+    oldest = 0
+    parties: dict[int, dict] = {}
+    for row in rows:
+        debt = row["loan"].debt
+        amount = value.to_base(row["line"]["rest"], debt.currency) or ZERO
+        total += amount
+        oldest = max(oldest, row["days"])
+        party = parties.setdefault(
+            debt.counterparty_id, {"name": debt.counterparty.name, "amount": ZERO, "days": 0}
+        )
+        party["amount"] += amount
+        party["days"] = max(party["days"], row["days"])
+    biggest = sorted(parties.values(), key=lambda p: p["amount"], reverse=True)[:3]
+    critical = oldest >= 30 or len(rows) >= 2
+    return [
+        Finding(
+            key=str(Kind.LOAN_OVERDUE),
+            severity=Severity.CRITICAL if critical else Severity.WARNING,
+            metrics={
+                "value": str(quantize(total)),
+                "unit": "money",
+                "currency": ctx.currency,
+                "count": len(rows),
+                "oldest_days": oldest,
+                "parties": [{**p, "amount": str(quantize(p["amount"]))} for p in biggest],
+            },
+            window_end=ctx.today,
+        )
+    ]
 
 
 STOCK_METRIC = "stock_value"

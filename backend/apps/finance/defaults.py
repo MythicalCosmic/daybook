@@ -59,6 +59,14 @@ ASSET_CATEGORIES = (
 )
 ASSET_CODES = frozenset(code for code, *_rest in ASSET_CATEGORIES)
 
+# What loans book into (v12, `apps.finance.loans`): the interest on a loan taken is an expense, on
+# a loan given an income. Added when the first loan needs them, after the asset categories.
+LOAN_CATEGORIES = (
+    ("loan_interest", EXPENSE, _("Loan interest"), False),
+    ("interest_income", INCOME, _("Interest received"), False),
+)
+LOAN_CODES = frozenset(code for code, *_rest in LOAN_CATEGORIES)
+
 DEFAULT_ACCOUNTS = (
     (MoneyAccount.Kind.CASH, _("Cash desk")),
     (MoneyAccount.Kind.CLEARING, _("Card terminal")),
@@ -123,6 +131,20 @@ def ensure_asset_categories(company) -> None:
             if code not in have:
                 base = len(SYSTEM_CATEGORIES) + order
                 _add_system_category(company, code, kind, str(name), base, sensitive)
+
+
+def ensure_loan_categories(company) -> None:
+    """The categories loans book their interest into. Idempotent."""
+    with translation.override(company.default_language), transaction.atomic():
+        have = set(
+            Category.objects.filter(company=company)
+            .exclude(system_code="")
+            .values_list("system_code", flat=True)
+        )
+        base = len(SYSTEM_CATEGORIES) + len(ASSET_CATEGORIES)
+        for order, (code, kind, name, sensitive) in enumerate(LOAN_CATEGORIES):
+            if code not in have:
+                _add_system_category(company, code, kind, str(name), base + order, sensitive)
 
 
 def _add_system_category(company, code, kind, name, order, sensitive) -> None:

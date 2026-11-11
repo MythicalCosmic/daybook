@@ -253,7 +253,8 @@ def _instalments(company, today, until, value, debt_ids: set[int]) -> list[Reaso
         for row in queries.installment_schedule(debt, today):
             if row["status"] == "paid" or row["due_on"] > until:
                 continue
-            base = value.to_base(row["amount"] - row["paid"], debt.currency)
+            rest = (row["amount"] - row["paid"]) + (row["interest"] - row["interest_paid"])
+            base = value.to_base(rest, debt.currency)
             found.append(
                 Reason(
                     key=f"instalment:{row['id']}",

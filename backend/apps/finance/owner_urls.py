@@ -5,7 +5,14 @@
 from django.urls import path
 from rest_framework.routers import SimpleRouter
 
-from apps.finance import owner_api, owner_money_api, planning_api, statements_api
+from apps.finance import (
+    loans_api,
+    owner_api,
+    owner_money_api,
+    planning_api,
+    statements_api,
+    taxes_api,
+)
 
 router = SimpleRouter()
 router.register("finance/accounts", owner_api.AccountViewSet, basename="finance-account")
@@ -145,10 +152,53 @@ reports_for_banks = [
     ),
 ]
 
+# v12: loans and the tax calendar (loans_api, taxes_api).
+credit = [
+    path("finance/loans/", loans_api.LoansView.as_view(), name="finance-loans"),
+    path(
+        "finance/loans/preview/",
+        loans_api.LoanPreviewView.as_view(),
+        name="finance-loans-preview",
+    ),
+    path("finance/loans/<int:pk>/", loans_api.LoanView.as_view(), name="finance-loan"),
+    path(
+        "finance/loans/<int:pk>/schedule/",
+        loans_api.LoanScheduleView.as_view(),
+        name="finance-loan-schedule",
+    ),
+    path("finance/loans/<int:pk>/pay/", loans_api.LoanPayView.as_view(), name="finance-loan-pay"),
+    path(
+        "finance/loans/<int:pk>/repay-early/",
+        loans_api.LoanEarlyView.as_view(),
+        name="finance-loan-repay-early",
+    ),
+    path(
+        "finance/loans/<int:pk>/undo/", loans_api.LoanUndoView.as_view(), name="finance-loan-undo"
+    ),
+    path("finance/taxes/", taxes_api.TaxCalendarView.as_view(), name="finance-taxes"),
+    path(
+        "finance/taxes/candidates/",
+        taxes_api.TaxCandidatesView.as_view(),
+        name="finance-taxes-candidates",
+    ),
+    path("finance/taxes/marks/", taxes_api.TaxMarksView.as_view(), name="finance-taxes-marks"),
+    path(
+        "finance/taxes/marks/<int:pk>/",
+        taxes_api.TaxMarkView.as_view(),
+        name="finance-taxes-mark",
+    ),
+    path(
+        "finance/taxes/compare/",
+        taxes_api.TaxCompareView.as_view(),
+        name="finance-taxes-compare",
+    ),
+]
+
 urlpatterns = [
     *planning,
     *owner_money,
     *reports_for_banks,
+    *credit,
     path("finance/overview/", owner_api.OverviewView.as_view(), name="finance-overview"),
     path("finance/options/", owner_api.OptionsView.as_view(), name="finance-options"),
     path("finance/receipts/", owner_api.ReceiptUploadView.as_view(), name="finance-receipts"),

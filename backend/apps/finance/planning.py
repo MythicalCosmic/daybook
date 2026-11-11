@@ -4,7 +4,9 @@
 Upcoming payments are:
 - the open occurrences of recurring payments (bills, automatic posts, the tax calendar), an
   overdue bill first, on their due day after the holiday move;
-- open debts to and from counterparties with a due date (payables and receivables);
+- open debts to and from counterparties with a due date (payables and receivables); a debt
+  with an instalment plan (a loan's schedule, v12) by each payment not yet made, principal and
+  interest, on its own day;
 - the pay the company owes its people (finalized payslips, expenses to pay back), as one line
   per day without names, the way the P&L shows salaries;
 - the coming pay days whose pay isn't booked yet, as estimates: payroll's own figure for each
@@ -156,12 +158,21 @@ def _rule_items(company, today: date, until: date, branch_ids) -> list[Item]:
 def _debt_items(company, today: date, until: date, branch_ids) -> list[Item]:
     debts = queries.scoped_debts(company, branch_ids=branch_ids).filter(status=Debt.Status.OPEN)
     found = []
+    planned = set(
+        debts.filter(counterparty__isnull=False, installments__isnull=False)
+        .values_list("pk", flat=True)
+        .distinct()
+    )
     parties = (
-        debts.filter(counterparty__isnull=False, due_on__isnull=False, due_on__lte=until)
-        .select_related("counterparty")
+        debts.filter(counterparty__isnull=False)
+        .filter(Q(due_on__isnull=False, due_on__lte=until) | Q(pk__in=planned))
+        .select_related("counterparty", "loan")
         .order_by("due_on", "pk")
     )
     for debt in parties:
+        if debt.pk in planned:
+            found += _instalment_items(company, debt, today, until)
+            continue
         payable = debt.direction == Debt.Direction.PAYABLE
         found.append(
             Item(
@@ -212,6 +223,45 @@ def _debt_items(company, today: date, until: date, branch_ids) -> list[Item]:
                 rule_id=None,
                 debt_id=None,
                 url=f"/c/{company.pk}/finance/debts?direction=payable",
+            )
+        )
+    return found
+
+
+def _instalment_items(company, debt: Debt, today: date, until: date) -> list[Item]:
+    """A debt with an instalment plan (a loan's schedule): each payment not yet made, on its own
+    day, with what is left of it (principal and a loan's interest)."""
+    payable = debt.direction == Debt.Direction.PAYABLE
+    loan = getattr(debt, "loan", None)
+    url = (
+        f"/c/{company.pk}/finance/loans/{loan.pk}"
+        if loan is not None
+        else f"/c/{company.pk}/finance/debts?debt={debt.pk}"
+    )
+    found = []
+    rows = queries.installment_schedule(debt, today)
+    for index, row in enumerate(rows):
+        if row["status"] == "paid" or row["due_on"] > until:
+            continue
+        rest = (row["amount"] - row["paid"]) + (row["interest"] - row["interest_paid"])
+        if rest <= 0:
+            continue
+        found.append(
+            Item(
+                key=f"instalment:{row['id']}",
+                kind="payable" if payable else "receivable",
+                title=debt.counterparty.name,
+                subtitle=_("Payment %(n)s of %(count)s") % {"n": index + 1, "count": len(rows)},
+                date=row["due_on"],
+                amount=rest,
+                currency=debt.currency,
+                direction="out" if payable else "in",
+                overdue=row["due_on"] < today,
+                estimate=False,
+                rule_id=None,
+                debt_id=debt.pk,
+                url=url,
+                trade=debt.kind == Debt.Kind.TRADE,
             )
         )
     return found

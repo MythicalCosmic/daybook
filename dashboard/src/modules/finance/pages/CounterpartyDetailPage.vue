@@ -77,6 +77,7 @@ const info = computed<DescriptionItem[]>(() => {
   if (p.address) list.push({ key: "address", label: t("finance.parties.address"), value: p.address, wide: true });
   if (p.default_category) list.push({ key: "category", label: t("finance.parties.defaultCategory"), value: p.default_category.name });
   if (p.credit_limit) list.push({ key: "limit", label: t("finance.parties.creditLimit"), value: fmt.money(p.credit_limit) });
+  if (p.payment_terms) list.push({ key: "terms", label: t("finance.parties.terms.label"), value: p.payment_terms });
   if (p.bank_details) list.push({ key: "bank", label: t("finance.parties.bankDetails"), value: p.bank_details, wide: true });
   if (p.notes) list.push({ key: "notes", label: t("finance.parties.notes"), value: p.notes, wide: true });
   return list;

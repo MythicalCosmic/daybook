@@ -6,8 +6,10 @@
  * need a receipt, when owners hear about a big expense, which claims wait for approval, and how
  * approved "paid from my own money" claims are paid back (with the payroll only while payroll is
  * on). Saving sends only what changed, so opening the panel never confirms a regime by itself.
+ * v12: how many days before a loan payment and a tax deadline owners hear about it, what else the
+ * company pays tax on (premises, land) and the turnover-tax rate the comparison uses.
  */
-import { BellRing, Landmark, Paperclip, Percent, ReceiptText, Wallet } from "@lucide/vue";
+import { BellRing, CalendarClock, Landmark, Paperclip, Percent, ReceiptText, Wallet } from "@lucide/vue";
 import { computed, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -20,6 +22,7 @@ import ProgressBar from "@/components/ProgressBar.vue";
 import RadioCards from "@/components/RadioCards.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import StickyActionBar from "@/components/StickyActionBar.vue";
+import ToggleSwitch from "@/components/ToggleSwitch.vue";
 import UiButton from "@/components/UiButton.vue";
 import { toast } from "@/components/useToast";
 import { dec, toMoney } from "@/lib/decimal";
@@ -52,6 +55,11 @@ interface Form {
   vat_percent: number | null;
   turnover_threshold: number | null;
   base_value: string | null;
+  loan_remind_days: number | null;
+  tax_remind_days: number | null;
+  owns_property: boolean;
+  owns_land: boolean;
+  turnover_tax_percent: number | null;
 }
 
 const form = reactive<Form>({
@@ -64,6 +72,11 @@ const form = reactive<Form>({
   vat_percent: 0,
   turnover_threshold: DEFAULT_THRESHOLD,
   base_value: null,
+  loan_remind_days: 3,
+  tax_remind_days: 5,
+  owns_property: false,
+  owns_land: false,
+  turnover_tax_percent: 4,
 });
 
 // A server that doesn't say (before package I) keeps today's choice open.
@@ -83,6 +96,11 @@ const saved = computed<Form | null>(() => {
     vat_percent: d.vat_percent === undefined || d.vat_percent === null ? DEFAULT_VAT[d.tax_regime ?? "turnover"] : Number(d.vat_percent),
     turnover_threshold: d.turnover_threshold ?? DEFAULT_THRESHOLD,
     base_value: d.base_value ?? null,
+    loan_remind_days: d.loan_remind_days ?? 3,
+    tax_remind_days: d.tax_remind_days ?? 5,
+    owns_property: d.owns_property ?? false,
+    owns_land: d.owns_land ?? false,
+    turnover_tax_percent: d.turnover_tax_percent === undefined || d.turnover_tax_percent === null ? 4 : Number(d.turnover_tax_percent),
   };
 });
 
@@ -102,7 +120,18 @@ const regime = computed({
 });
 
 const MONEY_KEYS = ["receipt_required_over", "large_expense_alert", "approval_threshold", "base_value"] as const;
-const PLAIN_KEYS = ["rate_source", "reimburse_via", "tax_regime", "vat_percent", "turnover_threshold"] as const;
+const PLAIN_KEYS = [
+  "rate_source",
+  "reimburse_via",
+  "tax_regime",
+  "vat_percent",
+  "turnover_threshold",
+  "loan_remind_days",
+  "tax_remind_days",
+  "owns_property",
+  "owns_land",
+  "turnover_tax_percent",
+] as const;
 
 function moneyDiffers(a: string | null, b: string | null): boolean {
   const empty = (value: string | null) => value === null || value === "";
@@ -122,6 +151,8 @@ const changes = computed<Partial<FinanceSettings>>(() => {
     if ((form[key] ?? null) === (before[key] ?? null)) continue;
     if (key === "vat_percent") out.vat_percent = (form.vat_percent ?? 0).toFixed(2);
     else if (key === "turnover_threshold") out.turnover_threshold = form.turnover_threshold ?? 0;
+    else if (key === "turnover_tax_percent") out.turnover_tax_percent = (form.turnover_tax_percent ?? 0).toFixed(2);
+    else if (key === "loan_remind_days" || key === "tax_remind_days") out[key] = form[key] ?? 0;
     else (out as Record<string, unknown>)[key] = form[key];
   }
   // A regime saved sends its rate with it, so the server never guesses one.
@@ -238,6 +269,32 @@ const turnoverShare = computed(() => {
             :value-text="t('finance.prefs.turnoverOf', { amount: fmt.money(summary.data.value.turnover, undefined, { compact: true }), threshold: fmt.money(summary.data.value.threshold, undefined, { compact: true }) })"
           />
           <p v-if="summary.data.value.over" class="text-sm font-medium text-danger">{{ t("finance.prefs.turnoverOver") }}</p>
+        </div>
+      </section>
+
+      <!-- v12: loans and the tax calendar. -->
+      <section class="ui-card flex flex-col gap-4 p-5" data-loans-taxes>
+        <header class="flex items-start gap-3">
+          <CalendarClock :size="18" class="mt-0.5 shrink-0 text-subtle" />
+          <div>
+            <h3 class="text-sm font-semibold text-fg">{{ t("finance.prefs.deadlines") }}</h3>
+            <p class="text-sm text-muted">{{ t("finance.prefs.deadlinesHint") }}</p>
+          </div>
+        </header>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <FormField :label="t('finance.prefs.loanRemind')" :hint="t('finance.prefs.remindHint')">
+            <NumberInput v-model="form.loan_remind_days" :min="0" :max="30" :suffix="t('finance.prefs.daysBefore')" />
+          </FormField>
+          <FormField :label="t('finance.prefs.taxRemind')" :hint="t('finance.prefs.remindHint')">
+            <NumberInput v-model="form.tax_remind_days" :min="0" :max="30" :suffix="t('finance.prefs.daysBefore')" />
+          </FormField>
+          <FormField :label="t('finance.prefs.turnoverRate')" :hint="t('finance.prefs.turnoverRateHint')">
+            <NumberInput v-model="form.turnover_tax_percent" :min="0" :max="100" :decimals="2" suffix="%" />
+          </FormField>
+        </div>
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <ToggleSwitch v-model="form.owns_property" :label="t('finance.prefs.ownsProperty')" :description="t('finance.prefs.ownsPropertyHint')" layout="row" />
+          <ToggleSwitch v-model="form.owns_land" :label="t('finance.prefs.ownsLand')" :description="t('finance.prefs.ownsLandHint')" layout="row" />
         </div>
       </section>
 

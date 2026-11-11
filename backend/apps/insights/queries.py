@@ -32,6 +32,7 @@ KIND_ORDER = Case(
         for index, kind in enumerate(
             (
                 Insight.Kind.CASH_LOW,
+                Insight.Kind.LOAN_OVERDUE,
                 Insight.Kind.BRANCH_MARGIN,
                 Insight.Kind.OVERDUE_PAYABLES,
                 Insight.Kind.EXPENSE_SPIKE,

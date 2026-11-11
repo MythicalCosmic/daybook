@@ -15,6 +15,7 @@ from apps.finance import (
     claims,
     defaults,
     exporters,
+    loans,
     partners,
     providers,
     recurring,
@@ -22,6 +23,7 @@ from apps.finance import (
     services,
     sources,
     statement_pack,
+    taxes,
 )
 from apps.finance.audit_actions import FinanceAction
 from apps.finance.models import (
@@ -74,6 +76,20 @@ sources.register(
     partners.SOURCE,
     label=_("Dividend"),
     url_template="/c/{company_id}/finance/my-money?tab=partners&dividend={id}",
+)
+
+
+# v12: a loan's payments, interest and fee (id: the loan), and a tax paid from the tax calendar
+# (id: its mark).
+sources.register(
+    loans.SOURCE,
+    label=_("Loan"),
+    url_template="/c/{company_id}/finance/loans/{id}",
+)
+sources.register(
+    taxes.SOURCE,
+    label=_("Tax calendar"),
+    url_template="/c/{company_id}/finance/taxes",
 )
 
 
@@ -137,6 +153,13 @@ registry.register_calendar_source(
     label=_("Debt due dates"),
     perm=Perm.FINANCE_VIEW,
     events=providers.calendar_events,
+    feature=FINANCE,
+)
+registry.register_calendar_source(
+    "finance.tax_deadlines",
+    label=_("Tax deadlines"),
+    perm=Perm.FINANCE_VIEW,
+    events=providers.tax_events,
     feature=FINANCE,
 )
 
@@ -299,6 +322,20 @@ register_kind(
     audience="owner",
     default_telegram=True,
     severity="warning",
+)
+# v12: loan payments coming or late, and tax deadlines coming.
+register_kind(
+    loans.NOTIFICATION,
+    label=_("Loan payments due"),
+    audience="owner",
+    default_telegram=True,
+)
+register_action(loans.NOTIFICATION, loans.PAID, loans.paid_action)
+register_kind(
+    taxes.NOTIFICATION,
+    label=_("Tax deadlines"),
+    audience="owner",
+    default_telegram=True,
 )
 register_kind(
     "finance.budget",

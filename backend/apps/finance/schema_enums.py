@@ -28,4 +28,9 @@ ENUM_NAME_OVERRIDES = {
     "FinanceStatementPeriodEnum": "apps.finance.models.StatementPack.Period",
     "FinanceStatementPurposeEnum": "apps.finance.models.StatementPack.Purpose",
     "FinanceStatementPackStatusEnum": "apps.finance.models.StatementPack.Status",
+    # v12: loans and the tax calendar.
+    "FinanceLoanMethodEnum": "apps.finance.models.Loan.Method",
+    "FinanceLoanBasisEnum": "apps.finance.models.Loan.Basis",
+    "FinanceLoanLineStatusEnum": "apps.finance.loans.LINE_STATUSES",
+    "FinanceTaxDeadlineStatusEnum": "apps.finance.taxes.DEADLINE_STATUSES",
 }

@@ -27,7 +27,8 @@ def test_a_company_starts_on_turnover_tax_without_vat(books):
     row = conf.get_settings(books)
 
     assert (row.tax_regime, row.vat_percent) == ("turnover", Decimal("0.00"))
-    assert (row.turnover_threshold, row.base_value) == (12000, Decimal("412000.00"))
+    # The base value in force since 01.09.2026 (Decree UP-115, tax_rules.BASE_VALUES).
+    assert (row.turnover_threshold, row.base_value) == (12000, Decimal("440000.00"))
     assert queries.vat_percent(books) == Decimal("0")
     assert not providers.tax_regime_done(books)
 
@@ -91,7 +92,7 @@ def test_the_settings_endpoint_reads_and_writes_the_regime(fin, boss, owner_api)
     before = client.get(url(fin, "settings/")).json()
     assert before["tax_regime"] == "turnover"
     assert before["vat_percent"] == "0.00"
-    assert before["base_value"] == "412000.00"
+    assert before["base_value"] == "440000.00"
     assert before["tax_regime_set"] is False
     assert before["payroll_on"] is False
 
@@ -150,8 +151,8 @@ def test_the_turnover_tile(fin, boss, owner_api, cash):
     assert body["regime"] == "turnover"
     assert body["year"] == today.year
     assert body["turnover"] == "2472000000.00"
-    assert body["threshold"] == "4944000000.00"  # 12 000 base values of 412 000 som
-    assert body["share"] == "0.50"
+    assert body["threshold"] == "5280000000.00"  # 12 000 base values of 440 000 som
+    assert body["share"] == "0.47"
     assert body["over"] is False
 
 

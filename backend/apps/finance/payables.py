@@ -17,7 +17,7 @@ from django.utils.translation import gettext as _
 
 from apps.core.exceptions import DomainError
 from apps.core.money import quantize
-from apps.finance import queries, services
+from apps.finance import queries, services, terms
 from apps.finance.models import Debt, MoneyAccount, Transaction
 from apps.members.models import Membership
 
@@ -71,7 +71,11 @@ def grouped(debts: list[Debt], today: date) -> dict:
         group = groups.setdefault(
             debt.counterparty_id,
             {
-                "counterparty": {"id": debt.counterparty_id, "name": debt.counterparty.name},
+                "counterparty": {
+                    "id": debt.counterparty_id,
+                    "name": debt.counterparty.name,
+                    "payment_terms": terms.describe(debt.counterparty),
+                },
                 "total": ZERO,
                 "overdue": ZERO,
                 "debts": [],

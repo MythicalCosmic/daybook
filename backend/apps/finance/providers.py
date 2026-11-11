@@ -235,7 +235,12 @@ def calendar_events(company, start: date, end: date, member: Membership) -> list
                     CalendarItem(
                         id=f"installment-{installment.pk}",
                         kind=kind,
-                        title=_debt_title(receivable, party, installment.amount, debt.currency),
+                        title=_debt_title(
+                            receivable,
+                            party,
+                            installment.amount + installment.interest,
+                            debt.currency,
+                        ),
                         start=installment.due_on,
                         end=None,
                         all_day=True,
@@ -480,3 +485,29 @@ def company_row_check(model):
         return model.objects.filter(company=member.company, pk=target_id).exists()
 
     return check
+
+
+def tax_events(company, start: date, end: date, member: Membership) -> list[CalendarItem]:
+    """The tax calendar's deadlines (v12, `apps.finance.taxes`) in the company calendar, for the
+    people who see the whole company's money."""
+    from apps.finance import taxes
+    from apps.members import scope as member_scope
+
+    if member_scope.branch_ids(member) is not None:
+        return []
+    items = []
+    for row in taxes.deadlines(company, start, end):
+        done = row.status == "done"
+        items.append(
+            CalendarItem(
+                id=f"tax-{row.key}",
+                kind="finance.tax",
+                title=f"{row.rule.name}: {taxes.label(row)}",
+                start=row.due_on,
+                end=None,
+                all_day=True,
+                color="success" if done else ("danger" if row.status == "overdue" else "warning"),
+                url=f"/c/{company.pk}/finance/taxes?deadline={row.key}",
+            )
+        )
+    return items

@@ -44,6 +44,25 @@ export const routes: RouteRecordRaw[] = [
     component: () => import("./pages/DebtsPage.vue"),
     meta: { title: "finance.nav.debts", perm: "finance.view" },
   },
+  // v12: loans and the tax calendar.
+  {
+    path: "finance/loans",
+    name: "finance.loans",
+    component: () => import("./pages/LoansPage.vue"),
+    meta: { title: "finance.nav.loans", perm: "finance.view" },
+  },
+  {
+    path: "finance/loans/:loanId(\\d+)",
+    name: "finance.loan",
+    component: () => import("./pages/LoanDetailPage.vue"),
+    meta: { title: "finance.loans.detail", perm: "finance.view" },
+  },
+  {
+    path: "finance/taxes",
+    name: "finance.taxes",
+    component: () => import("./pages/TaxesPage.vue"),
+    meta: { title: "finance.nav.taxes", perm: "finance.view" },
+  },
   {
     path: "finance/payables",
     name: "finance.payables",
