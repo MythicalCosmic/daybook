@@ -46,7 +46,8 @@ html { font-size: 9.4pt; color: #201e1d; line-height: 1.42; }
 /* Pages and headings -------------------------------------------------------------------------- */
 .page { break-before: page; }
 .after { margin-top: 12mm; }
-table.loans td.name { width: 38mm; }
+table.loans td.name { width: 40mm; }
+table.partners td.name { width: 52mm; }
 table.loans td.next { width: 36mm; white-space: nowrap; }
 .eyebrow { font-size: 7.5pt; letter-spacing: 0.18em; text-transform: uppercase; color: #a85a27; font-weight: 700; margin: 0 0 1mm; }
 h2.section { font-size: 17pt; margin: 0 0 1mm; letter-spacing: -0.01em; }
@@ -63,9 +64,9 @@ table.fin { width: 100%; border-collapse: collapse; margin: 0 0 3mm; font-size: 
 table.fin th, table.fin td { padding: 1.45mm 1.6mm; border-bottom: 0.4pt solid #e3ddd3; vertical-align: top; }
 table.fin thead th { font-size: 7.4pt; font-weight: 700; color: #6b6359; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 0.8pt solid #201e1d; vertical-align: bottom; }
 table.fin thead { display: table-header-group; }
+table.fin thead th.num { white-space: normal; }
 table.fin tr { break-inside: avoid; }
 table.fin .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-table.fin td.name { width: auto; }
 table.fin tr.head td { font-weight: 700; font-size: 7.6pt; letter-spacing: 0.06em; text-transform: uppercase; color: #6b6359; padding-top: 3.6mm; border-bottom: 0.4pt solid #cfc6b8; }
 table.fin tr.child td.name { padding-left: 6mm; color: #4a4540; }
 table.fin tr.child td { font-size: 8.3pt; }
@@ -92,7 +93,7 @@ table.fin .change { color: #6b6359; font-size: 8pt; }
 .chart__legend span.los { background: #ffffff; border: 0.8pt solid #8c491a; }
 .bars { display: flex; align-items: flex-end; border-bottom: 0.8pt solid #201e1d; margin-left: 22mm; }
 .bars__col { flex: 1; display: flex; justify-content: center; align-items: flex-end; }
-.bar { width: 31%; margin: 0 1.5%; }
+.bar { width: 31%; max-width: 8mm; margin: 0 1.5%; }
 .bar.rev { background: #e3d8c8; border: 0.4pt solid #8e8579; border-bottom: none; }
 .bar.pro { background: #8c491a; }
 .below { display: flex; align-items: flex-start; margin-left: 22mm; }

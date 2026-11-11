@@ -2,7 +2,7 @@
   <p class="eyebrow">{{ period_text }}</p>
   <h2 class="section">{% translate "Partners and dividends" %}</h2>
   <p class="lede">{% blocktranslate with profit=partners.profit unit=unit %}Who owns the business, their part of the period's net profit of {{ profit }} {{ unit }}, and the dividends for the period.{% endblocktranslate %}</p>
-  <table class="fin">
+  <table class="fin partners">
     <thead>
       <tr>
         <th>{% translate "Partner" %}</th>
@@ -23,16 +23,25 @@
   {% if partners.unassigned %}<p class="table-note">{% blocktranslate with share=partners.unassigned %}{{ share }} of the period had no partner set.{% endblocktranslate %}</p>{% endif %}
   <p class="table-note">{% translate "A partner's part of the profit follows the days they held each share. Dividends are paid as owner draws, so they never reduce the profit." %}</p>
   <div class="keep">
+    <h3>{% translate "Owner money in the period" %}</h3>
+    <table class="fin">
+      <tbody>
+        <tr><td class="name">{% translate "Owner money put in" %}</td><td class="num">{{ partners.put_in }}</td></tr>
+        <tr><td class="name">{% translate "Owner money taken out, dividends included" %}</td><td class="num">{{ partners.taken_out }}</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="keep">
     <h3>{% translate "Dividend rounds for the period" %}</h3>
     {% if partners.rounds %}
     <table class="fin">
-      <thead><tr><th>{% translate "For the period" %}</th><th class="num">{% translate "Amount" %}</th><th>{% translate "Status" %}</th></tr></thead>
+      <thead><tr><th>{% translate "For the period" %}</th><th class="num">{% translate "Amount" %}</th><th>{% translate "Status" %}</th><th class="num">{% translate "Paid on" %}</th></tr></thead>
       <tbody>
-        {% for round in partners.rounds %}<tr><td class="name">{{ round.period }}</td><td class="num">{{ round.amount }}</td><td>{{ round.status }}</td></tr>{% endfor %}
+        {% for round in partners.rounds %}<tr><td class="name">{{ round.period }}</td><td class="num">{{ round.amount }}</td><td>{{ round.status }}</td><td class="num">{{ round.paid_on }}</td></tr>{% endfor %}
       </tbody>
     </table>
     {% else %}
-    <p class="muted">{% translate "No dividends were declared for this period." %}</p>
+    <p class="muted">{% translate "No dividends were declared or paid in this period." %}</p>
     {% endif %}
   </div>
 </section>

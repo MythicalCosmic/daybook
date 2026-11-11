@@ -598,7 +598,7 @@ def _collect(
     worth = None
     if whole:
         worth = statements.worth(company, end, sheet=sheet, low=multiple_low, high=multiple_high)
-    partner_view = _partners_view(company, start, end, fmt) if whole else None
+    partner_view = _partners_view(company, start, end, fmt, flow) if whole else None
     progress(70)
     revenue = pnl["income"]["total"]
     profit = pnl["profit"]["total"]
@@ -924,7 +924,7 @@ def line_label(key: str) -> str:
         "staff_owe_us": _("Staff advances"),
         "loans_given": _("Loans given"),
         "other_receivable": _("Other money owed to us"),
-        "stock": _("Stock"),
+        "stock": _("Stock on hand"),
         "stock_at_cost": _("Medicines and goods at cost"),
         "fixed_assets": _("Fixed assets"),
         "fixed_assets_book": _("Equipment and fit-out at book value"),
@@ -1078,15 +1078,21 @@ def _loans(company, start: date, end: date, *, branch_ids, fmt: Fmt) -> dict:
 # Partners and dividends ---------------------------------------------------------------------------
 
 
-def _partners_view(company, start: date, end: date, fmt: Fmt) -> dict | None:
+def _partners_view(company, start: date, end: date, fmt: Fmt, flow: dict) -> dict | None:
+    """The partners on the period's last day, their part of its profit, the owner money in and
+    out, and the dividend rounds made for the period or paid in it."""
     people = partners.partners_on(company, end)
     share = partners.profit_share(company, start, end)
     if not people and not share["partners"]:
         return None
     rounds = []
-    for dividend in partners.dividends(company).filter(
-        period_end__gte=start, period_start__lte=end
-    ):
+    for dividend in partners.dividends(company):
+        lines = list(dividend.lines.all())
+        paid_days = [line.paid_on for line in lines if line.is_paid and line.paid_on]
+        overlaps = dividend.period_end >= start and dividend.period_start <= end
+        paid_in = any(start <= day <= end for day in paid_days)
+        if not (overlaps or paid_in):
+            continue
         status = partners.state(dividend)
         rounds.append(
             {
@@ -1094,8 +1100,10 @@ def _partners_view(company, start: date, end: date, fmt: Fmt) -> dict | None:
                 % {"start": fmt.day(dividend.period_start), "end": fmt.day(dividend.period_end)},
                 "amount": fmt.n(dividend.amount),
                 "status": str(Dividend.Status(status).label),
+                "paid_on": fmt.day(max(paid_days)) if paid_days else DASH,
             }
         )
+    owner = next((row for row in flow["sections"] if row["key"] == "owner"), None)
     return {
         "profit": fmt.n(share["profit"], dash=False),
         "rows": [
@@ -1110,6 +1118,8 @@ def _partners_view(company, start: date, end: date, fmt: Fmt) -> dict | None:
         ],
         "unassigned": fmt.pct(share["unassigned_share"]) if share["unassigned_share"] else None,
         "rounds": rounds,
+        "put_in": fmt.n(owner["income"] if owner else ZERO),
+        "taken_out": fmt.n(-owner["expense"] if owner else ZERO),
     }
 
 
