@@ -12,6 +12,7 @@ from apps.console import registry
 from apps.console.perms import AnyOf
 from apps.core.files import register_file_check
 from apps.exports.registry import register_exporter
+from apps.finance import planning as finance_planning
 from apps.finance import sources
 from apps.inbox.registry import register_action, register_kind
 from apps.members.permissions import Perm
@@ -115,6 +116,9 @@ registry.register_brief_section(
 registry.register_company_facts(
     "payroll", perm=VIEW, facts=providers.company_facts, feature=FEATURE
 )
+# The cash plan counts the coming pay days while their pay isn't booked (finance never imports
+# payroll, so payroll hands them over).
+finance_planning.register_pay_days(providers.pay_days)
 registry.register_calendar_source(
     "payroll.dates",
     label=_("Pay days"),

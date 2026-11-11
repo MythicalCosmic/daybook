@@ -302,6 +302,40 @@ def company_facts(company, range_, member: Membership) -> dict:
     return {"next_run_on": pay_day.isoformat(), "next_run_amount": f"{amount:.2f}"}
 
 
+def pay_days(company, today: date, until: date, *, branch_ids) -> list[tuple[date, Decimal, str]]:
+    """The pay days from `today` to `until` and what each takes out of the cash for the people
+    of `branch_ids`, for finance's cash plan (`apps.finance.planning.register_pay_days`; it
+    counts them while the pay isn't booked). The next pay day pays its month: once that run is
+    finalized, the payslips not paid yet (nothing when it was paid early), else the draft run or
+    the month's estimate (the portfolio's figure); each month after it pays the same again.
+    [] while payroll is off."""
+    if not company.has_feature("payroll"):
+        return []
+    first = next_pay_day(company, today)
+    if first > until:
+        return []
+    period = periods.previous_period(first)
+    summary = queries.run_summary(company, period, branch_ids=branch_ids)
+    if summary is not None:
+        monthly, currency = summary["net"], summary["currency"]
+    else:
+        projected = queries.projected_cost(company, period, branch_ids=branch_ids)
+        monthly, currency = projected["net"], projected["currency"]
+    upcoming = monthly
+    if summary is not None and summary["status"] in queries.DONE_STATUSES:
+        run = queries.regular_run(company, period)
+        unpaid = queries.people_scope(queries.month_payslips(company, run), branch_ids).exclude(
+            status=Payslip.Status.PAID
+        )
+        upcoming = sum((payslip.net for payslip in unpaid), Decimal(0))
+    found = [(first, upcoming, currency)] if upcoming > 0 else []
+    step = 1
+    while monthly > 0 and (day := periods.add_months(first, step).replace(day=first.day)) <= until:
+        found.append((day, monthly, currency))
+        step += 1
+    return found
+
+
 def calendar_events(company, start, end, member) -> list[CalendarItem]:
     """Pay days and advance days in the range."""
     settings_row = conf.get_settings(company)

@@ -6,8 +6,9 @@ can carry.
                         personal side, `MoneyAccount.Kind.OWNER`)
   - payments due        within `FinanceSettings.draw_horizon_days` (30): bills and automatic
                         payments, the tax calendar, payables to distributors and others (overdue
-                        ones count now), loan instalments, pay owed to the team and the next
-                        payroll (payroll's own figure for its next run while it isn't booked)
+                        ones count now), loan instalments, pay owed to the team and the coming
+                        pay days (payroll's own figure while their run isn't booked: the cash
+                        plan's estimates, `planning.items`)
   - cash buffer         `FinanceSettings.cash_buffer`, or else one month of fixed costs
   - planned purchases   those due within the horizon, or without a date
   = safe to take        never below zero
@@ -22,7 +23,7 @@ are in the tax calendar): rent, pay, utilities, the bank and the like.
 
 The suggested monthly draw is the largest amount that, taken on the first day of each of the
 coming months, keeps the 90-day cash forecast (`planning.forecast`, without the owner's own
-money) at or above the buffer every day.
+money; it counts the pay days payroll expects) at or above the buffer every day.
 
 Contract for other packages (the owner's cockpit, the advisor), company-wide, money as Decimal:
 
@@ -34,7 +35,6 @@ Contract for other packages (the owner's cockpit, the advisor), company-wide, mo
     history(company, months=6, on=None)        net profit, draws and contributions per month
 """
 
-import logging
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date, timedelta
@@ -59,8 +59,6 @@ from apps.finance.models import (
     Transaction,
 )
 from apps.members.models import Membership
-
-logger = logging.getLogger(__name__)
 
 ZERO = Decimal(0)
 Kind = MoneyAccount.Kind
@@ -229,7 +227,7 @@ def obligations(company, today: date, until: date) -> list[Reason]:
             )
         )
     reasons += _instalments(company, today, until, value, planned_debts)
-    reasons += _payroll(company, today, until, people)
+    reasons += _payroll(company, people)
     return reasons
 
 
@@ -271,84 +269,43 @@ def _instalments(company, today, until, value, debt_ids: set[int]) -> list[Reaso
     return found
 
 
-def _payroll(company, today, until, people) -> list[Reason]:
-    """The team's pay: what is booked and owed (finalized payslips, expenses to pay back), or
-    payroll's own figure for its next run when that is more (its run isn't booked yet), and
-    the pay days after it within the horizon."""
-    booked = quantize(sum((base for _item, base in people if base is not None), ZERO))
-    count = len(people)
+def _payroll(company, people: list[tuple[planning.Item, Decimal | None]]) -> list[Reason]:
+    """The team's pay: what is booked and owed (finalized payslips, expenses to pay back) in one
+    line, and each coming pay day payroll expects while its run isn't booked (the cash plan's
+    estimates: for the next pay day it counts the larger of the two, never both)."""
+    booked = [(item, base) for item, base in people if not item.estimate]
+    owed = quantize(sum((base for _item, base in booked if base is not None), ZERO))
     reasons = []
-    pay_days = [(day, amount) for day, amount in payroll_estimates(company, today) if day <= until]
-    url = f"/c/{company.pk}/payroll"
-    if booked and (not pay_days or booked >= pay_days[0][1]):
-        first = min(item.date for item, _base in people)
+    if owed:
+        count = len(booked)
         reasons.append(
             Reason(
                 key="payroll:booked",
                 kind="payroll",
                 title=_("Pay owed to the team"),
                 subtitle=ngettext("%(count)s line", "%(count)s lines", count) % {"count": count},
-                date=first,
-                amount=booked,
+                date=min(item.date for item, _base in booked),
+                amount=owed,
                 count=count,
-                overdue=any(item.overdue for item, _base in people),
+                overdue=any(item.overdue for item, _base in booked),
                 url=f"/c/{company.pk}/finance/debts?direction=payable",
             )
         )
-        pay_days = pay_days[1:]
-    for day, amount in pay_days:
-        reasons.append(
-            Reason(
-                key=f"payroll:{day.isoformat()}",
-                kind="payroll",
-                title=_("Payroll"),
-                subtitle=_("Pay day"),
-                date=day,
-                amount=amount,
-                estimate=True,
-                url=url,
+    for item, base in people:
+        if item.estimate:
+            reasons.append(
+                Reason(
+                    key=f"payroll:{item.date.isoformat()}",
+                    kind="payroll",
+                    title=_("Payroll"),
+                    subtitle=item.subtitle,
+                    date=item.date,
+                    amount=base,
+                    estimate=True,
+                    url=item.url,
+                )
             )
-        )
     return reasons
-
-
-def payroll_estimates(company, today: date, months: int = 3) -> list[tuple[date, Decimal]]:
-    """The next pay days and what each pays, from payroll's portfolio facts (its finalized run,
-    or else its estimate of the month), through the console registry: finance never imports
-    payroll. Empty while payroll is off or can't say."""
-    if not company.has_feature("payroll"):
-        return []
-    from apps.console import registry
-
-    provider = registry.COMPANY_FACTS.get("payroll")
-    reader = _company_reader(company)
-    if provider is None or reader is None:
-        return []
-    try:
-        facts = provider.facts(company, None, reader) or {}
-        if not facts.get("next_run_on") or not facts.get("next_run_amount"):
-            return []
-        day = date.fromisoformat(facts["next_run_on"])
-        amount = quantize(Decimal(facts["next_run_amount"]))
-    except Exception:  # payroll's trouble never breaks the owner's money page
-        logger.exception("Payroll facts failed for company %s", company.pk)
-        return []
-    if amount <= 0 or day < today:
-        return []
-    found = []
-    for step in range(months):
-        found.append((_add_months(day, step), amount))
-    return found
-
-
-def _company_reader(company) -> Membership | None:
-    """An owner of the company, to read company-wide facts as (every branch, every right)."""
-    return (
-        Membership.objects.select_related("role", "company")
-        .filter(company=company, status=Membership.Status.APPROVED, role__is_owner=True)
-        .order_by("pk")
-        .first()
-    )
 
 
 def _add_months(day: date, months: int) -> date:
@@ -726,12 +683,10 @@ def suggested_monthly(company, on: date | None = None) -> dict:
     dates = [day for day in dates if day <= today + timedelta(days=SUGGEST_DAYS)]
     best: Decimal | None = None
     below_on = None
-    payroll = _unbooked_payroll(company, today, today + timedelta(days=SUGGEST_DAYS))
-    points = []
-    for point in forecast["points"]:
-        day = date.fromisoformat(point["date"])
-        later_pay = sum((amount for pay_day, amount in payroll if pay_day <= day), ZERO)
-        points.append((day, Decimal(point["balance"]) - personal - later_pay))
+    points = [
+        (date.fromisoformat(point["date"]), Decimal(point["balance"]) - personal)
+        for point in forecast["points"]
+    ]
     for day, balance in points:
         taken = sum(1 for draw_day in dates if draw_day <= day)
         room = balance - buffer
@@ -767,25 +722,6 @@ def suggested_monthly(company, on: date | None = None) -> dict:
         "above_profit": monthly > max(profit_average, ZERO),
         "basis": forecast["basis"],
     }
-
-
-def _unbooked_payroll(company, today: date, until: date) -> list[tuple[date, Decimal]]:
-    """The pay days the forecast can't see yet (their runs aren't booked): payroll's figure on
-    each, without the run whose pay is already owed (that one the forecast has)."""
-    pay_days = [(day, amount) for day, amount in payroll_estimates(company, today) if day <= until]
-    if not pay_days:
-        return []
-    booked = sum(
-        (
-            item.amount
-            for item in planning.items(company, today, until, branch_ids=None)
-            if item.kind == "payroll" and item.amount is not None
-        ),
-        ZERO,
-    )
-    if booked and booked >= pay_days[0][1]:
-        pay_days = pay_days[1:]
-    return pay_days
 
 
 def whole(amount: Decimal, currency: str, rounding=ROUND_HALF_UP) -> Decimal:

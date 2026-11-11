@@ -69,6 +69,21 @@ def test_cash_low_point_under_the_buffer(shop, books):
     assert insight.resolved_at is not None
 
 
+def test_cash_low_sees_the_salaries_not_booked_yet(shop, books, payroll_pays):
+    # 30 mln in cash, 40 mln of pay on the 25th that payroll hasn't finalized yet.
+    books.income(mln(30), days_before(70), category="other_income")
+    pay_day = TODAY.replace(day=25)
+    payroll_pays(pay_day, mln(40))
+
+    run(shop)
+
+    [insight] = live(shop, Kind.CASH_LOW)
+    assert insight.severity == Insight.Severity.CRITICAL
+    assert insight.metrics["below_zero_on"] == pay_day.isoformat()
+    assert insight.metrics["value"] == "-10000000.00"
+    assert insight.metrics["causes"][0]["title"] == "Payroll (estimate)"
+
+
 def test_cash_running_out_is_urgent_and_names_the_payment(shop, books):
     books.income(mln(5), days_before(70), category="other_income")
     party = books.party("Oqtosh Med")

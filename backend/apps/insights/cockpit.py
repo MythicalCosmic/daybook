@@ -16,9 +16,11 @@ out. The money part is the slow one: it is cached per company, branch scope and 
 `TTL` seconds, and the key moves with the pulse versions of the ledger, so a change shows at
 once. Decisions and insights are read fresh on every call.
 
-Every amount comes from the P&L or the forecast as they are booked: nothing is estimated.
+Every amount of the money part comes from the P&L as it is booked: nothing is estimated.
 Salaries and depreciation are booked at the end of a month, so "this month so far" lacks them
 until then; `missing` names the cost groups last month had that this month has none of yet.
+The cash part is the forecast's, which also counts the pay days payroll expects while their
+pay isn't booked (its estimates), so the runway knows the salaries ahead.
 """
 
 from __future__ import annotations

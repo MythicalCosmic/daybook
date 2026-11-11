@@ -153,6 +153,30 @@ def test_runway_ends_when_the_forecast_goes_below_zero(shop, owner, books):
     assert cash["low"]["short_by"] == "20000000.00"
 
 
+def test_the_runway_sees_the_salaries_not_booked_yet(shop, owner, books, payroll_pays):
+    # 30 mln in cash, 40 mln of pay on the 25th that payroll hasn't finalized yet.
+    books.income(mln(30), days_before(70), category="other_income")
+    pay_day = TODAY.replace(day=25)
+    payroll_pays(pay_day, mln(40))
+
+    cash = cockpit.build(owner, now=NOW)["cash"]
+
+    assert cash["runway"] == {
+        "days": (pay_day - TODAY).days,
+        "basis": "forecast",
+        "below_zero_on": pay_day.isoformat(),
+        "horizon": 90,
+    }
+    assert cash["low"]["short_by"] == "10000000.00"
+    assert cash["low"]["causes"][0] == {
+        "title": "Payroll (estimate)",
+        "kind": "payroll",
+        "date": pay_day.isoformat(),
+        "amount": "40000000.00",
+        "overdue": False,
+    }
+
+
 def test_a_branch_accountant_sees_only_their_branch(
     shop, branch_accountant, branches, month_of_books
 ):

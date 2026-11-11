@@ -6,7 +6,10 @@ Upcoming payments are:
   overdue bill first, on their due day after the holiday move;
 - open debts to and from counterparties with a due date (payables and receivables);
 - the pay the company owes its people (finalized payslips, expenses to pay back), as one line
-  per day without names, the way the P&L shows salaries.
+  per day without names, the way the P&L shows salaries;
+- the coming pay days whose pay isn't booked yet, as estimates: payroll's own figure for each
+  (it registers `register_pay_days`; finance never imports payroll). The pay already booked
+  stands for the next pay day, and the larger of the two counts, never both.
 
 The forecast starts from the cash on every account in scope, adds the scheduled items above
 (payables on their due day, an overdue payable today; receivables on their due day, never an
@@ -20,7 +23,9 @@ what customers owe) are added too, but only after the last known due date of tha
 booked debts no longer cover the days ahead; nothing is counted twice.
 """
 
+import logging
 from collections import defaultdict
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date, timedelta
 from decimal import Decimal
@@ -33,10 +38,17 @@ from apps.core.money import quantize
 from apps.finance import queries, recurring
 from apps.finance.models import Category, Debt, RecurringRule, Transaction
 
+logger = logging.getLogger(__name__)
+
 ZERO = Decimal(0)
 MAX_DAYS = 120
 RUN_RATE_DAYS = 56
 PEOPLE_KINDS = (Debt.Kind.SALARY, Debt.Kind.REIMBURSEMENT)
+
+# What a coming pay day takes out of the cash: (day, amount, currency).
+PayDay = tuple[date, Decimal, str]
+PayDays = Callable[..., list[PayDay]]
+_pay_days: list[PayDays] = []
 
 
 @dataclass(frozen=True)
@@ -78,9 +90,12 @@ class Item:
 
 def items(company, today: date, until: date, *, branch_ids) -> list[Item]:
     """Everything due on or before `until`, overdue first, then by day."""
+    debts = _debt_items(company, today, until, branch_ids)
+    booked_pay = [item for item in debts if item.kind == "payroll"]
     found = [
         *_rule_items(company, today, until, branch_ids),
-        *_debt_items(company, today, until, branch_ids),
+        *debts,
+        *_pay_day_items(company, today, until, branch_ids, booked_pay),
     ]
     found.sort(key=lambda item: (not item.overdue, item.date, item.direction, item.title, item.key))
     return found
@@ -197,6 +212,78 @@ def _debt_items(company, today: date, until: date, branch_ids) -> list[Item]:
                 rule_id=None,
                 debt_id=None,
                 url=f"/c/{company.pk}/finance/debts?direction=payable",
+            )
+        )
+    return found
+
+
+# Pay days the ledger doesn't know yet ----------------------------------------------------------
+
+
+def register_pay_days(provider: PayDays) -> None:
+    """Payroll hands the cash plan its coming pay days (finance never imports payroll):
+    `provider(company, today, until, *, branch_ids) -> [(day, amount, currency)]`, each pay day
+    from `today` to `until` with what it pays the people of `branch_ids`; [] while payroll is
+    off or can't say. Registered once, from payroll's `hooks.py`."""
+    if provider in _pay_days:
+        raise ValueError(f"{provider!r} is already registered.")
+    _pay_days.append(provider)
+
+
+def pay_days(company, today: date, until: date, *, branch_ids) -> list[PayDay]:
+    """The coming pay days every provider names, the first first (a provider's trouble never
+    breaks the cash plan: it is logged and left out)."""
+    found: list[PayDay] = []
+    for provider in _pay_days:
+        try:
+            rows = provider(company, today, until, branch_ids=branch_ids) or []
+            for day, amount, currency in rows:
+                amount = quantize(Decimal(amount))
+                if today <= day <= until and amount > 0:
+                    found.append((day, amount, currency))
+        except Exception:
+            logger.exception("Pay days failed for company %s", company.pk)
+    found.sort(key=lambda row: row[0])
+    return found
+
+
+def _pay_day_items(company, today: date, until: date, branch_ids, booked: list[Item]) -> list[Item]:
+    """Payroll's estimate of each coming pay day. The pay already booked (finalized payslips,
+    expenses to pay back) stands for the next pay day: when it is as much as payroll's figure,
+    that pay day adds nothing; when it is less, the pay day adds the rest. So the larger of the
+    two counts, never both, and what is booked keeps its own line."""
+    rows = pay_days(company, today, until, branch_ids=branch_ids)
+    if not rows:
+        return []
+    value = queries.valuation(company, today)
+    owed = ZERO
+    for item in booked:
+        base = value.to_base(item.amount, item.currency) if item.amount is not None else None
+        owed += base or ZERO
+    found = []
+    for index, (day, amount, currency) in enumerate(rows):
+        subtitle = _("Pay day")
+        expected = value.to_base(amount, currency) if index == 0 and owed > 0 else None
+        if expected is not None:
+            if owed >= expected:
+                continue  # the pay booked already covers the next pay day
+            amount, currency = quantize(expected - owed), company.base_currency
+            subtitle = _("Beyond the pay already booked")
+        found.append(
+            Item(
+                key=f"payroll:{day.isoformat()}:estimate",
+                kind="payroll",
+                title=_("Payroll (estimate)"),
+                subtitle=subtitle,
+                date=day,
+                amount=amount,
+                currency=currency,
+                direction="out",
+                overdue=False,
+                estimate=True,
+                rule_id=None,
+                debt_id=None,
+                url=f"/c/{company.pk}/payroll",
             )
         )
     return found
