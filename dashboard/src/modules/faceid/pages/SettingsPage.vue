@@ -23,6 +23,7 @@ import StickyActionBar from "@/components/StickyActionBar.vue";
 import ToggleSwitch from "@/components/ToggleSwitch.vue";
 import UiButton from "@/components/UiButton.vue";
 import { toast } from "@/components/useToast";
+import { isDavomat } from "@/core/edition";
 import { useCompanyId, useCompanyStore } from "@/stores/company";
 
 import { saveSettings, useRefresh, useSettings } from "../api";
@@ -121,7 +122,8 @@ async function save(): Promise<void> {
         </div>
       </PageSection>
 
-      <BotCard />
+      <!-- Davomat has one bot, the organization's (Settings › Telegram), which sends Face ID's messages too. -->
+      <BotCard v-if="!isDavomat()" />
 
       <PageSection variant="card" flush :heading-level="2" :title="t('faceid.settings.privacyTitle')" :description="t('faceid.settings.privacyHint')">
         <div class="flex flex-col divide-y divide-line">

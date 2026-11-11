@@ -317,7 +317,7 @@
   "davomat.setup.done.later": "Перейти к обзору",
   "davomat.setup.done.next": "Что дальше",
   "davomat.setup.done.nextTeam": "Добавьте сотрудников или загрузите список",
-  "davomat.setup.done.nextTelegram": "Подключите Telegram-бота",
+  "davomat.setup.done.nextTelegram": "Подключите Telegram-бота и привяжите свой Telegram: каждый приход будет приходить вам с фото",
   "davomat.setup.done.nextTerminal": "Подключите терминал Face ID",
   "davomat.setup.done.terminal": "Добавить первый терминал",
   "davomat.setup.done.title": "Всё готово, {name}",
@@ -512,8 +512,8 @@
   "davomat.telegram.me.dialogHint": "Отсканируйте код камерой телефона или откройте ссылку на этом устройстве.",
   "davomat.telegram.me.dialogTitle": "Привяжите свой Telegram",
   "davomat.telegram.me.link": "Привязать мой Telegram",
-  "davomat.telegram.me.linked": "Привязан. Бот пишет вам: приходы, опоздания и ежедневную сводку.",
-  "davomat.telegram.me.notLinked": "Ещё не привязан. Отсканируйте код телефоном, чтобы получать сообщения.",
+  "davomat.telegram.me.linked": "Привязан. Бот пишет вам: приходы с фото, опоздания и ежедневную сводку. Кнопка Davomat в боте открывает это приложение прямо в Telegram.",
+  "davomat.telegram.me.notLinked": "Ещё не привязан. Привяжите, чтобы получать каждый приход с фото, в том числе свой.",
   "davomat.telegram.me.relink": "Привязать другой аккаунт",
   "davomat.telegram.me.title": "Ваш Telegram",
   "davomat.telegram.openBot": "Открыть бота",
@@ -678,5 +678,11 @@
   "davomat.employee.timeline.now": "Сейчас",
   "davomat.employee.timeline.summary": "Приход {in} · Уход {out} · На работе {worked}",
   "davomat.employee.timeline.stillIn": "Приход {in} · сейчас на месте",
-  "davomat.employee.timeline.none": "В этот день отметок нет"
+  "davomat.employee.timeline.none": "В этот день отметок нет",
+  "davomat.telegram.me.callout.title": "Сообщения о приходах вам пока не приходят",
+  "davomat.telegram.me.callout.body": "Бот пишет только тем, кто привязал свой Telegram. Привяжите свой, чтобы получать каждое сканирование с фото, в том числе своё, и кнопку Davomat в боте.",
+  "davomat.account.telegram.title": "Telegram",
+  "davomat.account.telegram.hint": "Привяжите Telegram, чтобы получать сообщения бота (приходы с фото, в том числе ваши) и открывать Davomat прямо в Telegram без пароля.",
+  "davomat.account.telegram.linked": "Привязан",
+  "davomat.account.telegram.notLinked": "Не привязан"
 }

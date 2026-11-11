@@ -3,11 +3,13 @@
  * Settings › Telegram (docs/DAVOMAT.md §1.5): the organization's own bot. Its state (not connected,
  * connected as @name, or refused by Telegram), the token pasted from @BotFather (checked with
  * Telegram before it is saved, kept encrypted, never shown again) with the steps to get one, a test
- * message, linking your own Telegram with a QR code, and what the bot sends to whom.
+ * message, linking your own Telegram with a QR code (said plainly at the top until it is linked:
+ * the bot writes only to people who linked theirs, so an admin who hasn't gets no arrivals, their
+ * own scans included), and what the bot sends to whom.
  */
 import { AlertTriangle, BellRing, Camera, CircleCheck, ClipboardList, ExternalLink, MessageCircleQuestion, RefreshCw, Send, Sparkles, Timer, Unplug, UserRoundSearch } from "@lucide/vue";
 import { useQueryClient } from "@tanstack/vue-query";
-import { computed, ref, watch } from "vue";
+import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { z } from "zod";
 
@@ -28,11 +30,11 @@ import { useForm } from "@/lib/useForm";
 import { useCompanyId, useCompanyStore } from "@/stores/company";
 import { useSessionStore } from "@/stores/session";
 
-import { davomatKeys, disconnectTelegram, saveTelegramToken, testTelegram, useBrandRefresh, useTelegram, userTelegramLink } from "../api";
+import { davomatKeys, disconnectTelegram, saveTelegramToken, testTelegram, useBrandRefresh, useTelegram } from "../api";
 import BotFatherGuide from "../components/settings/BotFatherGuide.vue";
+import MyTelegramLink from "../components/settings/MyTelegramLink.vue";
 import SecretInput from "../components/settings/SecretInput.vue";
 import { useUsersWhen } from "../components/settings/settingsApi";
-import TelegramLinkDialog from "../components/settings/TelegramLinkDialog.vue";
 import type { TelegramSettings } from "../types";
 
 const { t } = useI18n();
@@ -130,14 +132,10 @@ const users = useUsersWhen(canSeeUsers);
 const me = computed(() => (users.data.value ?? []).find((user) => user.id === company.current?.membership_id) ?? null);
 // The users list when the person may read it, else their own account (a linked Telegram has an id).
 const meLinked = computed(() => me.value?.telegram_linked ?? (session.me?.user.telegram_id ?? null) !== null);
-const linkOpen = ref(false);
-const createMyLink = () => userTelegramLink(cid.value, company.current?.membership_id ?? 0);
-watch(linkOpen, (open) => {
-  // Back from the dialog: the person may have linked; show it.
-  if (open) return;
+// Back from the link dialog (MyTelegramLink reads the account again): the users list too.
+function linkClosed(): void {
   if (canSeeUsers.value) void users.refetch();
-  void session.loadMe().catch(() => undefined);
-});
+}
 
 const sends = computed(() => [
   { icon: Camera, text: t("davomat.telegram.sends.arrivals") },
@@ -211,6 +209,19 @@ const sends = computed(() => [
         </div>
       </section>
 
+      <!-- The bot works, but writes only to people who linked their Telegram: the admin first. -->
+      <InlineAlert
+        v-if="status === 'ok' && !meLinked"
+        tone="warning"
+        :title="t('davomat.telegram.me.callout.title')"
+        :description="t('davomat.telegram.me.callout.body')"
+        data-link-me-callout
+      >
+        <template #actions>
+          <MyTelegramLink :linked="false" @closed="linkClosed" />
+        </template>
+      </InlineAlert>
+
       <InlineAlert v-if="!canEdit && status !== 'ok'" tone="info" :title="t('davomat.settings.readOnly.title')" :description="t('davomat.telegram.readOnly')" />
 
       <!-- The token, and how to get one -->
@@ -244,9 +255,7 @@ const sends = computed(() => [
           <h3 class="text-base font-semibold text-fg">{{ t("davomat.telegram.me.title") }}</h3>
           <p class="text-sm text-muted">{{ meLinked ? t("davomat.telegram.me.linked") : t("davomat.telegram.me.notLinked") }}</p>
           <div class="mt-auto flex flex-wrap gap-2 pt-1">
-            <UiButton :variant="meLinked ? 'ghost' : 'primary'" :icon="Send" data-link-me @click="linkOpen = true">
-              {{ meLinked ? t("davomat.telegram.me.relink") : t("davomat.telegram.me.link") }}
-            </UiButton>
+            <MyTelegramLink :linked="meLinked" @closed="linkClosed" />
           </div>
         </section>
         <section class="ui-card flex flex-col gap-3 p-5" data-test>
@@ -277,13 +286,5 @@ const sends = computed(() => [
         </div>
       </PageSection>
     </template>
-
-    <TelegramLinkDialog
-      v-model:open="linkOpen"
-      :title="t('davomat.telegram.me.dialogTitle')"
-      :description="meLinked ? undefined : t('davomat.telegram.me.dialogHint')"
-      :linked="false"
-      :create="createMyLink"
-    />
   </div>
 </template>
