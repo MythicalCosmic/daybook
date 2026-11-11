@@ -738,7 +738,7 @@
   "finance.worth.reset": "Standart oraliqni qaytarish (2–3)",
   "finance.worth.saved": "Koeffitsiyentlar saqlandi",
   "finance.worth.tooEarly": "Hisob kunlari: {n}. Yillik daromadni baholashga hali erta | Hisob kunlari: {n}. Yillik daromadni baholashga hali erta | Hisob kunlari: {n}. Yillik daromadni baholashga hali erta",
-  "finance.worth.loss": "So‘nggi o‘n ikki oyda foyda yo‘q, shuning uchun bu usul qiymat bermaydi.",
+  "finance.worth.loss": "Bu davrda biznes foyda ko‘rmadi, shuning uchun bu usul qiymat bermaydi.",
   "finance.pack.button": "Hisobot tayyorlash",
   "finance.pack.title": "Bank va investorlar uchun hisobot",
   "finance.pack.description": "Foyda va zarar, pul oqimlari, balans va izohlar bitta PDF faylda, yuborishga tayyor.",

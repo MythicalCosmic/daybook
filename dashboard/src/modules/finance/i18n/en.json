@@ -738,7 +738,7 @@
   "finance.worth.reset": "Back to 2–3",
   "finance.worth.saved": "Multiples saved",
   "finance.worth.tooEarly": "Only {n} days of books: too early to judge yearly earnings | Only {n} day of books: too early to judge yearly earnings | Only {n} days of books: too early to judge yearly earnings",
-  "finance.worth.loss": "No profit over the last twelve months, so this method gives no value.",
+  "finance.worth.loss": "The business made no profit over this time, so this method gives no value.",
   "finance.pack.button": "Prepare a report",
   "finance.pack.title": "Report for a bank or investors",
   "finance.pack.description": "One PDF with the profit and loss, cash flow, balance sheet and notes, ready to send.",

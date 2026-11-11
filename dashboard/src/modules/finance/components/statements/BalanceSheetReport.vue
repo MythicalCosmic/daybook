@@ -106,7 +106,7 @@ const sectionName = (key: string) => t(`finance.sheet.section.${key}`);
     </div>
     <ErrorState v-if="query.isError.value" :error="query.error.value" :retry="() => query.refetch()" />
     <template v-else>
-      <KpiStrip :items="kpis" :loading="query.isPending.value" :columns="4" />
+      <KpiStrip :items="kpis" :loading="query.isPending.value" :columns="4" phone="grid" />
       <SkeletonBlock v-if="query.isPending.value" height="420px" radius="12px" />
       <template v-else-if="data">
         <div class="grid grid-cols-1 gap-4 lg:grid-cols-2" data-balance-sheet>
