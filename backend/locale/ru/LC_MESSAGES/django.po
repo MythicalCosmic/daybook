@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-12 01:05+0500\n"
+"POT-Creation-Date: 2026-11-12 01:13+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -2069,12 +2069,13 @@ msgid "Understanding"
 msgstr "Разбираем"
 
 #: backend/apps/ai/models.py backend/apps/exports/models.py
-#: backend/apps/learning/models.py
+#: backend/apps/finance/models.py backend/apps/learning/models.py
 msgid "Ready"
 msgstr "Готово"
 
 #: backend/apps/ai/models.py backend/apps/exports/models.py
-#: backend/apps/learning/models.py backend/apps/sales/models.py
+#: backend/apps/finance/models.py backend/apps/learning/models.py
+#: backend/apps/sales/models.py
 msgid "Failed"
 msgstr "Ошибка"
 
@@ -2772,6 +2773,7 @@ msgid "Low-value items: uniforms, keys, small tools"
 msgstr "Малоценные предметы: форма, ключи, мелкий инструмент"
 
 #: backend/apps/assets/hooks.py backend/apps/finance/defaults.py
+#: backend/apps/finance/templates/finance/statements/notes.html
 msgid "Depreciation"
 msgstr "Амортизация"
 
@@ -3426,6 +3428,7 @@ msgid "Name"
 msgstr "Имя"
 
 #: backend/apps/assets/providers.py backend/apps/finance/exporters.py
+#: backend/apps/finance/templates/finance/statements/notes.html
 msgid "Category"
 msgstr "Категория"
 
@@ -3449,6 +3452,7 @@ msgstr "Филиал"
 
 #: backend/apps/assets/providers.py backend/apps/attendance/providers.py
 #: backend/apps/davomat/importing.py backend/apps/finance/exporters.py
+#: backend/apps/finance/templates/finance/statements/partners.html
 #: backend/apps/hr/policies/exporters.py backend/apps/inventory/providers.py
 #: backend/apps/members/providers.py backend/apps/payroll/providers.py
 #: backend/apps/sales/hooks.py backend/apps/tasks/hooks.py
@@ -3465,6 +3469,7 @@ msgid "Serial number"
 msgstr "Серийный номер"
 
 #: backend/apps/assets/providers.py
+#: backend/apps/finance/templates/finance/statements/notes.html
 msgid "Bought"
 msgstr "Куплено"
 
@@ -3842,6 +3847,9 @@ msgid "The amount must be the whole expense."
 msgstr "Сумма должна равняться всему расходу."
 
 #: backend/apps/assets/services.py backend/apps/finance/exporters.py
+#: backend/apps/finance/templates/finance/statements/loans.html
+#: backend/apps/finance/templates/finance/statements/notes.html
+#: backend/apps/finance/templates/finance/statements/partners.html
 #: backend/apps/payroll/templates/payroll/payslip.html
 #: backend/apps/sales/templates/sales/invoice.html
 msgid "Amount"
@@ -4996,6 +5004,7 @@ msgid "Use xlsx or pdf."
 msgstr "Укажите xlsx или pdf."
 
 #: backend/apps/attendance/owner_api.py backend/apps/exports/services.py
+#: backend/apps/finance/statement_pack.py
 msgid "You don't have permission to export this."
 msgstr "У вас нет прав на выгрузку этих данных."
 
@@ -5074,6 +5083,7 @@ msgstr "Последний день не может быть раньше пер
 
 #: backend/apps/attendance/providers.py backend/apps/attendance/reports.py
 #: backend/apps/finance/exporters.py
+#: backend/apps/finance/templates/finance/statements/notes.html
 #: backend/apps/inventory/templates/inventory/controlled_register.html
 #: backend/apps/inventory/templates/inventory/rx_journal.html
 #: backend/apps/tasks/templates/tasks/readings_journal.html
@@ -5233,8 +5243,11 @@ msgstr "Вовремя"
 msgid "Average lateness, min"
 msgstr "Среднее опоздание, мин"
 
-#: backend/apps/attendance/reports.py backend/apps/sales/hooks.py
-#: backend/apps/sales/templates/sales/invoice.html
+#: backend/apps/attendance/reports.py backend/apps/finance/exporters.py
+#: backend/apps/finance/templates/finance/statements/loans.html
+#: backend/apps/finance/templates/finance/statements/notes.html
+#: backend/apps/finance/templates/finance/statements/pnl.html
+#: backend/apps/sales/hooks.py backend/apps/sales/templates/sales/invoice.html
 msgid "Total"
 msgstr "Итого"
 
@@ -5616,7 +5629,9 @@ msgstr "Эта заявка не ждёт одобрения."
 msgid "%(name)s can't take this shift any more."
 msgstr "%(name)s больше не может взять эту смену."
 
-#: backend/apps/attendance/services.py backend/apps/tasks/feeds.py
+#: backend/apps/attendance/services.py
+#: backend/apps/finance/templates/finance/statements/loans.html
+#: backend/apps/tasks/feeds.py
 msgid "Taken"
 msgstr "Занято"
 
@@ -7481,8 +7496,8 @@ msgstr "%(label)s · строк: %(count)s"
 msgid "This export took too long. Please try again."
 msgstr "Выгрузка заняла слишком много времени. Пожалуйста, попробуйте ещё раз."
 
-#: backend/apps/exports/models.py backend/apps/inventory/models.py
-#: backend/apps/sales/models.py
+#: backend/apps/exports/models.py backend/apps/finance/models.py
+#: backend/apps/inventory/models.py backend/apps/sales/models.py
 msgid "Waiting"
 msgstr "В очереди"
 
@@ -8233,6 +8248,14 @@ msgstr "Отменил выплату дивиденда"
 msgid "Cancelled a dividend"
 msgstr "Отменил дивиденд"
 
+#: backend/apps/finance/audit_actions.py
+msgid "Prepared a report for a bank or investors"
+msgstr "Подготовлен отчёт для банка или инвесторов"
+
+#: backend/apps/finance/audit_actions.py
+msgid "Changed how the business is valued"
+msgstr "Изменена оценка бизнеса"
+
 #: backend/apps/finance/bot_messages.py
 #, python-format
 msgid "Big expense: %(amount)s · %(category)s"
@@ -8560,6 +8583,7 @@ msgid "Card terminal"
 msgstr "Терминал"
 
 #: backend/apps/finance/exporters.py
+#: backend/apps/finance/templates/finance/statements/notes.html
 msgid "Account"
 msgstr "Счёт"
 
@@ -8593,6 +8617,7 @@ msgid "Source"
 msgstr "Источник"
 
 #: backend/apps/finance/exporters.py
+#: backend/apps/finance/templates/finance/statements/cover.html
 msgid "Period"
 msgstr "Период"
 
@@ -8610,14 +8635,17 @@ msgid "Line"
 msgstr "Статья"
 
 #: backend/apps/finance/exporters.py
+#: backend/apps/finance/templates/finance/statements/cash_flow.html
 msgid "Money in"
 msgstr "Поступления"
 
 #: backend/apps/finance/exporters.py
+#: backend/apps/finance/templates/finance/statements/cash_flow.html
 msgid "Money out"
 msgstr "Выплаты"
 
 #: backend/apps/finance/exporters.py
+#: backend/apps/finance/templates/finance/statements/cash_flow.html
 msgid "Net"
 msgstr "Сальдо"
 
@@ -8626,6 +8654,7 @@ msgid "Account or line"
 msgstr "Счёт или статья"
 
 #: backend/apps/finance/exporters.py
+#: backend/apps/finance/templates/finance/statements/notes.html
 #: backend/apps/inventory/templates/inventory/controlled_register.html
 msgid "Balance"
 msgstr "Остаток"
@@ -8634,7 +8663,8 @@ msgstr "Остаток"
 msgid "In base currency"
 msgstr "В базовой валюте"
 
-#: backend/apps/finance/exporters.py backend/apps/inventory/providers.py
+#: backend/apps/finance/exporters.py backend/apps/finance/models.py
+#: backend/apps/inventory/providers.py
 #: backend/apps/inventory/templates/inventory/controlled_register.html
 #: backend/apps/payroll/providers.py
 #: backend/apps/payroll/templates/payroll/payslip.html
@@ -8647,6 +8677,7 @@ msgid "Direction"
 msgstr "Направление"
 
 #: backend/apps/finance/exporters.py
+#: backend/apps/finance/templates/finance/statements/notes.html
 msgid "Who"
 msgstr "Кто"
 
@@ -8688,6 +8719,7 @@ msgid "Expenses"
 msgstr "Расходы"
 
 #: backend/apps/finance/exporters.py
+#: backend/apps/finance/templates/finance/statements/summary.html
 msgid "Profit"
 msgstr "Прибыль"
 
@@ -8700,10 +8732,12 @@ msgid "Operating"
 msgstr "Основная деятельность"
 
 #: backend/apps/finance/exporters.py backend/apps/finance/owner_api.py
+#: backend/apps/finance/statement_pack.py
 msgid "Equipment and investments"
 msgstr "Оборудование и инвестиции"
 
 #: backend/apps/finance/exporters.py backend/apps/finance/owner_api.py
+#: backend/apps/finance/templates/finance/statements/notes.html
 msgid "Loans"
 msgstr "Займы"
 
@@ -8716,11 +8750,12 @@ msgid "Transfers and exchange"
 msgstr "Переводы и обмен валюты"
 
 #: backend/apps/finance/exporters.py backend/apps/finance/hooks.py
-#: backend/apps/finance/owner_api.py
+#: backend/apps/finance/owner_api.py backend/apps/finance/statement_pack.py
 msgid "Opening balances"
 msgstr "Начальные остатки"
 
 #: backend/apps/finance/exporters.py backend/apps/finance/owner_api.py
+#: backend/apps/finance/statement_pack.py
 msgid "Currency revaluation"
 msgstr "Переоценка валюты"
 
@@ -8743,6 +8778,21 @@ msgstr "Мы должны"
 #: backend/apps/finance/exporters.py
 msgid "Net position"
 msgstr "Итого с учётом долгов"
+
+#: backend/apps/finance/exporters.py
+#: backend/apps/finance/templates/finance/statements/balance.html
+msgid "Assets"
+msgstr "Активы"
+
+#: backend/apps/finance/exporters.py
+#: backend/apps/finance/templates/finance/statements/balance.html
+msgid "Liabilities"
+msgstr "Обязательства"
+
+#: backend/apps/finance/exporters.py
+#: backend/apps/finance/templates/finance/statements/balance.html
+msgid "Equity"
+msgstr "Собственный капитал"
 
 #: backend/apps/finance/exporters.py
 msgid "Parent category"
@@ -8859,17 +8909,24 @@ msgstr "Финансовые категории"
 msgid "Ledger entries"
 msgstr "Проводки"
 
-#: backend/apps/finance/hooks.py
+#: backend/apps/finance/hooks.py backend/apps/finance/statement_pack.py
+#: backend/apps/finance/templates/finance/statements/pnl.html
 msgid "Profit and loss"
 msgstr "Прибыли и убытки"
 
-#: backend/apps/finance/hooks.py
+#: backend/apps/finance/hooks.py backend/apps/finance/statement_pack.py
+#: backend/apps/finance/templates/finance/statements/cash_flow.html
 msgid "Cash flow"
 msgstr "Движение денег"
 
 #: backend/apps/finance/hooks.py
 msgid "Balances on a day"
 msgstr "Остатки на дату"
+
+#: backend/apps/finance/hooks.py backend/apps/finance/statement_pack.py
+#: backend/apps/finance/templates/finance/statements/balance.html
+msgid "Balance sheet"
+msgstr "Баланс"
 
 #: backend/apps/finance/hooks.py
 msgid "Category trend"
@@ -9002,6 +9059,14 @@ msgstr ""
 #: backend/apps/finance/models.py
 msgid "How many days of payments due the safe amount to take keeps back."
 msgstr "За сколько дней платежи откладываются из безопасной суммы изъятия."
+
+#: backend/apps/finance/models.py
+msgid "The lower multiple of a year's earnings. Empty: the default."
+msgstr "Нижний множитель годового дохода. Пусто: по умолчанию."
+
+#: backend/apps/finance/models.py
+msgid "The higher multiple of a year's earnings. Empty: the default."
+msgstr "Верхний множитель годового дохода. Пусто: по умолчанию."
 
 #: backend/apps/finance/models.py
 msgid "UZS per 1 unit of the currency."
@@ -9433,6 +9498,42 @@ msgstr ""
 "Изъятие собственника, которым это выплачено; если его аннулировать, часть "
 "снова станет невыплаченной."
 
+#: backend/apps/finance/models.py
+msgid "Quarter"
+msgstr "Квартал"
+
+#: backend/apps/finance/models.py
+msgid "Year"
+msgstr "Год"
+
+#: backend/apps/finance/models.py
+msgid "For a bank"
+msgstr "Для банка"
+
+#: backend/apps/finance/models.py
+msgid "For a partner"
+msgstr "Для партнёра"
+
+#: backend/apps/finance/models.py
+msgid "For selling the business"
+msgstr "Для продажи бизнеса"
+
+#: backend/apps/finance/models.py
+msgid "Being prepared"
+msgstr "Готовится"
+
+#: backend/apps/finance/models.py
+msgid "The last day covered (today for a period not over)."
+msgstr "Последний день периода (сегодня, если период не закончился)."
+
+#: backend/apps/finance/models.py
+msgid "Branches and the valuation multiples asked for."
+msgstr "Выбранные филиалы и множители оценки."
+
+#: backend/apps/finance/models.py
+msgid "Also send the PDF to the requester in Telegram."
+msgstr "Также отправить PDF запросившему в Telegram."
+
 #: backend/apps/finance/owner_api.py
 msgid "The finance module is off for this company."
 msgstr "Модуль «Финансы» для этой компании выключен."
@@ -9445,8 +9546,8 @@ msgstr "Выберите контрагента."
 msgid "Pick a person of the company."
 msgstr "Выберите сотрудника компании."
 
-#: backend/apps/finance/owner_api.py backend/apps/goals/owner_api.py
-#: backend/apps/sales/owner_api.py
+#: backend/apps/finance/owner_api.py backend/apps/finance/statements_api.py
+#: backend/apps/goals/owner_api.py backend/apps/sales/owner_api.py
 msgid "Pick one of your branches."
 msgstr "Выберите один из ваших филиалов."
 
@@ -10455,6 +10556,562 @@ msgstr "На счёте «%(account)s» недостаточно денег: о�
 msgid "This debt is reserved by %(source)s #%(id)s."
 msgstr "Этот долг зарезервирован: %(source)s #%(id)s."
 
+#: backend/apps/finance/statement_pack.py
+msgid "Pick a month, a quarter or a year."
+msgstr "Выберите месяц, квартал или год."
+
+#: backend/apps/finance/statement_pack.py
+msgid "That period hasn't started yet."
+msgstr "Этот период ещё не начался."
+
+#: backend/apps/finance/statement_pack.py
+#, python-format
+msgid "%(month)s %(year)s"
+msgstr "%(month)s %(year)s"
+
+#: backend/apps/finance/statement_pack.py
+#, python-format
+msgid "Quarter %(quarter)s, %(year)s"
+msgstr "%(quarter)s-й квартал %(year)s"
+
+#: backend/apps/finance/statement_pack.py
+#, python-format
+msgid "Year %(year)s"
+msgstr "%(year)s год"
+
+#: backend/apps/finance/statement_pack.py
+#, python-format
+msgid "%(period)s, to %(day)s"
+msgstr "%(period)s, по состоянию на %(day)s"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Pick who the report is for."
+msgstr "Выберите, для кого отчёт."
+
+#: backend/apps/finance/statement_pack.py
+msgid "Pick the report's language."
+msgstr "Выберите язык отчёта."
+
+#: backend/apps/finance/statement_pack.py
+msgid "There is nothing in the books yet to report on."
+msgstr "В учёте пока нет данных для отчёта."
+
+#: backend/apps/finance/statement_pack.py
+msgid "You no longer have permission to prepare this report."
+msgstr "У вас больше нет права готовить этот отчёт."
+
+#: backend/apps/finance/statement_pack.py
+msgid "Something went wrong while preparing this report."
+msgstr "При подготовке отчёта что-то пошло не так."
+
+#: backend/apps/finance/statement_pack.py
+msgid "financial statements"
+msgstr "финансовая отчётность"
+
+#: backend/apps/finance/statement_pack.py
+#, python-format
+msgid "%(company)s: financial statements, %(period)s"
+msgstr "%(company)s: финансовая отчётность, %(period)s"
+
+#: backend/apps/finance/statement_pack.py
+msgid "This report took too long. Please try again."
+msgstr "Отчёт готовился слишком долго. Попробуйте ещё раз."
+
+#: backend/apps/finance/statement_pack.py
+msgid "Financial statements"
+msgstr "Финансовая отчётность"
+
+#: backend/apps/finance/statement_pack.py
+msgid "No branches"
+msgstr "Нет филиалов"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Prepared for a bank"
+msgstr "Подготовлено для банка"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Prepared for the partners"
+msgstr "Подготовлено для партнёров"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Prepared for a buyer of the business"
+msgstr "Подготовлено для покупателя бизнеса"
+
+#: backend/apps/finance/statement_pack.py
+#, python-format
+msgid "%(start)s – %(end)s"
+msgstr "%(start)s – %(end)s"
+
+#: backend/apps/finance/statement_pack.py
+#: backend/apps/finance/templates/finance/statements/summary.html
+msgid "Summary"
+msgstr "Сводка"
+
+#: backend/apps/finance/statement_pack.py
+#: backend/apps/finance/templates/finance/statements/loans.html
+msgid "Loans and their payments"
+msgstr "Кредиты и платежи по ним"
+
+#: backend/apps/finance/statement_pack.py
+#: backend/apps/finance/templates/finance/statements/partners.html
+msgid "Partners and dividends"
+msgstr "Партнёры и дивиденды"
+
+#: backend/apps/finance/statement_pack.py
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid "What the business is worth"
+msgstr "Сколько стоит бизнес"
+
+#: backend/apps/finance/statement_pack.py
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "Notes"
+msgstr "Пояснения"
+
+#: backend/apps/finance/statement_pack.py
+#, python-format
+msgid "Q%(quarter)s"
+msgstr "%(quarter)s кв."
+
+#: backend/apps/finance/statement_pack.py
+#, python-format
+msgid "%(category)s, other"
+msgstr "%(category)s, прочее"
+
+#: backend/apps/finance/statement_pack.py
+#: backend/apps/finance/templates/finance/statements/summary.html
+#: backend/apps/goals/models.py
+msgid "Revenue"
+msgstr "Выручка"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Total revenue"
+msgstr "Итого выручка"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Cost of goods"
+msgstr "Затраты на товары"
+
+#: backend/apps/finance/statement_pack.py backend/apps/goals/models.py
+msgid "Gross profit"
+msgstr "Валовая прибыль"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Running costs"
+msgstr "Текущие расходы"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Total running costs"
+msgstr "Итого текущие расходы"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Operating profit"
+msgstr "Операционная прибыль"
+
+#: backend/apps/finance/statement_pack.py backend/apps/goals/models.py
+msgid "Net profit"
+msgstr "Чистая прибыль"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Operating: sales, purchases and running costs"
+msgstr "Основная деятельность: продажи, закупки и текущие расходы"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Loans taken and repaid"
+msgstr "Полученные и погашенные кредиты"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Owner money put in and taken out"
+msgstr "Деньги, внесённые и изъятые владельцем"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Transfers and currency exchange"
+msgstr "Переводы и обмен валюты"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Cash and bank"
+msgstr "Касса и банк"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Cash in the tills and safes"
+msgstr "Наличные в кассах и сейфах"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Bank accounts and cards"
+msgstr "Банковские счета и карты"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Card payments on their way to the bank"
+msgstr "Платежи по картам на пути в банк"
+
+#: backend/apps/finance/statement_pack.py
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "Owed to the business"
+msgstr "Долги перед бизнесом"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Customers"
+msgstr "Покупатели"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Staff advances"
+msgstr "Авансы сотрудникам"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Loans given"
+msgstr "Выданные займы"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Other money owed to us"
+msgstr "Прочие долги перед нами"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Stock on hand"
+msgstr "Запасы"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Medicines and goods at cost"
+msgstr "Лекарства и товары по себестоимости"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Fixed assets"
+msgstr "Основные средства"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Equipment and fit-out at book value"
+msgstr "Оборудование и ремонт по балансовой стоимости"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Due within a year"
+msgstr "Со сроком до года"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Due later"
+msgstr "Со сроком более года"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Suppliers"
+msgstr "Поставщики"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Loans, due within a year"
+msgstr "Кредиты со сроком до года"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Loans, due after a year"
+msgstr "Кредиты со сроком более года"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Taxes owed"
+msgstr "Задолженность по налогам"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Owed to staff"
+msgstr "Задолженность перед сотрудниками"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Dividends declared, not paid yet"
+msgstr "Объявленные, но ещё не выплаченные дивиденды"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Other money we owe"
+msgstr "Прочие наши долги"
+
+#: backend/apps/finance/statement_pack.py
+#: backend/apps/finance/templates/finance/statements/partners.html
+msgid "Owner money put in"
+msgstr "Внесено владельцем"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Owner money taken out"
+msgstr "Изъято владельцем"
+
+#: backend/apps/finance/statement_pack.py
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "Retained earnings"
+msgstr "Нераспределённая прибыль"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Net assets of these branches"
+msgstr "Чистые активы этих филиалов"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Profit recorded since the books started"
+msgstr "Прибыль, учтённая с начала ведения учёта"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Balances brought in when the books started"
+msgstr "Остатки, внесённые при начале учёта"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Fixed assets owned before the books started"
+msgstr "Основные средства, бывшие до начала учёта"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Revaluation of foreign money"
+msgstr "Переоценка валютных средств"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Staff"
+msgstr "Сотрудники"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Plus depreciation of fixed assets"
+msgstr "Плюс амортизация основных средств"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Plus interest on loans"
+msgstr "Плюс проценты по кредитам"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Plus equipment bought and booked as a cost"
+msgstr "Плюс оборудование, учтённое как расход"
+
+#: backend/apps/finance/statement_pack.py
+#, python-format
+msgid "The books cover only %(days)s day: too short to judge yearly earnings."
+msgid_plural ""
+"The books cover only %(days)s days: too short to judge yearly earnings."
+msgstr[0] ""
+"Учёт охватывает только %(days)s день: слишком мало, чтобы судить о годовом "
+"доходе."
+msgstr[1] ""
+"Учёт охватывает только %(days)s дня: слишком мало, чтобы судить о годовом "
+"доходе."
+msgstr[2] ""
+"Учёт охватывает только %(days)s дней: слишком мало, чтобы судить о годовом "
+"доходе."
+
+#: backend/apps/finance/statement_pack.py
+msgid ""
+"The business made no profit over this time, so the earnings method gives no "
+"value."
+msgstr ""
+"За это время бизнес не получил прибыли, поэтому доходный метод не даёт "
+"оценки."
+
+#: backend/apps/finance/statement_pack.py
+msgid "Earnings"
+msgstr "Доходный метод"
+
+#: backend/apps/finance/statement_pack.py
+#: backend/apps/finance/templates/finance/statements/balance.html
+msgid "Net assets"
+msgstr "Чистые активы"
+
+#: backend/apps/finance/statement_pack.py
+#, python-format
+msgid "Margin %(margin)s"
+msgstr "Маржа %(margin)s"
+
+#: backend/apps/finance/statement_pack.py
+#: backend/apps/finance/templates/finance/statements/balance.html
+#: backend/apps/finance/templates/finance/statements/valuation.html
+#, python-format
+msgid "On %(day)s"
+msgstr "На %(day)s"
+
+#: backend/apps/finance/statement_pack.py
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "The business owes"
+msgstr "Долги бизнеса"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Loans left"
+msgstr "Остаток по кредитам"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Stock at cost"
+msgstr "Остаток товаров по себестоимости"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Gross margin"
+msgstr "Валовая маржа"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Revenue less the cost of goods, as a share of revenue."
+msgstr "Выручка за вычетом затрат на товары, в доле от выручки."
+
+#: backend/apps/finance/statement_pack.py backend/apps/goals/models.py
+msgid "Net margin"
+msgstr "Чистая рентабельность"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Net profit as a share of revenue."
+msgstr "Чистая прибыль в доле от выручки."
+
+#: backend/apps/finance/statement_pack.py
+msgid "Current ratio"
+msgstr "Текущая ликвидность"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Cash, money owed to us and stock for each so‘m due within a year."
+msgstr ""
+"Деньги, долги перед нами и запасы на каждый сум, который нужно заплатить в "
+"течение года."
+
+#: backend/apps/finance/statement_pack.py
+msgid "Liabilities to net assets"
+msgstr "Обязательства к чистым активам"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Everything the business owes for each so‘m of net assets."
+msgstr "Все долги бизнеса на каждый сум чистых активов."
+
+#: backend/apps/finance/statement_pack.py
+msgid "Cash cover"
+msgstr "Запас денег"
+
+#: backend/apps/finance/statement_pack.py
+#, python-format
+msgid "%(months)s month"
+msgid_plural "%(months)s months"
+msgstr[0] "%(months)s месяц"
+msgstr[1] "%(months)s месяца"
+msgstr[2] "%(months)s месяцев"
+
+#: backend/apps/finance/statement_pack.py
+msgid "How many months of running payments the cash would pay for."
+msgstr "На сколько месяцев текущих платежей хватит денег."
+
+#: backend/apps/finance/statement_pack.py
+msgid "Debt service cover"
+msgstr "Покрытие обслуживания долга"
+
+#: backend/apps/finance/statement_pack.py
+msgid ""
+"Operating profit before interest for each so‘m of loan payments in the "
+"period."
+msgstr ""
+"Операционная прибыль до процентов на каждый сум платежей по кредитам за "
+"период."
+
+#: backend/apps/finance/statement_pack.py
+msgid ""
+"Prepared from the company's own records in Daybook. The figures are not "
+"audited and are not an official tax report."
+msgstr ""
+"Подготовлено по собственным учётным данным компании в Daybook. Цифры не "
+"проверены аудитором и не являются официальной налоговой отчётностью."
+
+#: backend/apps/finance/statement_pack.py
+#, python-format
+msgid ""
+"Amounts are in %(currency)s; money in another currency is valued at the "
+"company's rate on the day the statement is made up to."
+msgstr ""
+"Суммы в валюте %(currency)s; деньги в другой валюте оценены по курсу компании"
+" на дату отчёта."
+
+#: backend/apps/finance/statement_pack.py
+msgid ""
+"Medicines and goods count as a cost when they arrive; the stock still on the "
+"shelves is shown at cost in the balance sheet."
+msgstr ""
+"Лекарства и товары относятся на расходы при поступлении; остаток на полках "
+"показан в балансе по себестоимости."
+
+#: backend/apps/finance/statement_pack.py
+msgid ""
+"Fixed assets bought through the books are spread over their useful life as "
+"depreciation."
+msgstr ""
+"Основные средства, купленные через учёт, распределяются на срок службы через "
+"амортизацию."
+
+#: backend/apps/finance/statement_pack.py
+msgid "Owner money put in or taken out is never income or a cost."
+msgstr ""
+"Деньги, внесённые или изъятые владельцем, никогда не считаются доходом или "
+"расходом."
+
+#: backend/apps/finance/statement_pack.py
+#, python-format
+msgid "The books here start on %(day)s."
+msgstr "Учёт здесь ведётся с %(day)s."
+
+#: backend/apps/finance/statement_pack.py
+msgid "The books don't go back to the same period a year before."
+msgstr "Учёт не охватывает тот же период годом ранее."
+
+#: backend/apps/finance/statement_pack.py
+#, python-format
+msgid "USD rate used: %(rate)s on %(day)s."
+msgstr "Применён курс доллара %(rate)s на %(day)s."
+
+#: backend/apps/finance/statement_pack.py
+msgid "Nothing has been recorded in the books yet."
+msgstr "В учёте пока ничего не записано."
+
+#: backend/apps/finance/statement_pack.py
+#, python-format
+msgid ""
+"No opening balances were entered: money and debts from before %(day)s are "
+"missing."
+msgstr "Начальные остатки не внесены: нет денег и долгов, бывших до %(day)s."
+
+#: backend/apps/finance/statement_pack.py
+#, python-format
+msgid "No exchange rate was found for %(currencies)s: that money is left out."
+msgstr "Не найден курс для валют %(currencies)s: эти деньги не учтены."
+
+#: backend/apps/finance/statement_pack.py
+#, python-format
+msgid ""
+"%(account)s is below zero on that day: an entry of money coming in is "
+"probably missing."
+msgstr ""
+"Счёт «%(account)s» в этот день ниже нуля: вероятно, не записано поступление."
+
+#: backend/apps/finance/statement_pack.py
+msgid ""
+"Stock isn't kept in Daybook: the medicines on the shelves are not counted."
+msgstr "Остатки товаров в Daybook не ведутся: лекарства на полках не учтены."
+
+#: backend/apps/finance/statement_pack.py
+msgid ""
+"The stock history before that day is incomplete: stock is shown as zero."
+msgstr "История остатков до этого дня неполная: остаток показан как ноль."
+
+#: backend/apps/finance/statement_pack.py
+#, python-format
+msgid ""
+"Fixed assets aren't kept in Daybook: equipment bought for %(amount)s was "
+"booked as a cost and is not among the assets."
+msgstr ""
+"Основные средства в Daybook не ведутся: оборудование на %(amount)s учтено как"
+" расход и не входит в активы."
+
+#: backend/apps/finance/statement_pack.py
+msgid "Fixed assets aren't kept in Daybook: equipment is not among the assets."
+msgstr ""
+"Основные средства в Daybook не ведутся: оборудования нет среди активов."
+
+#: backend/apps/finance/statement_pack.py
+#, python-format
+msgid "%(count)s entry of %(amount)s waits for approval and is not included."
+msgid_plural ""
+"%(count)s entries of %(amount)s wait for approval and are not included."
+msgstr[0] "%(count)s запись на %(amount)s ждёт подтверждения и не включена."
+msgstr[1] "%(count)s записи на %(amount)s ждут подтверждения и не включены."
+msgstr[2] "%(count)s записей на %(amount)s ждут подтверждения и не включены."
+
+#: backend/apps/finance/statement_pack.py
+#, python-format
+msgid ""
+"%(amount)s of retained earnings can't be traced to the books: check the "
+"opening balances and transfers."
+msgstr ""
+"%(amount)s нераспределённой прибыли не прослеживается по учёту: проверьте "
+"начальные остатки и переводы."
+
+#: backend/apps/finance/statements_api.py
+msgid "Only someone who sees every branch can value the whole business."
+msgstr "Оценить весь бизнес может только тот, кто видит все филиалы."
+
+#: backend/apps/finance/statements_serializers.py
+msgid "Pick Uzbek, Russian or English."
+msgstr "Выберите узбекский, русский или английский."
+
 #: backend/apps/finance/tax_calendar.py
 msgid "VAT (QQS)"
 msgstr "НДС"
@@ -10486,6 +11143,540 @@ msgstr "Типичные сроки уплаты; уточните их у бу�
 #: backend/apps/finance/tax_calendar.py
 msgid "There is no tax calendar for that regime."
 msgstr "Для этого режима нет налогового календаря."
+
+#: backend/apps/finance/templates/finance/statements/balance.html
+#, python-format
+msgid "What the business owns and owes at the end of the period, in %(unit)s."
+msgstr ""
+"Что принадлежит бизнесу и что он должен на конец периода, в валюте %(unit)s."
+
+#: backend/apps/finance/templates/finance/statements/balance.html
+msgid "Total assets"
+msgstr "Итого активы"
+
+#: backend/apps/finance/templates/finance/statements/balance.html
+msgid "Nothing is owed"
+msgstr "Долгов нет"
+
+#: backend/apps/finance/templates/finance/statements/balance.html
+msgid "Total liabilities"
+msgstr "Итого обязательства"
+
+#: backend/apps/finance/templates/finance/statements/balance.html
+msgid "Total equity"
+msgstr "Итого собственный капитал"
+
+#: backend/apps/finance/templates/finance/statements/balance.html
+msgid "Total liabilities and equity"
+msgstr "Итого обязательства и капитал"
+
+#: backend/apps/finance/templates/finance/statements/balance.html
+msgid ""
+"Retained earnings are what is left once the owner's own money is counted, so "
+"the two sides always balance; the notes show how they are made from the "
+"books."
+msgstr ""
+"Нераспределённая прибыль: то, что остаётся после учёта денег владельца, "
+"поэтому стороны баланса всегда равны; в пояснениях показано, из чего она "
+"складывается."
+
+#: backend/apps/finance/templates/finance/statements/balance.html
+#, python-format
+msgid ""
+"Only these branches: %(branches)s. The company's own accounts, its loans and "
+"the owner's money are not included."
+msgstr ""
+"Только эти филиалы: %(branches)s. Общие счета компании, её кредиты и деньги "
+"владельца не включены."
+
+#: backend/apps/finance/templates/finance/statements/cash_flow.html
+#, python-format
+msgid "Money that came into and left the business's accounts, in %(unit)s."
+msgstr ""
+"Деньги, поступившие на счета бизнеса и ушедшие с них, в валюте %(unit)s."
+
+#: backend/apps/finance/templates/finance/statements/cash_flow.html
+msgid "Cash at the start"
+msgstr "Деньги на начало"
+
+#: backend/apps/finance/templates/finance/statements/cash_flow.html
+msgid "Cash at the end"
+msgstr "Деньги на конец"
+
+#: backend/apps/finance/templates/finance/statements/cash_flow.html
+msgid ""
+"Transfers between the business's own accounts cancel out. Foreign money is "
+"valued at the rate of each day it moved; the revaluation line brings it to "
+"the rate of the last day."
+msgstr ""
+"Переводы между собственными счетами бизнеса взаимно погашаются. Валюта "
+"оценена по курсу дня каждого движения; строка переоценки приводит её к курсу "
+"последнего дня."
+
+#: backend/apps/finance/templates/finance/statements/cash_flow.html
+msgid "Against the same period a year before"
+msgstr "В сравнении с тем же периодом годом ранее"
+
+#: backend/apps/finance/templates/finance/statements/cash_flow.html
+#: backend/apps/finance/templates/finance/statements/pnl.html
+msgid "This period"
+msgstr "Этот период"
+
+#: backend/apps/finance/templates/finance/statements/cash_flow.html
+#: backend/apps/finance/templates/finance/statements/pnl.html
+msgid "A year before"
+msgstr "Годом ранее"
+
+#: backend/apps/finance/templates/finance/statements/cash_flow.html
+msgid "By month"
+msgstr "По месяцам"
+
+#: backend/apps/finance/templates/finance/statements/cash_flow.html
+msgid ""
+"Real money in and out only: transfers, opening balances and the revaluation "
+"are left out of the months."
+msgstr ""
+"Только реальные поступления и выплаты: переводы, начальные остатки и "
+"переоценка в месяцы не включены."
+
+#: backend/apps/finance/templates/finance/statements/cover.html
+msgid "Prepared on"
+msgstr "Дата подготовки"
+
+#: backend/apps/finance/templates/finance/statements/cover.html
+msgid "Prepared by"
+msgstr "Подготовил"
+
+#: backend/apps/finance/templates/finance/statements/cover.html
+#: backend/apps/members/providers.py davomat_bot/views.py
+#: owner_bot/ownerbot/brief.py
+msgid "Branches"
+msgstr "Филиалы"
+
+#: backend/apps/finance/templates/finance/statements/cover.html
+msgid "Amounts in"
+msgstr "Суммы в"
+
+#: backend/apps/finance/templates/finance/statements/cover.html
+msgid "Contents"
+msgstr "Содержание"
+
+#: backend/apps/finance/templates/finance/statements/cover.html
+msgid "Prepared from the company's records in Daybook. Not audited."
+msgstr ""
+"Подготовлено по учётным данным компании в Daybook. Аудит не проводился."
+
+#: backend/apps/finance/templates/finance/statements/loans.html
+#, python-format
+msgid ""
+"What the business still owes on its loans, the next payments and what was "
+"paid in the period, in %(unit)s."
+msgstr ""
+"Остаток долга по кредитам, ближайшие платежи и выплаченное за период, в "
+"валюте %(unit)s."
+
+#: backend/apps/finance/templates/finance/statements/loans.html
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "Lender"
+msgstr "Кредитор"
+
+#: backend/apps/finance/templates/finance/statements/loans.html
+#: backend/apps/finance/templates/finance/statements/notes.html
+#: backend/apps/sales/hooks.py
+msgid "Left to pay"
+msgstr "Осталось оплатить"
+
+#: backend/apps/finance/templates/finance/statements/loans.html
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "Next payments"
+msgstr "Ближайшие платежи"
+
+#: backend/apps/finance/templates/finance/statements/loans.html
+msgid "Repaid in the period"
+msgstr "Погашено за период"
+
+#: backend/apps/finance/templates/finance/statements/loans.html
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "Interest in the period"
+msgstr "Проценты за период"
+
+#: backend/apps/finance/templates/finance/statements/loans.html
+msgid ""
+"Interest is what the books link to each loan. The split of what is due within"
+" a year and later follows each loan's payment plan."
+msgstr ""
+"Проценты: суммы, привязанные в учёте к каждому кредиту. Деление на платежи в "
+"течение года и позже следует графику каждого кредита."
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+#, python-format
+msgid "How the figures are made and what stands behind them, in %(unit)s."
+msgstr "Как получены цифры и что за ними стоит, в валюте %(unit)s."
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "How the figures are made"
+msgstr "Как получены цифры"
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "The largest debts"
+msgstr "Крупнейшие долги"
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+#: backend/apps/sales/hooks.py
+msgid "Overdue"
+msgstr "Просрочен"
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "Nobody owes the business anything."
+msgstr "Бизнесу никто не должен."
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "To whom"
+msgstr "Кому"
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "The business owes nothing besides its loans."
+msgstr "Кроме кредитов, у бизнеса долгов нет."
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid ""
+"Debts of staff are shown together, never by name. Loans are in their own "
+"note."
+msgstr ""
+"Долги сотрудников показаны вместе, без имён. Кредиты в отдельном пояснении."
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "Fixed assets in the period"
+msgstr "Основные средства за период"
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "At the start"
+msgstr "На начало"
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "Sold or written off"
+msgstr "Продано или списано"
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "At the end"
+msgstr "На конец"
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "At book value: what each item cost, less the depreciation so far."
+msgstr ""
+"По балансовой стоимости: цена каждого предмета за вычетом начисленной "
+"амортизации."
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "Money accounts on the last day"
+msgstr "Денежные счета на последний день"
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+#, python-format
+msgid "In %(unit)s"
+msgstr "В валюте %(unit)s"
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+#, python-format
+msgid "%(amount)s at %(rate)s on %(day)s: %(base)s."
+msgstr "%(amount)s по курсу %(rate)s на %(day)s: %(base)s."
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "No rate was published for that day: the latest one before it is used."
+msgstr "На этот день курс не опубликован: использован последний предыдущий."
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "How retained earnings are made"
+msgstr "Из чего складывается нераспределённая прибыль"
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "Not traced to the books"
+msgstr "Не прослеживается по учёту"
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid ""
+"The books count medicines as a cost when they arrive and know nothing from "
+"before they started, so retained earnings are more than the profit recorded "
+"here. Each line above says why."
+msgstr ""
+"В учёте лекарства относятся на расходы при поступлении, а о времени до начала"
+" учёта ничего не известно, поэтому нераспределённая прибыль больше учтённой "
+"здесь. Каждая строка выше объясняет почему."
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "What the books leave out"
+msgstr "Чего нет в учёте"
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid ""
+"Nothing found: every account has a rate, nothing waits for approval and the "
+"books explain every figure."
+msgstr ""
+"Ничего не найдено: у каждого счёта есть курс, ничего не ждёт подтверждения, и"
+" учёт объясняет каждую цифру."
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "Owner or director: name and signature"
+msgstr "Владелец или директор: ФИО и подпись"
+
+#: backend/apps/finance/templates/finance/statements/partners.html
+#, python-format
+msgid ""
+"Who owns the business, their part of the period's net profit of %(profit)s "
+"%(unit)s, and the dividends for the period."
+msgstr ""
+"Кому принадлежит бизнес, их доли в чистой прибыли периода (%(profit)s "
+"%(unit)s) и дивиденды за период."
+
+#: backend/apps/finance/templates/finance/statements/partners.html
+msgid "Partner"
+msgstr "Партнёр"
+
+#: backend/apps/finance/templates/finance/statements/partners.html
+#: owner_bot/ownerbot/invite.py
+msgid "Share"
+msgstr "Поделиться"
+
+#: backend/apps/finance/templates/finance/statements/partners.html
+msgid "Part of the profit"
+msgstr "Доля прибыли"
+
+#: backend/apps/finance/templates/finance/statements/partners.html
+msgid "Dividends paid"
+msgstr "Выплачено дивидендов"
+
+#: backend/apps/finance/templates/finance/statements/partners.html
+msgid "Dividends due"
+msgstr "К выплате дивидендов"
+
+#: backend/apps/finance/templates/finance/statements/partners.html
+msgid "No partners are set for this period."
+msgstr "Партнёры на этот период не указаны."
+
+#: backend/apps/finance/templates/finance/statements/partners.html
+#, python-format
+msgid "%(share)s of the period had no partner set."
+msgstr "Для %(share)s периода партнёр не указан."
+
+#: backend/apps/finance/templates/finance/statements/partners.html
+msgid ""
+"A partner's part of the profit follows the days they held each share. "
+"Dividends are paid as owner draws, so they never reduce the profit."
+msgstr ""
+"Доля партнёра в прибыли считается по дням владения каждой долей. Дивиденды "
+"выплачиваются как изъятия владельца, поэтому прибыль не уменьшают."
+
+#: backend/apps/finance/templates/finance/statements/partners.html
+msgid "Owner money in the period"
+msgstr "Деньги владельца за период"
+
+#: backend/apps/finance/templates/finance/statements/partners.html
+msgid "Owner money taken out, dividends included"
+msgstr "Изъято владельцем, включая дивиденды"
+
+#: backend/apps/finance/templates/finance/statements/partners.html
+msgid "Dividend rounds for the period"
+msgstr "Выплаты дивидендов за период"
+
+#: backend/apps/finance/templates/finance/statements/partners.html
+msgid "For the period"
+msgstr "За период"
+
+#: backend/apps/finance/templates/finance/statements/partners.html
+#: backend/apps/payroll/providers.py
+msgid "Paid on"
+msgstr "Дата выплаты"
+
+#: backend/apps/finance/templates/finance/statements/partners.html
+msgid "No dividends were declared or paid in this period."
+msgstr "За этот период дивиденды не объявлялись и не выплачивались."
+
+#: backend/apps/finance/templates/finance/statements/pnl.html
+#, python-format
+msgid ""
+"What the business earned and spent in the period, in %(unit)s. A loss is in "
+"brackets."
+msgstr ""
+"Доходы и расходы бизнеса за период, в валюте %(unit)s. Убыток указан в "
+"скобках."
+
+#: backend/apps/finance/templates/finance/statements/pnl.html
+msgid "Nothing was earned or spent in this period."
+msgstr "За этот период не было ни доходов, ни расходов."
+
+#: backend/apps/finance/templates/finance/statements/pnl.html
+msgid "Change"
+msgstr "Изменение"
+
+#: backend/apps/finance/templates/finance/statements/pnl.html
+msgid ""
+"Medicines and goods count as a cost when they arrive, not when they are sold."
+" Owner money put in or taken out is never income or a cost."
+msgstr ""
+"Лекарства и товары относятся на расходы при поступлении, а не при продаже. "
+"Деньги, внесённые или изъятые владельцем, никогда не считаются доходом или "
+"расходом."
+
+#: backend/apps/finance/templates/finance/statements/summary.html
+#, python-format
+msgid "The period at a glance. Amounts in %(unit)s."
+msgstr "Период вкратце. Суммы в валюте %(unit)s."
+
+#: backend/apps/finance/templates/finance/statements/summary.html
+msgid "Revenue and profit by month"
+msgstr "Выручка и прибыль по месяцам"
+
+#: backend/apps/finance/templates/finance/statements/summary.html
+msgid "Loss"
+msgstr "Убыток"
+
+#: backend/apps/finance/templates/finance/statements/summary.html
+msgid "Key ratios"
+msgstr "Ключевые показатели"
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid ""
+"Two simple methods from the company's own books, side by side, and the range "
+"they span."
+msgstr ""
+"Два простых метода по собственному учёту компании рядом и диапазон между "
+"ними."
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid "Estimated value"
+msgstr "Ориентировочная стоимость"
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid "Only the net assets method applies for now."
+msgstr "Пока применим только метод чистых активов."
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid "An estimate from the books, not an appraisal."
+msgstr "Оценка по данным учёта, а не заключение оценщика."
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid "1. Earnings"
+msgstr "1. Доходный метод"
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+#, python-format
+msgid "Profit before depreciation and interest, %(days)s days"
+msgstr "Прибыль до амортизации и процентов, дней: %(days)s"
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid "A year at the same pace"
+msgstr "Год в том же темпе"
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+#, python-format
+msgid "Times %(low)s to %(high)s: the business without its cash and loans"
+msgstr "Множитель %(low)s – %(high)s: бизнес без денег и кредитов"
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid "Plus cash and bank"
+msgstr "Плюс деньги в кассе и банке"
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid "Less loans and dividends owed"
+msgstr "Минус кредиты и невыплаченные дивиденды"
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid "Value for the owners"
+msgstr "Стоимость для владельцев"
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid "2. Net assets"
+msgstr "2. Чистые активы"
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid "Everything the business owns"
+msgstr "Всё, чем владеет бизнес"
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid "Less everything it owes"
+msgstr "Минус все его долги"
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid "Net assets at book value"
+msgstr "Чистые активы по балансовой стоимости"
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid "of which stock at cost"
+msgstr "в том числе запасы по себестоимости"
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid "of which equipment at book value"
+msgstr "в том числе оборудование по балансовой стоимости"
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid "How to read it"
+msgstr "Как читать"
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+#, python-format
+msgid ""
+"A buyer pays for the income a business brings: here %(low)s to %(high)s years"
+" of it."
+msgstr ""
+"Покупатель платит за доход, который приносит бизнес: здесь за %(low)s – "
+"%(high)s года дохода."
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid ""
+"This is Daybook's cautious starting range: small shops in the region usually "
+"sell for about one and a half to two and a half years of profit, and "
+"independent pharmacies abroad for two and a half to five. Borrowing is "
+"expensive in Uzbekistan, so buyers want their money back quickly."
+msgstr ""
+"Это осторожный начальный диапазон Daybook: небольшие магазины в регионе "
+"обычно продаются за полтора–два с половиной года прибыли, а независимые "
+"аптеки за рубежом за два с половиной–пять. В Узбекистане заёмные деньги "
+"дороги, поэтому покупатели хотят быстро вернуть вложенное."
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid "The company chose this range."
+msgstr "Этот диапазон выбрала компания."
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid ""
+"The owner's draws are not costs in these books: a buyer who pays a manager to"
+" run the business would earn less."
+msgstr ""
+"Изъятия владельца в этом учёте не расходы: покупатель, который наймёт "
+"управляющего, заработает меньше."
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid ""
+"The books are younger than a year, so the earnings are scaled up from the "
+"days there are and may miss the seasons."
+msgstr ""
+"Учёт ведётся меньше года, поэтому доход пересчитан на год по имеющимся дням и"
+" может не учитывать сезонность."
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid ""
+"Net assets are above the earnings value: a buyer of the income would offer "
+"less than the book value, one who wants the cash, stock and equipment would "
+"look at the book value."
+msgstr ""
+"Чистые активы выше доходной оценки: покупатель ради дохода предложит меньше "
+"балансовой стоимости, а покупатель денег, запасов и оборудования будет "
+"смотреть на балансовую стоимость."
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid ""
+"Stock and equipment are at what they cost, not at what they would sell for."
+msgstr ""
+"Запасы и оборудование показаны по цене покупки, а не по цене возможной "
+"продажи."
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid ""
+"This is an estimate from the company's own books, not an appraisal by a "
+"licensed valuer."
+msgstr ""
+"Это оценка по собственному учёту компании, а не заключение лицензированного "
+"оценщика."
 
 #: backend/apps/goals/audit_actions.py
 msgid "Set a business goal"
@@ -10575,22 +11766,6 @@ msgstr "Опоздания к числу явок."
 #: backend/apps/goals/metrics.py
 msgid "People who finished every mandatory course."
 msgstr "Прошедшие все обязательные курсы."
-
-#: backend/apps/goals/models.py
-msgid "Revenue"
-msgstr "Выручка"
-
-#: backend/apps/goals/models.py
-msgid "Gross profit"
-msgstr "Валовая прибыль"
-
-#: backend/apps/goals/models.py
-msgid "Net profit"
-msgstr "Чистая прибыль"
-
-#: backend/apps/goals/models.py
-msgid "Net margin"
-msgstr "Чистая рентабельность"
 
 #: backend/apps/goals/models.py
 msgid "Branches open"
@@ -20197,11 +21372,6 @@ msgstr ""
 msgid "Home branch"
 msgstr "Основной филиал"
 
-#: backend/apps/members/providers.py davomat_bot/views.py
-#: owner_bot/ownerbot/brief.py
-msgid "Branches"
-msgstr "Филиалы"
-
 #: backend/apps/members/providers.py
 msgid "Joined"
 msgstr "В команде с"
@@ -21748,10 +22918,6 @@ msgstr "Возмещение расходов"
 #: backend/apps/payroll/templates/payroll/payslip.html
 msgid "Earned"
 msgstr "Начислено"
-
-#: backend/apps/payroll/providers.py
-msgid "Paid on"
-msgstr "Дата выплаты"
 
 #: backend/apps/payroll/providers.py
 msgid "Advance day"
@@ -24334,14 +25500,6 @@ msgstr "Счёт"
 #: backend/apps/sales/hooks.py backend/apps/sales/models.py
 msgid "Invoices"
 msgstr "Счета-фактуры"
-
-#: backend/apps/sales/hooks.py
-msgid "Left to pay"
-msgstr "Осталось оплатить"
-
-#: backend/apps/sales/hooks.py
-msgid "Overdue"
-msgstr "Просрочен"
 
 #: backend/apps/sales/hooks.py
 msgid "Nasiya at the till"
@@ -29067,7 +30225,3 @@ msgstr "В ссылке не осталось мест."
 #, python-format
 msgid "Join %(company)s in Telegram"
 msgstr "Присоединяйтесь к команде %(company)s в Telegram"
-
-#: owner_bot/ownerbot/invite.py
-msgid "Share"
-msgstr "Поделиться"

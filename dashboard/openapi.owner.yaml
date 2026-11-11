@@ -9819,6 +9819,40 @@ paths:
                 items:
                   $ref: '#/components/schemas/RecurringRule'
           description: ''
+  /api/v1/owner/companies/{company_id}/finance/reports/balance-sheet/:
+    get:
+      operationId: companies_finance_reports_balance_sheet_retrieve
+      description: |-
+        The balance sheet at the end of a day (today by default): assets, liabilities and
+        equity in the base currency, how retained earnings are made, and what the books leave out.
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: array
+          items:
+            type: integer
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: 'on'
+        schema:
+          type: string
+        description: The day, YYYY-MM-DD (today by default).
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BalanceSheet'
+          description: ''
   /api/v1/owner/companies/{company_id}/finance/reports/balances/:
     get:
       operationId: companies_finance_reports_balances_retrieve
@@ -10133,6 +10167,115 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FinanceSettings'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/statements/:
+    get:
+      operationId: companies_finance_statements_list
+      description: |-
+        Your statement packs in this company, the latest first (kept 7 days); POST prepares one
+        in the background (poll its detail for the progress).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StatementPack'
+          description: ''
+    post:
+      operationId: companies_finance_statements_create
+      description: |-
+        Your statement packs in this company, the latest first (kept 7 days); POST prepares one
+        in the background (poll its detail for the progress).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StatementPackRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StatementPackRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StatementPackRequestRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceStatementPackCreated'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/statements/{id}/:
+    get:
+      operationId: companies_finance_statements_retrieve
+      description: 'One of your statement packs: its progress, and a signed link once
+        it is ready.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatementPack'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/statements/options/:
+    get:
+      operationId: companies_finance_statements_options_retrieve
+      description: |-
+        What the "Prepare a report" dialog offers the caller: how far back the books go,
+        whether they may prepare a pack, and whether it can go to their Telegram.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatementOptions'
           description: ''
   /api/v1/owner/companies/{company_id}/finance/tax-summary/:
     get:
@@ -10715,6 +10858,67 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Upcoming'
+          description: ''
+  /api/v1/owner/companies/{company_id}/finance/valuation/:
+    get:
+      operationId: companies_finance_valuation_retrieve
+      description: |-
+        What the business is worth: the earnings method's range and the net assets, an estimate
+        from the books (the whole company, so it needs every branch).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: 'on'
+        schema:
+          type: string
+        description: The day (today by default).
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Valuation'
+          description: ''
+    patch:
+      operationId: companies_finance_valuation_partial_update
+      description: |-
+        What the business is worth: the earnings method's range and the net assets, an estimate
+        from the books (the whole company, so it needs every branch).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedValuationUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedValuationUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedValuationUpdateRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Valuation'
           description: ''
   /api/v1/owner/companies/{company_id}/goals/:
     get:
@@ -39853,6 +40057,75 @@ components:
       - target
       - target_id
       - target_type
+    BalanceSheet:
+      type: object
+      properties:
+        'on':
+          type: string
+          format: date
+        currency:
+          type: string
+        whole_company:
+          type: boolean
+        books_start:
+          type: string
+          format: date
+          nullable: true
+        assets:
+          $ref: '#/components/schemas/StatementSide'
+        liabilities:
+          $ref: '#/components/schemas/StatementSide'
+        equity:
+          $ref: '#/components/schemas/StatementEquity'
+        check:
+          $ref: '#/components/schemas/StatementCheck'
+        current_assets:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        current_liabilities:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatementAccount'
+        foreign:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatementForeign'
+        rate:
+          $ref: '#/components/schemas/StatementRate'
+        complete:
+          type: boolean
+        reconciliation:
+          allOf:
+          - $ref: '#/components/schemas/StatementReconciliation'
+          nullable: true
+        gaps:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatementGap'
+      required:
+      - accounts
+      - assets
+      - books_start
+      - check
+      - complete
+      - currency
+      - current_assets
+      - current_liabilities
+      - equity
+      - foreign
+      - gaps
+      - liabilities
+      - 'on'
+      - rate
+      - reconciliation
+      - whole_company
     BandEnum:
       enum:
       - weak
@@ -45113,6 +45386,45 @@ components:
       - pending
       - to
       - today
+    FinanceStatementPackCreated:
+      type: object
+      properties:
+        id:
+          type: integer
+      required:
+      - id
+    FinanceStatementPackStatusEnum:
+      enum:
+      - pending
+      - running
+      - ready
+      - failed
+      type: string
+      description: |-
+        * `pending` - Waiting
+        * `running` - Being prepared
+        * `ready` - Ready
+        * `failed` - Failed
+    FinanceStatementPeriodEnum:
+      enum:
+      - month
+      - quarter
+      - year
+      type: string
+      description: |-
+        * `month` - Month
+        * `quarter` - Quarter
+        * `year` - Year
+    FinanceStatementPurposeEnum:
+      enum:
+      - bank
+      - partner
+      - sale
+      type: string
+      description: |-
+        * `bank` - For a bank
+        * `partner` - For a partner
+        * `sale` - For selling the business
     FinanceTaxRegimeEnum:
       enum:
       - turnover
@@ -66378,6 +66690,21 @@ components:
           pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
         account:
           type: integer
+    PatchedValuationUpdateRequest:
+      type: object
+      description: The multiple range of a year's earnings; null goes back to the
+        default.
+      properties:
+        multiple_low:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,1})?$
+          nullable: true
+        multiple_high:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,1})?$
+          nullable: true
     Payables:
       type: object
       properties:
@@ -74932,6 +75259,371 @@ components:
       - name
       - partner_id
       - share
+    StatementAccount:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        kind:
+          type: string
+        currency:
+          type: string
+        branch_id:
+          type: integer
+          nullable: true
+        balance:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        base:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+      required:
+      - balance
+      - base
+      - branch_id
+      - currency
+      - id
+      - kind
+      - name
+    StatementCheck:
+      type: object
+      properties:
+        assets:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        liabilities_and_equity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        balanced:
+          type: boolean
+      required:
+      - assets
+      - balanced
+      - liabilities_and_equity
+    StatementEquity:
+      type: object
+      properties:
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatementLine'
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+      required:
+      - lines
+      - total
+    StatementForeign:
+      type: object
+      properties:
+        currency:
+          type: string
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        base:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,6})?$
+          nullable: true
+        rate_date:
+          type: string
+          format: date
+        stale:
+          type: boolean
+      required:
+      - amount
+      - base
+      - currency
+      - rate
+      - rate_date
+      - stale
+    StatementGap:
+      type: object
+      properties:
+        key:
+          type: string
+        params:
+          type: object
+          additionalProperties: {}
+      required:
+      - key
+      - params
+    StatementLine:
+      type: object
+      properties:
+        key:
+          type: string
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        count:
+          type: integer
+        cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+      required:
+      - amount
+      - cost
+      - key
+    StatementOptions:
+      type: object
+      properties:
+        today:
+          type: string
+          format: date
+        books_start:
+          type: string
+          format: date
+          nullable: true
+        last_activity:
+          type: string
+          format: date
+          nullable: true
+        language:
+          type: string
+          description: The caller's language, the default.
+        whole_company:
+          type: boolean
+          description: Whether the caller sees every branch.
+        may_prepare:
+          type: boolean
+        telegram:
+          type: boolean
+          description: Whether the PDF can go to the caller's Telegram.
+      required:
+      - books_start
+      - language
+      - last_activity
+      - may_prepare
+      - telegram
+      - today
+      - whole_company
+    StatementPack:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        period:
+          allOf:
+          - $ref: '#/components/schemas/FinanceStatementPeriodEnum'
+          readOnly: true
+        start:
+          type: string
+          format: date
+          readOnly: true
+        end:
+          type: string
+          format: date
+          readOnly: true
+          description: The last day covered (today for a period not over).
+        purpose:
+          allOf:
+          - $ref: '#/components/schemas/FinanceStatementPurposeEnum'
+          readOnly: true
+        language:
+          type: string
+          readOnly: true
+        branches:
+          type: array
+          items:
+            type: integer
+          nullable: true
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/FinanceStatementPackStatusEnum'
+          readOnly: true
+        progress:
+          type: integer
+          readOnly: true
+        pages:
+          type: integer
+          readOnly: true
+          nullable: true
+        error:
+          type: string
+          readOnly: true
+        deliver_telegram:
+          type: boolean
+          readOnly: true
+          description: Also send the PDF to the requester in Telegram.
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        finished_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        expires_at:
+          type: string
+          format: date-time
+          readOnly: true
+        file_name:
+          type: string
+          nullable: true
+          readOnly: true
+        file_url:
+          type: string
+          nullable: true
+          readOnly: true
+      required:
+      - branches
+      - created_at
+      - deliver_telegram
+      - end
+      - error
+      - expires_at
+      - file_name
+      - file_url
+      - finished_at
+      - id
+      - language
+      - pages
+      - period
+      - progress
+      - purpose
+      - start
+      - status
+    StatementPackRequestRequest:
+      type: object
+      properties:
+        period:
+          $ref: '#/components/schemas/FinanceStatementPeriodEnum'
+        of:
+          type: string
+          format: date
+          description: Any day of the month, quarter or year.
+        purpose:
+          $ref: '#/components/schemas/FinanceStatementPurposeEnum'
+        language:
+          type: string
+          minLength: 1
+          description: uz, ru or en.
+          maxLength: 2
+        branch:
+          type: array
+          items:
+            type: integer
+          maxItems: 100
+        multiple_low:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,1})?$
+        multiple_high:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,1})?$
+        deliver_telegram:
+          type: boolean
+          default: false
+      required:
+      - language
+      - of
+      - period
+      - purpose
+    StatementRate:
+      type: object
+      properties:
+        rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,6})?$
+          nullable: true
+        stale:
+          type: boolean
+        source:
+          type: string
+        date:
+          type: string
+          format: date
+      required:
+      - date
+      - rate
+      - source
+      - stale
+    StatementReconciliation:
+      type: object
+      properties:
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatementLine'
+        retained:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        unexplained:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+      required:
+      - lines
+      - retained
+      - unexplained
+    StatementSection:
+      type: object
+      properties:
+        key:
+          type: string
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatementLine'
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+      required:
+      - key
+      - lines
+      - total
+    StatementSide:
+      type: object
+      properties:
+        sections:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatementSection'
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+      required:
+      - sections
+      - total
     StoragePresetDefaults:
       type: object
       properties:
@@ -77321,6 +78013,208 @@ components:
           type: integer
       required:
       - updated
+    Valuation:
+      type: object
+      properties:
+        'on':
+          type: string
+          format: date
+        currency:
+          type: string
+        multiple_low:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,1})?$
+        multiple_high:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,1})?$
+        default_low:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,1})?$
+        default_high:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,1})?$
+        earnings:
+          $ref: '#/components/schemas/ValuationEarnings'
+        earnings_method:
+          $ref: '#/components/schemas/ValuationMethod'
+        net_assets:
+          $ref: '#/components/schemas/ValuationNetAssets'
+        range:
+          $ref: '#/components/schemas/ValuationRange'
+        editable:
+          type: boolean
+          description: Whether the caller may change the multiples.
+      required:
+      - currency
+      - default_high
+      - default_low
+      - earnings
+      - earnings_method
+      - editable
+      - multiple_high
+      - multiple_low
+      - net_assets
+      - 'on'
+      - range
+    ValuationEarnings:
+      type: object
+      properties:
+        from:
+          type: string
+          format: date
+        to:
+          type: string
+          format: date
+        days:
+          type: integer
+        enough:
+          type: boolean
+        profit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatementLine'
+        earnings:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        yearly:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+      required:
+      - days
+      - earnings
+      - enough
+      - from
+      - lines
+      - profit
+      - to
+      - yearly
+    ValuationMethod:
+      type: object
+      properties:
+        applies:
+          type: boolean
+        reason:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/ValuationMethodReasonEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        business_low:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        business_high:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        cash:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        debt:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        low:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        high:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+      required:
+      - applies
+      - business_high
+      - business_low
+      - cash
+      - debt
+      - high
+      - low
+      - reason
+    ValuationMethodReasonEnum:
+      enum:
+      - too_early
+      - loss
+      type: string
+      description: |-
+        * `too_early` - too_early
+        * `loss` - loss
+    ValuationNetAssets:
+      type: object
+      properties:
+        value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        assets:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        liabilities:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        stock:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        fixed_assets:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+      required:
+      - assets
+      - fixed_assets
+      - liabilities
+      - stock
+      - value
+    ValuationRange:
+      type: object
+      properties:
+        low:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+        high:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+      required:
+      - high
+      - low
     VerifyRequest:
       type: object
       properties:

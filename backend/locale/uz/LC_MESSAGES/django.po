@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-12 01:05+0500\n"
+"POT-Creation-Date: 2026-11-12 01:13+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -2010,12 +2010,13 @@ msgid "Understanding"
 msgstr "Tushunilmoqda"
 
 #: backend/apps/ai/models.py backend/apps/exports/models.py
-#: backend/apps/learning/models.py
+#: backend/apps/finance/models.py backend/apps/learning/models.py
 msgid "Ready"
 msgstr "Tayyor"
 
 #: backend/apps/ai/models.py backend/apps/exports/models.py
-#: backend/apps/learning/models.py backend/apps/sales/models.py
+#: backend/apps/finance/models.py backend/apps/learning/models.py
+#: backend/apps/sales/models.py
 msgid "Failed"
 msgstr "Xatolik"
 
@@ -2712,6 +2713,7 @@ msgid "Low-value items: uniforms, keys, small tools"
 msgstr "Kam baholi buyumlar: forma, kalitlar, mayda asboblar"
 
 #: backend/apps/assets/hooks.py backend/apps/finance/defaults.py
+#: backend/apps/finance/templates/finance/statements/notes.html
 msgid "Depreciation"
 msgstr "Amortizatsiya"
 
@@ -3367,6 +3369,7 @@ msgid "Name"
 msgstr "Ism"
 
 #: backend/apps/assets/providers.py backend/apps/finance/exporters.py
+#: backend/apps/finance/templates/finance/statements/notes.html
 msgid "Category"
 msgstr "Toifa"
 
@@ -3390,6 +3393,7 @@ msgstr "Filial"
 
 #: backend/apps/assets/providers.py backend/apps/attendance/providers.py
 #: backend/apps/davomat/importing.py backend/apps/finance/exporters.py
+#: backend/apps/finance/templates/finance/statements/partners.html
 #: backend/apps/hr/policies/exporters.py backend/apps/inventory/providers.py
 #: backend/apps/members/providers.py backend/apps/payroll/providers.py
 #: backend/apps/sales/hooks.py backend/apps/tasks/hooks.py
@@ -3406,6 +3410,7 @@ msgid "Serial number"
 msgstr "Seriya raqami"
 
 #: backend/apps/assets/providers.py
+#: backend/apps/finance/templates/finance/statements/notes.html
 msgid "Bought"
 msgstr "Sotib olingan"
 
@@ -3785,6 +3790,9 @@ msgid "The amount must be the whole expense."
 msgstr "Summa butun xarajatga teng bo‘lishi kerak."
 
 #: backend/apps/assets/services.py backend/apps/finance/exporters.py
+#: backend/apps/finance/templates/finance/statements/loans.html
+#: backend/apps/finance/templates/finance/statements/notes.html
+#: backend/apps/finance/templates/finance/statements/partners.html
 #: backend/apps/payroll/templates/payroll/payslip.html
 #: backend/apps/sales/templates/sales/invoice.html
 msgid "Amount"
@@ -4959,6 +4967,7 @@ msgid "Use xlsx or pdf."
 msgstr "Format: xlsx yoki pdf."
 
 #: backend/apps/attendance/owner_api.py backend/apps/exports/services.py
+#: backend/apps/finance/statement_pack.py
 msgid "You don't have permission to export this."
 msgstr "Buni eksport qilishga ruxsatingiz yo‘q."
 
@@ -5037,6 +5046,7 @@ msgstr "Oxirgi kun birinchi kundan oldin bo‘lishi mumkin emas."
 
 #: backend/apps/attendance/providers.py backend/apps/attendance/reports.py
 #: backend/apps/finance/exporters.py
+#: backend/apps/finance/templates/finance/statements/notes.html
 #: backend/apps/inventory/templates/inventory/controlled_register.html
 #: backend/apps/inventory/templates/inventory/rx_journal.html
 #: backend/apps/tasks/templates/tasks/readings_journal.html
@@ -5196,8 +5206,11 @@ msgstr "O‘z vaqtida"
 msgid "Average lateness, min"
 msgstr "O‘rtacha kechikish, daq."
 
-#: backend/apps/attendance/reports.py backend/apps/sales/hooks.py
-#: backend/apps/sales/templates/sales/invoice.html
+#: backend/apps/attendance/reports.py backend/apps/finance/exporters.py
+#: backend/apps/finance/templates/finance/statements/loans.html
+#: backend/apps/finance/templates/finance/statements/notes.html
+#: backend/apps/finance/templates/finance/statements/pnl.html
+#: backend/apps/sales/hooks.py backend/apps/sales/templates/sales/invoice.html
 msgid "Total"
 msgstr "Jami"
 
@@ -5587,7 +5600,9 @@ msgstr "Bu so‘rov tasdiqni kutmayapti."
 msgid "%(name)s can't take this shift any more."
 msgstr "%(name)s endi bu smenani ola olmaydi."
 
-#: backend/apps/attendance/services.py backend/apps/tasks/feeds.py
+#: backend/apps/attendance/services.py
+#: backend/apps/finance/templates/finance/statements/loans.html
+#: backend/apps/tasks/feeds.py
 msgid "Taken"
 msgstr "Olindi"
 
@@ -7450,8 +7465,8 @@ msgstr "%(label)s · %(count)s qator"
 msgid "This export took too long. Please try again."
 msgstr "Eksport juda uzoq davom etdi. Iltimos, qayta urinib ko‘ring."
 
-#: backend/apps/exports/models.py backend/apps/inventory/models.py
-#: backend/apps/sales/models.py
+#: backend/apps/exports/models.py backend/apps/finance/models.py
+#: backend/apps/inventory/models.py backend/apps/sales/models.py
 msgid "Waiting"
 msgstr "Navbatda"
 
@@ -8211,6 +8226,14 @@ msgstr "Dividend to‘lovini qaytardi"
 msgid "Cancelled a dividend"
 msgstr "Dividendni bekor qildi"
 
+#: backend/apps/finance/audit_actions.py
+msgid "Prepared a report for a bank or investors"
+msgstr "Bank yoki investorlar uchun hisobot tayyorladi"
+
+#: backend/apps/finance/audit_actions.py
+msgid "Changed how the business is valued"
+msgstr "Biznesni baholash usulini o‘zgartirdi"
+
 #: backend/apps/finance/bot_messages.py
 #, python-format
 msgid "Big expense: %(amount)s · %(category)s"
@@ -8543,6 +8566,7 @@ msgid "Card terminal"
 msgstr "Terminal"
 
 #: backend/apps/finance/exporters.py
+#: backend/apps/finance/templates/finance/statements/notes.html
 msgid "Account"
 msgstr "Hisob"
 
@@ -8576,6 +8600,7 @@ msgid "Source"
 msgstr "Manba"
 
 #: backend/apps/finance/exporters.py
+#: backend/apps/finance/templates/finance/statements/cover.html
 msgid "Period"
 msgstr "Davr"
 
@@ -8593,14 +8618,17 @@ msgid "Line"
 msgstr "Modda"
 
 #: backend/apps/finance/exporters.py
+#: backend/apps/finance/templates/finance/statements/cash_flow.html
 msgid "Money in"
 msgstr "Kirim"
 
 #: backend/apps/finance/exporters.py
+#: backend/apps/finance/templates/finance/statements/cash_flow.html
 msgid "Money out"
 msgstr "Chiqim"
 
 #: backend/apps/finance/exporters.py
+#: backend/apps/finance/templates/finance/statements/cash_flow.html
 msgid "Net"
 msgstr "Saldo"
 
@@ -8609,6 +8637,7 @@ msgid "Account or line"
 msgstr "Hisob yoki modda"
 
 #: backend/apps/finance/exporters.py
+#: backend/apps/finance/templates/finance/statements/notes.html
 #: backend/apps/inventory/templates/inventory/controlled_register.html
 msgid "Balance"
 msgstr "Qoldiq"
@@ -8617,7 +8646,8 @@ msgstr "Qoldiq"
 msgid "In base currency"
 msgstr "Asosiy valyutada"
 
-#: backend/apps/finance/exporters.py backend/apps/inventory/providers.py
+#: backend/apps/finance/exporters.py backend/apps/finance/models.py
+#: backend/apps/inventory/providers.py
 #: backend/apps/inventory/templates/inventory/controlled_register.html
 #: backend/apps/payroll/providers.py
 #: backend/apps/payroll/templates/payroll/payslip.html
@@ -8630,6 +8660,7 @@ msgid "Direction"
 msgstr "Yo‘nalish"
 
 #: backend/apps/finance/exporters.py
+#: backend/apps/finance/templates/finance/statements/notes.html
 msgid "Who"
 msgstr "Kim"
 
@@ -8671,6 +8702,7 @@ msgid "Expenses"
 msgstr "Xarajatlar"
 
 #: backend/apps/finance/exporters.py
+#: backend/apps/finance/templates/finance/statements/summary.html
 msgid "Profit"
 msgstr "Foyda"
 
@@ -8683,10 +8715,12 @@ msgid "Operating"
 msgstr "Asosiy faoliyat"
 
 #: backend/apps/finance/exporters.py backend/apps/finance/owner_api.py
+#: backend/apps/finance/statement_pack.py
 msgid "Equipment and investments"
 msgstr "Jihozlar va investitsiyalar"
 
 #: backend/apps/finance/exporters.py backend/apps/finance/owner_api.py
+#: backend/apps/finance/templates/finance/statements/notes.html
 msgid "Loans"
 msgstr "Kreditlar"
 
@@ -8699,11 +8733,12 @@ msgid "Transfers and exchange"
 msgstr "O‘tkazmalar va valyuta almashtirish"
 
 #: backend/apps/finance/exporters.py backend/apps/finance/hooks.py
-#: backend/apps/finance/owner_api.py
+#: backend/apps/finance/owner_api.py backend/apps/finance/statement_pack.py
 msgid "Opening balances"
 msgstr "Boshlang‘ich qoldiqlar"
 
 #: backend/apps/finance/exporters.py backend/apps/finance/owner_api.py
+#: backend/apps/finance/statement_pack.py
 msgid "Currency revaluation"
 msgstr "Valyutani qayta baholash"
 
@@ -8726,6 +8761,21 @@ msgstr "Biz qarzdormiz"
 #: backend/apps/finance/exporters.py
 msgid "Net position"
 msgstr "Qarzlarni hisobga olgan holda jami"
+
+#: backend/apps/finance/exporters.py
+#: backend/apps/finance/templates/finance/statements/balance.html
+msgid "Assets"
+msgstr "Aktivlar"
+
+#: backend/apps/finance/exporters.py
+#: backend/apps/finance/templates/finance/statements/balance.html
+msgid "Liabilities"
+msgstr "Majburiyatlar"
+
+#: backend/apps/finance/exporters.py
+#: backend/apps/finance/templates/finance/statements/balance.html
+msgid "Equity"
+msgstr "Xususiy kapital"
 
 #: backend/apps/finance/exporters.py
 msgid "Parent category"
@@ -8844,17 +8894,24 @@ msgstr "Moliya toifalari"
 msgid "Ledger entries"
 msgstr "Buxgalteriya yozuvlari"
 
-#: backend/apps/finance/hooks.py
+#: backend/apps/finance/hooks.py backend/apps/finance/statement_pack.py
+#: backend/apps/finance/templates/finance/statements/pnl.html
 msgid "Profit and loss"
 msgstr "Foyda va zarar"
 
-#: backend/apps/finance/hooks.py
+#: backend/apps/finance/hooks.py backend/apps/finance/statement_pack.py
+#: backend/apps/finance/templates/finance/statements/cash_flow.html
 msgid "Cash flow"
 msgstr "Pul oqimi"
 
 #: backend/apps/finance/hooks.py
 msgid "Balances on a day"
 msgstr "Tanlangan kundagi qoldiqlar"
+
+#: backend/apps/finance/hooks.py backend/apps/finance/statement_pack.py
+#: backend/apps/finance/templates/finance/statements/balance.html
+msgid "Balance sheet"
+msgstr "Balans"
 
 #: backend/apps/finance/hooks.py
 msgid "Category trend"
@@ -8991,6 +9048,15 @@ msgstr ""
 #: backend/apps/finance/models.py
 msgid "How many days of payments due the safe amount to take keeps back."
 msgstr "Xavfsiz olinadigan summa necha kunlik to‘lovlarni ushlab turadi."
+
+#: backend/apps/finance/models.py
+msgid "The lower multiple of a year's earnings. Empty: the default."
+msgstr "Yillik daromadning quyi koeffitsiyenti. Bo‘sh bo‘lsa: standart qiymat."
+
+#: backend/apps/finance/models.py
+msgid "The higher multiple of a year's earnings. Empty: the default."
+msgstr ""
+"Yillik daromadning yuqori koeffitsiyenti. Bo‘sh bo‘lsa: standart qiymat."
 
 #: backend/apps/finance/models.py
 msgid "UZS per 1 unit of the currency."
@@ -9434,6 +9500,42 @@ msgstr ""
 "Uni to‘lagan ta’sischi olgan pul yozuvi; bekor qilinsa, ulush yana "
 "to‘lanmagan bo‘ladi."
 
+#: backend/apps/finance/models.py
+msgid "Quarter"
+msgstr "Chorak"
+
+#: backend/apps/finance/models.py
+msgid "Year"
+msgstr "Yil"
+
+#: backend/apps/finance/models.py
+msgid "For a bank"
+msgstr "Bank uchun"
+
+#: backend/apps/finance/models.py
+msgid "For a partner"
+msgstr "Sherik uchun"
+
+#: backend/apps/finance/models.py
+msgid "For selling the business"
+msgstr "Biznesni sotish uchun"
+
+#: backend/apps/finance/models.py
+msgid "Being prepared"
+msgstr "Tayyorlanmoqda"
+
+#: backend/apps/finance/models.py
+msgid "The last day covered (today for a period not over)."
+msgstr "Qamrab olingan oxirgi kun (tugamagan davr uchun bugun)."
+
+#: backend/apps/finance/models.py
+msgid "Branches and the valuation multiples asked for."
+msgstr "So‘ralgan filiallar va baholash koeffitsiyentlari."
+
+#: backend/apps/finance/models.py
+msgid "Also send the PDF to the requester in Telegram."
+msgstr "PDF faylni so‘ragan kishiga Telegramda ham yuborish."
+
 #: backend/apps/finance/owner_api.py
 msgid "The finance module is off for this company."
 msgstr "Bu kompaniyada moliya moduli o‘chirilgan."
@@ -9446,8 +9548,8 @@ msgstr "Kontragentni tanlang."
 msgid "Pick a person of the company."
 msgstr "Kompaniya xodimini tanlang."
 
-#: backend/apps/finance/owner_api.py backend/apps/goals/owner_api.py
-#: backend/apps/sales/owner_api.py
+#: backend/apps/finance/owner_api.py backend/apps/finance/statements_api.py
+#: backend/apps/goals/owner_api.py backend/apps/sales/owner_api.py
 msgid "Pick one of your branches."
 msgstr "Filiallaringizdan birini tanlang."
 
@@ -10463,6 +10565,557 @@ msgstr "«%(account)s» hisobida pul yetarli emas: %(balance)s qoldi."
 msgid "This debt is reserved by %(source)s #%(id)s."
 msgstr "Bu qarz %(source)s #%(id)s uchun band qilingan."
 
+#: backend/apps/finance/statement_pack.py
+msgid "Pick a month, a quarter or a year."
+msgstr "Oy, chorak yoki yilni tanlang."
+
+#: backend/apps/finance/statement_pack.py
+msgid "That period hasn't started yet."
+msgstr "Bu davr hali boshlanmagan."
+
+#: backend/apps/finance/statement_pack.py
+#, python-format
+msgid "%(month)s %(year)s"
+msgstr "%(year)s-yil %(month)s"
+
+#: backend/apps/finance/statement_pack.py
+#, python-format
+msgid "Quarter %(quarter)s, %(year)s"
+msgstr "%(year)s-yil %(quarter)s-chorak"
+
+#: backend/apps/finance/statement_pack.py
+#, python-format
+msgid "Year %(year)s"
+msgstr "%(year)s-yil"
+
+#: backend/apps/finance/statement_pack.py
+#, python-format
+msgid "%(period)s, to %(day)s"
+msgstr "%(period)s, %(day)s holatiga"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Pick who the report is for."
+msgstr "Hisobot kim uchunligini tanlang."
+
+#: backend/apps/finance/statement_pack.py
+msgid "Pick the report's language."
+msgstr "Hisobot tilini tanlang."
+
+#: backend/apps/finance/statement_pack.py
+msgid "There is nothing in the books yet to report on."
+msgstr "Hisobda hali hisobot tayyorlash uchun ma’lumot yo‘q."
+
+#: backend/apps/finance/statement_pack.py
+msgid "You no longer have permission to prepare this report."
+msgstr "Endi bu hisobotni tayyorlashga ruxsatingiz yo‘q."
+
+#: backend/apps/finance/statement_pack.py
+msgid "Something went wrong while preparing this report."
+msgstr "Hisobotni tayyorlashda xatolik yuz berdi."
+
+#: backend/apps/finance/statement_pack.py
+msgid "financial statements"
+msgstr "moliyaviy hisobotlar"
+
+#: backend/apps/finance/statement_pack.py
+#, python-format
+msgid "%(company)s: financial statements, %(period)s"
+msgstr "%(company)s: moliyaviy hisobotlar, %(period)s"
+
+#: backend/apps/finance/statement_pack.py
+msgid "This report took too long. Please try again."
+msgstr "Hisobot juda uzoq tayyorlandi. Qaytadan urinib ko‘ring."
+
+#: backend/apps/finance/statement_pack.py
+msgid "Financial statements"
+msgstr "Moliyaviy hisobotlar"
+
+#: backend/apps/finance/statement_pack.py
+msgid "No branches"
+msgstr "Filial yo‘q"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Prepared for a bank"
+msgstr "Bank uchun tayyorlangan"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Prepared for the partners"
+msgstr "Sheriklar uchun tayyorlangan"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Prepared for a buyer of the business"
+msgstr "Biznes xaridori uchun tayyorlangan"
+
+#: backend/apps/finance/statement_pack.py
+#, python-format
+msgid "%(start)s – %(end)s"
+msgstr "%(start)s – %(end)s"
+
+#: backend/apps/finance/statement_pack.py
+#: backend/apps/finance/templates/finance/statements/summary.html
+msgid "Summary"
+msgstr "Qisqacha xulosa"
+
+#: backend/apps/finance/statement_pack.py
+#: backend/apps/finance/templates/finance/statements/loans.html
+msgid "Loans and their payments"
+msgstr "Kreditlar va ularning to‘lovlari"
+
+#: backend/apps/finance/statement_pack.py
+#: backend/apps/finance/templates/finance/statements/partners.html
+msgid "Partners and dividends"
+msgstr "Sheriklar va dividendlar"
+
+#: backend/apps/finance/statement_pack.py
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid "What the business is worth"
+msgstr "Biznes qancha turadi"
+
+#: backend/apps/finance/statement_pack.py
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "Notes"
+msgstr "Izohlar"
+
+#: backend/apps/finance/statement_pack.py
+#, python-format
+msgid "Q%(quarter)s"
+msgstr "%(quarter)s-chorak"
+
+#: backend/apps/finance/statement_pack.py
+#, python-format
+msgid "%(category)s, other"
+msgstr "%(category)s, boshqalar"
+
+#: backend/apps/finance/statement_pack.py
+#: backend/apps/finance/templates/finance/statements/summary.html
+#: backend/apps/goals/models.py
+msgid "Revenue"
+msgstr "Tushum"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Total revenue"
+msgstr "Jami tushum"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Cost of goods"
+msgstr "Tovar xarajatlari"
+
+#: backend/apps/finance/statement_pack.py backend/apps/goals/models.py
+msgid "Gross profit"
+msgstr "Yalpi foyda"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Running costs"
+msgstr "Joriy xarajatlar"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Total running costs"
+msgstr "Jami joriy xarajatlar"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Operating profit"
+msgstr "Operatsion foyda"
+
+#: backend/apps/finance/statement_pack.py backend/apps/goals/models.py
+msgid "Net profit"
+msgstr "Sof foyda"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Operating: sales, purchases and running costs"
+msgstr "Asosiy faoliyat: savdo, xaridlar va joriy xarajatlar"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Loans taken and repaid"
+msgstr "Olingan va qaytarilgan kreditlar"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Owner money put in and taken out"
+msgstr "Egasi kiritgan va olgan pul"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Transfers and currency exchange"
+msgstr "O‘tkazmalar va valyuta ayirboshlash"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Cash and bank"
+msgstr "Kassa va bank"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Cash in the tills and safes"
+msgstr "Kassalar va seyflardagi naqd pul"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Bank accounts and cards"
+msgstr "Bank hisoblari va kartalar"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Card payments on their way to the bank"
+msgstr "Bankka o‘tayotgan karta to‘lovlari"
+
+#: backend/apps/finance/statement_pack.py
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "Owed to the business"
+msgstr "Biznesga qarzlar"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Customers"
+msgstr "Mijozlar"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Staff advances"
+msgstr "Xodimlarga avanslar"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Loans given"
+msgstr "Berilgan qarzlar"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Other money owed to us"
+msgstr "Bizga boshqa qarzlar"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Stock on hand"
+msgstr "Tovar zaxiralari"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Medicines and goods at cost"
+msgstr "Dori va tovarlar tannarx bo‘yicha"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Fixed assets"
+msgstr "Asosiy vositalar"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Equipment and fit-out at book value"
+msgstr "Uskunalar va ta’mir balans qiymatida"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Due within a year"
+msgstr "Bir yil ichida to‘lanadi"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Due later"
+msgstr "Keyinroq to‘lanadi"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Suppliers"
+msgstr "Yetkazib beruvchilar"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Loans, due within a year"
+msgstr "Kreditlar, bir yil ichida"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Loans, due after a year"
+msgstr "Kreditlar, bir yildan keyin"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Taxes owed"
+msgstr "Soliq qarzlari"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Owed to staff"
+msgstr "Xodimlarga qarz"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Dividends declared, not paid yet"
+msgstr "E’lon qilingan, hali to‘lanmagan dividendlar"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Other money we owe"
+msgstr "Boshqa qarzlarimiz"
+
+#: backend/apps/finance/statement_pack.py
+#: backend/apps/finance/templates/finance/statements/partners.html
+msgid "Owner money put in"
+msgstr "Egasi kiritgan pul"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Owner money taken out"
+msgstr "Egasi olgan pul"
+
+#: backend/apps/finance/statement_pack.py
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "Retained earnings"
+msgstr "Taqsimlanmagan foyda"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Net assets of these branches"
+msgstr "Shu filiallarning sof aktivlari"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Profit recorded since the books started"
+msgstr "Hisob yuritila boshlanganidan beri qayd etilgan foyda"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Balances brought in when the books started"
+msgstr "Hisob boshlanganda kiritilgan qoldiqlar"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Fixed assets owned before the books started"
+msgstr "Hisob boshlanishidan oldingi asosiy vositalar"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Revaluation of foreign money"
+msgstr "Valyutadagi pulni qayta baholash"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Staff"
+msgstr "Xodimlar"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Plus depreciation of fixed assets"
+msgstr "Qo‘shiladi: asosiy vositalar amortizatsiyasi"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Plus interest on loans"
+msgstr "Qo‘shiladi: kredit foizlari"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Plus equipment bought and booked as a cost"
+msgstr "Qo‘shiladi: xarajat sifatida yozilgan uskunalar"
+
+#: backend/apps/finance/statement_pack.py
+#, python-format
+msgid "The books cover only %(days)s day: too short to judge yearly earnings."
+msgid_plural ""
+"The books cover only %(days)s days: too short to judge yearly earnings."
+msgstr[0] ""
+"Hisob atigi %(days)s kunni qamraydi: yillik daromadni baholash uchun juda "
+"qisqa."
+
+#: backend/apps/finance/statement_pack.py
+msgid ""
+"The business made no profit over this time, so the earnings method gives no "
+"value."
+msgstr ""
+"Bu davrda biznes foyda ko‘rmadi, shuning uchun daromad usuli qiymat bermaydi."
+
+#: backend/apps/finance/statement_pack.py
+msgid "Earnings"
+msgstr "Daromad usuli"
+
+#: backend/apps/finance/statement_pack.py
+#: backend/apps/finance/templates/finance/statements/balance.html
+msgid "Net assets"
+msgstr "Sof aktivlar"
+
+#: backend/apps/finance/statement_pack.py
+#, python-format
+msgid "Margin %(margin)s"
+msgstr "Marja: %(margin)s"
+
+#: backend/apps/finance/statement_pack.py
+#: backend/apps/finance/templates/finance/statements/balance.html
+#: backend/apps/finance/templates/finance/statements/valuation.html
+#, python-format
+msgid "On %(day)s"
+msgstr "%(day)s holatiga"
+
+#: backend/apps/finance/statement_pack.py
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "The business owes"
+msgstr "Biznesning qarzlari"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Loans left"
+msgstr "Kredit qoldig‘i"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Stock at cost"
+msgstr "Tovar qoldig‘i tannarxda"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Gross margin"
+msgstr "Yalpi marja"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Revenue less the cost of goods, as a share of revenue."
+msgstr "Tushumdan tovar xarajati ayirilgani, tushumga nisbatan."
+
+#: backend/apps/finance/statement_pack.py backend/apps/goals/models.py
+msgid "Net margin"
+msgstr "Sof rentabellik"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Net profit as a share of revenue."
+msgstr "Sof foydaning tushumdagi ulushi."
+
+#: backend/apps/finance/statement_pack.py
+msgid "Current ratio"
+msgstr "Joriy likvidlik"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Cash, money owed to us and stock for each so‘m due within a year."
+msgstr ""
+"Bir yil ichida to‘lanadigan har bir so‘mga to‘g‘ri keladigan pul, bizga "
+"qarzlar va tovar qoldig‘i."
+
+#: backend/apps/finance/statement_pack.py
+msgid "Liabilities to net assets"
+msgstr "Majburiyatlarning sof aktivlarga nisbati"
+
+#: backend/apps/finance/statement_pack.py
+msgid "Everything the business owes for each so‘m of net assets."
+msgstr "Sof aktivlarning har bir so‘miga to‘g‘ri keladigan barcha qarzlar."
+
+#: backend/apps/finance/statement_pack.py
+msgid "Cash cover"
+msgstr "Pul zaxirasi"
+
+#: backend/apps/finance/statement_pack.py
+#, python-format
+msgid "%(months)s month"
+msgid_plural "%(months)s months"
+msgstr[0] "%(months)s oy"
+
+#: backend/apps/finance/statement_pack.py
+msgid "How many months of running payments the cash would pay for."
+msgstr "Mavjud pul necha oylik joriy to‘lovlarga yetadi."
+
+#: backend/apps/finance/statement_pack.py
+msgid "Debt service cover"
+msgstr "Qarzga xizmat ko‘rsatish qoplanishi"
+
+#: backend/apps/finance/statement_pack.py
+msgid ""
+"Operating profit before interest for each so‘m of loan payments in the "
+"period."
+msgstr ""
+"Davrdagi kredit to‘lovlarining har bir so‘miga to‘g‘ri keladigan foizgacha "
+"operatsion foyda."
+
+#: backend/apps/finance/statement_pack.py
+msgid ""
+"Prepared from the company's own records in Daybook. The figures are not "
+"audited and are not an official tax report."
+msgstr ""
+"Kompaniyaning Daybookdagi o‘z hisob yozuvlari asosida tayyorlangan. Raqamlar "
+"auditdan o‘tmagan va rasmiy soliq hisoboti emas."
+
+#: backend/apps/finance/statement_pack.py
+#, python-format
+msgid ""
+"Amounts are in %(currency)s; money in another currency is valued at the "
+"company's rate on the day the statement is made up to."
+msgstr ""
+"Summalar %(currency)s hisobida; boshqa valyutadagi pul hisobot sanasidagi "
+"kompaniya kursi bo‘yicha baholangan."
+
+#: backend/apps/finance/statement_pack.py
+msgid ""
+"Medicines and goods count as a cost when they arrive; the stock still on the "
+"shelves is shown at cost in the balance sheet."
+msgstr ""
+"Dori va tovarlar kelgan kuni xarajat hisoblanadi; javonlardagi qoldiq "
+"balansda tannarx bo‘yicha ko‘rsatiladi."
+
+#: backend/apps/finance/statement_pack.py
+msgid ""
+"Fixed assets bought through the books are spread over their useful life as "
+"depreciation."
+msgstr ""
+"Hisob orqali sotib olingan asosiy vositalar xizmat muddati davomida "
+"amortizatsiya sifatida taqsimlanadi."
+
+#: backend/apps/finance/statement_pack.py
+msgid "Owner money put in or taken out is never income or a cost."
+msgstr "Egasi kiritgan yoki olgan pul hech qachon daromad yoki xarajat emas."
+
+#: backend/apps/finance/statement_pack.py
+#, python-format
+msgid "The books here start on %(day)s."
+msgstr "Bu yerdagi hisob boshlangan sana: %(day)s."
+
+#: backend/apps/finance/statement_pack.py
+msgid "The books don't go back to the same period a year before."
+msgstr "Hisob bir yil oldingi xuddi shu davrgacha bormaydi."
+
+#: backend/apps/finance/statement_pack.py
+#, python-format
+msgid "USD rate used: %(rate)s on %(day)s."
+msgstr "Qo‘llangan dollar kursi: %(rate)s, sana: %(day)s."
+
+#: backend/apps/finance/statement_pack.py
+msgid "Nothing has been recorded in the books yet."
+msgstr "Hisobda hali hech narsa qayd etilmagan."
+
+#: backend/apps/finance/statement_pack.py
+#, python-format
+msgid ""
+"No opening balances were entered: money and debts from before %(day)s are "
+"missing."
+msgstr ""
+"Boshlang‘ich qoldiqlar kiritilmagan: quyidagi sanagacha bo‘lgan pul va "
+"qarzlar yo‘q: %(day)s."
+
+#: backend/apps/finance/statement_pack.py
+#, python-format
+msgid "No exchange rate was found for %(currencies)s: that money is left out."
+msgstr "Kurs topilmadi (%(currencies)s): bu pul hisobga olinmagan."
+
+#: backend/apps/finance/statement_pack.py
+#, python-format
+msgid ""
+"%(account)s is below zero on that day: an entry of money coming in is "
+"probably missing."
+msgstr ""
+"Hisob o‘sha kuni noldan past: %(account)s. Ehtimol, kirim yozuvi tushib "
+"qolgan."
+
+#: backend/apps/finance/statement_pack.py
+msgid ""
+"Stock isn't kept in Daybook: the medicines on the shelves are not counted."
+msgstr ""
+"Tovar qoldig‘i Daybookda yuritilmaydi: javonlardagi dorilar hisobga "
+"olinmagan."
+
+#: backend/apps/finance/statement_pack.py
+msgid ""
+"The stock history before that day is incomplete: stock is shown as zero."
+msgstr "O‘sha kungacha qoldiq tarixi to‘liq emas: qoldiq nol deb ko‘rsatilgan."
+
+#: backend/apps/finance/statement_pack.py
+#, python-format
+msgid ""
+"Fixed assets aren't kept in Daybook: equipment bought for %(amount)s was "
+"booked as a cost and is not among the assets."
+msgstr ""
+"Asosiy vositalar Daybookda yuritilmaydi: sotib olingan uskunalar (%(amount)s)"
+" xarajat sifatida yozilgan va aktivlarga kirmagan."
+
+#: backend/apps/finance/statement_pack.py
+msgid "Fixed assets aren't kept in Daybook: equipment is not among the assets."
+msgstr ""
+"Asosiy vositalar Daybookda yuritilmaydi: uskunalar aktivlarga kirmagan."
+
+#: backend/apps/finance/statement_pack.py
+#, python-format
+msgid "%(count)s entry of %(amount)s waits for approval and is not included."
+msgid_plural ""
+"%(count)s entries of %(amount)s wait for approval and are not included."
+msgstr[0] ""
+"Tasdiq kutayotgan yozuvlar: %(count)s, summasi %(amount)s. Ular hisobga "
+"kiritilmagan."
+
+#: backend/apps/finance/statement_pack.py
+#, python-format
+msgid ""
+"%(amount)s of retained earnings can't be traced to the books: check the "
+"opening balances and transfers."
+msgstr ""
+"Taqsimlanmagan foydaning bir qismi hisobdan kuzatilmaydi: %(amount)s. "
+"Boshlang‘ich qoldiqlar va o‘tkazmalarni tekshiring."
+
+#: backend/apps/finance/statements_api.py
+msgid "Only someone who sees every branch can value the whole business."
+msgstr ""
+"Butun biznesni faqat barcha filiallarni ko‘radigan kishi baholay oladi."
+
+#: backend/apps/finance/statements_serializers.py
+msgid "Pick Uzbek, Russian or English."
+msgstr "O‘zbek, rus yoki ingliz tilini tanlang."
+
 #: backend/apps/finance/tax_calendar.py
 msgid "VAT (QQS)"
 msgstr "QQS"
@@ -10494,6 +11147,542 @@ msgstr "Odatiy to‘lov muddatlari; buxgalteringiz bilan aniqlashtiring."
 #: backend/apps/finance/tax_calendar.py
 msgid "There is no tax calendar for that regime."
 msgstr "Bu rejim uchun soliq kalendari yo‘q."
+
+#: backend/apps/finance/templates/finance/statements/balance.html
+#, python-format
+msgid "What the business owns and owes at the end of the period, in %(unit)s."
+msgstr "Davr oxirida biznesga tegishli mulk va qarzlar, %(unit)s hisobida."
+
+#: backend/apps/finance/templates/finance/statements/balance.html
+msgid "Total assets"
+msgstr "Jami aktivlar"
+
+#: backend/apps/finance/templates/finance/statements/balance.html
+msgid "Nothing is owed"
+msgstr "Qarz yo‘q"
+
+#: backend/apps/finance/templates/finance/statements/balance.html
+msgid "Total liabilities"
+msgstr "Jami majburiyatlar"
+
+#: backend/apps/finance/templates/finance/statements/balance.html
+msgid "Total equity"
+msgstr "Jami xususiy kapital"
+
+#: backend/apps/finance/templates/finance/statements/balance.html
+msgid "Total liabilities and equity"
+msgstr "Jami majburiyatlar va kapital"
+
+#: backend/apps/finance/templates/finance/statements/balance.html
+msgid ""
+"Retained earnings are what is left once the owner's own money is counted, so "
+"the two sides always balance; the notes show how they are made from the "
+"books."
+msgstr ""
+"Taqsimlanmagan foyda egasining puli hisobga olingandan keyin qolgan qism, "
+"shuning uchun ikki tomon doim teng; izohlarda u hisobdan qanday kelib "
+"chiqqani ko‘rsatilgan."
+
+#: backend/apps/finance/templates/finance/statements/balance.html
+#, python-format
+msgid ""
+"Only these branches: %(branches)s. The company's own accounts, its loans and "
+"the owner's money are not included."
+msgstr ""
+"Faqat shu filiallar: %(branches)s. Kompaniyaning umumiy hisoblari, kreditlari"
+" va egasining puli kirmagan."
+
+#: backend/apps/finance/templates/finance/statements/cash_flow.html
+#, python-format
+msgid "Money that came into and left the business's accounts, in %(unit)s."
+msgstr "Biznes hisoblariga kirgan va chiqqan pul, %(unit)s hisobida."
+
+#: backend/apps/finance/templates/finance/statements/cash_flow.html
+msgid "Cash at the start"
+msgstr "Davr boshidagi pul"
+
+#: backend/apps/finance/templates/finance/statements/cash_flow.html
+msgid "Cash at the end"
+msgstr "Davr oxiridagi pul"
+
+#: backend/apps/finance/templates/finance/statements/cash_flow.html
+msgid ""
+"Transfers between the business's own accounts cancel out. Foreign money is "
+"valued at the rate of each day it moved; the revaluation line brings it to "
+"the rate of the last day."
+msgstr ""
+"Biznesning o‘z hisoblari orasidagi o‘tkazmalar bir-birini yopadi. Valyuta har"
+" bir harakat kunidagi kurs bo‘yicha baholanadi; qayta baholash qatori uni "
+"oxirgi kun kursiga keltiradi."
+
+#: backend/apps/finance/templates/finance/statements/cash_flow.html
+msgid "Against the same period a year before"
+msgstr "Bir yil oldingi xuddi shu davr bilan solishtirish"
+
+#: backend/apps/finance/templates/finance/statements/cash_flow.html
+#: backend/apps/finance/templates/finance/statements/pnl.html
+msgid "This period"
+msgstr "Shu davr"
+
+#: backend/apps/finance/templates/finance/statements/cash_flow.html
+#: backend/apps/finance/templates/finance/statements/pnl.html
+msgid "A year before"
+msgstr "Bir yil oldin"
+
+#: backend/apps/finance/templates/finance/statements/cash_flow.html
+msgid "By month"
+msgstr "Oylar bo‘yicha"
+
+#: backend/apps/finance/templates/finance/statements/cash_flow.html
+msgid ""
+"Real money in and out only: transfers, opening balances and the revaluation "
+"are left out of the months."
+msgstr ""
+"Faqat haqiqiy kirim va chiqim: o‘tkazmalar, boshlang‘ich qoldiqlar va qayta "
+"baholash oylarga kiritilmagan."
+
+#: backend/apps/finance/templates/finance/statements/cover.html
+msgid "Prepared on"
+msgstr "Tayyorlangan sana"
+
+#: backend/apps/finance/templates/finance/statements/cover.html
+msgid "Prepared by"
+msgstr "Tayyorlagan"
+
+#: backend/apps/finance/templates/finance/statements/cover.html
+#: backend/apps/members/providers.py davomat_bot/views.py
+#: owner_bot/ownerbot/brief.py
+msgid "Branches"
+msgstr "Filiallar"
+
+#: backend/apps/finance/templates/finance/statements/cover.html
+msgid "Amounts in"
+msgstr "Summalar valyutasi"
+
+#: backend/apps/finance/templates/finance/statements/cover.html
+msgid "Contents"
+msgstr "Mundarija"
+
+#: backend/apps/finance/templates/finance/statements/cover.html
+msgid "Prepared from the company's records in Daybook. Not audited."
+msgstr ""
+"Kompaniyaning Daybookdagi hisob yozuvlari asosida tayyorlangan. Auditdan "
+"o‘tmagan."
+
+#: backend/apps/finance/templates/finance/statements/loans.html
+#, python-format
+msgid ""
+"What the business still owes on its loans, the next payments and what was "
+"paid in the period, in %(unit)s."
+msgstr ""
+"Kreditlar bo‘yicha qolgan qarz, keyingi to‘lovlar va davrda to‘langan "
+"summalar, %(unit)s hisobida."
+
+#: backend/apps/finance/templates/finance/statements/loans.html
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "Lender"
+msgstr "Kreditor"
+
+#: backend/apps/finance/templates/finance/statements/loans.html
+#: backend/apps/finance/templates/finance/statements/notes.html
+#: backend/apps/sales/hooks.py
+msgid "Left to pay"
+msgstr "To‘lanishi kerak"
+
+#: backend/apps/finance/templates/finance/statements/loans.html
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "Next payments"
+msgstr "Keyingi to‘lovlar"
+
+#: backend/apps/finance/templates/finance/statements/loans.html
+msgid "Repaid in the period"
+msgstr "Davrda qaytarilgan"
+
+#: backend/apps/finance/templates/finance/statements/loans.html
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "Interest in the period"
+msgstr "Davrdagi foizlar"
+
+#: backend/apps/finance/templates/finance/statements/loans.html
+msgid ""
+"Interest is what the books link to each loan. The split of what is due within"
+" a year and later follows each loan's payment plan."
+msgstr ""
+"Foizlar: hisobda har bir kreditga bog‘langan summalar. Bir yil ichida va "
+"keyinroq to‘lanadigan qismlar har bir kreditning to‘lov rejasiga ko‘ra "
+"ajratilgan."
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+#, python-format
+msgid "How the figures are made and what stands behind them, in %(unit)s."
+msgstr ""
+"Raqamlar qanday hisoblangani va ularning ortida nima turgani, %(unit)s "
+"hisobida."
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "How the figures are made"
+msgstr "Raqamlar qanday hisoblangan"
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "The largest debts"
+msgstr "Eng katta qarzlar"
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+#: backend/apps/sales/hooks.py
+msgid "Overdue"
+msgstr "Muddati o‘tgan"
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "Nobody owes the business anything."
+msgstr "Biznesga hech kim qarzdor emas."
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "To whom"
+msgstr "Kimga"
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "The business owes nothing besides its loans."
+msgstr "Kreditlardan tashqari biznesning qarzi yo‘q."
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid ""
+"Debts of staff are shown together, never by name. Loans are in their own "
+"note."
+msgstr ""
+"Xodimlarning qarzlari ism-familiyasiz, birgalikda ko‘rsatilgan. Kreditlar "
+"alohida izohda."
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "Fixed assets in the period"
+msgstr "Davrdagi asosiy vositalar"
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "At the start"
+msgstr "Davr boshida"
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "Sold or written off"
+msgstr "Sotilgan yoki hisobdan chiqarilgan"
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "At the end"
+msgstr "Davr oxirida"
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "At book value: what each item cost, less the depreciation so far."
+msgstr ""
+"Balans qiymatida: har bir buyumning narxi, shu kungacha amortizatsiyani "
+"ayirgan holda."
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "Money accounts on the last day"
+msgstr "Oxirgi kundagi pul hisoblari"
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+#, python-format
+msgid "In %(unit)s"
+msgstr "Valyuta: %(unit)s"
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+#, python-format
+msgid "%(amount)s at %(rate)s on %(day)s: %(base)s."
+msgstr "%(amount)s, kurs %(rate)s, sana %(day)s: %(base)s."
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "No rate was published for that day: the latest one before it is used."
+msgstr ""
+"O‘sha kun uchun kurs e’lon qilinmagan: undan oldingi oxirgi kurs ishlatilgan."
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "How retained earnings are made"
+msgstr "Taqsimlanmagan foyda nimalardan iborat"
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "Not traced to the books"
+msgstr "Hisobdan kuzatilmagan"
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid ""
+"The books count medicines as a cost when they arrive and know nothing from "
+"before they started, so retained earnings are more than the profit recorded "
+"here. Each line above says why."
+msgstr ""
+"Hisobda dorilar kelgan kuni xarajat hisoblanadi va hisob boshlanishidan "
+"oldingi narsalar ma’lum emas, shuning uchun taqsimlanmagan foyda bu yerda "
+"qayd etilgan foydadan ko‘p. Yuqoridagi har bir qator sababini ko‘rsatadi."
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "What the books leave out"
+msgstr "Hisobda nimalar yo‘q"
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid ""
+"Nothing found: every account has a rate, nothing waits for approval and the "
+"books explain every figure."
+msgstr ""
+"Hech narsa topilmadi: har bir hisobning kursi bor, tasdiq kutayotgan yozuv "
+"yo‘q va hisob har bir raqamni tushuntiradi."
+
+#: backend/apps/finance/templates/finance/statements/notes.html
+msgid "Owner or director: name and signature"
+msgstr "Egasi yoki direktor: F.I.Sh. va imzo"
+
+#: backend/apps/finance/templates/finance/statements/partners.html
+#, python-format
+msgid ""
+"Who owns the business, their part of the period's net profit of %(profit)s "
+"%(unit)s, and the dividends for the period."
+msgstr ""
+"Biznes egalari, davrdagi sof foydadagi ulushlari (jami sof foyda: %(profit)s "
+"%(unit)s) va davr dividendlari."
+
+#: backend/apps/finance/templates/finance/statements/partners.html
+msgid "Partner"
+msgstr "Sherik"
+
+#: backend/apps/finance/templates/finance/statements/partners.html
+#: owner_bot/ownerbot/invite.py
+msgid "Share"
+msgstr "Ulashish"
+
+#: backend/apps/finance/templates/finance/statements/partners.html
+msgid "Part of the profit"
+msgstr "Foydadagi ulushi"
+
+#: backend/apps/finance/templates/finance/statements/partners.html
+msgid "Dividends paid"
+msgstr "To‘langan dividendlar"
+
+#: backend/apps/finance/templates/finance/statements/partners.html
+msgid "Dividends due"
+msgstr "To‘lanishi kerak bo‘lgan dividendlar"
+
+#: backend/apps/finance/templates/finance/statements/partners.html
+msgid "No partners are set for this period."
+msgstr "Bu davr uchun sheriklar kiritilmagan."
+
+#: backend/apps/finance/templates/finance/statements/partners.html
+#, python-format
+msgid "%(share)s of the period had no partner set."
+msgstr "Davrning bir qismida sherik kiritilmagan: %(share)s."
+
+#: backend/apps/finance/templates/finance/statements/partners.html
+msgid ""
+"A partner's part of the profit follows the days they held each share. "
+"Dividends are paid as owner draws, so they never reduce the profit."
+msgstr ""
+"Sherikning foydadagi ulushi har bir ulushga egalik qilgan kunlariga qarab "
+"hisoblanadi. Dividendlar egasi olgan pul sifatida to‘lanadi, shuning uchun "
+"foydani kamaytirmaydi."
+
+#: backend/apps/finance/templates/finance/statements/partners.html
+msgid "Owner money in the period"
+msgstr "Davrdagi egasi puli"
+
+#: backend/apps/finance/templates/finance/statements/partners.html
+msgid "Owner money taken out, dividends included"
+msgstr "Egasi olgan pul, dividendlar bilan"
+
+#: backend/apps/finance/templates/finance/statements/partners.html
+msgid "Dividend rounds for the period"
+msgstr "Davr uchun dividend to‘lovlari"
+
+#: backend/apps/finance/templates/finance/statements/partners.html
+msgid "For the period"
+msgstr "Davr"
+
+#: backend/apps/finance/templates/finance/statements/partners.html
+#: backend/apps/payroll/providers.py
+msgid "Paid on"
+msgstr "To‘langan sana"
+
+#: backend/apps/finance/templates/finance/statements/partners.html
+msgid "No dividends were declared or paid in this period."
+msgstr "Bu davrda dividend e’lon qilinmagan va to‘lanmagan."
+
+#: backend/apps/finance/templates/finance/statements/pnl.html
+#, python-format
+msgid ""
+"What the business earned and spent in the period, in %(unit)s. A loss is in "
+"brackets."
+msgstr ""
+"Davrda biznes topgan va sarflagan pul, %(unit)s hisobida. Zarar qavs ichida."
+
+#: backend/apps/finance/templates/finance/statements/pnl.html
+msgid "Nothing was earned or spent in this period."
+msgstr "Bu davrda daromad ham, xarajat ham bo‘lmagan."
+
+#: backend/apps/finance/templates/finance/statements/pnl.html
+msgid "Change"
+msgstr "O‘zgarish"
+
+#: backend/apps/finance/templates/finance/statements/pnl.html
+msgid ""
+"Medicines and goods count as a cost when they arrive, not when they are sold."
+" Owner money put in or taken out is never income or a cost."
+msgstr ""
+"Dori va tovarlar sotilganda emas, kelgan kuni xarajat hisoblanadi. Egasi "
+"kiritgan yoki olgan pul hech qachon daromad yoki xarajat emas."
+
+#: backend/apps/finance/templates/finance/statements/summary.html
+#, python-format
+msgid "The period at a glance. Amounts in %(unit)s."
+msgstr "Davr bir qarashda. Summalar %(unit)s hisobida."
+
+#: backend/apps/finance/templates/finance/statements/summary.html
+msgid "Revenue and profit by month"
+msgstr "Oylar bo‘yicha tushum va foyda"
+
+#: backend/apps/finance/templates/finance/statements/summary.html
+msgid "Loss"
+msgstr "Zarar"
+
+#: backend/apps/finance/templates/finance/statements/summary.html
+msgid "Key ratios"
+msgstr "Asosiy ko‘rsatkichlar"
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid ""
+"Two simple methods from the company's own books, side by side, and the range "
+"they span."
+msgstr ""
+"Kompaniyaning o‘z hisobi asosidagi ikki oddiy usul yonma-yon va ular hosil "
+"qilgan oraliq."
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid "Estimated value"
+msgstr "Taxminiy qiymat"
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid "Only the net assets method applies for now."
+msgstr "Hozircha faqat sof aktivlar usuli qo‘llanadi."
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid "An estimate from the books, not an appraisal."
+msgstr "Hisob asosidagi taxmin, baholash xulosasi emas."
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid "1. Earnings"
+msgstr "1. Daromad usuli"
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+#, python-format
+msgid "Profit before depreciation and interest, %(days)s days"
+msgstr "Amortizatsiya va foizlargacha foyda, kunlar soni: %(days)s"
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid "A year at the same pace"
+msgstr "Shu sur’atda bir yil"
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+#, python-format
+msgid "Times %(low)s to %(high)s: the business without its cash and loans"
+msgstr "Koeffitsiyent %(low)s – %(high)s: pul va kreditlarsiz biznes"
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid "Plus cash and bank"
+msgstr "Qo‘shiladi: kassa va bankdagi pul"
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid "Less loans and dividends owed"
+msgstr "Ayiriladi: kreditlar va to‘lanmagan dividendlar"
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid "Value for the owners"
+msgstr "Egalar uchun qiymat"
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid "2. Net assets"
+msgstr "2. Sof aktivlar"
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid "Everything the business owns"
+msgstr "Biznesning barcha mulki"
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid "Less everything it owes"
+msgstr "Ayiriladi: barcha qarzlari"
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid "Net assets at book value"
+msgstr "Balans qiymatidagi sof aktivlar"
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid "of which stock at cost"
+msgstr "shundan tovar qoldig‘i tannarxda"
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid "of which equipment at book value"
+msgstr "shundan uskunalar balans qiymatida"
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid "How to read it"
+msgstr "Qanday tushunish kerak"
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+#, python-format
+msgid ""
+"A buyer pays for the income a business brings: here %(low)s to %(high)s years"
+" of it."
+msgstr ""
+"Xaridor biznes keltiradigan daromad uchun to‘laydi: bu yerda %(low)s – "
+"%(high)s yillik daromad."
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid ""
+"This is Daybook's cautious starting range: small shops in the region usually "
+"sell for about one and a half to two and a half years of profit, and "
+"independent pharmacies abroad for two and a half to five. Borrowing is "
+"expensive in Uzbekistan, so buyers want their money back quickly."
+msgstr ""
+"Bu Daybookning ehtiyotkor boshlang‘ich oralig‘i: mintaqadagi kichik do‘konlar"
+" odatda bir yarim–ikki yarim yillik foydaga, xorijdagi mustaqil dorixonalar "
+"esa ikki yarim–besh yillik foydaga sotiladi. O‘zbekistonda kredit qimmat, "
+"shuning uchun xaridorlar pulini tez qaytarishni xohlaydi."
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid "The company chose this range."
+msgstr "Bu oraliqni kompaniya tanlagan."
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid ""
+"The owner's draws are not costs in these books: a buyer who pays a manager to"
+" run the business would earn less."
+msgstr ""
+"Bu hisobda egasi olgan pul xarajat emas: biznesni boshqarish uchun menejer "
+"yollagan xaridor kamroq daromad oladi."
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid ""
+"The books are younger than a year, so the earnings are scaled up from the "
+"days there are and may miss the seasons."
+msgstr ""
+"Hisob bir yildan kam vaqtdan beri yuritiladi, shuning uchun daromad mavjud "
+"kunlardan yilga hisoblangan va mavsumlarni hisobga olmasligi mumkin."
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid ""
+"Net assets are above the earnings value: a buyer of the income would offer "
+"less than the book value, one who wants the cash, stock and equipment would "
+"look at the book value."
+msgstr ""
+"Sof aktivlar daromad usulidagi qiymatdan yuqori: daromad uchun sotib oluvchi "
+"balans qiymatidan kam taklif qiladi, pul, tovar va uskunalar kerak bo‘lgan "
+"xaridor esa balans qiymatiga qaraydi."
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid ""
+"Stock and equipment are at what they cost, not at what they would sell for."
+msgstr ""
+"Tovar va uskunalar sotilish narxida emas, sotib olingan narxida ko‘rsatilgan."
+
+#: backend/apps/finance/templates/finance/statements/valuation.html
+msgid ""
+"This is an estimate from the company's own books, not an appraisal by a "
+"licensed valuer."
+msgstr ""
+"Bu kompaniyaning o‘z hisobi asosidagi taxmin, litsenziyali baholovchining "
+"xulosasi emas."
 
 #: backend/apps/goals/audit_actions.py
 msgid "Set a business goal"
@@ -10584,22 +11773,6 @@ msgstr "Ishga kelingan kunlarga nisbatan kechikishlar."
 #: backend/apps/goals/metrics.py
 msgid "People who finished every mandatory course."
 msgstr "Barcha majburiy kurslarni tugatganlar."
-
-#: backend/apps/goals/models.py
-msgid "Revenue"
-msgstr "Tushum"
-
-#: backend/apps/goals/models.py
-msgid "Gross profit"
-msgstr "Yalpi foyda"
-
-#: backend/apps/goals/models.py
-msgid "Net profit"
-msgstr "Sof foyda"
-
-#: backend/apps/goals/models.py
-msgid "Net margin"
-msgstr "Sof rentabellik"
 
 #: backend/apps/goals/models.py
 msgid "Branches open"
@@ -20169,11 +21342,6 @@ msgstr ""
 msgid "Home branch"
 msgstr "Asosiy filial"
 
-#: backend/apps/members/providers.py davomat_bot/views.py
-#: owner_bot/ownerbot/brief.py
-msgid "Branches"
-msgstr "Filiallar"
-
 #: backend/apps/members/providers.py
 msgid "Joined"
 msgstr "Qo‘shilgan"
@@ -21710,10 +22878,6 @@ msgstr "Qoplangan xarajatlar"
 #: backend/apps/payroll/templates/payroll/payslip.html
 msgid "Earned"
 msgstr "Hisoblangan"
-
-#: backend/apps/payroll/providers.py
-msgid "Paid on"
-msgstr "To‘langan sana"
 
 #: backend/apps/payroll/providers.py
 msgid "Advance day"
@@ -24308,14 +25472,6 @@ msgstr "Hisob-faktura"
 #: backend/apps/sales/hooks.py backend/apps/sales/models.py
 msgid "Invoices"
 msgstr "Hisob-fakturalar"
-
-#: backend/apps/sales/hooks.py
-msgid "Left to pay"
-msgstr "To‘lanishi kerak"
-
-#: backend/apps/sales/hooks.py
-msgid "Overdue"
-msgstr "Muddati o‘tgan"
 
 #: backend/apps/sales/hooks.py
 msgid "Nasiya at the till"
@@ -29068,7 +30224,3 @@ msgstr "Havolada bo‘sh joy qolmagan."
 #, python-format
 msgid "Join %(company)s in Telegram"
 msgstr "Telegramda %(company)s jamoasiga qo‘shiling"
-
-#: owner_bot/ownerbot/invite.py
-msgid "Share"
-msgstr "Ulashish"
