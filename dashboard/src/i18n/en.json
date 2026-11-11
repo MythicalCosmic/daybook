@@ -461,6 +461,7 @@
   "shell.searchType.vacancies": "Vacancies",
   "shell.searchType.applicants": "Applicants",
   "shell.searchType.assets": "Equipment",
+  "shell.searchType.contracts": "Contracts",
   "shell.searchType.members": "People",
   "shell.searchType.crm": "Deals",
   "shell.searchType.inventory": "Products",
