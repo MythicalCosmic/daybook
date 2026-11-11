@@ -154,8 +154,11 @@ export const STUB_TITLES: Record<string, { title: Triple; pages: Record<string, 
       recurring: ["Recurring bills", "Регулярные платежи", "Doimiy to‘lovlar"],
       calendar: ["Payment calendar", "Платёжный календарь", "To‘lov kalendari"],
       claims: ["Expense claims", "Авансовые отчёты", "Xarajat so‘rovlari"],
+      loans: ["Loans", "Кредиты", "Kreditlar"],
+      taxes: ["Tax calendar", "Налоговый календарь", "Soliq kalendari"],
     },
   },
+  contracts: { title: ["Contracts", "Договоры", "Shartnomalar"], pages: { list: ["Contracts", "Договоры", "Shartnomalar"] } },
   assets: {
     title: ["Assets", "Основные средства", "Asosiy vositalar"],
     pages: {

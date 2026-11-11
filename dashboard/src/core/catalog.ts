@@ -321,7 +321,19 @@ export const CATALOG: readonly CatalogEntry[] = [
       { id: "claims", to: "finance/claims", perm: "finance.approve", badge: "finance.claims" },
       // v11 K: the owner's money (a sidebar row of its own).
       { id: "myMoney", to: "finance/my-money", perm: "finance.manage" },
+      // v12 L: loans and the tax calendar.
+      { id: "loans", to: "finance/loans", perm: "finance.view" },
+      { id: "taxes", to: "finance/taxes", perm: "finance.view" },
     ],
+  },
+  {
+    // v12 C: the business's own contracts (leases, suppliers, services), not HR's employment ones.
+    id: "contracts",
+    group: "money",
+    order: 37,
+    pkg: "C (v12)",
+    perm: "finance.view",
+    pages: [{ id: "list", to: "contracts", perm: "finance.view" }],
   },
   {
     id: "assets",
