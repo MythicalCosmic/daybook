@@ -41,7 +41,7 @@ from apps.audit import services as audit
 from apps.core.exceptions import DomainError
 from apps.core.money import Currency, format_money, quantize
 from apps.core.uploads import accept_document, make_thumb
-from apps.finance import conf, defaults, sources
+from apps.finance import conf, defaults, sources, terms
 from apps.finance.audit_actions import FinanceAction
 from apps.finance.models import (
     COLOR_PATTERN,
@@ -847,6 +847,9 @@ def open_debt(
         raise DomainError(_("A debt is owed by or to one counterparty or one employee."))
     _same_company(company, counterparty, membership, account, branch, responsible, project)
     amount = _money(amount)
+    if terms.applies(direction, kind, counterparty, due_on):
+        # A supplier's payment terms set the due date nobody typed (v12, `apps.finance.terms`).
+        due_on = terms.due_on(counterparty, issued_on)
     if due_on is not None and due_on < issued_on:
         raise DomainError(_("The due date can't be before the day it was issued."))
     if account is not None and category is not None:
@@ -1362,6 +1365,8 @@ PARTY_FIELDS = (
     "default_category",
     "credit_limit",
     "credit_blocked",
+    "credit_days",
+    "credit_day",
     "birthday",
     "tags",
     "is_active",
@@ -1388,6 +1393,12 @@ SETTINGS_FIELDS = (
     "vat_percent",
     "turnover_threshold",
     "base_value",
+    # v12: loans and the tax calendar.
+    "loan_remind_days",
+    "tax_remind_days",
+    "owns_property",
+    "owns_land",
+    "turnover_tax_percent",
 )
 PERCENT_STEP = Decimal("0.01")
 DEBT_FIELDS = ("due_on", "description", "responsible", "branch")
@@ -2006,6 +2017,8 @@ def _apply_party(party: Counterparty, fields: dict) -> None:
                 )
             case "credit_blocked" | "is_active":
                 setattr(party, key, bool(value))
+            case "credit_days" | "credit_day":
+                setattr(party, key, _term(key, value))
             case "birthday":
                 party.birthday = value or None
             case "tags":
@@ -2017,7 +2030,25 @@ def _apply_party(party: Counterparty, fields: dict) -> None:
                 party.tags = tags[:MAX_TAGS]
 
 
+def _term(key: str, value) -> int | None:
+    """A payment term: days after delivery (1-365) or a day of the next month (1-31)."""
+    if value in (None, ""):
+        return None
+    try:
+        number = int(value)
+    except TypeError, ValueError:
+        number = 0
+    top = 365 if key == "credit_days" else 31
+    if not 1 <= number <= top:
+        if key == "credit_days":
+            raise DomainError(_("Payment terms are 1 to 365 days after delivery."))
+        raise DomainError(_("The payment day is 1 to 31."))
+    return number
+
+
 def _save_party(party: Counterparty) -> None:
+    if party.credit_days is not None and party.credit_day is not None:
+        raise DomainError(_("Pick days after delivery or a day of the next month, not both."))
     others = Counterparty.objects.filter(company=party.company).exclude(pk=party.pk)
     if party.phone and others.filter(phone=party.phone).exists():
         raise DomainError(_("Another counterparty already has this phone number."))
@@ -2044,6 +2075,8 @@ def _party_snapshot(party: Counterparty) -> dict:
         "default_category": str(party.default_category) if party.default_category_id else None,
         "credit_limit": str(party.credit_limit) if party.credit_limit is not None else None,
         "credit_blocked": party.credit_blocked,
+        "credit_days": party.credit_days,
+        "credit_day": party.credit_day,
         "birthday": party.birthday.isoformat() if party.birthday else None,
         "tags": list(party.tags),
         "is_active": party.is_active,
@@ -2626,6 +2659,14 @@ def update_settings(company, *, by: Membership, **fields) -> FinanceSettings:
             settings_row.turnover_threshold = value
         elif key == "base_value":
             settings_row.base_value = _money(value)
+        elif key in ("loan_remind_days", "tax_remind_days"):
+            if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= 30:
+                raise DomainError(_("Remind 0 to 30 days before."))
+            setattr(settings_row, key, value)
+        elif key in ("owns_property", "owns_land"):
+            setattr(settings_row, key, bool(value))
+        elif key == "turnover_tax_percent":
+            settings_row.turnover_tax_percent = _percent(value)
         else:
             setattr(
                 settings_row,
@@ -2663,6 +2704,11 @@ def _settings_snapshot(row: FinanceSettings) -> dict:
         "vat_percent": money(row.vat_percent),
         "turnover_threshold": row.turnover_threshold,
         "base_value": money(row.base_value),
+        "loan_remind_days": row.loan_remind_days,
+        "tax_remind_days": row.tax_remind_days,
+        "owns_property": row.owns_property,
+        "owns_land": row.owns_land,
+        "turnover_tax_percent": money(row.turnover_tax_percent),
     }
 
 
@@ -2851,6 +2897,9 @@ def _category(company, category, *, kind: str | None = None, by=None) -> Categor
             category = rows.first()
         elif category is None and code in defaults.ASSET_CODES:
             defaults.ensure_asset_categories(company)
+            category = rows.first()
+        elif category is None and code in defaults.LOAN_CODES:
+            defaults.ensure_loan_categories(company)
             category = rows.first()
         if category is None:
             raise ValueError(f"No category with system code {code!r}.")

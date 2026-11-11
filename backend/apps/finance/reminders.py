@@ -6,7 +6,9 @@ company's morning, once per person and item per day:
   [Paid from <account>] when it has a usual account and a fixed amount, and [Tomorrow];
 - an automatic payment that couldn't post (a closed period, not enough money);
 - an overdue payable or receivable, to the person responsible for it, on the day it falls due
-  and then weekly.
+  and then weekly;
+- (v12, `deadline_reminders`) loan payments and tax deadlines, to the people who manage the
+  money, at the company's morning hour.
 """
 
 import logging
@@ -20,7 +22,7 @@ from django.utils.translation import gettext_lazy, ngettext
 
 from apps.core.exceptions import DomainError
 from apps.core.money import format_money
-from apps.finance import access, recurring
+from apps.finance import access, deadline_reminders, recurring
 from apps.finance.models import Debt, RecurringRule
 from apps.members import scope
 from apps.members.models import Membership
@@ -42,6 +44,11 @@ def remind(now: datetime | None = None) -> int:
     sent = 0
     for company in Company.objects.filter(features__contains=["finance"]).order_by("pk"):
         local = timezone.localtime(now, ZoneInfo(company.timezone))
+        # v12: loan payments and tax deadlines, at the company's own morning hour.
+        try:
+            sent += deadline_reminders.remind(company, local)
+        except Exception:
+            logger.exception("Loan and tax reminders failed for company %s", company.pk)
         if not MORNING[0] <= local.hour < MORNING[1]:
             continue
         try:

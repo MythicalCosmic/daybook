@@ -40,6 +40,7 @@ from django.utils import timezone
 from apps.core.exceptions import DomainError
 from apps.core.money import Currency, MoneyField, quantize
 from apps.finance.models import (
+    LIVE_STATUSES,
     SETTLES_DEBT,
     Category,
     Counterparty,
@@ -976,19 +977,26 @@ def debts_aging(
 
 def installment_schedule(debt: Debt, today: date) -> list[dict]:
     """The debt's instalments with how much of each is covered by the payments so far, in
-    order: `status` paid, partial, due (not yet), overdue."""
+    order: `status` paid, partial, due (not yet), overdue.
+
+    `amount` is the part of the debt (a loan's principal), covered in order by what the debt's
+    payments settled (`paid`). A loan's instalment also has `interest`; `interest_paid` is what
+    the loan's interest rows booked against that instalment (`apps.finance.loans`). An
+    instalment is paid once both are."""
     covered = debt.paid
+    interest_paid = loan_interest_paid(debt)
     schedule = []
     for installment in DebtInstallment.objects.filter(debt=debt).order_by(
         "due_on", "position", "pk"
     ):
         paid = min(covered, installment.amount)
         covered -= paid
-        if paid == installment.amount:
+        interest = min(interest_paid.get(installment.pk, ZERO), installment.interest)
+        if paid == installment.amount and interest == installment.interest:
             status = "paid"
         elif installment.due_on < today:
             status = "overdue"
-        elif paid > 0:
+        elif paid > 0 or interest > 0:
             status = "partial"
         else:
             status = "due"
@@ -998,10 +1006,33 @@ def installment_schedule(debt: Debt, today: date) -> list[dict]:
                 "due_on": installment.due_on,
                 "amount": installment.amount,
                 "paid": quantize(paid),
+                "interest": installment.interest,
+                "interest_paid": quantize(interest),
+                "early": installment.early,
                 "status": status,
             }
         )
     return schedule
+
+
+LOAN_SOURCE = "finance.loan"
+
+
+def loan_interest_paid(debt: Debt) -> dict[int, Decimal]:
+    """{instalment id: interest paid} from the loan's live interest rows (source key
+    "<instalment id>:i<n>", `apps.finance.loans`), in the debt's currency."""
+    found: dict[int, Decimal] = defaultdict(lambda: ZERO)
+    rows = Transaction.objects.filter(
+        debt=debt,
+        source_type=LOAN_SOURCE,
+        source_key__contains=":i",
+        status__in=LIVE_STATUSES,
+    ).values_list("source_key", "amount")
+    for key, amount in rows:
+        installment, _sep, _n = key.partition(":")
+        if installment.isdigit():
+            found[int(installment)] += abs(amount)
+    return found
 
 
 # Balances on a date ---------------------------------------------------------------------------

@@ -135,7 +135,7 @@ class FinanceSettings(models.Model):
         ),
     )
     base_value = MoneyField(
-        default=Decimal(412000),
+        default=Decimal(440000),
         help_text=_("One base calculation value in so'm. Confirm with your accountant."),
     )
     tax_regime_set_at = models.DateTimeField(
@@ -176,6 +176,33 @@ class FinanceSettings(models.Model):
         blank=True,
         validators=[MinValueValidator(Decimal("0.5")), MaxValueValidator(Decimal(20))],
         help_text=_("The higher multiple of a year's earnings. Empty: the default."),
+    )
+    # Loans and the tax calendar (v12, `apps.finance.loans`, `apps.finance.taxes`): how many days
+    # before a payment or a tax deadline the reminder goes out (at the company's morning hour),
+    # what else the company pays tax on, and the turnover-tax rate the comparison uses.
+    loan_remind_days = models.PositiveSmallIntegerField(
+        default=3,
+        validators=[MaxValueValidator(30)],
+        help_text=_("Days before a loan payment that owners are reminded. 0: on the day only."),
+    )
+    tax_remind_days = models.PositiveSmallIntegerField(
+        default=5,
+        validators=[MaxValueValidator(30)],
+        help_text=_("Days before a tax deadline that owners are reminded. 0: on the day only."),
+    )
+    owns_property = models.BooleanField(
+        default=False,
+        help_text=_("The company owns buildings or premises: property tax is on its calendar."),
+    )
+    owns_land = models.BooleanField(
+        default=False, help_text=_("The company holds land: land tax is on its calendar.")
+    )
+    turnover_tax_percent = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal("4.00"),
+        validators=[MinValueValidator(Decimal(0)), MaxValueValidator(Decimal(100))],
+        help_text=_("The turnover tax rate. Confirm with your accountant."),
     )
 
     class Meta:
@@ -430,6 +457,21 @@ class Counterparty(TenantModel):
     )
     credit_limit = MoneyField(null=True, blank=True)
     credit_blocked = models.BooleanField(default=False)
+    # A supplier's payment terms (v12, `apps.finance.terms`): what it delivers on credit is due
+    # `credit_days` days after delivery, or on day `credit_day` of the month after it. At most
+    # one of the two; neither: no terms, the due date is typed.
+    credit_days = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(1), MaxValueValidator(365)],
+        help_text=_("Goods on credit are paid this many days after delivery."),
+    )
+    credit_day = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(1), MaxValueValidator(31)],
+        help_text=_("Goods on credit are paid on this day of the month after delivery."),
+    )
     birthday = models.DateField(null=True, blank=True)
     tags = ArrayField(models.CharField(max_length=32), default=list, blank=True)
     is_active = models.BooleanField(default=True)
@@ -446,6 +488,18 @@ class Counterparty(TenantModel):
                 fields=["company", "phone"],
                 condition=~Q(phone=""),
                 name="finance_unique_party_phone",
+            ),
+            models.CheckConstraint(
+                condition=Q(credit_days__isnull=True) | Q(credit_day__isnull=True),
+                name="finance_party_one_credit_term",
+            ),
+            models.CheckConstraint(
+                condition=Q(credit_days__isnull=True) | Q(credit_days__gte=1, credit_days__lte=365),
+                name="finance_party_credit_days_range",
+            ),
+            models.CheckConstraint(
+                condition=Q(credit_day__isnull=True) | Q(credit_day__gte=1, credit_day__lte=31),
+                name="finance_party_credit_day_range",
             ),
         ]
 
@@ -983,18 +1037,29 @@ class Receipt(TenantModel):
 class DebtInstallment(models.Model):
     """One planned payment of a debt (an instalment plan). The schedule is a plan: payments
     settle the debt as a whole, and each instalment counts as paid once the payments so far
-    cover it and the ones before it."""
+    cover it and the ones before it.
+
+    `amount` is the part of the debt itself (a loan's principal), so the instalments add up to
+    the debt. A loan's instalment also carries its `interest` (v12, `apps.finance.loans`): an
+    expense (or income, on a loan given) paid with it that is never part of the debt. A grace
+    month pays interest only (`amount` 0). `early` marks an early repayment the schedule was
+    recalculated after."""
 
     debt = models.ForeignKey(Debt, on_delete=models.CASCADE, related_name="installments")
     due_on = models.DateField()
-    amount = MoneyField(help_text=_("In the debt's currency."))
+    amount = MoneyField(help_text=_("In the debt's currency: the part of the debt (principal)."))
+    interest = MoneyField(
+        default=0, help_text=_("A loan's interest paid with it, in the debt's currency.")
+    )
+    early = models.BooleanField(default=False, help_text=_("An early repayment."))
     position = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
         ordering = ["due_on", "position", "pk"]
         constraints = [
             models.CheckConstraint(
-                condition=Q(amount__gt=0), name="finance_installment_amount_positive"
+                condition=Q(amount__gte=0, interest__gte=0) & (Q(amount__gt=0) | Q(interest__gt=0)),
+                name="finance_installment_amount_positive",
             ),
         ]
 
@@ -1495,3 +1560,126 @@ class StatementPack(TenantModel):
 
     def __str__(self):
         return f"{self.purpose} {self.start}–{self.end} ({self.status})"
+
+
+class Loan(TenantModel):
+    """A loan's terms (v12, `apps.finance.loans`). The loan itself is a `Debt` of kind `loan`:
+    what is owed (the principal), the lender (a loan taken, payable) or borrower (a loan given,
+    receivable), the currency and the day it started. Its `DebtInstallment`s are the repayment
+    schedule: principal and interest per payment, made from these terms (`loan_math`) or typed
+    from the bank's own schedule (`custom`)."""
+
+    class Method(models.TextChoices):
+        ANNUITY = "annuity", _("Equal payments (annuity)")
+        EQUAL_PRINCIPAL = "equal_principal", _("Equal principal, payments fall")
+        CUSTOM = "custom", _("The bank's own schedule")
+
+    class Basis(models.TextChoices):
+        MONTHLY = "monthly", _("A twelfth of the annual rate each month")
+        ACTUAL = "actual", _("By the actual days, out of 365")
+
+    company = models.ForeignKey(Company, on_delete=models.PROTECT, related_name="finance_loans")
+    debt = models.OneToOneField(Debt, on_delete=models.PROTECT, related_name="loan")
+    annual_rate = models.DecimalField(
+        max_digits=6,
+        decimal_places=3,
+        default=Decimal(0),
+        validators=[MinValueValidator(Decimal(0)), MaxValueValidator(Decimal(100))],
+        help_text=_("The annual interest rate, in per cent. 0: no interest."),
+    )
+    method = models.CharField(max_length=16, choices=Method.choices, default=Method.ANNUITY)
+    basis = models.CharField(max_length=8, choices=Basis.choices, default=Basis.MONTHLY)
+    term_months = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(600)]
+    )
+    first_due_on = models.DateField(help_text=_("The first payment's day; the rest monthly."))
+    grace_months = models.PositiveSmallIntegerField(
+        default=0, help_text=_("The first payments pay interest only.")
+    )
+    fee = MoneyField(default=0, help_text=_("A one-off fee at the start, in the loan's currency."))
+    account = models.ForeignKey(
+        MoneyAccount,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="loans",
+        help_text=_("Where the money arrived (or left from); the usual account of its payments."),
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+
+    class Meta:
+        ordering = ["-pk"]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(annual_rate__gte=0, annual_rate__lte=100),
+                name="finance_loan_rate_range",
+            ),
+            models.CheckConstraint(
+                condition=Q(term_months__gte=1, term_months__lte=600),
+                name="finance_loan_term_range",
+            ),
+            models.CheckConstraint(
+                condition=Q(grace_months__lt=F("term_months")), name="finance_loan_grace_in_term"
+            ),
+            models.CheckConstraint(condition=Q(fee__gte=0), name="finance_loan_fee_positive"),
+        ]
+
+    def __str__(self):
+        return f"Loan #{self.pk}: {self.annual_rate} %, {self.term_months} months"
+
+
+class TaxMark(TenantModel):
+    """A tax deadline someone dealt with (v12, `apps.finance.taxes`): paid, with the ledger row
+    that paid it when there is one, or filed. The deadlines themselves come from the rules in
+    `apps.finance.tax_rules`; only what was done is stored, one row per tax, kind and period."""
+
+    class Kind(models.TextChoices):
+        PAY = "pay", _("Paid")
+        FILE = "file", _("Filed")
+
+    company = models.ForeignKey(Company, on_delete=models.PROTECT, related_name="finance_tax_marks")
+    tax = models.CharField(max_length=32, help_text=_("The rule's key in tax_rules."))
+    kind = models.CharField(max_length=4, choices=Kind.choices)
+    period_start = models.DateField()
+    period_end = models.DateField()
+    due_on = models.DateField()
+    done_on = models.DateField()
+    transaction = models.ForeignKey(
+        Transaction,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="tax_marks",
+        help_text=_("The payment in the ledger."),
+    )
+    amount = MoneyField(null=True, blank=True, help_text=_("What was paid, in the base currency."))
+    note = models.CharField(max_length=300, blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+
+    class Meta:
+        ordering = ["-due_on", "tax"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["company", "tax", "kind", "period_start"],
+                name="finance_unique_tax_mark",
+            ),
+            models.CheckConstraint(
+                condition=Q(period_end__gte=F("period_start")),
+                name="finance_tax_mark_period_order",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.tax} {self.period_start} {self.kind}"

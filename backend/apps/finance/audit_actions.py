@@ -72,3 +72,11 @@ class FinanceAction(models.TextChoices):
         _("Prepared a report for a bank or investors"),
     )
     VALUATION_SET = "finance.valuation_set", _("Changed how the business is valued")
+    # v12: loans, supplier terms and the tax calendar.
+    LOAN_CREATED = "finance.loan_created", _("Recorded a loan")
+    LOAN_SCHEDULE_SET = "finance.loan_schedule_set", _("Changed a loan's schedule")
+    LOAN_PAID = "finance.loan_paid", _("Paid a loan instalment")
+    LOAN_REPAID_EARLY = "finance.loan_repaid_early", _("Repaid part of a loan early")
+    LOAN_PAYMENT_UNDONE = "finance.loan_payment_undone", _("Took back a loan payment")
+    TAX_MARKED = "finance.tax_marked", _("Marked a tax deadline done")
+    TAX_UNMARKED = "finance.tax_unmarked", _("Took back a tax deadline mark")

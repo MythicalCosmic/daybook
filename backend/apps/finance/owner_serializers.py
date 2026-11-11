@@ -280,6 +280,7 @@ class CounterpartySerializer(serializers.ModelSerializer):
     we_owe = serializers.SerializerMethodField()
     overdue = serializers.SerializerMethodField()
     last_activity = serializers.SerializerMethodField()
+    payment_terms = serializers.SerializerMethodField()
 
     class Meta:
         model = Counterparty
@@ -298,6 +299,9 @@ class CounterpartySerializer(serializers.ModelSerializer):
             "default_category",
             "credit_limit",
             "credit_blocked",
+            "credit_days",
+            "credit_day",
+            "payment_terms",
             "birthday",
             "tags",
             "is_active",
@@ -332,6 +336,12 @@ class CounterpartySerializer(serializers.ModelSerializer):
         day = self._balance(party).get("last_activity")
         return day.isoformat() if day else None
 
+    def get_payment_terms(self, party) -> str:
+        """The supplier's payment terms in words ("" without terms; v12)."""
+        from apps.finance import terms
+
+        return terms.describe(party)
+
 
 class CounterpartyWriteSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=200, required=False)
@@ -346,6 +356,12 @@ class CounterpartyWriteSerializer(serializers.Serializer):
     default_category = serializers.IntegerField(required=False, allow_null=True)
     credit_limit = MoneySerializerField(positive=False, required=False, allow_null=True)
     credit_blocked = serializers.BooleanField(required=False)
+    credit_days = serializers.IntegerField(
+        min_value=1, max_value=365, required=False, allow_null=True
+    )
+    credit_day = serializers.IntegerField(
+        min_value=1, max_value=31, required=False, allow_null=True
+    )
     birthday = serializers.DateField(required=False, allow_null=True)
     tags = serializers.ListField(child=serializers.CharField(max_length=32), required=False)
     is_active = serializers.BooleanField(required=False)
@@ -941,6 +957,7 @@ class SettingsSerializer(serializers.ModelSerializer):
     base_currency = serializers.CharField(source="company.base_currency", read_only=True)
     can_reopen = serializers.SerializerMethodField()
     vat_percent = serializers.DecimalField(max_digits=5, decimal_places=2, read_only=True)
+    turnover_tax_percent = serializers.DecimalField(max_digits=5, decimal_places=2, read_only=True)
     base_value = money_out()
     tax_regime_set = serializers.SerializerMethodField()
     payroll_on = serializers.SerializerMethodField()
@@ -963,6 +980,11 @@ class SettingsSerializer(serializers.ModelSerializer):
             "base_value",
             "tax_regime_set",
             "payroll_on",
+            "loan_remind_days",
+            "tax_remind_days",
+            "owns_property",
+            "owns_land",
+            "turnover_tax_percent",
         )
 
     def get_can_reopen(self, row) -> bool:
@@ -987,6 +1009,13 @@ class SettingsUpdateSerializer(serializers.Serializer):
     )
     turnover_threshold = serializers.IntegerField(min_value=0, max_value=10**9, required=False)
     base_value = MoneySerializerField(required=False)
+    loan_remind_days = serializers.IntegerField(min_value=0, max_value=30, required=False)
+    tax_remind_days = serializers.IntegerField(min_value=0, max_value=30, required=False)
+    owns_property = serializers.BooleanField(required=False)
+    owns_land = serializers.BooleanField(required=False)
+    turnover_tax_percent = serializers.DecimalField(
+        max_digits=5, decimal_places=2, min_value=0, max_value=100, required=False
+    )
 
 
 class TaxSummarySerializer(serializers.Serializer):
