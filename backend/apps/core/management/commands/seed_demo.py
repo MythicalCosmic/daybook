@@ -81,6 +81,56 @@ BRANCH_MANAGER_PERMISSIONS = [
 ]
 
 
+# Where stored data names a position or a role (a job change's before and after, the audit trail's
+# details): there the demo's English working names become their Uzbek ones too.
+NAME_KEYS = frozenset({"position", "positions", "role", "roles", "documents_for"})
+
+
+def in_uzbek(value, names: dict[str, str], named: bool = False):
+    """Stored JSON `value` with the English names under NAME_KEYS in Uzbek, word for word."""
+    if isinstance(value, dict):
+        return {
+            key: in_uzbek(item, names, named or key in NAME_KEYS) for key, item in value.items()
+        }
+    if isinstance(value, list):
+        return [in_uzbek(item, names, named) for item in value]
+    return names.get(value, value) if named and isinstance(value, str) else value
+
+
+def names_in_uzbek(company) -> None:
+    """Positions and roles take their Uzbek names, and so does what the module demos stored with
+    the English working names they find them by (a promotion's before and after, the audit
+    trail), as if the company had used the Uzbek names from the start."""
+    for model, names in IN_UZBEK.items():
+        for english, uzbek in names.items():
+            model.objects.filter(company=company, name=english).update(name=uzbek)
+    names = {**plan.IN_UZBEK_ROLES, **plan.IN_UZBEK_POSITIONS}
+    for model in django_apps.get_models():
+        owner = next(
+            (
+                field.name
+                for field in model._meta.get_fields()
+                if field.many_to_one and field.related_model is Company
+            ),
+            None,
+        )
+        if owner is None:
+            continue
+        for field in model._meta.get_fields():
+            if not isinstance(field, models.JSONField):
+                continue
+            mentions = Q()
+            for english in names:
+                mentions |= Q(**{f"{field.name}__icontains": english})
+            rows = model._default_manager.filter(mentions, **{owner: company}).values_list(
+                "pk", field.name
+            )
+            for pk, value in rows:
+                changed = in_uzbek(value, names)
+                if changed != value:
+                    model._default_manager.filter(pk=pk).update(**{field.name: changed})
+
+
 def accept_finished_work(company) -> None:
     """The demo companies accept finished work automatically, like every new company
     (PLAN-OWNER §15.3); work a routine or a task asks to check still waits for its check."""
@@ -368,9 +418,7 @@ class Command(BaseCommand):
                 if finish := getattr(demo, "finish", None):
                     run(label, finish, company, crew)
         for company in (shop, small):
-            for model, names in IN_UZBEK.items():
-                for english, uzbek in names.items():
-                    model.objects.filter(company=company, name=english).update(name=uzbek)
+            names_in_uzbek(company)
 
         # Last, so the module demos never treat a real person as one of the staff.
         if owner_tg is not None:
