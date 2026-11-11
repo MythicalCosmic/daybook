@@ -124,7 +124,9 @@ async def test_the_web_app_button_needs_https_and_dashboard_access(dp, bot, link
     settings.DASHBOARD_URL = "https://davomat.example.uz/dashboard/"
     await dp.feed_update(bot, updates.message(updates.tg_user(9007), "/start"))
     [[web], [language]] = bot.sent()[-1].reply_markup.inline_keyboard
-    assert web.url.startswith("https://davomat.example.uz/dashboard/c/")
+    # A Mini App button: the web app opens inside Telegram, signed in, no password.
+    assert web.web_app.url.startswith("https://davomat.example.uz/dashboard/c/")
+    assert web.url is None
     assert language.text == LANGUAGE_BUTTON
 
     await dp.feed_update(bot, updates.message(updates.tg_user(9008), "/start"))

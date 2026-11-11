@@ -10,6 +10,7 @@ when the change came first.
 import asyncio
 import logging
 from collections.abc import Callable
+from contextlib import suppress
 
 from aiogram import Bot, Dispatcher
 from aiogram.exceptions import TelegramUnauthorizedError
@@ -17,7 +18,7 @@ from asgiref.sync import sync_to_async
 
 from apps.core.bot_runtime import DatabaseContext
 from davomat_bot import edition, runtime
-from davomat_bot.commands import set_commands
+from davomat_bot.commands import set_commands, sync_menu_buttons
 from davomat_bot.config import Settings, load_settings
 from davomat_bot.dispatcher import create_bot, create_dispatcher
 
@@ -67,12 +68,19 @@ async def run(
     watcher = asyncio.create_task(
         runtime.watch_token(settings, token=token, version=version, on_change=restart)
     )
+    menus = None
     try:
         await bot.delete_webhook()
         await set_commands(bot)
+        # The web app button for everyone linked, beside polling (once per token version).
+        menus = asyncio.create_task(sync_menu_buttons(bot, version))
         if not changed.is_set():
             await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
     finally:
         watcher.cancel()
+        if menus is not None and not menus.done():
+            menus.cancel()
+            with suppress(asyncio.CancelledError):
+                await menus
         await bot.session.close()
     return CHANGED if changed.is_set() else STOPPED

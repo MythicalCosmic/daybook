@@ -41,11 +41,27 @@ async def cmd_start(
         await claim(message, bot, payload.removeprefix(bot_messages.START_LINK))
         return
     await home(message, person)
+    if person.user is not None:
+        # Their menu and the web app button as they are now (a new role, a new address).
+        await relabel(bot, message.chat.id, person)
 
 
 async def home(message: Message, person: Person) -> None:
     text, markup = bot_messages.home(person.member, person.company, _first_name(message, person))
     await message.answer(text, reply_markup=markup)
+
+
+async def relabel(bot: Bot, chat_id: int, person: Person, language: str | None = None) -> None:
+    """A linked person's command menu (in `language`, else theirs) and the button beside the
+    message field: the web app for its users, the commands for everyone else."""
+    menu = await sync_to_async(bot_messages.menu_button)(person.member)
+    await commands.relabel(
+        bot,
+        chat_id,
+        language=language or person.language,
+        manager=bot_messages.sees_attendance(person.member),
+        menu=menu,
+    )
 
 
 def _first_name(message: Message, person: Person) -> str:
@@ -60,14 +76,15 @@ async def claim(message: Message, bot: Bot, code: str) -> None:
     if done is None:
         await message.answer(bot_messages.link_failed(reason))
         return
-    text, markup, language, manager = done
+    text, markup, language, manager, menu = done
     await message.answer(text, reply_markup=markup)
-    await commands.relabel(bot, message.chat.id, language=language, manager=manager)
+    # At once: a person who uses the web app finds it beside the message field now.
+    await commands.relabel(bot, message.chat.id, language=language, manager=manager, menu=menu)
 
 
 def _claim(code: str, telegram_id: int, username: str, first_name: str):
-    """((text, markup, language, manager), None) once linked, else (None, the reason to show
-    or None for the plain "this link doesn't work")."""
+    """((text, markup, language, manager, menu button), None) once linked, else (None, the
+    reason to show or None for the plain "this link doesn't work")."""
     if not code:
         return None, None
     try:
@@ -89,7 +106,8 @@ def _claim(code: str, telegram_id: int, username: str, first_name: str):
     language = language_of(member.user.language)
     with translation.override(language):
         text, markup = bot_messages.linked(member)
-    return (text, markup, language, bot_messages.sees_attendance(member)), None
+    menu = bot_messages.menu_button(member)
+    return (text, markup, language, bot_messages.sees_attendance(member), menu), None
 
 
 @router.message(Command("help"), F.chat.type == ChatType.PRIVATE)

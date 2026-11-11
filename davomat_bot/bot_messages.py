@@ -2,19 +2,29 @@
 person's language. Plain and short, no emoji (apps.notifications.emoji)."""
 
 from aiogram import html
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import (
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    MenuButtonCommands,
+    MenuButtonWebApp,
+    WebAppInfo,
+)
 from django.conf import settings
 from django.utils.translation import gettext as _
 
 from apps.accounts.telegram_chat import LANGUAGE_BUTTON
 from apps.companies.models import Company
+from apps.davomat import conf as davomat_conf
 from apps.members.models import Membership
 from apps.members.permissions import Perm
 from davomat_bot.callbacks import HomeLanguage
 
 type BotMessage = tuple[str, InlineKeyboardMarkup | None]
+type MenuButton = MenuButtonWebApp | MenuButtonCommands
 
 START_LINK = "link_"
+# Telegram's limit for the words on the button beside the message field (kept short anyway).
+MENU_TEXT_LIMIT = 32
 
 
 def dashboard_url(path: str = "") -> str:
@@ -25,11 +35,36 @@ def dashboard_url(path: str = "") -> str:
     return base.rstrip("/") + "/" + path.lstrip("/") if path else base
 
 
-def open_button(text: str, path: str = "") -> InlineKeyboardButton | None:
-    """A link to the web app. Telegram takes only https links on buttons; the web app has its
-    own password sign-in, so it opens in the browser rather than as a Mini App."""
+def app_url(path: str = "") -> str:
+    """The web app's address to open inside Telegram, or "" when there is none Telegram takes
+    (it opens only https addresses as a Mini App)."""
     url = dashboard_url(path)
-    return InlineKeyboardButton(text=text, url=url) if url.startswith("https://") else None
+    return url if url.startswith("https://") else ""
+
+
+def open_button(text: str, path: str = "") -> InlineKeyboardButton | None:
+    """Opens the web app inside Telegram as a Mini App, already signed in: the launch data the
+    organization's bot signs says who it is (apps.signin), no password. Mini App buttons work
+    in private chats only, the only chats this bot talks in; a place that isn't one would need
+    a link (`url=`) instead."""
+    url = app_url(path)
+    return InlineKeyboardButton(text=text, web_app=WebAppInfo(url=url)) if url else None
+
+
+def menu_button(member: Membership | None) -> MenuButton:
+    """The button beside the message field: for people who use the web app, the web app itself
+    as a Mini App (named as the product, "Davomat" unless the organization renamed it); for
+    everyone else the command menu (an employee's day is in /me; the web app has nothing for
+    them, and their launch data would only get "no access")."""
+    url = app_url(f"c/{member.company_id}") if uses_dashboard(member) else ""
+    if not url:
+        return MenuButtonCommands()
+    return web_app_menu(url, davomat_conf.product_name(member.company))
+
+
+def web_app_menu(url: str, product: str) -> MenuButtonWebApp:
+    text = (product or davomat_conf.PRODUCT).strip()[:MENU_TEXT_LIMIT] or davomat_conf.PRODUCT
+    return MenuButtonWebApp(text=text, web_app=WebAppInfo(url=url))
 
 
 def sees_attendance(member: Membership | None) -> bool:
@@ -170,5 +205,15 @@ def help_text(member: Membership | None, company: Company | None) -> str:
         *commands_lines(member),
     ]
     if uses_dashboard(member):
-        lines += ["", _("Reports, schedules and the team are in the Davomat web app.")]
+        lines += ["", web_app_line()]
     return "\n".join(lines)
+
+
+def web_app_line() -> str:
+    """Where the web app is, for the people who use it: inside Telegram when it can open there."""
+    if app_url():
+        return _(
+            "Reports, schedules and the team are in the Davomat web app: the Davomat button "
+            "next to the message field opens it here, no password needed."
+        )
+    return _("Reports, schedules and the team are in the Davomat web app.")
