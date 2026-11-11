@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-12 00:57+0500\n"
+"POT-Creation-Date: 2026-11-12 01:05+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -9565,10 +9565,6 @@ msgstr[0] "%(count)s строка"
 msgstr[1] "%(count)s строки"
 msgstr[2] "%(count)s строк"
 
-#: backend/apps/finance/owner_draw.py backend/apps/payroll/providers.py
-msgid "Pay day"
-msgstr "День зарплаты"
-
 #: backend/apps/finance/owner_draw.py
 msgid "Say what you plan to buy."
 msgstr "Укажите, что планируете купить."
@@ -9753,6 +9749,18 @@ msgid_plural "%(count)s people"
 msgstr[0] "%(count)s человек"
 msgstr[1] "%(count)s человека"
 msgstr[2] "%(count)s человек"
+
+#: backend/apps/finance/planning.py backend/apps/payroll/providers.py
+msgid "Pay day"
+msgstr "День зарплаты"
+
+#: backend/apps/finance/planning.py
+msgid "Beyond the pay already booked"
+msgstr "Сверх уже начисленной зарплаты"
+
+#: backend/apps/finance/planning.py
+msgid "Payroll (estimate)"
+msgstr "Зарплата (оценка)"
 
 #: backend/apps/finance/planning_api.py
 #, python-format

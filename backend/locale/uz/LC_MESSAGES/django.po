@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-12 00:57+0500\n"
+"POT-Creation-Date: 2026-11-12 01:05+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -9563,10 +9563,6 @@ msgid "%(count)s line"
 msgid_plural "%(count)s lines"
 msgstr[0] "%(count)s ta qator"
 
-#: backend/apps/finance/owner_draw.py backend/apps/payroll/providers.py
-msgid "Pay day"
-msgstr "Ish haqi kuni"
-
 #: backend/apps/finance/owner_draw.py
 msgid "Say what you plan to buy."
 msgstr "Nima sotib olishni yozing."
@@ -9749,6 +9745,18 @@ msgstr "Jamoaga to‘lanadigan ish haqi va xarajatlar"
 msgid "%(count)s person"
 msgid_plural "%(count)s people"
 msgstr[0] "%(count)s kishi"
+
+#: backend/apps/finance/planning.py backend/apps/payroll/providers.py
+msgid "Pay day"
+msgstr "Ish haqi kuni"
+
+#: backend/apps/finance/planning.py
+msgid "Beyond the pay already booked"
+msgstr "Hisoblangan ish haqidan tashqari"
+
+#: backend/apps/finance/planning.py
+msgid "Payroll (estimate)"
+msgstr "Ish haqi (taxminan)"
 
 #: backend/apps/finance/planning_api.py
 #, python-format
