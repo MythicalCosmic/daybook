@@ -135,6 +135,20 @@ def owner(company, member):
         questions=reviews.template(),
     )
     reviews.open_cycle(round_, by=owner)
+    # Contracts: a lease ending and another one's notice deadline, both inside the week.
+    from apps.contracts import services as contracts
+
+    for title, renews in (("Ijara", False), ("Ombor ijarasi", True)):
+        contracts.create_contract(
+            company,
+            by=owner,
+            kind="lease",
+            title=title,
+            starts_on=today - timedelta(days=300),
+            ends_on=today + timedelta(days=5 if not renews else 35),
+            auto_renews=renews,
+            notice_days=30,
+        )
     return owner
 
 

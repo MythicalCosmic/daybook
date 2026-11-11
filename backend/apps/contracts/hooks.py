@@ -35,8 +35,24 @@ register_kind(
     audience="owner",
     default_telegram=True,
 )
-register_action(notify.KIND, notify.KEEP, notify.keep)
-register_action(notify.KIND, notify.STOP, notify.stop)
+# Renewals to decide live in "Needs you" (and Egasi paneli's decisions); the notice reminder's
+# Telegram copy carries the same two buttons, with no in-app row of its own.
+registry.register_queue(
+    "contracts.renewals",
+    perm=MANAGE,
+    label=_("Contract renewals"),
+    count=providers.decision_count,
+    items=providers.decision_items,
+)
+register_kind(
+    notify.NOTICE_KIND,
+    label=_("Contract notice deadlines: keep renewing or give notice"),
+    audience="owner",
+    default_telegram=True,
+    queue_kind="contracts.renewals",
+)
+register_action(notify.NOTICE_KIND, notify.KEEP, notify.keep)
+register_action(notify.NOTICE_KIND, notify.STOP, notify.stop)
 
 registry.register_search("contracts.contract", perm=READ, search=providers.search)
 registry.register_calendar_source(
@@ -47,15 +63,7 @@ registry.register_calendar_source(
 )
 
 # Egasi paneli: renewals to decide before their notice deadline, and leases ending soon.
-decisions.register_source(
-    "contracts.renewals",
-    group="other",
-    order=90,
-    label=_("Contract renewals"),
-    perm=MANAGE,
-    count=providers.decision_count,
-    items=providers.decision_items,
-)
+decisions.register_source("contracts.renewals", group="other", order=90)
 detectors.detector(providers.LEASE_KIND, domain=Insight.Domain.FINANCE, feature=None)(
     providers.lease_ending
 )

@@ -26,6 +26,9 @@ from apps.members.permissions import Perm
 from apps.members.queries import members_with_perm
 
 KIND = "contracts.dates"
+# Notice deadlines: a decision, so its in-app form is the "Needs you" queue item
+# (`contracts.renewals`); the Telegram copy has the buttons.
+NOTICE_KIND = "contracts.notice"
 KEEP, STOP = "keep", "stop"
 
 
@@ -155,7 +158,7 @@ def notice(contract: BusinessContract, step: str, today: date) -> int:
 
     sent = inbox.notify(
         recipients,
-        KIND,
+        NOTICE_KIND,
         title=title,
         body=body,
         url=url(contract),

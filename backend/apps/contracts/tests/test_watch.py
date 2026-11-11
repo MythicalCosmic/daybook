@@ -17,7 +17,7 @@ KIND = notify.KIND
 
 
 def sent(contract=None):
-    rows = Notification.objects.filter(kind=KIND)
+    rows = Notification.objects.filter(kind__in=(KIND, notify.NOTICE_KIND))
     if contract is not None:
         rows = rows.filter(target_id=contract.pk)
     return rows
@@ -274,3 +274,24 @@ def test_the_agenda_shows_ends_and_notice_deadlines(shop, owner, manager, lease,
     # The Chilonzor manager sees only Chilonzor's.
     theirs = providers.calendar_events(shop, date(2026, 11, 1), date(2026, 12, 31), manager)
     assert [item.kind for item in theirs] == ["contracts.end"]
+
+
+def test_a_renewal_to_decide_is_in_needs_you_and_its_notice_only_in_telegram(
+    shop, owner, lease, freeze
+):
+    from apps.console import registry
+
+    lease = services.update_contract(lease, by=owner, auto_renews=True)
+    run(shop, freeze, date(2026, 11, 20), 10)
+    row = sent().get(recipient=owner)
+    assert row.kind == notify.NOTICE_KIND
+    assert row.in_app is False  # the queue item is its in-app form
+    items = registry.queue_items(owner, kind="contracts.renewals")
+    assert [item.id for item in items] == [lease.pk]
+    assert [action.key for action in items[0].actions] == ["keep", "stop"]
+    assert (
+        dict((source.key, count) for source, count in registry.queue_counts(owner))[
+            "contracts.renewals"
+        ]
+        == 1
+    )
