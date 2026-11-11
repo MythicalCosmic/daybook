@@ -3,7 +3,7 @@ from importlib import import_module
 from django.urls import include, path
 from rest_framework.routers import SimpleRouter
 
-from apps.accounts.api import MeView, TelegramAuthView
+from apps.accounts.api import MeView, TelegramAuthView, TelegramRefreshView
 from apps.members.api import MemberListView, OnboardingView, PositionListView
 from apps.reminders.api import ReminderPolicyViewSet
 from apps.reports.api import TeamStatsView
@@ -109,6 +109,7 @@ owner_modules = [import_module(f"apps.{app}.owner_urls") for app in OWNER_APPS]
 urlpatterns = [
     # Employee mini app
     path("auth/telegram/", TelegramAuthView.as_view(), name="auth-telegram"),
+    path("auth/telegram/refresh/", TelegramRefreshView.as_view(), name="auth-telegram-refresh"),
     path("me/", MeView.as_view(), name="me"),
     path(f"{COMPANY}/members/", MemberListView.as_view(), name="members"),
     path(f"{COMPANY}/positions/", PositionListView.as_view(), name="positions"),
