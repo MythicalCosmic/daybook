@@ -88,3 +88,41 @@ def test_init_data_from_the_future_is_rejected():
 def test_unknown_bots_are_a_programming_error():
     with pytest.raises(ValueError):
         validate_init_data(signed_init_data(), bot="other")
+
+
+# The Davomat edition's own bot -------------------------------------------------------------
+
+DAVOMAT_TOKEN = "7701234567:AAFakeDavomatTokenForTestsOnly-abcdefgh"
+
+
+@pytest.fixture
+def davomat_bot(company):
+    """The organization's bot token as the Telegram settings save it (apps.davomat, encrypted)."""
+    from apps.davomat import conf as davomat_conf
+
+    row = davomat_conf.get_settings(company)
+    row.bot_token, row.bot_username = DAVOMAT_TOKEN, "namuna_davomat_bot"
+    row.save(update_fields=["bot_token", "bot_username"])
+    return row
+
+
+def test_the_davomat_bot_signs_only_in_its_own_edition(settings, davomat_bot):
+    data = signed_init_data(user_id=9, token=DAVOMAT_TOKEN)
+
+    with pytest.raises(InvalidInitData, match="configured"):
+        validate_init_data(data, bot="davomat")  # Daybook never takes its bot's word
+    settings.EDITION = "davomat"
+    assert validate_init_data(data, bot="davomat").id == 9
+    with pytest.raises(InvalidInitData):
+        validate_init_data(signed_init_data(user_id=9), bot="davomat")  # the employee bot's
+    two_hours_ago = int(time.time()) - 2 * 60 * 60
+    old = signed_init_data(user_id=9, auth_date=two_hours_ago, token=DAVOMAT_TOKEN)
+    with pytest.raises(InvalidInitData, match="expired"):
+        validate_init_data(old, bot="davomat")  # an hour, as the owner bot's
+
+
+def test_the_davomat_bot_refuses_before_a_token_is_saved(settings, company):
+    settings.EDITION = "davomat"
+
+    with pytest.raises(InvalidInitData, match="configured"):
+        validate_init_data(signed_init_data(token=DAVOMAT_TOKEN), bot="davomat")

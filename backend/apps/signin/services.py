@@ -268,13 +268,15 @@ class InitDataRefused(Exception):
 
 def user_from_init_data(init_data: str) -> User:
     """The person behind Telegram Mini App `init_data` (§7.2): signed by the owner bot, or by
-    the employee bot as a fallback, at most `OWNER_INIT_DATA_MAX_AGE` old, and allowed into
-    the dashboard. Raises InitDataRefused."""
+    the employee bot as a fallback (in the Davomat edition first by the organization's own
+    bot), at most `OWNER_INIT_DATA_MAX_AGE` old, and allowed into the dashboard. Raises
+    InitDataRefused."""
     from apps.accounts.services import sync_telegram_user
     from apps.accounts.telegram_auth import InvalidInitData, validate_init_data
 
+    davomat = settings.EDITION == "davomat"
     web_user = None
-    for bot in ("owner", "employee"):
+    for bot in ("davomat", "owner", "employee") if davomat else ("owner", "employee"):
         try:
             web_user = validate_init_data(
                 init_data, bot=bot, max_age=settings.OWNER_INIT_DATA_MAX_AGE
@@ -285,15 +287,19 @@ def user_from_init_data(init_data: str) -> User:
     if web_user is None:
         raise InitDataRefused("init_data_invalid")
     # Nobody is created here: only people who already belong to a company may get in.
-    if not User.objects.filter(telegram_id=web_user.id).exists():
+    user = User.objects.filter(telegram_id=web_user.id).first()
+    if user is None:
         raise InitDataRefused("no_access")
-    user = sync_telegram_user(
-        telegram_id=web_user.id,
-        username=web_user.username,
-        first_name=web_user.first_name,
-        last_name=web_user.last_name,
-        language_code=None,
-    )
+    if not davomat:
+        # In Davomat the names are the ones the administrator typed (a one-time link joined
+        # this Telegram to them): Telegram's profile never replaces them.
+        user = sync_telegram_user(
+            telegram_id=web_user.id,
+            username=web_user.username,
+            first_name=web_user.first_name,
+            last_name=web_user.last_name,
+            language_code=None,
+        )
     if not can_sign_in(user):
         raise InitDataRefused("no_access")
     return user

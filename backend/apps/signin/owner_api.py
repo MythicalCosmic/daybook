@@ -35,8 +35,9 @@ POLL_HEADER = "X-Login-Poll"
 
 
 class TelegramSignIn:
-    """Signing in through Telegram (login links, Mini App initData). The Davomat edition signs
-    in with passwords only (docs/DAVOMAT.md §1.2): there these endpoints don't exist."""
+    """Signing in on the desktop through a Telegram bot (login links). The Davomat edition
+    signs in with passwords there (docs/DAVOMAT.md §1.2), so these endpoints don't exist in it;
+    the Mini App sign-in (`telegram/`, `telegram/refresh/`) works in both editions."""
 
     def initial(self, request, *args, **kwargs):
         if settings.EDITION == "davomat":
@@ -308,9 +309,10 @@ class TelegramLoginSerializer(serializers.Serializer):
     init_data = serializers.CharField(max_length=4096)
 
 
-class TelegramLoginView(TelegramSignIn, APIView):
-    """Sign in with `Telegram.WebApp.initData` (owner bot, else employee bot), at most
-    `OWNER_INIT_DATA_MAX_AGE` old: a session whose refresh token comes in the body (Telegram
+class TelegramLoginView(APIView):
+    """Sign in with `Telegram.WebApp.initData` (owner bot, else employee bot; in the Davomat
+    edition the organization's own bot first), at most `OWNER_INIT_DATA_MAX_AGE` old: a
+    session whose refresh token comes in the body (Telegram
     Web runs the dashboard in a cross-site iframe, where no cookie arrives). The page keeps it
     and gets every next access token from `telegram/refresh/`, so the console stays signed in
     after the hour initData is good for."""
@@ -357,7 +359,7 @@ class TelegramLoginView(TelegramSignIn, APIView):
         return Response({"access": issued.access, "refresh": issued.refresh})
 
 
-class TelegramRefreshView(TelegramSignIn, APIView):
+class TelegramRefreshView(APIView):
     """The Mini App's next access token: `{"refresh"}` (the token the page kept) is rotated as
     the desktop's cookie is (`services.rotate`: reuse detection, revocation, the devices list),
     with the same limits per session and per address. No cookie and no Origin check: the token

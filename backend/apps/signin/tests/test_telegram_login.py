@@ -12,6 +12,7 @@ from rest_framework.throttling import SimpleRateThrottle
 from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken
 
 from apps.accounts.tests.telegram import signed_init_data
+from apps.davomat import conf as davomat_conf
 from apps.signin import services
 from apps.signin.models import DeviceSession
 from apps.signin.services import REFRESH_COOKIE
@@ -360,3 +361,72 @@ def test_refreshes_are_throttled_per_session(client, tokens, owner, monkeypatch)
 
 def _request(agent: str):
     return RequestFactory().post("/", HTTP_USER_AGENT=agent, REMOTE_ADDR="10.0.0.9")
+
+
+# The Davomat edition: the organization's own bot opens the web app ---------------------------
+
+DAVOMAT_TOKEN = "7701234567:AAFakeDavomatTokenForTestsOnly-abcdefgh"
+
+
+def _save_bot_token(company) -> None:
+    row = davomat_conf.get_settings(company)
+    row.bot_token, row.bot_username = DAVOMAT_TOKEN, "namuna_davomat_bot"
+    row.save(update_fields=["bot_token", "bot_username"])
+
+
+@pytest.fixture
+def davomat(settings, company):
+    """Davomat with its bot connected in Settings, and no Daybook bot tokens at all."""
+    settings.EDITION = "davomat"
+    settings.OWNER_BOT_TOKEN = settings.EMPLOYEE_BOT_TOKEN = ""
+    settings.OWNER_INIT_DATA_MAX_AGE = 3600
+    _save_bot_token(company)
+    return settings
+
+
+def test_in_davomat_its_own_bot_signs_in_and_the_session_lives_on(client, davomat, owner):
+    names = (owner.user.first_name, owner.user.last_name)
+
+    response = login(client, signed_init_data(7710001, token=DAVOMAT_TOKEN))
+
+    assert response.status_code == 200, response.content
+    body = response.json()
+    assert str(OwnerAccessToken(body["access"])["user_id"]) == str(owner.user_id)
+    # The names the administrator typed stay (Telegram calls this person "Ali Valiyev").
+    owner.user.refresh_from_db()
+    assert (owner.user.first_name, owner.user.last_name) == names
+    davomat.OWNER_INIT_DATA_MAX_AGE = 0
+    assert refresh(client, body["refresh"]).status_code == 200
+
+
+def test_in_davomat_the_other_bots_still_work_after_it(client, davomat, owner):
+    davomat.OWNER_BOT_TOKEN = OWNER_TOKEN
+
+    assert login(client, signed_init_data(7710001, token=OWNER_TOKEN)).status_code == 200
+
+
+def test_in_davomat_an_unlinked_telegram_has_no_access(client, davomat, owner, company, member):
+    member(company, "Employee", user__telegram_id=7710002)
+
+    stranger = login(client, signed_init_data(7719999, token=DAVOMAT_TOKEN))
+    employee = login(client, signed_init_data(7710002, token=DAVOMAT_TOKEN))
+
+    assert stranger.status_code == employee.status_code == 403
+    assert employee.json()["code"] == "no_access"
+
+
+def test_in_davomat_a_forged_or_old_launch_is_refused(client, davomat, owner):
+    old = int(time.time()) - 3601
+
+    assert login(client, signed_init_data(7710001, token=OWNER_TOKEN)).status_code == 401
+    stale = login(client, signed_init_data(7710001, auth_date=old, token=DAVOMAT_TOKEN))
+    assert stale.status_code == 401
+
+
+def test_daybook_never_takes_the_davomat_bots_word(client, tokens, owner, company):
+    _save_bot_token(company)
+
+    response = login(client, signed_init_data(7710001, token=DAVOMAT_TOKEN))
+
+    assert response.status_code == 401
+    assert response.json()["code"] == "init_data_invalid"
