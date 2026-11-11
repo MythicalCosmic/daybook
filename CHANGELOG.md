@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.8.1 — 2026-11-12
+
+### Loading that never lies
+- A page never says "nothing here yet" while its data is still on the way: the loading skeleton is
+  in place from the first moment (it fades in after 150 ms, so quick answers never flash it).
+- A slim loading bar across the top while a page or data you're waiting for loads; live refreshes
+  of what's already on screen never show it.
+- Face ID's live feed: the first scans show even with the mouse over the list, and changing the
+  day or filter keeps the last list (dimmed) until the new one arrives, instead of a moment of
+  "no scans".
+
 ## 0.8.0 — 2026-11-11
 
 ### Egasi paneli: the owner's page for the morning
