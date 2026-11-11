@@ -295,6 +295,47 @@ def balance_rows(member, params: dict):
         }
 
 
+BALANCE_SHEET_COLUMNS = [
+    Column("section", _("Section")),
+    Column("line", _("Line")),
+    Column("amount", _("Amount"), "money"),
+]
+
+
+def balance_sheet_rows(member, params: dict):
+    """The balance sheet on a day (`on`, default today), line by line with each section's
+    total, as the Balance sheet report shows it (v12)."""
+    from apps.finance import statement_pack, statements
+
+    today = queries.local_today(member.company)
+    on = min(filters.day(params, "on") or today, today)
+    sheet = statements.balance_sheet(
+        member.company, on, branch_ids=_branches(member, params), today=today
+    )
+    for side, label in (("assets", _("Assets")), ("liabilities", _("Liabilities"))):
+        for section in sheet[side]["sections"]:
+            name = statement_pack.line_label(section["key"])
+            for line in section["lines"]:
+                yield {
+                    "section": f"{label}: {name}",
+                    "line": statement_pack.line_label(line["key"]),
+                    "amount": line["amount"],
+                }
+            yield {
+                "section": f"{label}: {name}",
+                "line": str(_("Total")),
+                "amount": section["total"],
+            }
+        yield {"section": str(label), "line": str(_("Total")), "amount": sheet[side]["total"]}
+    for line in sheet["equity"]["lines"]:
+        yield {
+            "section": str(_("Equity")),
+            "line": statement_pack.line_label(line["key"]),
+            "amount": line["amount"],
+        }
+    yield {"section": str(_("Equity")), "line": str(_("Total")), "amount": sheet["equity"]["total"]}
+
+
 def category_trend_rows(member, params: dict):
     """One category (with its subcategories) month by month, as the Category trends report."""
     pk = filters.one_int(params, "category")

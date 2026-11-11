@@ -1,0 +1,98 @@
+{% load i18n %}<section class="page" id="notes">
+  <p class="eyebrow">{{ period_text }}</p>
+  <h2 class="section">{% translate "Notes" %}</h2>
+  <p class="lede">{% blocktranslate with unit=unit %}How the figures are made and what stands behind them, in {{ unit }}.{% endblocktranslate %}</p>
+
+  <div class="note keep">
+    <h3><span class="no"></span>{% translate "How the figures are made" %}</h3>
+    <ul class="bullets">{% for line in notes.basis %}<li>{{ line }}</li>{% endfor %}</ul>
+  </div>
+
+  {% if loans.rows and purpose != "bank" %}
+  <div class="note keep">
+    <h3><span class="no"></span>{% translate "Loans" %}</h3>
+    <table class="fin">
+      <thead><tr><th>{% translate "Lender" %}</th><th class="num">{% translate "Left to pay" %}</th><th>{% translate "Next payments" %}</th><th class="num">{% translate "Interest in the period" %}</th></tr></thead>
+      <tbody>
+        {% for loan in loans.rows %}<tr><td class="name">{{ loan.lender }}</td><td class="num">{{ loan.left }}</td><td class="small">{% for payment in loan.next %}<div>{{ payment }}</div>{% empty %}–{% endfor %}</td><td class="num">{{ loan.interest }}</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <div class="note">
+    <h3><span class="no"></span>{% translate "The largest debts" %}</h3>
+    <div class="two">
+      <div class="keep">
+        <p class="small"><b>{% translate "Owed to the business" %}</b></p>
+        {% if notes.receivable %}
+        <table class="fin">
+          <thead><tr><th>{% translate "Who" %}</th><th class="num">{% translate "Amount" %}</th><th class="num">{% translate "Overdue" %}</th></tr></thead>
+          <tbody>{% for row in notes.receivable %}<tr><td class="name">{{ row.name }}</td><td class="num">{{ row.amount }}</td><td class="num">{{ row.overdue }}</td></tr>{% endfor %}</tbody>
+        </table>
+        {% else %}<p class="muted small">{% translate "Nobody owes the business anything." %}</p>{% endif %}
+      </div>
+      <div class="keep">
+        <p class="small"><b>{% translate "The business owes" %}</b></p>
+        {% if notes.payable %}
+        <table class="fin">
+          <thead><tr><th>{% translate "To whom" %}</th><th class="num">{% translate "Amount" %}</th><th class="num">{% translate "Overdue" %}</th></tr></thead>
+          <tbody>{% for row in notes.payable %}<tr><td class="name">{{ row.name }}</td><td class="num">{{ row.amount }}</td><td class="num">{{ row.overdue }}</td></tr>{% endfor %}</tbody>
+        </table>
+        {% else %}<p class="muted small">{% translate "The business owes nothing besides its loans." %}</p>{% endif %}
+      </div>
+    </div>
+    <p class="table-note">{% translate "Debts of staff are shown together, never by name. Loans are in their own note." %}</p>
+  </div>
+
+  {% if notes.fixed %}
+  <div class="note keep">
+    <h3><span class="no"></span>{% translate "Fixed assets in the period" %}</h3>
+    <table class="fin">
+      <thead><tr><th>{% translate "Category" %}</th><th class="num">{% translate "At the start" %}</th><th class="num">{% translate "Bought" %}</th><th class="num">{% translate "Depreciation" %}</th><th class="num">{% translate "Sold or written off" %}</th><th class="num">{% translate "At the end" %}</th></tr></thead>
+      <tbody>
+        {% for row in notes.fixed.rows %}<tr><td class="name">{{ row.name }}</td><td class="num">{{ row.open }}</td><td class="num">{{ row.added }}</td><td class="num">{{ row.depreciation }}</td><td class="num">{{ row.out }}</td><td class="num">{{ row.close }}</td></tr>{% endfor %}
+        <tr class="subtotal"><td class="name">{% translate "Total" %}</td><td class="num">{{ notes.fixed.total.open }}</td><td class="num">{{ notes.fixed.total.added }}</td><td class="num">{{ notes.fixed.total.depreciation }}</td><td class="num">{{ notes.fixed.total.out }}</td><td class="num">{{ notes.fixed.total.close }}</td></tr>
+      </tbody>
+    </table>
+    <p class="table-note">{% translate "At book value: what each item cost, less the depreciation so far." %}</p>
+  </div>
+  {% endif %}
+
+  <div class="note keep">
+    <h3><span class="no"></span>{% translate "Money accounts on the last day" %}</h3>
+    <table class="fin">
+      <thead><tr><th>{% translate "Account" %}</th><th class="num">{% translate "Balance" %}</th><th class="num">{% blocktranslate with unit=unit %}In {{ unit }}{% endblocktranslate %}</th></tr></thead>
+      <tbody>{% for row in notes.accounts %}<tr><td class="name">{{ row.name }}</td><td class="num">{{ row.balance }}</td><td class="num">{{ row.base }}</td></tr>{% endfor %}</tbody>
+    </table>
+    {% for row in notes.foreign %}<p class="table-note">{% blocktranslate with amount=row.amount rate=row.rate day=row.rate_date base=row.base %}{{ amount }} at {{ rate }} on {{ day }}: {{ base }}.{% endblocktranslate %}{% if row.stale %} {% translate "No rate was published for that day: the latest one before it is used." %}{% endif %}</p>{% endfor %}
+  </div>
+
+  {% if notes.reconciliation %}
+  <div class="note keep">
+    <h3><span class="no"></span>{% translate "How retained earnings are made" %}</h3>
+    <table class="fin">
+      <tbody>
+        {% for line in notes.reconciliation.lines %}<tr class="child"><td class="name">{{ line.name }}</td><td class="num">{{ line.amount }}</td></tr>{% endfor %}
+        {% if notes.reconciliation.unexplained %}<tr class="child"><td class="name">{% translate "Not traced to the books" %}</td><td class="num">{{ notes.reconciliation.unexplained }}</td></tr>{% endif %}
+        <tr class="subtotal"><td class="name">{% translate "Retained earnings" %}</td><td class="num">{{ notes.reconciliation.retained }}</td></tr>
+      </tbody>
+    </table>
+    <p class="table-note">{% translate "The books count medicines as a cost when they arrive and know nothing from before they started, so retained earnings are more than the profit recorded here. Each line above says why." %}</p>
+  </div>
+  {% endif %}
+
+  <div class="note keep">
+    <h3><span class="no"></span>{% translate "What the books leave out" %}</h3>
+    {% if notes.gaps %}
+    <ul class="bullets gaps">{% for gap in notes.gaps %}<li>{{ gap }}</li>{% endfor %}</ul>
+    {% else %}
+    <p class="small muted">{% translate "Nothing found: every account has a rate, nothing waits for approval and the books explain every figure." %}</p>
+    {% endif %}
+  </div>
+
+  <div class="signoff">
+    <div>{% translate "Owner or director: name and signature" %}</div>
+    <div>{% translate "Date" %}</div>
+  </div>
+</section>

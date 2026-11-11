@@ -1,0 +1,43 @@
+{% load i18n %}<section class="page" id="balance">
+  <p class="eyebrow">{% blocktranslate with day=balance.on %}On {{ day }}{% endblocktranslate %}</p>
+  <h2 class="section">{% translate "Balance sheet" %}</h2>
+  <p class="lede">{% blocktranslate with unit=unit %}What the business owns and owes at the end of the period, in {{ unit }}.{% endblocktranslate %}</p>
+  <table class="fin">
+    <thead>
+      <tr><th></th><th class="num">{{ balance.on }}</th>{% if balance.before_on %}<th class="num">{{ balance.before_on }}</th>{% endif %}</tr>
+    </thead>
+    <tbody>
+      <tr class="head"><td colspan="3">{% translate "Assets" %}</td></tr>
+      {% for section in balance.assets %}
+        <tr class="subtotal"><td class="name">{{ section.name }}</td><td class="num">{{ section.total }}</td>{% if balance.before_on %}<td class="num prev">{{ section.previous }}</td>{% endif %}</tr>
+        {% for line in section.lines %}
+        <tr class="child"><td class="name">{{ line.name }}</td><td class="num">{{ line.amount }}</td>{% if balance.before_on %}<td class="num prev">{{ line.previous }}</td>{% endif %}</tr>
+        {% endfor %}
+      {% endfor %}
+      <tr class="total"><td class="name">{% translate "Total assets" %}</td><td class="num">{{ balance.assets_total }}</td>{% if balance.before_on %}<td class="num">{{ balance.assets_previous }}</td>{% endif %}</tr>
+
+      <tr class="head"><td colspan="3">{% translate "Liabilities" %}</td></tr>
+      {% for section in balance.liabilities %}
+        <tr class="subtotal"><td class="name">{{ section.name }}</td><td class="num">{{ section.total }}</td>{% if balance.before_on %}<td class="num prev">{{ section.previous }}</td>{% endif %}</tr>
+        {% for line in section.lines %}
+        <tr class="child"><td class="name">{{ line.name }}</td><td class="num">{{ line.amount }}</td>{% if balance.before_on %}<td class="num prev">{{ line.previous }}</td>{% endif %}</tr>
+        {% endfor %}
+      {% empty %}
+        <tr class="child"><td class="name">{% translate "Nothing is owed" %}</td><td class="num">–</td>{% if balance.before_on %}<td></td>{% endif %}</tr>
+      {% endfor %}
+      <tr class="subtotal"><td class="name">{% translate "Total liabilities" %}</td><td class="num">{{ balance.liabilities_total }}</td>{% if balance.before_on %}<td class="num prev">{{ balance.liabilities_previous }}</td>{% endif %}</tr>
+
+      <tr class="head"><td colspan="3">{% if balance.whole_company %}{% translate "Equity" %}{% else %}{% translate "Net assets" %}{% endif %}</td></tr>
+      {% for line in balance.equity %}
+      <tr class="child"><td class="name">{{ line.name }}</td><td class="num">{{ line.amount }}</td>{% if balance.before_on %}<td class="num prev">{{ line.previous }}</td>{% endif %}</tr>
+      {% endfor %}
+      <tr class="subtotal"><td class="name">{% if balance.whole_company %}{% translate "Total equity" %}{% else %}{% translate "Net assets" %}{% endif %}</td><td class="num">{{ balance.equity_total }}</td>{% if balance.before_on %}<td class="num prev">{{ balance.equity_previous }}</td>{% endif %}</tr>
+      <tr class="total"><td class="name">{% translate "Total liabilities and equity" %}</td><td class="num">{{ balance.total }}</td>{% if balance.before_on %}<td></td>{% endif %}</tr>
+    </tbody>
+  </table>
+  {% if balance.whole_company %}
+  <p class="table-note">{% translate "Retained earnings are what is left once the owner's own money is counted, so the two sides always balance; the notes show how they are made from the books." %}</p>
+  {% else %}
+  <p class="table-note">{% blocktranslate with branches=branches %}Only these branches: {{ branches }}. The company's own accounts, its loans and the owner's money are not included.{% endblocktranslate %}</p>
+  {% endif %}
+</section>

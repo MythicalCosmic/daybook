@@ -1,0 +1,38 @@
+{% load i18n %}<section class="page" id="partners">
+  <p class="eyebrow">{{ period_text }}</p>
+  <h2 class="section">{% translate "Partners and dividends" %}</h2>
+  <p class="lede">{% blocktranslate with profit=partners.profit unit=unit %}Who owns the business, their part of the period's net profit of {{ profit }} {{ unit }}, and the dividends for the period.{% endblocktranslate %}</p>
+  <table class="fin">
+    <thead>
+      <tr>
+        <th>{% translate "Partner" %}</th>
+        <th class="num">{% translate "Share" %}</th>
+        <th class="num">{% translate "Part of the profit" %}</th>
+        <th class="num">{% translate "Dividends paid" %}</th>
+        <th class="num">{% translate "Dividends due" %}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in partners.rows %}
+      <tr><td class="name"><b>{{ row.name }}</b></td><td class="num">{{ row.share }}</td><td class="num">{{ row.profit }}</td><td class="num">{{ row.paid }}</td><td class="num">{{ row.due }}</td></tr>
+      {% empty %}
+      <tr><td colspan="5" class="muted">{% translate "No partners are set for this period." %}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% if partners.unassigned %}<p class="table-note">{% blocktranslate with share=partners.unassigned %}{{ share }} of the period had no partner set.{% endblocktranslate %}</p>{% endif %}
+  <p class="table-note">{% translate "A partner's part of the profit follows the days they held each share. Dividends are paid as owner draws, so they never reduce the profit." %}</p>
+  <div class="keep">
+    <h3>{% translate "Dividend rounds for the period" %}</h3>
+    {% if partners.rounds %}
+    <table class="fin">
+      <thead><tr><th>{% translate "For the period" %}</th><th class="num">{% translate "Amount" %}</th><th>{% translate "Status" %}</th></tr></thead>
+      <tbody>
+        {% for round in partners.rounds %}<tr><td class="name">{{ round.period }}</td><td class="num">{{ round.amount }}</td><td>{{ round.status }}</td></tr>{% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="muted">{% translate "No dividends were declared for this period." %}</p>
+    {% endif %}
+  </div>
+</section>

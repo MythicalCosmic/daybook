@@ -21,6 +21,7 @@ from apps.finance import (
     reminders,
     services,
     sources,
+    statement_pack,
 )
 from apps.finance.audit_actions import FinanceAction
 from apps.finance.models import (
@@ -102,6 +103,8 @@ registry.register_pulse(
     "finance.overdue", perm=Perm.FINANCE_VIEW, count=providers.overdue_count, feature=FINANCE
 )
 registry.register_pulse("finance.ledger", perm=None, count=None, feature=FINANCE)
+# v12: a statement pack was asked for, finished or failed.
+registry.register_pulse(statement_pack.PULSE, perm=Perm.FINANCE_VIEW, count=None, feature=FINANCE)
 registry.register_pulse(
     claims.PULSE, perm=Perm.FINANCE_APPROVE, count=claims.queue_count, feature=FINANCE
 )
@@ -217,6 +220,14 @@ register_exporter(
     feature=FINANCE,
 )
 register_exporter(
+    "finance.balance_sheet",
+    perm=Perm.FINANCE_VIEW,
+    label=_("Balance sheet"),
+    columns=exporters.BALANCE_SHEET_COLUMNS,
+    rows=exporters.balance_sheet_rows,
+    feature=FINANCE,
+)
+register_exporter(
     "finance.category_trend",
     perm=Perm.FINANCE_VIEW,
     label=_("Category trend"),
@@ -300,6 +311,7 @@ register_kind(
 # Private files and record history ----------------------------------------------------------
 
 register_file_check("finance.receipt", providers.receipt_check)
+register_file_check("finance.statement_pack", statement_pack.can_download)
 audit_registry.register_target(
     "transaction", Perm.FINANCE_VIEW, check=providers.transaction_history_check
 )

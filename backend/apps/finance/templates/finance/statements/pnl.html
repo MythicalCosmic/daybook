@@ -1,0 +1,34 @@
+{% load i18n %}<section class="page" id="pnl">
+  <p class="eyebrow">{{ period_text }}</p>
+  <h2 class="section">{% translate "Profit and loss" %}</h2>
+  <p class="lede">{% blocktranslate with unit=unit %}What the business earned and spent in the period, in {{ unit }}. A loss is in brackets.{% endblocktranslate %}</p>
+  {% if pnl.empty %}
+  <p class="muted">{% translate "Nothing was earned or spent in this period." %}</p>
+  {% else %}
+  <table class="fin">
+    <thead>
+      <tr>
+        <th></th>
+        {% for column in pnl.columns %}<th class="num">{{ column }}</th>{% endfor %}
+        <th class="num">{% if pnl.columns %}{% translate "Total" %}{% else %}{% translate "This period" %}{% endif %}</th>
+        {% if pnl.compare %}<th class="num">{% translate "A year before" %}</th><th class="num">{% translate "Change" %}</th>{% endif %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for block in pnl.blocks %}
+        {% if block.kind == "head" %}
+        <tr class="head"><td colspan="{{ pnl.columns|length|add:4 }}">{{ block.name }}</td></tr>
+        {% else %}
+        <tr class="{% if block.kind == 'line' and block.level %}child{% elif block.kind == 'subtotal' %}subtotal{% elif block.kind == 'total' %}total{% endif %}">
+          <td class="name">{{ block.name }}{% if block.margin and block.margin != "–" %}<span class="margin">{{ block.margin }}</span>{% endif %}</td>
+          {% for amount in block.amounts %}<td class="num">{{ amount }}</td>{% endfor %}
+          <td class="num">{{ block.total }}</td>
+          {% if pnl.compare %}<td class="num prev">{{ block.previous }}</td><td class="num change">{{ block.change|default:"" }}</td>{% endif %}
+        </tr>
+        {% endif %}
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="table-note">{% translate "Medicines and goods count as a cost when they arrive, not when they are sold. Owner money put in or taken out is never income or a cost." %}</p>
+  {% endif %}
+</section>

@@ -84,3 +84,19 @@ def check_all_budgets() -> int:
     from apps.finance import budgets
 
     return budgets.check_all()
+
+
+@shared_task
+def build_statement_pack(pack_id: int) -> None:
+    """Build a statement pack PDF (v12); sends it to Telegram when the requester asked."""
+    from apps.finance import statement_pack
+
+    statement_pack.build(pack_id)
+
+
+@shared_task
+def prune_statement_packs() -> int:
+    """Daily: statement packs older than 7 days, files included; stuck ones marked failed."""
+    from apps.finance import statement_pack
+
+    return statement_pack.prune()

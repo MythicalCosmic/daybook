@@ -1,0 +1,74 @@
+{% load i18n %}<section class="page" id="valuation">
+  <p class="eyebrow">{% blocktranslate with day=balance.on %}On {{ day }}{% endblocktranslate %}</p>
+  <h2 class="section">{% translate "What the business is worth" %}</h2>
+  <p class="lede">{% translate "Two simple methods from the company's own books, side by side, and the range they span." %}</p>
+  <div class="verdict">
+    <div class="verdict__label">{% translate "Estimated value" %}</div>
+    {% if valuation.single %}
+    <div class="verdict__value">{{ valuation.range_low }}</div>
+    <div class="verdict__note">{% translate "Only the net assets method applies for now." %} {% translate "An estimate from the books, not an appraisal." %}</div>
+    {% else %}
+    <div class="verdict__value">{{ valuation.range_low }} – {{ valuation.range_high }}</div>
+    <div class="verdict__note">{% translate "An estimate from the books, not an appraisal." %}</div>
+    {% endif %}
+  </div>
+
+  <div class="field">
+    {% for row in valuation.chart %}
+    <div class="field__row">
+      <div class="field__name">{{ row.name }}</div>
+      <div class="field__track">
+        {% if row.range %}<div class="field__range" style="left: {{ row.left }}%; width: {{ row.width }}%"></div>
+        {% else %}<div class="field__point" style="left: {{ row.left }}%"></div>{% endif %}
+      </div>
+      <div class="field__text">{{ row.text }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="method">
+    <div>
+      <h3>{% translate "1. Earnings" %}</h3>
+      {% if valuation.applies or valuation.lines %}
+      <table class="fin">
+        <tbody>
+          {% for line in valuation.lines %}<tr class="child"><td class="name">{{ line.name }}</td><td class="num">{{ line.amount }}</td></tr>{% endfor %}
+          <tr class="subtotal"><td class="name">{% blocktranslate with days=valuation.earnings_days %}Profit before depreciation and interest, {{ days }} days{% endblocktranslate %}</td><td class="num">{{ valuation.earnings }}</td></tr>
+          {% if valuation.scaled and valuation.yearly %}<tr class="child"><td class="name">{% translate "A year at the same pace" %}</td><td class="num">{{ valuation.yearly }}</td></tr>{% endif %}
+          {% if valuation.applies %}
+          <tr class="child"><td class="name">{% blocktranslate with low=valuation.multiple_low high=valuation.multiple_high %}Times {{ low }} to {{ high }}: the business without its cash and loans{% endblocktranslate %}</td><td class="num">{{ valuation.business_low }} – {{ valuation.business_high }}</td></tr>
+          <tr class="child"><td class="name">{% translate "Plus cash and bank" %}</td><td class="num">{{ valuation.cash }}</td></tr>
+          <tr class="child"><td class="name">{% translate "Less loans and dividends owed" %}</td><td class="num">({{ valuation.debt }})</td></tr>
+          <tr class="total"><td class="name">{% translate "Value for the owners" %}</td><td class="num">{{ valuation.low }} – {{ valuation.high }}</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+      {% endif %}
+      {% if valuation.reason %}<p class="table-note">{{ valuation.reason }}</p>{% endif %}
+    </div>
+    <div>
+      <h3>{% translate "2. Net assets" %}</h3>
+      <table class="fin">
+        <tbody>
+          <tr class="child"><td class="name">{% translate "Everything the business owns" %}</td><td class="num">{{ valuation.assets }}</td></tr>
+          <tr class="child"><td class="name">{% translate "Less everything it owes" %}</td><td class="num">({{ valuation.liabilities }})</td></tr>
+          <tr class="total"><td class="name">{% translate "Net assets at book value" %}</td><td class="num">{{ valuation.net_assets }}</td></tr>
+          {% if valuation.stock %}<tr class="child"><td class="name">{% translate "of which stock at cost" %}</td><td class="num prev">{{ valuation.stock }}</td></tr>{% endif %}
+          {% if valuation.fixed_assets %}<tr class="child"><td class="name">{% translate "of which equipment at book value" %}</td><td class="num prev">{{ valuation.fixed_assets }}</td></tr>{% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="keep">
+    <h3>{% translate "How to read it" %}</h3>
+    <ul class="caveats">
+      <li>{% blocktranslate with low=valuation.multiple_low high=valuation.multiple_high %}A buyer pays for the income a business brings: here {{ low }} to {{ high }} years of it.{% endblocktranslate %} {% if valuation.is_default %}{% translate "This is Daybook's cautious starting range: small shops in the region usually sell for about one and a half to two and a half years of profit, and independent pharmacies abroad for two and a half to five. Borrowing is expensive in Uzbekistan, so buyers want their money back quickly." %}{% else %}{% translate "The company chose this range." %}{% endif %}</li>
+      <li>{% translate "The owner's draws are not costs in these books: a buyer who pays a manager to run the business would earn less." %}</li>
+      {% if valuation.scaled %}<li>{% translate "The books are younger than a year, so the earnings are scaled up from the days there are and may miss the seasons." %}</li>{% endif %}
+      {% if valuation.net_above %}<li>{% translate "Net assets are above the earnings value: a buyer of the income would offer less than the book value, one who wants the cash, stock and equipment would look at the book value." %}</li>{% endif %}
+      <li>{% translate "Stock and equipment are at what they cost, not at what they would sell for." %}</li>
+      <li>{% translate "This is an estimate from the company's own books, not an appraisal by a licensed valuer." %}</li>
+    </ul>
+  </div>
+</section>

@@ -27,6 +27,11 @@ SCHEDULE = {
         "task": "apps.finance.tasks.remind_payments",
         "schedule": crontab(minute="*/15"),
     },
+    # v12: statement packs are kept seven days.
+    "finance-prune-statement-packs": {
+        "task": "apps.finance.tasks.prune_statement_packs",
+        "schedule": crontab(hour=4, minute=20),
+    },
     "finance-check-budgets": {
         "task": "apps.finance.tasks.check_all_budgets",
         "schedule": crontab(hour=3, minute=30),

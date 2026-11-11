@@ -5,7 +5,7 @@
 from django.urls import path
 from rest_framework.routers import SimpleRouter
 
-from apps.finance import owner_api, owner_money_api, planning_api
+from apps.finance import owner_api, owner_money_api, planning_api, statements_api
 
 router = SimpleRouter()
 router.register("finance/accounts", owner_api.AccountViewSet, basename="finance-account")
@@ -120,9 +120,35 @@ owner_money = [
     ),
 ]
 
+# v12: reports for banks and investors (statements_api).
+reports_for_banks = [
+    path(
+        "finance/reports/balance-sheet/",
+        statements_api.BalanceSheetView.as_view(),
+        name="finance-report-balance-sheet",
+    ),
+    path("finance/valuation/", statements_api.ValuationView.as_view(), name="finance-valuation"),
+    path(
+        "finance/statements/options/",
+        statements_api.StatementOptionsView.as_view(),
+        name="finance-statements-options",
+    ),
+    path(
+        "finance/statements/",
+        statements_api.StatementPacksView.as_view(),
+        name="finance-statements",
+    ),
+    path(
+        "finance/statements/<int:pk>/",
+        statements_api.StatementPackView.as_view(),
+        name="finance-statement",
+    ),
+]
+
 urlpatterns = [
     *planning,
     *owner_money,
+    *reports_for_banks,
     path("finance/overview/", owner_api.OverviewView.as_view(), name="finance-overview"),
     path("finance/options/", owner_api.OptionsView.as_view(), name="finance-options"),
     path("finance/receipts/", owner_api.ReceiptUploadView.as_view(), name="finance-receipts"),

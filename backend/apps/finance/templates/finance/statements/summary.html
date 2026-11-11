@@ -1,0 +1,45 @@
+{% load i18n %}<section class="page" id="summary">
+  <p class="eyebrow">{{ period_text }}</p>
+  <h2 class="section">{% translate "Summary" %}</h2>
+  <p class="lede">{% blocktranslate with unit=unit %}The period at a glance. Amounts in {{ unit }}.{% endblocktranslate %}</p>
+  <div class="tiles">
+    {% for tile in summary.tiles %}
+    <div class="tile{% if forloop.counter <= 2 %} tile--lead{% endif %}"><div class="tile__box">
+      <div class="tile__label">{{ tile.label }}</div>
+      <div class="tile__value">{{ tile.value }}</div>
+      {% if tile.hint %}<div class="tile__hint">{{ tile.hint }}</div>{% endif %}
+    </div></div>
+    {% endfor %}
+  </div>
+  {% if summary.has_trend %}
+  <div class="chart">
+    <h3 style="margin-top:0">{% translate "Revenue and profit by month" %}</h3>
+    <div class="chart__legend"><span class="rev"></span>{% translate "Revenue" %}<span class="pro"></span>{% translate "Profit" %}<span class="los"></span>{% translate "Loss" %}</div>
+    <div class="bars" style="height: {{ summary.chart.up }}mm">
+      {% for point in summary.trend %}<div class="bars__col"><div class="bar rev" style="height: {{ point.revenue_mm }}mm"></div><div class="bar pro{% if point.loss %} ghost{% endif %}" style="height: {{ point.profit_mm }}mm"></div></div>{% endfor %}
+    </div>
+    {% if summary.chart.down %}
+    <div class="below" style="height: {{ summary.chart.down }}mm">
+      {% for point in summary.trend %}<div class="bars__col"><div class="bar ghost"></div><div class="bar los{% if not point.loss %} ghost{% endif %}" style="height: {{ point.loss_mm }}mm"></div></div>{% endfor %}
+    </div>
+    {% endif %}
+    <table class="fin trend">
+      <thead><tr><th></th>{% for point in summary.trend %}<th>{{ point.label }}</th>{% endfor %}</tr></thead>
+      <tbody>
+        <tr><td>{% translate "Revenue" %}</td>{% for point in summary.trend %}<td>{{ point.revenue_text }}</td>{% endfor %}</tr>
+        <tr><td>{% translate "Profit" %}</td>{% for point in summary.trend %}<td>{{ point.profit_text }}</td>{% endfor %}</tr>
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+  <div class="keep">
+    <h3>{% translate "Key ratios" %}</h3>
+    <table class="fin ratios">
+      <tbody>
+        {% for name, value, what in summary.ratios %}
+        <tr><td style="width:40mm"><b>{{ name }}</b></td><td class="num" style="width:22mm">{{ value }}</td><td class="what">{{ what }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>

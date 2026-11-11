@@ -66,3 +66,9 @@ class FinanceAction(models.TextChoices):
     DIVIDEND_PAID = "finance.dividend_paid", _("Paid a dividend")
     DIVIDEND_UNDONE = "finance.dividend_undone", _("Took back a dividend payment")
     DIVIDEND_CANCELLED = "finance.dividend_cancelled", _("Cancelled a dividend")
+    # v12: reports for banks and investors.
+    STATEMENTS_PREPARED = (
+        "finance.statements_prepared",
+        _("Prepared a report for a bank or investors"),
+    )
+    VALUATION_SET = "finance.valuation_set", _("Changed how the business is valued")
