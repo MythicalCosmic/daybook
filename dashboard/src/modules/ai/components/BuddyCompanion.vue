@@ -11,6 +11,14 @@
  * close sends it shyly aside; while it walks every tap goes through it. A tap: hearts (five quick
  * taps: dizzy); a long press: it waves goodbye and hides (buddyPrefs; the toast brings it back).
  * The page scrolling under it while it stands on a card: it jumps down. Still with reduced motion.
+ *
+ * It never covers what people press (buddySpace.ts): it only stands where nothing pressable, no
+ * docked bar and no dialog is under its drawing, hopping up onto a save bar, a selection bar or a
+ * chat's composer instead of standing in front of it; when the floor has no such place it peeks in
+ * from the window's right edge, and when even that is taken it hides until there is room. Every
+ * 0.7 s it looks again (a save bar slid up, a list scrolled under it) and steps aside, and it
+ * hides while a dialog, sheet or drawer is open. Only its drawn pixels take taps, and only on a
+ * spot it checked; it is drawn under docked bars, menus and dialogs, never over them.
  */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
@@ -30,16 +38,20 @@ import {
   BUDDY_IDLE_SLEEP_MS,
   buddyBox,
   buddyWalkMs,
-  floorY,
+  figureBox,
+  floorAt,
   planCompanion,
   shyStep,
+  spotsFrom,
   standPoint,
+  type Box,
   type BuddyAction,
 } from "../lib";
 import AiBuddy from "./AiBuddy.vue";
 import { buddyCue } from "./buddyBus";
 import { useBuddyCues } from "./buddyCues";
 import { buddyEverywhere } from "./buddyPrefs";
+import { dockedBars, overlayOpen, PRESSABLE, pressableBoxes, spotClear } from "./buddySpace";
 
 const { t } = useI18n();
 const route = useRoute();
@@ -62,12 +74,20 @@ const walking = ref(false);
 const sitting = ref(false);
 const asleep = ref(false);
 const facing = ref<"left" | "right">("right");
+/** Out of the way: a dialog is open, or there is nowhere clear to stand. */
+const hidden = ref(false);
+/** The spot it stands on was checked: nothing to press under it, so it may take taps. */
+const clearHere = ref(false);
+const layer = ref<HTMLElement | null>(null);
+const GUARD_MS = 700;
+const TOP_GAP = 64; // below the top bar
 
 const timers = new Set<ReturnType<typeof setTimeout>>();
 let alive = true;
 let trip = 0; // goes up when a walk starts or is called off; an old walk stops at its next step
 let travelling = false;
 const onCard = ref(false); // up on a card: taps go through it, as while it walks
+const tappable = computed(() => !walking.value && !onCard.value && clearHere.value && !hidden.value);
 let lastActivity = Date.now();
 let lastNoted = 0;
 let lastShy = 0;
@@ -100,22 +120,87 @@ function randomDance(): BuddyAction {
   return BUDDY_DANCES[Math.floor(Math.random() * BUDDY_DANCES.length)]!;
 }
 
-/** The stretch of floor it walks on: the page's content, above the phone's tab bar. */
-function lane(): { min: number; max: number; floor: number } {
+/** The stretch of floor it walks on: the page's content, above the phone's tab bar. `feet` is
+ * the floor's line, `floor` where its top is when it stands there. */
+function lane(): { min: number; max: number; floor: number; feet: number } {
   const rect = document.querySelector("main")?.getBoundingClientRect();
   const left = rect ? Math.max(rect.left, 0) : 0;
   const right = rect && rect.width > 0 ? Math.min(rect.right, window.innerWidth) : window.innerWidth;
   const bar = isPhone.value ? (document.querySelector("nav.fixed.bottom-0")?.getBoundingClientRect().top ?? null) : null;
+  const feet = Math.round(bar ?? window.innerHeight - 10);
   return {
     min: Math.round(left + 8),
     max: Math.round(Math.max(left + 8, right - size.value - 8)),
-    floor: floorY(window.innerHeight, bar, size.value),
+    floor: feet - buddyBox(size.value).feet,
+    feet,
   };
 }
 
 function randomX(): number {
   const { min, max } = lane();
   return Math.round(min + Math.random() * (max - min));
+}
+
+type Spot = { x: number; y: number; peek?: boolean };
+
+/** What its drawing would cover at a spot (a peek only shows its part inside the window). */
+function figureAt(spot: Spot): Box {
+  const figure = figureBox(spot.x, spot.y, size.value);
+  if (!spot.peek) return figure;
+  return { ...figure, width: Math.max(0, window.innerWidth - 1 - figure.left) };
+}
+
+function clearAt(spot: Spot, pressable?: readonly Box[]): boolean {
+  return spot.y >= TOP_GAP && spotClear(figureAt(spot), layer.value, pressable ?? pressableBoxes(layer.value));
+}
+
+/** The nearest clear place on the floor to `x` (up on a docked bar where one is), else a peek in
+ * from the window's right edge, else none. */
+function findSpot(x: number): Spot | null {
+  const { min, max, feet } = lane();
+  const bars = dockedBars(feet, min, max + size.value, layer.value);
+  const pressable = pressableBoxes(layer.value);
+  const tall = buddyBox(size.value).feet;
+  for (const left of spotsFrom(x, min, max)) {
+    const spot = { x: left, y: floorAt(feet, bars, left, size.value) - tall };
+    if (clearAt(spot, pressable)) return spot;
+  }
+  const edge = window.innerWidth - Math.round(size.value * 0.45);
+  const peek = { x: edge, y: floorAt(feet, bars, edge, size.value) - tall, peek: true };
+  return clearAt(peek, pressable) ? peek : null;
+}
+
+/** Straight to a spot (reduced motion, or a new window size). */
+function place(spot: Spot): void {
+  moveMs.value = 0;
+  walking.value = false;
+  position.value = { x: spot.x, y: spot.y };
+}
+
+/** Where it settles: it looks once more before it takes taps. */
+function settle(spot: Spot): void {
+  if (spot.peek) facing.value = "left";
+  clearHere.value = clearAt({ ...position.value, peek: spot.peek });
+}
+
+/** Out of the way until there is room (or the dialog closes). */
+function hide(): void {
+  trip += 1;
+  travelling = false;
+  walking.value = false;
+  onCard.value = false;
+  sitting.value = false;
+  clearHere.value = false;
+  hidden.value = true;
+}
+
+/** Reduced motion: it stands still at the right end of the floor, or the nearest clear place. */
+function stayStill(): void {
+  const spot = overlayOpen() ? null : findSpot(lane().max);
+  if (!spot) return hide();
+  hidden.value = false;
+  place(spot);
+  settle(spot);
 }
 
 async function walkTo(point: { x: number; y: number }, id: number, backwards = false): Promise<boolean> {
@@ -137,15 +222,21 @@ async function walkTo(point: { x: number; y: number }, id: number, backwards = f
 /** It comes onto the page from the left edge: a new page, and it came along. */
 async function enter(): Promise<void> {
   const id = (trip += 1);
-  travelling = true;
   onCard.value = false;
   asleep.value = false;
-  const { min, floor } = lane();
+  clearHere.value = false;
+  const spot = overlayOpen() ? null : findSpot(randomX());
+  if (!spot) return hide();
+  hidden.value = false;
+  travelling = true;
   moveMs.value = 0;
-  position.value = { x: min - size.value - 24, y: floor };
+  position.value = { x: lane().min - size.value - 24, y: spot.y };
   await nextTick();
   await wait(30); // the start is painted before the walk, so the walk animates
-  if (await walkTo({ x: randomX(), y: floor }, id)) act(Math.random() < 0.5 ? "wave" : "look");
+  if (await walkTo(spot, id)) {
+    settle(spot);
+    act(spot.peek || Math.random() < 0.5 ? "look" : "wave");
+  }
   if (id === trip) travelling = false;
 }
 
@@ -159,24 +250,45 @@ function visibleCards(): HTMLElement[] {
   const { floor } = lane();
   const { feet } = buddyBox(size.value);
   return Array.from(main.querySelectorAll<HTMLElement>(LANDMARKS)).filter((card) => {
-    if (card.closest('[role="dialog"]')) return false;
+    // A dialog's card, or a button dressed as a card (a suggestion chip): not something to climb.
+    if (card.closest('[role="dialog"]') || card.closest(PRESSABLE)) return false;
     const rect = card.getBoundingClientRect();
     return rect.width > size.value + 40 && rect.height >= 56 && rect.top - feet > 64 && rect.top < floor - 40 && rect.left >= 0 && rect.right <= window.innerWidth;
   });
 }
 
 async function down(id: number): Promise<void> {
-  if (await walkTo({ x: randomX(), y: lane().floor }, id)) onCard.value = false;
+  const spot = findSpot(randomX());
+  if (!spot) {
+    if (id === trip) hide();
+    return;
+  }
+  if (await walkTo(spot, id)) {
+    onCard.value = false;
+    settle(spot);
+  }
   if (id === trip) travelling = false;
 }
 
+/** A clear place on a card's top edge (a few tries along it), or none. */
+function cardSpot(card: HTMLElement, sit: boolean): Spot | null {
+  const rect = card.getBoundingClientRect();
+  const screen = { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
+  const pressable = pressableBoxes(layer.value);
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const spot = standPoint({ left: rect.left, top: rect.top, width: rect.width, height: rect.height }, screen, size.value, Math.random(), sit);
+    if (clearAt(spot, pressable)) return spot;
+  }
+  return null;
+}
+
 async function visit(card: HTMLElement): Promise<void> {
+  const sit = Math.random() < 0.35;
+  const spot = cardSpot(card, sit);
+  if (!spot) return; // something to press above it: not this card
   const id = (trip += 1);
   travelling = true;
-  const rect = card.getBoundingClientRect();
-  const sit = Math.random() < 0.35;
-  const screen = { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
-  const spot = standPoint({ left: rect.left, top: rect.top, width: rect.width, height: rect.height }, screen, size.value, Math.random(), sit);
+  clearHere.value = false;
   if (!(await walkTo(spot, id))) {
     if (id === trip) travelling = false;
     return;
@@ -195,13 +307,86 @@ async function visit(card: HTMLElement): Promise<void> {
 }
 
 async function stroll(moonwalk = false): Promise<void> {
-  const id = (trip += 1);
-  travelling = true;
-  const { min, max, floor } = lane();
+  const { min, max } = lane();
   let x = randomX();
   if (moonwalk && Math.abs(x - position.value.x) < 120) x = position.value.x - min > max - position.value.x ? min : max;
-  if (await walkTo({ x, y: floor }, id, moonwalk)) act(moonwalk ? "star" : (["wave", "look", "wink", "hearts"] as const)[Math.floor(Math.random() * 4)]!);
+  const spot = findSpot(x);
+  if (!spot || (spot.x === position.value.x && spot.y === position.value.y)) return;
+  const id = (trip += 1);
+  travelling = true;
+  clearHere.value = false;
+  if (await walkTo(spot, id, moonwalk)) {
+    settle(spot);
+    act(moonwalk ? "star" : (["wave", "look", "wink", "hearts"] as const)[Math.floor(Math.random() * 4)]!);
+  }
   if (id === trip) travelling = false;
+}
+
+/** Something came under it (a save bar slid up, a list scrolled, a menu opened): it steps to the
+ * nearest clear place, or hides. */
+async function stepAside(): Promise<void> {
+  const spot = findSpot(position.value.x);
+  if (!spot) return hide();
+  const id = (trip += 1);
+  onCard.value = false;
+  asleep.value = false;
+  clearHere.value = false;
+  if (reduced) {
+    place(spot);
+    settle(spot);
+    return;
+  }
+  travelling = true;
+  act("shy");
+  if (await walkTo(spot, id)) settle(spot);
+  if (id === trip) travelling = false;
+}
+
+/** No room on the floor (a page full of things to press): now and then it pops up on a card's
+ * clear top edge, waves and dances, and goes again. */
+async function popIn(): Promise<void> {
+  const cards = visibleCards();
+  if (!cards.length) return;
+  const sit = Math.random() < 0.35;
+  const spot = cardSpot(cards[Math.floor(Math.random() * cards.length)]!, sit);
+  if (!spot) return;
+  const id = (trip += 1);
+  travelling = true;
+  place(spot);
+  facing.value = "right";
+  sitting.value = sit;
+  onCard.value = true;
+  await nextTick();
+  hidden.value = false; // it fades in where it stands, without crossing the page
+  act("wave");
+  await wait(1600);
+  if (id !== trip) return;
+  act(sit ? "wink" : randomDance());
+  await wait(1800);
+  if (id !== trip) return;
+  await down(id);
+}
+
+/** It looks under itself every GUARD_MS: out of the way of dialogs, aside from what came under
+ * it, back once there is room again (looking for room is the costly part: every third round),
+ * or popping up on a card now and then (every 18th) while there is none. */
+let rounds = 0;
+function guard(): void {
+  rounds += 1;
+  if (alive && shown.value && !document.hidden) {
+    if (overlayOpen()) {
+      if (!hidden.value) hide();
+    } else if (hidden.value) {
+      if (rounds % 3 === 0 && reduced) stayStill();
+      else if (rounds % 3 === 0 && !travelling && findSpot(randomX())) void enter();
+      else if (rounds % 18 === 0 && !travelling && !reduced) void popIn();
+    } else if (!walking.value && !travelling) {
+      const clear = clearAt({ ...position.value, peek: position.value.x > window.innerWidth - size.value });
+      clearHere.value = clear && !onCard.value;
+      if (!clear) void stepAside();
+    }
+  }
+  later(guard, GUARD_MS);
 }
 
 function tick(): void {
@@ -243,11 +428,15 @@ function onPointerMove(event: PointerEvent): void {
   const middleY = position.value.y + height.value / 2;
   if (Math.hypot(event.clientX - middleX, event.clientY - middleY) > 70) return;
   lastShy = now;
+  const { min, max } = lane();
+  const spot = findSpot(shyStep(position.value.x, event.clientX, min, max));
+  if (!spot) return;
   const id = (trip += 1);
   travelling = true;
+  clearHere.value = false;
   act("shy");
-  const { min, max, floor } = lane();
-  void walkTo({ x: shyStep(position.value.x, event.clientX, min, max), y: floor }, id).then(() => {
+  void walkTo(spot, id).then((arrived) => {
+    if (arrived) settle(spot);
     if (id === trip) travelling = false;
   });
 }
@@ -255,7 +444,10 @@ function onPointerMove(event: PointerEvent): void {
 /** The page scrolled under it while it stood on a card: it jumps back down. */
 function onScroll(): void {
   noteActivity();
-  if (!onCard.value) return;
+  if (!onCard.value) {
+    clearHere.value = false; // the page moved under it: no taps until it has looked again
+    return;
+  }
   onCard.value = false;
   act("wide");
   travelling = true;
@@ -267,9 +459,11 @@ function onResize(): void {
   travelling = false;
   onCard.value = false;
   walking.value = false;
-  moveMs.value = 0;
-  const { min, max, floor } = lane();
-  position.value = { x: Math.min(max, Math.max(min, position.value.x)), y: floor };
+  if (hidden.value) return;
+  const spot = findSpot(position.value.x);
+  if (!spot) return hide();
+  place(spot);
+  settle(spot);
 }
 
 function onTap(): void {
@@ -305,7 +499,7 @@ async function goodbye(): Promise<void> {
   travelling = true;
   act("bye");
   await wait(BUDDY_DURATION.bye);
-  await walkTo({ x: window.innerWidth + 24, y: lane().floor }, id);
+  await walkTo({ x: window.innerWidth + 24, y: position.value.y }, id);
   buddyEverywhere.value = false;
   travelling = false;
   toast.info(t("ai.buddy.hidden"), { action: { label: t("ai.buddy.bringBack"), onClick: () => (buddyEverywhere.value = true) }, duration: 6000 });
@@ -328,10 +522,8 @@ watch(shown, (visible) => {
     onCard.value = false;
     return;
   }
-  if (reduced) {
-    const { max, floor } = lane();
-    position.value = { x: max, y: floor };
-  } else void enter();
+  if (reduced) stayStill();
+  else void enter();
 });
 watch(
   () => route.path,
@@ -347,12 +539,11 @@ onMounted(() => {
   window.addEventListener("scroll", onScroll, { capture: true, passive: true });
   window.addEventListener("resize", onResize);
   if (shown.value) {
-    if (reduced) {
-      const { max, floor } = lane();
-      position.value = { x: max, y: floor };
-    } else void enter();
+    if (reduced) stayStill();
+    else void enter();
   }
   if (!reduced) later(tick, 2500);
+  later(guard, GUARD_MS);
 });
 onBeforeUnmount(() => {
   alive = false;
@@ -370,9 +561,17 @@ defineExpose({ visit, stroll, act, enter, goodbye });
 </script>
 
 <template>
-  <div v-if="shown" class="pointer-events-none fixed inset-0 z-[35]" data-testid="ai-buddy-companion">
+  <!-- Drawn under docked bars (z-index 2 and up), menus, sheets and dialogs, over the page itself. -->
+  <div
+    v-if="shown"
+    ref="layer"
+    :class="['pointer-events-none fixed inset-0 z-[1] transition-opacity duration-200', hidden && 'opacity-0']"
+    :data-hidden="hidden || undefined"
+    :aria-hidden="hidden || undefined"
+    data-testid="ai-buddy-companion"
+  >
     <div
-      :class="['buddy-walker absolute left-0 top-0 will-change-transform', walking || onCard ? 'pointer-events-none' : 'pointer-events-auto']"
+      :class="['buddy-walker absolute left-0 top-0 will-change-transform', tappable ? 'pointer-events-auto' : 'pointer-events-none']"
       :style="{ transform: `translate(${position.x}px, ${position.y}px)`, transition: moveMs ? `transform ${moveMs}ms linear` : 'none' }"
       data-testid="ai-buddy-walker"
       @pointerdown="pressStart"
@@ -403,5 +602,12 @@ defineExpose({ visit, stroll, act, enter, goodbye });
   -webkit-user-select: none;
   -webkit-touch-callout: none;
   touch-action: manipulation;
+}
+/* Only its drawn pixels take a tap: the empty corners of its box let it through. */
+.buddy-walker.pointer-events-auto :deep(.ai-buddy) {
+  pointer-events: none;
+}
+.buddy-walker.pointer-events-auto :deep(.buddy-figure) {
+  pointer-events: visiblePainted;
 }
 </style>

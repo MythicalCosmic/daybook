@@ -167,3 +167,20 @@ def books(shop, owner, branches):
 
 def days_before(count: int) -> date:
     return TODAY - timedelta(days=count)
+
+
+@pytest.fixture
+def payroll_pays(shop, monkeypatch):
+    """`payroll_pays(day, amount)`: payroll switched on, expecting to pay `amount` on `day` (the
+    one pay day the cash plan hears of from its provider, `planning.register_pay_days`)."""
+    from apps.finance import planning
+
+    shop.features = [*shop.features, "payroll"]
+    shop.save(update_fields=["features"])
+    plan = []
+    monkeypatch.setattr(
+        planning,
+        "_pay_days",
+        [lambda company, today, until, *, branch_ids: [row for row in plan if row[0] <= until]],
+    )
+    return lambda day, amount: plan.append((day, Decimal(amount), "UZS"))

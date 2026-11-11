@@ -103,3 +103,35 @@ def person(db):
         return member
 
     return make
+
+
+@pytest.fixture
+def payroll_pays(monkeypatch):
+    """`payroll_pays(day, amount)`: payroll expects to pay `amount` on `day` and on the same day
+    of each month after it, as its provider hands the cash plan (`planning.register_pay_days`),
+    only while the company has payroll on. `amount` may be a function of the `branch_ids` asked
+    for; every call's `branch_ids` lands in the returned list."""
+    from apps.finance import owner_draw, planning
+
+    plan = {}
+    calls = []
+
+    def provider(company, today, until, *, branch_ids):
+        calls.append(branch_ids)
+        if not company.has_feature("payroll") or "day" not in plan:
+            return []
+        amount = plan["amount"](branch_ids) if callable(plan["amount"]) else plan["amount"]
+        found, step = [], 0
+        while (day := owner_draw._add_months(plan["day"], step)) <= until:
+            if day >= today:
+                found.append((day, Decimal(amount), "UZS"))
+            step += 1
+        return found
+
+    monkeypatch.setattr(planning, "_pay_days", [provider])
+
+    def pays(day, amount):
+        plan.update(day=day, amount=amount)
+        return calls
+
+    return pays

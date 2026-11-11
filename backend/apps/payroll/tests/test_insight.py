@@ -10,6 +10,7 @@ from django.core.cache import cache
 from apps.ai.tools.registry import SWITCHES
 from apps.ai.tools.testing import call_tool
 from apps.console import contracts
+from apps.finance import planning as finance_planning
 from apps.payroll import (
     ai_tools,  # noqa: F401  (registers the tool before apps/ai's tests swap the registry)
     earnings,
@@ -181,6 +182,48 @@ def test_portfolio_card_briefing_and_calendar(shop, team, freeze):
         ("payroll.pay_day", date(2026, 11, 5)),
         ("payroll.advance_day", date(2026, 11, 20)),
     ]
+
+
+def test_the_cash_plans_pay_days(shop, team, freeze, cash, chilonzor, yunusobod):
+    freeze(local(date(2026, 11, 3), 10))
+    today = date(2026, 11, 3)
+    until = date(2027, 2, 1)  # 90 days
+
+    def pay_days(branch_ids=None):
+        rows = providers.pay_days(shop, today, until, branch_ids=branch_ids)
+        return [(day, amount, currency) for day, amount, currency in rows]
+
+    # No October run yet: the month's estimate (the portfolio's figure), and the same again.
+    estimate = D(providers.company_facts(shop, None, team.owner)["next_run_amount"])
+    assert estimate > 0
+    assert pay_days() == [
+        (date(2026, 11, 5), estimate, "UZS"),
+        (date(2026, 12, 5), estimate, "UZS"),
+        (date(2027, 1, 5), estimate, "UZS"),
+    ]
+    assert providers.pay_days in finance_planning._pay_days  # registered by payroll's hooks
+    # Finalized: the next pay day takes what is still unpaid of the run.
+    run = services.create_run(shop, by=team.owner, period="2026-10")
+    services.finalize_run(run, by=team.owner)
+    assert pay_days()[0] == (date(2026, 11, 5), D("9880000.00"), "UZS")
+    assert pay_days([chilonzor.pk])[0] == (date(2026, 11, 5), D("5200000.00"), "UZS")
+    assert pay_days([yunusobod.pk])[0] == (date(2026, 11, 5), D("4680000.00"), "UZS")
+    ali = run.payslips.get(membership=team.ali)
+    services.mark_paid(run, by=team.owner, payslip_ids=[ali.pk], account=cash)
+    assert pay_days()[:2] == [
+        (date(2026, 11, 5), D("4680000.00"), "UZS"),
+        (date(2026, 12, 5), D("9880000.00"), "UZS"),
+    ]
+    # Paid early: that pay day takes nothing more; the months after still pay the run's sum.
+    sara = run.payslips.get(membership=team.sara)
+    services.mark_paid(run, by=team.owner, payslip_ids=[sara.pk], account=cash)
+    assert [day for day, _amount, _currency in pay_days()] == [
+        date(2026, 12, 5),
+        date(2027, 1, 5),
+    ]
+    shop.features = ["finance", "attendance", "hr"]
+    shop.save(update_fields=["features"])
+    assert pay_days() == []
 
 
 def test_cost_rate_from_the_pay_setup(shop, team):

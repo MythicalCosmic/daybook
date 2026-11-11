@@ -5,7 +5,9 @@
  * walks on. Every few seconds it acts in place, strolls along its strip, or walks to an agent card
  * it can see, stands or sits on its top edge and pokes it (the card bounces), then walks home.
  * While an agent runs it prefers that card and types there. Away from home every tap goes through
- * it (it never covers a button); at home a tap makes it hop with hearts. Pauses while the tab is hidden, goes home when
+ * it, and it only goes where nothing one presses is under its drawing (buddySpace.ts: a card with a
+ * button just above it, or a strip with one in the way, it leaves alone); at home a tap makes it
+ * hop with hearts. Pauses while the tab is hidden, goes home when
  * the window resizes, and stays home and still with reduced motion.
  *
  * The page's root must be `position: relative` (the layer is `absolute inset-0` in it), and its
@@ -17,7 +19,8 @@ import { reducedMotion } from "@/components/chartOptions";
 
 import AiBuddy from "./AiBuddy.vue";
 import { buddyCue, greet } from "./buddyBus";
-import { BUDDY_DURATION, buddyBox, buddyWalkMs, planBuddy, standPoint, type Box, type BuddyAction, type BuddyMood } from "../lib";
+import { BUDDY_DURATION, buddyBox, buddyWalkMs, figureBox, planBuddy, standPoint, type Box, type BuddyAction, type BuddyMood } from "../lib";
+import { pressableBoxes, spotClear } from "./buddySpace";
 
 const props = withDefaults(defineProps<{ mood: BuddyMood; size?: number }>(), { size: 76 });
 
@@ -125,14 +128,40 @@ function poke(card: HTMLElement): void {
   later(() => delete card.dataset.buddyPoke, 650);
 }
 
+/** What it leaves out of its looking: its walking layer and itself at home. */
+function itself(): (Element | null)[] {
+  return [layer.value, home.value];
+}
+
+/** Whether its drawing at `point` (in the page's coordinates) covers nothing one presses. */
+function clearAt(point: { x: number; y: number }, pressable: readonly Box[]): boolean {
+  const page = root();
+  if (!page) return false;
+  const base = box(page);
+  return spotClear(figureBox(point.x + base.left, point.y + base.top, props.size), itself(), pressable);
+}
+
+/** A clear place on a card's top edge (a few tries along it), or none. */
+function cardSpot(card: HTMLElement, sit: boolean): { x: number; y: number } | null {
+  const page = root();
+  if (!page) return null;
+  const pressable = pressableBoxes(itself());
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const point = standPoint(box(card), box(page), props.size, Math.random(), sit);
+    if (clearAt(point, pressable)) return point;
+  }
+  return null;
+}
+
 async function visit(card: HTMLElement): Promise<void> {
+  const sit = Math.random() < 0.35;
+  const spot = cardSpot(card, sit);
+  if (!spot) return; // a button above that card: it stays home
   const id = (trip += 1);
   travelling = true;
   await leaveHome();
-  const page = root();
-  if (!page) return void (travelling = false);
-  const sit = Math.random() < 0.35;
-  if (!(await walkTo(standPoint(box(card), box(page), props.size, Math.random(), sit), id))) return void (travelling = false);
+  if (!root()) return void (travelling = false);
+  if (!(await walkTo(spot, id))) return void (travelling = false);
   sitting.value = sit;
   const working = card.classList.contains("is-running");
   poke(card);
@@ -144,16 +173,27 @@ async function visit(card: HTMLElement): Promise<void> {
   await goHome(id);
 }
 
+/** A clear place along its strip (the strip's line may hold a button), or none. */
+function stripSpot(): { x: number; y: number } | null {
+  const page = root();
+  if (!strip.value || !page) return null;
+  const lane = box(strip.value);
+  const base = box(page);
+  const pressable = pressableBoxes(itself());
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const point = { x: Math.round(lane.left - base.left + 8 + Math.random() * Math.max(0, lane.width - props.size - 16)), y: homePoint().y };
+    if (clearAt(point, pressable)) return point;
+  }
+  return null;
+}
+
 async function stroll(): Promise<void> {
+  const spot = stripSpot();
+  if (!spot) return void act("look");
   const id = (trip += 1);
   travelling = true;
   await leaveHome();
-  const page = root();
-  if (!strip.value || !page) return void (travelling = false);
-  const lane = box(strip.value);
-  const base = box(page);
-  const x = Math.round(lane.left - base.left + 8 + Math.random() * Math.max(0, lane.width - props.size - 16));
-  if (!(await walkTo({ x, y: homePoint().y }, id))) return void (travelling = false);
+  if (!(await walkTo(spot, id))) return void (travelling = false);
   act((["wave", "hearts", "look", "dance"] as const)[Math.floor(Math.random() * 4)]!);
   await wait(1500);
   await goHome(id);

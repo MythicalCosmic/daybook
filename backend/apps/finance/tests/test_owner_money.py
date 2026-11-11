@@ -8,8 +8,6 @@ from decimal import Decimal
 import pytest
 
 from apps.companies.models import Branch
-from apps.console import registry
-from apps.console.registry import CompanyFactsProvider
 from apps.core.exceptions import DomainError
 from apps.finance import owner_draw, queries, recurring, services
 from apps.finance.models import Category, MoneyAccount, PlannedPurchase, Transaction
@@ -310,25 +308,11 @@ def test_planned_purchases_within_the_horizon_are_kept_back(ledger, boss, today)
         owner_draw.plan_purchase(ledger, by=boss, title=" ", amount="1000")
 
 
-def test_payroll_counts_payrolls_own_figure_for_the_next_pay_day(
-    ledger, boss, today, isolated_registries
-):
+def test_payroll_counts_payrolls_own_figure_for_the_next_pay_day(ledger, boss, today, payroll_pays):
     ledger.features = ["finance", "payroll"]
     ledger.save(update_fields=["features"])
     pay_day = today + timedelta(days=12)
-    registry.COMPANY_FACTS._entries.pop("payroll", None)
-    registry.COMPANY_FACTS.add(
-        CompanyFactsProvider(
-            "payroll",
-            None,
-            None,
-            None,
-            lambda company, range_, member: {
-                "next_run_on": pay_day.isoformat(),
-                "next_run_amount": "84000000.00",
-            },
-        )
-    )
+    payroll_pays(pay_day, "84000000.00")
 
     data = owner_draw.safe_amount(ledger, today)
 
@@ -439,26 +423,14 @@ def test_the_suggestion_keeps_90_days_above_the_buffer(fin, boss, bank, today):
     assert data["below_buffer_on"] is None
 
 
-def test_the_suggestion_counts_the_payroll_the_forecast_cant_see(
-    fin, boss, bank, today, isolated_registries
+def test_the_suggestion_counts_the_payroll_the_forecast_expects(
+    fin, boss, bank, today, payroll_pays
 ):
     fin.features = ["finance", "payroll"]
     fin.save(update_fields=["features"])
     opening(fin, boss, bank, "100000000", today - timedelta(days=1))
     owner_draw.update_settings(fin, by=boss, cash_buffer="10000000")
-    registry.COMPANY_FACTS._entries.pop("payroll", None)
-    registry.COMPANY_FACTS.add(
-        CompanyFactsProvider(
-            "payroll",
-            None,
-            None,
-            None,
-            lambda company, range_, member: {
-                "next_run_on": (today + timedelta(days=12)).isoformat(),
-                "next_run_amount": "20000000.00",
-            },
-        )
-    )
+    payroll_pays(today + timedelta(days=12), "20000000.00")
 
     data = owner_draw.suggested_monthly(fin, today)
 
