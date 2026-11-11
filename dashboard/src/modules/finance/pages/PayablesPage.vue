@@ -212,6 +212,7 @@ const groupBuckets = (group: PayableGroup) => bucketTotals(group.debts);
             </RouterLink>
             <p class="flex flex-wrap gap-x-3 text-xs text-muted">
               <span>{{ t("finance.overview.debtCount", { n: group.debts.length }, group.debts.length) }}</span>
+              <span v-if="group.counterparty.payment_terms" class="inline-flex items-center gap-1" :title="t('finance.parties.terms.label')" data-terms>{{ group.counterparty.payment_terms }}</span>
               <span v-if="!isZeroMoney(groupBuckets(group).overdue)" class="font-semibold text-danger">{{ t("finance.overview.overdue", { amount: fmt.money(groupBuckets(group).overdue, undefined, { compact: true }) }) }}</span>
               <span v-if="!isZeroMoney(groupBuckets(group).week)" class="text-warning">{{ t("finance.payables.thisWeek", { amount: fmt.money(groupBuckets(group).week, undefined, { compact: true }) }) }}</span>
             </p>

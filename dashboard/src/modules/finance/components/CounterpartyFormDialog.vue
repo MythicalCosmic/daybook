@@ -2,7 +2,9 @@
 /**
  * Add or edit a counterparty (the one party directory: customers, suppliers, the landlord, the
  * tax office): name, kind, phone (+998…), taxpayer number, contact, Telegram, address, bank
- * details for invoices, a default category, a credit limit, tags and notes.
+ * details for invoices, a default category, a credit limit, tags and notes. A supplier's payment
+ * terms (v12): goods and bills on credit are due N days after delivery, or on a day of the next
+ * month, so their due date fills itself in.
  */
 import { computed, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
@@ -12,6 +14,8 @@ import ComboBox from "@/components/ComboBox.vue";
 import FormField from "@/components/FormField.vue";
 import MoneyInput from "@/components/MoneyInput.vue";
 import MultiSelect from "@/components/MultiSelect.vue";
+import NumberInput from "@/components/NumberInput.vue";
+import SegmentedControl from "@/components/SegmentedControl.vue";
 import SelectBox from "@/components/SelectBox.vue";
 import TextArea from "@/components/TextArea.vue";
 import TextInput from "@/components/TextInput.vue";
@@ -50,6 +54,9 @@ const empty = () => ({
   default_category: null as number | null,
   credit_limit: null as string | null,
   credit_blocked: false,
+  terms: "none" as "none" | "days" | "day",
+  credit_days: null as number | null,
+  credit_day: null as number | null,
   tags: [] as string[],
   is_active: true,
 });
@@ -65,6 +72,7 @@ watch(
     for (const key of Object.keys(errors)) delete errors[key];
     // The tags are copied: the cached list is read-only, so a new tag pushed onto it was dropped.
     Object.assign(form, empty(), party ? { ...party, tags: [...party.tags], default_category: party.default_category?.id ?? null } : {});
+    form.terms = party?.credit_days ? "days" : party?.credit_day ? "day" : "none";
   },
   { immediate: true },
 );
@@ -72,6 +80,19 @@ watch(
 const kinds = computed(() => (["customer", "supplier", "both", "state", "other"] as const).map((kind) => ({ value: kind, label: t(`finance.partyKind.${kind}`) })));
 const categoryChoices = computed(() => categoryOptions(categories.data.value, null, { activeOnly: true }));
 const tagOptions = computed(() => form.tags.map((tag) => ({ value: tag, label: tag })));
+const buysFrom = computed(() => form.kind !== "customer");
+const termOptions = computed(() => [
+  { value: "none" as const, label: t("finance.parties.terms.none") },
+  { value: "days" as const, label: t("finance.parties.terms.days") },
+  { value: "day" as const, label: t("finance.parties.terms.day") },
+]);
+watch(
+  () => form.terms,
+  (terms) => {
+    if (terms === "days" && !form.credit_days) form.credit_days = 30;
+    if (terms === "day" && !form.credit_day) form.credit_day = 10;
+  },
+);
 
 async function save(): Promise<void> {
   for (const key of Object.keys(errors)) delete errors[key];
@@ -81,7 +102,13 @@ async function save(): Promise<void> {
   }
   saving.value = true;
   try {
-    const payload = { ...form, name: form.name.trim() };
+    const { terms, ...fields } = form;
+    const payload = {
+      ...fields,
+      name: form.name.trim(),
+      credit_days: terms === "days" ? form.credit_days : null,
+      credit_day: terms === "day" ? form.credit_day : null,
+    };
     const saved = editing.value ? await financeApi.updateCounterparty(company.currentId ?? 0, props.party!.id, payload) : await financeApi.createCounterparty(company.currentId ?? 0, payload);
     toast.success(editing.value ? t("finance.parties.saved") : t("finance.parties.created", { name: saved.name }));
     emit("saved", saved);
@@ -136,6 +163,13 @@ async function save(): Promise<void> {
           <MoneyInput v-model="form.credit_limit" />
         </FormField>
       </div>
+      <FormField v-if="buysFrom" :label="t('finance.parties.terms.label')" :hint="t('finance.parties.terms.hint')" :error="errors.credit_days || errors.credit_day" optional data-terms>
+        <div class="flex flex-wrap items-center gap-2">
+          <SegmentedControl v-model="form.terms" size="sm" :options="termOptions" />
+          <NumberInput v-if="form.terms === 'days'" v-model="form.credit_days" :min="1" :max="365" size="sm" class="w-32" :suffix="t('finance.parties.terms.daysSuffix')" :aria-label="t('finance.parties.terms.days')" />
+          <NumberInput v-if="form.terms === 'day'" v-model="form.credit_day" :min="1" :max="31" size="sm" class="w-28" :suffix="t('finance.parties.terms.daySuffix')" :aria-label="t('finance.parties.terms.day')" />
+        </div>
+      </FormField>
       <FormField :label="t('finance.parties.tags')" optional>
         <MultiSelect v-model="form.tags" :options="tagOptions" creatable :placeholder="t('finance.parties.tagsPlaceholder')" @create="(tag: string) => (form.tags = [...form.tags, tag])" />
       </FormField>

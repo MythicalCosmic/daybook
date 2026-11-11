@@ -4,6 +4,7 @@
  * dialog reachable from every page (`N`, the + in the top bar, palette commands). Package I adds
  * money planning: paying distributors, staff expense claims, the payments calendar with the cash
  * forecast, recurring bills with the tax calendar, budgets, and the tax regime in the settings.
+ * v12 adds loans (schedule, payments, early repayment) and the tax calendar with its deadlines.
  *
  * Kept tiny: pages, widgets, the dialog and the API load lazily.
  */
@@ -37,6 +38,9 @@ export default defineModule({
     { key: "transactions", title: "finance.nav.transactions", to: "finance/transactions", perm: [VIEW, RECORD] },
     { key: "debts", title: "finance.nav.debts", to: "finance/debts", perm: VIEW, badge: counter("finance.overdue") },
     { key: "payables", title: "finance.nav.payables", to: "finance/payables", perm: VIEW },
+    // v12: loans and the tax calendar.
+    { key: "loans", title: "finance.nav.loans", to: "finance/loans", perm: VIEW },
+    { key: "taxes", title: "finance.nav.taxes", to: "finance/taxes", perm: VIEW },
     { key: "claims", title: "finance.nav.claims", to: "finance/claims", perm: [APPROVE, VIEW], badge: counter("finance.claims") },
     { key: "calendar", title: "finance.nav.calendar", to: "finance/calendar", perm: VIEW },
     { key: "recurring", title: "finance.nav.recurring", to: "finance/recurring", perm: VIEW },
@@ -129,6 +133,35 @@ export default defineModule({
           },
         ]
       : []),
+    // v12: loans, the tax calendar and what is late to suppliers.
+    {
+      id: "finance.loans",
+      title: ctx.t("finance.cmd.loans"),
+      icon: Landmark,
+      keywords: ["kredit", "qarz", "кредит", "займ", "loan", "bank", "rassrochka"],
+      perm: VIEW,
+      run: () => ctx.go("finance/loans"),
+    },
+    {
+      id: "finance.taxes",
+      title: ctx.t("finance.cmd.taxes"),
+      icon: CalendarClock,
+      keywords: ["soliq", "налог", "QQS", "НДС", "VAT", "deklaratsiya", "декларация", "tax"],
+      perm: VIEW,
+      run: () => ctx.go("finance/taxes"),
+    },
+    ...(ctx.can(VIEW)
+      ? [
+          {
+            id: "finance.suppliers-overdue",
+            title: ctx.t("finance.cmd.suppliersOverdue"),
+            icon: Truck,
+            keywords: ["muddati o‘tgan", "просрочка", "поставщик", "distribyutor", "overdue"],
+            perm: VIEW,
+            run: () => ctx.go("finance/payables?bucket=overdue"),
+          },
+        ]
+      : []),
     {
       id: "finance.upcoming",
       title: ctx.t("finance.cmd.upcoming"),
@@ -202,6 +235,9 @@ export default defineModule({
     payables: () => "finance/payables",
     upcoming: () => "finance/calendar",
     budgets: () => "finance/budgets",
+    // v12: a loan's reminder ("loan_7"), the tax calendar.
+    loan: (id) => (/^\d+$/.test(id) ? `finance/loans/${id}` : "finance/loans"),
+    taxes: () => "finance/taxes",
   },
   messages: (language) => import(`./i18n/${language}.json`),
 });
