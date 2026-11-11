@@ -175,7 +175,15 @@ def test_the_demo(company, demo_people):
     # Yunusobod is counted on the story's stock-count Saturday, as the calendar says.
     counted = projects["INV"].milestones.get(name="Yunusobod sanaldi")
     assert counted.due_on == story.inventory_day()
-    assert opening.finance_transactions.filter(kind="expense").count() == 9
+    # The fit-out is an investment (a capital category) and the deposit is owed back: neither
+    # is a running cost, so the statement pack's earnings stay true.
+    assert opening.finance_transactions.filter(kind="expense").count() == 8
+    fit_out = opening.finance_transactions.filter(category__name="Yangi dorixona ta’miri")
+    assert fit_out.count() == 3 and all(row.category.is_capex for row in fit_out)
+    from apps.finance.models import Debt
+
+    deposit = Debt.objects.get(company=company, direction="receivable", amount=Decimal("18000000"))
+    assert deposit.counterparty.name == "Sergeli bino egasi"
     assert TimeEntry.objects.filter(company=company).count() > 20
     assert ProjectUpdate.objects.filter(project=opening).count() == 3
     assert opening.files.count() == 4 and opening.links.count() == 3

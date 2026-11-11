@@ -834,7 +834,7 @@ def _expenses(company, sergeli, gpp, diabetes, owner, *, today: date) -> None:
     """The owner puts money for the new pharmacy into the bank; the projects' expenses are
     booked on it."""
     from apps.finance import services as finance
-    from apps.finance.models import Category, MoneyAccount
+    from apps.finance.models import Category, Counterparty, MoneyAccount
 
     if not Category.objects.filter(company=company, system_code="repairs").exists():
         return  # the finance defaults aren't there (finance switched off in this demo)
@@ -861,15 +861,40 @@ def _expenses(company, sergeli, gpp, diabetes, owner, *, today: date) -> None:
         occurred_on=today - timedelta(days=50),
         description="Ta’sischi Sergeli dorixonasi va tadbirlar uchun mablag‘ kiritdi",
     )
+    # Opening a pharmacy is an investment, not a month's running cost: the landlord holds the
+    # deposit (owed back, a receivable) and the fit-out goes to a capital category, as equipment
+    # does, so the statement pack's earnings and the cockpit's profit stay true.
+    landlord = Counterparty.objects.filter(company=company, name="Sergeli bino egasi").first()
+    if landlord is None:
+        landlord = finance.create_counterparty(
+            company, by=owner, name="Sergeli bino egasi", kind=Counterparty.Kind.OTHER
+        )
+    finance.open_debt(
+        company,
+        by=owner,
+        direction="receivable",
+        kind="other",
+        amount=Decimal("18000000"),
+        currency=account.currency,
+        issued_on=today - timedelta(days=37),
+        counterparty=landlord,
+        account=account,
+        description="Sergeli: ijara depoziti, 2 oy (ijara tugaganda qaytariladi)",
+        project=sergeli,
+    )
+    fit_out = Category.objects.filter(company=company, name="Yangi dorixona ta’miri").first()
+    if fit_out is None:
+        fit_out = finance.create_category(
+            company, by=owner, name="Yangi dorixona ta’miri", kind="expense", is_capex=True
+        )
     rows = [
-        (sergeli, "other_expense", "18000000", -37, "Sergeli: ijara depoziti, 2 oy"),
-        (sergeli, "repairs", "19500000", -30, "Ta’mir pudratchisi: buzish va devorlar"),
-        (sergeli, "repairs", "12600000", -22, "Ta’mir pudratchisi: elektr va suvoq"),
+        (sergeli, fit_out, "19500000", -30, "Ta’mir pudratchisi: buzish va devorlar"),
+        (sergeli, fit_out, "12600000", -22, "Ta’mir pudratchisi: elektr va suvoq"),
         (sergeli, equipment, "21400000", -24, "Mebel ustaxonasi: dori shkaflari va javonlar"),
         (sergeli, equipment, "13900000", -11, "Farmatsevtik muzlatgich, +2…+8\u00a0°C"),
         (sergeli, equipment, "4600000", -17, "Kassa apparati va terminal"),
         (sergeli, "marketing", "5200000", -14, "Yashil xochli peshlavha"),
-        (sergeli, "repairs", "4800000", -8, "Pol plitkasi va yelim"),
+        (sergeli, fit_out, "4800000", -8, "Pol plitkasi va yelim"),
         (sergeli, licences, "3400000", -4, "Litsenziya arizasi: davlat boji"),
         (gpp, "other_expense", "1200000", -26, "Termometr va gigrometrlarni kalibrlash"),
         (gpp, equipment, "3800000", -15, "Harorat yozib boradigan qurilma (data logger)"),
