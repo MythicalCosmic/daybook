@@ -10,6 +10,7 @@ from apps.console import registry
 from apps.contracts import notify, providers, queries
 from apps.contracts.audit_actions import ContractsAction
 from apps.core.files import register_file_check
+from apps.exports.registry import register_exporter
 from apps.inbox.registry import register_action, register_kind
 from apps.insights import decisions, detectors, texts
 from apps.insights.models import Insight
@@ -55,6 +56,26 @@ register_action(notify.NOTICE_KIND, notify.KEEP, notify.keep)
 register_action(notify.NOTICE_KIND, notify.STOP, notify.stop)
 
 registry.register_search("contracts.contract", perm=READ, search=providers.search)
+registry.register_brief_section("contracts", perm=READ, order=66, build=providers.brief_section)
+registry.register_setup_step(
+    "contracts.add",
+    perm=MANAGE,
+    order=72,
+    label=_("Add your leases and contracts"),
+    description=_(
+        "The pharmacy leases and the main supplier and service contracts: the scans in one "
+        "place, the rent in the cash forecast, and a reminder before each one ends."
+    ),
+    url="contracts?new=1",
+    done=providers.setup_done,
+)
+register_exporter(
+    "contracts.register",
+    perm=READ,
+    label=_("Contracts register"),
+    columns=providers.REGISTER_COLUMNS,
+    rows=providers.register_rows,
+)
 registry.register_calendar_source(
     "contracts.dates",
     label=_("Contracts"),

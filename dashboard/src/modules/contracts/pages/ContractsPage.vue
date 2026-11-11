@@ -13,6 +13,7 @@ import { RouterLink, useRouter } from "vue-router";
 
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
+import ExportButton from "@/components/ExportButton.vue";
 import KpiStrip from "@/components/KpiStrip.vue";
 import MoneyText from "@/components/MoneyText.vue";
 import PageHeader from "@/components/PageHeader.vue";
@@ -143,6 +144,7 @@ function clear(): void {
   <div>
     <PageHeader :title="t('contracts.title')" :description="t('contracts.description')">
       <template #actions>
+        <ExportButton kind="contracts.register" />
         <UiButton v-if="canManage" variant="primary" :icon="FilePlus2" data-testid="contracts-new" @click="creating = true">{{ t("contracts.new") }}</UiButton>
       </template>
     </PageHeader>

@@ -16,6 +16,7 @@ from __future__ import annotations
 from datetime import date
 
 from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy as _lazy
 from django.utils.translation import ngettext
 
 from apps.console.perms import AllOf, holds
@@ -205,6 +206,104 @@ def decision_items(member: Membership, limit: int) -> list[QueueItem]:
             )
         )
     return items
+
+
+# The briefing and Get started -------------------------------------------------------------------
+
+BRIEF_LINES = 3
+
+
+def brief_section(company, day: date, now, branch_ids: list[int] | None) -> dict | None:
+    """What the contracts need soon: those ending within the warning days and the renewals to
+    decide before their notice deadline, soonest first. Nothing when all is well."""
+    found = queries.attention(company, branch_ids=branch_ids, today=day)
+    if not found:
+        return None
+    settings = conf.get_settings(company)
+    lines = []
+    for contract in found[:BRIEF_LINES]:
+        name = _name(contract)
+        if services.notice_due(contract, day, settings.notice_remind_days):
+            text = _("%(contract)s: notice deadline %(day)s") % {
+                "contract": name,
+                "day": contract.notice_deadline.strftime("%d.%m.%Y"),
+            }
+        else:
+            text = _("%(contract)s ends %(day)s") % {
+                "contract": name,
+                "day": contract.ends_on.strftime("%d.%m.%Y"),
+            }
+        lines.append(text)
+    rest = len(found) - BRIEF_LINES
+    if rest > 0:
+        lines.append(
+            ngettext("And %(count)d more contract", "And %(count)d more contracts", rest)
+            % {"count": rest}
+        )
+    return {"title": _("Contracts"), "lines": lines}
+
+
+def setup_done(company) -> bool:
+    return BusinessContract.objects.for_company(company).exists()
+
+
+# The export -------------------------------------------------------------------------------------
+
+REGISTER_COLUMNS = (
+    ("title", _lazy("Contract")),
+    ("kind", _lazy("Kind")),
+    ("counterparty", _lazy("Party")),
+    ("number", _lazy("Number")),
+    ("branch", _lazy("Branch")),
+    ("status", _lazy("Status")),
+    ("signed_on", _lazy("Signed"), "date"),
+    ("starts_on", _lazy("Starts"), "date"),
+    ("ends_on", _lazy("Ends"), "date"),
+    ("auto_renews", _lazy("Renews by itself"), "bool"),
+    ("notice_deadline", _lazy("Notice deadline"), "date"),
+    ("amount", _lazy("Amount"), "money"),
+    ("currency", _lazy("Currency")),
+    ("period", _lazy("Paid")),
+    ("per_month", _lazy("A month"), "money"),
+    ("in_forecast", _lazy("In the cash forecast"), "bool"),
+    ("responsible", _lazy("Looks after it")),
+    ("files", _lazy("Files"), "number"),
+    ("notes", _lazy("Notes")),
+)
+
+
+def register_rows(member: Membership, params: dict):
+    """Every contract in the caller's branch scope, soonest end first."""
+    from django.db.models import Count
+
+    rows = (
+        queries.visible(member)
+        .select_related("branch", "counterparty", "responsible")
+        .annotate(file_count=Count("files"))
+        .order_by("ends_on", "title", "pk")
+    )
+    for contract in rows:
+        yield {
+            "title": contract.title,
+            "kind": contract.get_kind_display(),
+            "counterparty": contract.counterparty.name if contract.counterparty_id else "",
+            "number": contract.number,
+            "branch": contract.branch.name if contract.branch_id else "",
+            "status": contract.get_status_display(),
+            "signed_on": contract.signed_on,
+            "starts_on": contract.starts_on,
+            "ends_on": contract.ends_on,
+            "auto_renews": contract.auto_renews,
+            "notice_deadline": contract.notice_deadline,
+            "amount": contract.amount,
+            "currency": contract.currency,
+            "period": contract.get_period_display(),
+            "per_month": queries.per_month(contract),
+            "in_forecast": contract.in_forecast,
+            "responsible": str(contract.responsible) if contract.responsible_id else "",
+            "files": contract.file_count,
+            "notes": contract.notes,
+        }
 
 
 # The insight ------------------------------------------------------------------------------------
