@@ -147,7 +147,7 @@ class LoansView(LoanMixin, OwnerAPIView):
     perm = VIEW
     perms_by_action = {"post": VIEW_AND_RECORD}
 
-    @extend_schema(responses=out.LoanListSerializer)
+    @extend_schema(operation_id="finance_loans_list", responses=out.LoanListSerializer)
     def get(self, request, company_id):
         today = self.today
         value = queries.valuation(self.company, today)

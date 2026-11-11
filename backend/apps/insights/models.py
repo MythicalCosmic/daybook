@@ -71,6 +71,7 @@ class Insight(TenantModel):
         OVERDUE_PAYABLES = "overdue_payables", _("Overdue bills to suppliers piling up")
         STOCK_BUILD = "stock_build", _("Stock growing while sales fall")
         STAFF_COST = "staff_cost", _("Staff cost share rising")
+        LOAN_OVERDUE = "loan_overdue", _("A loan payment overdue")
 
     class Domain(models.TextChoices):
         TASKS = "tasks", _("Tasks")

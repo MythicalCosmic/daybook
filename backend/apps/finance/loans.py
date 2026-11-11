@@ -67,6 +67,7 @@ INTEREST_CODE = {
     Debt.Direction.RECEIVABLE: "interest_income",
 }
 OVERDUE_EVERY = 7  # days between reminders of the same overdue payment
+LINE_STATUSES = ("paid", "partial", "due", "overdue")  # of a payment in the schedule
 PAID = "paid"
 NOTIFICATION = "finance.loan_due"
 
@@ -116,11 +117,11 @@ def plan(
 
 def preview(**terms) -> dict:
     """What a loan's schedule would be, without saving anything (the form's live preview)."""
+    fee = Decimal(terms.pop("fee", 0) or 0)
     rows = plan(**terms)
     amount = Decimal(terms["amount"])
     left = loan_math.balances(rows, amount)
     sums = loan_math.totals(rows)
-    fee = Decimal(terms.get("fee") or 0)
     return {
         "rows": [
             {

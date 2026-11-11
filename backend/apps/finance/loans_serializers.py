@@ -4,7 +4,7 @@ string in the loan's currency (or the base currency where it says so)."""
 from rest_framework import serializers
 
 from apps.core.money import Currency, MoneySerializerField
-from apps.finance import loan_math
+from apps.finance import loan_math, loans, taxes
 from apps.finance.models import Debt, Loan, TaxMark
 from apps.finance.owner_serializers import (
     FinanceAccountRefSerializer,
@@ -29,7 +29,7 @@ class LoanLineSerializer(serializers.Serializer):
     interest_paid = money_out()
     rest = money_out(help_text="What is still to pay of it, principal and interest.")
     balance = money_out(help_text="The principal still owed after it.")
-    status = serializers.ChoiceField(["paid", "partial", "due", "overdue"])
+    status = serializers.ChoiceField(loans.LINE_STATUSES)
     early = serializers.BooleanField()
 
     class Meta:
@@ -250,7 +250,7 @@ class TaxDeadlineSerializer(serializers.Serializer):
     basis = serializers.CharField(help_text="How the estimate is worked out.")
     booked = serializers.BooleanField(help_text="The amount is a booked tax debt.")
     currency = serializers.CharField()
-    status = serializers.ChoiceField(["due", "overdue", "done"])
+    status = serializers.ChoiceField(taxes.DEADLINE_STATUSES)
     done_on = serializers.DateField(allow_null=True)
     mark_id = serializers.IntegerField(allow_null=True)
     paid = money_out(allow_null=True)

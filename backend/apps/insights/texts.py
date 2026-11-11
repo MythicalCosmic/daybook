@@ -235,6 +235,27 @@ def _overdue_payables(metrics: dict, branch: str, subject: str) -> Texts:
     return Texts(title, explanation, action)
 
 
+def _loan_overdue(metrics: dict, branch: str, subject: str) -> Texts:
+    values = {
+        "amount": _money(metrics, "value"),
+        "count": metrics.get("count") or 0,
+        "days": metrics.get("oldest_days") or 0,
+        "parties": _parties(metrics),
+    }
+    title = _("Loan payments overdue: %(amount)s") % values
+    explanation = (
+        ngettext(
+            "Overdue loan payments: %(count)s, the oldest %(days)s day late. Lenders: %(parties)s.",
+            "Overdue loan payments: %(count)s, the oldest %(days)s days late. Lenders: "
+            "%(parties)s.",
+            values["days"],
+        )
+        % values
+    )
+    action = _("Pay them now: a bank charges penalty interest, and lateness stays on record.")
+    return Texts(title, explanation, action)
+
+
 def _stock_build(metrics: dict, branch: str, subject: str) -> Texts:
     values = {
         "branch": branch,
@@ -288,4 +309,5 @@ WRITERS = {
     Kind.OVERDUE_PAYABLES: _overdue_payables,
     Kind.STOCK_BUILD: _stock_build,
     Kind.STAFF_COST: _staff_cost,
+    Kind.LOAN_OVERDUE: _loan_overdue,
 }

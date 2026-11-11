@@ -60,6 +60,7 @@ HUNDRED = Decimal(100)
 SOURCE = "finance.tax"  # a payment recorded from the calendar: id = TaxMark.pk
 NOTIFICATION = "finance.tax_due"
 WARNING = gettext_lazy("Check with your accountant.")
+DEADLINE_STATUSES = ("due", "overdue", "done")
 # The recurring tax bills of the tax calendar templates (`tax_calendar`) by the rule they stand for.
 TEMPLATE_RULES = {
     "tax.vat": "vat",

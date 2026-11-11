@@ -360,3 +360,23 @@ def test_paid_from_the_reminder(books, owner, loan, money):
     loan.debt.refresh_from_db()
     assert loan.debt.paid == D(1_000_000)
     assert loans.paid_action(note, owner, "") == "Already paid."
+
+
+def test_egasi_paneli_hears_of_a_late_payment(books, owner, loan):
+    from apps.insights import engine
+    from apps.insights.models import Insight
+
+    books.features = ["finance"]
+    books.save(update_fields=["features"])
+    late = datetime.combine(date(2026, 2, 15), time(12), tzinfo=ZoneInfo(books.timezone))
+    engine.run(books, late, notify=False)
+    insight = Insight.objects.get(company=books, kind=Insight.Kind.LOAN_OVERDUE)
+    assert insight.severity == Insight.Severity.WARNING
+    assert insight.metrics["value"] == "1240000.00" and insight.metrics["oldest_days"] == 5
+    assert "Ipoteka bank" in insight.explanation
+    # Paid: the next run resolves it.
+    first = loan.debt.installments.order_by("due_on").first()
+    loans.pay(first, by=owner, account=loan.account, paid_on=date(2026, 2, 15))
+    engine.run(books, late, notify=False)
+    insight.refresh_from_db()
+    assert insight.status == Insight.Status.RESOLVED
