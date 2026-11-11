@@ -8,7 +8,9 @@ which everything Face ID sends to Telegram goes through it (`route`, registered 
 * the branch groups' arrival posts, when the bot was added to the group (otherwise the employee
   bot posts them, as before).
 
-Without a connected bot nothing changes: the shared bots send as before. Telegram lets a bot
+Without a connected bot nothing changes: the shared bots send as before. The Davomat edition
+has one bot, the organization's own (docs/DAVOMAT.md §1.5): there this route never applies, so
+the scan messages always reach whoever linked their Telegram to it. Telegram lets a bot
 write only to people who pressed Start in it: a 403 is recorded on `FaceBotChat` and nothing
 more is sent to that person until they press Start (no retries). The `faceid_bot` command polls
 every connected bot (`poll_once`) to answer /start and mark the person as started; it reads the
@@ -31,6 +33,7 @@ from aiogram.exceptions import (
     TelegramForbiddenError,
     TelegramUnauthorizedError,
 )
+from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.utils import timezone, translation
 from django.utils.translation import gettext as _
@@ -70,7 +73,10 @@ def connected(row: FaceIdSettings) -> bool:
 
 
 def has_bot(company_id: int) -> bool:
-    """Whether the company's Face ID bot is connected and working."""
+    """Whether the company's Face ID bot is connected and working (never in Davomat, whose
+    one bot sends everything)."""
+    if settings.EDITION == "davomat":
+        return False
     return (
         FaceIdSettings.objects.filter(company_id=company_id, bot_status=Status.OK)
         .exclude(bot_token="")
@@ -270,7 +276,10 @@ def route(
     group: bool = False,
 ) -> Routed | None:
     """Send through the company's Face ID bot when it has one; None (the shared bot sends, as
-    before) when it hasn't, when its token stopped working, or for a group it isn't in."""
+    before) when it hasn't, when its token stopped working, or for a group it isn't in. Always
+    None in Davomat: the organization's one bot sends, to everyone linked to it."""
+    if settings.EDITION == "davomat":
+        return None
     row = (
         FaceIdSettings.objects.filter(company_id=company_id)
         .only("company_id", "bot_token", "bot_username", "bot_status")
