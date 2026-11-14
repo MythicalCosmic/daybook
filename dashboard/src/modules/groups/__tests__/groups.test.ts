@@ -30,7 +30,7 @@ class NoResize {
   disconnect(): void {}
 }
 
-function stub(routes: Record<string, (call: Call) => Response>): Call[] {
+function stub(routes: Record<string, (call: Call) => Response | Promise<Response>>): Call[] {
   const calls: Call[] = [];
   vi.stubGlobal("ResizeObserver", NoResize);
   vi.stubGlobal(
