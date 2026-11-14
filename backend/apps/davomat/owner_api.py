@@ -33,6 +33,7 @@ from aiogram.exceptions import (
     TelegramUnauthorizedError,
 )
 from django.conf import settings
+from django.db import transaction
 from django.db.models import Q
 from django.http import Http404, HttpResponse
 from django.utils import timezone
@@ -66,6 +67,8 @@ from apps.members import scope
 from apps.members.models import AccessRole, Department, Membership, Position
 from apps.members.permissions import Perm
 from apps.notifications import telegram as bots
+from apps.notifications.telegram import BotName
+from apps.signin import notices
 from apps.signin import services as signin
 from apps.signin.auth import FromDashboard, OwnerJWTAuthentication
 from apps.signin.tokens import SESSION_CLAIM
@@ -321,7 +324,14 @@ class PasswordLoginView(PublicCookieView):
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
-        return signin.session_response(user, request)
+        issued = signin.issue_session(user, request)
+        response = Response({"access": issued.access})
+        signin.set_refresh_cookie(response, issued.refresh)
+        # Like a sign-in through Telegram: "Signed in on Chrome… Not you? Log out everywhere"
+        # (to whoever has Telegram linked; nothing is sent otherwise).
+        session = issued.session
+        transaction.on_commit(lambda: notices.signed_in(session, bot=BotName.OWNER))
+        return response
 
 
 class PasswordChangeView(APIView):

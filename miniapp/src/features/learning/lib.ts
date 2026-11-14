@@ -4,7 +4,7 @@
  */
 import { hasModule, isSuspended } from "../../api/membership";
 import type { Membership } from "../../api/types";
-import { clock, dayKey, dayMonth, daysFromToday, weekdayLong } from "../../lib/time";
+import { clock, dayMonth, daysFromToday, weekdayLong } from "../../lib/time";
 import type { LearningT } from "./text";
 import type { Answer, AssignmentCard, CourseDetail, CourseStep, QuestionPlay } from "./types";
 
@@ -119,9 +119,6 @@ export function dueText(card: Pick<AssignmentCard, "due_at" | "late">, now: Date
 
 /** Whether a moment is still ahead. */
 export const isAhead = (moment: string | null | undefined, now: Date) => Boolean(moment && Date.parse(moment) > now.getTime());
-
-/** The same calendar day in the company's zone. */
-export const sameDay = (a: string | Date, b: string | Date, timeZone: string) => dayKey(a, timeZone) === dayKey(b, timeZone);
 
 /** "4:05" or "1:02:05" for a countdown. */
 export function countdown(seconds: number): string {

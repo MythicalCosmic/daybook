@@ -102,13 +102,6 @@ def _remove(name: str) -> None:
         logger.warning("Couldn't delete the learning file %s", name, exc_info=True)
 
 
-def remove_files(video: Video) -> None:
-    """The video's stored files: the pieces, the MP4 and the poster."""
-    _remove(part_name(video))
-    _remove(video.file.name if video.file else "")
-    _remove(video.poster.name if video.poster else "")
-
-
 # Storage limit --------------------------------------------------------------------------
 
 
@@ -127,10 +120,6 @@ def used_bytes(company) -> int:
         or 0
     )
     return kept + pending
-
-
-def limit_bytes(company) -> int:
-    return conf.get_settings(company).storage_limit_mb * 1024 * 1024
 
 
 def _megabytes(size: int) -> str:

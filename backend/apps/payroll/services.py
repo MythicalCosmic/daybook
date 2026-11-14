@@ -244,6 +244,8 @@ SETTINGS_FIELDS = (
     "auto_prepare",
     "leave_payout_months",
     "leave_payout_unit",
+    "early_finalize",
+    "roster_partial_month",
 )
 
 
@@ -712,9 +714,15 @@ def _lock_adjustment(row: Adjustment) -> Adjustment:
     )
 
 
-def _unlocked(row: Adjustment) -> None:
+def _unlocked(row: Adjustment, *, taking_back: bool = False) -> None:
+    """`row` may still change. `taking_back` (a reject or a void): a proposal nobody decided is
+    on no payslip, so taking it back changes nothing in a finalized month, and it must stay
+    possible there: a paid month can't be reopened, and the row would wait for ever."""
     if row.is_locked:
         raise DomainError(_("This is on a finalized payslip, so it can't change."))
+    if taking_back and row.status == AdjustmentStatus.PROPOSED:
+        _lock_month(row.company, row.period)  # in line behind a finalize in progress, as ever
+        return
     _check_period_open(row.company, row.period)
 
 
@@ -877,7 +885,7 @@ def reject(row: Adjustment, *, by: Membership | None, reason: str) -> Adjustment
     _require(by, Perm.PAYROLL_MANAGE)
     row = _lock_adjustment(row)
     _not_own_adjustment(by, row)
-    _unlocked(row)
+    _unlocked(row, taking_back=True)
     if row.status != AdjustmentStatus.PROPOSED:
         raise DomainError(_("This was already decided."))
     row.status = AdjustmentStatus.REJECTED
@@ -903,7 +911,7 @@ def void(row: Adjustment, *, by: Membership | None, reason: str) -> Adjustment:
     _require(by, Perm.PAYROLL_MANAGE)
     row = _lock_adjustment(row)
     _not_own_adjustment(by, row)
-    _unlocked(row)
+    _unlocked(row, taking_back=True)
     if row.status not in (AdjustmentStatus.PROPOSED, AdjustmentStatus.APPROVED):
         raise DomainError(_("Only a proposed or approved one can be voided."))
     row.status = AdjustmentStatus.VOID
@@ -967,7 +975,7 @@ def answer_dispute(
     fields = ["dispute_answer", "dispute_answered_at", "dispute_answered_by", "updated_at"]
     if void_it:
         _not_own_adjustment(by, row)
-        _unlocked(row)
+        _unlocked(row, taking_back=True)
         if row.status not in (AdjustmentStatus.PROPOSED, AdjustmentStatus.APPROVED):
             raise DomainError(_("Only a proposed or approved one can be voided."))
         row.status = AdjustmentStatus.VOID
@@ -1198,6 +1206,8 @@ def pay_advance(
     company = row.company
     if row.status != AdvanceStatus.APPROVED:
         raise DomainError(_("Only an approved advance can be paid."))
+    # Approved while they worked here, paid after they left: no payslip would ever take it back.
+    _check_member(company, row.membership)
     _same_company(company, account)
     if method not in PayoutMethod.values:
         raise DomainError(_("Pick how it was paid."))

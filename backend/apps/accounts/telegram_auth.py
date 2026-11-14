@@ -37,7 +37,7 @@ def validate_init_data(
     try:
         # Checks the HMAC that Telegram computed with that bot's token.
         data = safe_parse_webapp_init_data(token, init_data)
-    except ValueError as exc:
+    except (ValueError, TypeError) as exc:  # TypeError: a hash with letters outside ASCII
         raise InvalidInitData("Invalid init data.") from exc
     if data.user is None:
         raise InvalidInitData("Init data has no user.")

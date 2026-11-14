@@ -22,7 +22,9 @@ from apps.members.models import Membership
 
 
 class TelegramAuthSerializer(serializers.Serializer):
-    init_data = serializers.CharField(help_text="Telegram.WebApp.initData, exactly as received.")
+    init_data = serializers.CharField(
+        max_length=4096, help_text="Telegram.WebApp.initData, exactly as received."
+    )
 
 
 class AccessTokenSerializer(serializers.Serializer):

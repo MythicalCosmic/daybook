@@ -277,7 +277,7 @@ def visible(viewer: Membership, *, state: str | None = OPEN):
     """The suggestions `viewer` may see: about the people they see; company-wide ones only
     with every branch in sight."""
     rows = TutorSuggestion.objects.filter(company_id=viewer.company_id).select_related(
-        "membership__user", "topic", "course", "lesson"
+        "membership__user", "membership__position", "topic", "course", "lesson"
     )
     if state:
         rows = rows.filter(state=state)

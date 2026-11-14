@@ -1013,11 +1013,26 @@ def _hash(code: str) -> str:
     return hashlib.sha256(code.encode()).hexdigest()
 
 
+def _ensure_may_link(by: Membership | None, membership: Membership) -> None:
+    """Whoever opens someone's link is that person in the bot from then on (their branches, their
+    reports, their buttons). So for someone else's Telegram: only an owner for an owner, and for
+    anyone who signs in to the web app only someone who could give them their role."""
+    if by is None or by.pk == membership.pk:
+        return
+    _ensure_may_touch(by, membership)
+    role = membership.role
+    if role is None or not queries.is_user(membership):
+        return
+    if not members.may_assign_role(by, role, target=membership):
+        raise PermissionDenied(_("You don't have permission to do this."))
+
+
 @transaction.atomic
 def make_link(membership: Membership, *, by: Membership | None) -> NewLink:
     """A one-time link (24 hours) that links whoever opens it in the bot to `membership`; it
     replaces any earlier link of theirs that is still unused."""
     company = membership.company
+    _ensure_may_link(by, membership)
     row = conf.get_settings(company)
     if not row.bot_username:
         raise DomainError(_("Connect the Telegram bot first (Settings, Telegram)."))
@@ -1127,6 +1142,7 @@ def _free_telegram(telegram_id: int, *, keep: int, company_id: int) -> None:
 @transaction.atomic
 def unlink_telegram(membership: Membership, *, by: Membership | None) -> Membership:
     """Their Telegram is no longer linked (and their unused links stop working)."""
+    _ensure_may_link(by, membership)
     user = User.objects.select_for_update().get(pk=membership.user_id)
     now = timezone.now()
     TelegramLink.objects.filter(

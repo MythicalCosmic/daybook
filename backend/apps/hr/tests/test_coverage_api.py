@@ -97,6 +97,23 @@ def test_the_week_of_each_pharmacy(shop, rota, owner_api, chilonzor, yunusobod):
     assert "SRT-445566" not in response.content.decode()
 
 
+def test_the_plan_does_not_grow_with_its_shifts(
+    shop, rota, owner_api, chilonzor, django_assert_max_num_queries
+):
+    client = owner_api(rota.owner)
+    week = {"from": DAY.isoformat(), "to": (DAY + timedelta(days=6)).isoformat()}
+    assert get(client, shop, **week).status_code == 200  # makes the settings rows
+    with django_assert_max_num_queries(80) as few:
+        get(client, shop, **week)
+    for offset in range(1, 6):
+        for person in (rota.ali, rota.vali):
+            shift_at(person, DAY + timedelta(days=offset), time(8), time(17), branch=chilonzor)
+    # Every cover names the person and their job title: read with the shifts, not one by one.
+    with django_assert_max_num_queries(len(few.captured_queries)):
+        plan = get(client, shop, **week).json()
+    assert sum(len(day["shifts"]) for row in plan["branches"] for day in row["days"]) == 13
+
+
 def test_a_week_from_today_by_default_and_62_days_at_most(shop, rota, owner_api):
     client = owner_api(rota.owner)
     body = get(client, shop).json()

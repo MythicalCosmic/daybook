@@ -112,6 +112,7 @@ class SettingsSerializer(serializers.Serializer):
     price_rounding = Money(min_value=0, max_value=1_000_000)
     price_jump_percent = Percent(min_value=0, max_value=500)
     writeoff_approval = serializers.BooleanField()
+    allow_zero_cost = serializers.BooleanField(required=False)
     show_other_branches = serializers.BooleanField()
     camera_scanning = serializers.BooleanField()
     rx_log = serializers.BooleanField()

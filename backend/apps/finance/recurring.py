@@ -35,7 +35,7 @@ from django.utils.translation import gettext as _
 
 from apps.core.exceptions import DomainError
 from apps.core.money import quantize
-from apps.finance import conf, services
+from apps.finance import services
 from apps.finance.audit_actions import FinanceAction
 from apps.finance.models import (
     Category,
@@ -673,7 +673,3 @@ def tax_office(company, *, by: Membership | None) -> Counterparty:
     if by is None:
         raise DomainError(_("Add the tax office to the counterparties first."))
     return services.create_counterparty(company, by=by, name=name, kind=Counterparty.Kind.STATE)
-
-
-def settings_for(company):
-    return conf.get_settings(company)

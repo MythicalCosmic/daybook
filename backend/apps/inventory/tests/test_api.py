@@ -91,6 +91,41 @@ def test_branch_scope(shop, head, owner_api, stocked, chilonzor, yunusobod):
     assert [row["branch"]["id"] for row in receipts] == [chilonzor.pk]
 
 
+def test_a_transfer_is_called_back_and_settled_by_the_side_whose_books_change(
+    shop, owner, head, owner_api, chilonzor, yunusobod, product
+):
+    """The head manages Chilonzor only. A transfer coming to Chilonzor is the sender's to call
+    back, and what went missing on the way is the sender's loss to write off: not theirs."""
+    client = owner_api(head)
+
+    def transfer(source, target, series):
+        batch = opening(source, product, series, expires_on=date(2027, 6, 30), quantity=10)
+        row = services.create_transfer(
+            shop,
+            by=owner,
+            from_branch=source,
+            to_branch=target,
+            lines=[{"product": product, "batch": batch, "quantity": D(6)}],
+        )
+        return services.send_transfer(row, by=owner)
+
+    coming = transfer(yunusobod, chilonzor, "Y1")
+    url = f"{base(shop)}/transfers/{coming.pk}"
+    assert client.post(f"{url}/void/", {"reason": "Not needed"}).status_code == 404
+    coming.refresh_from_db()
+    assert coming.status == StockTransfer.Status.SENT
+    [line_] = coming.lines.all()
+    services.receive_transfer(coming, by=head, received={line_.pk: D(4)})  # two parts short
+    assert client.post(f"{url}/resolve/", {"outcome": "shortage"}).status_code == 404
+    assert client.post(f"{url}/resolve/", {"outcome": "returned"}).status_code == 404
+    found = client.post(f"{url}/resolve/", {"outcome": "found"})  # on their own shelves
+    assert found.status_code == 200, found.content
+    # Their own transfer out, they may call back.
+    going = transfer(chilonzor, yunusobod, "C1")
+    called = client.post(f"{base(shop)}/transfers/{going.pk}/void/", {"reason": "Wrong box"})
+    assert called.status_code == 200 and called.json()["transfer"]["status"] == "void"
+
+
 def test_while_the_module_is_off(shop, owner, owner_api, api_as, ali):
     shop.features = ["finance"]
     shop.save(update_fields=["features"])

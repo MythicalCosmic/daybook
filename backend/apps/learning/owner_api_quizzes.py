@@ -524,10 +524,10 @@ class CheckViewSet(
     def rounds(self, request, company_id, pk):
         check = self.get_object()
         rows = CheckRound.objects.filter(regular_check=check).order_by("-starts_at")[:52]
-        scope = self.branch_scope
         return Response(
             s.LearningRoundSerializer(
-                [quiz_queries.round_row(row, branch_ids=scope) for row in rows], many=True
+                quiz_queries.round_rows(self.company, rows, branch_ids=self.branch_scope),
+                many=True,
             ).data
         )
 

@@ -148,10 +148,6 @@ def held_assets_for(company, member_ids) -> dict[int, dict[int, str]]:
     return found
 
 
-def open_task_count(membership) -> int:
-    return open_task_counts(membership.company, [membership.pk]).get(membership.pk, 0)
-
-
 def open_task_counts(company, member_ids) -> dict[int, int]:
     """{member id: tasks given to them that are still to do}: routine tasks are left out (they
     are made again for whoever works the day), and so is work waiting for a check."""

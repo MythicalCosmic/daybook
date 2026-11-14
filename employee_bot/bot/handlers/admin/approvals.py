@@ -136,6 +136,10 @@ def _step(user: User, data: JoinSetup) -> Answer:
     if membership is None:
         return Answer(_("This request no longer exists."))
     if data.step == JoinStep.BACK:
+        # The card names the person (phone, Telegram): only for someone who approves here now.
+        # A request already decided still shows, with who decided it.
+        if not services.can(user, membership.company, Perm.MEMBERS_APPROVE):
+            return Answer(_("You don't have permission to do this."))
         return Answer(message=_original(membership, data.nid, user))
     problem = _problem(user, membership)
     if problem is not None:

@@ -82,11 +82,6 @@ export function allGaps(branches: readonly CoverageBranch[]): Array<CoverageGap 
     .sort((a, b) => Date.parse(a.start) - Date.parse(b.start) || a.branchName.localeCompare(b.branchName));
 }
 
-/** The day (company-local "YYYY-MM-DD") an instant from the API starts on: its own date part. */
-export function dayOfInstant(iso: string): string {
-  return iso.slice(0, 10);
-}
-
 const DIPLOMAS: readonly DocumentKind[] = ["diploma", "pharmacy_diploma", "medical_diploma"];
 
 /** The levels a kind of document takes (a diploma's or a qualification category's); none for the rest. */

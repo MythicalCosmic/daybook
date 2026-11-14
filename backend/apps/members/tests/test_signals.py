@@ -196,6 +196,28 @@ def test_time_off_is_cancelled_row_by_row_so_balances_hear_about_it(
     assert past.status == TimeOff.Status.APPROVED
 
 
+def test_time_off_in_progress_is_kept_through_the_last_day(
+    company, owner, worker, heard, django_capture_on_commit_callbacks
+):
+    """Only the rest of it is taken back: cancelled whole, the days already taken would be
+    missing from the final payslip of someone paid by the day."""
+    day = today(company)
+    started = time_off(worker, day - timedelta(days=3), day + timedelta(days=2))
+
+    with django_capture_on_commit_callbacks(execute=True):
+        services.offboard(worker, by=owner.user, terminated_on=day - timedelta(days=1))
+
+    started.refresh_from_db()
+    assert started.status == TimeOff.Status.APPROVED
+    assert (started.first_day, started.last_day) == (
+        day - timedelta(days=3),
+        day - timedelta(days=1),
+    )
+    assert [call for call in heard if call[0] == "time_off_cancelled"] == [
+        ("time_off_cancelled", started.pk, TimeOff.Status.APPROVED, owner)
+    ]
+
+
 def test_nothing_is_announced_when_the_change_rolls_back(
     company, owner, worker, heard, django_capture_on_commit_callbacks
 ):

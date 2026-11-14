@@ -292,5 +292,3 @@ export function useRecorder(options: RecorderOptions) {
 
   return { state, seconds, level, levels, blob, hitLimit, start, stop, cancel, reset: cancel };
 }
-
-export type Recorder = ReturnType<typeof useRecorder>;

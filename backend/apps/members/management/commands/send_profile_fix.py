@@ -1,9 +1,15 @@
 """Create the branches Asosiy and G‘alaba and ask everyone in the employee bot to pick their
-branch, department and job title again (apps.members.profile_fix)."""
+branch, department and job title again (apps.members.profile_fix).
+
+The survey takes answers for `--days` days from now (14 by default; run it again to send
+again and to keep it open longer), then the buttons of its messages say it is over.
+`--close` ends it at once and sends nothing."""
 
 import time
+from datetime import timedelta
 
 from django.core.management.base import BaseCommand
+from django.utils import timezone
 
 from apps.companies.models import Company
 from apps.members import profile_fix
@@ -17,9 +23,19 @@ class Command(BaseCommand):
         parser.add_argument("--company", type=int, required=True)
         parser.add_argument("--dry-run", action="store_true")
         parser.add_argument("--only", type=int, help="Send to this Telegram id only (a test).")
+        parser.add_argument("--days", type=int, default=14, help="How long answers are taken.")
+        parser.add_argument("--close", action="store_true", help="End the survey now.")
 
-    def handle(self, *args, company, dry_run, only, **options):
+    def handle(self, *args, company, dry_run, only, days, close, **options):
         company = Company.objects.get(pk=company)
+        if close:
+            Company.objects.filter(pk=company.pk).update(profile_fix_until=None)
+            self.stdout.write("the survey is closed")
+            return
+        if not dry_run:
+            until = timezone.now() + timedelta(days=max(days, 1))
+            Company.objects.filter(pk=company.pk).update(profile_fix_until=until)
+            self.stdout.write(f"answers are taken until {until:%Y-%m-%d %H:%M} UTC")
         branches = profile_fix.ensure_branches(company)
         self.stdout.write(f"branches: {[b.name for b in branches]}")
         markup = serialize_markup(profile_fix.branch_keyboard(company))

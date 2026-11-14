@@ -188,6 +188,27 @@ def test_a_revoked_token_marks_the_bot(org, owner_api, connected, monkeypatch):
 # Link codes --------------------------------------------------------------------------------
 
 
+def test_nobody_links_the_telegram_of_someone_above_them(org, owner_api, connected):
+    """Whoever opens a link becomes that person in the bot: a manager can't make one for an
+    administrator who also scans in their branch, nor an administrator for the owner."""
+    manager = org.user("manager", "bekzod")
+    admin = org.user("admin", "aziza")
+    services.update_user(admin, by=org.owner, is_employee=True)  # scans at the terminal too
+    viewer = org.user("viewer", "madina")
+    person = org.employee("Jasur")
+
+    as_manager, as_admin = owner_api(manager), owner_api(admin)
+    assert as_manager.post(org.url(f"employees/{admin.pk}/telegram-link/")).status_code == 403
+    assert as_manager.delete(org.url(f"employees/{admin.pk}/telegram-link/")).status_code == 403
+    assert as_admin.post(org.url(f"users/{org.owner.pk}/telegram-link/")).status_code == 403
+    assert not TelegramLink.objects.exists()
+    # Below them, and themselves, as before.
+    assert as_manager.post(org.url(f"employees/{person.pk}/telegram-link/")).status_code == 201
+    assert as_admin.post(org.url(f"users/{viewer.pk}/telegram-link/")).status_code == 201
+    assert as_admin.post(org.url(f"users/{admin.pk}/telegram-link/")).status_code == 201
+    assert as_manager.post(org.url(f"users/{manager.pk}/telegram-link/")).status_code == 201
+
+
 def test_a_link_for_an_employee_links_their_telegram(org, owner_api, connected):
     person = org.employee("Aziza")
 

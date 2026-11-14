@@ -2171,6 +2171,42 @@ def issue_invoice(invoice, *, by: Membership, issued_on: date | None = None):
 
 
 @transaction.atomic
+def _follow_debt(invoice) -> bool:
+    """Write the invoice's status as its receivable has it (`queries.invoice_status`); whether
+    it changed."""
+    from apps.sales import queries
+
+    status = queries.invoice_status(invoice)
+    if status == invoice.status:
+        return False
+    invoice.status = status
+    invoice.save(update_fields=["status", "updated_at"])
+    return True
+
+
+def sync_invoices(company) -> int:
+    """Invoices in step with their receivables; returns how many changed. Finance pays, writes
+    off and reopens the same debt on its own pages without telling sales, so the stored status
+    (what lists filter by) is brought back in step here, every few minutes (`scan`)."""
+    from django.db.models import Q
+
+    from apps.sales.models import Invoice
+
+    issued, partly, paid = Invoice.Status.ISSUED, Invoice.Status.PARTLY_PAID, Invoice.Status.PAID
+    out_of_step = (
+        Invoice.objects.select_for_update(of=("self",))
+        .filter(company=company, debt__isnull=False, status__in=(issued, partly, paid))
+        .filter(
+            Q(debt__status="paid") & ~Q(status=paid)
+            | Q(debt__status="open", debt__paid__gt=0) & ~Q(status=partly)
+            | Q(debt__status="open", debt__paid=0) & ~Q(status=issued)
+        )
+        .select_related("debt")
+    )
+    with transaction.atomic():
+        return sum(1 for invoice in out_of_step if _follow_debt(invoice))
+
+
 def record_invoice_payment(
     invoice, *, by: Membership, account, amount, paid_on: date, debt_amount=None
 ):
@@ -2181,6 +2217,7 @@ def record_invoice_payment(
 
     _need_person(by)
     invoice = _lock_invoice(invoice)
+    _follow_debt(invoice)  # a payment voided in Finance opened it again, say
     if invoice.status not in (Invoice.Status.ISSUED, Invoice.Status.PARTLY_PAID):
         raise DomainError(_("Only an issued invoice takes payments."))
     _same_company(invoice.company, account)

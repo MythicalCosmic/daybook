@@ -22,7 +22,3 @@ export function openDictation(mode: DictationMode, options: { text?: string } = 
   dictation.session += 1;
   dictation.open = true;
 }
-
-export function closeDictation(): void {
-  dictation.open = false;
-}

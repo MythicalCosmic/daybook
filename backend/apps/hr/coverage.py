@@ -209,7 +209,7 @@ def plan(
             end + timedelta(days=1),
             branch_ids=[branch.pk for branch in branches],
             drafts=drafts,
-        )
+        ).select_related("membership__position")  # a cover names the person's job title
         if shift.status == WorkShift.Status.PLANNED
         and shift.membership_id is not None
         and shift.membership_id not in excluded

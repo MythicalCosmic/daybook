@@ -19,6 +19,7 @@ from apps.learning import checks, grading, quizzes, skills, suggestions
 from apps.learning.models import (
     AnswerLog,
     Attempt,
+    CheckEntry,
     CheckRound,
     DailyQuestion,
     Question,
@@ -334,11 +335,13 @@ def results(
 # Checks ------------------------------------------------------------------------------------
 
 
-def round_row(round_: CheckRound, *, branch_ids: list[int] | None) -> dict:
-    entries = round_.entries.select_related("attempt")
-    if branch_ids is not None:
-        entries = entries.filter(membership__in=people(round_.company, branch_ids=branch_ids))
-    entries = list(entries)
+def round_row(round_: CheckRound, *, branch_ids: list[int] | None, entries=None) -> dict:
+    """A round's numbers; `entries` when the caller already read them (`round_rows`)."""
+    if entries is None:
+        entries = round_.entries.select_related("attempt")
+        if branch_ids is not None:
+            entries = entries.filter(membership__in=people(round_.company, branch_ids=branch_ids))
+        entries = list(entries)
     return {
         "id": round_.pk,
         "starts_at": round_.starts_at,
@@ -348,6 +351,20 @@ def round_row(round_: CheckRound, *, branch_ids: list[int] | None) -> dict:
         "done": sum(1 for entry in entries if entry.attempt_id),
         "passed": sum(1 for entry in entries if entry.attempt and entry.attempt.passed),
     }
+
+
+def round_rows(company, rounds, *, branch_ids: list[int] | None) -> list[dict]:
+    """`round_row` of each of `rounds` (a check's history), their entries read in one query."""
+    rounds = list(rounds)
+    entries = CheckEntry.objects.filter(check_round__in=rounds).select_related("attempt")
+    if branch_ids is not None:
+        entries = entries.filter(membership__in=people(company, branch_ids=branch_ids))
+    by_round: dict[int, list] = {round_.pk: [] for round_ in rounds}
+    for entry in entries:
+        by_round[entry.check_round_id].append(entry)
+    return [
+        round_row(round_, branch_ids=branch_ids, entries=by_round[round_.pk]) for round_ in rounds
+    ]
 
 
 def round_detail(round_: CheckRound, *, branch_ids: list[int] | None) -> dict:

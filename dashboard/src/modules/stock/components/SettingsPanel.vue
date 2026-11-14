@@ -50,6 +50,7 @@ const form = reactive({
   price_rounding: "100.00" as string | null,
   price_jump_percent: 10 as number | null,
   writeoff_approval: true,
+  allow_zero_cost: false,
   show_other_branches: true,
   camera_scanning: true,
   rx_log: true,
@@ -82,6 +83,7 @@ watch(
       price_rounding: data.price_rounding,
       price_jump_percent: Number(data.price_jump_percent),
       writeoff_approval: data.writeoff_approval,
+      allow_zero_cost: data.allow_zero_cost ?? false,
       show_other_branches: data.show_other_branches,
       camera_scanning: data.camera_scanning,
       rx_log: data.rx_log,
@@ -181,6 +183,7 @@ async function save(): Promise<void> {
     price_rounding: form.price_rounding || "0",
     price_jump_percent: String(n(form.price_jump_percent, 0)),
     writeoff_approval: form.writeoff_approval,
+    allow_zero_cost: form.allow_zero_cost,
     show_other_branches: form.show_other_branches,
     camera_scanning: form.camera_scanning,
     rx_log: form.rx_log,
@@ -288,6 +291,7 @@ async function save(): Promise<void> {
         <ToggleSwitch v-model="form.fefo_strict" :label="t('stock.settings.fefo')" :description="t('stock.settings.fefoHint')" :disabled="!canEdit" />
         <ToggleSwitch v-model="form.allow_negative" :label="t('stock.settings.negative')" :description="t('stock.settings.negativeHint')" :disabled="!canEdit" />
         <ToggleSwitch v-model="form.writeoff_approval" :label="t('stock.settings.approval')" :description="t('stock.settings.approvalHint')" :disabled="!canEdit" />
+        <ToggleSwitch v-model="form.allow_zero_cost" :label="t('stock.settings.freeGoods')" :description="t('stock.settings.freeGoodsHint')" :disabled="!canEdit" />
       </div>
     </section>
 

@@ -209,6 +209,61 @@ def test_an_xlsx_export_reads_like_a_csv(pharmacy):
     assert row.total == Decimal("25800.00") and row.register == "2"
 
 
+def test_a_date_without_a_time_is_taken_at_noon_not_at_midnight(pharmacy):
+    """At midnight every receipt of a date-only file would fall before the end of the business
+    day (04:00), on the day before."""
+
+    from apps.sales import days
+
+    noon = datetime(2026, 10, 21, 12, 0, tzinfo=TASHKENT)
+    # Text without a time, a date, and a spreadsheet's date cell (it reads as midnight).
+    assert importer.moment("21.10.2026", None, "", TASHKENT) == noon
+    assert importer.moment(date(2026, 10, 21), None, "", TASHKENT) == noon
+    assert importer.moment(datetime(2026, 10, 21), None, "", TASHKENT, timed=False) == noon
+    # A time column says the time; a midnight that was written, or among moments, is 00:00.
+    assert importer.moment(datetime(2026, 10, 21), "09:05", "", TASHKENT, timed=False).hour == 9
+    assert importer.moment("21.10.2026 00:00", None, "", TASHKENT).hour == 0
+    assert importer.moment(datetime(2026, 10, 21), None, "", TASHKENT).hour == 0
+
+    layout = lines.layout(pharmacy.profile)
+    data = (HEADER + "\n" + line(when="21.10.2026") + "\n").encode()
+    [row], problems = importer.rows(data, layout, timezone="Asia/Tashkent", needs_branch=False)
+    assert problems == [] and row.sold_at == noon
+    assert days.business_day(pharmacy.company, row.sold_at) == date(2026, 10, 21)
+    # A file whose only line was written at midnight: text that says 00:00 means it.
+    data = (HEADER + "\n" + line(when="21.10.2026 00:00") + "\n").encode()
+    [row], problems = importer.rows(data, layout, timezone="Asia/Tashkent", needs_branch=False)
+    assert problems == [] and row.sold_at.hour == 0
+    assert days.business_day(pharmacy.company, row.sold_at) == date(2026, 10, 20)
+
+
+def test_a_spreadsheets_date_column_is_dates_unless_it_says_times(pharmacy):
+    import io
+
+    from openpyxl import Workbook
+
+    def read(*moments):
+        book = Workbook()
+        sheet = book.active
+        sheet.append(HEADER.split(";"))
+        for number, when in enumerate(moments, start=1):
+            cells = [str(number), when, "2", "K02", int(PARACETAMOL), "Paratsetamol", 1, "уп"]
+            sheet.append([*cells, 12900, 0, 12900, "Naqd", None, None, None, None])
+        buffer = io.BytesIO()
+        book.save(buffer)
+        layout = lines.layout(pharmacy.profile)
+        layout.file_kind = "xlsx"
+        found, problems = importer.rows(
+            buffer.getvalue(), layout, timezone="Asia/Tashkent", needs_branch=False
+        )
+        assert problems == []
+        return [row.sold_at.hour for row in found]
+
+    day = datetime(2026, 10, 21)
+    assert read(day, day) == [12, 12]  # plain dates: noon
+    assert read(day.replace(hour=9, minute=5), day) == [9, 0]  # moments: a sale at 00:00
+
+
 def test_a_profile_must_name_what_an_import_needs(pharmacy):
     with pytest.raises(DomainError):
         services.create_import_profile(
@@ -427,6 +482,38 @@ def test_a_code_that_isnt_goods_can_be_skipped(pharmacy):
     assert SaleLine.objects.get(code="PAKET").status == SaleLine.Status.SKIPPED
 
 
+def test_a_refund_that_names_no_receipt_still_comes_back_to_stock(pharmacy):
+    """Through the real stock module (nothing mocked): each side was only ever tested against
+    a mock of the other, and such a refund was refused by one and never retried by the other."""
+    from datetime import date as day
+
+    from apps.inventory import services as inventory
+    from apps.inventory.models import BatchStock, StockBatch
+
+    company = pharmacy.company
+    company.features = [*company.features, "stock"]
+    company.save(update_fields=["features"])
+    batch = inventory.add_opening_stock(
+        pharmacy.branch,
+        by=pharmacy.owner,
+        product=pharmacy.paracetamol,
+        series="A1",
+        expires_on=day(2027, 6, 30),
+        quantity=Decimal("10"),
+        unit_cost=Decimal("10000"),
+    )
+    held = lambda row: BatchStock.objects.get(branch=pharmacy.branch, batch=row).quantity  # noqa: E731
+
+    sold = run(pharmacy, line(receipt="50", when="21.10.2026 10:00", quantity="2", total="25800"))
+    assert sold.problems == [] and held(batch) == 6  # two packs of two parts left the shelf
+    back = run(pharmacy, line(receipt="51", when="21.10.2026 16:00", quantity="-1", total="-12900"))
+
+    assert back.problems == []
+    twin = StockBatch.objects.get(origin=batch)  # sold medicines come back apart, in quarantine
+    assert twin.status == StockBatch.Status.QUARANTINE and held(twin) == 2
+    assert held(batch) == 6
+
+
 def test_refunds_land_in_quarantine_with_the_original_receipts_batches(pharmacy):
     batch = StockBatchFactory(product=pharmacy.paracetamol, unit_cost=Decimal("10000.00"))
     with mock.patch(
@@ -434,7 +521,10 @@ def test_refunds_land_in_quarantine_with_the_original_receipts_batches(pharmacy)
         return_value=[Allocation(batch.pk, Decimal("2"), Decimal("5000.00"))],
     ):
         run(pharmacy, line(receipt="40", when="21.10.2026 10:00"))
-    with mock.patch("apps.sales.lines.stock.restock") as restock:
+    with (
+        mock.patch("apps.sales.lines.stock.restock") as restock,
+        mock.patch("apps.sales.lines.stock.restock_product") as restock_product,
+    ):
         imp = run(
             pharmacy,
             line(receipt="41", when="21.10.2026 15:00", refund="да", refund_of="40"),
@@ -443,12 +533,15 @@ def test_refunds_land_in_quarantine_with_the_original_receipts_batches(pharmacy)
     assert imp.receipts == 2
     refunds = Sale.objects.filter(company=pharmacy.company, kind="refund").order_by("number")
     assert [s.number for s in refunds] == ["41", "42"]
-    first, second = restock.call_args_list
-    assert first.kwargs["status"] == "quarantine" and second.kwargs["status"] == "quarantine"
-    assert first.kwargs["document"] == ("sales.sale", refunds[0].pk)
-    # The named receipt's batch goes back; an unnamed refund goes back without one.
-    assert first.args[1] == [Allocation(batch.pk, Decimal("2.000"), Decimal("5000.00"))]
-    assert second.args[1] == [Allocation(None, Decimal("2.000"), None)]
+    [named] = restock.call_args_list
+    [unnamed] = restock_product.call_args_list
+    assert named.kwargs["status"] == "quarantine" and unnamed.kwargs["status"] == "quarantine"
+    assert named.kwargs["document"] == ("sales.sale", refunds[0].pk)
+    # The named receipt's batch goes back. A refund that names no receipt can't say its batch:
+    # the stock module is told the item and takes it back against the batch last sold here.
+    assert named.args[1] == [Allocation(batch.pk, Decimal("2.000"), Decimal("5000.00"))]
+    assert unnamed.args[1:] == (pharmacy.paracetamol, Decimal("2.000"))
+    assert unnamed.kwargs["document"] == ("sales.sale", refunds[1].pk)
 
 
 def test_an_rx_line_with_a_prescription_goes_to_the_prescription_log(pharmacy):

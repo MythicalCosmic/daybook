@@ -149,15 +149,33 @@ def current_streak(streak: Streak | None, member: Membership, now: datetime | No
     (it shows 0 until the person learns again; the row changes only then)."""
     if streak is None or not streak.current or streak.last_day is None:
         return 0
-    from apps.recognition import streaks
+    return current_streaks(member.company, [streak], now)[streak.membership_id]
 
-    today = local_today(member.company, now)
-    if today <= streak.last_day + timedelta(days=1):
-        return streak.current
-    yesterday = today - timedelta(days=1)
-    if streaks.workdays(member, streak.last_day + timedelta(days=1), yesterday):
-        return 0
-    return streak.current
+
+def current_streaks(company, streaks, now: datetime | None = None) -> dict[int, int]:
+    """`current_streak` of several people of `company` at once (member id → the streak today):
+    three queries however many they are."""
+    from apps.recognition import streaks as calendar
+
+    today = local_today(company, now)
+    result: dict[int, int] = {}
+    stale: dict[int, Streak] = {}
+    for streak in streaks:
+        if not streak.current or streak.last_day is None:
+            result[streak.membership_id] = 0
+        elif today <= streak.last_day + timedelta(days=1):
+            result[streak.membership_id] = streak.current
+        else:
+            stale[streak.membership_id] = streak
+    if stale:
+        missed = calendar.workdays_many(
+            company,
+            {member_id: streak.last_day + timedelta(days=1) for member_id, streak in stale.items()},
+            today - timedelta(days=1),
+        )
+        for member_id, streak in stale.items():
+            result[member_id] = 0 if missed[member_id] else streak.current
+    return result
 
 
 # People and their pictures ---------------------------------------------------------------------

@@ -742,6 +742,8 @@
   "stock.settings.negativeHint": "Продажи, внесённые до прихода, ждут его, а не отклоняются.",
   "stock.settings.approval": "Списания требуют утверждения",
   "stock.settings.approvalHint": "Каждое предложение утверждает менеджер.",
+  "stock.settings.freeGoods": "В приходе может быть бесплатный товар",
+  "stock.settings.freeGoodsHint": "Выключено: приход со строкой без цены закупки нельзя провести, пока цена не указана. Включите, если дистрибьюторы присылают бонусные упаковки.",
   "stock.settings.legalTitle": "Сроки по закону",
   "stock.settings.legalBody": "Уничтожение непригодного товара и журнал ПКУ.",
   "stock.settings.destroyWithin": "Уничтожить непригодный товар в течение",

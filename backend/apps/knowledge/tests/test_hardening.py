@@ -155,6 +155,24 @@ def test_space_list_and_overview_queries_dont_grow_with_rows(
         client.get(owner_url(company, "overview/"))
 
 
+def test_the_overview_reads_who_changed_its_pages_with_the_pages(
+    company, owner, cashier, cook, owner_api, django_assert_max_num_queries
+):
+    client = owner_api(owner)
+    space = SpaceFactory(company=company)
+    PageFactory(space=space, require_ack=True, updated_by=owner)
+    client.get(owner_url(company, "overview/"))  # makes the settings rows
+    with django_assert_max_num_queries(80) as few:
+        client.get(owner_url(company, "overview/"))
+    for person in (cashier, cook, cashier, cook):
+        PageFactory(space=space, require_ack=True, updated_by=person)
+    # Five pages now, changed by three people: the lists name each without a query a page.
+    with django_assert_max_num_queries(len(few.captured_queries)):
+        data = client.get(owner_url(company, "overview/")).data
+    assert len(data["recent"]) == 5 and len(data["to_read"]) == 5
+    assert {row["updated_by"]["name"] for row in data["recent"]} >= {"Madina", "Jasur"}
+
+
 # Announcing only what readers can open --------------------------------------------------
 
 

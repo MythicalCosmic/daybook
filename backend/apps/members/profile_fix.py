@@ -13,8 +13,11 @@ import html
 
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from django.db import transaction
+from django.utils import timezone
 
+from apps.audit import services as audit
 from apps.companies.models import Branch, Company
+from apps.members.audit_actions import MemberAction
 from apps.members.callbacks import ProfileFix
 from apps.members.models import Department, Membership, Position
 from apps.members.permissions import Perm
@@ -125,10 +128,19 @@ def confirm_keyboard(b: int, d: int, p: int) -> InlineKeyboardMarkup:
     )
 
 
+def is_open(company: Company, now=None) -> bool:
+    """Whether the company's survey takes answers: `send_profile_fix` opens it for some days
+    (`Company.profile_fix_until`); after that the buttons of the old messages say it is over."""
+    until = company.profile_fix_until
+    return until is not None and (now or timezone.now()) < until
+
+
 def member_for(user, company_id: int | None = None) -> Membership | None:
-    """The person's membership in a company that runs the survey (has its branches)."""
+    """The person's membership in a company whose survey is open now (and has its branches)."""
     rows = Membership.objects.filter(user=user).exclude(status__in=GONE_STATUSES)
-    rows = rows.filter(company__branches__name=BRANCH_NAMES[0]).select_related("company", "role")
+    rows = rows.filter(
+        company__branches__name=BRANCH_NAMES[0], company__profile_fix_until__gt=timezone.now()
+    ).select_related("company", "role")
     if company_id:
         rows = rows.filter(company_id=company_id)
     return rows.order_by("pk").first()
@@ -154,6 +166,12 @@ def apply(membership: Membership, *, b: int, d: int, p: int) -> bool:
         .select_related("role")
         .get(pk=membership.pk)
     )
+    before = {
+        "department": membership.department_id,
+        "position": membership.position_id,
+        "home_branch": membership.home_branch_id,
+        "role": membership.role_id,
+    }
     membership.department = department
     membership.position = title
     membership.home_branch = branch
@@ -161,11 +179,31 @@ def apply(membership: Membership, *, b: int, d: int, p: int) -> bool:
     new_role = title_role(title, company)
     owner = membership.role is not None and membership.role.is_owner
     keeps_power = membership.role is not None and _guarded(membership.role)
-    if not owner and not keeps_power and new_role is not None and not _guarded(new_role):
+    # Someone still waiting to be let in (or suspended) says where they work; what they may do
+    # is decided by whoever approves them, never by a title they picked themselves.
+    working = membership.status == Membership.Status.APPROVED
+    follows = new_role is not None and not _guarded(new_role)
+    if working and not owner and not keeps_power and follows:
         membership.role = new_role
         fields.append("role")
     membership.save(update_fields=[*fields, "updated_at"])
     membership.branches.set([branch])
+    after = {
+        "department": membership.department_id,
+        "position": membership.position_id,
+        "home_branch": membership.home_branch_id,
+        "role": membership.role_id,
+    }
+    audit.record(
+        MemberAction.CHANGED,
+        company_id=company.pk,
+        actor=membership.user,
+        target=membership,
+        via="profile_fix",
+        changes={
+            name: [before[name], after[name]] for name in after if before[name] != after[name]
+        },
+    )
     return True
 
 

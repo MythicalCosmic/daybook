@@ -24,7 +24,9 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
+from fractions import Fraction
 
+from django.db.models import Min
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 from django.utils.translation import gettext as _
@@ -113,6 +115,7 @@ class Person:
     employed_to: date | None
     setups: list[Compensation] = field(default_factory=list)
     planned_days: set[date] = field(default_factory=set)
+    roster_from: date | None = None  # the day of their first shift ever
     records: list[Record] = field(default_factory=list)
     leave: dict[date, LeaveDay] = field(default_factory=dict)
     unpaid_suspension: dict[tuple[date, date], int] = field(default_factory=dict)
@@ -196,6 +199,24 @@ class Result:
 # Small helpers --------------------------------------------------------------------------
 
 
+def times(amount: Decimal, share) -> Decimal:
+    """`amount` times a share of days (a whole number or a fraction), divided once."""
+    share = Fraction(share)
+    return amount * share.numerator / share.denominator
+
+
+def count(days) -> Decimal:
+    """A number of days as a line's quantity."""
+    days = Fraction(days)
+    return Decimal(days.numerator) if days.denominator == 1 else money(times(Decimal(1), days))
+
+
+def plain(days):
+    """A number of days for a line's `params`: whole as a rule, else to two places as text."""
+    days = Fraction(days)
+    return days.numerator if days.denominator == 1 else text(money(times(Decimal(1), days)))
+
+
 def money(value: Decimal) -> Decimal:
     return quantize(value)
 
@@ -229,22 +250,54 @@ def night_minutes(start: datetime, end: datetime, tz, starts_at, ends_at) -> int
     return total
 
 
+def company_workdays(inputs: Inputs) -> set[date]:
+    """The month's days in `Company.workdays`, without the holidays."""
+    return {
+        day
+        for day in periods.days(inputs.start, inputs.end)
+        if day.weekday() in inputs.workdays and day not in inputs.holidays
+    }
+
+
 def scheduled_days(person: Person, inputs: Inputs) -> set[date]:
     """`S` as days (§2.7, §3.17): the planned shift days of someone on a roster, otherwise
     the company's workdays; holidays never count.
 
-    Someone on a roster who joins or leaves during the month has shifts only while employed
-    (leaving cancels the rest), so S also counts the company workdays outside their employment:
-    those come off as "not employed", and a leaver on 14 October is paid 11 of 26 days, not
-    the whole month."""
-    workdays = {
-        day for day in periods.days(inputs.start, inputs.end) if day.weekday() in inputs.workdays
-    }
-    if person.planned_days:
-        base = person.planned_days | {day for day in workdays if not employed(person, day)}
-    else:
-        base = workdays
-    return {day for day in base if day not in inputs.holidays}
+    Before someone's first shift ever, when that falls inside the month, they worked the
+    company's days, and those count too: a roster first published for the 19th must not make
+    its 12 days the whole month (one no-show would cost a twelfth of the salary)."""
+    workdays = company_workdays(inputs)
+    if not person.planned_days:
+        return workdays
+    days = {day for day in person.planned_days if day not in inputs.holidays}
+    if person.roster_from is not None and person.roster_from > inputs.start:
+        days |= {day for day in workdays if day < person.roster_from}
+    return days
+
+
+def roster_share(person: Person, inputs: Inputs, scheduled: set[date], in_job: set[date]):
+    """For someone on a roster who is employed only part of the month: (their scheduled days
+    while employed, the days outside the employment by the company's chosen calendar, how many
+    of that calendar's days they were employed). None for everyone else.
+
+    They have shifts only while employed (leaving cancels the rest), so their roster can't say
+    what a whole month of theirs is. It is reckoned from the share of the month they were
+    employed, counted in the company's working days (as for people without a roster: a leaver
+    on 14 October is paid 11 of 26 days) or in calendar days
+    (`PayrollSettings.roster_partial_month`):
+
+        S = roster days while employed x days of the month / days employed
+
+    For a roster that follows the company's week that is the plain rule; for a 2/2 roster it
+    is a month of about 16 shifts, not their 7 shifts plus the company's 15 other workdays."""
+    if not person.planned_days or len(in_job) >= inputs.days_in_month:
+        return None
+    month = set(periods.days(inputs.start, inputs.end))
+    by_calendar = inputs.settings.roster_partial_month == "calendar"
+    counted = month if by_calendar else company_workdays(inputs)
+    if not counted & in_job:
+        counted = month  # employed on the company's days off only: by calendar days then
+    return scheduled & in_job, counted - in_job, len(counted & in_job)
 
 
 def employed(person: Person, day: date) -> bool:
@@ -339,13 +392,18 @@ def _work(person: Person, inputs: Inputs, parts, result: Result) -> list[Line]:
     header numbers (days, hours) written on `result`."""
     scheduled = scheduled_days(person, inputs)
     in_job = {day for day in periods.days(inputs.start, inputs.end) if employed(person, day)}
+    total = Fraction(len(scheduled))
+    share = roster_share(person, inputs, scheduled, in_job)
+    if share is not None:
+        scheduled, days_out, days_in = share
+        total = Fraction(len(scheduled) * (days_in + len(days_out)), days_in)
     attended_days = {record.day for record in person.records if record.attended}
     absent = {
         record.day
         for record in person.records
         if record.absent and record.day in scheduled and record.day not in person.leave
     } - attended_days
-    result.scheduled_days = len(scheduled)
+    result.scheduled_days = round(total)
 
     earnings: list[Line] = []
     unpaid_total = ZERO
@@ -357,6 +415,10 @@ def _work(person: Person, inputs: Inputs, parts, result: Result) -> list[Line]:
         seg_in_job = _between(in_job, first, last)
         seg_records = [r for r in person.records if first <= r.day <= last and r.day in seg_in_job]
         whole = first == inputs.start and last == inputs.end
+        if share is None:
+            outside = Fraction(len(seg_scheduled - seg_in_job))
+        else:  # the segment's part of the scheduled days they weren't employed for
+            outside = Fraction(len(scheduled) * len(_between(days_out, first, last)), days_in)
         context = SegmentContext(
             person=person,
             inputs=inputs,
@@ -372,6 +434,8 @@ def _work(person: Person, inputs: Inputs, parts, result: Result) -> list[Line]:
             absent=_between(absent, first, last) & seg_in_job,
             result=result,
             in_job=in_job,
+            scheduled_total=total,
+            outside=outside,
         )
         if setup.pay_type == PayType.MONTHLY:
             earnings += _monthly(context)
@@ -445,6 +509,15 @@ class SegmentContext:
     result: Result
     in_job: set[date] = field(default_factory=set)  # every employed day of the month
     unpaid_days: int = 0
+    # `S`, the month's scheduled days: a whole number, except for a roster and a part of a
+    # month (`roster_share`). And the segment's part of it outside the employment.
+    scheduled_total: Fraction = Fraction(0)
+    outside: Fraction = Fraction(0)
+
+    @property
+    def seg_days(self) -> Fraction:
+        """The segment's scheduled days, those outside the employment included."""
+        return len(self.seg_scheduled & self.seg_in_job) + self.outside
 
     @property
     def settings(self) -> PayrollSettings:
@@ -479,10 +552,10 @@ def _hours_rate(context: SegmentContext) -> tuple[Decimal, Decimal]:
     daily_hours = context.settings.daily_hours
     pay_type = context.setup.pay_type
     if pay_type == PayType.MONTHLY:
-        days = Decimal(len(context.scheduled))
+        days = context.scheduled_total
         if not days:
             return ZERO, Decimal(1)
-        return context.amount, days * daily_hours
+        return context.amount * days.denominator, days.numerator * daily_hours
     if pay_type == PayType.DAILY:
         return context.amount, daily_hours
     return context.amount, Decimal(1)
@@ -544,9 +617,9 @@ def _extras(context: SegmentContext, *, base_includes_hours: bool) -> list[Line]
         multiplier = settings.holiday_work_multiplier
         if pay_type == PayType.MONTHLY:
             days = Decimal(len({r.day for r in on_holidays}))
-            scheduled = Decimal(len(context.scheduled)) or Decimal(1)
-            amount = money(context.amount * multiplier * days / scheduled)
-            quantity, rate = days, money(context.amount / scheduled)
+            scheduled = context.scheduled_total or Fraction(1)
+            amount = money(times(context.amount * multiplier * days, 1 / scheduled))
+            quantity, rate = days, money(times(context.amount, 1 / scheduled))
         elif pay_type == PayType.DAILY:
             days = Decimal(len({r.day for r in on_holidays}))
             amount = money(context.amount * (multiplier - 1) * days)
@@ -597,18 +670,20 @@ def _monthly(context: SegmentContext) -> list[Line]:
     setup = context.setup
     inputs = context.inputs
     lines: list[Line] = []
-    scheduled_total = len(context.scheduled)
-    seg_days = len(context.seg_scheduled)
+    scheduled_total = context.scheduled_total
+    seg_days = context.seg_days
     if setup.proration == Proration.ATTENDANCE and scheduled_total:
-        base = amount if context.whole else money(amount * seg_days / scheduled_total)
+        base = amount if context.whole else money(times(amount, seg_days / scheduled_total))
         lines.append(
             Line(
                 kind=Kind.BASE,
                 label=str(Kind.BASE.label),
                 amount=base,
-                quantity=None if context.whole else Decimal(seg_days),
-                rate=None if context.whole else money(amount / scheduled_total),
-                params=_base_params(context, days=seg_days, scheduled=scheduled_total),
+                quantity=None if context.whole else count(seg_days),
+                rate=None if context.whole else money(times(amount, 1 / scheduled_total)),
+                params=_base_params(
+                    context, days=plain(seg_days), scheduled=plain(scheduled_total)
+                ),
             )
         )
         lines += _attendance_deductions(context, scheduled_total)
@@ -651,31 +726,30 @@ def _monthly(context: SegmentContext) -> list[Line]:
     return lines
 
 
-def _attendance_deductions(context: SegmentContext, scheduled_total: int) -> list[Line]:
+def _attendance_deductions(context: SegmentContext, scheduled_total: Fraction) -> list[Line]:
     """The days of `S` a monthly salary doesn't pay, at `amount / S` each."""
     amount = context.amount
     person = context.person
     lines = []
     seg = context.seg_scheduled
     in_job = context.seg_in_job
-    rate = money(amount / scheduled_total)
+    rate = money(times(amount, 1 / scheduled_total))
 
-    def unpaid(code: str, days: int, **params) -> None:
+    def unpaid(code: str, days, **params) -> None:
         if days <= 0:
             return
         lines.append(
             Line(
                 kind=Kind.PRORATION,
                 label=str(Kind.PRORATION.label),
-                amount=-money(amount * days / scheduled_total),
-                quantity=Decimal(days),
+                amount=-money(times(amount, days / scheduled_total)),
+                quantity=count(days),
                 rate=rate,
-                params={"code": code, "days": days, **params, **context.range_params()},
+                params={"code": code, "days": plain(days), **params, **context.range_params()},
             )
         )
 
-    outside = sorted(seg - in_job)
-    unpaid("not_employed", len(outside))
+    unpaid("not_employed", context.outside)
     unpaid("absent", len(context.absent))
     leave_unpaid = sorted(
         day for day in seg & in_job if (leave := person.leave.get(day)) and not leave.paid
@@ -698,9 +772,9 @@ def _attendance_deductions(context: SegmentContext, scheduled_total: int) -> lis
             Line(
                 kind=Kind.PRORATION,
                 label=str(Kind.PRORATION.label),
-                amount=-money(amount * days * share / scheduled_total),
+                amount=-money(times(amount * days * share, 1 / scheduled_total)),
                 quantity=Decimal(days),
-                rate=money(amount * share / scheduled_total),
+                rate=money(times(amount * share, 1 / scheduled_total)),
                 params={
                     "code": "partial_leave",
                     "leave_kind": kind,
@@ -1094,6 +1168,22 @@ def gather(
         .values_list("membership_id", "date")
     ):
         people[member_id].planned_days.add(day)
+    rostered = [member_id for member_id, person in people.items() if person.planned_days]
+    if rostered:
+        # The day of each one's first shift ever (`scheduled_days` asks: before it they worked
+        # the company's days).
+        first_shifts = (
+            WorkShift.objects.live()
+            .filter(
+                membership_id__in=rostered,
+                status__in=(WorkShift.Status.PLANNED, WorkShift.Status.LEAVE),
+            )
+            .values("membership_id")
+            .annotate(first=Min("date"))
+            .values_list("membership_id", "first")
+        )
+        for member_id, first in first_shifts:
+            people[member_id].roster_from = first
 
     tz = periods.zone(company)
     closed = (AttendanceRecord.Status.CLOSED, AttendanceRecord.Status.AUTO_CLOSED)
@@ -1210,7 +1300,8 @@ def gather(
     )
     if not advances_in_full:
         advances = advances.filter(first_period__lte=start)
-    for advance in advances.prefetch_related("repayments").order_by("first_period", "pk"):
+    advances = advances.select_related("debt").prefetch_related("repayments")
+    for advance in advances.order_by("first_period", "pk"):
         if advances_in_full:
             due = queries.advance_left_of(advance)
         else:

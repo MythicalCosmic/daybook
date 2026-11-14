@@ -117,6 +117,44 @@ def test_the_shown_streak_ends_when_a_workday_passed(shop, ali, freeze):
     assert queries.current_streak(Streak.objects.get(membership=ali), ali) == 2
 
 
+def test_everyones_shown_streak_is_read_at_once(
+    shop, ali, madina, nigora, chilonzor, freeze, django_assert_max_num_queries
+):
+    shop.features = [*shop.features, "attendance"]
+    shop.save(update_fields=["features"])
+    wednesday, thursday = date(2026, 11, 4), date(2026, 11, 5)
+    for person in (ali, madina, nigora):
+        run(person, wednesday, thursday)
+    # Friday passed without learning: Ali missed it, Madina was on leave, Nigora's roster rested.
+    TimeOff.objects.create(
+        company=shop,
+        membership=madina,
+        first_day=FRI,
+        last_day=FRI,
+        status=TimeOff.Status.APPROVED,
+    )
+    for day in (wednesday, thursday, SAT):
+        WorkShift.objects.create(
+            company=shop,
+            membership=nigora,
+            date=day,
+            starts_at=at(day, 8),
+            ends_at=at(day, 20),
+            branch=chilonzor,
+            published_at=at(MON, 0),
+        )
+    freeze(at(SAT, 9))
+    rows = list(Streak.objects.filter(kind="learning").select_related("membership__company"))
+    with django_assert_max_num_queries(3):  # shifts, holidays, leave: however many people
+        shown = queries.current_streaks(shop, rows)
+    assert shown == {ali.pk: 0, madina.pk: 2, nigora.pk: 2}
+    for row in rows:  # asked one person at a time, the answer is the same
+        assert queries.current_streak(row, row.membership) == shown[row.membership_id]
+    # A holiday on the missed day gives Ali's streak back; each person keeps their own period.
+    Holiday.objects.create(company=shop, date=FRI, name="Bayram")
+    assert queries.current_streaks(shop, rows) == {ali.pk: 2, madina.pk: 2, nigora.pk: 2}
+
+
 def test_a_moment_is_read_as_the_company_day(shop, ali):
     late_evening = at(FRI, 23, 30)
     streak = services.touch_streak(ali, late_evening)

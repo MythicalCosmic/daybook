@@ -615,7 +615,6 @@ export function forecastHeadline(forecast: Pick<Forecast, "below_zero_on" | "low
 
 // Payables -------------------------------------------------------------------------------------------
 
-export const PAYABLE_BUCKETS: readonly PayableBucket[] = ["overdue", "week", "later"];
 export const BUCKET_TONES: Record<PayableBucket, StatusTone> = { overdue: "danger", week: "warning", later: "neutral" };
 
 /** Accounts that hold cash or a person's money: a goods-receipt payable shouldn't be paid from them. */

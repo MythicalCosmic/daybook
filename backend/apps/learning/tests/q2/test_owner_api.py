@@ -296,6 +296,45 @@ def test_checks_and_their_rounds(admin, pharmacy, taken, staff):
     assert AuditLog.objects.filter(action="learning.check_paused").exists()
 
 
+def test_a_checks_history_and_the_suggestions_do_not_grow_with_their_rows(
+    admin, pharmacy, taken, staff, django_assert_max_num_queries
+):
+    from apps.learning import checks
+    from apps.members.models import Position
+
+    row = checks.create_check(
+        pharmacy, by=None, title="Dushanba tekshiruvi", quiz_id=taken.pk, every="week", weekday=0
+    )
+    title = Position.objects.create(company=pharmacy, name="Farmatsevt")
+    now = timezone.now()
+
+    def week(number: int) -> None:
+        """One more round of the check, and a suggestion about one more person with a job."""
+        assert checks.start_round(row, now - timedelta(weeks=number, hours=1)) is not None
+        TutorSuggestion.objects.create(
+            company=pharmacy,
+            membership=person(pharmacy, position=title, first_name=f"Xodim {number}"),
+            kind="praise",
+            params={"points": 45},
+        )
+
+    week(0)
+    paths = [url(pharmacy, f"checks/{row.pk}/rounds/"), url(pharmacy, "suggestions/")]
+    few = []
+    for path in paths:
+        admin.get(path)  # makes the settings rows
+        with django_assert_max_num_queries(40) as counted:
+            assert admin.get(path).status_code == 200
+        few.append(len(counted.captured_queries))
+    for number in range(1, 5):
+        week(number)
+    for path, allowed in zip(paths, few, strict=True):
+        with django_assert_max_num_queries(allowed):
+            rows = admin.get(path).json()
+        assert len(rows) == 5
+    assert {row["member"]["position"] for row in rows} == {"Farmatsevt"}
+
+
 # Skills ------------------------------------------------------------------------------------
 
 

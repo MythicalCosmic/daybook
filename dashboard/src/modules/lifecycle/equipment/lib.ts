@@ -37,7 +37,6 @@ const ICONS: Record<string, Component> = {
 /** A category's icon (a lucide name from the API), a box when unknown. */
 export const categoryIcon = (name: string | null | undefined): Component => (name && ICONS[name]) || Box;
 
-export const CONDITION_TONES: Record<Condition, StatusTone> = { new: "success", good: "neutral", worn: "warning", damaged: "danger" };
 export const OUTCOME_TONES: Record<Outcome, StatusTone> = { held: "primary", returned: "success", lost: "danger", written_off: "neutral" };
 
 // ─── The people list ─────────────────────────────────────────────────────

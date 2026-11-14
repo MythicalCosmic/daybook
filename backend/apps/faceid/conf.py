@@ -12,9 +12,10 @@ def get_settings(company) -> FaceIdSettings:
 
 
 def is_on(company) -> bool:
-    """Whether the company runs Face ID (the `face_id` module): while it is off, terminals'
-    events keep nothing personal and change nothing."""
-    return company.has_feature(Feature.FACE_ID)
+    """Whether the company runs Face ID (the `face_id` module, in a company that is itself
+    switched on): while it is off, terminals' events keep nothing personal and change nothing.
+    A terminal goes on posting after its company is switched off; nobody else can reach it."""
+    return company.is_active and company.has_feature(Feature.FACE_ID)
 
 
 def counts_attendance(company, settings: FaceIdSettings | None = None) -> bool:

@@ -10,7 +10,7 @@ from django.utils import timezone
 
 from apps.companies.models import Company
 from apps.core.exceptions import DomainError
-from apps.payroll import conf, notify, periods, rules
+from apps.payroll import conf, notify, periods, rules, runs
 from apps.payroll.models import PayrollRun, PayrollSettings
 
 logger = logging.getLogger(__name__)
@@ -52,6 +52,9 @@ def prepare_runs(now: datetime | None = None) -> int:
         except DomainError as exc:
             logger.warning("Payroll for %s of company %s not prepared: %s", period, company.pk, exc)
             continue
+        except Exception:  # one company's data never keeps the others from their payroll
+            logger.exception("payroll of %s not prepared for company %s", period, company.pk)
+            continue
         made += 1
     return made
 
@@ -74,17 +77,21 @@ def pay_day_reminders(now: datetime | None = None) -> int:
             .exclude(status=PayrollRun.Status.CANCELLED)
             .first()
         )
-        with transaction.atomic():
-            updated = (
-                PayrollSettings.objects.filter(pk=settings_row.pk)
-                .exclude(reminded_period=period)
-                .update(reminded_period=period)
-            )
-            if not updated:
-                continue
-            if run is not None and run.status == PayrollRun.Status.PAID:
-                continue
-            notify.pay_day(run, company, period)
+        try:
+            with transaction.atomic():
+                updated = (
+                    PayrollSettings.objects.filter(pk=settings_row.pk)
+                    .exclude(reminded_period=period)
+                    .update(reminded_period=period)
+                )
+                if not updated:
+                    continue
+                if run is not None and run.status == PayrollRun.Status.PAID:
+                    continue
+                notify.pay_day(run, company, period)
+        except Exception:
+            logger.exception("pay day reminder failed for company %s", company.pk)
+            continue
         sent += 1
     return sent
 
@@ -98,5 +105,11 @@ def evaluate_daily_rules(now: datetime | None = None) -> int:
         local = periods.local(company, now)
         if local.hour < DAILY_RULES_FROM_HOUR:
             continue
-        changed += rules.evaluate_daily(company, local.date(), now=now)
+        try:
+            changed += rules.evaluate_daily(company, local.date(), now=now)
+            # While here: advances settled (or reopened) on Finance's own pages since.
+            with transaction.atomic():
+                runs.sync_advances(company)
+        except Exception:
+            logger.exception("daily pay rules failed for company %s", company.pk)
     return changed

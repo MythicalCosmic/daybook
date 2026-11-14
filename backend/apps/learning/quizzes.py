@@ -42,7 +42,6 @@ from apps.knowledge.models import Page
 from apps.learning import grading
 from apps.learning.audit_actions import QuizAction
 from apps.learning.models import (
-    LIVE,
     AnswerLog,
     Attempt,
     DailyQuestion,
@@ -588,10 +587,6 @@ def delete_quiz(quiz: Quiz, *, by: Membership | None) -> None:
 
 def is_live(quiz: Quiz) -> bool:
     return quiz.status == Status.PUBLISHED and quiz.archived_at is None
-
-
-def live_quizzes(company) -> QuerySet[Quiz]:
-    return Quiz.objects.filter(company=company).filter(LIVE)
 
 
 # The draw ----------------------------------------------------------------------------------

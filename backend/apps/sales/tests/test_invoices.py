@@ -17,7 +17,7 @@ from apps.inventory.services import Allocation
 from apps.inventory.tests.factories import ProductFactory, StockBatchFactory
 from apps.members.permissions import Perm
 from apps.sales import services
-from apps.sales.models import SalesSettings
+from apps.sales.models import Invoice, SalesSettings
 from apps.sales.tests.factories import make_member, scoped_role
 
 
@@ -183,6 +183,45 @@ def test_partial_and_other_currency_payments(wholesale):
         services.void_invoice(invoice, by=wholesale.owner, reason="Too late")
 
 
+def test_an_invoice_follows_its_receivable_whoever_settles_it(wholesale):
+    """The same receivable is paid on Finance's Debts page and by credit payments at the till,
+    which know nothing of the invoice: it used to stay "issued", turn overdue and count in the
+    badge after it was paid, and to refuse payments after one of its payments was voided."""
+    from apps.sales import queries
+
+    company, owner = wholesale.company, wholesale.owner
+    invoice = services.issue_invoice(draft(wholesale), by=owner)
+    invoice.due_on = invoice.issued_on - timedelta(days=1)  # past due
+    invoice.save(update_fields=["due_on"])
+    today = invoice.issued_on
+    bank = finance.create_account(company, by=owner, kind="bank", name="Bank", currency="UZS")
+
+    def overdue():
+        filters = {"overdue": True, "today": today}
+        return list(queries.invoices(company, filters, branch_ids=None))
+
+    assert overdue() == [invoice]
+
+    paid = finance.pay_debt(  # in Finance, not on the invoice
+        invoice.debt, by=owner, amount=invoice.total, paid_on=today, account=bank
+    )
+    invoice.refresh_from_db()
+    row = queries.invoice_row(invoice, today)
+    assert (row["status"], row["left"], row["overdue"]) == ("paid", "0.00", False)
+    assert overdue() == []
+    assert invoice.status == "issued" and services.sync_invoices(company) == 1
+    invoice.refresh_from_db()
+    assert invoice.status == "paid" and services.sync_invoices(company) == 0
+
+    finance.void_transaction(paid, by=owner, reason="Wrong customer")  # open again
+    invoice.refresh_from_db()
+    assert queries.invoice_row(invoice, today)["status"] == "issued" and overdue() == [invoice]
+    invoice = services.record_invoice_payment(  # and it takes a payment again
+        invoice, by=owner, account=bank, amount="95000", paid_on=today
+    )
+    assert invoice.status == "partly_paid"
+
+
 def test_void_before_payment_cancels_the_receivable_and_puts_the_goods_back(wholesale):
     batch = StockBatchFactory(product=wholesale.drug)
     with mock.patch(
@@ -236,6 +275,24 @@ def test_sending_goes_to_the_customers_telegram_or_gives_a_link(
     assert send_document.call_args.args[:2] == ("employee", 777000)
     invoice.refresh_from_db()
     assert invoice.sent_at is not None and invoice.pdf
+
+
+def test_previewing_the_pdf_never_puts_an_older_invoice_back(wholesale, owner_api, monkeypatch):
+    """Someone issues the draft while its preview is still rendering: the preview keeps only
+    its file, not the row it read a moment before (a draft without a number or a receivable)."""
+    invoice = draft(wholesale)
+    render = services.invoice_pdf
+
+    def issue_meanwhile(row, **kwargs):
+        services.issue_invoice(Invoice.objects.get(pk=row.pk), by=wholesale.owner)
+        return render(row, **kwargs)
+
+    monkeypatch.setattr(services, "invoice_pdf", issue_meanwhile)
+    url = f"/api/v1/owner/companies/{wholesale.company.pk}/sales/invoices/{invoice.pk}/pdf/"
+    assert owner_api(wholesale.owner).get(url).json()["url"].startswith("/api/v1/files/")
+    invoice.refresh_from_db()
+    assert invoice.status == Invoice.Status.ISSUED and invoice.number and invoice.debt_id
+    assert invoice.pdf
 
 
 def test_invoice_endpoints_check_permissions(wholesale, owner_api, other_company, member):

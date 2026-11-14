@@ -312,10 +312,6 @@ def my_row(member: Membership, policy: Policy) -> PolicyAcknowledgement | None:
     )
 
 
-def to_sign_count(member: Membership, day: date) -> int:
-    return sum(1 for item in mine(member, day) if item.state in (WAITING, LATE))
-
-
 def history(member: Membership) -> list[PolicyAcknowledgement]:
     """Every signature the person gave, newest first (of earlier versions too)."""
     return list(

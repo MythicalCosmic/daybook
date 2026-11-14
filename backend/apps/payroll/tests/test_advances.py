@@ -9,6 +9,7 @@ import pytest
 from apps.core.exceptions import DomainError
 from apps.finance.models import Debt, Transaction
 from apps.inbox.models import Notification
+from apps.members.models import Membership
 from apps.payroll import queries, services
 from apps.payroll.tests.conftest import OCTOBER
 
@@ -77,6 +78,70 @@ def test_request_decide_pay_and_repay(shop, paid_staff, cash, django_capture_on_
     assert row.status == "repaid" and cash.balance == Decimal("50000000.00")
     assert Debt.objects.get(pk=debt.pk).status == "paid"
     assert Transaction.objects.filter(debt=debt, kind="debt_payment").count() == 2
+
+
+def test_an_advance_approved_before_someone_left_is_not_paid_out_after(shop, paid_staff, cash):
+    staff = paid_staff
+    row = services.create_advance(staff.ali, by=staff.owner, amount="1000000", installments=2)
+    assert row.status == "approved"
+    Membership.objects.filter(pk=staff.ali.pk).update(status=Membership.Status.LEFT)
+    with pytest.raises(DomainError, match="doesn't work here"):
+        services.pay_advance(row, by=staff.owner, account=cash)
+    row.refresh_from_db()
+    cash.refresh_from_db()
+    assert row.status == "approved" and row.debt_id is None
+    assert cash.balance == Decimal("50000000.00")
+
+
+def test_payroll_follows_what_finance_did_to_an_advance(shop, paid_staff, cash, freeze):
+    """The accountant records money handed back (or writes the debt off) on Finance's Debts
+    page: no repayment row is made here. Payroll used to go on deducting the whole advance, and
+    finalizing then failed for everyone ("That's more than the 400 000 still owed")."""
+    from apps.finance import services as finance
+    from apps.payroll.tests.conftest import local
+
+    staff = paid_staff
+    row = services.create_advance(
+        staff.ali, by=staff.owner, amount="1000000", installments=2, first_period="2026-10"
+    )
+    row = services.pay_advance(row, by=staff.owner, account=cash)
+    back = finance.pay_debt(
+        row.debt, by=staff.owner, amount="600000", paid_on=date(2026, 10, 21), account=cash
+    )
+    row.refresh_from_db()
+    assert queries.advance_left(row) == Decimal("400000.00")
+    assert queries.repayment_due(row, OCTOBER) == Decimal("400000.00")  # not the 500 000 share
+
+    freeze(local(date(2026, 11, 3), 10))
+    run = services.create_run(shop, by=staff.owner, period="2026-10")
+    run = services.finalize_run(run, by=staff.owner)  # used to raise
+    taken = run.payslips.get(membership=staff.ali).lines.get(kind="advance")
+    assert taken.amount == Decimal("-400000.00")
+    row.refresh_from_db()
+    assert row.status == "repaid" and Debt.objects.get(pk=row.debt_id).status == "paid"
+    assert back.pk and queries.advance_left(row) == 0
+
+
+def test_an_advance_closed_or_reopened_in_finance_changes_state_here(shop, paid_staff, cash):
+    from apps.finance import services as finance
+    from apps.payroll import runs
+
+    staff = paid_staff
+    row = services.create_advance(staff.ali, by=staff.owner, amount="1000000", installments=2)
+    row = services.pay_advance(row, by=staff.owner, account=cash)
+    back = finance.pay_debt(
+        row.debt, by=staff.owner, amount="1000000", paid_on=date(2026, 10, 21), account=cash
+    )
+    assert runs.sync_advances(shop) == 1
+    row.refresh_from_db()
+    assert row.status == "repaid" and queries.repayment_due(row, OCTOBER) == 0
+    assert queries.advance_cap(staff.ali)["available"] > 0  # nothing of it is "used" any more
+    # That payment was a mistake: voided in Finance, the advance is owed again.
+    finance.void_transaction(back, by=staff.owner, reason="Wrong person")
+    assert runs.sync_advances(shop) == 1
+    row.refresh_from_db()
+    assert row.status == "paid" and queries.advance_left(row) == Decimal("1000000.00")
+    assert runs.sync_advances(shop) == 0  # in step: nothing to change
 
 
 def test_instalments_split_and_the_last_takes_the_rest(shop, paid_staff, cash):

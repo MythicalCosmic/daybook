@@ -6,7 +6,7 @@
 import type { StatusTone } from "@/components/StatusPill.vue";
 import { addDays, addMonths, startOfMonth } from "@/lib/dates";
 
-import type { Answers, GoalInput, Outcome, OutcomeState, Question, QuestionInput, Review, RoundInput, RoundProgress, RoundStatus } from "./types";
+import type { Answers, GoalInput, Outcome, OutcomeState, Question, QuestionInput, Review, RoundInput, RoundStatus } from "./types";
 
 export const MIN_QUESTIONS = 3;
 export const MAX_QUESTIONS = 10;
@@ -152,12 +152,6 @@ export function stageIndex(status: RoundStatus): number {
   return STAGES.indexOf(status);
 }
 
-/** Share of people done with the part the round is in (0–100). */
-export function partDone(status: RoundStatus, progress: RoundProgress): number {
-  if (!progress.people) return 0;
-  const done = status === "self" ? progress.self_sent : progress.published;
-  return Math.round((100 * done) / progress.people);
-}
 
 // ─── Ratings and outcomes ──────────────────────────────────────────────────
 

@@ -103,6 +103,57 @@ def test_a_rostered_joiner_is_paid_from_the_first_day(shop, staff, freeze, dates
     assert net(result) == D("3000000.00")
 
 
+def test_a_two_on_two_off_leaver_is_paid_their_share_of_the_month(shop, staff, freeze, dates):
+    """A pharmacist on 2/2 works about 16 shifts a month, not the company's 26 days. Leaving on
+    14 October after 7 shifts, they were paid 7 days of "their 7 shifts plus the company's 15
+    other workdays" (7/22: 1 654 545.45). The month is now reckoned from the share of it they
+    were employed: 11 of the company's 26 working days, as a colleague without a roster would
+    be (2 200 000), or 14 of 31 calendar days where the company counts those."""
+    from apps.payroll.tests.test_golden import absent
+
+    ali = staff.ali
+    dates[ali.pk] = (date(2025, 6, 1), date(2026, 10, 14))
+    freeze(local(date(2026, 9, 28), 10))
+    services.set_pay(ali, by=None, effective_from=date(2026, 1, 1), amount=D("5200000"))
+    plan(ali, [date(2026, 10, day) for day in (2, 3, 6, 7, 10, 11, 14)])
+    freeze(local(date(2026, 11, 3), 10))
+
+    result = compute(ali)
+    assert net(result) == D("2200000.00")
+    assert result.paid_days == 7 and result.scheduled_days == 17  # 7 x 26 / 11 = 16.5
+    gone = next(line for line in result.lines if line.params.get("code") == "not_employed")
+    assert gone.amount == D("-3000000.00")  # 15 of the company's 26 days, like anyone else
+
+    def unrounded(found):
+        return sum((line.amount for line in found.lines if line.kind != Kind.ROUNDING), D(0))
+
+    absent(ali, date(2026, 10, 6))  # one of the seven shifts missed: a seventh of that share
+    assert unrounded(compute(ali)) == D("1885714.29")
+    AttendanceRecord.objects.filter(membership=ali).delete()
+
+    services.update_settings(shop, by=staff.owner, roster_partial_month="calendar")
+    assert unrounded(compute(ali)) == D("2348387.10")  # 5 200 000 x 14 / 31
+
+
+def test_a_roster_first_published_mid_month_does_not_shrink_the_month(shop, staff, freeze, dates):
+    """Employed all October; the company starts planning shifts on the 19th. The 12 planned
+    days were taken for the whole month: one no-show cost 433 333.33 (a twelfth) instead of
+    200 000. Before someone's first shift ever, the company's own working days count."""
+    from apps.payroll.tests.test_golden import absent
+
+    ali = staff.ali
+    dates[ali.pk] = (date(2025, 6, 1), None)
+    freeze(local(date(2026, 10, 16), 10))
+    services.set_pay(ali, by=None, effective_from=date(2026, 1, 1), amount=D("5200000"))
+    plan(ali, [day for day in october_workdays() if day >= date(2026, 10, 19)])
+    absent(ali, date(2026, 10, 20))
+    freeze(local(date(2026, 11, 3), 10))
+
+    result = compute(ali)
+    assert result.scheduled_days == 26 and result.paid_days == 25
+    assert net(result) == D("5000000.00")
+
+
 def test_a_rostered_joiners_overtime_rate_follows_the_whole_month(shop, staff, freeze, dates):
     vali = staff.vali
     dates[vali.pk] = (date(2026, 10, 15), None)
@@ -399,6 +450,31 @@ def test_a_dollar_task_rate_is_converted(shop, staff, freeze, dates):
     assert run.usd_rate == D("12650")
     line = PayslipLine.objects.get(payslip__run=run, kind=Kind.PIECE)
     assert line.amount == D("63250.00")
+
+
+def test_dollar_pay_counts_in_the_wallet_and_the_projection_before_there_is_a_run(
+    shop, staff, freeze, dates
+):
+    from apps.payroll import earnings, queries
+
+    ali = staff.ali
+    dates[ali.pk] = (date(2025, 6, 1), None)
+    freeze(local(date(2026, 11, 3), 10))
+    services.set_pay(
+        ali, by=None, effective_from=date(2026, 1, 1), amount=D("1000"), currency="USD"
+    )
+    finance.set_company_rate(
+        shop, by=staff.owner, currency="USD", day=date(2026, 11, 30), rate=D("12650")
+    )
+    # No run yet: the month is reckoned at the rate a run would take.
+    assert queries.usd_rate_for(shop, date(2026, 11, 1)) == D("12650")
+    assert earnings.current(ali, fresh=True)["estimate"]["net"] == "12650000.00"
+    projected = queries.projected_cost(shop, date(2026, 11, 1))
+    assert (projected["people"], projected["net"]) == (1, D("12650000.00"))
+    # A draft run with its own rate: the wallet follows it.
+    run = services.create_run(shop, by=staff.owner, period="2026-11", usd_rate=D("12700"))
+    assert run.usd_rate == D("12700")
+    assert earnings.current(ali, fresh=True)["estimate"]["net"] == "12700000.00"
 
 
 # 10. "Full amount": a setup from the hire day covers the whole employment.

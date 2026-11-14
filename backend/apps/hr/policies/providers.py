@@ -1,7 +1,7 @@
 """What policies give the shared registries: who may open a version's file, and who may read a
 policy's history."""
 
-from apps.hr.models import Policy, PolicyVersion
+from apps.hr.models import PolicyVersion
 from apps.hr.policies import queries
 from apps.members import scope
 from apps.members.models import Membership
@@ -48,7 +48,3 @@ def may_see_history(member: Membership, policy_id: int) -> bool:
         .filter(pk=policy_id)
         .exists()
     )
-
-
-def policy_link(policy: Policy) -> str:
-    return f"/c/{policy.company_id}/hr/policies/{policy.pk}"

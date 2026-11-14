@@ -21,7 +21,7 @@ they weren't opened.
 """
 
 import logging
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 
 from django.db import transaction
@@ -54,6 +54,9 @@ NO_HOURS_LIMIT = timedelta(hours=16)
 ROUND_THE_CLOCK_LIMIT = timedelta(hours=26)  # a 24-hour branch's till, open since yesterday
 DAY_END_WINDOW = timedelta(hours=1)  # when a 24-hour branch's cash is checked, after the day ends
 EVENING_DELAY = timedelta(minutes=30)
+# While a till of the day is still open the evening post waits for it, until the day's last
+# run (beat runs this every 15 minutes): then it goes out with what is closed.
+EVENING_LAST_CALL = time(23, 45)
 DEFAULT_CLOSE = (22, 0)
 
 
@@ -72,6 +75,9 @@ def scan_all(now: datetime | None = None) -> int:
 
 
 def scan_company(company, now: datetime) -> int:
+    from apps.sales import services
+
+    services.sync_invoices(company)
     settings = get_settings(company)
     at = local(company, now)
     today = business_day(company, now, ends_at=settings.business_day_ends_at)
@@ -303,11 +309,19 @@ def post_evening(company, now: datetime) -> int:
         locked = SalesSettings.objects.select_for_update().get(pk=settings.pk)
         if locked.evening_posted_on == day:
             return 0
-        locked.evening_posted_on = day
-        locked.save(update_fields=["evening_posted_on", "updated_at"])
+        counting = CashShift.objects.filter(
+            branch__company=company,
+            branch__is_active=True,
+            business_day=day,
+            status=CashShift.Status.OPEN,
+        ).exists()
+        if counting and at.time() < EVENING_LAST_CALL:
+            return 0  # a till hasn't closed: its day isn't in the numbers yet, look again
         rows = day_by_branch(company, day)
         if not rows:
-            return 0
+            return 0  # nothing to say yet: the day is marked only once its post went out
+        locked.evening_posted_on = day
+        locked.save(update_fields=["evening_posted_on", "updated_at"])
         total = sum((net for _b, net, _r in rows), Decimal(0))
         week_ago = sum(
             (net for _b, net, _r in day_by_branch(company, day - timedelta(days=7))), Decimal(0)

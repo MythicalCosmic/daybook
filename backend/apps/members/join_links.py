@@ -38,8 +38,9 @@ REPORT_KIND = "members.link_joined"
 # How many names one note or group post lists before "and N more".
 LISTED = 15
 EDITABLE = ("name", "auto_approve", "branch", "role", "position", "max_uses", "expires_at")
-# Changing these makes the editor the one whose approval the link stands for.
-AUTHORITY = {"auto_approve", "branch", "role"}
+# Changing these makes the editor the one whose approval the link stands for (the job title
+# too: a link without a role of its own gives its title's).
+AUTHORITY = {"auto_approve", "branch", "role", "position"}
 
 
 # Reading ----------------------------------------------------------------------------------
@@ -51,7 +52,7 @@ def visible_links(member: Membership) -> QuerySet[JoinLink]:
     links = (
         JoinLink.objects.for_company(member.company)
         .filter(deleted_at__isnull=True)
-        .select_related("branch", "role", "position", "created_by__user")
+        .select_related("branch", "role", "position__role", "created_by__user")
     )
     allowed = scope.branch_ids(member)
     if allowed is not None:
@@ -69,12 +70,24 @@ def may_edit(member: Membership, link: JoinLink, *, default: AccessRole | None =
             return False
     elif not scope.allows(allowed, link.branch_id):
         return False
-    role = link.role or default or default_role(link.company)
+    role = given_role(link, default=default)
     return role is None or services.may_assign_role(member, role)
 
 
 def default_role(company: Company) -> AccessRole | None:
     return AccessRole.objects.for_company(company).filter(is_default=True).first()
+
+
+def given_role(link: JoinLink, *, default: AccessRole | None = None) -> AccessRole | None:
+    """The role the link really gives, as a join reads it (`services._link_role`): its own, else
+    its job title's (never the Owner role), else the company's default one. `default` saves
+    looking that one up for each of many links."""
+    if link.role_id is not None:
+        return link.role
+    title = link.position if link.position_id is not None else None
+    if title is not None and title.role_id is not None and not title.role.is_owner:
+        return title.role
+    return default or default_role(link.company)
 
 
 def ordered(links: QuerySet[JoinLink], now: datetime | None = None) -> list[JoinLink]:
@@ -218,8 +231,9 @@ def _apply(link: JoinLink, by: Membership, fields: dict) -> set[str]:
             changed.add(name)
         setattr(link, name, value)
 
-    # The link stands for its maker's approval: the role is one they may give.
-    role = link.role or default_role(company)
+    # The link stands for its maker's approval: the role it gives (its own or its job title's)
+    # is one they may give.
+    role = given_role(link)
     if role is not None and not services.may_assign_role(by, role):
         raise DomainError(_("You can only give a role whose permissions you have yourself."))
     allowed = scope.branch_ids(by)

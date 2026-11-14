@@ -667,6 +667,7 @@ describe("Settings › Stock", () => {
       price_rounding: "100.00",
       price_jump_percent: "10.00",
       writeoff_approval: true,
+      allow_zero_cost: false,
       show_other_branches: true,
       camera_scanning: true,
       rx_log: true,

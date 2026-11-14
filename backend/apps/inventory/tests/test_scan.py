@@ -29,6 +29,30 @@ def run(freeze, day: date, hour: int = 7, *, capture):
         return scan.daily_scan()
 
 
+def test_one_companys_failure_never_keeps_the_others_from_their_scan(
+    shop, other_company, freeze, monkeypatch, django_capture_on_commit_callbacks
+):
+    from apps.inventory import conf
+
+    other_company.features = ["stock"]
+    other_company.save(update_fields=["features"])
+    first, second = sorted([shop, other_company], key=lambda company: company.pk)
+    scanned = []
+
+    def scan_company(company, today):
+        if company.pk == first.pk:
+            raise RuntimeError("this company's data trips the scan")
+        scanned.append(company.pk)
+
+    monkeypatch.setattr(scan, "scan_company", scan_company)
+    capture = django_capture_on_commit_callbacks
+    assert run(freeze, DAY, capture=capture) == 1
+    assert scanned == [second.pk]
+    # The one that failed isn't marked done: the next hour tries it again.
+    assert conf.get_settings(first).scanned_on is None
+    assert conf.get_settings(second).scanned_on == DAY
+
+
 def test_each_step_once_per_batch(
     shop, owner, head, chilonzor, yunusobod, product, freeze, django_capture_on_commit_callbacks
 ):

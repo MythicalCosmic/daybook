@@ -2106,12 +2106,34 @@ def invoices(company, filters: dict, *, branch_ids: list[int] | None) -> QuerySe
         rows = rows.filter(issued_on__lte=end)
     if filters.get("overdue"):
         today = filters.get("today") or business_day(company)
-        rows = rows.filter(
-            status__in=(Invoice.Status.ISSUED, Invoice.Status.PARTLY_PAID), due_on__lt=today
+        # Its receivable decides, not the invoice's stored status: one paid or written off on
+        # Finance's Debts page (or by a credit payment at the till) is no longer awaited, and
+        # one whose payment was voided there is awaited again.
+        awaited = (Invoice.Status.ISSUED, Invoice.Status.PARTLY_PAID)
+        rows = rows.filter(due_on__lt=today).filter(
+            Q(debt__isnull=True, status__in=awaited)
+            | Q(debt__status="open", status__in=(*awaited, Invoice.Status.PAID))
         )
     if q := (filters.get("q") or "").strip():
         rows = rows.filter(Q(number__icontains=q) | Q(counterparty__name__icontains=q))
     return rows.order_by("-created_at", "-pk")
+
+
+def invoice_status(invoice) -> str:
+    """An invoice's status as its receivable has it now. The stored one is written when a
+    payment is recorded on the invoice itself; the same receivable is also paid, written off
+    or reopened on Finance's Debts page and by credit payments at the till, which know nothing
+    of the invoice (`services.sync_invoices` writes the stored one back in step)."""
+    from apps.sales.models import Invoice
+
+    debt = invoice.debt if invoice.debt_id else None
+    if debt is None or invoice.status in (Invoice.Status.DRAFT, Invoice.Status.VOID):
+        return invoice.status
+    if debt.status == "paid":
+        return Invoice.Status.PAID
+    if debt.status == "open":
+        return Invoice.Status.PARTLY_PAID if debt.paid > 0 else Invoice.Status.ISSUED
+    return invoice.status  # written off or cancelled there: no invoice status says that
 
 
 def invoice_row(invoice, today: date) -> dict:
@@ -2119,11 +2141,14 @@ def invoice_row(invoice, today: date) -> dict:
 
     debt = invoice.debt
     paid = debt.paid if debt is not None else ZERO
-    open_ = invoice.status in (Invoice.Status.ISSUED, Invoice.Status.PARTLY_PAID)
+    status = invoice_status(invoice)
+    open_ = status in (Invoice.Status.ISSUED, Invoice.Status.PARTLY_PAID) and (
+        debt is None or debt.status == "open"
+    )
     return {
         "id": invoice.pk,
         "number": invoice.number,
-        "status": invoice.status,
+        "status": status,
         "customer": {"id": invoice.counterparty_id, "name": invoice.counterparty.name},
         "branch": {"id": invoice.branch_id, "name": invoice.branch.name}
         if invoice.branch_id

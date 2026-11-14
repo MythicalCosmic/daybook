@@ -2428,13 +2428,19 @@ def time_off_approved(time_off: TimeOff) -> int:
     return len(ids)
 
 
-def time_off_cancelled(time_off: TimeOff, previous_status: str | None = None) -> int:
-    """Cancelled or revoked time off gives the person back their coming shifts."""
+def time_off_cancelled(
+    time_off: TimeOff, previous_status: str | None = None, *, cancelled_from: date | None = None
+) -> int:
+    """Cancelled or revoked time off gives the person back their coming shifts: all of them,
+    or those from `cancelled_from` on when only the rest of it was taken back (the days before
+    it are still leave)."""
     if previous_status not in (None, TimeOff.Status.APPROVED):
         return 0
-    today = clock.today(time_off.company)
+    since = clock.today(time_off.company)
+    if cancelled_from is not None:
+        since = max(since, cancelled_from)
     count = WorkShift.objects.filter(
-        time_off=time_off, status=WorkShift.Status.LEAVE, date__gte=today
+        time_off=time_off, status=WorkShift.Status.LEAVE, date__gte=since
     ).update(status=WorkShift.Status.PLANNED, time_off=None, updated_at=timezone.now())
     if count:
         _bump(time_off.company_id, PULSE_ROSTER)

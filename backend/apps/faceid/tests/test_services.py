@@ -654,6 +654,16 @@ def test_a_company_without_the_module_keeps_nothing_personal(staff, device, scan
     assert records(staff.ali) == []
 
 
+def test_a_switched_off_company_keeps_nothing_personal_either(staff, device, scan):
+    company = device.company
+    company.is_active = False  # every API answers 404 for it; its terminal still posts
+    company.save(update_fields=["is_active"])
+    event = scan(8, 57)
+    assert event.action == Action.MODULE_OFF
+    assert (event.employee_no, event.name_on_device, event.photo.name) == ("", "", "")
+    assert records(staff.ali) == []
+
+
 def test_a_disabled_terminal_changes_nothing(staff, device, scan):
     device.enabled = False
     device.save()

@@ -226,6 +226,14 @@ class Story:
                     kamola, by=kamola, amount=D("500000"), reason="Ijara to‘lovi uchun"
                 )
 
+    @staticmethod
+    def _status(member, status: str) -> None:
+        """Set the member's status as it stood at a moment of the story (no signal, no audit)."""
+        from apps.members.models import Membership
+
+        member.status = status
+        Membership.objects.filter(pk=member.pk).update(status=status)
+
     def leaver(self) -> None:
         """Nodira's final settlement (§3.17): an advance paid ten days before she left comes off
         in full, 9 unused leave days are paid out."""
@@ -238,7 +246,8 @@ class Story:
         account = self.payout_account(D("800000"))
         if account is not None:
             given = left_on - timedelta(days=10)
-            nodira.status = Membership.Status.APPROVED  # as she was then (not saved)
+            # As she was then: an advance is given and paid only to someone who works here.
+            self._status(nodira, Membership.Status.APPROVED)
             try:
                 with moment(self.at(given, 10)):
                     row = services.create_advance(
@@ -254,7 +263,7 @@ class Story:
             except DomainError as exc:
                 logger.warning("Demo advance of the leaver not given: %s", exc)
             finally:
-                nodira.status = Membership.Status.LEFT
+                self._status(nodira, Membership.Status.LEFT)
         try:
             with moment(self.at(left_on + timedelta(days=1), 10)):
                 run = services.create_final_run(nodira, by=self.owner, leave_days=D("9"))

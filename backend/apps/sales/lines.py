@@ -507,16 +507,21 @@ def _deduct(sale, product, quantity, *, series, by, outcome, row) -> list[Alloca
 
 def _restock(sale, product, quantity, *, refund_of, by, outcome, row) -> list[Allocation]:
     allocations = _whole(_returned(sale, product, quantity, refund_of), quantity)
+    booking = {
+        "by": by,
+        "document": (SALE_DOCUMENT, sale.pk),
+        "kind": "refund",
+        "status": "quarantine",
+    }
     try:
         with transaction.atomic():
-            stock.restock(
-                sale.branch,
-                allocations,
-                by=by,
-                document=(SALE_DOCUMENT, sale.pk),
-                kind="refund",
-                status="quarantine",
-            )
+            if any(allocation.batch_id for allocation in allocations):
+                stock.restock(sale.branch, allocations, **booking)
+            else:
+                # The file doesn't name the receipt it returns (or that one isn't here): the
+                # stock module can't tell the item from an allocation without a batch, so it
+                # is told, and takes the goods back against the batch last sold here.
+                stock.restock_product(sale.branch, product, quantity, **booking)
     except DomainError as exc:
         if outcome is not None:
             outcome.problem(

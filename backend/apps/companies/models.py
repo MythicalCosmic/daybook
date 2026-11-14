@@ -109,6 +109,9 @@ class Company(TimeStampedModel):
         ),
     )
     is_active = models.BooleanField(default=True)
+    # Until when the one-off "check your details" survey of the employee bot takes answers
+    # (apps.members.profile_fix; `send_profile_fix` opens it). Empty: closed.
+    profile_fix_until = models.DateTimeField(null=True, blank=True, editable=False)
     base_currency = CurrencyField(
         help_text=_("The currency reports and the ledger add up in. Locked once money is booked.")
     )

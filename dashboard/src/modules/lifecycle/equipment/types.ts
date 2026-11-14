@@ -7,7 +7,6 @@ import type { Money } from "@/api/types";
 
 export type CategoryKind = "fixed" | "intangible" | "low_value";
 export type Condition = "new" | "good" | "worn" | "damaged";
-export const CONDITIONS = ["new", "good", "worn", "damaged"] as const;
 
 export interface CategoryRef {
   id: number;

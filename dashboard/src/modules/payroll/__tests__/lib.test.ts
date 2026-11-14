@@ -536,6 +536,10 @@ describe("settings", () => {
     form.leave_payout_months = 6;
     form.leave_payout_unit = "work_days";
     expect(settingsChanges(saved, form)).toEqual({ leave_payout_months: 6, leave_payout_unit: "work_days" });
+    // Closing a month before it ends is off until someone switches it on (an older server says nothing).
+    expect(form.early_finalize).toBe(false);
+    form.early_finalize = true;
+    expect(settingsChanges(saved, form)).toMatchObject({ early_finalize: true });
   });
 });
 

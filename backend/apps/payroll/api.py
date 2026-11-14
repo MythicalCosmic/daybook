@@ -85,7 +85,7 @@ class DisputeView(WalletView):
 def _my_advances(membership: Membership):
     return (
         Advance.objects.filter(membership=membership)
-        .select_related("membership__user", "requested_by", "decided_by", "paid_by")
+        .select_related("membership__user", "requested_by", "decided_by", "paid_by", "debt")
         .prefetch_related(
             Prefetch("repayments", queryset=AdvanceRepayment.objects.select_related("payslip_line"))
         )

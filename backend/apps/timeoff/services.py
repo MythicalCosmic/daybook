@@ -298,8 +298,8 @@ def revoke(
 
 
 def payroll_locked_until(company: Company) -> date | None:
-    """The last day of the last finalized payroll period, when payroll says so (package H's
-    `payroll.queries.finalized_until(company)`); None until then."""
+    """The last day of the last finalized payroll period (`payroll.queries.finalized_until`);
+    None while no month is finalized."""
     try:
         from apps.payroll import queries as payroll_queries
     except ImportError:  # pragma: no cover - the app always exists

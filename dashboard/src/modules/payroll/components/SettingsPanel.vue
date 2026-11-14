@@ -2,7 +2,8 @@
 /**
  * Settings › Payroll (plan §3.13, §14.11, §14.21): pay day, the advance day and cap, the deductions
  * cap and rounding, overtime, holiday and night multipliers with the night window, the working day
- * in hours, taxes (off by default, with a note) and preparing last month's payroll on the 1st.
+ * in hours, taxes (off by default, with a note), whether a month may be closed before it ends and
+ * preparing last month's payroll on the 1st.
  * Saves only what changed; the server audits it.
  */
 import { Info } from "@lucide/vue";
@@ -53,6 +54,7 @@ const roundingOptions = computed(() =>
 );
 
 const leaveUnits = computed(() => (["calendar", "work_days"] as const).map((value) => ({ value, label: t(`payroll.settings.leaveUnit.${value}`) })));
+const rosterShares = computed(() => (["workdays", "calendar"] as const).map((value) => ({ value, label: t(`payroll.settings.rosterShare.${value}`) })));
 
 async function save(): Promise<void> {
   if (!dirty.value || saving.value) return;
@@ -159,6 +161,15 @@ function reset(): void {
           </FormField>
           <FormField v-slot="{ id }" layout="inline" :label="t('payroll.settings.leaveUnit')" :hint="t('payroll.settings.leaveUnitHint')">
             <SelectBox :id="id" v-model="draft.leave_payout_unit" :options="leaveUnits" class="sm:max-w-[200px]" />
+          </FormField>
+        </div>
+      </PageSection>
+
+      <PageSection variant="card" :heading-level="3" :title="t('payroll.settings.closing')">
+        <div class="flex flex-col gap-4">
+          <ToggleSwitch v-model="draft.early_finalize" layout="row" :label="t('payroll.settings.earlyFinalize')" :description="t('payroll.settings.earlyFinalizeHint')" />
+          <FormField v-slot="{ id }" layout="inline" :label="t('payroll.settings.rosterShare')" :hint="t('payroll.settings.rosterShareHint')">
+            <SelectBox :id="id" v-model="draft.roster_partial_month" :options="rosterShares" class="sm:max-w-[200px]" />
           </FormField>
         </div>
       </PageSection>

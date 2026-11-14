@@ -28,6 +28,7 @@ from apps.payroll.models import (
     Payslip,
     PayslipLine,
     PayType,
+    TaskRate,
 )
 
 ZERO = Decimal(0)
@@ -78,9 +79,15 @@ def compensation_ids_between(membership: Membership, start: date, end: date) -> 
     return {row.pk for row in in_force([membership.pk], start, end).get(membership.pk, [])}
 
 
+# What a pay setup's row shows besides its numbers: whose it is (name and photo) and who wrote it.
+COMPENSATION_PEOPLE = ("membership__user", "created_by")
+
+
 def current_compensations(member_ids, on: date) -> dict[int, Compensation]:
+    """The setup in force on `on`, by member (with its person and author: lists show both)."""
     rows = (
         Compensation.objects.filter(membership_id__in=list(member_ids), effective_from__lte=on)
+        .select_related(*COMPENSATION_PEOPLE)
         .order_by("membership_id", "-effective_from")
         .distinct("membership_id")
     )
@@ -91,6 +98,7 @@ def next_compensations(member_ids, on: date) -> dict[int, Compensation]:
     """The next setup starting after `on` (a raise already planned)."""
     rows = (
         Compensation.objects.filter(membership_id__in=list(member_ids), effective_from__gt=on)
+        .select_related(*COMPENSATION_PEOPLE)
         .order_by("membership_id", "effective_from")
         .distinct("membership_id")
     )
@@ -122,6 +130,45 @@ def in_payroll_currency(company, amount: Decimal, currency: str, day: date) -> D
     except DomainError:
         return None
     return convert(amount, currency, target, rate)
+
+
+def _pays_in_another_currency(company) -> bool:
+    """A pay setup or an active task rate is in a currency other than the payroll's."""
+    currency = conf.get_settings(company).currency
+    return (
+        Compensation.objects.for_company(company).exclude(currency=currency).exists()
+        or TaskRate.objects.for_company(company)
+        .filter(is_active=True)
+        .exclude(currency=currency)
+        .exists()
+    )
+
+
+def usd_rate_on(company, day: date) -> Decimal | None:
+    """The company's dollar rate for `day` when some pay is set in another currency: what a run
+    takes when none is given. None when all pay is in the payroll currency, or without a rate."""
+    return _company_usd_rate(company, day) if _pays_in_another_currency(company) else None
+
+
+def _company_usd_rate(company, day: date) -> Decimal | None:
+    from apps.finance.rates import rate_for
+
+    try:
+        return rate_for(company, "USD", day).rate
+    except DomainError:
+        return None
+
+
+def usd_rate_for(company, period: date) -> Decimal | None:
+    """The dollar rate `period`'s pay is reckoned at while its run is not final (the wallet,
+    the month's projection): the run's own when it has one, else what a run would take, the
+    company's rate for the month's last day (`usd_rate_on`)."""
+    if not _pays_in_another_currency(company):
+        return None
+    run = regular_run(company, period)
+    if run is not None and run.usd_rate is not None:
+        return run.usd_rate
+    return _company_usd_rate(company, periods.last_day(periods.first_day(period)))
 
 
 def monthly_pay(membership: Membership, *, on: date | None = None) -> Decimal | None:
@@ -158,17 +205,34 @@ def monthly_pay(membership: Membership, *, on: date | None = None) -> Decimal | 
 # Advances -------------------------------------------------------------------------------
 
 
+def advance_owed(advance: Advance, *, repaid: Decimal | None = None) -> Decimal:
+    """What is still owed on a paid advance: what its repayments here leave, and never more
+    than its receivable in Finance still has open.
+
+    Money the person handed back, or a debt written off, on Finance's own Debts page makes no
+    repayment row here. Without the second half payroll would go on taking back an advance
+    that is settled, and finalizing the month would fail on it for the whole company."""
+    if repaid is None:
+        repaid = sum((row.amount for row in advance.repayments.all()), ZERO)
+    left = advance.amount - repaid
+    debt = advance.debt if advance.debt_id is not None else None
+    if debt is not None:
+        still_open = debt.amount - debt.paid if debt.status == debt.Status.OPEN else ZERO
+        left = min(left, still_open)
+    return max(left, ZERO)
+
+
 def advance_left(advance: Advance) -> Decimal:
-    """What is still owed on a paid advance."""
+    """What is still owed on a paid advance (`advance_owed`, its repayments read now)."""
     repaid = advance.repayments.aggregate(total=Sum("amount"))["total"] or ZERO
-    return advance.amount - repaid
+    return advance_owed(advance, repaid=repaid)
 
 
 def advance_left_of(advance: Advance) -> Decimal:
     """`advance_left` from prefetched repayments (a final settlement takes all of it)."""
     if advance.status != Advance.Status.PAID:
         return ZERO
-    return max(ZERO, advance.amount - sum((r.amount for r in advance.repayments.all()), ZERO))
+    return advance_owed(advance)
 
 
 def advance_cap(membership: Membership, *, on: date | None = None) -> dict:
@@ -180,11 +244,13 @@ def advance_cap(membership: Membership, *, on: date | None = None) -> dict:
     percent = settings_row.advance_cap_percent
     cap = quantize((base or ZERO) * Decimal(percent) / Decimal(100))
     used = ZERO
-    for advance in Advance.objects.filter(
-        membership=membership, status__in=Advance.OPEN_STATUSES
-    ).prefetch_related("repayments"):
+    for advance in (
+        Advance.objects.filter(membership=membership, status__in=Advance.OPEN_STATUSES)
+        .select_related("debt")
+        .prefetch_related("repayments")
+    ):
         if advance.status == Advance.Status.PAID:
-            used += advance.amount - sum((r.amount for r in advance.repayments.all()), ZERO)
+            used += advance_owed(advance)
         else:
             used += advance.amount
     return {
@@ -202,7 +268,7 @@ def repayment_due(advance: Advance, period: date) -> Decimal:
     (the last one takes what is left), from `first_period` on, never more than is owed."""
     if advance.status != Advance.Status.PAID or period < advance.first_period:
         return ZERO
-    left = advance.amount - sum((r.amount for r in advance.repayments.all()), ZERO)
+    left = advance_owed(advance)
     if left <= 0:
         return ZERO
     months_in = (period.year - advance.first_period.year) * 12 + (
@@ -227,7 +293,7 @@ def people_scope(queryset: QuerySet, branch_ids: list[int] | None, *, field: str
 
 def compensations(company, *, branch_ids: list[int] | None) -> QuerySet[Compensation]:
     rows = Compensation.objects.for_company(company).select_related(
-        "membership__user", "membership__position", "membership__home_branch"
+        "membership__user", "membership__position", "membership__home_branch", "created_by"
     )
     return people_scope(rows, branch_ids)
 
@@ -310,6 +376,24 @@ def regular_run(company, period: date) -> PayrollRun | None:
     )
 
 
+def finalized_until(company) -> date | None:
+    """The last day of the latest month whose regular payroll is finalized or paid; None when
+    no month is. Time off inside it is no longer recorded or revoked
+    (`timeoff.services.payroll_locked_until` asks): the month's timesheet would stop matching
+    the payslips already made from it. Reopening the run lifts the lock."""
+    period = (
+        PayrollRun.objects.for_company(company)
+        .filter(
+            kind=PayrollRun.Kind.REGULAR,
+            status__in=(PayrollRun.Status.FINALIZED, PayrollRun.Status.PAID),
+        )
+        .order_by("-period")
+        .values_list("period", flat=True)
+        .first()
+    )
+    return periods.last_day(period) if period is not None else None
+
+
 def _sum(rows, field: str) -> Decimal:
     return sum((getattr(row, field) for row in rows), ZERO)
 
@@ -376,7 +460,7 @@ def projected_cost(company, period: date, *, branch_ids: list[int] | None = None
     summary = run_summary(company, period, branch_ids=branch_ids)
     if summary is not None and summary["status"] in DONE_STATUSES:
         return {"source": "run", **summary}
-    inputs, people = calculator.gather(company, period)
+    inputs, people = calculator.gather(company, period, usd_rate=usd_rate_for(company, period))
     if branch_ids is not None:
         visible = set(
             Membership.objects.filter(branches__in=branch_ids).values_list("pk", flat=True)

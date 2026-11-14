@@ -61,6 +61,41 @@ def test_pay_day_reminder_once_a_month(shop, team, freeze, django_capture_on_com
     assert jobs.pay_day_reminders(local(date(2026, 11, 5), 10)) == 0
 
 
+def test_one_companys_failure_never_stops_the_jobs_for_the_others(
+    shop, team, other_company, monkeypatch
+):
+    """The jobs walk every company: an unexpected error in one (ordered first here) used to
+    end the whole pass, so the companies after it got no payroll prepared and no rules."""
+    from apps.companies.models import Company
+    from apps.payroll import rules
+
+    other_company.features = ["payroll"]
+    other_company.save(update_fields=["features"])
+    monkeypatch.setattr(
+        jobs,
+        "_companies",
+        lambda: sorted(Company.objects.all(), key=lambda c: c.pk != other_company.pk),
+    )
+    create_run, evaluate_daily = services.create_run, rules.evaluate_daily
+
+    def failing_create(company, **kwargs):
+        if company.pk == other_company.pk:
+            raise RuntimeError("this company's data trips the calculation")
+        return create_run(company, **kwargs)
+
+    def failing_rules(company, day, **kwargs):
+        if company.pk == other_company.pk:
+            raise RuntimeError("this company's data trips the rules")
+        return evaluate_daily(company, day, **kwargs)
+
+    monkeypatch.setattr(services, "create_run", failing_create)
+    monkeypatch.setattr(rules, "evaluate_daily", failing_rules)
+
+    assert jobs.prepare_runs(local(date(2026, 11, 1), 7)) == 1
+    assert PayrollRun.objects.filter(company=shop, period=date(2026, 10, 1)).exists()
+    assert jobs.evaluate_daily_rules(local(date(2026, 11, 2), 7)) == 0  # no rules, no crash
+
+
 def test_run_spreadsheet_rows(shop, team, freeze):
     freeze(local(date(2026, 11, 3), 10))
     run = services.create_run(shop, by=team.owner, period="2026-10")

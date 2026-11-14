@@ -28,7 +28,7 @@ from django.utils import timezone
 from django.utils.translation import gettext as _
 
 from apps.audit import services as audit
-from apps.companies.models import Branch, BranchKind
+from apps.companies.models import Branch
 from apps.console import pulse
 from apps.core.exceptions import DomainError
 from apps.core.money import quantize
@@ -112,10 +112,6 @@ def _same_company(company_id: int, *rows) -> None:
             raise DomainError(_("That belongs to another company."))
 
 
-def _company_id(row) -> int:
-    return row.company_id if hasattr(row, "company_id") else row.pk
-
-
 def _text(value, limit: int) -> str:
     return (value or "").strip()[:limit]
 
@@ -134,10 +130,6 @@ def _next_number(company, field: str) -> int:
 
 def _code(branch) -> str:
     return (branch.code or str(branch.pk)).upper()
-
-
-def _product_label(product: Product) -> str:
-    return product.name
 
 
 def is_licensed_for(branch, product: Product) -> bool:
@@ -582,6 +574,7 @@ SETTINGS_FIELDS = (
     "price_rounding",
     "price_jump_percent",
     "writeoff_approval",
+    "allow_zero_cost",
     "show_other_branches",
     "camera_scanning",
     "rx_log",
@@ -674,6 +667,18 @@ def normalize_inn(value: str) -> str:
     return "+".join(sorted(part for part in parts_ if part))[:200]
 
 
+def _pack_in_use(product: Product) -> bool:
+    """Whether anything is counted in parts of the item's pack already: a batch, a movement or
+    a delivery line. Quantities, costs and prices are kept per part and read back through the
+    pack size, so changing it then would turn 50 packs on the shelf into 5 at a tenth of the
+    value, in the books only."""
+    return (
+        StockBatch.objects.filter(product=product).exists()
+        or StockMovement.objects.filter(product=product).exists()
+        or GoodsReceiptLine.objects.filter(product=product).exists()
+    )
+
+
 def _apply_product(product: Product, fields: dict) -> dict:
     changed = {}
     for field, value in fields.items():
@@ -690,6 +695,14 @@ def _apply_product(product: Product, fields: dict) -> dict:
                 setattr(product, field, value)
             continue
         if getattr(product, field) != value:
+            if field == "units_per_pack" and product.pk is not None and _pack_in_use(product):
+                raise DomainError(
+                    _(
+                        "The pack size can't change once the item has deliveries or stock: "
+                        "everything it has is counted in parts of the pack as it is now. Add "
+                        "a new item with the right pack size instead."
+                    )
+                )
             changed[field] = str(value) if isinstance(value, Decimal | date) else value
             setattr(product, field, value)
     if not product.name:
@@ -1344,6 +1357,25 @@ def submit_receipt(receipt: GoodsReceipt, *, by: Membership) -> GoodsReceipt:
     return receipt
 
 
+def _costs_given(lines, settings) -> None:
+    """Every line says what it cost, unless the company takes free goods
+    (`StockSettings.allow_zero_cost`). The app's cost field is optional (not everyone who
+    receives sees costs), so a forgotten cost reads as 0: posted like that, the goods would
+    count for nothing in the stock's value, open no payable and be sold at no cost."""
+    if settings.allow_zero_cost:
+        return
+    missing = [line.product.name for line in lines if line.unit_cost is None or line.unit_cost <= 0]
+    if missing:
+        names = ", ".join(missing[:5]) + (" …" if len(missing) > 5 else "")
+        raise DomainError(
+            _(
+                "No cost on: %(names)s. Enter what each one cost, or allow deliveries of free "
+                "goods in the stock settings."
+            )
+            % {"names": names}
+        )
+
+
 @transaction.atomic
 def post_receipt(receipt: GoodsReceipt, *, by: Membership) -> GoodsReceipt:
     """Post a delivery, in one transaction: its number, one batch per line on stock (the
@@ -1365,6 +1397,7 @@ def post_receipt(receipt: GoodsReceipt, *, by: Membership) -> GoodsReceipt:
     company = receipt.company
     branch = receipt.branch
     settings = conf.get_settings(company)
+    _costs_given(lines, settings)
     rules = list(PricingRule.objects.for_company(company).filter(is_active=True))
     for line in lines:
         _check_licensed(branch, line.product)
@@ -1375,12 +1408,19 @@ def post_receipt(receipt: GoodsReceipt, *, by: Membership) -> GoodsReceipt:
     document = (RECEIPT, receipt.pk)
     levels = lock_levels((branch, line.product) for line in lines)
     jumps = []
+    last_cost: dict[int, Decimal] = {}
     for line in lines:
         product = line.product
         line.warnings = line_warnings(receipt, line)
         cost = _in_base(receipt, line.unit_cost)
+        # Free goods (where the company takes them) sell at the usual price: the price and its
+        # cap come from what the item last cost (on this delivery, else before it), while the
+        # batch itself keeps its cost of 0.
+        priced_at = cost if cost > 0 else last_cost.get(product.pk, product.cost_price or ZERO)
+        # A free line's own price was worked out from its cost of 0: not a price anyone typed.
+        wanted = line.retail_price if cost > 0 else (line.retail_price or None)
         price, lowered = pricing.suggest_price(
-            product, cost, settings, wanted=line.retail_price, rules=rules
+            product, priced_at, settings, wanted=wanted, rules=rules
         )
         if (
             lowered
@@ -1418,8 +1458,9 @@ def post_receipt(receipt: GoodsReceipt, *, by: Membership) -> GoodsReceipt:
             jumps.append(
                 {"product": product.name, "before": str(product.cost_price), "now": str(cost)}
             )
-        Product.objects.filter(pk=product.pk).update(cost_price=cost)
-        product.cost_price = cost
+        if cost > 0:  # free goods don't make the item's cost zero
+            Product.objects.filter(pk=product.pk).update(cost_price=cost)
+            product.cost_price = last_cost[product.pk] = cost
         if recall is not None:
             _add_found(recall, branch, batch, line.quantity)
     receipt.status = GoodsReceipt.Status.POSTED
@@ -1630,11 +1671,6 @@ def release(batch: StockBatch, *, by: Membership, reason: str) -> StockBatch:
         )
         _bump(batch.company_id)
     return batch
-
-
-def batch_ceiling(batch: StockBatch) -> Decimal | None:
-    settings = conf.get_settings(batch.product.company)
-    return pricing.price_ceiling(batch.product, batch.unit_cost, settings)
 
 
 @transaction.atomic
@@ -2277,24 +2313,47 @@ def _lock_count(count: StockCount) -> StockCount:
 
 
 @transaction.atomic
+def _held(branch, batch) -> Decimal:
+    """Parts of `batch` the books hold at `branch` now (callers hold the product's level lock,
+    so nothing moves it meanwhile)."""
+    held = BatchStock.objects.filter(branch=branch, batch=batch).values_list("quantity", flat=True)
+    return held.first() or ZERO
+
+
+@transaction.atomic
 def record_counted(count: StockCount, *, by: Membership, counted: dict[int, Decimal]) -> StockCount:
-    """What the counter found, by line id (blind: they never see what was expected)."""
+    """What the counter found, by line id (blind: they never see what was expected).
+
+    A line is compared with the books of the moment it is counted, not of the moment the count
+    started: what was sold, received or written off in between is off the shelf and off the
+    books alike, and booking "counted minus the quantity at the start" would move it twice."""
     count = _lock_count(count)
     if count.status != StockCount.Status.OPEN:
         raise DomainError(_("This count is closed."))
-    lines = {line.pk: line for line in count.lines.all()}
+    lines = {line.pk: line for line in count.lines.select_related("product", "batch")}
+    chosen = []
     for line_id, value in counted.items():
         line = lines.get(int(line_id))
         if line is None:
             raise DomainError(_("That line isn't on this count."))
-        if value is None:
-            line.counted, line.counted_by = None, None
-        else:
+        if value is not None:
             value = parts(value)
             if value < 0:
                 raise DomainError(_("A count can't be below zero."))
+        chosen.append((line, value))
+    lock_levels(
+        (count.branch, line.product)
+        for line, value in chosen
+        if value is not None and line.batch_id is not None
+    )
+    for line, value in chosen:
+        if value is None:
+            line.counted, line.counted_by = None, None
+        else:
             line.counted, line.counted_by = value, by
-        line.save(update_fields=["counted", "counted_by"])
+            if line.batch_id is not None:
+                line.expected = _held(count.branch, line.batch)
+        line.save(update_fields=["counted", "counted_by", "expected"])
     return count
 
 
@@ -2308,7 +2367,11 @@ def add_found(
     expires_on: date,
     counted,
 ) -> StockCountLine:
-    """Goods on the shelf the system didn't know: their own line, counted."""
+    """Goods on the shelf that aren't on the count's list: their own line, counted. Told twice
+    (a retry, a corrected quantity) they are still one line. When the books know the series at
+    this branch after all (a delivery posted or a transfer received since the count started),
+    the line is that batch's, against its books of this moment: booked as new goods, the
+    delivery would be on stock twice."""
     count = _lock_count(count)
     if count.status != StockCount.Status.OPEN:
         raise DomainError(_("This count is closed."))
@@ -2319,11 +2382,33 @@ def add_found(
     counted = parts(counted)
     if counted <= 0:
         raise DomainError(_("Give a quantity above zero."))
-    existing = count.lines.filter(product=product, batch__series=series).first()
+    lock_levels([(count.branch, product)])
+    existing = (
+        count.lines.filter(product=product, batch__series=series).select_related("batch").first()
+        or count.lines.filter(product=product, batch__isnull=True, series=series).first()
+    )
     if existing is not None:
         existing.counted, existing.counted_by = counted, by
-        existing.save(update_fields=["counted", "counted_by"])
+        if existing.batch_id is not None:
+            existing.expected = _held(count.branch, existing.batch)
+        existing.save(update_fields=["counted", "counted_by", "expected"])
         return existing
+    known = (
+        BatchStock.objects.filter(branch=count.branch, batch__product=product, batch__series=series)
+        .select_related("batch")
+        .order_by("-quantity", "batch_id")
+        .first()
+    )
+    if known is not None:
+        return StockCountLine.objects.create(
+            count=count,
+            product=product,
+            batch=known.batch,
+            expected=known.quantity,
+            counted=counted,
+            counted_by=by,
+            order=count.lines.count(),
+        )
     return StockCountLine.objects.create(
         count=count,
         product=product,
@@ -2357,7 +2442,9 @@ def submit_count(count: StockCount, *, by: Membership) -> StockCount:
 def apply_count(count: StockCount, *, by: Membership) -> StockCount:
     """Book the differences of the counted lines (uncounted lines change nothing) as count
     adjustments at each batch's cost; goods found that the system didn't know become a batch
-    of their own. A shortage above `count_tolerance` at cost tells the owners."""
+    of their own. A line's difference is what was counted less the books of the moment it was
+    counted (`record_counted`), so what moved before that is not booked again and what moved
+    after it still stands. A shortage above `count_tolerance` at cost tells the owners."""
     count = _lock_count(count)
     if count.status == StockCount.Status.APPLIED:
         return count
@@ -2741,7 +2828,3 @@ def set_request_status(row: MissingRequest, *, by: Membership, status: str) -> M
 
 
 # Branch helpers --------------------------------------------------------------------------------
-
-
-def pharmacy_branches(company):
-    return company.branches.filter(is_active=True, kind=BranchKind.PHARMACY).order_by("order", "pk")

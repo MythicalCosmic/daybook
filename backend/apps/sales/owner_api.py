@@ -1785,10 +1785,14 @@ class InvoiceViewSet(SalesViewSet):
         from django.core.files.base import ContentFile
 
         from apps.core.files import signed_url
+        from apps.sales.models import Invoice
 
         invoice = self._invoice(pk)
         data = services.invoice_pdf(invoice, language=self.membership_language())
-        invoice.pdf.save(f"{invoice.number or invoice.pk}.pdf", ContentFile(data), save=True)
+        # Only the file's name is written. Saving the whole row would put back the invoice as
+        # this request read it, over an issue or a payment made while the PDF was rendering.
+        invoice.pdf.save(f"{invoice.number or invoice.pk}.pdf", ContentFile(data), save=False)
+        Invoice.objects.filter(pk=invoice.pk).update(pdf=invoice.pdf.name)
         url = signed_url(
             invoice.pdf,
             user=request.user,

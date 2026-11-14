@@ -13,7 +13,9 @@ import io
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 
+from django.conf import settings
 from django.db import transaction
+from django.utils import translation
 from django.utils.translation import gettext as _
 
 from apps.core.exceptions import DomainError
@@ -76,6 +78,7 @@ SYNONYMS = {
 # A check mark typed in a cell counts too; built at run time, since it is read, never sent (the
 # bots' no-emoji check reads every string literal).
 YES = {"1", "yes", "true", "ha", "да", "+", "x", "rx", chr(0x2713)}
+NO = {"0", "no", "false", "yo’q", "yoq", "нет", "-", "otc"}
 KIND_WORDS = {
     "medicine": ("medicine", "dori", "препарат", "лс"),
     "device": ("device", "tibbiy buyum", "изделие", "мед изделие"),
@@ -98,13 +101,18 @@ def read_table(upload) -> tuple[list[str], list[list[str]]]:
     if name.endswith(".xlsx") or data[:2] == b"PK":
         from openpyxl import load_workbook
 
-        book = load_workbook(io.BytesIO(data), read_only=True, data_only=True)
-        sheet = book.worksheets[0]
-        rows = [
-            ["" if cell is None else _cell(cell) for cell in row]
-            for row in sheet.iter_rows(values_only=True)
-        ]
-        book.close()
+        try:
+            book = load_workbook(io.BytesIO(data), read_only=True, data_only=True)
+        except Exception as exc:  # anything openpyxl can't open is simply not a workbook
+            raise DomainError(_("The file isn't readable as an Excel workbook.")) from exc
+        try:
+            rows = []
+            for row in book.worksheets[0].iter_rows(values_only=True):
+                rows.append(["" if cell is None else _cell(cell) for cell in row])
+                if len(rows) > MAX_ROWS + 50:
+                    break  # too many: said below, without reading a million rows first
+        finally:
+            book.close()
     else:
         text = None
         for encoding in ("utf-8-sig", "cp1251"):
@@ -115,8 +123,14 @@ def read_table(upload) -> tuple[list[str], list[list[str]]]:
                 continue
         if text is None:
             raise DomainError(_("The file's text can't be read: save it as UTF-8 CSV or XLSX."))
-        dialect = csv.Sniffer().sniff(text[:4096], delimiters=",;\t") if text.strip() else None
-        rows = [row for row in csv.reader(io.StringIO(text), dialect or csv.excel)]
+        try:
+            dialect = csv.Sniffer().sniff(text[:4096], delimiters=",;\t") if text.strip() else None
+        except csv.Error:
+            dialect = None  # one column (a list of names): nothing to tell a separator by
+        try:
+            rows = [row for row in csv.reader(io.StringIO(text), dialect or csv.excel)]
+        except csv.Error as exc:
+            raise DomainError(_("The file isn't readable as CSV.")) from exc
     rows = [row for row in rows if any(str(cell).strip() for cell in row)]
     if not rows:
         raise DomainError(_("The file is empty."))
@@ -162,21 +176,57 @@ def _decimal(text: str) -> Decimal | None:
         raise ValueError(text) from exc
 
 
-def _bool(text: str) -> bool:
-    return _key(text) in YES
+def _bool(text: str) -> bool | None:
+    """Yes or no as the cell says it; None for an empty cell (the item keeps what it has). A
+    word that is neither is an error of the row: read as "no", it would quietly take a
+    prescription medicine off prescription."""
+    key = _key(text)
+    if not key:
+        return None
+    if key in YES:
+        return True
+    if key in NO:
+        return False
+    raise ValueError(text)
 
 
-def _kind(text: str) -> str:
+def _kind(text: str) -> str | None:
+    """The kind the cell names; None when it is empty or names none (the item keeps its own)."""
     key = (text or "").strip().lower()
     for kind, words in KIND_WORDS.items():
         if key == kind or key in words:
             return kind
-    return Product.Kind.MEDICINE
+    return None
 
 
-def _choice(text: str, choices, default: str) -> str:
-    key = (text or "").strip().lower()
-    return key if key in choices else default
+_LABELLED: dict[type, dict[str, str]] = {}
+
+
+def _labelled(enum) -> dict[str, str]:
+    """Every way a choice is written: its code and its name in each language of the app."""
+    if enum not in _LABELLED:
+        found = {}
+        for value, label in enum.choices:
+            found[_key(value)] = value
+            for code, _name in settings.LANGUAGES:
+                with translation.override(code):
+                    found[_key(str(label))] = value
+        _LABELLED[enum] = found
+    return _LABELLED[enum]
+
+
+def _choice(text: str, enum, *, strict: bool) -> str | None:
+    """The choice the cell names (by its code or its name in any language); None for an empty
+    cell: the item keeps what it has. A word that names none is an error of the row when
+    `strict` (how a medicine is controlled and stored: a guess there is worse than a skipped
+    row), else it is left alone like an empty cell."""
+    key = _key(text)
+    if not key:
+        return None
+    found = _labelled(enum).get(key)
+    if found is None and strict:
+        raise ValueError(text)
+    return found
 
 
 def _row_fields(values: dict[str, str], cache: dict) -> tuple[dict, list[str]]:
@@ -201,17 +251,20 @@ def _row_fields(values: dict[str, str], cache: dict) -> tuple[dict, list[str]]:
                         raise ValueError(text)
                     fields[field] = int(number)
             elif field in ("rx_required", "mandatory_list", "socially_significant"):
-                fields[field] = _bool(text)
+                if (answer := _bool(text)) is not None:
+                    fields[field] = answer
             elif field == "kind":
-                fields[field] = _kind(text)
+                if (kind := _kind(text)) is not None:
+                    fields[field] = kind
             elif field == "dosage_form":
-                fields[field] = _choice(text, Product.DosageForm.values, "")
+                if (form := _choice(text, Product.DosageForm, strict=False)) is not None:
+                    fields[field] = form
             elif field == "control_class":
-                fields[field] = _choice(
-                    text, Product.ControlClass.values, Product.ControlClass.NONE
-                )
+                if (control := _choice(text, Product.ControlClass, strict=True)) is not None:
+                    fields[field] = control
             elif field == "storage":
-                fields[field] = _choice(text, Product.Storage.values, Product.Storage.ROOM)
+                if (storage := _choice(text, Product.Storage, strict=True)) is not None:
+                    fields[field] = storage
             elif field == "registration_until":
                 fields[field] = date.fromisoformat(text[:10]) if text else None
             elif field == "inn":

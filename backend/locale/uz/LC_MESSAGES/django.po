@@ -29056,3 +29056,58 @@ msgstr "Telegramda %(company)s jamoasiga qo‘shiling"
 #: owner_bot/ownerbot/invite.py
 msgid "Share"
 msgstr "Ulashish"
+
+#: backend/apps/payroll/models.py
+msgid ""
+"A month's payroll may be finalized before the month is over. What is worked "
+"after that reaches no payslip."
+msgstr ""
+"Oyning ish haqini oy tugamasdan yakunlash mumkin. Shundan keyin ishlangani "
+"hech bir hisob-varaqqa tushmaydi."
+
+#: backend/apps/payroll/runs.py
+#, python-format
+msgid ""
+"%(month)s isn't over yet: its payroll can be finalized after %(day)s. To pay "
+"a month before it ends, allow that in the payroll settings."
+msgstr ""
+"Oy hali tugamadi (%(month)s): ish haqini %(day)s kunidan keyin yakunlash "
+"mumkin. Oy tugamasdan to‘lash uchun bunga ish haqi sozlamalarida ruxsat "
+"bering."
+
+#: backend/apps/inventory/models.py
+msgid ""
+"A delivery may have lines at no cost (free goods). Off: a line without a "
+"cost stops the delivery from being posted."
+msgstr ""
+"Kirimda tannarxi yo‘q qatorlar (bepul tovar) bo‘lishi mumkin. O‘chiq bo‘lsa, "
+"tannarxsiz qator bor kirimni o‘tkazib bo‘lmaydi."
+
+#: backend/apps/inventory/services.py
+#, python-format
+msgid ""
+"No cost on: %(names)s. Enter what each one cost, or allow deliveries of free "
+"goods in the stock settings."
+msgstr ""
+"Tannarx kiritilmagan: %(names)s. Har birining tannarxini kiriting yoki ombor "
+"sozlamalarida bepul tovarli kirimga ruxsat bering."
+
+#: backend/apps/inventory/services.py
+msgid ""
+"The pack size can't change once the item has deliveries or stock: everything "
+"it has is counted in parts of the pack as it is now. Add a new item with the "
+"right pack size instead."
+msgstr ""
+"Mahsulotda kirim yoki qoldiq bo‘lgach, qadoq hajmini o‘zgartirib bo‘lmaydi: "
+"undagi hamma narsa hozirgi qadoq qismlarida hisoblanadi. Buning o‘rniga "
+"qadoq hajmi to‘g‘ri bo‘lgan yangi mahsulot qo‘shing."
+
+#: backend/apps/payroll/models.py
+msgid ""
+"Someone on a shift roster who joins or leaves during a month is paid for the "
+"share of the month they were employed: counted in the company's working "
+"days, as for everyone else, or in calendar days."
+msgstr ""
+"Smena jadvalidagi xodim oy davomida ishga kirsa yoki ketsa, oyning ishlagan "
+"ulushi uchun haq oladi: ulush boshqa xodimlardagi kabi kompaniyaning ish "
+"kunlarida yoki kalendar kunlarida hisoblanadi."

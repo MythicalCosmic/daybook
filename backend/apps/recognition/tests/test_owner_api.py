@@ -1,6 +1,8 @@
 """The owner endpoints (rule 21): company scope (404), permissions (403), branch scope, audit,
 hidden fields, the module switch."""
 
+from datetime import date
+
 import pytest
 
 from apps.audit.models import AuditLog
@@ -26,6 +28,27 @@ def viewer(shop, member):
     person.role = role
     person.save(update_fields=["role"])
     return person
+
+
+def test_the_leaderboard_does_not_grow_with_its_people(
+    shop, owner, ali, madina, nigora, owner_api, django_assert_max_num_queries
+):
+    client = owner_api(owner)
+
+    def learner(person) -> None:
+        """Points this week and a streak a workday has passed since (Wednesday; it is Saturday)."""
+        PointsEntryFactory(membership=person, points=30, at=at(DAY))
+        services.touch_streak(person, date(2026, 11, 4))
+
+    learner(ali)
+    client.get(url(shop, "leaderboard/?period=week"))  # makes the settings rows
+    with django_assert_max_num_queries(60) as few:
+        client.get(url(shop, "leaderboard/?period=week"))
+    learner(madina)
+    learner(nigora)
+    with django_assert_max_num_queries(len(few.captured_queries)):
+        rows = client.get(url(shop, "leaderboard/?period=week")).json()["rows"]
+    assert len(rows) == 3 and {row["streak"] for row in rows} == {0}
 
 
 def test_leaderboard_with_branch_scope(shop, owner, head, ali, nigora, owner_api, yunusobod):

@@ -42,7 +42,7 @@ from rest_framework.response import Response
 
 from apps.companies.models import Branch
 from apps.console.base import OwnerAPIView
-from apps.console.perms import AnyOf, holds
+from apps.console.perms import AnyOf
 from apps.core import uploads
 from apps.finance.models import Counterparty
 from apps.inventory import conf, engine, importing, journals, queries, register, services, shapes
@@ -509,9 +509,13 @@ class ProductMovementsView(StockView):
     def get(self, request, company_id, pk):
         product = self.get_product(pk)
         today = self.today()
-        rows = queries.movements(
-            self.company, today - timedelta(days=365), today, branch_ids=self.branches()
-        ).filter(product=product)[:200]
+        rows = (
+            queries.movements(
+                self.company, today - timedelta(days=365), today, branch_ids=self.branches()
+            )
+            .filter(product=product)
+            .select_related("created_by__user")[:200]
+        )
         return Response(
             s.MovementSerializer(
                 [shapes.movement_out(row, cost=self.cost) for row in rows], many=True
@@ -1076,6 +1080,8 @@ class MovementsView(StockView):
         )
         if params.get("product"):
             rows = rows.filter(product_id=_int(params["product"], "product"))
+        # Each row names who made it (`by`: name and photo): the person's account comes along.
+        rows = rows.select_related("created_by__user")
         return Response(
             s.MovementSerializer(
                 [shapes.movement_out(row, cost=self.cost) for row in rows[:500]], many=True
@@ -1138,7 +1144,7 @@ class ReceiptsView(ReceiptBase):
     def get(self, request, company_id):
         params = request.query_params
         rows = queries.receipts(self.company, branch_ids=self.branches()).select_related(
-            "received_by", "posted_by", "debt"
+            "received_by__user", "posted_by__user", "debt"
         )
         if params.get("status"):
             rows = rows.filter(status__in=params["status"].split(","))
@@ -1352,7 +1358,7 @@ class TransfersView(TransferBase):
     )
     def get(self, request, company_id):
         rows = queries.transfers(self.company, branch_ids=self.branches()).select_related(
-            "sent_by", "received_by"
+            "sent_by__user", "received_by__user"
         )
         if request.query_params.get("status"):
             rows = rows.filter(status__in=request.query_params["status"].split(","))
@@ -1440,8 +1446,14 @@ class TransferResolveView(TransferBase):
     def post(self, request, company_id, pk):
         serializer = s.ResolveSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        transfer = self.get_transfer(pk)
+        # Whoever settles it manages the pharmacy whose books it changes: the receiving one
+        # when the goods were found there, else the sending one (its loss, or its goods back).
+        found = serializer.validated_data["outcome"] == StockTransfer.Resolution.FOUND
+        if not self.in_scope(transfer.to_branch_id if found else transfer.from_branch_id):
+            raise NotFound
         transfer = services.resolve_transfer(
-            self.get_transfer(pk), by=self.membership, **serializer.validated_data
+            transfer, by=self.membership, **serializer.validated_data
         )
         return self.detail(transfer)
 
@@ -1453,8 +1465,11 @@ class TransferVoidView(TransferBase):
     def post(self, request, company_id, pk):
         serializer = s.ReasonSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        transfer = self.get_transfer(pk)
+        if not self.in_scope(transfer.from_branch_id):  # the sender calls its goods back
+            raise NotFound
         transfer = services.void_transfer(
-            self.get_transfer(pk), by=self.membership, reason=serializer.validated_data["reason"]
+            transfer, by=self.membership, reason=serializer.validated_data["reason"]
         )
         return self.detail(transfer)
 
@@ -1514,7 +1529,7 @@ class WriteOffsView(WriteOffBase):
     )
     def get(self, request, company_id):
         rows = queries.writeoffs(self.company, branch_ids=self.branches()).select_related(
-            "proposed_by", "approved_by"
+            "proposed_by__user", "approved_by__user"
         )
         if request.query_params.get("status"):
             rows = rows.filter(status__in=request.query_params["status"].split(","))
@@ -1681,7 +1696,8 @@ class CountBase(StockView):
     def detail(self, count) -> Response:
         count = self.get_count(count.pk)
         blind = count.status == StockCount.Status.OPEN or not self.membership.has_perm(MANAGE)
-        lines = list(count.lines.select_related("product", "batch"))
+        # A line's value difference is priced through its batch's product (the pack size).
+        lines = list(count.lines.select_related("product", "batch__product"))
         return Response(
             s.CountDetailSerializer(
                 {
@@ -1707,7 +1723,9 @@ class CountsView(CountBase):
         responses=s.CountSerializer(many=True),
     )
     def get(self, request, company_id):
-        rows = queries.counts(self.company, branch_ids=self.branches())
+        rows = queries.counts(self.company, branch_ids=self.branches()).select_related(
+            "started_by__user"
+        )
         if request.query_params.get("status"):
             rows = rows.filter(status__in=request.query_params["status"].split(","))
         rows = rows.annotate(counted_total=Count("lines", filter=Q(lines__counted__isnull=False)))
@@ -2025,7 +2043,7 @@ class DefekturaView(StockView):
     )
     def get(self, request, company_id):
         rows = MissingRequest.objects.for_company(self.company).select_related(
-            "branch", "product", "requested_by"
+            "branch", "product", "requested_by__user"
         )
         scope = self.branches()
         if scope is not None:
@@ -2262,7 +2280,3 @@ class ControlledReportedView(JournalBase):
                 register.rows(period.branch, period.month, product=period.product), many=True
             ).data
         )
-
-
-def holds_any(member, *perms) -> bool:
-    return holds(member, AnyOf(*perms))

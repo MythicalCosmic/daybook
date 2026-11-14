@@ -176,6 +176,24 @@ def test_the_evening_post_goes_out_once_after_closing(hours):
     assert SalesSettings.objects.get(company=shop.company).evening_posted_on == day
 
 
+def test_the_evening_post_waits_for_a_till_that_is_still_open(hours):
+    shop = hours
+    shift = services.open_shift(by=shop.cashier, register=shop.register, opening_float="200000")
+    day = shift.business_day
+    posted_on = lambda: SalesSettings.objects.get(company=shop.company).evening_posted_on  # noqa: E731
+    with mock.patch("apps.sales.scan.broadcast") as broadcast:
+        # 21:40: closing time has passed, the cashier is still counting. Nothing goes out, and
+        # the day is not marked as posted (it would stay silent for the whole evening).
+        assert scan.post_evening(shop.company, datetime.combine(day, time(21, 40), TASHKENT)) == 0
+        assert posted_on() is None and not broadcast.called
+        other = open_and_close(shop, cashier=shop.colleague, register=shop.other_register)
+        assert other.business_day == day
+        # One till closed, one still open: still waiting, until the day's last run.
+        assert scan.post_evening(shop.company, datetime.combine(day, time(22, 10), TASHKENT)) == 0
+        assert scan.post_evening(shop.company, datetime.combine(day, time(23, 45), TASHKENT)) == 1
+    assert posted_on() == day and broadcast.call_count == 1
+
+
 def test_a_closed_shift_posts_to_the_cash_groups(shop, django_capture_on_commit_callbacks):
     with (
         mock.patch("apps.sales.alerts.broadcast") as broadcast,

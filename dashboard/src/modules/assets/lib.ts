@@ -156,6 +156,3 @@ export function yearsOf(schedule: ScheduleMonth[]): YearGroup[] {
 }
 
 /** Sum of decimal strings as a number (for display only; the server's totals are the truth). */
-export function sumMoney(values: Array<string | null | undefined>): number {
-  return values.reduce((total, value) => total + (value ? Number(value) : 0), 0);
-}

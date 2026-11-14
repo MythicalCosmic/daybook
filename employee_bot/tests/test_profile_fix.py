@@ -1,9 +1,12 @@
 """The post-launch survey: branch → department → job title → save, and a self-chosen title
 never raises anyone's access."""
 
+from datetime import timedelta
+
 import pytest
-from aiogram.methods import EditMessageText
+from aiogram.methods import AnswerCallbackQuery, EditMessageText
 from asgiref.sync import sync_to_async
+from django.utils import timezone
 
 from apps.members import profile_fix
 from apps.members.callbacks import ProfileFix
@@ -14,6 +17,8 @@ pytestmark = pytest.mark.django_db(transaction=True)
 
 
 def _setup(company, member):
+    company.profile_fix_until = timezone.now() + timedelta(days=14)  # as send_profile_fix opens it
+    company.save(update_fields=["profile_fix_until"])
     branches = profile_fix.ensure_branches(company)
     department = Department.objects.create(company=company, name="Tijorat bo‘limi")
     worker = member.registered(company, user__telegram_id=7701)
@@ -86,3 +91,46 @@ def test_ids_from_elsewhere_are_refused(company, other_company, member):
     foreign = Position.objects.create(company=other_company, name="Begona")
     assert not profile_fix.apply(worker, b=branches[0].pk, d=0, p=foreign.pk)
     assert not profile_fix.apply(worker, b=999999, d=0, p=foreign.pk)
+
+
+async def test_the_survey_is_over_once_its_days_have_passed(dp, bot, company, member):
+    """It used to take answers for ever: anyone still holding its message could move their own
+    branch and job title months later. `send_profile_fix` opens it for some days."""
+    branches, _department, worker = await sync_to_async(_setup)(company, member)
+    await sync_to_async(
+        lambda: (
+            type(company)
+            .objects.filter(pk=company.pk)
+            .update(profile_fix_until=timezone.now() - timedelta(minutes=1))
+        )
+    )()
+    data = ProfileFix(step="b", b=branches[1].pk)
+
+    await dp.feed_update(bot, updates.callback(updates.tg_user(7701), data.pack()))
+
+    answer = [r for r in bot.requests if isinstance(r, AnswerCallbackQuery)][-1]
+    assert answer.text == profile_fix.GONE and answer.show_alert
+    assert not [r for r in bot.requests if isinstance(r, EditMessageText)]
+    saved = await sync_to_async(lambda: Membership.objects.get(pk=worker.pk))()
+    assert saved.home_branch_id == worker.home_branch_id
+
+
+def test_someone_still_waiting_says_where_they_work_but_gets_no_role_from_it(company, member):
+    """What a person may do is decided by whoever approves them, never by a title they picked;
+    and each answer leaves a row in the audit log."""
+    from apps.audit.models import AuditLog
+
+    branches, department, _worker = _setup(company, member)
+    cashier = AccessRole.objects.get(company=company, name="Cashier")
+    title = Position.objects.create(company=company, name="Kassir X", role=cashier)
+    waiting = member.registered(company, user__telegram_id=7702)
+    Membership.objects.filter(pk=waiting.pk).update(status=Membership.Status.PENDING)
+    waiting.refresh_from_db()
+    role_before = waiting.role_id
+
+    assert profile_fix.apply(waiting, b=branches[0].pk, d=department.pk, p=title.pk)
+
+    waiting.refresh_from_db()
+    assert waiting.position_id == title.pk and waiting.role_id == role_before
+    row = AuditLog.objects.filter(action="members.changed", company_id=company.pk).latest("pk")
+    assert row.details["via"] == "profile_fix" and "position" in row.details["changes"]

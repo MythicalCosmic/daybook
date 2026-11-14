@@ -89,20 +89,35 @@ def balance(membership: Membership, *, kind: str = "annual", on: date) -> Decima
 
 def days_off(member: Membership, first: date, last: date) -> set[date]:
     """The member's days off from `first` to `last`: company holidays and approved time off."""
-    off = set(
-        Holiday.objects.filter(company_id=member.company_id, date__range=(first, last)).values_list(
+    return days_off_many(member.company_id, {member.pk: first}, last)[member.pk]
+
+
+def days_off_many(company_id: int, first_days: dict[int, date], last: date) -> dict[int, set[date]]:
+    """`days_off` of several people of one company in two queries: member id → their days off
+    from their own first day to `last`."""
+    result: dict[int, set[date]] = {member_id: set() for member_id in first_days}
+    if not first_days:
+        return result
+    earliest = min(first_days.values())
+    holidays = list(
+        Holiday.objects.filter(company_id=company_id, date__range=(earliest, last)).values_list(
             "date", flat=True
         )
     )
+    for member_id, first in first_days.items():
+        result[member_id].update(day for day in holidays if day >= first)
     approved = TimeOff.objects.filter(
-        membership=member, status=TimeOff.Status.APPROVED, first_day__lte=last, last_day__gte=first
-    ).values_list("first_day", "last_day")
-    for start, end in approved:
-        day = max(start, first)
+        membership_id__in=list(first_days),
+        status=TimeOff.Status.APPROVED,
+        first_day__lte=last,
+        last_day__gte=earliest,
+    ).values_list("membership_id", "first_day", "last_day")
+    for member_id, start, end in approved:
+        day = max(start, first_days[member_id])
         while day <= min(end, last):
-            off.add(day)
+            result[member_id].add(day)
             day += timedelta(days=1)
-    return off
+    return result
 
 
 def is_holiday(company: Company, day: date) -> bool:

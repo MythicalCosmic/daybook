@@ -216,6 +216,9 @@ class TestRegularRun:
         """October was finalized on the 26th; Ali's last day is Wednesday the 28th."""
         staff = team
         history(shop, staff.ali)
+        services.update_settings(
+            shop, by=staff.owner, early_finalize=True
+        )  # they pay before the month ends
         freeze(local(date(2026, 10, 26), 10))
         regular = services.create_run(shop, by=staff.accountant, period="2026-10")
         services.finalize_run(regular, by=staff.owner)

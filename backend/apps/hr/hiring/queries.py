@@ -158,10 +158,5 @@ def stage_counts(rows: QuerySet[Applicant]) -> dict[str, int]:
     return {stage: found.get(stage, 0) for stage in STAGES}
 
 
-def summary_line(vacancy: Vacancy) -> str:
-    """ "Farmatsevt · Chilonzor" """
-    return " · ".join(part for part in (vacancy.title, _branch(vacancy)) if part)
-
-
 def _branch(vacancy: Vacancy) -> str:
     return vacancy.branch.name if vacancy.branch_id else _("Any branch")

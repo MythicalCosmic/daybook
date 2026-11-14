@@ -83,6 +83,8 @@ export interface Ref {
 
 // Settings ------------------------------------------------------------------------------------
 
+export type RosterShare = "workdays" | "calendar";
+
 export interface PayrollSettings {
   currency: Currency;
   pay_day: number;
@@ -106,6 +108,10 @@ export interface PayrollSettings {
   /** Unused leave paid out on leaving: the average day's pay of this many months before. */
   leave_payout_months?: number;
   leave_payout_unit?: LeaveUnit;
+  /** A month's payroll may be finalized before the month is over (off: refused until it ends). */
+  early_finalize?: boolean;
+  /** How a part of a month counts for someone on a shift roster who joined or left in it. */
+  roster_partial_month?: RosterShare;
 }
 
 // Pay setups ----------------------------------------------------------------------------------

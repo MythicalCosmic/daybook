@@ -1,6 +1,8 @@
 """The single offboarding wizard: steps other modules register, their blockers and questions,
 and the answers that reach `member_left` receivers."""
 
+from datetime import timedelta
+
 import pytest
 from django.core.exceptions import PermissionDenied
 from django.utils import timezone
@@ -170,18 +172,25 @@ def test_future_time_off_is_cancelled(company, member):
     owner = member.registered(company, "Owner")
     worker = member.registered(company)
     today = timezone.localdate()
-    future = TimeOff.objects.create(
-        company=company,
-        membership=worker,
-        first_day=today,
-        last_day=today,
-        status=TimeOff.Status.APPROVED,
+    tomorrow = today + timedelta(days=1)
+    last, future = (
+        TimeOff.objects.create(
+            company=company,
+            membership=worker,
+            first_day=day,
+            last_day=day,
+            status=TimeOff.Status.APPROVED,
+        )
+        for day in (today, tomorrow)
     )
 
     services.complete_offboarding(worker, by=owner, terminated_on=today, reason="redundancy")
 
     future.refresh_from_db()
     assert future.status == TimeOff.Status.CANCELLED
+    # A day off on the last day itself was theirs: it stays (a final payslip pays it).
+    last.refresh_from_db()
+    assert last.status == TimeOff.Status.APPROVED
 
 
 def test_an_unknown_reason_is_refused(company, member):

@@ -37,7 +37,15 @@ def _multiplier(params: dict) -> str:
 
 
 def _days(count) -> str:
-    count = int(count or 0)
+    """A number of days: whole as a rule; a part of one (to two places, as text) on a line of
+    someone on a shift roster who was employed for a part of the month."""
+    try:
+        days = Decimal(str(count or 0))
+    except Exception:
+        days = Decimal(0)
+    if days != days.to_integral_value():
+        return _leave_days(days)
+    count = int(days)
     return ngettext("%(count)s day", "%(count)s days", count) % {"count": count}
 
 
@@ -72,7 +80,10 @@ def line_label(line: PayslipLine) -> str:
         pay_type = params.get("pay_type")
         if pay_type == PayType.MONTHLY:
             if "days" in params and "scheduled" in params and params.get("from"):
-                return _("Monthly pay for %(days)s of %(scheduled)s working days") % params
+                return _("Monthly pay for %(days)s of %(scheduled)s working days") % {
+                    "days": _number(params["days"]),
+                    "scheduled": _number(params["scheduled"]),
+                }
             if (
                 params.get("calendar_days")
                 and "days" in params

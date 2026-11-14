@@ -11,7 +11,7 @@ from apps.core.exceptions import DomainError
 from apps.finance import services as finance
 from apps.finance.models import Debt, MoneyAccount, Transaction
 from apps.inbox.models import Notification
-from apps.payroll import finance_bridge, services
+from apps.payroll import finance_bridge, queries, services
 from apps.payroll.models import (
     Adjustment,
     Advance,
@@ -121,6 +121,21 @@ class TestCalculate:
         run = services.create_run(shop, by=staff.accountant, period="2026-10")
         warned = {w["member"]["id"] for w in run.warnings if w["code"] == "no_pay_setup"}
         assert staff.vali.pk not in warned and staff.manager.pk in warned
+
+    def test_nobody_but_an_owner_adds_lines_to_their_own_payslip(self, shop, team):
+        staff = team
+        services.set_pay(
+            staff.accountant, by=staff.owner, effective_from=date(2026, 1, 1), amount=4_000_000
+        )
+        run = services.create_run(shop, by=staff.owner, period="2026-10")
+        mine = payslip_of(run, staff.accountant)
+        line = [{"label": "Correction", "amount": "3000000"}]
+        with pytest.raises(DomainError, match="own pay"):
+            services.set_manual_lines(mine, by=staff.accountant, lines=line)
+        assert not mine.lines.filter(kind="manual").exists()
+        # Someone else's payslip, and an owner's own (the business itself), as before.
+        services.set_manual_lines(payslip_of(run, staff.ali), by=staff.accountant, lines=line)
+        services.set_manual_lines(mine, by=staff.owner, lines=line)
 
     def test_recalculating_follows_the_data_and_keeps_hand_made_lines(self, shop, team):
         staff = team
@@ -321,6 +336,62 @@ class TestFinalize:
         )
         with pytest.raises(DomainError, match="paid"):
             services.reopen_run(run, by=staff.owner)
+
+    def test_a_proposal_nobody_decided_can_still_be_taken_back_after_the_month_is_paid(
+        self, shop, team, cash
+    ):
+        staff = team
+        fine, other, bonus = (
+            services.propose(
+                staff.ali, by=staff.manager, kind=kind, amount=amount, reason="x", period="2026-10"
+            )
+            for kind, amount in (("fine", 50000), ("fine", 70000), ("bonus", 90000))
+        )
+        run = services.create_run(shop, by=staff.owner, period="2026-10")
+        services.finalize_run(run, by=staff.owner)
+        services.mark_paid(
+            run, by=staff.owner, payslip_ids=[payslip_of(run, staff.ali).pk], account=cash
+        )
+        # Paid: the month can't be reopened, so the three would wait in "Needs you" for ever.
+        assert queries.pending_count(staff.owner) == 3
+        with pytest.raises(DomainError, match="finalized"):
+            services.approve(bonus, by=staff.owner)  # that would change a paid month
+        services.reject(fine, by=staff.owner, reason="Too late")
+        services.void(other, by=staff.owner, reason="Too late")
+        services.reject(bonus, by=staff.owner, reason="Too late")
+        assert queries.pending_count(staff.owner) == 0
+        assert payslip_of(run, staff.ali).net == D("5200000.00")  # nothing moved
+
+    def test_a_finalized_month_locks_time_off_inside_it(self, shop, team):
+        from apps.timeoff import services as timeoff
+
+        staff = team
+        october, november = date(2026, 10, 20), date(2026, 11, 2)
+        run = services.create_run(shop, by=staff.owner, period="2026-10")
+        assert queries.finalized_until(shop) is None  # a draft locks nothing
+        services.finalize_run(run, by=staff.owner)
+        assert queries.finalized_until(shop) == date(2026, 10, 31)
+        with pytest.raises(DomainError, match="finalized"):
+            timeoff.record_time_off(staff.ali, by=staff.owner, first_day=october, last_day=october)
+        timeoff.record_time_off(staff.ali, by=staff.owner, first_day=november, last_day=november)
+        services.reopen_run(run, by=staff.owner)
+        assert queries.finalized_until(shop) is None
+        timeoff.record_time_off(staff.ali, by=staff.owner, first_day=october, last_day=october)
+
+    def test_a_month_in_progress_is_finalized_only_where_the_company_pays_early(self, shop, team):
+        """It is 3 November. November's payroll can be prepared (a draft "so far"), but closing
+        it now would leave the rest of the month off every payslip, for good once it is paid:
+        refused, unless the company says it pays before the month ends."""
+        staff = team
+        run = services.create_run(shop, by=staff.owner, period="2026-11")
+        with pytest.raises(DomainError, match="isn't over yet"):
+            services.finalize_run(run, by=staff.owner)
+        run.refresh_from_db()
+        assert run.status == "draft"
+        october = services.create_run(shop, by=staff.owner, period="2026-10")
+        assert services.finalize_run(october, by=staff.owner).status == "finalized"  # over
+        services.update_settings(shop, by=staff.owner, early_finalize=True)
+        assert services.finalize_run(run, by=staff.owner).status == "finalized"
 
     def test_mark_paid_publish_and_received(
         self, shop, team, cash, claim, django_capture_on_commit_callbacks

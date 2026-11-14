@@ -31,6 +31,7 @@ import type {
   PayslipLine,
   PayslipLineKind,
   PayslipStatus,
+  RosterShare,
   Rule,
   RuleInput,
   RuleMetric,
@@ -654,6 +655,8 @@ export interface SettingsForm {
   auto_prepare: boolean;
   leave_payout_months: number | null;
   leave_payout_unit: LeaveUnit;
+  early_finalize: boolean;
+  roster_partial_month: RosterShare;
 }
 
 const DECIMAL_SETTINGS = ["deductions_cap_percent", "overtime_multiplier", "holiday_work_multiplier", "night_multiplier", "daily_hours", "income_tax_percent", "social_tax_percent", "inps_percent"] as const;
@@ -673,6 +676,8 @@ export function settingsForm(settings: PayrollSettings): SettingsForm {
     auto_prepare: settings.auto_prepare,
     leave_payout_months: settings.leave_payout_months ?? 12,
     leave_payout_unit: settings.leave_payout_unit ?? "calendar",
+    early_finalize: settings.early_finalize ?? false,
+    roster_partial_month: settings.roster_partial_month ?? "workdays",
     ...decimals,
   };
 }

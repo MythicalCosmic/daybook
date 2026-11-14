@@ -13,6 +13,7 @@ from decimal import Decimal
 
 from django.core.exceptions import PermissionDenied
 from django.db import IntegrityError, transaction
+from django.db.models import F, Q
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
@@ -20,7 +21,6 @@ from apps.audit import services as audit
 from apps.console import pulse
 from apps.core.exceptions import DomainError
 from apps.finance.models import MoneyAccount
-from apps.finance.rates import rate_for
 from apps.members.models import Membership
 from apps.members.permissions import Perm
 from apps.members.queries import person_ref
@@ -30,12 +30,10 @@ from apps.payroll.models import (
     Adjustment,
     Advance,
     AdvanceRepayment,
-    Compensation,
     PayoutMethod,
     PayrollRun,
     Payslip,
     PayslipLine,
-    TaskRate,
 )
 from apps.payroll.signals import payslips_published, run_paid
 
@@ -126,20 +124,7 @@ def _usd_rate(run: PayrollRun) -> Decimal | None:
     active task rate is in another currency."""
     if run.usd_rate is not None:
         return run.usd_rate
-    currency = conf.get_settings(run.company).currency
-    foreign = (
-        Compensation.objects.for_company(run.company).exclude(currency=currency).exists()
-        or TaskRate.objects.for_company(run.company)
-        .filter(is_active=True)
-        .exclude(currency=currency)
-        .exists()
-    )
-    if not foreign:
-        return None
-    try:
-        return rate_for(run.company, "USD", finance_bridge.booked_on(run)).rate
-    except DomainError:
-        return None
+    return queries.usd_rate_on(run.company, finance_bridge.booked_on(run))
 
 
 def _warnings(run: PayrollRun, inputs, people, results, members) -> list[dict]:
@@ -289,7 +274,43 @@ def _store(run: PayrollRun, result: calculator.Result, payslip: Payslip | None, 
     return payslip
 
 
+def sync_advances(company) -> int:
+    """Advances in step with their receivables in Finance; returns how many changed.
+
+    An advance settled on Finance's own Debts page (the money handed back there, or the debt
+    written off) is closed here; one whose payment there was voided is open again. Payroll's
+    numbers already follow the debt (`queries.advance_owed`): this moves the advance between
+    "being paid back" and "closed"."""
+    from apps.finance.models import Debt
+
+    rows = (
+        Advance.objects.select_for_update(of=("self",))
+        .filter(company=company, debt__isnull=False)
+        .filter(
+            Q(status=Advance.Status.PAID)
+            | Q(
+                status=Advance.Status.REPAID,
+                debt__status=Debt.Status.OPEN,
+                debt__paid__lt=F("debt__amount"),
+            )
+        )
+        .select_related("debt")
+        .prefetch_related("repayments")
+    )
+    changed = 0
+    for row in rows:
+        status = Advance.Status.PAID if queries.advance_owed(row) > 0 else Advance.Status.REPAID
+        if status != row.status:
+            row.status = status
+            row.save(update_fields=["status", "updated_at"])
+            changed += 1
+    if changed:
+        _bump(company.pk, PULSE_ADVANCES)
+    return changed
+
+
 def _calculate(run: PayrollRun, *, by, member_ids=None) -> PayrollRun:
+    sync_advances(run.company)
     if run.is_final:
         return _calculate_final(run, by=by)
     company = run.company
@@ -403,6 +424,24 @@ def calculate_run(run: PayrollRun, *, by: Membership | None, usd_rate=None) -> P
 # Finalizing and reopening ---------------------------------------------------------------
 
 
+def _month_is_over(run: PayrollRun) -> None:
+    """A month's payroll waits for the month to end, unless the company pays before it does
+    (`PayrollSettings.early_finalize`): a month finalized and paid on the 12th can't be reopened,
+    and the hours, absences, task pay and fines of the days after reach no payslip. A final
+    payslip closes on the person's last day, whenever that is."""
+    if run.is_final or conf.get_settings(run.company).early_finalize:
+        return
+    ends = periods.last_day(run.period)
+    if periods.today(run.company) <= ends:
+        raise DomainError(
+            _(
+                "%(month)s isn't over yet: its payroll can be finalized after %(day)s. To pay "
+                "a month before it ends, allow that in the payroll settings."
+            )
+            % {"month": queries.month_label(run.period), "day": ends.strftime("%d.%m.%Y")}
+        )
+
+
 @transaction.atomic
 def finalize_run(run: PayrollRun, *, by: Membership | None) -> PayrollRun:
     """Calculate once more and freeze the month: setups, adjustments and repayments lock and
@@ -411,6 +450,7 @@ def finalize_run(run: PayrollRun, *, by: Membership | None) -> PayrollRun:
     run = _lock(run)
     if run.status != Status.DRAFT:
         raise DomainError(_("Only a draft payroll can be finalized."))
+    _month_is_over(run)
     run = _calculate(run, by=by)
     payslips = list(run.payslips.select_related("membership__home_branch", "run"))
     if not payslips:
@@ -456,11 +496,15 @@ def finalize_run(run: PayrollRun, *, by: Membership | None) -> PayrollRun:
                     created_by=by.user if by is not None else None,
                 )
         finance_bridge.book_payslip(payslip, by=by)
-    for advance in Advance.objects.filter(
-        pk__in=PayslipLine.objects.filter(payslip__run=run, advance__isnull=False).values(
-            "advance_id"
+    for advance in (
+        Advance.objects.filter(
+            pk__in=PayslipLine.objects.filter(payslip__run=run, advance__isnull=False).values(
+                "advance_id"
+            )
         )
-    ).prefetch_related("repayments"):
+        .select_related("debt")
+        .prefetch_related("repayments")
+    ):
         if queries.advance_left(advance) <= 0:
             advance.status = Advance.Status.REPAID
             advance.save(update_fields=["status", "updated_at"])
@@ -706,6 +750,10 @@ def set_manual_lines(payslip: Payslip, *, by: Membership | None, lines: list[dic
     """Replace the hand-made lines of a draft payslip (`[{"id"?, "label", "amount"}]`, signed
     amounts) and work the payslip out again."""
     _require(by, Perm.PAYROLL_MANAGE)
+    # Nobody but an owner writes their own pay (services._not_own_pay: the rule of pay setups,
+    # bonuses and fines), and a hand-made line is pay.
+    if by is not None and by.pk == payslip.membership_id and not by.role.is_owner:
+        raise DomainError(_("You can't change your own pay."))
     run = _lock(payslip.run)
     if run.status != Status.DRAFT:
         raise DomainError(_("Lines can be added only while the payroll is a draft."))

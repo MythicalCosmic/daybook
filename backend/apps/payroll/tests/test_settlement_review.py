@@ -40,6 +40,7 @@ def team(monkeypatch, staff, freeze):
 def finalized_october_then_ali_leaves(shop, staff, freeze):
     """October finalized on the 26th with Ali's payslip; Ali's last day is the 28th and his
     final run (after the regular one) is prepared on the 29th."""
+    services.update_settings(shop, by=staff.owner, early_finalize=True)  # they pay before the end
     freeze(local(date(2026, 10, 26), 10))
     regular = services.create_run(shop, by=staff.accountant, period="2026-10")
     services.finalize_run(regular, by=staff.owner)
@@ -58,6 +59,9 @@ def test_a_bonus_is_paid_once_when_october_is_reopened_around_the_final_run(shop
     the regular one) takes it when it is finalized first. Finalized again, October must not
     pay it a second time."""
     staff = team
+    services.update_settings(
+        shop, by=staff.owner, early_finalize=True
+    )  # they pay before the month ends
     freeze(local(date(2026, 10, 20), 10))
     bonus = services.propose(
         staff.ali,
@@ -85,6 +89,9 @@ def test_a_later_month_that_paid_a_leaver_is_flagged(shop, team, freeze):
     after the regular one) says what September paid after the 28th, and that October paid him
     a whole month he didn't work."""
     staff = team
+    services.update_settings(
+        shop, by=staff.owner, early_finalize=True
+    )  # they pay before the month ends
     freeze(local(date(2026, 9, 30), 18))
     september = services.create_run(shop, by=staff.accountant, period="2026-09")
     services.finalize_run(september, by=staff.owner)

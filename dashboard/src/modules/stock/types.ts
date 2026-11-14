@@ -49,6 +49,8 @@ export interface StockSettings {
   price_rounding: Money;
   price_jump_percent: string;
   writeoff_approval: boolean;
+  /** Deliveries may have lines at cost 0 (free goods); off: such a delivery isn't posted. */
+  allow_zero_cost?: boolean;
   show_other_branches: boolean;
   camera_scanning: boolean;
   rx_log: boolean;

@@ -195,4 +195,7 @@ def test_the_legal_price_cap_of_a_pack(company):
     assert queries.price_cap(capped, unit_cost=Decimal("10340")) == Decimal("12000")
     assert queries.price_cap(capped) == Decimal("12000")
     assert queries.price_cap(ProductFactory(company=company, rx_required=True)) is None
+    # A cost of zero (a line received without its cost, a gift) is no cost to cap from.
+    assert queries.price_cap(rx, unit_cost=Decimal("0")) is None
+    assert queries.price_cap(capped, unit_cost=Decimal("0")) == Decimal("12000")
     assert queries.price_cap(ProductFactory(company=company), unit_cost=Decimal("10340")) is None

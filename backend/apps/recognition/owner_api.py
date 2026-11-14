@@ -112,15 +112,14 @@ class LeaderboardView(OwnerView):
             "membership_id", flat=True
         ):
             badges[member_id] = badges.get(member_id, 0) + 1
-        streaks = {
-            streak.membership_id: streak
-            for streak in Streak.objects.filter(membership_id__in=ids, kind="learning")
-        }
+        streaks = queries.current_streaks(
+            self.company, Streak.objects.filter(membership_id__in=ids, kind="learning")
+        )
         rows = [
             {
                 **queries.board_row(row),
                 "badges": badges.get(row.member.pk, 0),
-                "streak": queries.current_streak(streaks.get(row.member.pk), row.member),
+                "streak": streaks.get(row.member.pk, 0),
             }
             for row in board.rows
         ]

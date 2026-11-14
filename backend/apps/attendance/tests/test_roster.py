@@ -223,6 +223,35 @@ def test_time_off_turns_shifts_into_leave_and_back(staff, django_capture_on_comm
     assert shift.status == WorkShift.Status.PLANNED and shift.time_off is None
 
 
+def test_time_off_taken_back_from_a_day_gives_back_the_shifts_from_that_day_only(
+    staff, django_capture_on_commit_callbacks
+):
+    company = staff.ali.company
+    days = [DAY + timedelta(days=offset) for offset in range(4)]
+    shifts = [shift_at(staff.ali, day) for day in days]
+    time_off = TimeOff.objects.create(
+        company=company,
+        membership=staff.ali,
+        first_day=days[0],
+        last_day=days[-1],
+        status=TimeOff.Status.PENDING,
+    )
+    with django_capture_on_commit_callbacks(execute=True):
+        timeoff_services.decide(time_off.pk, True, by=staff.manager.user)
+    time_off.refresh_from_db()
+    with django_capture_on_commit_callbacks(execute=True):
+        timeoff_services.revoke(time_off, by=staff.manager, reason="Needed back", from_day=days[2])
+    for shift in shifts:
+        shift.refresh_from_db()
+    # The first two days are still leave; the shifts of the days taken back are theirs again.
+    assert [shift.status for shift in shifts] == [
+        WorkShift.Status.LEAVE,
+        WorkShift.Status.LEAVE,
+        WorkShift.Status.PLANNED,
+        WorkShift.Status.PLANNED,
+    ]
+
+
 def test_retroactive_time_off_excuses_absences(staff):
     past = DAY - timedelta(days=2)
     shift = shift_at(staff.ali, past)

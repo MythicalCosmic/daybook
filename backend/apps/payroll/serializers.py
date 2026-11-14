@@ -14,7 +14,7 @@ from rest_framework import serializers
 
 from apps.core.money import Currency, MoneySerializerField
 from apps.members.queries import person_ref
-from apps.payroll import periods
+from apps.payroll import periods, queries
 from apps.payroll.models import (
     Adjustment,
     AdjustmentRule,
@@ -137,6 +137,8 @@ class SettingsSerializer(serializers.ModelSerializer):
             "auto_prepare",
             "leave_payout_months",
             "leave_payout_unit",
+            "early_finalize",
+            "roster_partial_month",
         )
         ref_name = "PayrollSettings"
 
@@ -462,7 +464,8 @@ class AdvanceSerializer(AmountsHidden, serializers.ModelSerializer):
     def get_left(self, row):
         if row.status not in (Advance.Status.PAID, Advance.Status.REPAID):
             return f"{row.amount:.2f}"
-        return f"{row.amount - self._repaid(row):.2f}"
+        # Not just the amount less what payroll took back: Finance may have settled it too.
+        return f"{queries.advance_owed(row):.2f}"
 
     @extend_schema_field(RepaymentSerializer(many=True))
     def get_repayments(self, row):
@@ -555,13 +558,6 @@ class DisputeSerializer(serializers.Serializer):
 
     class Meta:
         ref_name = "PayrollDispute"
-
-
-class RuleRefSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = AdjustmentRule
-        fields = ("id", "name")
-        ref_name = "PayrollRuleRef"
 
 
 # Runs and payslips ----------------------------------------------------------------------

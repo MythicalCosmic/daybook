@@ -16,7 +16,6 @@ from apps.audit.queries import events
 from apps.members.models import Membership
 from apps.members.permissions import Perm
 from apps.members.scope import branch_ids as scope_of
-from apps.reminders.models import ReminderLog
 from apps.tasks import generation, queries, rules
 from apps.tasks.models import Proof, Task, TaskReading, TaskTemplate
 from apps.timeoff.queries import is_holiday
@@ -420,15 +419,6 @@ def _day_over(company, now: datetime):
 
 def _percent(part: int, whole: int) -> float | None:
     return round(100 * part / whole, 1) if whole else None
-
-
-def reminder_counts(task_ids: list[int]) -> dict[int, int]:
-    return dict(
-        ReminderLog.objects.filter(task_id__in=task_ids, kind=ReminderLog.Kind.REMINDER)
-        .values("task_id")
-        .annotate(n=Count("pk"))
-        .values_list("task_id", "n")
-    )
 
 
 # Routine work: the Routines page's Today, History and To confirm ----------------------------

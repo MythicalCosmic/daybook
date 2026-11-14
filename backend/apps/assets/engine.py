@@ -362,15 +362,6 @@ class _State:
             self.salvage = min(self.salvage, self.book)
 
 
-def _suspended_before(changes, month: date) -> bool:
-    """Mothballed before `month` (the opening of the schedule)?"""
-    state = False
-    for change in changes:
-        if change.kind in ("suspend", "resume") and add_months(first_of(change.on), 1) < month:
-            state = change.kind == "suspend"
-    return state
-
-
 def _projected(usage: dict[date, Decimal], month: date) -> Decimal:
     """A future month's units: the average of the last three months recorded before it."""
     known = [usage[key] for key in sorted(usage) if key < month][-3:]

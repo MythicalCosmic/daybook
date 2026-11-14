@@ -92,6 +92,48 @@ def test_copying_setup_from_another_company(owner, owner_api, company):
     assert AuditLog.objects.filter(action=CompanyAction.SETUP_COPIED, company_id=new.pk).exists()
 
 
+def test_copying_a_modules_setup_into_a_new_company_brings_the_module(owner, owner_api, company):
+    """A new company starts with no module on: a module's part (finance categories) used to be
+    refused there, and with it the whole creation."""
+    from apps.finance import services as finance
+    from apps.finance.models import Category
+
+    services.set_features(company, by=owner, features=["finance", "attendance"])
+    finance.create_category(company, by=owner, name="Packaging", kind="expense")
+    api = owner_api(owner)
+
+    only = api.post(
+        NEW,
+        {"name": "Second shop", "copy_from": company.pk, "parts": ["finance.categories"]},
+        format="json",
+    )
+    assert only.status_code == 201, only.content
+    assert only.json()["copied"]["finance.categories"] >= 1
+    second = Company.objects.get(pk=only.json()["id"])
+    assert second.features == ["finance"]  # the part's module, not every module of the source
+    assert Category.objects.filter(company=second, name="Packaging").exists()
+
+    both = api.post(
+        NEW,
+        {
+            "name": "Third shop",
+            "copy_from": company.pk,
+            "parts": ["companies.modules", "finance.categories"],
+        },
+        format="json",
+    )
+    assert both.status_code == 201, both.content
+    assert Company.objects.get(pk=both.json()["id"]).features == ["finance", "attendance"]
+    # A part of a module the source doesn't run is still refused, and nothing is made.
+    services.set_features(company, by=owner, features=["attendance"])
+    refused = api.post(
+        NEW,
+        {"name": "Fourth shop", "copy_from": company.pk, "parts": ["finance.categories"]},
+        format="json",
+    )
+    assert refused.status_code == 400 and not Company.objects.filter(name="Fourth shop").exists()
+
+
 def test_copying_from_a_company_you_cannot_open_is_refused(owner, owner_api, other_company):
     response = owner_api(owner).post(
         NEW,

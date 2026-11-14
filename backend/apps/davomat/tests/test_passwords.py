@@ -149,6 +149,40 @@ def test_a_daybook_account_from_telegram_has_no_password(client, company, member
     assert login(client, owner.user.username, "").status_code == 400
 
 
+def test_in_daybook_a_password_sign_in_is_announced_and_log_out_everywhere_ends_it(
+    client, company, member, owner_api, sent_messages, django_capture_on_commit_callbacks, settings
+):
+    """Someone who held a session for a minute could set a first password (no current one is
+    asked) and come back with it for ever, unseen: password sign-ins sent no notice and "Log
+    out everywhere" left the password. Now the sign-in says so in Telegram, and the button
+    under that message ends the password too."""
+    from apps.signin import bot_flow
+
+    settings.OWNER_BOT_TOKEN = "1:TEST"  # a bot to send the notice through
+    owner = member(company, "Owner")  # signs in through Telegram
+    assert owner_api(owner).post(CHANGE, {"new": "Bukhara-Winter-99"}).status_code == 204
+
+    with django_capture_on_commit_callbacks(execute=True):
+        assert login(client, owner.user.username, "Bukhara-Winter-99").status_code == 200
+    [notice] = [m for m in sent_messages if m["chat_id"] == owner.user.telegram_id]
+    assert notice["reply_markup"]  # "Not you? Log out everywhere"
+
+    owner.user.refresh_from_db()
+    bot_flow.log_out_everywhere(owner.user)
+    owner.user.refresh_from_db()
+    assert not owner.user.has_usable_password()
+    assert not DeviceSession.objects.filter(user=owner.user, revoked_at__isnull=True).exists()
+    assert login(client, owner.user.username, "Bukhara-Winter-99").status_code == 400
+
+
+def test_in_davomat_log_out_everywhere_leaves_the_password(org):
+    from apps.signin import bot_flow
+
+    bot_flow.log_out_everywhere(org.owner.user)  # there the password is how people sign in
+    org.owner.user.refresh_from_db()
+    assert org.owner.user.check_password(OWNER_PASSWORD)
+
+
 # Changing your own password --------------------------------------------------------------------
 
 

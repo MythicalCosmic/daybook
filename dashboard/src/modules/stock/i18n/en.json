@@ -742,6 +742,8 @@
   "stock.settings.negativeHint": "Sales recorded before their delivery wait for it instead of being refused.",
   "stock.settings.approval": "Write-offs need approval",
   "stock.settings.approvalHint": "A manager approves each proposal.",
+  "stock.settings.freeGoods": "Deliveries may include free goods",
+  "stock.settings.freeGoodsHint": "Off: a delivery with a line at cost 0 can’t be posted until the cost is entered. Switch it on if distributors send you bonus packs.",
   "stock.settings.legalTitle": "Legal periods",
   "stock.settings.legalBody": "Destruction of unfit goods and the controlled-substance register.",
   "stock.settings.destroyWithin": "Destroy unfit goods within",

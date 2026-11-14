@@ -325,5 +325,3 @@ export function scheduleText(check: Pick<Check, "every" | "weekday" | "month_day
 export function percent(part: number, whole: number): number | null {
   return whole > 0 ? Math.floor((part / whole) * 100) : null;
 }
-
-export const DONE_STATES = new Set(["finished", "expired"]);

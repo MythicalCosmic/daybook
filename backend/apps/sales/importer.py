@@ -29,6 +29,8 @@ CENT = Decimal("0.01")
 ENCODINGS = ("utf-8-sig", "cp1251")
 DELIMITERS = ";,\t|"
 
+# How many rows decide whether a file's date column says times of day (`_says_times`).
+TIMES_SAMPLE = 2000
 DATE_FORMATS = (
     "%d.%m.%Y %H:%M:%S",
     "%d.%m.%Y %H:%M",
@@ -408,16 +410,34 @@ def rows(data: bytes, layout: Layout, *, timezone: str, needs_branch: bool):
     check_columns(layout.columns or {}, needs_branch=needs_branch)
     where = positions(headers, layout.columns or {})
     zone = ZoneInfo(timezone)
+    timed = _says_times(grid, where, layout)
     found, problems = [], []
     for number, cells in grid:
         try:
-            found.append(parse(number, cells, where, layout, zone))
+            found.append(parse(number, cells, where, layout, zone, timed=timed))
         except RowError as exc:
             problems.append({"row": number, "message": str(exc)})
     return found, problems
 
 
-def parse(number: int, cells: list, where: dict[str, int], layout: Layout, zone) -> Row:
+def _says_times(grid, where: dict[str, int], layout: Layout) -> bool:
+    """Whether the file's date column says times of day too: one of its first cells is not at
+    midnight. A spreadsheet's date cell reads as that day's midnight, so in a column of plain
+    dates midnight is no time at all (`moment` takes such a line at noon), while in a column of
+    moments it is a sale at 00:00."""
+    index = where.get("sold_at", where.get("date"))
+    if index is None:
+        return False
+    for _number, cells in grid[:TIMES_SAMPLE]:
+        when = _when(cells[index], layout.date_format) if index < len(cells) else None
+        if isinstance(when, datetime) and when.time() != time(0, 0):
+            return True
+    return False
+
+
+def parse(
+    number: int, cells: list, where: dict[str, int], layout: Layout, zone, *, timed: bool = True
+) -> Row:
     def cell(field: str):
         index = where.get(field)
         if index is None or index >= len(cells):
@@ -448,6 +468,7 @@ def parse(number: int, cells: list, where: dict[str, int], layout: Layout, zone)
         cell("time"),
         layout.date_format,
         zone,
+        timed=timed,
     )
     return Row(
         number=number,
@@ -498,18 +519,23 @@ def amount(value, *, field: str = "") -> Decimal | None:
     return -number if negative else number
 
 
-def moment(value, clock, date_format: str, zone) -> datetime:
-    """When the line was sold, as an aware moment in the company's timezone."""
+def moment(value, clock, date_format: str, zone, *, timed: bool = True) -> datetime:
+    """When the line was sold, as an aware moment in the company's timezone. A date without a
+    time of day (and no time column) is taken at noon: at midnight it would fall on the
+    business day before. `timed`: the file's date column says times (`_says_times`), so a
+    spreadsheet cell at midnight is a sale at 00:00 and not a plain date. Text that writes
+    "00:00" always means it."""
     when = _when(value, date_format)
     if when is None:
         raise RowError(_("The date isn't readable."))
     extra = _clock(clock)
-    if extra is not None and isinstance(when, datetime) and when.time() == time(0, 0):
-        when = datetime.combine(when.date(), extra)
-    elif extra is not None and not isinstance(when, datetime):
-        when = datetime.combine(when, extra)
+    midnight = isinstance(when, datetime) and when.time() == time(0, 0)
+    # A cell of a spreadsheet (a moment or a day number), where a plain date reads as midnight.
+    cell = not isinstance(value, str)
+    if midnight and (extra is not None or (cell and not timed)):
+        when = when.date()
     if not isinstance(when, datetime):
-        when = datetime.combine(when, time(12, 0))
+        when = datetime.combine(when, extra if extra is not None else time(12, 0))
     if when.tzinfo is None:
         when = when.replace(tzinfo=zone)
     return when
@@ -530,9 +556,11 @@ def _when(value, date_format: str) -> datetime | date | None:
     raw = re.sub(r"\s+", " ", str(value).strip())
     for pattern in (date_format,) if date_format else DATE_FORMATS:
         try:
-            return datetime.strptime(raw, pattern)
+            read = datetime.strptime(raw, pattern)
         except ValueError:
             continue
+        # A format without hours wrote a date, not that day's midnight.
+        return read if "%H" in pattern or "%I" in pattern else read.date()
     return None
 
 

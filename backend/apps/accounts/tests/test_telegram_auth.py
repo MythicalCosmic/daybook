@@ -43,6 +43,12 @@ def test_garbage_is_rejected(init_data):
         validate_init_data(init_data)
 
 
+def test_a_hash_with_letters_outside_ascii_is_rejected_not_a_crash():
+    # hmac.compare_digest refuses such text with a TypeError: still plain invalid init data.
+    with pytest.raises(InvalidInitData):
+        validate_init_data("hash=%C3%A9&auth_date=1")
+
+
 def test_login_is_refused_without_a_bot_token(settings):
     settings.EMPLOYEE_BOT_TOKEN = ""
 

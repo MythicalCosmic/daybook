@@ -52,6 +52,13 @@ class PayType(models.TextChoices):
 PayoutMethod = EmployeeProfile.PayoutMethod
 
 
+class RosterShare(models.TextChoices):
+    """How a part of a month counts for someone on a shift roster who joined or left in it."""
+
+    WORKDAYS = "workdays", _("Working days")
+    CALENDAR = "calendar", _("Calendar days")
+
+
 class LeaveUnit(models.TextChoices):
     """How unused leave is counted for the payout on leaving (§3.17)."""
 
@@ -155,6 +162,23 @@ class PayrollSettings(models.Model):
         help_text=_(
             "How unused leave days are counted: the average day is the pay over the calendar "
             "days employed, or over the working days paid."
+        ),
+    )
+    roster_partial_month = models.CharField(
+        max_length=10,
+        choices=RosterShare.choices,
+        default=RosterShare.WORKDAYS,
+        help_text=_(
+            "Someone on a shift roster who joins or leaves during a month is paid for the "
+            "share of the month they were employed: counted in the company's working days, "
+            "as for everyone else, or in calendar days."
+        ),
+    )
+    early_finalize = models.BooleanField(
+        default=False,
+        help_text=_(
+            "A month's payroll may be finalized before the month is over. What is worked after "
+            "that reaches no payslip."
         ),
     )
     # Pay day reminders: the last month a reminder went out for (once a month).

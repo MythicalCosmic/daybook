@@ -15,7 +15,6 @@ type Schemas = components["schemas"];
 
 export type Earnings = Schemas["PayrollEarnings"];
 export type EarningsSums = Schemas["PayrollEarningsSums"];
-export type Proposed = Schemas["PayrollEarningsProposed"];
 /** A bonus rule's progress: `op` says whether more or less is better, `limit` what an at-most rule that pays now must stay within. */
 export type Progress = Schemas["PayrollEarningsProgress"];
 export type Op = Schemas["PayrollRuleOpEnum"];
@@ -26,7 +25,6 @@ export type AdvanceCap = Schemas["PayrollAdvanceCap"];
 export type MyAdvances = Schemas["PayrollMyAdvances"];
 export type PayslipRow = Schemas["PayslipRow"];
 export type Payslip = Schemas["PayrollPayslip"];
-export type PayslipLine = Schemas["Line"];
 export type AdvanceRequest = Schemas["PayrollAdvanceRequestRequest"];
 
 export const walletKeys = {

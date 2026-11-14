@@ -402,5 +402,7 @@ def readable_counts(member: Membership, space_ids: list[int]) -> dict[int, int]:
 
 def recent(member: Membership, *, limit: int = 8) -> list[Page]:
     return list(
-        readable_pages(member).select_related("space", "updated_by").order_by("-updated_at")[:limit]
+        readable_pages(member)
+        .select_related("space", "updated_by__user")
+        .order_by("-updated_at")[:limit]
     )

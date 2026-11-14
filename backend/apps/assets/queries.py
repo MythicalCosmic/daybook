@@ -27,6 +27,8 @@ from apps.core.money import quantize
 ZERO = Decimal("0")
 MONEY = DecimalField(max_digits=18, decimal_places=2)
 LIVE = ~Q(status=Asset.Status.DISPOSED)
+# What `posting.schedule_of` reads of each asset: loaded for the whole list at once.
+SCHEDULE_FACTS = ("events", "entries")
 
 
 def scoped(company, *, branch_ids: list[int] | None) -> QuerySet[Asset]:
@@ -81,8 +83,9 @@ def register(
     custodian: int | None = None,
     include_disposed: bool = False,
 ) -> QuerySet[Asset]:
+    # A person without a name yet is shown by their account's: it comes with the row.
     rows = scoped(company, branch_ids=branch_ids).select_related(
-        "category", "branch", "custodian", "responsible"
+        "category", "branch", "custodian__user", "responsible"
     )
     if status:
         rows = rows.filter(status=status)
@@ -124,8 +127,10 @@ def summary(company, *, branch_ids: list[int] | None, today: date | None = None)
     """The register's header: how much the company owns and what it costs a month."""
     today = today or posting.local_today(company)
     settings = conf.get_settings(company)
-    live = with_values(scoped(company, branch_ids=branch_ids).filter(LIVE)).select_related(
-        "category", "company"
+    live = (
+        with_values(scoped(company, branch_ids=branch_ids).filter(LIVE))
+        .select_related("category", "company")
+        .prefetch_related(*SCHEDULE_FACTS)
     )
     totals = {"count": 0, "cost": ZERO, "accumulated": ZERO, "book": ZERO, "this_month": ZERO}
     fully, due, low_value = 0, 0, 0
@@ -320,6 +325,7 @@ def depreciation_report(
     assets = (
         scoped(company, branch_ids=branch_ids)
         .select_related("category", "branch", "company")
+        .prefetch_related(*SCHEDULE_FACTS)
         .exclude(in_service_on=None)
         .exclude(disposed_on__lt=months[0])
     )
@@ -474,8 +480,10 @@ def planning(company, *, branch_ids: list[int] | None, today: date | None = None
     settings = conf.get_settings(company)
     month = engine.first_of(today)
     horizon = engine.add_months(month, 36)
-    live = with_values(scoped(company, branch_ids=branch_ids).filter(LIVE)).select_related(
-        "category", "branch", "company", "custodian"
+    live = (
+        with_values(scoped(company, branch_ids=branch_ids).filter(LIVE))
+        .select_related("category", "branch", "company", "custodian__user")
+        .prefetch_related(*SCHEDULE_FACTS, "files")
     )
     replacements, quarters = [], defaultdict(lambda: {"count": 0, "amount": ZERO})
     repairs_since = today - timedelta(days=365)
@@ -578,9 +586,11 @@ def planning(company, *, branch_ids: list[int] | None, today: date | None = None
 
 def custody(company, *, branch_ids: list[int] | None) -> list[dict]:
     """Who holds what now, by person, with the value of it."""
-    rows = with_values(
-        scoped(company, branch_ids=branch_ids).filter(LIVE, custodian__isnull=False)
-    ).select_related("custodian", "category")
+    rows = (
+        with_values(scoped(company, branch_ids=branch_ids).filter(LIVE, custodian__isnull=False))
+        .select_related("custodian__user", "category", "branch")
+        .prefetch_related("files")
+    )
     people: dict[int, dict] = {}
     open_by_asset = {
         assignment.asset_id: assignment

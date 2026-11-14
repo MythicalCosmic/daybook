@@ -639,7 +639,8 @@ class OverviewView(OwnerAPIView):
             counts["awaiting"] = sum(read[page.pk][1] - read[page.pk][0] for page in attention)
             attention = attention[:5]
         to_read = mine[:5]
-        prefetch_related_objects([*attention, *recent, *to_read], "topics")
+        # Every row shows its topics and who changed it last (name and photo).
+        prefetch_related_objects([*attention, *recent, *to_read], "topics", "updated_by__user")
         return Response(
             {
                 "counts": counts,

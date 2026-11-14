@@ -324,6 +324,51 @@ def test_without_approval_a_write_off_is_approved_at_once(shop, owner, chilonzor
     assert writeoff.status == WriteOff.Status.APPROVED and writeoff.destroy_by is None
 
 
+def test_a_line_without_a_cost_stops_the_delivery_unless_free_goods_are_allowed(
+    shop, owner, chilonzor, supplier, product
+):
+    """The app's cost field is optional, so a forgotten cost reads as 0. A company that does
+    take free goods (bonus packs) says so in its stock settings."""
+    receipt = receive(
+        shop,
+        owner,
+        chilonzor,
+        supplier,
+        [line(product, "PAID", packs=2), line(product, "FREE", packs=1, cost="0")],
+        post=False,
+    )
+    with pytest.raises(DomainError, match="No cost on"):
+        services.post_receipt(receipt, by=owner)
+    receipt.refresh_from_db()
+    assert receipt.status != GoodsReceipt.Status.POSTED and not product.batches.exists()
+
+    services.update_settings(shop, by=owner, allow_zero_cost=True)
+    assert services.post_receipt(receipt, by=owner).status == GoodsReceipt.Status.POSTED
+    paid, free = product.batches.get(series="PAID"), product.batches.get(series="FREE")
+    product.refresh_from_db()
+    assert product.cost_price == D("10340.00")  # the free pack didn't make the item cost nothing
+    assert free.unit_cost == 0 and free.retail_price == paid.retail_price > 0  # the usual price
+    assert receipt.lines.count() == 2
+
+
+def test_the_pack_size_is_fixed_once_the_item_has_stock(shop, owner, chilonzor, product):
+    """Stock, costs and prices are kept per part of the pack: "2 blisters a pack" turned into
+    10 would make 5 packs on the shelf into one, in the books only."""
+    fresh = ProductFactory(company=shop, name="Yangi", units_per_pack=1)
+    services.update_product(fresh, by=owner, units_per_pack=10)  # nothing counted yet: fine
+    fresh.refresh_from_db()
+    assert fresh.units_per_pack == 10
+
+    opening(chilonzor, product, "A", expires_on=date(2027, 1, 31), quantity=10)
+    with pytest.raises(DomainError, match="pack size"):
+        services.update_product(product, by=owner, units_per_pack=10)
+    product.refresh_from_db()
+    assert product.units_per_pack == 2
+    services.update_product(product, by=owner, strength="500 mg", units_per_pack=2)  # the rest may
+    product.refresh_from_db()
+    assert product.strength == "500 mg"
+
+
 # Counts ---------------------------------------------------------------------------------------
 
 
@@ -344,6 +389,72 @@ def test_a_count_books_the_differences_at_cost(shop, owner, ali, chilonzor, prod
     found = StockBatch.objects.get(series="NEW")
     assert held(chilonzor, found) == 2 and found.receipt_line_id is None
     assert queries.last_applied_count(chilonzor, kind="full") == count.applied_at
+
+
+def test_what_moves_while_a_count_is_open_is_not_booked_twice(
+    shop, owner, ali, chilonzor, supplier, product
+):
+    """A count takes hours and the pharmacy goes on working. Each line is compared with the
+    books of the moment it is counted: before, "counted minus the quantity at the start" took
+    a write-off made meanwhile off a second time and put a delivery on stock twice."""
+
+    def write_off(batch, quantity):
+        row = services.propose_writeoff(
+            shop,
+            by=owner,
+            branch=chilonzor,
+            reason="internal_use",
+            lines=[{"batch": batch, "quantity": quantity}],
+        )
+        if row.status == WriteOff.Status.PROPOSED:
+            row = services.approve_writeoff(row, by=owner)
+        assert row.status == WriteOff.Status.APPROVED
+
+    a = opening(chilonzor, product, "A", expires_on=date(2027, 1, 31), quantity=10)
+    b = opening(chilonzor, product, "B", expires_on=date(2027, 6, 30), quantity=6)
+    count = services.start_count(chilonzor, by=owner, kind="full")
+    lines = {line.batch_id: line for line in count.lines.all()}
+    # Meanwhile 3 parts of A are used up and a delivery of a new series is posted (10 parts).
+    write_off(a, 3)
+    receive(shop, owner, chilonzor, supplier, [line(product, "NEW", packs=5)], invoice="N-9")
+    # The counter then finds what is there: all 7 of A, 5 of B (one is missing) and the
+    # delivery, which isn't on the list. They tell the delivery twice (a retry).
+    services.record_counted(count, by=ali, counted={lines[a.pk].pk: D(7), lines[b.pk].pk: D(5)})
+    told = [
+        services.add_found(
+            count, by=ali, product=product, series="NEW", expires_on=date(2028, 4, 30), counted=10
+        )
+        for _again in range(2)
+    ]
+    assert told[0].pk == told[1].pk and told[0].batch.series == "NEW"
+    write_off(a, 2)  # after A was counted: stands as it is
+    count = services.apply_count(count, by=owner)
+
+    assert held(chilonzor, a) == 5  # 10 - 3 - 2, nothing taken twice
+    assert held(chilonzor, b) == 5  # the one real shortage
+    [new] = StockBatch.objects.filter(series="NEW")
+    assert held(chilonzor, new) == 10  # the delivery once
+    assert count.value_difference == D("-5170.00")  # one part of B at cost
+    assert {row.batch_id: row.difference for row in count.lines.all()} == {
+        a.pk: D(0),
+        b.pk: D(-1),
+        new.pk: D(0),
+    }
+
+
+def test_goods_found_and_told_twice_are_one_line(shop, owner, ali, chilonzor, product):
+    opening(chilonzor, product, "A", expires_on=date(2027, 1, 31), quantity=10)
+    count = services.start_count(chilonzor, by=owner)
+    first = services.add_found(
+        count, by=ali, product=product, series="X1", expires_on=date(2027, 9, 1), counted=3
+    )
+    again = services.add_found(
+        count, by=ali, product=product, series="X1", expires_on=date(2027, 9, 1), counted=2
+    )
+    assert again.pk == first.pk and count.lines.filter(batch__isnull=True).count() == 1
+    services.apply_count(count, by=owner)
+    [found] = StockBatch.objects.filter(series="X1")
+    assert held(chilonzor, found) == 2  # the corrected quantity, once
 
 
 def test_a_big_shortage_tells_the_owners(

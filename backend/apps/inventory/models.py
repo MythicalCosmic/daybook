@@ -94,6 +94,13 @@ class StockSettings(models.Model):
     writeoff_approval = models.BooleanField(
         default=True, help_text=_("Write-offs wait for a manager's approval.")
     )
+    allow_zero_cost = models.BooleanField(
+        default=False,
+        help_text=_(
+            "A delivery may have lines at no cost (free goods). Off: a line without a cost "
+            "stops the delivery from being posted."
+        ),
+    )
     show_other_branches = models.BooleanField(
         default=True, help_text=_("The app's stock lookup shows what the other pharmacies have.")
     )

@@ -5,7 +5,6 @@
  * drop proposes, and the small statuses a person shows.
  */
 import type { StatusTone } from "@/components/StatusPill.vue";
-import { diffDays } from "@/lib/dates";
 
 import type { OrgChart, OrgPerson, OrgPosition, OrgRef, OrgVacancy, OrgView } from "./types";
 
@@ -239,13 +238,6 @@ export function pathTo(root: OrgNode, personId: number): { nodes: string[]; grou
   return visit(root, []);
 }
 
-/** The node someone sits in (or heads) in this tree. */
-export function nodeOf(root: OrgNode, personId: number): OrgNode | null {
-  const path = pathTo(root, personId);
-  if (!path) return null;
-  const key = path.nodes[path.nodes.length - 1];
-  return walk(root).find((node) => node.key === key) ?? null;
-}
 
 /** Where someone may be dropped, in chart order. */
 export function moveTargets(root: OrgNode): OrgNode[] {
@@ -297,9 +289,6 @@ export function badges(person: OrgPerson): PersonBadge[] {
   if (person.change) out.push({ key: "change", tone: "primary", day: person.change.effective_on });
   return out;
 }
-
-/** Days until a status's day (0 on it); null without one. */
-export const daysTo = (day: string | null, today: string): number | null => (day ? diffDays(today, day) : null);
 
 /** How many people of a group show before "Show N more" (the rest fold away to keep it calm). */
 export const GROUP_PREVIEW = 6;

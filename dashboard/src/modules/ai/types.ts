@@ -122,8 +122,6 @@ export interface ApplyResult {
 }
 
 /** The codes `POST ai/task-drafts/` refuses with. */
-export type DraftRefusal = "audio_too_long" | "audio_too_big" | "audio_unreadable" | "text_too_long" | "ai_off" | "limit_reached";
-
 // ─── Agents and activity ────────────────────────────────────────────────────
 
 export type AgentFieldType = "bool" | "int" | "time" | "choice";

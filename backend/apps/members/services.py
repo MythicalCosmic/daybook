@@ -606,7 +606,7 @@ def offboard(
     membership.suspended_until = None
     _record_decision(membership, by)
     membership.save()
-    _wind_down(membership, by=actor)
+    _wind_down(membership, by=actor, last_day=terminated_on)
     extra = {"reason": reason} if reason else {}
     _audit(
         AuditLog.Action.MEMBER_LEFT,
@@ -1389,32 +1389,53 @@ def bump_on_commit(company_id: int, *keys: str) -> None:
     transaction.on_commit(partial(_bump, company_id, *keys))
 
 
-def _wind_down(membership: Membership, *, by: Membership | None) -> None:
+def _wind_down(
+    membership: Membership, *, by: Membership | None, last_day: date | None = None
+) -> None:
     """Hand their work back, leave the departments they headed without a head, and drop time
     off they won't be taking, one row at a time so `time_off_cancelled` reaches the apps that
-    keep balances."""
+    keep balances.
+
+    `last_day` is their last day here (today when not given). Approved time off already in
+    progress then stays theirs through that day and only the rest of it is taken back, as a
+    revoke does: cancelled whole, the days already taken would vanish from the final payslip
+    of someone paid by the day or the hour."""
     task_services.hand_back_work(membership)
     if Department.objects.filter(head=membership).update(head=None):
         bump_on_commit(membership.company_id, "members.departments")
-    cancelled = (
+    today = _today(membership.company)
+    last_day = last_day or today
+    open_rows = (
         TimeOff.objects.select_for_update()
         .filter(
             membership=membership,
             status__in=(TimeOff.Status.PENDING, TimeOff.Status.APPROVED),
-            last_day__gte=_today(membership.company),
+            last_day__gte=today,
         )
         .order_by("first_day")
     )
-    for time_off in cancelled:
+    for time_off in open_rows:
         previous_status = time_off.status
-        time_off.status = TimeOff.Status.CANCELLED
-        time_off.save(update_fields=["status", "updated_at"])
+        cut = {}
+        if previous_status == TimeOff.Status.APPROVED and time_off.first_day <= last_day:
+            if time_off.last_day <= last_day:
+                continue  # taken to its end
+            cut = {
+                "cancelled_from": last_day + timedelta(days=1),
+                "cancelled_to": time_off.last_day,
+            }
+            time_off.last_day = last_day
+            time_off.save(update_fields=["last_day", "updated_at"])
+        else:
+            time_off.status = TimeOff.Status.CANCELLED
+            time_off.save(update_fields=["status", "updated_at"])
         send_on_commit(
             time_off_cancelled,
             sender=TimeOff,
             time_off=time_off,
             by=by,
             previous_status=previous_status,
+            **cut,
         )
 
 

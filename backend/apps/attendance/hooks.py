@@ -266,9 +266,11 @@ def on_time_off_approved(sender, time_off, by=None, **kwargs) -> None:
         services.time_off_approved(time_off)
 
 
-def on_time_off_cancelled(sender, time_off, by=None, previous_status=None, **kwargs) -> None:
+def on_time_off_cancelled(
+    sender, time_off, by=None, previous_status=None, cancelled_from=None, **kwargs
+) -> None:
     if time_off.company.has_feature(FEATURE):
-        services.time_off_cancelled(time_off, previous_status)
+        services.time_off_cancelled(time_off, previous_status, cancelled_from=cancelled_from)
 
 
 def on_member_left(sender, membership, by=None, **kwargs) -> None:

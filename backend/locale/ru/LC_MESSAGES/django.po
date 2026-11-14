@@ -29055,3 +29055,57 @@ msgstr "Присоединяйтесь к команде %(company)s в Telegram
 #: owner_bot/ownerbot/invite.py
 msgid "Share"
 msgstr "Поделиться"
+
+#: backend/apps/payroll/models.py
+msgid ""
+"A month's payroll may be finalized before the month is over. What is worked "
+"after that reaches no payslip."
+msgstr ""
+"Зарплату за месяц можно утвердить до его окончания. Отработанное после этого "
+"не попадёт ни в один расчётный лист."
+
+#: backend/apps/payroll/runs.py
+#, python-format
+msgid ""
+"%(month)s isn't over yet: its payroll can be finalized after %(day)s. To pay "
+"a month before it ends, allow that in the payroll settings."
+msgstr ""
+"Месяц ещё не закончился (%(month)s): зарплату можно утвердить после %(day)s. "
+"Чтобы платить до конца месяца, разрешите это в настройках зарплаты."
+
+#: backend/apps/inventory/models.py
+msgid ""
+"A delivery may have lines at no cost (free goods). Off: a line without a "
+"cost stops the delivery from being posted."
+msgstr ""
+"В приходе могут быть строки без цены закупки (бесплатный товар). Выключено: "
+"приход со строкой без цены закупки провести нельзя."
+
+#: backend/apps/inventory/services.py
+#, python-format
+msgid ""
+"No cost on: %(names)s. Enter what each one cost, or allow deliveries of free "
+"goods in the stock settings."
+msgstr ""
+"Не указана цена закупки: %(names)s. Укажите цену каждой позиции или "
+"разрешите приход бесплатного товара в настройках склада."
+
+#: backend/apps/inventory/services.py
+msgid ""
+"The pack size can't change once the item has deliveries or stock: everything "
+"it has is counted in parts of the pack as it is now. Add a new item with the "
+"right pack size instead."
+msgstr ""
+"Размер упаковки нельзя менять, когда у товара уже есть приходы или остаток: "
+"всё считается в частях нынешней упаковки. Вместо этого добавьте новый товар "
+"с правильным размером упаковки."
+
+#: backend/apps/payroll/models.py
+msgid ""
+"Someone on a shift roster who joins or leaves during a month is paid for the "
+"share of the month they were employed: counted in the company's working "
+"days, as for everyone else, or in calendar days."
+msgstr ""
+"Сотрудник со сменным графиком, принятый или уволенный в течение месяца, "
+"получает за ту долю месяца, которую проработал: она считается в рабочих днях "
+"компании, как у остальных, или в календарных днях."

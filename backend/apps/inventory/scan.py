@@ -18,6 +18,7 @@ Each notice is deduplicated, so a second run on the same day sends nothing new.
 
 from __future__ import annotations
 
+import logging
 from collections import defaultdict
 from datetime import date, datetime, time, timedelta
 
@@ -28,6 +29,8 @@ from django.utils.translation import gettext as _
 from apps.companies.models import Company, Feature
 from apps.inventory import conf, engine, notify, prescriptions, queries, register
 from apps.inventory.models import BatchStock, MissingRequest, WriteOff
+
+logger = logging.getLogger(__name__)
 
 SCAN_HOUR = 6
 CHECKLIST_MAX = 30
@@ -42,8 +45,15 @@ def daily_scan(now: datetime | None = None) -> int:
         settings = conf.get_settings(company)
         if settings.scanned_on == local.date():
             continue
-        scan_company(company, local.date())
-        type(settings).objects.filter(pk=settings.pk).update(scanned_on=local.date())
+        try:
+            # One company's scan in one piece: a failure takes back what it had claimed (the
+            # next hour tries again) and never keeps the companies after it from their own.
+            with transaction.atomic():
+                scan_company(company, local.date())
+                type(settings).objects.filter(pk=settings.pk).update(scanned_on=local.date())
+        except Exception:
+            logger.exception("stock scan failed for company %s", company.pk)
+            continue
         done += 1
     return done
 

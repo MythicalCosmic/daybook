@@ -742,6 +742,8 @@
   "stock.settings.negativeHint": "Kirimdan oldin kiritilgan sotuvlar rad etilmaydi, kirimni kutadi.",
   "stock.settings.approval": "Hisobdan chiqarish tasdiq talab qiladi",
   "stock.settings.approvalHint": "Har bir taklifni menejer tasdiqlaydi.",
+  "stock.settings.freeGoods": "Kirimda bepul tovar bo‘lishi mumkin",
+  "stock.settings.freeGoodsHint": "O‘chiq: tannarxi kiritilmagan qator bor kirimni tannarx kiritilmaguncha o‘tkazib bo‘lmaydi. Distribyutorlar bonus qadoqlar yuborsa, yoqing.",
   "stock.settings.legalTitle": "Qonuniy muddatlar",
   "stock.settings.legalBody": "Yaroqsiz tovarni yo‘q qilish va nazoratdagi moddalar jurnali.",
   "stock.settings.destroyWithin": "Yaroqsiz tovarni yo‘q qilish muddati",

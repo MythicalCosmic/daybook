@@ -713,7 +713,12 @@ def run_copy(source: Company, target: Company, keys: list[str], *, by: Membershi
     `by`'s user must also be an approved member of `source` with dashboard access and each
     part's permission there: nobody copies the setup of a company they can't see. Unknown
     parts and parts `by` may not copy raise `RegistryError`, before anything is copied; a
-    failing part raises too, so the caller's transaction keeps everything or nothing."""
+    failing part raises too, so the caller's transaction keeps everything or nothing.
+
+    A part of a module is offered by the source running that module (what the "new company"
+    dialog lists). The target is usually brand new, with no module on yet: the chosen parts'
+    modules come on there first, with their defaults, as a module's setup means nothing
+    without it."""
     if by.company_id != target.pk:
         raise RegistryError("`by` must be a member of the company copied into.")
     if source.pk == target.pk:
@@ -722,9 +727,20 @@ def run_copy(source: Company, target: Company, keys: list[str], *, by: Membershi
     parts = []
     for key in keys:
         part = COPY_PARTS.get(key)
-        if part is None or not usable(part, by) or reader is None or not holds(reader, part.perm):
+        if part is None or reader is None or not usable(part, reader) or not holds(by, part.perm):
             raise RegistryError(f"Can't copy {key!r}.")
         parts.append(part)
+    missing = [
+        part.feature
+        for part in parts
+        if part.feature is not None and not target.has_feature(part.feature)
+    ]
+    if missing:
+        from apps.companies import services as companies
+
+        companies.set_features(target, by=by, features=[*target.features, *missing])
+        target.refresh_from_db(fields=["features"])
+        by.company = target
     return {part.key: part.copy(source, target, by) for part in parts}
 
 

@@ -188,6 +188,26 @@ async def test_second_approver_sees_who_decided_first(dp, bot, company, member):
 # Approving through the inbox copy, with branches -----------------------------------------
 
 
+async def test_going_back_to_a_request_is_for_approvers_only(dp, bot, company, member):
+    """The Back button shows the request card (name, phone, Telegram) again: someone who can't
+    approve here (an employee, a former approver holding an old message) gets no card."""
+    from apps.members.callbacks import JoinSetup, JoinStep
+
+    employee = await member.acreate(company)
+    ali = updates.tg_user(508)
+    await dp.feed_update(bot, updates.message(ali, f"/start {company.invite_start_param}"))
+    await dp.feed_update(bot, updates.pick_language(ali))
+    request = await get_membership(company, 508)
+    data = JoinSetup(step=JoinStep.BACK, membership_id=request.pk).pack()
+    edits = len([r for r in bot.requests if isinstance(r, EditMessageText)])
+
+    await dp.feed_update(bot, updates.callback(updates.tg_user(employee.user.telegram_id), data))
+
+    answer = [r for r in bot.requests if isinstance(r, AnswerCallbackQuery)][-1]
+    assert answer.show_alert and "permission" in answer.text
+    assert len([r for r in bot.requests if isinstance(r, EditMessageText)]) == edits
+
+
 @sync_to_async
 def notified_request(company, telegram_id=601):
     """A filled-in join request, announced to the approvers (inbox notifications)."""

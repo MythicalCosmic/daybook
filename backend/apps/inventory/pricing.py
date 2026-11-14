@@ -41,13 +41,19 @@ def cap_percent(product, settings) -> Decimal:
     return Decimal(settings.rx_max_markup_percent)
 
 
+def _known(unit_cost) -> bool:
+    """A cost a cap can stand on. Zero is none: a line received without its cost typed (or as
+    a gift) would cap the price at 0, refuse every price and flag every sale as above it."""
+    return unit_cost is not None and Decimal(unit_cost) > 0
+
+
 def legal_cap(product, unit_cost, settings) -> Decimal | None:
     """The legal maximum price of one pack, unrounded; None when the law sets none (an OTC
     item, or a prescription item with neither a cost nor a reference price)."""
     if not product.rx_required:
         return None
     caps = []
-    if unit_cost is not None:
+    if _known(unit_cost):
         caps.append(quantize(Decimal(unit_cost) * (1 + cap_percent(product, settings) / HUNDRED)))
     if product.reference_price is not None:
         caps.append(Decimal(product.reference_price))
@@ -60,7 +66,7 @@ def price_ceiling(product, unit_cost, settings) -> Decimal | None:
     if not product.rx_required:
         return None
     caps = []
-    if unit_cost is not None:
+    if _known(unit_cost):
         raw = Decimal(unit_cost) * (1 + cap_percent(product, settings) / HUNDRED)
         caps.append(round_down(raw, settings.price_rounding))
     if product.reference_price is not None:

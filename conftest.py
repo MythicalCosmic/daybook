@@ -3,7 +3,7 @@ from datetime import timedelta
 
 import pytest
 from asgiref.sync import sync_to_async
-from django.utils import timezone
+from django.utils import timezone, translation
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken
 
@@ -51,6 +51,16 @@ class MemberMaker:
 @pytest.fixture
 def member(db):
     return MemberMaker()
+
+
+@pytest.fixture(autouse=True)
+def default_language():
+    """Every test starts in the default language. A signed-in request answers in the person's
+    own (LanguageJWTAuthentication); in production the next request picks again, in a test
+    nothing does, and the tests after one that signed in as an Uzbek speaker got Uzbek messages."""
+    translation.deactivate()
+    yield
+    translation.deactivate()
 
 
 @pytest.fixture(autouse=True)

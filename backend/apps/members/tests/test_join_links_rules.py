@@ -4,6 +4,7 @@ branches and roles checked at every join, the owner API's error shapes)."""
 from datetime import timedelta
 
 import pytest
+from django.core.exceptions import PermissionDenied
 from django.utils import timezone
 
 from apps.accounts.tests.factories import UserFactory
@@ -14,7 +15,7 @@ from apps.core.exceptions import DomainError
 from apps.groups.models import GroupEvent, TelegramGroup
 from apps.inbox.models import Notification
 from apps.members import join_links, services, tasks
-from apps.members.models import AccessRole, JoinLink, Membership
+from apps.members.models import AccessRole, JoinLink, Membership, Position
 from apps.members.permissions import Perm
 from apps.members.tests.factories import AccessRoleFactory, MembershipFactory
 
@@ -32,9 +33,12 @@ def opened(link):
     return membership
 
 
-def finish(membership, first_name="Aziz"):
+def finish(membership, first_name="Aziz", position=None):
     return services.complete_onboarding(
-        membership, first_name=first_name, last_name="Karimov", position_id=None
+        membership,
+        first_name=first_name,
+        last_name="Karimov",
+        position_id=position.pk if position else None,
     )
 
 
@@ -166,6 +170,51 @@ def test_a_link_without_a_role_rechecks_the_default_role_against_its_maker(compa
     # Contract: "the role is re-checked against the creator's permissions at every join: if
     # the creator ... may no longer give that role, the person becomes an ordinary request".
     assert joined.status == Membership.Status.PENDING, f"let in as {joined.role}"
+
+
+# 6. A link without a role gives its job title's: the title is checked like the role ---------
+
+
+def test_a_links_job_title_cannot_give_a_role_beyond_whoever_sets_it(company, member):
+    owner = member.registered(company, "Owner")
+    head, mine = branch_head(company, member)
+    link = make_link(company, owner, branch=mine)  # the owner's link: no role, no job title
+    cashier = AccessRole.objects.get(company=company, name="Cashier")  # beyond the head
+    title = Position.objects.create(company=company, name="Kassir", role=cashier)
+    plain = Position.objects.create(company=company, name="Sotuvchi")  # the default role
+
+    with pytest.raises(DomainError):  # the join would give Cashier on the owner's authority
+        join_links.update_link(link, by=head, position=title)
+    with pytest.raises(DomainError):
+        make_link(company, head, name="Mine", branch=mine, position=title)
+
+    link.refresh_from_db()
+    assert link.position_id is None and link.created_by_id == owner.pk
+    joined = finish(opened(link), position=plain)
+    assert joined.status == Membership.Status.APPROVED and joined.role != cashier
+
+
+def test_whoever_changes_a_links_job_title_is_its_maker_from_then_on(company, member):
+    owner = member.registered(company, "Owner")
+    head, mine = branch_head(company, member)
+    link = make_link(company, owner, branch=mine)
+    plain = Position.objects.create(company=company, name="Sotuvchi")  # the default role
+    cashier = AccessRole.objects.get(company=company, name="Cashier")
+    title = Position.objects.create(company=company, name="Kassir", role=cashier)
+
+    join_links.update_link(link, by=head, position=plain)
+    link.refresh_from_db()
+    assert link.created_by_id == head.pk  # joins are checked against the head now
+
+    join_links.update_link(link, by=owner, position=title)  # the owner may give Cashier
+    link.refresh_from_db()
+    assert link.created_by_id == owner.pk
+    assert join_links.given_role(link) == services._link_role(link) == cashier
+    assert not join_links.may_edit(head, link)  # not a link the head could have made
+    with pytest.raises(PermissionDenied):
+        join_links.update_link(link, by=head, name="Mine now")
+    joined = finish(opened(link), position=title)
+    assert joined.status == Membership.Status.APPROVED and joined.role == cashier
 
 
 # Contract details of the owner API ----------------------------------------------------------

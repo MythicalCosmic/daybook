@@ -13,7 +13,7 @@ from decimal import Decimal
 from django.core.cache import cache
 from django.utils import timezone
 
-from apps.payroll import calculator, periods, rules
+from apps.payroll import calculator, periods, queries, rules
 from apps.payroll.models import Adjustment, PayslipLine
 
 ZERO = Decimal(0)
@@ -67,7 +67,13 @@ def _current(member, now: datetime) -> dict:
     company = member.company
     today = periods.today(company, now)
     period = periods.first_day(today)
-    inputs, people = calculator.gather(company, period, member_ids=[member.pk], now=now)
+    inputs, people = calculator.gather(
+        company,
+        period,
+        member_ids=[member.pk],
+        usd_rate=queries.usd_rate_for(company, period),  # pay set in dollars counts too
+        now=now,
+    )
     person = people[0] if people else None
     estimate = calculator.compute(person, inputs) if person is not None else None
     so_far = None
