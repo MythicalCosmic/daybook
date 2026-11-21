@@ -31415,3 +31415,114 @@ msgstr "В ссылке не осталось мест."
 #, python-format
 msgid "Join %(company)s in Telegram"
 msgstr "Присоединяйтесь к команде %(company)s в Telegram"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Started an unchangeable list"
+msgstr "Создал неизменяемый список"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Changed an unchangeable list"
+msgstr "Изменил неизменяемый список"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Deleted an empty unchangeable list"
+msgstr "Удалил пустой неизменяемый список"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Sealed an unchangeable list"
+msgstr "Опечатал неизменяемый список"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Wrote a line in an unchangeable list"
+msgstr "Внёс запись в неизменяемый список"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Corrected a line in an unchangeable list"
+msgstr "Исправил запись в неизменяемом списке"
+
+#: backend/apps/learning/models.py
+msgid "Sealed"
+msgstr "Опечатан"
+
+#: backend/apps/learning/models.py
+msgid "Studied"
+msgstr "Изучил"
+
+#: backend/apps/learning/study_lists.py
+#, python-format
+msgid "Keep it under %(n)d characters."
+msgstr "Не длиннее %(n)d символов."
+
+#: backend/apps/learning/study_lists.py
+msgid "This list is sealed: nothing can be added or changed."
+msgstr "Этот список опечатан: в нём ничего нельзя добавить или изменить."
+
+#: backend/apps/learning/study_lists.py
+msgid "Give the list a title."
+msgstr "Дайте списку название."
+
+#: backend/apps/learning/study_lists.py
+msgid "A list with lines can't be deleted; it can only be sealed."
+msgstr "Список с записями нельзя удалить, его можно только опечатать."
+
+#: backend/apps/learning/study_lists.py
+msgid "A topic needs a title."
+msgstr "Напишите название темы."
+
+#: backend/apps/learning/study_lists.py
+msgid "Write at least one topic."
+msgstr "Напишите хотя бы одну тему."
+
+#: backend/apps/learning/study_lists.py
+#, python-format
+msgid "A list holds at most %(n)d topics."
+msgstr "В списке может быть не больше %(n)d тем."
+
+#: backend/apps/learning/study_lists.py
+msgid "There's no such topic in this list."
+msgstr "В этом списке нет такой темы."
+
+#: backend/apps/learning/study_lists.py
+msgid "This topic already has lines, so it can't be changed."
+msgstr "По этой теме уже есть записи, поэтому её нельзя изменить."
+
+#: backend/apps/learning/study_lists.py
+msgid "Pick people or type a name."
+msgstr "Выберите сотрудников или впишите имя."
+
+#: backend/apps/learning/study_lists.py
+msgid "Type the student's name."
+msgstr "Впишите имя ученика."
+
+#: backend/apps/learning/study_lists.py
+#, python-format
+msgid "A list holds at most %(n)d students."
+msgstr "В списке может быть не больше %(n)d учеников."
+
+#: backend/apps/learning/study_lists.py
+msgid "There's no such student in this list."
+msgstr "В этом списке нет такого ученика."
+
+#: backend/apps/learning/study_lists.py
+msgid "This student already has lines, so they can't be changed."
+msgstr "У этого ученика уже есть записи, поэтому его нельзя изменить."
+
+#: backend/apps/learning/study_lists.py
+msgid "Pick a topic and a student of this list."
+msgstr "Выберите тему и ученика из этого списка."
+
+#: backend/apps/learning/study_lists.py
+msgid "This student already has a line for this topic. Correct it first if it's wrong."
+msgstr "У этого ученика уже есть запись по этой теме. Если она ошибочна, сначала исправьте её."
+
+#: backend/apps/learning/study_lists.py
+msgid "Write why this line is wrong."
+msgstr "Напишите, почему эта запись ошибочна."
+
+#: backend/apps/learning/study_lists.py
+msgid "There's no such line in this list."
+msgstr "В этом списке нет такой записи."
+
+#: backend/apps/learning/study_lists.py
+msgid "Only a line that still stands can be corrected."
+msgstr "Исправить можно только действующую запись."

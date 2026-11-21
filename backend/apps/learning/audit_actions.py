@@ -55,3 +55,14 @@ class QuizAction(models.TextChoices):
         _("Had the tutor draft questions in a chat"),
     )
     TUTOR_QUIZ_DRAFTED = "learning.tutor_quiz_drafted", _("Had the tutor draft a quiz in a chat")
+
+
+class ListAction(models.TextChoices):
+    """The unchangeable lists' actions (`apps.learning.study_lists`)."""
+
+    CREATED = "learning.list_created", _("Started an unchangeable list")
+    CHANGED = "learning.list_changed", _("Changed an unchangeable list")
+    DELETED = "learning.list_deleted", _("Deleted an empty unchangeable list")
+    SEALED = "learning.list_sealed", _("Sealed an unchangeable list")
+    LINE_WRITTEN = "learning.list_line_written", _("Wrote a line in an unchangeable list")
+    LINE_CORRECTED = "learning.list_line_corrected", _("Corrected a line in an unchangeable list")

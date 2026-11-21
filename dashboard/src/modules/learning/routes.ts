@@ -48,4 +48,16 @@ export const routes: RouteRecordRaw[] = [
     component: () => lazy().then((m) => m.pages.person()),
     meta: { title: "learning.person.title", perm: READ, feature: "learning" },
   },
+  {
+    path: "learning/lists",
+    name: "learning.lists",
+    component: () => lazy().then((m) => m.pages.lists()),
+    meta: { title: "learning.nav.lists", perm: READ, feature: "learning" },
+  },
+  {
+    path: "learning/lists/:listId(\\d+)",
+    name: "learning.list",
+    component: () => lazy().then((m) => m.pages.list()),
+    meta: { title: "learning.list.title", perm: READ, feature: "learning" },
+  },
 ];

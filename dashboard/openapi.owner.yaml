@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: 911 Trello API
-  version: 0.8.2
+  version: 0.8.3
   description: API for the employee mini app and the owner dashboard.
 paths:
   /api/v1/owner/auth/dev-login/:
@@ -18604,6 +18604,543 @@ paths:
               schema:
                 $ref: '#/components/schemas/LearningViewers'
           description: ''
+  /api/v1/owner/companies/{company_id}/learning/lists/:
+    get:
+      operationId: companies_learning_lists_list
+      description: 'Unchangeable lists: the register, its topics and students, its
+        lines and the seal.'
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: One branch (in the caller's scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: q
+        schema:
+          type: string
+      - in: query
+        name: state
+        schema:
+          type: string
+          enum:
+          - open
+          - sealed
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LearningStudyListRow'
+          description: ''
+    post:
+      operationId: companies_learning_lists_create
+      description: 'Unchangeable lists: the register, its topics and students, its
+        lines and the seal.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LearningStudyListWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LearningStudyListWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LearningStudyListWriteRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningStudyList'
+          description: ''
+  /api/v1/owner/companies/{company_id}/learning/lists/{id}/:
+    get:
+      operationId: companies_learning_lists_retrieve
+      description: 'Unchangeable lists: the register, its topics and students, its
+        lines and the seal.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningStudyList'
+          description: ''
+    patch:
+      operationId: companies_learning_lists_partial_update
+      description: 'Unchangeable lists: the register, its topics and students, its
+        lines and the seal.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedLearningStudyListWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedLearningStudyListWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedLearningStudyListWriteRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningStudyList'
+          description: ''
+    delete:
+      operationId: companies_learning_lists_destroy
+      description: 'Unchangeable lists: the register, its topics and students, its
+        lines and the seal.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/learning/lists/{id}/candidates/:
+    get:
+      operationId: companies_learning_lists_candidates_list
+      description: 'Unchangeable lists: the register, its topics and students, its
+        lines and the seal.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: query
+        name: q
+        schema:
+          type: string
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LearningStudyCandidate'
+          description: ''
+  /api/v1/owner/companies/{company_id}/learning/lists/{id}/marks/:
+    post:
+      operationId: companies_learning_lists_marks_create
+      description: 'Unchangeable lists: the register, its topics and students, its
+        lines and the seal.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LearningStudyMarkWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LearningStudyMarkWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LearningStudyMarkWriteRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningStudyList'
+          description: ''
+  /api/v1/owner/companies/{company_id}/learning/lists/{id}/marks/{mark_id}/correct/:
+    post:
+      operationId: companies_learning_lists_marks_correct_create
+      description: 'Unchangeable lists: the register, its topics and students, its
+        lines and the seal.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: mark_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LearningStudyCorrectRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LearningStudyCorrectRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LearningStudyCorrectRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningStudyList'
+          description: ''
+  /api/v1/owner/companies/{company_id}/learning/lists/{id}/seal/:
+    post:
+      operationId: companies_learning_lists_seal_create
+      description: 'Unchangeable lists: the register, its topics and students, its
+        lines and the seal.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningStudyList'
+          description: ''
+  /api/v1/owner/companies/{company_id}/learning/lists/{id}/students/:
+    post:
+      operationId: companies_learning_lists_students_create
+      description: 'Unchangeable lists: the register, its topics and students, its
+        lines and the seal.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LearningStudyStudentsRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LearningStudyStudentsRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LearningStudyStudentsRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningStudyList'
+          description: ''
+  /api/v1/owner/companies/{company_id}/learning/lists/{id}/students/{student_id}/:
+    patch:
+      operationId: companies_learning_lists_students_partial_update
+      description: 'Unchangeable lists: the register, its topics and students, its
+        lines and the seal.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: student_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedLearningStudyStudentWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedLearningStudyStudentWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedLearningStudyStudentWriteRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningStudyList'
+          description: ''
+    delete:
+      operationId: companies_learning_lists_students_destroy
+      description: 'Unchangeable lists: the register, its topics and students, its
+        lines and the seal.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: student_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/learning/lists/{id}/topics/:
+    post:
+      operationId: companies_learning_lists_topics_create
+      description: 'Unchangeable lists: the register, its topics and students, its
+        lines and the seal.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LearningStudyTopicsRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LearningStudyTopicsRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LearningStudyTopicsRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningStudyList'
+          description: ''
+  /api/v1/owner/companies/{company_id}/learning/lists/{id}/topics/{topic_id}/:
+    patch:
+      operationId: companies_learning_lists_topics_partial_update
+      description: 'Unchangeable lists: the register, its topics and students, its
+        lines and the seal.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: topic_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedLearningStudyTopicWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedLearningStudyTopicWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedLearningStudyTopicWriteRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningStudyList'
+          description: ''
+    delete:
+      operationId: companies_learning_lists_topics_destroy
+      description: 'Unchangeable lists: the register, its topics and students, its
+        lines and the seal.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: topic_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/owner/companies/{company_id}/learning/overview/:
     get:
       operationId: companies_learning_overview_retrieve
@@ -59094,6 +59631,326 @@ components:
       required:
       - kind
       - target_id
+    LearningStudyBranch:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
+    LearningStudyCandidate:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        position:
+          type: string
+          nullable: true
+        branch:
+          type: string
+          nullable: true
+      required:
+      - branch
+      - id
+      - name
+      - position
+    LearningStudyCorrectRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          minLength: 3
+          maxLength: 300
+      required:
+      - reason
+    LearningStudyList:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        teacher:
+          type: string
+        branch:
+          allOf:
+          - $ref: '#/components/schemas/LearningStudyBranch'
+          nullable: true
+        state:
+          $ref: '#/components/schemas/LearningStudyListStateEnum'
+        created_at:
+          type: string
+          format: date-time
+        created_by:
+          type: string
+        sealed_at:
+          type: string
+          format: date-time
+          nullable: true
+        sealed_by:
+          type: string
+        seal_digest:
+          type: string
+        intact:
+          type: boolean
+          description: The chain of lines (and the seal) checks out.
+        topics:
+          type: array
+          items:
+            $ref: '#/components/schemas/LearningStudyTopic'
+        students:
+          type: array
+          items:
+            $ref: '#/components/schemas/LearningStudyStudent'
+        marks:
+          type: array
+          items:
+            $ref: '#/components/schemas/LearningStudyMark'
+      required:
+      - branch
+      - created_at
+      - created_by
+      - description
+      - id
+      - intact
+      - marks
+      - seal_digest
+      - sealed_at
+      - sealed_by
+      - state
+      - students
+      - teacher
+      - title
+      - topics
+    LearningStudyListRow:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        teacher:
+          type: string
+        branch:
+          allOf:
+          - $ref: '#/components/schemas/LearningStudyBranch'
+          nullable: true
+        state:
+          $ref: '#/components/schemas/LearningStudyListStateEnum'
+        topics:
+          type: integer
+        students:
+          type: integer
+        studied:
+          type: integer
+          description: Cells holding a standing 'studied' line.
+        cells:
+          type: integer
+          description: Topics × students.
+        created_at:
+          type: string
+          format: date-time
+        sealed_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - branch
+      - cells
+      - created_at
+      - id
+      - sealed_at
+      - state
+      - students
+      - studied
+      - teacher
+      - title
+      - topics
+    LearningStudyListStateEnum:
+      enum:
+      - open
+      - sealed
+      type: string
+      description: |-
+        * `open` - Open
+        * `sealed` - Sealed
+    LearningStudyListWriteRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 5000
+        teacher:
+          type: string
+          maxLength: 200
+        branch_id:
+          type: integer
+          nullable: true
+      required:
+      - title
+    LearningStudyMark:
+      type: object
+      properties:
+        id:
+          type: integer
+        number:
+          type: integer
+        kind:
+          $ref: '#/components/schemas/LearningStudyMarkKindEnum'
+        topic_id:
+          type: integer
+        student_id:
+          type: integer
+        studied_on:
+          type: string
+          format: date
+          nullable: true
+        note:
+          type: string
+        corrects_id:
+          type: integer
+          nullable: true
+        corrected_by_id:
+          type: integer
+          nullable: true
+        written_by:
+          type: string
+        written_at:
+          type: string
+          format: date-time
+        digest:
+          type: string
+      required:
+      - corrected_by_id
+      - corrects_id
+      - digest
+      - id
+      - kind
+      - note
+      - number
+      - student_id
+      - studied_on
+      - topic_id
+      - written_at
+      - written_by
+    LearningStudyMarkKindEnum:
+      enum:
+      - studied
+      - correction
+      type: string
+      description: |-
+        * `studied` - Studied
+        * `correction` - Correction
+    LearningStudyMarkWriteRequest:
+      type: object
+      properties:
+        topic_id:
+          type: integer
+        student_id:
+          type: integer
+        studied_on:
+          type: string
+          format: date
+          nullable: true
+        note:
+          type: string
+          maxLength: 300
+      required:
+      - student_id
+      - topic_id
+    LearningStudyNameRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        note:
+          type: string
+          maxLength: 200
+      required:
+      - name
+    LearningStudyStudent:
+      type: object
+      properties:
+        id:
+          type: integer
+        number:
+          type: integer
+        name:
+          type: string
+        note:
+          type: string
+        member_id:
+          type: integer
+          nullable: true
+        position:
+          type: string
+          nullable: true
+        locked:
+          type: boolean
+      required:
+      - id
+      - locked
+      - member_id
+      - name
+      - note
+      - number
+      - position
+    LearningStudyStudentsRequest:
+      type: object
+      properties:
+        member_ids:
+          type: array
+          items:
+            type: integer
+          maxItems: 200
+        names:
+          type: array
+          items:
+            $ref: '#/components/schemas/LearningStudyNameRequest'
+          maxItems: 200
+    LearningStudyTopic:
+      type: object
+      properties:
+        id:
+          type: integer
+        number:
+          type: integer
+        title:
+          type: string
+        locked:
+          type: boolean
+          description: 'A line mentions it: it can''t change any more.'
+      required:
+      - id
+      - locked
+      - number
+      - title
+    LearningStudyTopicsRequest:
+      type: object
+      properties:
+        titles:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 300
+          maxItems: 100
+          minItems: 1
+      required:
+      - titles
     LearningSuggestion:
       type: object
       properties:
@@ -68265,6 +69122,39 @@ components:
       properties:
         required:
           type: boolean
+    PatchedLearningStudyListWriteRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 5000
+        teacher:
+          type: string
+          maxLength: 200
+        branch_id:
+          type: integer
+          nullable: true
+    PatchedLearningStudyStudentWriteRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        note:
+          type: string
+          maxLength: 200
+    PatchedLearningStudyTopicWriteRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 300
     PatchedLifecycleHandoverSetRequest:
       type: object
       properties:

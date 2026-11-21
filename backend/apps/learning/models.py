@@ -17,6 +17,11 @@ question is also an **answer log** row, the skill matrix's raw data. People also
 audience every week or month with a deadline). The tutor agent turns the results into
 **suggestions**.
 
+An **unchangeable list** (`StudyList`, "O‘zgarmas ro‘yxat") is a register kept like a bound
+journal: numbered topics, numbered students (staff or typed-in names), and lines saying who studied
+which topic on which day. A line is never edited or deleted; a mistake is taken back by a correction
+line, and sealing is final (`apps.learning.study_lists`).
+
 Everything is per company (`TenantModel`); module switch `learning` (`Company.features`).
 """
 
@@ -28,7 +33,7 @@ from django.db import models
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
-from apps.companies.models import Branch, Company, TenantModel
+from apps.companies.models import Branch, Company, TenantModel, TenantQuerySet
 from apps.core.storage import learning_storage, private_storage, private_upload_to
 from apps.knowledge.models import Page, Topic
 from apps.members.models import Membership, Position
@@ -859,3 +864,151 @@ class TutorDraft(TenantModel):
     class Meta:
         ordering = ["created_at", "pk"]
         indexes = [models.Index(fields=["company", "conversation"])]
+
+
+# Unchangeable lists ------------------------------------------------------------------------
+
+
+class UnchangeableError(Exception):
+    """Something tried to change or delete a line of an unchangeable list."""
+
+
+class StudyList(TenantModel):
+    """An unchangeable list ("O‘zgarmas ro‘yxat"): which student studied which topic, kept like a
+    bound journal. Topics and students are added while it is open; a line (`StudyMark`) is never
+    edited or deleted, a mistake is taken back by a correction line; sealing is final."""
+
+    class State(models.TextChoices):
+        OPEN = "open", _("Open")
+        SEALED = "sealed", _("Sealed")
+
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    teacher = models.CharField(max_length=200, blank=True)
+    branch = models.ForeignKey(
+        Branch, on_delete=models.PROTECT, null=True, blank=True, related_name="+"
+    )
+    state = models.CharField(max_length=8, choices=State.choices, default=State.OPEN)
+    created_by = models.ForeignKey(
+        Membership, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    sealed_at = models.DateTimeField(null=True, blank=True)
+    sealed_by = models.ForeignKey(
+        Membership, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    seal_digest = models.CharField(max_length=64, blank=True)
+
+    class Meta:
+        ordering = ["-created_at", "-pk"]
+        indexes = [models.Index(fields=["company", "state"])]
+
+    def __str__(self):
+        return self.title
+
+
+class StudyTopic(TenantModel):
+    """A topic of a list: numbered 1, 2, 3… in the order added; a number is never reused."""
+
+    study_list = models.ForeignKey(StudyList, on_delete=models.CASCADE, related_name="topics")
+    number = models.PositiveSmallIntegerField()
+    title = models.CharField(max_length=300)
+
+    class Meta:
+        ordering = ["number"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["study_list", "number"], name="learning_studytopic_number_uniq"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.number}. {self.title}"
+
+
+class StudyStudent(TenantModel):
+    """A student of a list: a member of the company, or a typed-in name (an intern from a college).
+    `name` is the name as written in the list, kept even if the member later leaves."""
+
+    study_list = models.ForeignKey(StudyList, on_delete=models.CASCADE, related_name="students")
+    number = models.PositiveSmallIntegerField()
+    membership = models.ForeignKey(
+        Membership, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    name = models.CharField(max_length=200)
+    note = models.CharField(max_length=200, blank=True)
+
+    class Meta:
+        ordering = ["number"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["study_list", "number"], name="learning_studystudent_number_uniq"
+            ),
+            models.UniqueConstraint(
+                fields=["study_list", "membership"],
+                condition=Q(membership__isnull=False),
+                name="learning_studystudent_member_uniq",
+            ),
+        ]
+
+    def __str__(self):
+        return self.name
+
+
+class StudyMarkQuerySet(TenantQuerySet):
+    """Lines are written once: a bulk update or delete is refused like a single one."""
+
+    def update(self, **kwargs):
+        raise UnchangeableError("A line of an unchangeable list is never changed.")
+
+    def delete(self):
+        raise UnchangeableError("A line of an unchangeable list is never deleted.")
+
+
+class StudyMark(TenantModel):
+    """One line of an unchangeable list, numbered 1, 2, 3… and never changed or deleted.
+
+    A "studied" line says a student studied a topic on a day. A correction takes back an earlier
+    "studied" line (`corrects`, with the reason in `note`); the cell is then empty again. Each line
+    carries `digest`, a SHA-256 of the line before it and of its own content
+    (`apps.learning.study_lists.line_digest`), so a row changed behind the app's back shows."""
+
+    class Kind(models.TextChoices):
+        STUDIED = "studied", _("Studied")
+        CORRECTION = "correction", _("Correction")
+
+    study_list = models.ForeignKey(StudyList, on_delete=models.PROTECT, related_name="marks")
+    number = models.PositiveIntegerField()
+    kind = models.CharField(max_length=10, choices=Kind.choices)
+    topic = models.ForeignKey(StudyTopic, on_delete=models.PROTECT, related_name="marks")
+    student = models.ForeignKey(StudyStudent, on_delete=models.PROTECT, related_name="marks")
+    studied_on = models.DateField(null=True, blank=True)
+    note = models.CharField(max_length=300, blank=True)
+    corrects = models.OneToOneField(
+        "self", on_delete=models.PROTECT, null=True, blank=True, related_name="correction"
+    )
+    written_by = models.ForeignKey(
+        Membership, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    written_by_name = models.CharField(max_length=200, blank=True)
+    digest = models.CharField(max_length=64)
+
+    objects = StudyMarkQuerySet.as_manager()
+
+    class Meta:
+        ordering = ["number"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["study_list", "number"], name="learning_studymark_number_uniq"
+            )
+        ]
+
+    def __str__(self):
+        return f"#{self.number} {self.kind}"
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise UnchangeableError("A line of an unchangeable list is never changed.")
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise UnchangeableError("A line of an unchangeable list is never deleted.")

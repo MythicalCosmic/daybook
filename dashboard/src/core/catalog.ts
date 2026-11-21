@@ -222,6 +222,8 @@ export const CATALOG: readonly CatalogEntry[] = [
       { id: "courses", to: "learning/courses" },
       { id: "lessons", to: "learning/lessons" },
       { id: "people", to: "learning/people" },
+      // v13: unchangeable lists (O‘zgarmas ro‘yxatlar), study registers kept like a bound journal.
+      { id: "lists", to: "learning/lists" },
     ],
   },
   {

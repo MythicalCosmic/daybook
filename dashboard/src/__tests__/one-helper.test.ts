@@ -3,7 +3,7 @@
  * and inline in six more places; it is `@/stores/company`'s now.
  */
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { dirname, join, relative, resolve } from "node:path";
+import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
@@ -20,13 +20,15 @@ function sources(dir: string): string[] {
 
 describe("one helper, one place", () => {
   it("defines the current company's id once", () => {
+    // Paths with "/" on every system (Windows gives "\"), so the exclusion and the answer read the same.
+    const slashed = (path: string) => path.split(sep).join("/");
     const copies = sources(SRC)
-      .filter((file) => !file.includes("/modules/ai/"))
+      .filter((file) => !slashed(file).includes("/modules/ai/"))
       .filter((file) => {
         const text = readFileSync(file, "utf8");
         return /function useCompanyId\(/.test(text) || /computed\(\(\) => company\.currentId \?\? 0\)/.test(text);
       })
-      .map((file) => relative(SRC, file));
+      .map((file) => slashed(relative(SRC, file)));
     expect(copies).toEqual(["stores/company.ts"]);
   });
 });

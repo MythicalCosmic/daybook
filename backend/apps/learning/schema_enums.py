@@ -27,4 +27,6 @@ ENUM_NAME_OVERRIDES = {
     "LearningSuggestionStateEnum": "apps.learning.models.TutorSuggestion.State",
     "LearningTutorDraftKindEnum": "apps.learning.models.TutorDraft.Kind",
     "LearningTutorDraftStateEnum": "apps.learning.models.TutorDraft.State",
+    "LearningStudyListStateEnum": "apps.learning.models.StudyList.State",
+    "LearningStudyMarkKindEnum": "apps.learning.models.StudyMark.Kind",
 }

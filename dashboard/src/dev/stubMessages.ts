@@ -91,6 +91,7 @@ export const STUB_TITLES: Record<string, { title: Triple; pages: Record<string, 
       courses: ["Courses", "Курсы", "Kurslar"],
       lessons: ["Lessons", "Уроки", "Darslar"],
       people: ["People", "Сотрудники", "Xodimlar"],
+      lists: ["Unchangeable lists", "Неизменяемые списки", "O‘zgarmas ro‘yxatlar"],
     },
   },
   quizzes: {

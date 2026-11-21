@@ -307,3 +307,125 @@ export interface Topic {
   lesson_count: number;
   question_count: number;
 }
+
+// Unchangeable lists (O‘zgarmas ro‘yxatlar): .lead/briefs/lists-contract.md, fixed 2026-11-21.
+
+export type StudyListState = "open" | "sealed";
+export type StudyMarkKind = "studied" | "correction";
+
+export interface StudyListRow {
+  id: number;
+  title: string;
+  /** "" when none. */
+  teacher: string;
+  branch: Ref | null;
+  state: StudyListState;
+  /** How many topics. */
+  topics: number;
+  /** How many students. */
+  students: number;
+  /** Cells holding a standing "studied" line. */
+  studied: number;
+  /** Topics × students. */
+  cells: number;
+  created_at: string;
+  sealed_at: string | null;
+}
+
+export interface StudyTopic {
+  id: number;
+  /** 1, 2, 3… in the order added; never reused. */
+  number: number;
+  title: string;
+  /** A line mentions it: it can't be renamed or removed. */
+  locked: boolean;
+}
+
+export interface StudyStudent {
+  id: number;
+  number: number;
+  /** As written in the list (a staff member's name when added, or typed). */
+  name: string;
+  /** "intern, pharmacy college"; "" when none. */
+  note: string;
+  /** Daybook staff, or null for a typed-in name. */
+  member_id: number | null;
+  /** The staff member's position name. */
+  position: string | null;
+  locked: boolean;
+}
+
+export interface StudyMark {
+  id: number;
+  /** The line number in the list: 1, 2, 3… */
+  number: number;
+  kind: StudyMarkKind;
+  topic_id: number;
+  student_id: number;
+  /** YYYY-MM-DD for "studied"; null for a correction. */
+  studied_on: string | null;
+  /** "studied": an optional note; "correction": the reason. */
+  note: string;
+  /** A correction: the line it takes back. */
+  corrects_id: number | null;
+  /** A "studied" line: the correction that took it back. */
+  corrected_by_id: number | null;
+  /** The name of who wrote it. */
+  written_by: string;
+  written_at: string;
+  /** 64 hex characters, chained to the line before. */
+  digest: string;
+}
+
+export interface StudyListDetail {
+  id: number;
+  title: string;
+  description: string;
+  teacher: string;
+  branch: Ref | null;
+  state: StudyListState;
+  created_at: string;
+  /** "" if unknown. */
+  created_by: string;
+  sealed_at: string | null;
+  /** "" while open. */
+  sealed_by: string;
+  /** "" while open. */
+  seal_digest: string;
+  /** The chain of lines checks out. */
+  intact: boolean;
+  /** By number. */
+  topics: StudyTopic[];
+  /** By number. */
+  students: StudyStudent[];
+  /** Every line, oldest first (corrections included). */
+  marks: StudyMark[];
+}
+
+export interface StudyListInput {
+  title: string;
+  description?: string;
+  teacher?: string;
+  branch_id?: number | null;
+}
+
+export interface StudyCandidate {
+  /** The member id. */
+  id: number;
+  name: string;
+  position: string | null;
+  branch: string | null;
+}
+
+export interface StudyStudentsInput {
+  member_ids?: number[];
+  names?: { name: string; note?: string }[];
+}
+
+export interface StudyMarkInput {
+  topic_id: number;
+  student_id: number;
+  /** YYYY-MM-DD; the server's default is today in company time, never in the future. */
+  studied_on?: string;
+  note?: string;
+}

@@ -2,11 +2,12 @@
  * Training (O‘qitish): courses that mix video lessons, knowledge base pages and quizzes, made
  * mandatory for positions or branches with a deadline and a renewal; lessons with an uploaded
  * video or a YouTube link and "who watched what"; the people × mandatory courses grid and each
- * person's training (docs/PLAN-LEARNING.md §11 Q1). Quizzes and the tutor are the `quizzes`
- * module; both fill the extension points `learning.overview.cards` and `learning.person.panels`.
- * Behind the `learning` switch.
+ * person's training (docs/PLAN-LEARNING.md §11 Q1); unchangeable lists (O‘zgarmas ro‘yxatlar),
+ * study registers of topics × students kept like a bound journal. Quizzes and the tutor are the
+ * `quizzes` module; both fill the extension points `learning.overview.cards` and
+ * `learning.person.panels`. Behind the `learning` switch.
  */
-import { BookOpenCheck, GraduationCap, Plus, Users } from "@lucide/vue";
+import { BookOpenCheck, GraduationCap, NotebookPen, Plus, Users } from "@lucide/vue";
 import { defineAsyncComponent } from "vue";
 
 import { defineModule } from "@/core/modules";
@@ -30,6 +31,7 @@ export default defineModule({
     { key: "courses", title: "learning.nav.courses", to: "learning/courses" },
     { key: "lessons", title: "learning.nav.lessons", to: "learning/lessons" },
     { key: "people", title: "learning.nav.people", to: "learning/people" },
+    { key: "lists", title: "learning.nav.lists", to: "learning/lists" },
   ],
   invalidates: ["learning.courses", "learning.lessons"],
   commands: (ctx) => [
@@ -48,6 +50,14 @@ export default defineModule({
       keywords: ["dars", "урок", "lesson", "video", "видео"],
       perm: "learning.manage",
       run: () => ctx.go("learning/lessons?new=1"),
+    },
+    {
+      id: "learning.newList",
+      title: ctx.t("learning.cmd.newList"),
+      icon: NotebookPen,
+      keywords: ["o‘zgarmas", "ro‘yxat", "jurnal", "неизменяемый", "список", "журнал", "unchangeable", "list", "register", "journal"],
+      perm: "learning.manage",
+      run: () => ctx.go("learning/lists?new=1"),
     },
     {
       id: "learning.people",

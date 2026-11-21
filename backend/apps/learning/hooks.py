@@ -7,7 +7,8 @@ edit the same file: `hooks_courses.py` (Q1: courses, lessons, videos) and `hooks
 
 from apps.audit import registry as audit_registry
 from apps.learning import hooks_courses, hooks_quizzes  # noqa: F401  (they register on import)
-from apps.learning.audit_actions import CourseAction, QuizAction
+from apps.learning.audit_actions import CourseAction, ListAction, QuizAction
 
 audit_registry.register(CourseAction)
 audit_registry.register(QuizAction)
+audit_registry.register(ListAction)

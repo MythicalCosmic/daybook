@@ -31405,3 +31405,114 @@ msgstr "Havolada bo‘sh joy qolmagan."
 #, python-format
 msgid "Join %(company)s in Telegram"
 msgstr "Telegramda %(company)s jamoasiga qo‘shiling"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Started an unchangeable list"
+msgstr "O‘zgarmas ro‘yxat ochdi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Changed an unchangeable list"
+msgstr "O‘zgarmas ro‘yxatni o‘zgartirdi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Deleted an empty unchangeable list"
+msgstr "Bo‘sh o‘zgarmas ro‘yxatni o‘chirdi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Sealed an unchangeable list"
+msgstr "O‘zgarmas ro‘yxatni muhrladi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Wrote a line in an unchangeable list"
+msgstr "O‘zgarmas ro‘yxatga yozuv kiritdi"
+
+#: backend/apps/learning/audit_actions.py
+msgid "Corrected a line in an unchangeable list"
+msgstr "O‘zgarmas ro‘yxatdagi yozuvni tuzatdi"
+
+#: backend/apps/learning/models.py
+msgid "Sealed"
+msgstr "Muhrlangan"
+
+#: backend/apps/learning/models.py
+msgid "Studied"
+msgstr "O‘rgandi"
+
+#: backend/apps/learning/study_lists.py
+#, python-format
+msgid "Keep it under %(n)d characters."
+msgstr "%(n)d belgidan oshmasin."
+
+#: backend/apps/learning/study_lists.py
+msgid "This list is sealed: nothing can be added or changed."
+msgstr "Bu ro‘yxat muhrlangan: unga hech narsa qo‘shib yoki o‘zgartirib bo‘lmaydi."
+
+#: backend/apps/learning/study_lists.py
+msgid "Give the list a title."
+msgstr "Ro‘yxatga nom bering."
+
+#: backend/apps/learning/study_lists.py
+msgid "A list with lines can't be deleted; it can only be sealed."
+msgstr "Yozuvlari bor ro‘yxatni o‘chirib bo‘lmaydi, uni faqat muhrlash mumkin."
+
+#: backend/apps/learning/study_lists.py
+msgid "A topic needs a title."
+msgstr "Mavzuga nom yozing."
+
+#: backend/apps/learning/study_lists.py
+msgid "Write at least one topic."
+msgstr "Kamida bitta mavzu yozing."
+
+#: backend/apps/learning/study_lists.py
+#, python-format
+msgid "A list holds at most %(n)d topics."
+msgstr "Ro‘yxatda ko‘pi bilan %(n)d ta mavzu bo‘lishi mumkin."
+
+#: backend/apps/learning/study_lists.py
+msgid "There's no such topic in this list."
+msgstr "Bu ro‘yxatda bunday mavzu yo‘q."
+
+#: backend/apps/learning/study_lists.py
+msgid "This topic already has lines, so it can't be changed."
+msgstr "Bu mavzu bo‘yicha yozuvlar bor, shuning uchun uni o‘zgartirib bo‘lmaydi."
+
+#: backend/apps/learning/study_lists.py
+msgid "Pick people or type a name."
+msgstr "Xodimlarni tanlang yoki ism yozing."
+
+#: backend/apps/learning/study_lists.py
+msgid "Type the student's name."
+msgstr "O‘quvchining ismini yozing."
+
+#: backend/apps/learning/study_lists.py
+#, python-format
+msgid "A list holds at most %(n)d students."
+msgstr "Ro‘yxatda ko‘pi bilan %(n)d ta o‘quvchi bo‘lishi mumkin."
+
+#: backend/apps/learning/study_lists.py
+msgid "There's no such student in this list."
+msgstr "Bu ro‘yxatda bunday o‘quvchi yo‘q."
+
+#: backend/apps/learning/study_lists.py
+msgid "This student already has lines, so they can't be changed."
+msgstr "Bu o‘quvchi bo‘yicha yozuvlar bor, shuning uchun uni o‘zgartirib bo‘lmaydi."
+
+#: backend/apps/learning/study_lists.py
+msgid "Pick a topic and a student of this list."
+msgstr "Shu ro‘yxatdagi mavzu va o‘quvchini tanlang."
+
+#: backend/apps/learning/study_lists.py
+msgid "This student already has a line for this topic. Correct it first if it's wrong."
+msgstr "Bu o‘quvchida shu mavzu bo‘yicha yozuv bor. Agar u xato bo‘lsa, avval uni tuzating."
+
+#: backend/apps/learning/study_lists.py
+msgid "Write why this line is wrong."
+msgstr "Bu yozuv nima uchun xato ekanini yozing."
+
+#: backend/apps/learning/study_lists.py
+msgid "There's no such line in this list."
+msgstr "Bu ro‘yxatda bunday yozuv yo‘q."
+
+#: backend/apps/learning/study_lists.py
+msgid "Only a line that still stands can be corrected."
+msgstr "Faqat amaldagi yozuvni tuzatish mumkin."

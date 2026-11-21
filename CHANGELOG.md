@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.8.3 — 2026-11-21
+
+### Unchangeable lists (O‘zgarmas ro‘yxat)
+- **A study register kept like a bound journal** (O‘qitish › O‘zgarmas ro‘yxatlar): numbered
+  topics down the side, students across (staff from Daybook, or typed-in names such as interns
+  from a college), and who studied which topic on which day, written by whom.
+- **Nothing written is ever changed or deleted.** A mistake is taken back by a correction: a new,
+  visible line with its reason; the old line stays in the journal, struck through, and the cell can
+  be marked again. Topics and students lock once a line mentions them.
+- **Seal** a finished list: nothing can be added afterwards, and the list shows who sealed it, when,
+  and the seal's fingerprint.
+- **Quiet edits show**: every line carries a fingerprint chained to the line before it, so a line
+  changed outside Daybook breaks the chain and the list says so.
+- The **Journal** tab lists every line in order; **Print** gives a clean page for an inspector
+  (save it as PDF from the print dialog).
+- Reading needs training view, writing training manage; a branch's list is seen by that branch's
+  people.
+
 ## 0.8.2 — 2026-11-12
 
 ### Reports for banks and investors

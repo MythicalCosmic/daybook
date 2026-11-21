@@ -30,6 +30,12 @@ import type {
   PersonPage,
   Pick,
   StepKind,
+  StudyCandidate,
+  StudyListDetail,
+  StudyListInput,
+  StudyListRow,
+  StudyMarkInput,
+  StudyStudentsInput,
   Topic,
   Video,
   ViewerState,
@@ -39,6 +45,10 @@ import type {
 export const MODULE = "learning";
 
 const path = (cid: number, rest: string) => ownerPath(cid, `learning/${rest}`);
+
+/** A plain list, as the lists contract answers; a DRF page (`{ results }`), as the schema draws it, reads the same. */
+type Rows<T> = T[] | { results?: T[] } | null;
+const rowsOf = <T>(answer: Rows<T>): T[] => (Array.isArray(answer) ? answer : (answer?.results ?? []));
 
 export const learningApi = {
   overview: (cid: number, params: Query = {}) => http.get<Overview>(path(cid, "overview/"), params),
@@ -100,6 +110,25 @@ export const learningApi = {
 
   /** The knowledge base's topics (shared by pages, lessons and questions). */
   topics: (cid: number) => http.get<Topic[]>(ownerPath(cid, "knowledge/topics/")),
+
+  // Unchangeable lists: every write answers the whole list as it now stands.
+  lists: async (cid: number, params: Query = {}, signal?: AbortSignal) => rowsOf(await http.get<Rows<StudyListRow>>(path(cid, "lists/"), params, { signal })),
+  list: (cid: number, id: number) => http.get<StudyListDetail>(path(cid, `lists/${id}/`)),
+  createList: (cid: number, input: StudyListInput) => http.post<StudyListDetail>(path(cid, "lists/"), input),
+  updateList: (cid: number, id: number, input: Partial<StudyListInput>) => http.patch<StudyListDetail>(path(cid, `lists/${id}/`), input),
+  deleteList: (cid: number, id: number) => http.delete(path(cid, `lists/${id}/`)),
+  addTopics: (cid: number, id: number, titles: string[]) => http.post<StudyListDetail>(path(cid, `lists/${id}/topics/`), { titles }),
+  renameTopic: (cid: number, id: number, topicId: number, title: string) => http.patch<StudyListDetail>(path(cid, `lists/${id}/topics/${topicId}/`), { title }),
+  removeTopic: (cid: number, id: number, topicId: number) => http.delete<StudyListDetail>(path(cid, `lists/${id}/topics/${topicId}/`)),
+  listCandidates: async (cid: number, id: number, q = "", signal?: AbortSignal) =>
+    rowsOf(await http.get<Rows<StudyCandidate>>(path(cid, `lists/${id}/candidates/`), { q: q || undefined }, { signal })),
+  addStudents: (cid: number, id: number, input: StudyStudentsInput) => http.post<StudyListDetail>(path(cid, `lists/${id}/students/`), input),
+  updateStudent: (cid: number, id: number, studentId: number, input: { name?: string; note?: string }) =>
+    http.patch<StudyListDetail>(path(cid, `lists/${id}/students/${studentId}/`), input),
+  removeStudent: (cid: number, id: number, studentId: number) => http.delete<StudyListDetail>(path(cid, `lists/${id}/students/${studentId}/`)),
+  mark: (cid: number, id: number, input: StudyMarkInput) => http.post<StudyListDetail>(path(cid, `lists/${id}/marks/`), input),
+  correct: (cid: number, id: number, markId: number, reason: string) => http.post<StudyListDetail>(path(cid, `lists/${id}/marks/${markId}/correct/`), { reason }),
+  seal: (cid: number, id: number) => http.post<StudyListDetail>(path(cid, `lists/${id}/seal/`)),
 };
 
 export const learningKeys = {
@@ -145,6 +174,10 @@ export const usePerson = (id: MaybeRefOrGetter<number>) =>
 export const useLearningSettings = (enabled: MaybeRefOrGetter<boolean> = true) =>
   useResource("settings", {}, (cid) => learningApi.settings(cid), { enabled, staleTime: 60_000 });
 export const useTopics = () => useResource("topics", {}, (cid) => learningApi.topics(cid), { staleTime: 60_000 });
+export const useStudyLists = (params: MaybeRefOrGetter<Query>) =>
+  useResource("lists", () => ({ ...toValue(params) }), (cid, p, signal) => learningApi.lists(cid, p as Query, signal), { keepPrevious: true });
+export const useStudyList = (id: MaybeRefOrGetter<number>) =>
+  useResource("list", () => ({ id: toValue(id) }), (cid, p) => learningApi.list(cid, Number(p.id)), { enabled: () => toValue(id) > 0 });
 
 /** Refetch every learning query and the sidebar pulse (after a write). */
 export function useRefresh() {
@@ -153,5 +186,22 @@ export function useRefresh() {
   return () => {
     void client.invalidateQueries({ queryKey: learningKeys.all(cid.value) });
     void client.invalidateQueries({ queryKey: [cid.value, "shell", "pulse"] });
+  };
+}
+
+/**
+ * After a write to a list: every write answers the whole list, so it goes on screen at once (the
+ * key `useStudyList` reads) without asking again; the lists page's rows and the staff still to
+ * add refresh behind it.
+ */
+export function useApplyList() {
+  const client = useQueryClient();
+  const cid = useCompanyId();
+  return (detail: StudyListDetail): StudyListDetail => {
+    client.setQueryData(learningKeys.of(cid.value, "list", { id: detail.id }), detail);
+    void client.invalidateQueries({ queryKey: [cid.value, MODULE, "lists"] });
+    void client.invalidateQueries({ queryKey: [cid.value, MODULE, "listCandidates"] });
+    void client.invalidateQueries({ queryKey: [cid.value, "shell", "pulse"] });
+    return detail;
   };
 }

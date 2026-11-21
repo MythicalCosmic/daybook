@@ -7,6 +7,8 @@ export const pages = {
   lesson: () => import("./pages/LessonPage.vue"),
   people: () => import("./pages/PeoplePage.vue"),
   person: () => import("./pages/PersonPage.vue"),
+  lists: () => import("./pages/ListsPage.vue"),
+  list: () => import("./pages/ListPage.vue"),
 };
 
 export const panels = {
