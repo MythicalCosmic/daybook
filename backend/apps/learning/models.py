@@ -955,13 +955,12 @@ class StudyStudent(TenantModel):
 
 
 class StudyMarkQuerySet(TenantQuerySet):
-    """Lines are written once: a bulk update or delete is refused like a single one."""
+    """Lines are written once: a bulk update is refused like a single save. A bulk delete stays
+    possible only so a whole company can be removed (seed_demo's reset); nothing in the app deletes
+    lines, and a missing line breaks the digest chain (`study_lists.verify`)."""
 
     def update(self, **kwargs):
         raise UnchangeableError("A line of an unchangeable list is never changed.")
-
-    def delete(self):
-        raise UnchangeableError("A line of an unchangeable list is never deleted.")
 
 
 class StudyMark(TenantModel):
@@ -983,8 +982,10 @@ class StudyMark(TenantModel):
     student = models.ForeignKey(StudyStudent, on_delete=models.PROTECT, related_name="marks")
     studied_on = models.DateField(null=True, blank=True)
     note = models.CharField(max_length=300, blank=True)
-    corrects = models.OneToOneField(
-        "self", on_delete=models.PROTECT, null=True, blank=True, related_name="correction"
+    # A foreign key (one correction per line by the constraint below), so a company's removal can
+    # delete corrections before the lines they take back (seed_demo goes leaves first).
+    corrects = models.ForeignKey(
+        "self", on_delete=models.PROTECT, null=True, blank=True, related_name="corrections"
     )
     written_by = models.ForeignKey(
         Membership, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
@@ -999,7 +1000,12 @@ class StudyMark(TenantModel):
         constraints = [
             models.UniqueConstraint(
                 fields=["study_list", "number"], name="learning_studymark_number_uniq"
-            )
+            ),
+            models.UniqueConstraint(
+                fields=["corrects"],
+                condition=Q(corrects__isnull=False),
+                name="learning_studymark_corrects_uniq",
+            ),
         ]
 
     def __str__(self):

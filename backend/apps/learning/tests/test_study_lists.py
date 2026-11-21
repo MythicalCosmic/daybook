@@ -184,8 +184,6 @@ def test_a_line_is_never_changed_or_deleted_even_from_code(company, boss, api):
         mark.delete()
     with pytest.raises(UnchangeableError):
         StudyMark.objects.filter(pk=mark.pk).update(note="changed")
-    with pytest.raises(UnchangeableError):
-        StudyMark.objects.filter(pk=mark.pk).delete()
     assert StudyMark.objects.get(pk=mark.pk).note == ""
     # A list with lines can only be sealed, never deleted.
     assert api.delete(url(company, f"{lid}/")).status_code == 400
@@ -193,6 +191,47 @@ def test_a_line_is_never_changed_or_deleted_even_from_code(company, boss, api):
     api.post(url(company, f"{empty['id']}/topics/"), {"titles": ["A"]}, format="json")
     assert api.delete(url(company, f"{empty['id']}/")).status_code == 204
     assert not StudyList.objects.filter(pk=empty["id"]).exists()
+
+
+def test_a_line_deleted_behind_the_apps_back_breaks_the_chain(company, boss, api):
+    data = new_list(api, company)
+    lid = data["id"]
+    api.post(url(company, f"{lid}/topics/"), {"titles": ["A", "B"]}, format="json")
+    data = api.post(
+        url(company, f"{lid}/students/"), {"names": [{"name": "C"}]}, format="json"
+    ).data
+    for topic in data["topics"]:
+        data = api.post(
+            url(company, f"{lid}/marks/"),
+            {"topic_id": topic["id"], "student_id": data["students"][0]["id"]},
+            format="json",
+        ).data
+    assert data["intact"] is True
+    # Only a whole company's removal deletes lines in bulk; anything else shows.
+    StudyMark.objects.filter(pk=data["marks"][0]["id"]).delete()
+    assert api.get(url(company, f"{lid}/")).data["intact"] is False
+
+
+def test_a_company_with_lists_and_corrections_can_still_be_removed(company, boss, api):
+    from apps.core.management.commands.seed_demo import Command
+
+    data = new_list(api, company)
+    lid = data["id"]
+    api.post(url(company, f"{lid}/topics/"), {"titles": ["A"]}, format="json")
+    data = api.post(
+        url(company, f"{lid}/students/"), {"names": [{"name": "B"}]}, format="json"
+    ).data
+    body = {"topic_id": data["topics"][0]["id"], "student_id": data["students"][0]["id"]}
+    data = api.post(url(company, f"{lid}/marks/"), body, format="json").data
+    api.post(url(company, f"{lid}/marks/{data['marks'][0]['id']}/correct/"), {"reason": "wrong"})
+    api.post(url(company, f"{lid}/marks/"), body, format="json")
+    api.post(url(company, f"{lid}/seal/"))
+    assert StudyMark.objects.filter(company=company).count() == 3
+
+    Command()._remove_company(company)
+
+    assert not StudyList.objects.filter(pk=lid).exists()
+    assert not StudyMark.objects.filter(company_id=company.pk).exists()
 
 
 def test_a_row_changed_behind_the_apps_back_shows(company, boss, api):

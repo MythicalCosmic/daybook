@@ -381,7 +381,7 @@ def standing(study_list: StudyList, topic_id: int, student_id: int) -> StudyMark
         topic_id=topic_id,
         student_id=student_id,
         kind=StudyMark.Kind.STUDIED,
-        correction__isnull=True,
+        corrections__isnull=True,
     ).first()
 
 
@@ -509,7 +509,7 @@ def rows(lists: QuerySet[StudyList]) -> list[dict]:
         n_students=Count("students", distinct=True),
         n_studied=Count(
             "marks",
-            filter=Q(marks__kind=StudyMark.Kind.STUDIED, marks__correction__isnull=True),
+            filter=Q(marks__kind=StudyMark.Kind.STUDIED, marks__corrections__isnull=True),
             distinct=True,
         ),
     )

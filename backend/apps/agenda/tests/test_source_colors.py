@@ -152,11 +152,17 @@ def owner(company, member):
     return owner
 
 
+# The tax calendar keeps the law's days of the month, which a given week may not reach (the test
+# went red on 2026-11-21): it is read over a quarter, so it always has a deadline to colour.
+WIDER = {"finance.tax_deadlines": 92}
+
+
 def test_every_registered_source_colours_its_items_with_tokens(company, owner):
-    first, last = timezone.localdate(), timezone.localdate() + timedelta(days=7)
+    first = timezone.localdate()
     empty = []
     for source in registry.CALENDAR_SOURCES:
         assert registry.usable(source, owner), f"{source.key}: give the owner a way to see it"
+        last = first + timedelta(days=WIDER.get(source.key, 7))
         items = source.events(company, first, last, owner)
         if not items:
             empty.append(source.key)
