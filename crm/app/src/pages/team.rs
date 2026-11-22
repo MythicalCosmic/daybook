@@ -194,7 +194,7 @@ fn MemberCard(m: Member) -> Element {
             (t("team.won"), if ld.won_value > 0 { money_short(ld.won_value) } else { fmt::num(ld.won_count as i64) }),
             (t("team.new_customers"), fmt::num(ld.customers as i64)),
         ],
-        None => vec![(t("team.tasks_open"), fmt::num(m.open_tasks as i64)), (t("team.branches"), "6".to_string()), (t("team.role"), role.clone())],
+        None => vec![(t("team.tasks_open"), fmt::num(m.open_tasks as i64)), (t("team.branches"), fmt::num(DB.read().branches.len() as i64)), (t("team.role"), role.clone())],
     };
     let tasks = format!("{} {}", m.open_tasks, t("team.open_tasks_lc"));
     let name = m.name.clone();
@@ -397,7 +397,7 @@ pub fn Goals() -> Element {
                             };
                             let role_label = t(role.key());
                             let pct = r.score as f64 / max * 100.0;
-                            let won = money_short(r.won_value);
+                            let won = if r.won_value > 0 { money_short(r.won_value) } else { "—".to_string() };
                             let line = format!("{} · {} {} · {} {}", role_label, r.calls, t("team.calls_lc"), r.customers, t("team.customers_lc"));
                             rsx! {
                                 div { key: "{r.staff_id}", class: "list-row",
@@ -538,10 +538,12 @@ fn NewGoal(onclose: EventHandler<()>) -> Element {
                         }
                     }
                 }
-                Segmented {
-                    options: vec![("branch".to_string(), t("common.branch")), ("staff".to_string(), t("team.employee"))],
-                    value: scope(),
-                    onchange: move |v: String| scope.set(v),
+                div { class: "row",
+                    Segmented {
+                        options: vec![("branch".to_string(), t("common.branch")), ("staff".to_string(), t("team.employee"))],
+                        value: scope(),
+                        onchange: move |v: String| scope.set(v),
+                    }
                 }
                 if is_branch {
                     div { class: "field",

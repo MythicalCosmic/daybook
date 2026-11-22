@@ -824,14 +824,11 @@ fn ThreadPane(id: u32) -> Element {
                         span { class: "nowrap", "{channel_name}" }
                         span { class: "subtle", "·" }
                         span { class: "truncate", "{handle}" }
-                        if let Some(w) = wait.clone() {
-                            span { class: "tone-danger strong nowrap row gap-4 hide-mobile", style: "margin-left: 6px", Icon { name: "clock", size: 11 } "{w}" }
-                        }
                     }
                 }
                 select {
                     class: "select sm hide-mobile",
-                    style: "width: 168px",
+                    style: "width: 150px",
                     title: t("common.assign"),
                     onchange: move |e| {
                         let v: u32 = e.value().parse().unwrap_or(0);
@@ -879,6 +876,9 @@ fn ThreadPane(id: u32) -> Element {
                 }
             }
             div { class: "thread", style: "flex-direction: column-reverse",
+                if let Some(w) = wait.clone() {
+                    div { class: "day-sep row gap-4", style: "padding-top: 10px; color: var(--c-danger)", Icon { name: "clock", size: 12 } "{w}" }
+                }
                 for (k, item) in items.into_iter().enumerate().rev() {
                     {match item {
                         Item::Day(label) => rsx! { div { key: "d{k}", class: "day-sep", "{label}" } },
@@ -1143,8 +1143,12 @@ fn Composer(id: u32) -> Element {
                         Icon { name: "sticky-note", size: 14 }
                         span { class: "hide-mobile", {t("inbox.note")} }
                     }
+                    button { class: "btn primary sm only-mobile", disabled: !can_send, onclick: move |_| send(),
+                        Icon { name: send_icon, size: 14 }
+                        if note() { {t("inbox.save_note")} } else { {t("inbox.send")} }
+                    }
                 }
-                button { class: "btn primary sm", disabled: !can_send, onclick: move |_| send(),
+                button { class: "btn primary sm hide-mobile", disabled: !can_send, onclick: move |_| send(),
                     Icon { name: send_icon, size: 14 }
                     if note() { {t("inbox.save_note")} } else { {t("inbox.send")} }
                 }
@@ -1211,7 +1215,16 @@ fn CustomerMini(cid: u32) -> Element {
                 .filter(|tk| tk.customer_id == Some(cid) && tk.is_open())
                 .map(|tk| (tk.id, format!("{} · {}", tk.number, tk.subject), t(tk.status.key()), if tk.kind == TicketKind::AdverseReaction { "danger" } else { "warning" }))
                 .collect();
-            let summary = crm::analytics::customer_summary(&db, cid, now, l);
+            let summary = {
+                let s = crm::analytics::customer_summary(&db, cid, now, l);
+                let seg = crm::analytics::rfm(&c, today).segment;
+                let label = t(seg.key());
+                let cyr = crm::i18n::to_cyrillic(seg.slug());
+                match s.rfind(seg.slug()).map(|p| (p, seg.slug().len())).or_else(|| s.rfind(&cyr).map(|p| (p, cyr.len()))) {
+                    Some((p, n)) => format!("{}{}{}", &s[..p], label, &s[p + n..]),
+                    None => s,
+                }
+            };
             (c, branch, regimens, purchases, tickets, summary)
         })
     };

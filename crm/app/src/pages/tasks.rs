@@ -556,7 +556,8 @@ pub fn Calendar() -> Element {
                             if is_today {
                                 cls.push_str(" today");
                             }
-                            let list = ev.get(&d).cloned().unwrap_or_default();
+                            let mut list = ev.get(&d).cloned().unwrap_or_default();
+                            list.sort_by_key(|r| (r.done, r.due));
                             let n = list.len();
                             let extra = n.saturating_sub(3);
                             let style = if d == sel { "cursor: pointer; box-shadow: inset 0 0 0 2px var(--c-primary)" } else { "cursor: pointer" };
@@ -567,12 +568,28 @@ pub fn Calendar() -> Element {
                                         span { class: "cal-day", "{day}" }
                                         if extra > 0 { span { class: "xs subtle hide-mobile", "+{extra}" } }
                                     }
-                                    for r in list.into_iter().take(3) {
+                                    for r in list.iter().take(3).cloned() {
                                         {
                                             let cls = cal_class(r.kind);
                                             let time = fmt::time(r.due);
                                             let st = if r.done { "opacity: .5" } else { "" };
-                                            rsx! { div { key: "{r.id}", class: "{cls}", style: "{st}", title: "{r.title}", "{time} {r.title}" } }
+                                            rsx! { div { key: "{r.id}", class: "{cls} hide-mobile", style: "{st}", title: "{r.title}", "{time} {r.title}" } }
+                                        }
+                                    }
+                                    if !list.is_empty() {
+                                        div { class: "only-mobile row wrap", style: "gap: 3px; justify-content: center; margin-top: 2px",
+                                            for r in list.iter().take(6).cloned() {
+                                                {
+                                                    let color = match r.kind {
+                                                        ActivityKind::Call => "var(--c-info)",
+                                                        ActivityKind::Meeting | ActivityKind::Visit => "var(--c-success)",
+                                                        ActivityKind::Delivery => "var(--c-warning)",
+                                                        _ => "var(--c-primary)",
+                                                    };
+                                                    let op = if r.done { ".35" } else { "1" };
+                                                    rsx! { span { key: "{r.id}", style: "width: 6px; height: 6px; border-radius: 99px; background: {color}; opacity: {op}" } }
+                                                }
+                                            }
                                         }
                                     }
                                 }

@@ -750,10 +750,12 @@ fn Editor(c: Campaign) -> Element {
                     div { class: "card",
                         StepHead { n: 4, title: t("campaigns.step_when") }
                         div { class: "card-body stack gap-12",
-                            Segmented {
-                                options: vec![("now".to_string(), t("campaigns.now")), ("later".to_string(), t("campaigns.later"))],
-                                value: if later() { "later".to_string() } else { "now".to_string() },
-                                onchange: move |v: String| later.set(v == "later"),
+                            div { class: "row",
+                                Segmented {
+                                    options: vec![("now".to_string(), t("campaigns.now")), ("later".to_string(), t("campaigns.later"))],
+                                    value: if later() { "later".to_string() } else { "now".to_string() },
+                                    onchange: move |v: String| later.set(v == "later"),
+                                }
                             }
                             div { class: "grid-2",
                                 if later() {

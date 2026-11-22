@@ -192,7 +192,7 @@ fn SalesTab(period: String) -> Element {
     let rev_delta = analytics::delta(s.revenue as f64, s.prev_revenue as f64);
     let ord_delta = analytics::delta(s.orders as f64, s.prev_orders as f64);
     let basket_delta = analytics::delta(basket as f64, prev_basket as f64);
-    let center = money_short(s.revenue);
+    let center = fmt::compact(s.revenue as f64, l);
     let top = s.top.clone();
     let rx_label = t("category.rx");
     rsx! {
