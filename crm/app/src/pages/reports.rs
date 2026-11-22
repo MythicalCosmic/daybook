@@ -35,6 +35,16 @@ fn mon(m: u32, l: Lang) -> String {
     }
 }
 
+/// Revenue per so‘m spent: "×4.2", or rounded and grouped when large ("×2 827").
+fn ratio(revenue: Money, cost: Money) -> String {
+    let r = revenue as f64 / cost.max(1) as f64;
+    if r >= 10.0 {
+        format!("×{}", fmt::num(r.round() as i64))
+    } else {
+        format!("×{:.1}", r)
+    }
+}
+
 /// [from, to) for the period select, and the period before it.
 fn period_range(p: &str, today: NaiveDate) -> (NaiveDate, NaiveDate, NaiveDate) {
     let m0 = month_start(today);
@@ -456,7 +466,7 @@ fn MarketingTab() -> Element {
     let revenue: Money = campaigns.iter().map(|c| c.revenue).sum();
     let cost: Money = campaigns.iter().map(|c| c.cost).sum();
     let conv: u32 = campaigns.iter().map(|c| c.converted).sum();
-    let roi = if cost > 0 { format!("×{:.1}", revenue as f64 / cost as f64) } else { "—".into() };
+    let roi = if cost > 0 { ratio(revenue, cost) } else { "—".into() };
     // per channel: revenue per 1 000 messages
     let mut by: Vec<(Channel, u32, Money, u32)> = Vec::new();
     for c in &campaigns {
@@ -513,7 +523,7 @@ fn MarketingTab() -> Element {
                                 {
                                     let id = c.id;
                                     let read = if c.channel == Channel::Sms { "—".to_string() } else { fmt::pct(c.read as f64 / c.sent.max(1) as f64 * 100.0, l) };
-                                    let roi = if c.cost > 0 { format!("×{:.1}", c.revenue as f64 / c.cost as f64) } else { t("campaigns.free") };
+                                    let roi = if c.cost > 0 { ratio(c.revenue, c.cost) } else { t("campaigns.free") };
                                     let icon = crm::db::channel_icon(c.channel);
                                     let sent = fmt::num(c.sent as i64);
                                     rsx! {

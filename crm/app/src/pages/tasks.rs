@@ -741,7 +741,20 @@ pub fn Calendar() -> Element {
                                             let cls = cal_class(r.kind);
                                             let time = fmt::time(r.due);
                                             let st = if r.done { "opacity: .5" } else { "" };
-                                            rsx! { div { key: "{r.id}", class: "{cls} hide-mobile", style: "{st}", title: "{r.title}", "{time} {r.title}" } }
+                                            let rid = r.id;
+                                            rsx! {
+                                                div {
+                                                    key: "{rid}",
+                                                    class: "{cls} hide-mobile",
+                                                    style: "{st}",
+                                                    title: "{r.title}",
+                                                    onclick: move |e| {
+                                                        e.stop_propagation();
+                                                        *OPEN_TASK.write() = Some(rid);
+                                                    },
+                                                    "{time} {r.title}"
+                                                }
+                                            }
                                         }
                                     }
                                     if !list.is_empty() {
@@ -799,7 +812,18 @@ pub fn Calendar() -> Element {
                                                     let cls = cal_class(r.kind);
                                                     let time = fmt::time(r.due);
                                                     let st = if r.done { "opacity: .5; white-space: normal" } else { "white-space: normal" };
-                                                    rsx! { div { key: "{r.id}", class: "{cls}", style: "{st}", title: "{r.title}", b { "{time} " } "{r.title}" } }
+                                                    let rid = r.id;
+                                                    rsx! {
+                                                        div {
+                                                            key: "{rid}",
+                                                            class: "{cls}",
+                                                            style: "{st}",
+                                                            title: "{r.title}",
+                                                            onclick: move |_| *OPEN_TASK.write() = Some(rid),
+                                                            b { "{time} " }
+                                                            "{r.title}"
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }

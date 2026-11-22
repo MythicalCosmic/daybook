@@ -828,7 +828,7 @@ fn ThreadPane(id: u32) -> Element {
                 }
                 select {
                     class: "select sm hide-mobile",
-                    style: "width: 150px",
+                    style: "width: 132px",
                     title: t("common.assign"),
                     onchange: move |e| {
                         let v: u32 = e.value().parse().unwrap_or(0);
@@ -1215,7 +1215,9 @@ fn CustomerMini(cid: u32) -> Element {
                 .filter(|tk| tk.customer_id == Some(cid) && tk.is_open())
                 .map(|tk| (tk.id, format!("{} · {}", tk.number, tk.subject), t(tk.status.key()), if tk.kind == TicketKind::AdverseReaction { "danger" } else { "warning" }))
                 .collect();
-            let summary = {
+            let summary = if c.orders == 0 {
+                t("inbox.summary_new").replace("{n}", &fmt::num(c.points))
+            } else {
                 let s = crm::analytics::customer_summary(&db, cid, now, l);
                 let seg = crm::analytics::rfm(&c, today).segment;
                 let label = t(seg.key());
@@ -1643,6 +1645,12 @@ pub const STRINGS: &[Entry] = &[
     ("inbox.points_short", "Ballar", "Баллы", "Points"),
     ("inbox.orders", "Xaridlar", "Покупки", "Orders"),
     ("inbox.summary", "AI xulosa", "AI-сводка", "AI summary"),
+    (
+        "inbox.summary_new",
+        "Yangi mijoz, hali xarid qilmagan. Hisobida {n} ball bor: birinchi xaridga taklif qiling va doimiy dorilari haqida so‘rang.",
+        "Новый клиент, покупок ещё не было. На счёте {n} баллов: пригласите на первую покупку и спросите о постоянных препаратах.",
+        "A new customer with no purchases yet and {n} points to spend: invite them for a first purchase and ask about regular medicines.",
+    ),
     ("inbox.regimens", "Doimiy dorilar", "Постоянные препараты", "Regular medicines"),
     ("inbox.no_regimens", "Doimiy dorilar yo‘q", "Постоянных препаратов нет", "No regular medicines"),
     ("inbox.no_health_consent", "Sog‘liq ma’lumotlarini saqlashga rozilik yo‘q", "Нет согласия на хранение данных о здоровье", "No consent to keep health data"),
