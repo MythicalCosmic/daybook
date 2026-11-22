@@ -21,6 +21,7 @@
   --c-accent-fg: #8c491a;
   --c-success: #5f7a45;
   --c-success-soft: #eef4e3;
+  --c-on-success: #ffffff;
   --c-warning: #a8701c;
   --c-warning-soft: #fbf0db;
   --c-danger: #b3412e;
@@ -66,6 +67,7 @@
   --c-accent-fg: #ffc6a5;
   --c-success: #9cc07a;
   --c-success-soft: #232c1a;
+  --c-on-success: #14200c;
   --c-warning: #e0a84a;
   --c-warning-soft: #33270f;
   --c-danger: #f07a63;
@@ -112,6 +114,7 @@
     --c-accent-fg: #ffc6a5;
     --c-success: #9cc07a;
     --c-success-soft: #232c1a;
+  --c-on-success: #14200c;
     --c-warning: #e0a84a;
     --c-warning-soft: #33270f;
     --c-danger: #f07a63;
@@ -379,7 +382,7 @@ p { margin: 0; }
 .btn.ghost:hover { background: var(--c-hover); color: var(--c-text); }
 .btn.danger { color: var(--c-danger); }
 .btn.danger.solid { background: var(--c-danger); color: #fff; border-color: transparent; }
-.btn.success { background: var(--c-success); color: #fff; border-color: transparent; }
+.btn.success { background: var(--c-success); color: var(--c-on-success); border-color: transparent; }
 .btn.sm { height: 30px; padding: 0 10px; font-size: 12.5px; border-radius: 8px; gap: 5px; }
 .btn.lg { height: 44px; padding: 0 20px; font-size: 15px; border-radius: 12px; }
 .btn.block { width: 100%; }
@@ -422,7 +425,9 @@ p { margin: 0; }
 .switch.on::after { transform: translateX(16px); }
 
 /* segmented control and tabs */
-.seg { display: inline-flex; padding: 3px; gap: 2px; border-radius: 11px; background: var(--c-surface-2); border: 1px solid var(--c-border); }
+.seg { display: inline-flex; padding: 3px; gap: 2px; border-radius: 11px; background: var(--c-surface-2); border: 1px solid var(--c-border); max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.seg::-webkit-scrollbar { display: none; }
+.seg button { flex: 0 0 auto; }
 .seg button { border: 0; background: transparent; padding: 0 12px; height: 28px; border-radius: 8px; cursor: pointer; color: var(--c-muted); font-weight: 620; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 .seg button:hover { color: var(--c-text); }
 .seg button.on { background: var(--c-surface); color: var(--c-text); box-shadow: var(--shadow-sm); }
