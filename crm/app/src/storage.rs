@@ -64,6 +64,33 @@ pub fn capture_url() {
 #[cfg(not(target_arch = "wasm32"))]
 pub fn capture_url() {}
 
+/// The starting UI state. On the web, `?palette=1`, `?notif=1` and `?quick=<kind>` open an
+/// overlay right away (for screenshots and links in the demo guide).
+pub fn initial_ui() -> crate::state::Ui {
+    #[allow(unused_mut)]
+    let mut ui = crate::state::Ui::default();
+    #[cfg(target_arch = "wasm32")]
+    if let Some(search) = URL_SEARCH.get() {
+        use crate::state::QuickAdd;
+        ui.palette = search.contains("palette=1");
+        ui.notifications = search.contains("notif=1");
+        ui.quick_add = if search.contains("quick=customer") {
+            Some(QuickAdd::Customer)
+        } else if search.contains("quick=deal") {
+            Some(QuickAdd::Deal)
+        } else if search.contains("quick=task") {
+            Some(QuickAdd::Task)
+        } else if search.contains("quick=lead") {
+            Some(QuickAdd::Lead)
+        } else if search.contains("quick=ticket") {
+            Some(QuickAdd::Ticket)
+        } else {
+            None
+        };
+    }
+    ui
+}
+
 /// `?theme=dark&lang=ru&reset=1&privacy=1` for screenshots and demos (web only, not saved).
 #[cfg(target_arch = "wasm32")]
 fn apply_url_overrides(db: &mut Db) {

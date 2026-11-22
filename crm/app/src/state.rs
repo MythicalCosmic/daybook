@@ -12,7 +12,7 @@ use dioxus::prelude::*;
 use crate::routes::Route;
 
 pub static DB: GlobalSignal<Db> = Signal::global(crate::storage::load);
-pub static UI: GlobalSignal<Ui> = Signal::global(Ui::default);
+pub static UI: GlobalSignal<Ui> = Signal::global(crate::storage::initial_ui);
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Ui {

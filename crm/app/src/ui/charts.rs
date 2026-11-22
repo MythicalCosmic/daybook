@@ -59,8 +59,8 @@ pub struct Series {
     pub dashed: bool,
 }
 
-/// Area/line chart with axes, gridlines and a hover tooltip.
-/// `labels` are the x-axis labels (shown sparsely), `fmt_value` formats tooltip/axis numbers.
+//// Area/line chart with gridlines and a hover tooltip. The plot is SVG; axis labels, hover dots
+/// and the tooltip are HTML, so text keeps its size on every screen width.
 #[component]
 pub fn AreaChart(
     labels: Vec<String>,
@@ -71,25 +71,47 @@ pub fn AreaChart(
     let mut hover = use_signal(|| None::<usize>);
     let id = use_hook(grad_id);
     let lang = crate::state::lang();
-    let w = 720.0;
+    let w = 1000.0;
     let h = height as f64;
-    let (pl, pr, pt, pb) = (52.0, 12.0, 12.0, 26.0);
+    let (pt, pb) = (10.0, 2.0);
     let all: Vec<f64> = series.iter().flat_map(|s| s.values.iter().cloned()).collect();
     let raw_max = max_of(&all);
     let step = nice_step(raw_max / 4.0);
     let top = (raw_max / step).ceil() * step;
     let n = labels.len().max(2);
-    let x = |i: usize| pl + (i as f64) / ((n - 1) as f64) * (w - pl - pr);
+    let x = |i: usize| (i as f64) / ((n - 1) as f64) * w;
     let y = |v: f64| pt + (1.0 - v / top) * (h - pt - pb);
-    let ticks: Vec<f64> = (0..=4).map(|k| top / 4.0 * k as f64).collect();
+    let ticks: Vec<(f64, String)> = (0..=4)
+        .map(|k| {
+            let v = top / 4.0 * k as f64;
+            (y(v), if money { crm::fmt::compact(v, lang) } else { format!("{:.0}", v) })
+        })
+        .collect();
     let every = (n / 6).max(1);
-    let fmtv = move |v: f64| if money { crm::fmt::compact(v, lang) } else { format!("{:.0}", v) };
+    let xlabels: Vec<(f64, String, &'static str)> = labels
+        .iter()
+        .enumerate()
+        .filter(|(i, _)| i % every == 0 || *i == n - 1)
+        .enumerate()
+        .map(|(k, (i, l))| {
+            let edge = if i == 0 {
+                "first"
+            } else if i == n - 1 {
+                "last"
+            } else if k % 2 == 1 {
+                "alt"
+            } else {
+                ""
+            };
+            (x(i) / w * 100.0, l.clone(), edge)
+        })
+        .collect();
     let paths: Vec<(String, String, &'static str, bool)> = series
         .iter()
         .map(|s| {
             let pts: Vec<(f64, f64)> = s.values.iter().enumerate().map(|(i, v)| (x(i), y(*v))).collect();
             let line = smooth_path(&pts);
-            let area = format!("{line} L{:.1},{:.1} L{:.1},{:.1} Z", x(s.values.len().saturating_sub(1)), h - pb, pl, h - pb);
+            let area = format!("{line} L{:.1},{:.1} L0,{:.1} Z", x(s.values.len().saturating_sub(1)), h - pb, h - pb);
             (line, area, s.color, s.dashed)
         })
         .collect();
@@ -97,49 +119,42 @@ pub fn AreaChart(
     let defs = format!(
         "<linearGradient id='{id}' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='{first_color}' stop-opacity='0.22'/><stop offset='1' stop-color='{first_color}' stop-opacity='0'/></linearGradient>"
     );
-    let zone_w = (w - pl - pr) / (n as f64 - 1.0).max(1.0);
+    let zone_w = w / (n as f64 - 1.0).max(1.0);
     let tip = hover().map(|i| {
         let label = labels.get(i).cloned().unwrap_or_default();
-        let rows: Vec<(String, String, &'static str)> =
-            series.iter().map(|s| (s.name.clone(), s.values.get(i).map(|v| if money { crm::fmt::money_short(*v as i64, lang) } else { crm::fmt::num(*v as i64) }).unwrap_or_default(), s.color)).collect();
-        let left = (x(i) / w * 100.0).clamp(8.0, 84.0);
-        (label, rows, left, i)
+        let rows: Vec<(String, String, &'static str)> = series
+            .iter()
+            .map(|s| {
+                let v = s.values.get(i).map(|v| if money { crm::fmt::money_short(*v as i64, lang) } else { crm::fmt::num(*v as i64) }).unwrap_or_default();
+                (s.name.clone(), v, s.color)
+            })
+            .collect();
+        let dots: Vec<(f64, &'static str)> = series.iter().filter_map(|s| s.values.get(i).map(|v| (y(*v), s.color))).collect();
+        let frac = x(i) / w;
+        (label, rows, frac, dots)
     });
     rsx! {
-        div { style: "position: relative",
+        div { class: "chart-wrap",
+            for (k, (ty, text)) in ticks.iter().cloned().enumerate() {
+                div { key: "y{k}", class: "axis-y", style: "top: {ty - 7.0:.1}px", "{text}" }
+            }
             svg { class: "chart", view_box: "0 0 {w} {h}", height: "{height}", preserve_aspect_ratio: "none",
                 onmouseleave: move |_| hover.set(None),
                 defs { dangerous_inner_html: "{defs}" }
-                for (k, tv) in ticks.iter().enumerate() {
-                    g { key: "g{k}",
-                        line { class: "grid-line", x1: "{pl}", x2: "{w - pr}", y1: "{y(*tv):.1}", y2: "{y(*tv):.1}" }
-                        text { class: "axis", x: "{pl - 8.0}", y: "{y(*tv) + 4.0:.1}", text_anchor: "end", "{fmtv(*tv)}" }
-                    }
-                }
-                for (i, l) in labels.iter().enumerate() {
-                    if i % every == 0 || i == n - 1 {
-                        text { key: "x{i}", class: "axis", x: "{x(i):.1}", y: "{h - 6.0}", text_anchor: "middle", "{l}" }
-                    }
+                for (k, (ty, _)) in ticks.iter().cloned().enumerate() {
+                    line { key: "g{k}", class: "grid-line", x1: "0", x2: "{w}", y1: "{ty:.1}", y2: "{ty:.1}", vector_effect: "non-scaling-stroke" }
                 }
                 for (k, (line, area, color, dashed)) in paths.iter().cloned().enumerate() {
                     g { key: "s{k}",
-                    if k == 0 { path { d: "{area}", fill: "url(#{id})" } }
-                    path {
-                        d: "{line}",
-                        fill: "none",
-                        stroke: "{color}",
-                        stroke_width: if dashed { "1.8" } else { "2.4" },
-                        stroke_dasharray: if dashed { "5 5" } else { "none" },
-                        stroke_linecap: "round",
-                        vector_effect: "non-scaling-stroke",
-                    }
-                    }
-                }
-                if let Some((_, _, _, i)) = tip.clone() {
-                    line { x1: "{x(i):.1}", x2: "{x(i):.1}", y1: "{pt}", y2: "{h - pb}", stroke: "var(--c-border-strong)", stroke_dasharray: "3 3" }
-                    for (k, s) in series.iter().enumerate() {
-                        if let Some(v) = s.values.get(i) {
-                            circle { key: "c{k}", cx: "{x(i):.1}", cy: "{y(*v):.1}", r: "4", fill: "var(--c-surface)", stroke: "{s.color}", stroke_width: "2.5" }
+                        if k == 0 { path { d: "{area}", fill: "url(#{id})" } }
+                        path {
+                            d: "{line}",
+                            fill: "none",
+                            stroke: "{color}",
+                            stroke_width: if dashed { "1.8" } else { "2.4" },
+                            stroke_dasharray: if dashed { "5 5" } else { "none" },
+                            stroke_linecap: "round",
+                            vector_effect: "non-scaling-stroke",
                         }
                     }
                 }
@@ -152,12 +167,23 @@ pub fn AreaChart(
                         width: "{zone_w:.1}",
                         height: "{h}",
                         onmouseenter: move |_| hover.set(Some(i)),
+                        onclick: move |_| hover.set(Some(i)),
                     }
                 }
             }
-            if let Some((label, rows, left, _)) = tip {
+            div { class: "axis-x",
+                for (k, (left, text, edge)) in xlabels.into_iter().enumerate() {
+                    span { key: "x{k}", class: "{edge}", style: "left: {left:.2}%", "{text}" }
+                }
+            }
+            if let Some((label, rows, frac, dots)) = tip {
+                div { class: "chart-vline", style: "left: calc(46px + (100% - 46px) * {frac:.4}); height: {height}px" }
+                for (k, (dy, color)) in dots.into_iter().enumerate() {
+                    div { key: "d{k}", class: "chart-dot", style: "left: calc(46px + (100% - 46px) * {frac:.4}); top: {dy:.1}px; border-color: {color}" }
+                }
                 div {
-                    style: "position:absolute; top:-6px; left:{left:.1}%; transform:translateX(-50%); pointer-events:none; background:var(--c-surface); border:1px solid var(--c-border); box-shadow:var(--shadow-md); border-radius:10px; padding:8px 10px; font-size:12px; min-width:140px; z-index:3",
+                    class: "chart-tip",
+                    style: "left: calc(46px + (100% - 46px) * {frac.clamp(0.12, 0.86):.4})",
                     div { class: "strong", style: "margin-bottom:4px", "{label}" }
                     for (name, val, color) in rows {
                         div { class: "row between", key: "{name}",
@@ -191,45 +217,64 @@ fn nice_step(raw: f64) -> f64 {
     m * mag
 }
 
-/// Vertical bars with labels under them; the highlighted index is drawn full colour.
+//// Vertical bars with labels under them; the highlighted index is drawn full colour.
 #[component]
 pub fn BarChart(labels: Vec<String>, values: Vec<f64>, #[props(default = 180)] height: u32, #[props(default)] highlight: Option<usize>, #[props(default)] money: bool) -> Element {
     let mut hover = use_signal(|| None::<usize>);
     let lang = crate::state::lang();
-    let w = 720.0;
+    let w = 1000.0;
     let h = height as f64;
-    let (pb, pt) = (24.0, 18.0);
+    let pt = 20.0;
     let m = max_of(&values);
     let n = values.len().max(1) as f64;
     let slot = w / n;
-    let bw = (slot * 0.62).min(46.0);
+    let bw = (slot * 0.62).min(70.0);
+    let bars: Vec<(usize, f64, f64, f64, bool, String, String)> = values
+        .iter()
+        .enumerate()
+        .map(|(i, v)| {
+            let bh = (v / m) * (h - pt);
+            let xx = slot * i as f64 + (slot - bw) / 2.0;
+            let on = highlight.map_or(true, |hl| hl == i) || hover() == Some(i);
+            let label = labels.get(i).cloned().unwrap_or_default();
+            let val = if money { crm::fmt::compact(*v, lang) } else { format!("{:.0}", v) };
+            (i, xx, h - bh, bh.max(2.0), on, label, val)
+        })
+        .collect();
+    let shown = hover().or(highlight);
     rsx! {
-        svg { class: "chart", view_box: "0 0 {w} {h}", height: "{height}", preserve_aspect_ratio: "none", onmouseleave: move |_| hover.set(None),
-            line { class: "grid-line", x1: "0", x2: "{w}", y1: "{h - pb}", y2: "{h - pb}" }
-            for (i, v) in values.iter().enumerate() {
-                {
-                    let bh = (v / m) * (h - pb - pt);
-                    let xx = slot * i as f64 + (slot - bw) / 2.0;
-                    let yy = h - pb - bh;
-                    let on = highlight.map_or(true, |hl| hl == i) || hover() == Some(i);
-                    let label = labels.get(i).cloned().unwrap_or_default();
-                    let val = if money { crm::fmt::compact(*v, lang) } else { format!("{:.0}", v) };
-                    rsx! {
-                        g { key: "{i}", onmouseenter: move |_| hover.set(Some(i)),
-                            rect { class: if on { "bar" } else { "bar dim" }, x: "{xx:.1}", y: "{yy:.1}", width: "{bw:.1}", height: "{bh.max(2.0):.1}", rx: "6" }
-                            text { class: "axis", x: "{xx + bw / 2.0:.1}", y: "{h - 7.0}", text_anchor: "middle", "{label}" }
-                            if hover() == Some(i) || highlight == Some(i) {
-                                text { class: "axis", style: "fill: var(--c-text); font-weight: 700", x: "{xx + bw / 2.0:.1}", y: "{(yy - 6.0).max(11.0):.1}", text_anchor: "middle", "{val}" }
-                            }
-                        }
+        div { class: "chart-wrap bars", onmouseleave: move |_| hover.set(None),
+            svg { class: "chart", view_box: "0 0 {w} {h}", height: "{height}", preserve_aspect_ratio: "none",
+                line { class: "grid-line", x1: "0", x2: "{w}", y1: "{h - 0.5}", y2: "{h - 0.5}", vector_effect: "non-scaling-stroke" }
+                for (i, xx, yy, bh, on, _, _) in bars.iter().cloned() {
+                    rect {
+                        key: "{i}",
+                        class: if on { "bar" } else { "bar dim" },
+                        x: "{xx:.1}",
+                        y: "{yy:.1}",
+                        width: "{bw:.1}",
+                        height: "{bh:.1}",
+                        rx: "3",
+                        onmouseenter: move |_| hover.set(Some(i)),
+                        onclick: move |_| hover.set(Some(i)),
                     }
+                }
+            }
+            div { class: "axis-x",
+                for (i, _, _, _, _, label, _) in bars.iter().cloned() {
+                    span { key: "l{i}", style: "left: {(i as f64 + 0.5) / n * 100.0:.2}%", "{label}" }
+                }
+            }
+            for (i, _, yy, _, _, _, val) in bars.iter().cloned() {
+                if shown == Some(i) {
+                    div { key: "v{i}", class: "bar-value", style: "left: {(i as f64 + 0.5) / n * 100.0:.2}%; top: {(yy - 18.0).max(0.0):.1}px", "{val}" }
                 }
             }
         }
     }
 }
 
-/// One slice of a donut.
+// One slice of a donut.
 #[derive(Clone, PartialEq, Debug)]
 pub struct Slice {
     pub label: String,
