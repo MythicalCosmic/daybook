@@ -318,6 +318,31 @@ mod imp {
             Err("unauthorized".into())
         }
 
+        /// A whole list: plain arrays, DRF `next` links or `?page=N` with a `count`.
+        fn get_list(&mut self, path: &str) -> Result<Vec<Value>, String> {
+            let first = self.get_json(path)?;
+            let count = first.get("count").and_then(|c| c.as_u64()).unwrap_or(0) as usize;
+            let mut next = first.get("next").and_then(|n| n.as_str()).map(str::to_string);
+            let mut all = rows(first);
+            let mut page = 2;
+            while page <= 40 {
+                let url = match next.take() {
+                    Some(abs) => abs.split_once("/api/").map(|(_, rest)| format!("/api/{rest}")).unwrap_or(abs),
+                    None if count > all.len() => format!("{path}{}page={page}", if path.contains('?') { "&" } else { "?" }),
+                    None => break,
+                };
+                let v = self.get_json(&url)?;
+                next = v.get("next").and_then(|n| n.as_str()).map(str::to_string);
+                let more = rows(v);
+                if more.is_empty() {
+                    break;
+                }
+                all.extend(more);
+                page += 1;
+            }
+            Ok(all)
+        }
+
         pub fn me(&mut self) -> Result<Me, String> {
             let v = self.get_json("/api/v1/owner/me/")?;
             let name = ["full_name", "name", "first_name"]
@@ -347,11 +372,11 @@ mod imp {
         pub fn pull(&mut self, company: i64, tasks: Vec<(u32, String, String, String)>) -> Result<Pulled, String> {
             let o = format!("/api/v1/owner/companies/{company}");
             let mut p = Pulled::default();
-            p.branches = rows(self.get_json(&format!("{o}/branches/"))?);
-            p.people = self.get_json(&format!("{o}/people/")).map(rows).unwrap_or_default();
-            p.products = self.get_json(&format!("{o}/stock/products/")).map(rows).unwrap_or_default();
-            p.customers = self.get_json(&format!("{o}/sales/customers/")).map(rows).unwrap_or_default();
-            p.defektura = self.get_json(&format!("{o}/stock/defektura/")).map(rows).map(|r| r.len()).unwrap_or(0);
+            p.branches = self.get_list(&format!("{o}/branches/"))?;
+            p.people = self.get_list(&format!("{o}/people/")).unwrap_or_default();
+            p.products = self.get_list(&format!("{o}/stock/products/")).unwrap_or_default();
+            p.customers = self.get_list(&format!("{o}/sales/customers/")).unwrap_or_default();
+            p.defektura = self.get_list(&format!("{o}/stock/defektura/")).map(|r| r.len()).unwrap_or(0);
             for (crm_id, title, due, owner) in tasks {
                 // Daybook wants people, positions or branches: the owner by name, else the first branch.
                 let person = p.people.iter().find(|x| x.get("full_name").and_then(|n| n.as_str()).map(|n| n.eq_ignore_ascii_case(&owner)).unwrap_or(false)).and_then(|x| x.get("id")).and_then(|x| x.as_i64());
@@ -562,4 +587,35 @@ pub fn qr_path(text: &str) -> Option<(String, usize)> {
         }
     }
     Some((d, w))
+}
+
+/// Live check against a running Daybook (local dev server with DASHBOARD_DEV_LOGIN):
+///   DAYBOOK_TEST_SERVER=http://127.0.0.1:28000 cargo test -p daybook-crm -- --ignored live_sync
+#[cfg(all(test, not(target_arch = "wasm32")))]
+mod live {
+    use super::*;
+
+    #[test]
+    #[ignore]
+    fn live_sync() {
+        let server = std::env::var("DAYBOOK_TEST_SERVER").unwrap_or_else(|_| "http://127.0.0.1:28000".into());
+        let mut s = Session { server, ..Default::default() };
+        let h = s.health().expect("health");
+        assert!(h.ok, "server not healthy");
+        s.dev_login(1001).expect("dev login");
+        assert!(s.access.is_some() && s.refresh.is_some(), "tokens");
+        let me = s.me().expect("me");
+        assert!(!me.companies.is_empty(), "companies");
+        let company = me.companies[0].0;
+        let pulled = s.pull(company, vec![(1, "Daybook CRM live test".into(), "2026-11-24T10:00:00".into(), "nobody".into())]).expect("pull");
+        let now = chrono::NaiveDate::from_ymd_opt(2026, 11, 23).unwrap().and_hms_opt(10, 0, 0).unwrap();
+        let mut db = crm::demo::generate(now);
+        let branches_before = db.branches.len();
+        let counts = apply(&mut db, &pulled);
+        eprintln!("me={} company={company} version={} counts={counts:?} branches {}->{}", me.name, h.version, branches_before, db.branches.len());
+        assert!(counts.branches > 0 && counts.products > 0 && counts.staff > 0);
+        // a refresh rotates the cookie and still works
+        s.access = Some("expired".into());
+        s.me().expect("renewed after 401");
+    }
 }
