@@ -14,6 +14,7 @@ The app opens on a demo company called **Oydin Farm**. It's a fictional chain wi
 | Marketing | Telegram/SMS campaigns with consent filtering, phone preview and Rx compliance checks; automations with pharmacy recipes (refill reminder, day-3 antibiotic check-in, the 4-hour adverse-reaction rule, birthday, win-back); loyalty (tiers, cashback, Rx excluded, liability) |
 | Care | **Refill radar** (who runs out of which medicine, by day); **defektura waitlist** tied to stock ("demand we lost" in so‘m); tickets with SLA, pharmacovigilance form and batch-aware complaints |
 | Insights | Reports (sales, cohorts, RFM, pipeline, campaigns, service, team), goals and leaderboard, team |
+| AI | "Ask your pharmacy": questions in Uzbek, Russian or English become segments, lists and numbers, counted against the company's AI budget (Claude Haiku); AI summaries and next best actions on every customer; suggested replies in the inbox |
 | Everywhere | Command palette (Ctrl+K); quick add; notifications; 4 languages (O‘zbekcha, Ўзбекча generated automatically, Русский, English); light, dark and system themes; privacy mode (masks phones and health data); a phone layout with a tab bar; health-data access written to the audit log |
 
 The research behind the feature list is in [docs/RESEARCH.md](docs/RESEARCH.md).

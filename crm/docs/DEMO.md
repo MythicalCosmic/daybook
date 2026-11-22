@@ -29,12 +29,18 @@ Search with **Ctrl+K**: type a name, a phone fragment or a card number.
 - **Automations:** pharmacy recipes, such as the refill reminder, the day-3 antibiotic check-in and the 4-hour adverse-reaction rule.
 - **Loyalty:** tiers, cashback, Rx excluded, the points liability.
 
-## 6. Everything else, 1 minute
+## 6. Ask your pharmacy (AI), 1 minute
+Press the ✨ button in the top bar and ask in plain words, in Uzbek, Russian or English:
+- "60 yoshdan katta diabetik ayollar" gives 11 customers as a segment, with how many can be reached on Telegram. One click saves it and opens a campaign.
+- "Bu hafta kimning dorisi tugaydi?" (whose medicine runs out this week?), "Qaysi filial ko‘proq sotdi?" (which branch sold most?), "Eng yaxshi mijozlar" (best customers).
+Each answer is counted against the company's AI budget (Claude Haiku). In the demo, the understanding runs on the device.
+
+## 7. Everything else, 1 minute
 - **Inbox:** Telegram, SMS, WhatsApp and Instagram in one place, with templates, an AI suggested reply, internal notes and a compliance warning.
 - Reports (cohorts, RFM, funnel), goals and leaderboard, team.
 - **Settings:** language (Uzbek Latin and Cyrillic, Russian, English), dark theme, privacy mode, per-company rules, editable pipelines, AI budget (Haiku by default).
 
-## 7. Connected to Daybook, 1 minute
+## 8. Connected to Daybook, 1 minute
 **Settings → Daybook connection → Sign in with Telegram.** Scan the QR code (or tap the button), then tap the matching number in the owner bot. The app then pulls branches, staff, medicines and B2B customers, and pushes CRM tasks into Daybook tasks.
 
 ## Phones
