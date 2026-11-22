@@ -1,3 +1,4 @@
+#![allow(unreachable_code)]
 //! Every screen of the app. The `Shell` layout wraps them all (sidebar, top bar, tab bar).
 
 use dioxus::prelude::*;

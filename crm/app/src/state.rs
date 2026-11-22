@@ -151,8 +151,3 @@ pub fn hue_of(s: &str) -> u16 {
     }
     (h % 360) as u16
 }
-
-/// True on the Android / iOS builds (touch-first UI tweaks).
-pub const fn is_mobile_build() -> bool {
-    cfg!(feature = "mobile")
-}

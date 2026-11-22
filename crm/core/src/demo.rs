@@ -632,6 +632,7 @@ impl Gen {
         if let Some(c) = db.customers.iter_mut().find(|c| c.gender == Gender::Female && c.regimens.len() >= 2) {
             c.first_name = "Gulchehra".into();
             c.last_name = "Karimova".into();
+            c.telegram = Some("@gulchehra_karimova".into());
             c.tags = vec!["Nafaqaxo‘r".into(), "VIP".into()];
             c.notes = "Faqat ertalab qo‘ng‘iroq qiling. Insulinni sovutgich sumkada yetkazish kerak.".into();
         }
