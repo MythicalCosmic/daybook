@@ -463,7 +463,14 @@ fn WaitCard(item: Item) -> Element {
                 if !acts.is_empty() {
                     div { class: "row gap-4 wrap",
                         for (to, key, icon, cls) in acts {
-                            button { key: "{key}", class: cls, style: "flex: 1 1 auto", onclick: move |_| advance(id, to), Icon { name: icon, size: 13 } {t(key)} }
+                            button {
+                                key: "{key}",
+                                class: cls,
+                                style: if cls.contains("success") { "flex: 1 1 auto; color: var(--c-on-primary)" } else { "flex: 1 1 auto" },
+                                onclick: move |_| advance(id, to),
+                                Icon { name: icon, size: 13 }
+                                {t(key)}
+                            }
                         }
                     }
                 }
@@ -499,13 +506,20 @@ fn WaitRow(item: Item) -> Element {
             }
             td { class: "m-hide small muted", "{item.branch}" }
             td { class: "num m-hide", "{w.qty}" }
-            td { class: "num", span { class: "strong", "{money_short(w.value)}" } }
+            td { class: "num", span { class: "strong nowrap", "{money_short(w.value)}" } }
             td { class: "m-hide small muted nowrap", "{requested}" }
             td { Badge { text: status, tone, dot: true } }
             td {
                 div { class: "row gap-4 end",
                     for (to, key, icon, cls) in acts {
-                        button { key: "{key}", class: cls, onclick: move |_| advance(id, to), Icon { name: icon, size: 13 } span { class: "hide-mobile", {t(key)} } }
+                        button {
+                            key: "{key}",
+                            class: cls,
+                            style: if cls.contains("success") { "color: var(--c-on-primary)" } else { "" },
+                            onclick: move |_| advance(id, to),
+                            Icon { name: icon, size: 13 }
+                            span { class: "hide-mobile", {t(key)} }
+                        }
                     }
                     if cancellable {
                         button { class: "icon-btn sm", title: "{cancel_title}", onclick: move |_| advance(id, WaitStatus::Cancelled), Icon { name: "x", size: 14 } }
@@ -671,7 +685,9 @@ fn NewRequest(onclose: EventHandler<()>) -> Element {
                 div { class: "callout accent",
                     Icon { name: "bell-ring", size: 16 }
                     div {
-                        div { class: "strong", "{value_text}" }
+                        if value > 0 {
+                            div { class: "strong", "{value_text}" }
+                        }
                         div { class: "small", {t("waitlist.new_hint")} }
                     }
                 }

@@ -331,7 +331,7 @@ pub fn TicketDetail(id: u32) -> Element {
                         Icon { name: "archive", size: 16 }
                         span { class: "label-text", {t("tickets.close")} }
                     }
-                    button { class: "btn success keep", onclick: move |_| resolving.set(true), Icon { name: "circle-check", size: 16 } span { class: "label-text", {t("tickets.resolve")} } }
+                    button { class: "btn success keep", style: "color: var(--c-on-primary)", onclick: move |_| resolving.set(true), Icon { name: "circle-check", size: 16 } span { class: "label-text", {t("tickets.resolve")} } }
                 } else {
                     button {
                         class: "btn",
@@ -975,7 +975,7 @@ fn ResolveModal(id: Id, onclose: EventHandler<()>) -> Element {
             }
             div { class: "modal-foot",
                 button { class: "btn ghost", onclick: move |_| onclose.call(()), {t("common.cancel")} }
-                button { class: "btn success", onclick: save, Icon { name: "circle-check", size: 16 } {t("tickets.resolve")} }
+                button { class: "btn success", style: "color: var(--c-on-primary)", onclick: save, Icon { name: "circle-check", size: 16 } {t("tickets.resolve")} }
             }
         }
     }

@@ -428,7 +428,7 @@ fn DealCard(
         cls.push_str(" dragging");
     }
     let open_menu = menu() == Some(id);
-    let idle_text = t("deals.idle").replace("{n}", &card.idle.to_string());
+    let idle_text = t("deals.idle").replace("{n}", &fmt::days(card.idle, lang()));
     let in_stage = t("deals.in_stage").replace("{n}", &card.days_in_stage.to_string());
     let close = fmt::date(card.expected_close, today(), lang());
     let flag: Option<(&'static str, String)> = match card.priority {
@@ -516,7 +516,7 @@ fn DealCard(
                         option { value: "lost", {t("deals.mark_lost")} }
                     }
                     div { class: "row gap-4",
-                        button { class: "btn sm success", style: "flex: 1", onclick: move |_| { menu.set(None); win(id); }, Icon { name: "trophy", size: 13 } {t("deal_status.won")} }
+                        button { class: "btn sm success", style: "flex: 1; color: var(--c-on-primary)", onclick: move |_| { menu.set(None); win(id); }, Icon { name: "trophy", size: 13 } {t("deal_status.won")} }
                         button { class: "btn sm danger", style: "flex: 1", onclick: move |_| { menu.set(None); losing.set(Some(id)); }, Icon { name: "circle-x", size: 13 } {t("deal_status.lost")} }
                     }
                 }
@@ -602,7 +602,7 @@ fn DealTable(cards: Vec<Card>, sort: Signal<(String, bool)>) -> Element {
                                     let weighted = c.value * c.probability as Money / 100;
                                     let status_text = t(c.status.key());
                                     let tone = status_tone(c.status);
-                                    let idle_text = if c.status == DealStatus::Open { t("deals.idle").replace("{n}", &c.idle.to_string()) } else { status_text.clone() };
+                                    let idle_text = if c.status == DealStatus::Open { t("deals.idle").replace("{n}", &fmt::days(c.idle, l)) } else { status_text.clone() };
                                     let idle_cls = if c.rotting { "badge warning sm" } else if c.status == DealStatus::Open { "badge sm" } else { "badge sm" };
                                     rsx! {
                                         tr { key: "{id}", class: "click", onclick: move |_| go(&format!("/deals/{id}")),
@@ -1013,7 +1013,7 @@ pub fn DealDetail(id: u32) -> Element {
     let created = fmt::date(d.created.date(), today, l);
     let is_open = d.status == DealStatus::Open;
     let rotting = DB.read().is_rotting(&d, now);
-    let idle_text = t("deals.idle").replace("{n}", &d.idle_days(now).to_string());
+    let idle_text = t("deals.idle").replace("{n}", &fmt::days(d.idle_days(now), l));
     let lost_reason = d.lost_reason.as_deref().map(reason_label);
     let closed_text = d.closed_at.map(|c| fmt::date(c.date(), today, l)).unwrap_or_default();
     let can_quote = has_lines;
@@ -1074,7 +1074,7 @@ pub fn DealDetail(id: u32) -> Element {
             PageHeader { title: d.title.clone(), subtitle,
                 if is_open {
                     button { class: "btn danger", onclick: move |_| losing.set(true), Icon { name: "circle-x", size: 16 } span { class: "label-text", {t("deal_status.lost")} } }
-                    button { class: "btn success keep", onclick: move |_| win(id), Icon { name: "trophy", size: 16 } span { class: "label-text", {t("deals.mark_won")} } }
+                    button { class: "btn success keep", style: "color: var(--c-on-primary)", onclick: move |_| win(id), Icon { name: "trophy", size: 16 } span { class: "label-text", {t("deals.mark_won")} } }
                 } else {
                     button { class: "btn", onclick: move |_| reopen(id), Icon { name: "rotate-ccw", size: 16 } span { class: "label-text", {t("deals.reopen")} } }
                 }
@@ -1792,7 +1792,7 @@ pub const STRINGS: &[Entry] = &[
     ("deals.won_toast", "Bitim yutildi", "Сделка выиграна", "Deal won"),
     ("deals.lost_toast", "Bitim boy berildi deb belgilandi", "Сделка отмечена как проигранная", "Deal marked as lost"),
     ("deals.reopened", "Bitim qayta ochildi", "Сделка снова открыта", "Deal reopened"),
-    ("deals.idle", "{n} kun harakatsiz", "{n} дн. без движения", "{n} days idle"),
+    ("deals.idle", "{n} harakatsiz", "{n} без движения", "{n} idle"),
     ("deals.in_stage", "bosqichda {n} kun", "{n} дн. на этапе", "{n} d in stage"),
     ("deals.move_to", "Ko‘chirish…", "Перенести в…", "Move to…"),
     ("deals.mark_won", "Yutildi", "Выиграна", "Mark won"),

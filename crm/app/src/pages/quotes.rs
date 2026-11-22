@@ -559,7 +559,7 @@ pub fn QuoteDetail(id: u32) -> Element {
                                 button { class: "btn primary block", onclick: to_invoice, Icon { name: "receipt", size: 16 } {t("quotes.invoice")} }
                             }
                             if matches!(st, QuoteStatus::Invoiced | QuoteStatus::Overdue) {
-                                button { class: "btn success block", onclick: mark_paid, Icon { name: "banknote", size: 16 } {t("quotes.paid")} }
+                                button { class: "btn success block", style: "color: var(--c-on-primary)", onclick: mark_paid, Icon { name: "banknote", size: 16 } {t("quotes.paid")} }
                             }
                             if st == QuoteStatus::Paid {
                                 div { class: "callout success", Icon { name: "circle-check", size: 15 } span { {t("quotes.all_done")} } }
