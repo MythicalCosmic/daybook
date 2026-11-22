@@ -10,6 +10,7 @@ pub static TABLES: &[&[Entry]] = &[
     crm::analytics::STRINGS,
     crate::shell::STRINGS,
     crate::overlays::STRINGS,
+    crate::assistant::STRINGS,
     pages::home::STRINGS,
     pages::inbox::STRINGS,
     pages::tasks::STRINGS,

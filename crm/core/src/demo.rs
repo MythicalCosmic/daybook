@@ -1446,7 +1446,8 @@ impl Gen {
         }
         let refills = crate::analytics::refills(db, now.date(), 3).len();
         db.notify(now - Duration::hours(1), NotifKind::Refill, format!("{refills}"), "", "/refills");
-        if let Some(n) = db.notifications.iter_mut().last() {
+        db.notifications.sort_by(|a, b| b.at.cmp(&a.at));
+        for n in db.notifications.iter_mut().skip(4) {
             n.read = true;
         }
         db.audit.clear();

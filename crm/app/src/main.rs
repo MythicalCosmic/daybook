@@ -1,6 +1,7 @@
 //! Daybook CRM: one Rust codebase for Windows, macOS, Linux, Android, iPhone and the web.
 #![cfg_attr(all(not(debug_assertions), target_os = "windows"), windows_subsystem = "windows")]
 
+mod assistant;
 mod daybook;
 mod i18n;
 mod overlays;

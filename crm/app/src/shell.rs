@@ -117,6 +117,7 @@ pub fn Shell() -> Element {
     let mut lang_menu = use_signal(|| false);
     let mut add_menu = use_signal(|| false);
     let cur_lang = lang();
+    let lang_code = cur_lang.code();
 
     let on_key = move |e: KeyboardEvent| {
         let key = e.key();
@@ -132,6 +133,7 @@ pub fn Shell() -> Element {
                 ui.palette = false;
                 ui.notifications = false;
                 ui.quick_add = None;
+                ui.ai_panel = false;
                 lang_menu.set(false);
                 add_menu.set(false);
             }
@@ -140,7 +142,7 @@ pub fn Shell() -> Element {
     };
 
     rsx! {
-        div { class: "{app_cls}", "data-theme": "{theme_slug}", tabindex: "-1", onkeydown: on_key,
+        div { class: "{app_cls}", "data-theme": "{theme_slug}", lang: "{lang_code}", tabindex: "-1", onkeydown: on_key,
             aside { class: "sidebar",
                 div { class: "brand",
                     div { class: "brand-mark", Icon { name: "heart-pulse", size: 18 } }
@@ -238,6 +240,12 @@ pub fn Shell() -> Element {
                         }
                     }
                     button {
+                        class: "icon-btn tone-accent",
+                        title: t("assistant.title"),
+                        onclick: move |_| UI.write().ai_panel = true,
+                        Icon { name: "sparkles", size: 19 }
+                    }
+                    button {
                         class: "icon-btn",
                         title: "{t(\"common.notifications\")}",
                         onclick: move |_| {
@@ -302,6 +310,7 @@ pub fn Shell() -> Element {
             }
             if ui.palette { Palette {} }
             if ui.notifications { NotificationsPanel {} }
+            if ui.ai_panel { crate::assistant::AssistantPanel {} }
             if let Some(kind) = ui.quick_add { QuickAddModal { kind } }
             if !onboarded { Onboarding {} }
             Toasts {}

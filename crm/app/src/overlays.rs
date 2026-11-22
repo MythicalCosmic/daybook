@@ -15,6 +15,7 @@ use crate::ui::{Icon, Modal, Segmented};
 #[derive(Clone, PartialEq, Debug)]
 enum PAction {
     Go(String),
+    Ai,
     Quick(QuickAdd),
     Theme,
     Lang(Lang),
@@ -53,6 +54,7 @@ fn palette_items(q: &str) -> Vec<PItem> {
     }
     let actions = t("palette.actions");
     let acts: Vec<(&'static str, String, PAction)> = vec![
+        ("sparkles", t("assistant.title"), PAction::Ai),
         ("user-plus", t("palette.new_customer"), PAction::Quick(QuickAdd::Customer)),
         ("square-kanban", t("palette.new_deal"), PAction::Quick(QuickAdd::Deal)),
         ("square-check", t("palette.new_task"), PAction::Quick(QuickAdd::Task)),
@@ -91,6 +93,7 @@ fn run(action: PAction) {
     UI.write().palette = false;
     match action {
         PAction::Go(r) => go(&r),
+        PAction::Ai => UI.write().ai_panel = true,
         PAction::Quick(k) => UI.write().quick_add = Some(k),
         PAction::Theme => mutate(|db| {
             db.settings.theme = match db.settings.theme {

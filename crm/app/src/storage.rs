@@ -74,6 +74,7 @@ pub fn initial_ui() -> crate::state::Ui {
         use crate::state::QuickAdd;
         ui.palette = search.contains("palette=1");
         ui.notifications = search.contains("notif=1");
+        ui.ai_panel = search.contains("ai=1");
         ui.quick_add = if search.contains("quick=customer") {
             Some(QuickAdd::Customer)
         } else if search.contains("quick=deal") {
@@ -162,3 +163,18 @@ fn write(s: &str) {
 
 #[cfg(not(target_arch = "wasm32"))]
 fn apply_url_overrides(_db: &mut Db) {}
+
+/// A `?name=value` parameter of the page's address at startup (web only).
+pub fn url_param(name: &str) -> Option<String> {
+    #[cfg(target_arch = "wasm32")]
+    {
+        let search = URL_SEARCH.get()?;
+        let params = web_sys::UrlSearchParams::new_with_str(search).ok()?;
+        params.get(name)
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        let _ = name;
+        None
+    }
+}
