@@ -436,7 +436,7 @@ fn CardPreview(company: String) -> Element {
                         }
                     }
                 }
-                div { class: "phone-mock", style: "align-self: center",
+                div { class: "phone-mock", style: "align-self: center; box-shadow: 0 0 0 1px var(--c-border-strong), var(--shadow-lg)",
                     div { class: "phone-screen", style: "gap: 10px",
                         div { class: "row gap-8", style: "background: rgb(255 255 255 / .78); margin: -14px -14px 2px; padding: 12px 14px; color: #1c1916",
                             span { class: "avatar sm", style: "--h: 24", "{initials}" }
