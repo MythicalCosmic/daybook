@@ -487,7 +487,7 @@ fn RefillItem(row: Row) -> Element {
     let snooze_title = t("refills.snooze");
     rsx! {
         div { class: "list-row", style: "flex-wrap: wrap; row-gap: 10px",
-            div { class: "row gap-12 grow", style: "min-width: 230px; flex-basis: 260px; cursor: pointer", onclick: move |_| go(&format!("/contacts/{cid}")),
+            div { class: "row gap-12 grow", style: "min-width: 200px; flex-basis: 220px; cursor: pointer", onclick: move |_| go(&format!("/contacts/{cid}")),
                 Avatar { name: name.clone() }
                 div { class: "meta",
                     div { class: "row gap-8",
@@ -527,11 +527,11 @@ fn RefillItem(row: Row) -> Element {
                     span { class: "badge success sm", Icon { name: "package-check", size: 12 } "{h}" }
                 }
             }
-            div { class: "hide-mobile stack gap-4", style: "width: 170px",
+            div { class: "hide-mobile stack gap-4", style: "width: 160px",
                 span { class: "xs subtle upper", {t("refills.last_call")} }
                 span { class: outcome_cls, "{outcome}" }
             }
-            div { class: "row gap-4", style: "margin-left: auto; min-width: 214px; justify-content: flex-end",
+            div { class: "row gap-4", style: "margin-left: auto; min-width: 206px; justify-content: flex-end",
                 if row.reachable {
                     button {
                         class: remind_cls,
