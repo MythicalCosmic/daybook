@@ -4,6 +4,7 @@
 
 use crm::Db;
 
+#[cfg(target_arch = "wasm32")]
 const KEY: &str = "daybook-crm-v1";
 
 pub fn load() -> Db {
