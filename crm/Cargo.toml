@@ -34,3 +34,9 @@ opt-level = 3
 lto = "thin"
 codegen-units = 16
 strip = true
+
+# The web release: wasm-bindgen needs the target_features section, so no stripping here.
+[profile.wasm-release]
+inherits = "release"
+opt-level = "z"
+strip = false

@@ -4,9 +4,10 @@
 #   cd /src/crm/app && dx bundle --android --release --target aarch64-linux-android --package-types apk --out-dir /target/dist/android
 # usage: CARGO_TARGET_DIR=/target/android sh crm/tools/package-android.sh [version]
 set -e
+CRM="$(cd "$(dirname "$0")/.." && pwd)"
 VERSION="${1:-0.1.0}"
 P="${CARGO_TARGET_DIR:-/target/android}/dx/daybook-crm/release/android/app"
-ICONS=/src/crm/app/assets/icons
+ICONS="$CRM/app/assets/icons"
 RES="$P/app/src/main/res"
 
 sed -i 's|<string name="app_name">[^<]*</string>|<string name="app_name">Daybook CRM</string>|' "$RES/values/strings.xml"
