@@ -1263,6 +1263,7 @@ fn LinesEditor(id: Id) -> Element {
         toast(t("deals.line_added"), "plus", "success");
     };
     let manual_text = t("deals.manual_value").replace("{v}", &money(manual));
+    let manual_money = money(manual);
     rsx! {
         div { class: "card",
             div { class: "card-head",
@@ -1272,8 +1273,30 @@ fn LinesEditor(id: Id) -> Element {
                 }
             }
             if lines.is_empty() {
-                div { class: "card-body",
+                div { class: "card-body stack gap-12",
                     div { class: "callout", Icon { name: "info", size: 16 } span { "{manual_text}" } }
+                    div { class: "row gap-12 wrap",
+                        span { class: "label", {t("deals.subtotal")} }
+                        input {
+                            class: "input sm num",
+                            style: "width: 180px",
+                            inputmode: "numeric",
+                            value: "{manual}",
+                            onchange: move |e| {
+                                let v: Money = e.value().chars().filter(|c| c.is_ascii_digit()).collect::<String>().parse().unwrap_or(0);
+                                if v > 0 {
+                                    mutate(|db| {
+                                        if let Some(d) = db.deal_mut(id) {
+                                            d.value = v;
+                                            d.last_activity = crate::state::now();
+                                        }
+                                    });
+                                    toast(t("common.saved"), "check", "success");
+                                }
+                            },
+                        }
+                        span { class: "small muted num", "{manual_money}" }
+                    }
                 }
             } else {
                 div { class: "list", style: "margin-top: 8px",

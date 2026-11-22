@@ -4,7 +4,7 @@
 use chrono::{Datelike, Duration};
 use crm::analytics;
 use crm::fmt;
-use crm::i18n::Entry;
+use crm::i18n::{Entry, Lang};
 use crm::model::*;
 use dioxus::prelude::*;
 
@@ -37,6 +37,124 @@ fn buyer_name(db: &crm::Db, q: &Quote) -> String {
     match db.company(q.company_id) {
         Some(c) => c.name.clone(),
         None => db.customer_name(q.deal_id.and_then(|d| db.deal(d)).and_then(|d| d.customer_id)),
+    }
+}
+
+// ---------------------------------------------------------------- amount in words (invoices carry it)
+
+const UZ_ONES: [&str; 10] = ["", "bir", "ikki", "uch", "to‘rt", "besh", "olti", "yetti", "sakkiz", "to‘qqiz"];
+const UZ_TENS: [&str; 10] = ["", "o‘n", "yigirma", "o‘ttiz", "qirq", "ellik", "oltmish", "yetmish", "sakson", "to‘qson"];
+const RU_ONES_M: [&str; 10] = ["", "один", "два", "три", "четыре", "пять", "шесть", "семь", "восемь", "девять"];
+const RU_ONES_F: [&str; 10] = ["", "одна", "две", "три", "четыре", "пять", "шесть", "семь", "восемь", "девять"];
+const RU_TEENS: [&str; 10] = ["десять", "одиннадцать", "двенадцать", "тринадцать", "четырнадцать", "пятнадцать", "шестнадцать", "семнадцать", "восемнадцать", "девятнадцать"];
+const RU_TENS: [&str; 10] = ["", "", "двадцать", "тридцать", "сорок", "пятьдесят", "шестьдесят", "семьдесят", "восемьдесят", "девяносто"];
+const RU_HUNDREDS: [&str; 10] = ["", "сто", "двести", "триста", "четыреста", "пятьсот", "шестьсот", "семьсот", "восемьсот", "девятьсот"];
+const EN_ONES: [&str; 20] = [
+    "", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen",
+    "fifteen", "sixteen", "seventeen", "eighteen", "nineteen",
+];
+const EN_TENS: [&str; 10] = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"];
+
+/// Groups of three digits, lowest first.
+fn triplets(n: u64) -> Vec<u32> {
+    let mut v = Vec::new();
+    let mut x = n;
+    while x > 0 {
+        v.push((x % 1000) as u32);
+        x /= 1000;
+    }
+    v
+}
+
+fn words_uz(n: u64) -> String {
+    let scales = ["", "ming", "million", "milliard"];
+    let mut parts: Vec<&str> = Vec::new();
+    for (i, g) in triplets(n).into_iter().enumerate().rev() {
+        if g == 0 {
+            continue;
+        }
+        let (h, t, o) = ((g / 100) as usize, (g / 10 % 10) as usize, (g % 10) as usize);
+        if h > 0 {
+            parts.extend([UZ_ONES[h], "yuz"]);
+        }
+        if t > 0 {
+            parts.push(UZ_TENS[t]);
+        }
+        if o > 0 {
+            parts.push(UZ_ONES[o]);
+        }
+        if i > 0 {
+            parts.push(scales[i.min(3)]);
+        }
+    }
+    if parts.is_empty() { "nol".into() } else { parts.join(" ") }
+}
+
+fn words_ru(n: u64) -> String {
+    let scales: [(&str, &str, &str); 4] = [("", "", ""), ("тысяча", "тысячи", "тысяч"), ("миллион", "миллиона", "миллионов"), ("миллиард", "миллиарда", "миллиардов")];
+    let mut parts: Vec<&str> = Vec::new();
+    for (i, g) in triplets(n).into_iter().enumerate().rev() {
+        if g == 0 {
+            continue;
+        }
+        let (h, t, o) = ((g / 100) as usize, (g / 10 % 10) as usize, (g % 10) as usize);
+        if h > 0 {
+            parts.push(RU_HUNDREDS[h]);
+        }
+        if t == 1 {
+            parts.push(RU_TEENS[o]);
+        } else {
+            if t > 1 {
+                parts.push(RU_TENS[t]);
+            }
+            if o > 0 {
+                parts.push(if i == 1 { RU_ONES_F[o] } else { RU_ONES_M[o] });
+            }
+        }
+        if i > 0 {
+            let (one, few, many) = scales[i.min(3)];
+            parts.push(fmt::plural_ru(g as i64, one, few, many));
+        }
+    }
+    if parts.is_empty() { "ноль".into() } else { parts.join(" ") }
+}
+
+fn words_en(n: u64) -> String {
+    let scales = ["", "thousand", "million", "billion"];
+    let mut parts: Vec<String> = Vec::new();
+    for (i, g) in triplets(n).into_iter().enumerate().rev() {
+        if g == 0 {
+            continue;
+        }
+        let (h, r) = ((g / 100) as usize, (g % 100) as usize);
+        if h > 0 {
+            parts.push(format!("{} hundred", EN_ONES[h]));
+        }
+        if r > 0 && r < 20 {
+            parts.push(EN_ONES[r].into());
+        } else if r >= 20 {
+            parts.push(if r % 10 > 0 { format!("{}-{}", EN_TENS[r / 10], EN_ONES[r % 10]) } else { EN_TENS[r / 10].into() });
+        }
+        if i > 0 {
+            parts.push(scales[i.min(3)].into());
+        }
+    }
+    if parts.is_empty() { "zero".into() } else { parts.join(" ") }
+}
+
+/// "Yigirma to‘qqiz million … so‘m" / "Двадцать девять миллионов … сумов" / "Twenty-nine million … soum".
+fn amount_in_words(v: Money, l: Lang) -> String {
+    let n = v.unsigned_abs();
+    let s = match l {
+        Lang::Ru => format!("{} {}", words_ru(n), fmt::plural_ru(n as i64, "сум", "сума", "сумов")),
+        Lang::En => format!("{} soum", words_en(n)),
+        Lang::Uz => format!("{} so‘m", words_uz(n)),
+        Lang::UzCyrl => crm::i18n::to_cyrillic(&format!("{} so‘m", words_uz(n))),
+    };
+    let mut c = s.chars();
+    match c.next() {
+        Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
+        None => s,
     }
 }
 
@@ -297,6 +415,7 @@ pub fn QuoteDetail(id: u32) -> Element {
     let subtotal = qt.subtotal();
     let vat = qt.vat();
     let total = qt.total();
+    let words = amount_in_words(total, l);
     let vat_label = t("quotes.vat").replace("{n}", &qt.vat_pct.to_string());
     let terms_days = company.as_ref().map(|c| c.terms_days).unwrap_or(30);
     let terms = t("quotes.terms_text").replace("{n}", &terms_days.to_string());
@@ -511,6 +630,9 @@ pub fn QuoteDetail(id: u32) -> Element {
                             }
                         }
                     }
+                    div { class: "small muted", style: "margin-top: -14px; text-align: right; font-style: italic",
+                        {t("quotes.in_words")} ": {words}"
+                    }
 
                     div { class: "stack gap-4", style: "padding: 14px 16px; border-radius: 12px; border: 1px dashed var(--c-border-strong)",
                         span { class: "xs muted upper", {t("quotes.terms")} }
@@ -684,6 +806,7 @@ pub const STRINGS: &[Entry] = &[
     ("quotes.subtotal", "QQSsiz jami", "Итого без НДС", "Subtotal"),
     ("quotes.vat", "QQS {n}%", "НДС {n}%", "VAT {n}%"),
     ("quotes.total", "To‘lovga jami", "Итого к оплате", "Total due"),
+    ("quotes.in_words", "Yozuv bilan", "Прописью", "In words"),
     ("quotes.terms", "To‘lov shartlari", "Условия оплаты", "Payment terms"),
     ("quotes.terms_text", "{n} kun ichida bank o‘tkazmasi orqali", "Банковским переводом в течение {n} дн.", "Bank transfer within {n} days"),
     ("quotes.sign_seller", "Sotuvchi", "Продавец", "Seller"),
