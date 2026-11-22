@@ -758,6 +758,10 @@ def _rounds(company, people, plan, check, rng, now) -> None:
     topics_by_id = _topics_by_id(company)
     local = plan.local(now)
     monday = local.date() - timedelta(days=local.weekday())
+    if plan.at(monday, time(10, 0)) > now:
+        # Early on a Monday this week's round hasn't started: last week's is the open one, so the
+        # demo still has four rounds (a build on Monday 03:00 had one fewer and the test went red).
+        monday -= timedelta(weeks=1)
     starts = [plan.at(monday - timedelta(weeks=weeks), time(10, 0)) for weeks in (3, 2, 1, 0)]
     starts = [moment for moment in starts if moment <= now]
     for index, moment in enumerate(starts):

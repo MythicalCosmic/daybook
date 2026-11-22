@@ -290,7 +290,14 @@ def test_the_first_bytes_pick_the_demuxer(tmp_path):
         assert media.sniff(path) == demuxer
 
 
+def no_binary_needed(monkeypatch):
+    """These tests only read the arguments (subprocess is replaced), so they run where ffmpeg
+    isn't installed too, like CI: the programs are "found" without looking."""
+    monkeypatch.setattr(media.shutil, "which", lambda name, *args, **kwargs: f"/usr/bin/{name}")
+
+
 def test_programs_open_only_the_local_file_with_the_chosen_demuxer(tmp_path, monkeypatch):
+    no_binary_needed(monkeypatch)
     seen = []
 
     def record(args, **kwargs):
@@ -327,7 +334,8 @@ def test_programs_open_only_the_local_file_with_the_chosen_demuxer(tmp_path, mon
         assert "shell" not in kwargs
 
 
-def test_no_sound_means_no_sound_map(tmp_path):
+def test_no_sound_means_no_sound_map(tmp_path, monkeypatch):
+    no_binary_needed(monkeypatch)
     found = media.Source(duration=5, video={"index": 0}, audio=None)
     args = media.transcode_args(tmp_path / "a", tmp_path / "b", demuxer="mov", found=found)
     assert [args[i + 1] for i, arg in enumerate(args) if arg == "-map"] == ["0:0"]
