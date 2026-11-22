@@ -24,6 +24,17 @@ const TABS: [(&str, &str, &str); 6] = [
 
 const COLORS: [&str; 7] = ["var(--c-chart-1)", "var(--c-chart-2)", "var(--c-chart-3)", "var(--c-chart-4)", "var(--c-chart-5)", "var(--c-chart-6)", "var(--c-subtle)"];
 
+/// Short month for chart labels (Uzbek keeps June and July apart: Iyun, Iyul).
+fn mon(m: u32, l: Lang) -> String {
+    const UZ: [&str; 12] = ["Yan", "Fev", "Mar", "Apr", "May", "Iyun", "Iyul", "Avg", "Sen", "Okt", "Noy", "Dek"];
+    let i = (m.clamp(1, 12) - 1) as usize;
+    match l {
+        Lang::Uz => UZ[i].to_string(),
+        Lang::UzCyrl => crm::i18n::to_cyrillic(UZ[i]),
+        _ => fmt::month_short(m, l),
+    }
+}
+
 /// [from, to) for the period select, and the period before it.
 fn period_range(p: &str, today: NaiveDate) -> (NaiveDate, NaiveDate, NaiveDate) {
     let m0 = month_start(today);
@@ -182,7 +193,7 @@ fn SalesTab(period: String) -> Element {
     let m = monthly();
     let basket = if s.orders > 0 { s.revenue / s.orders as Money } else { 0 };
     let prev_basket = if s.prev_orders > 0 { s.prev_revenue / s.prev_orders as Money } else { 0 };
-    let labels: Vec<String> = m.iter().map(|(d, _, _)| fmt::month_short(d.month(), l)).collect();
+    let labels: Vec<String> = m.iter().map(|(d, _, _)| mon(d.month(), l)).collect();
     let series = vec![Series { name: t("metric.revenue"), values: m.iter().map(|x| x.1 as f64).collect(), color: "var(--c-chart-1)", dashed: false }];
     let baskets: Vec<f64> = m.iter().map(|(_, v, n)| if *n > 0 { (*v / *n as Money) as f64 } else { 0.0 }).collect();
     let branch_items: Vec<(String, f64, String)> = s.by_branch.iter().map(|(n, v)| (n.clone(), *v as f64, money_short(*v))).collect();
@@ -282,7 +293,7 @@ fn CustomersTab(period: String) -> Element {
     let tier_slices: Vec<Slice> = tiers().iter().enumerate().map(|(i, (tier, n, _))| Slice { label: t(tier.key()), value: *n as f64, color: tier_colors[i % 4].to_string() }).collect();
     let rfm_rows = rfm();
     let rfm_total: u32 = rfm_rows.iter().map(|r| r.1).sum::<u32>().max(1);
-    let labels: Vec<String> = months.iter().map(|(m, _, _)| fmt::month_short(m.month(), l)).collect();
+    let labels: Vec<String> = months.iter().map(|(m, _, _)| mon(m.month(), l)).collect();
     let series = vec![
         Series { name: t("reports.returning"), values: months.iter().map(|x| x.2).collect(), color: "var(--c-chart-1)", dashed: false },
         Series { name: t("reports.new_buyers"), values: months.iter().map(|x| x.1).collect(), color: "var(--c-chart-2)", dashed: true },
@@ -290,7 +301,7 @@ fn CustomersTab(period: String) -> Element {
     let legend: Vec<(String, &'static str)> = series.iter().map(|s| (s.name.clone(), s.color)).collect();
     let cols = cohorts().iter().map(|c| c.retention.len()).max().unwrap_or(0).min(7);
     let grid = format!("grid-template-columns: 96px 52px repeat({}, minmax(0, 1fr))", cols.max(1));
-    let cohort_rows: Vec<(String, u32, Vec<f64>)> = cohorts().iter().map(|c| (format!("{} {}", fmt::month_short(c.month.month(), l), c.month.year() % 100), c.size, c.retention.iter().take(cols).cloned().collect())).collect();
+    let cohort_rows: Vec<(String, u32, Vec<f64>)> = cohorts().iter().map(|c| (format!("{} {}", mon(c.month.month(), l), c.month.year() % 100), c.size, c.retention.iter().take(cols).cloned().collect())).collect();
     let total = fmt::num(k.customers_total as i64);
     rsx! {
         div { class: "grid-4",
@@ -315,7 +326,7 @@ fn CustomersTab(period: String) -> Element {
                                 let v = ret.get(i).copied();
                                 let (bg, fg, text) = match v {
                                     Some(p) if size > 0 => {
-                                        let mix = (p * 1.7).clamp(6.0, 92.0);
+                                        let mix = (p * 0.95).clamp(8.0, 92.0);
                                         let fg = if mix > 48.0 { "var(--c-on-primary)" } else { "var(--c-text)" };
                                         (format!("color-mix(in srgb, var(--c-primary) {mix:.0}%, var(--c-surface-2))"), fg, format!("{p:.0}%"))
                                     }
@@ -382,7 +393,7 @@ fn PipelineTab() -> Element {
     })();
     let forecast = use_memo(move || analytics::forecast(&DB.read(), crate::state::today(), 6))();
     let lost = use_memo(move || analytics::lost_reasons(&DB.read()))();
-    let labels: Vec<String> = forecast.iter().map(|(m, _, _)| fmt::month_short(m.month(), l)).collect();
+    let labels: Vec<String> = forecast.iter().map(|(m, _, _)| mon(m.month(), l)).collect();
     let series = vec![
         Series { name: t("reports.weighted"), values: forecast.iter().map(|x| x.1 as f64).collect(), color: "var(--c-chart-1)", dashed: false },
         Series { name: t("reports.best_case"), values: forecast.iter().map(|x| x.2 as f64).collect(), color: "var(--c-chart-3)", dashed: true },
@@ -575,7 +586,12 @@ fn ServiceTab() -> Element {
         Lang::En => format!("{:.1} h", avg_h),
         _ => uz(format!("{:.1} soat", avg_h).replace('.', ",")),
     };
-    let csat_text = if csat_n > 0 { format!("{:.1} / 5", csat) } else { "—".into() };
+    let csat_text = if csat_n > 0 {
+        let v = format!("{:.1}", csat);
+        format!("{} / 5", if l == Lang::En { v } else { v.replace('.', ",") })
+    } else {
+        "—".into()
+    };
     let sla_tone: &'static str = if sla >= 90.0 { "success" } else if sla >= 75.0 { "warning" } else { "danger" };
     let adverse_line = t("reports.adverse_text").replace("{n}", &adverse.to_string()).replace("{r}", &reported.to_string());
     rsx! {

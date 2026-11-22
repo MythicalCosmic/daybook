@@ -262,17 +262,18 @@ pub fn Automations() -> Element {
                     div { class: "card-body", HBars { items: best, color: "var(--c-chart-2)" } }
                 }
             }
-            if let Some(id) = selected() {
-                EditorDrawer { key: "{id}", id, onclose: move |_| selected.set(None) }
-            }
-            if library() {
-                Library {
-                    onclose: move |_| library.set(false),
-                    onpick: move |id| {
-                        library.set(false);
-                        selected.set(Some(id));
-                    },
-                }
+        }
+        // Overlays sit outside .page: its entry animation would pin fixed elements to the page box.
+        if let Some(id) = selected() {
+            EditorDrawer { key: "{id}", id, onclose: move |_| selected.set(None) }
+        }
+        if library() {
+            Library {
+                onclose: move |_| library.set(false),
+                onpick: move |id| {
+                    library.set(false);
+                    selected.set(Some(id));
+                },
             }
         }
     }
@@ -569,7 +570,7 @@ fn EditorDrawer(id: u32, onclose: EventHandler<()>) -> Element {
                         button { class: "btn soft sm", onclick: move |_| add_menu.toggle(), Icon { name: "plus", size: 14 } {t("auto.add_step")} }
                         if add_menu() {
                             div { style: "position: fixed; inset: 0; z-index: 39", onclick: move |_| add_menu.set(false) }
-                            div { class: "menu", style: "top: 36px; left: 0",
+                            div { class: "menu", style: "bottom: 38px; left: 0",
                                 for (i, aicon, label) in add_opts {
                                     button {
                                         key: "{i}",

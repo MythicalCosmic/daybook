@@ -429,9 +429,10 @@ pub fn Goals() -> Element {
                     }
                 }
             }
-            if modal() {
-                NewGoal { onclose: move |_| modal.set(false) }
-            }
+        }
+        // Outside .page: its entry animation would pin the modal to the page box.
+        if modal() {
+            NewGoal { onclose: move |_| modal.set(false) }
         }
     }
 }
