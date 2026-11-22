@@ -638,6 +638,22 @@ pub fn Calendar() -> Element {
         }
         map
     });
+    let markers = use_memo(move || {
+        let db = DB.read();
+        let today = crate::state::today();
+        let mut refills: std::collections::BTreeMap<NaiveDate, usize> = std::collections::BTreeMap::new();
+        for r in crm::analytics::refills(&db, today, 45) {
+            *refills.entry(r.due).or_default() += 1;
+        }
+        let mut camps: std::collections::BTreeMap<NaiveDate, Vec<(Id, String)>> = std::collections::BTreeMap::new();
+        for c in db.campaigns.iter().filter(|c| matches!(c.status, CampaignStatus::Scheduled | CampaignStatus::Running)) {
+            if let Some(s) = c.scheduled {
+                camps.entry(s.date()).or_default().push((c.id, c.name.clone()));
+            }
+        }
+        (refills, camps)
+    });
+    let (refill_map, camp_map) = markers();
     let ev = events();
     let m0 = month();
     let offset = m0.weekday().num_days_from_monday() as i64;
@@ -659,6 +675,10 @@ pub fn Calendar() -> Element {
     let agenda: Vec<TaskRow> = ev.get(&sel).cloned().unwrap_or_default();
     let agenda_title = format!("{}, {}", fmt::weekday_long(sel.weekday().num_days_from_monday(), l), fmt::date(sel, today, l));
     let agenda_n = agenda.len();
+    let sel_refills = refill_map.get(&sel).copied().unwrap_or(0);
+    let sel_camps: Vec<(Id, String)> = camp_map.get(&sel).cloned().unwrap_or_default();
+    let refill_line = t("tasks.refills_day").replace("{n}", &sel_refills.to_string());
+    let refill_hint = t("tasks.refill_hint");
     let weekdays: Vec<String> = (0..7).map(|i| fmt::weekday_short(i, l)).collect();
     let hours: Vec<u32> = (8..=20).collect();
 
@@ -730,11 +750,33 @@ pub fn Calendar() -> Element {
                             let extra = n.saturating_sub(3);
                             let style = if d == sel { "cursor: pointer; box-shadow: inset 0 0 0 2px var(--c-primary)" } else { "cursor: pointer" };
                             let day = d.day();
+                            let rn = refill_map.get(&d).copied().unwrap_or(0);
+                            let camps = camp_map.get(&d).cloned().unwrap_or_default();
+                            let refill_title = t("tasks.refills_day").replace("{n}", &rn.to_string());
                             rsx! {
                                 div { key: "{d}", class: "{cls}", style: "{style}", onclick: move |_| selected.set(d),
                                     div { class: "row between",
                                         span { class: "cal-day", "{day}" }
-                                        if extra > 0 { span { class: "xs subtle hide-mobile", "+{extra}" } }
+                                        div { class: "row gap-4",
+                                            if rn > 0 {
+                                                span { class: "badge sm success hide-mobile", style: "height: 18px; padding: 0 5px; gap: 2px", title: "{refill_title}", Icon { name: "repeat", size: 10 } "{rn}" }
+                                            }
+                                            if extra > 0 { span { class: "xs subtle hide-mobile", "+{extra}" } }
+                                        }
+                                    }
+                                    for (cid, cname) in camps {
+                                        div {
+                                            key: "k{cid}",
+                                            class: "cal-ev hide-mobile",
+                                            style: "background: var(--c-surface-3); color: var(--c-text)",
+                                            title: "{cname}",
+                                            onclick: move |e| {
+                                                e.stop_propagation();
+                                                go(&format!("/campaigns/{cid}"));
+                                            },
+                                            Icon { name: "megaphone", size: 10 }
+                                            " {cname}"
+                                        }
                                     }
                                     for r in list.iter().take(3).cloned() {
                                         {
@@ -848,6 +890,26 @@ pub fn Calendar() -> Element {
                     for r in agenda {
                         ActivityRow { key: "{r.id}", r: r.clone(), compact: true }
                     }
+                    if sel_refills > 0 {
+                        div { class: "list-row click", onclick: move |_| go("/refills"),
+                            IconTile { icon: "repeat", tone: "success", size: "sm" }
+                            div { class: "meta",
+                                span { class: "title small", "{refill_line}" }
+                                span { class: "sub", "{refill_hint}" }
+                            }
+                            Icon { name: "chevron-right", size: 16, class: "subtle" }
+                        }
+                    }
+                    for (cid, cname) in sel_camps {
+                        div { key: "c{cid}", class: "list-row click", onclick: move |_| go(&format!("/campaigns/{cid}")),
+                            IconTile { icon: "megaphone", tone: "accent", size: "sm" }
+                            div { class: "meta",
+                                span { class: "title small truncate", "{cname}" }
+                                span { class: "sub", {t("common.campaign")} }
+                            }
+                            Icon { name: "chevron-right", size: 16, class: "subtle" }
+                        }
+                    }
                 }
             }
             div { class: "legend",
@@ -855,6 +917,8 @@ pub fn Calendar() -> Element {
                 span { span { class: "sw", style: "background: var(--c-success)" } {t("activity.meeting")} }
                 span { span { class: "sw", style: "background: var(--c-warning)" } {t("activity.delivery")} }
                 span { span { class: "sw", style: "background: var(--c-primary)" } {t("activity.task")} }
+                span { span { class: "sw", style: "background: var(--c-success-soft); border: 1px solid var(--c-success)" } {t("tasks.refill_legend")} }
+                span { span { class: "sw", style: "background: var(--c-surface-3)" } {t("common.campaign")} }
             }
         }
         if let Some(open) = OPEN_TASK() {
@@ -897,6 +961,9 @@ pub const STRINGS: &[Entry] = &[
     ("tasks.cal_week", "Hafta", "Неделя", "Week"),
     ("tasks.cal_free", "Bu kunga reja yo‘q", "На этот день ничего не запланировано", "Nothing planned for this day"),
     ("tasks.prev", "Oldingi", "Назад", "Previous"),
+    ("tasks.refills_day", "{n} ta mijozning doimiy dorisi tugaydi", "У {n} клиентов заканчивается постоянный препарат", "{n} customers run out of a regular medicine"),
+    ("tasks.refill_hint", "Dori radarida eslatma yuboring yoki qadoq ajrating", "Напомните или отложите упаковку в радаре лекарств", "Remind them or hold a pack from the refill radar"),
+    ("tasks.refill_legend", "Dori tugaydi", "Заканчивается лекарство", "Refill due"),
     ("tasks.title", "Vazifa", "Задача", "Task"),
     ("tasks.kind", "Turi", "Тип", "Type"),
     ("tasks.priority", "Muhimlik", "Приоритет", "Priority"),

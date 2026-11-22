@@ -977,11 +977,35 @@ fn Bubble(m: Message, author: String) -> Element {
 
 // ---------------------------------------------------------------- composer
 
+/// A pack the customer asked for that their branch has: (product, name, qty, branch, branch name, total).
+fn hold_for(db: &Db, id: Id) -> Option<(Id, String, u32, Id, String, Money)> {
+    let c = db.conversation(id)?;
+    let last = c.messages.iter().rev().find(|m| m.kind != MsgKind::Note && m.kind != MsgKind::System)?;
+    if !last.inbound {
+        return None;
+    }
+    let x = context(db, c);
+    let p = x.product?;
+    let b = x.branch?;
+    // The asked branch if it has the pack, otherwise the branch with the most stock.
+    let (bid, bname, stock) = if p.stock_at(b.id) > 0 {
+        (b.id, b.name.clone(), p.stock_at(b.id))
+    } else {
+        let s = p.stock.iter().filter(|s| s.qty > 0).max_by_key(|s| s.qty)?;
+        let br = db.branch(s.branch_id)?;
+        (br.id, br.name.clone(), s.qty)
+    };
+    let qty = x.qty.min(stock).max(1);
+    Some((p.id, p.name.clone(), qty, bid, bname, p.price * qty as Money))
+}
+
 #[component]
 fn Composer(id: u32) -> Element {
     let mut draft = use_signal(String::new);
     let mut note = use_signal(|| false);
     let mut menu = use_signal(|| false);
+    let mut reserved = use_signal(|| false);
+    let hold = use_memo(move || hold_for(&DB.read(), id));
     let suggestion = use_memo(move || {
         let db = DB.read();
         db.conversation(id).and_then(|c| suggest(&db, c))
@@ -1061,6 +1085,28 @@ fn Composer(id: u32) -> Element {
     let ai_note = t("inbox.ai_note");
     let send_icon: &'static str = if note() { "check" } else { "send" };
     let sug_click = sug.clone();
+    let hold_v = if reserved() { None } else { hold() };
+    let hold_text = hold_v.as_ref().map(|h| format!("{}: {} × {} · {} · {}", t("inbox.reservation"), h.1, h.2, h.4, money(h.5)));
+    let reserve = move |_| {
+        let Some((pid, _, qty, bid, _, _)) = hold.peek().clone() else { return };
+        let Some(text) = hold_text.clone() else { return };
+        let now = crate::state::now();
+        mutate(move |db| {
+            if let Some(p) = db.product_mut(pid) {
+                if let Some(s) = p.stock.iter_mut().find(|s| s.branch_id == bid) {
+                    s.qty = s.qty.saturating_sub(qty);
+                }
+            }
+            let me = db.settings.me;
+            let mid = db.new_id();
+            if let Some(c) = db.conversation_mut(id) {
+                c.messages.push(Message { id: mid, inbound: false, author_id: Some(me), text: text.clone(), at: now, kind: MsgKind::System });
+            }
+            db.log(now, text, false);
+        });
+        reserved.set(true);
+        toast(t("inbox.reserved_toast"), "package-check", "success");
+    };
 
     rsx! {
         div { class: "composer", style: "{composer_style}",
@@ -1072,15 +1118,23 @@ fn Composer(id: u32) -> Element {
                             span { class: "small clamp-2", "{s}" }
                             span { class: "xs subtle", "{ai_note}" }
                         }
-                        button {
-                            class: "btn soft sm",
-                            onclick: move |_| {
-                                if let Some(x) = sug_click.clone() {
-                                    draft.set(x);
+                        div { class: "stack gap-4", style: "flex: 0 0 auto",
+                            button {
+                                class: "btn soft sm",
+                                onclick: move |_| {
+                                    if let Some(x) = sug_click.clone() {
+                                        draft.set(x);
+                                    }
+                                },
+                                Icon { name: "wand-sparkles", size: 14 }
+                                {t("inbox.use")}
+                            }
+                            if hold_v.is_some() {
+                                button { class: "btn sm", onclick: reserve,
+                                    Icon { name: "package-check", size: 14 }
+                                    {t("inbox.reserve")}
                                 }
-                            },
-                            Icon { name: "wand-sparkles", size: 14 }
-                            {t("inbox.use")}
+                            }
                         }
                     }
                 }
@@ -1627,6 +1681,9 @@ pub const STRINGS: &[Entry] = &[
     ("inbox.tpl_lang_uz", "Mijozga o‘zbek tilida", "Клиенту на узбекском", "In Uzbek for this customer"),
     ("inbox.ai_note", "Demoda qurilmaning o‘zida hisoblanadi", "В демо считается прямо на устройстве", "Computed on this device in the demo"),
     ("inbox.use", "Qo‘yish", "Вставить", "Use"),
+    ("inbox.reserve", "Bron qilish", "Забронировать", "Reserve"),
+    ("inbox.reservation", "Bron", "Бронь", "Reserved"),
+    ("inbox.reserved_toast", "Bron qilindi: 24 soat saqlanadi", "Забронировано на 24 часа", "Reserved for 24 hours"),
     ("inbox.placeholder", "Javob yozing… (Enter: yuborish)", "Напишите ответ… (Enter: отправить)", "Write a reply… (Enter to send)"),
     ("inbox.note_placeholder", "Ichki izoh: buni faqat jamoa ko‘radi", "Внутренняя заметка: её видит только команда", "Internal note: only your team sees this"),
     ("inbox.note", "Ichki izoh", "Заметка", "Note"),

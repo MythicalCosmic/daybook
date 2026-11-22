@@ -624,7 +624,12 @@ pub const STRINGS: &[Entry] = &[
     ("team.role", "Lavozim", "Должность", "Role"),
     ("team.open_tasks_lc", "ta ochiq vazifa", "открытых задач", "open tasks"),
     ("team.new_goal", "Yangi maqsad", "Новая цель", "New goal"),
-    ("team.pace_line", "Oyning {p} qismi o‘tdi: rejada bo‘lish uchun natija shundan kam bo‘lmasin", "Прошло {p} месяца: чтобы идти по плану, результат должен быть не ниже", "{p} of the month is gone: to be on track, results should be at least that"),
+    (
+        "team.pace_line",
+        "Oyning {p} qismi o‘tdi: rejada bo‘lish uchun maqsad kamida {p} bajarilgan bo‘lishi kerak",
+        "Прошло {p} месяца: чтобы идти по плану, цель должна быть выполнена хотя бы на {p}",
+        "{p} of the month is gone: to be on track, a goal should be at least {p} done",
+    ),
     ("team.no_goals", "Bu oy uchun maqsad yo‘q", "Целей на этот месяц нет", "No goals for this month"),
     ("team.no_goals_text", "Filial tushumi yoki xodim natijasi uchun maqsad qo‘ying.", "Поставьте цель по выручке филиала или результату сотрудника.", "Set a goal for branch revenue or a person’s results."),
     ("team.branch_goals", "Filiallar maqsadlari", "Цели филиалов", "Branch goals"),
