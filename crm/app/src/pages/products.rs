@@ -301,6 +301,7 @@ fn ProductRow(row: Row, stock_max: u32, onopen: EventHandler<Id>) -> Element {
     let total_cls = if row.total == 0 { "strong num tone-danger" } else if row.total <= 10 { "strong num tone-warning" } else { "strong num" };
     let no_bonus = t("products.no_bonus");
     let regular_title = t("products.regular");
+    let stock_line = t("products.stock_total").replace("{n}", &total);
     let waiting_title = t("products.waiting");
     rsx! {
         tr { class: "click", onclick: move |_| onopen.call(id),
@@ -312,9 +313,10 @@ fn ProductRow(row: Row, stock_max: u32, onopen: EventHandler<Id>) -> Element {
                 }
                 div { class: "xs muted", "{row.generic} · {row.form} · {row.maker}" }
                 div { class: "only-mobile row gap-8 xs", style: "margin-top: 4px",
-                    span { class: total_cls, "{total}" }
-                    span { class: "muted", "·" }
-                    Badge { text: exp_left.clone(), tone: exp_tone }
+                    span { class: total_cls, "{stock_line}" }
+                    if !exp_tone.is_empty() {
+                        Badge { text: exp_left.clone(), tone: exp_tone }
+                    }
                 }
             }
             td { class: "m-hide",

@@ -262,9 +262,9 @@ pub fn Waitlist() -> Element {
                                     div { class: "kanban-head",
                                         span { style: "width: 8px; height: 8px; border-radius: 99px; background: {color}; flex: 0 0 8px" }
                                         span { class: "strong small truncate", "{label}" }
-                                        span { class: "badge sm", "{n}" }
-                                        span { class: "total num", "{money_short(value)}" }
+                                        span { class: "badge sm", style: "margin-left: auto", "{n}" }
                                     }
+                                    div { class: "xs subtle num", style: "padding: 0 6px; margin-top: -6px", "{money_short(value)}" }
                                     if col.is_empty() {
                                         div { class: "xs subtle center", style: "padding: 18px 6px; border: 1px dashed var(--c-border-strong); border-radius: 10px", {t("waitlist.empty_col")} }
                                     }
@@ -419,6 +419,8 @@ fn WaitCard(item: Item) -> Element {
     let cancellable = !matches!(w.status, WaitStatus::PickedUp | WaitStatus::Cancelled);
     let done = w.status == WaitStatus::PickedUp;
     let cancel_title = t("waitlist.act_cancel");
+    let tier_slug = item.tier.slug();
+    let tier_label = t(item.tier.key());
     rsx! {
         div { class: "kanban-card", style: "cursor: default",
             div { class: "row top between gap-8",
@@ -428,7 +430,9 @@ fn WaitCard(item: Item) -> Element {
             div { class: "row gap-8", style: "cursor: pointer", onclick: move |_| go(&format!("/contacts/{cid}")),
                 Avatar { name: item.customer.clone(), size: "xs" }
                 span { class: "small truncate grow", "{item.customer}" }
-                TierBadge { tier: item.tier }
+                if item.tier >= Tier::Gold {
+                    span { class: "tier {tier_slug}", style: "padding: 0 6px", title: "{tier_label}", Icon { name: "crown", size: 12 } }
+                }
             }
             div { class: "stack gap-4 xs muted",
                 span { class: "row gap-4", Icon { name: "store", size: 12 } span { class: "truncate", "{item.branch}" } }

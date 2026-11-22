@@ -23,6 +23,8 @@ struct Row {
     dose: String,
     branch: String,
     telegram: bool,
+    /// Telegram or SMS consent: can we message them at all?
+    reachable: bool,
     outcome: Option<String>,
     reminded: bool,
     held: Option<WaitStatus>,
@@ -99,6 +101,7 @@ pub fn Refills() -> Element {
                     dose,
                     branch: db.branch_name(Some(r.branch_id)),
                     telegram: c.consent.telegram,
+                    reachable: c.consent.telegram || c.consent.sms,
                     outcome: last_call.get(&c.id).map(|x| x.1.clone()),
                     reminded: reminded.contains(&c.id),
                     held: held.get(&(c.id, r.product_id)).copied(),
@@ -255,7 +258,7 @@ pub fn Refills() -> Element {
                                         let border = if selected { "var(--c-primary)" } else if is_today { "var(--c-border-strong)" } else { "transparent" };
                                         let bg = if selected { "var(--c-accent-soft)" } else if is_today { "var(--c-surface-2)" } else { "transparent" };
                                         let date = today + Duration::days(d.max(0));
-                                        let top = if d < 0 { t("refills.overdue_short") } else { fmt::weekday_short(date.weekday().num_days_from_monday(), l) };
+                                        let top = if d < 0 { t("refills.group.overdue") } else { fmt::weekday_short(date.weekday().num_days_from_monday(), l) };
                                         let bottom = if d < 0 { "≤ −1".to_string() } else { date.day().to_string() };
                                         let top_cls = if is_today { "xs strong tone-accent truncate" } else if d < 0 { "xs strong tone-danger truncate" } else { "xs muted truncate" };
                                         let num_cls = if n == 0 { "xs subtle num" } else { "xs strong num" };
@@ -266,7 +269,11 @@ pub fn Refills() -> Element {
                                                 onclick: move |_| day.set(if day() == Some(d) { None } else { Some(d) }),
                                                 span { class: num_cls, "{n}" }
                                                 span { style: "width: 70%; max-width: 26px; height: {h:.0}px; border-radius: 7px; background: {bar}; transition: height .4s var(--ease)" }
-                                                span { class: top_cls, style: "max-width: 100%", "{top}" }
+                                                if d < 0 {
+                                                    span { class: "tone-danger", title: "{top}", style: "line-height: 0", Icon { name: "circle-alert", size: 14 } }
+                                                } else {
+                                                    span { class: top_cls, style: "max-width: 100%", "{top}" }
+                                                }
                                                 span { class: "xs subtle num", "{bottom}" }
                                             }
                                         }
@@ -437,6 +444,8 @@ fn RefillItem(row: Row) -> Element {
     let name = row.name.clone();
     let product = row.product.clone();
     let product2 = row.product.clone();
+    let product3 = row.product.clone();
+    let no_consent = t("refills.toast_no_consent");
     let condition = t(r.condition.key());
     let overdue = r.days_left < 0;
     let reminded = row.reminded;
@@ -491,12 +500,22 @@ fn RefillItem(row: Row) -> Element {
                 if let Some(h) = held {
                     span { class: "badge success sm", Icon { name: "package-check", size: 12 } "{h}" }
                 }
-                button {
-                    class: remind_cls,
-                    title: "{remind_label}",
-                    onclick: move |_| remind_many(&[(cid, pid)]),
-                    Icon { name: remind_icon, size: 14 }
-                    span { "{remind_label}" }
+                if row.reachable {
+                    button {
+                        class: remind_cls,
+                        title: "{remind_label}",
+                        onclick: move |_| remind_many(&[(cid, pid)]),
+                        Icon { name: remind_icon, size: 14 }
+                        span { "{remind_label}" }
+                    }
+                } else {
+                    button {
+                        class: "btn sm soft",
+                        title: "{no_consent}",
+                        onclick: move |_| plan_call(cid, &product3, overdue),
+                        Icon { name: "phone-call", size: 14 }
+                        span { {t("common.call")} }
+                    }
                 }
                 button {
                     class: "icon-btn sm bordered",
@@ -677,7 +696,6 @@ pub const STRINGS: &[Entry] = &[
     ("refills.kpi_reach_foot", "{n} / {m} mijoz rozi", "{n} из {m} дали согласие", "{n} of {m} gave consent"),
     ("refills.strip_title", "Keyingi 14 kun", "Ближайшие 14 дней", "Next 14 days"),
     ("refills.strip_hint", "Kunni bosing: ro‘yxat shu kunga saralanadi", "Нажмите на день, чтобы отфильтровать список", "Tap a day to filter the list"),
-    ("refills.overdue_short", "Tugagan", "Кончились", "Out"),
     ("refills.all_days", "Barcha kunlar", "Все дни", "All days"),
     ("refills.reset_filters", "Filtrlarni tozalash", "Сбросить фильтры", "Clear filters"),
     ("refills.group.overdue", "Dori tugab qolgan", "Лекарство уже закончилось", "Already ran out"),

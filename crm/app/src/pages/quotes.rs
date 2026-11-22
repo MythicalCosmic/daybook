@@ -466,9 +466,9 @@ pub fn QuoteDetail(id: u32) -> Element {
                                 tr {
                                     th { style: "width: 34px", "№" }
                                     th { {t("common.product")} }
-                                    th { class: "num", {t("quotes.col_qty")} }
-                                    th { class: "num", {t("quotes.col_price")} }
-                                    th { class: "num", {t("quotes.col_disc")} }
+                                    th { class: "num hide-mobile", {t("quotes.col_qty")} }
+                                    th { class: "num hide-mobile", {t("quotes.col_price")} }
+                                    th { class: "num hide-mobile", {t("quotes.col_disc")} }
                                     th { class: "num", {t("quotes.col_total")} }
                                 }
                             }
@@ -477,13 +477,21 @@ pub fn QuoteDetail(id: u32) -> Element {
                                     {
                                         let n = i + 1;
                                         let disc = if li.discount_pct > 0 { format!("{}%", li.discount_pct) } else { "—".into() };
+                                        let mobile_line = if li.discount_pct > 0 {
+                                            format!("{} × {} · −{}%", fmt::num(li.qty as i64), money(li.price), li.discount_pct)
+                                        } else {
+                                            format!("{} × {}", fmt::num(li.qty as i64), money(li.price))
+                                        };
                                         rsx! {
                                             tr { key: "{i}",
                                                 td { class: "muted num", "{n}" }
-                                                td { class: "small", "{name}" }
-                                                td { class: "num", "{fmt::num(li.qty as i64)}" }
-                                                td { class: "num nowrap", "{money(li.price)}" }
-                                                td { class: "num muted", "{disc}" }
+                                                td { class: "small",
+                                                    div { "{name}" }
+                                                    div { class: "xs muted num only-mobile", "{mobile_line}" }
+                                                }
+                                                td { class: "num hide-mobile", "{fmt::num(li.qty as i64)}" }
+                                                td { class: "num nowrap hide-mobile", "{money(li.price)}" }
+                                                td { class: "num muted hide-mobile", "{disc}" }
                                                 td { class: "num strong nowrap", "{money(li.total())}" }
                                             }
                                         }

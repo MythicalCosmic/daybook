@@ -350,7 +350,7 @@ pub fn TicketDetail(id: u32) -> Element {
                     span { class: "xs muted upper", {t("tickets.kind")} }
                     span { class: "badge {kind_tone}", style: "height: 30px; padding: 0 12px", Icon { name: kicon, size: 14 } "{klabel}" }
                 }
-                div { class: "field", style: "min-width: 170px",
+                div { class: "field", style: "flex: 1 1 160px",
                     span { class: "xs muted upper", {t("common.status")} }
                     select {
                         class: "select sm",
@@ -365,7 +365,7 @@ pub fn TicketDetail(id: u32) -> Element {
                         }
                     }
                 }
-                div { class: "field", style: "min-width: 150px",
+                div { class: "field", style: "flex: 1 1 140px",
                     span { class: "xs muted upper", {t("tickets.priority")} }
                     select {
                         class: "select sm",
@@ -383,7 +383,7 @@ pub fn TicketDetail(id: u32) -> Element {
                         }
                     }
                 }
-                div { class: "field", style: "min-width: 200px",
+                div { class: "field", style: "flex: 1 1 180px",
                     span { class: "xs muted upper", {t("tickets.assignee")} }
                     select {
                         class: "select sm",
