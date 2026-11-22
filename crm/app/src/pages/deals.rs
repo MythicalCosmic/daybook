@@ -1157,8 +1157,9 @@ pub fn DealDetail(id: u32) -> Element {
                                 };
                                 let sid = s.id;
                                 let name_cls = if s.id == d.stage_id { "truncate" } else { "truncate hide-mobile" };
+                                let st_style = if s.id == d.stage_id { "min-width: fit-content" } else { "" };
                                 rsx! {
-                                    div { key: "{sid}", class: cls, title: "{s.name} · {s.probability}%", onclick: move |_| move_to(id, sid),
+                                    div { key: "{sid}", class: cls, style: st_style, title: "{s.name} · {s.probability}%", onclick: move |_| move_to(id, sid),
                                         span { class: name_cls, "{s.name}" }
                                     }
                                 }
