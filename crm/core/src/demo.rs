@@ -1343,7 +1343,7 @@ impl Gen {
                 issued,
                 valid_until: issued + Duration::days(if *st == QuoteStatus::Overdue { 14 } else { 30 }),
                 vat_pct: 12,
-                notes: "To‘lov: bank o‘tkazmasi, 30 kun ichida. Yetkazish bepul.".into(),
+                notes: "Yetkazib berish bepul. Dorilar sovuq zanjirda saqlanadi va yetkaziladi.".into(),
                 owner_id: self.reps[k % self.reps.len()],
                 paid_on: if *st == QuoteStatus::Paid { Some(issued + Duration::days(rng.range(5, 25))) } else { None },
             });
