@@ -140,7 +140,7 @@ pub fn Loyalty() -> Element {
                     foot: t("loyalty.members_foot").replace("{n}", &s.new_month.to_string()), onclick: move |_| go("/contacts") }
                 Kpi { label: t("loyalty.liability"), value: money_short(s.liability), icon: "wallet", tone: "warning", foot: t("loyalty.liability_foot") }
                 Kpi { label: t("loyalty.earned"), value: fmt::num(s.earned), icon: "coins", tone: "success",
-                    foot: format!("{}: {}", t("loyalty.of_bonus"), fmt::num(s.bonus)) }
+                    foot: if s.bonus > 0 { format!("{}: {}", t("loyalty.of_bonus"), fmt::num(s.bonus)) } else { t("loyalty.earned_foot") } }
                 Kpi { label: t("loyalty.redeemed"), value: fmt::num(s.redeemed), icon: "shopping-bag", tone: "accent",
                     foot: fmt::plural(s.receipts as i64, l, "chekda|чек|чека|чеков|receipt|receipts") }
                 Kpi { label: t("loyalty.rate"), value: fmt::pct(s.rate, l), icon: "percent", foot: t("loyalty.rate_foot") }
@@ -182,6 +182,7 @@ pub fn Loyalty() -> Element {
 
             div { class: "grid-main",
                 div { class: "stack gap-16",
+                    PointsFlow {}
                     SettingsEditor {}
                     TopMembers {}
                 }
@@ -193,6 +194,63 @@ pub fn Loyalty() -> Element {
 
             if adjust() {
                 AdjustModal { onclose: move |_| adjust.set(false) }
+            }
+        }
+    }
+}
+
+#[component]
+fn PointsFlow() -> Element {
+    let data = use_memo(move || {
+        let db = DB.read();
+        let today = crate::state::today();
+        let weeks = 19usize;
+        let mut earned = vec![0f64; weeks];
+        let mut redeemed = vec![0f64; weeks];
+        for tx in db.loyalty.iter() {
+            let ago = (today - tx.at.date()).num_days();
+            if ago < 0 {
+                continue;
+            }
+            let w = (ago / 7) as usize;
+            if w >= weeks {
+                continue;
+            }
+            let idx = weeks - 1 - w;
+            match tx.kind {
+                TxKind::Earn | TxKind::Bonus if tx.points > 0 => earned[idx] += tx.points as f64,
+                TxKind::Redeem => redeemed[idx] += (-tx.points) as f64,
+                _ => {}
+            }
+        }
+        let starts: Vec<chrono::NaiveDate> = (0..weeks).map(|i| today - chrono::Duration::days(((weeks - 1 - i) * 7) as i64)).collect();
+        (starts, earned, redeemed)
+    });
+    let l = lang();
+    let (starts, earned, redeemed) = data();
+    let labels: Vec<String> = starts.iter().map(|d| format!("{} {}", chrono::Datelike::day(d), fmt::month_short(chrono::Datelike::month(d), l))).collect();
+    let total_e: f64 = earned.iter().sum();
+    let total_r: f64 = redeemed.iter().sum();
+    let series = vec![
+        Series { name: t("loyalty.series_earned"), values: earned, color: "var(--c-chart-1)", dashed: false },
+        Series { name: t("loyalty.series_redeemed"), values: redeemed, color: "var(--c-chart-3)", dashed: false },
+    ];
+    rsx! {
+        div { class: "card",
+            div { class: "card-head",
+                div { class: "card-title", Icon { name: "chart-line", size: 16, class: "subtle" } {t("loyalty.flow")} }
+                div { class: "legend",
+                    for s in series.iter() {
+                        span { key: "{s.name}", span { class: "sw", style: "background: {s.color}" } "{s.name}" }
+                    }
+                }
+            }
+            div { class: "card-body",
+                AreaChart { labels, series: series.clone(), height: 190, money: true }
+                div { class: "row gap-16 small muted", style: "margin-top: 8px",
+                    span { {t("loyalty.series_earned")} ": " b { class: "num", style: "color: var(--c-text)", "{fmt::num(total_e as i64)}" } }
+                    span { {t("loyalty.series_redeemed")} ": " b { class: "num", style: "color: var(--c-text)", "{fmt::num(total_r as i64)}" } }
+                }
             }
         }
     }
@@ -353,7 +411,6 @@ fn CardPreview(company: String) -> Element {
     };
     let first = top.first().map(|x| x.0).unwrap_or(0);
     let mut pick = use_signal(move || first);
-    let l = lang();
     let Some(c) = DB.read().customer(pick()).cloned() else { return rsx! {} };
     let cashback = DB.read().settings.loyalty.cashback(c.tier);
     let link = format!("https://t.me/daybook_crm_bot?start=card{}", c.card_no.replace(' ', ""));
@@ -365,7 +422,6 @@ fn CardPreview(company: String) -> Element {
     let points = fmt::num(c.points);
     let points_money = money(c.points);
     let initials = crm::fmt::initials(&company);
-    let _ = l;
     rsx! {
         div { class: "card",
             div { class: "card-head",
@@ -611,6 +667,7 @@ pub const STRINGS: &[Entry] = &[
     ("loyalty.liability_foot", "mijozlar hisobidagi ballar, so‘mda", "баллы на счетах клиентов, в сумах", "points on customer balances, in so‘m"),
     ("loyalty.earned", "Shu oy berilgan ballar", "Начислено за месяц", "Points earned this month"),
     ("loyalty.of_bonus", "shundan bonus", "из них бонусы", "of which bonuses"),
+    ("loyalty.earned_foot", "xaridlardan keshbek", "кешбэк с покупок", "cashback from purchases"),
     ("loyalty.redeemed", "Shu oy sarflangan", "Списано за месяц", "Redeemed this month"),
     ("loyalty.rate", "Sarflanish ulushi", "Доля списания", "Redemption rate"),
     ("loyalty.rate_foot", "oxirgi 90 kun", "за последние 90 дней", "last 90 days"),
@@ -634,6 +691,9 @@ pub const STRINGS: &[Entry] = &[
     ("loyalty.unsaved", "Saqlanmagan o‘zgarishlar bor", "Есть несохранённые изменения", "Unsaved changes"),
     ("loyalty.save_ok", "Dastur sozlamalari saqlandi", "Настройки программы сохранены", "Programme settings saved"),
     ("loyalty.tier_changed", "{n} ta mijozning darajasi qayta hisoblandi", "уровень пересчитан у {n} клиентов", "{n} customers moved to a new tier"),
+    ("loyalty.flow", "Ballar oqimi, haftalar bo‘yicha", "Движение баллов по неделям", "Points flow by week"),
+    ("loyalty.series_earned", "Berildi", "Начислено", "Earned"),
+    ("loyalty.series_redeemed", "Sarflandi", "Списано", "Redeemed"),
     ("loyalty.top", "Eng ko‘p balli a’zolar", "Лидеры по баллам", "Top members by points"),
     ("loyalty.ledger", "So‘nggi ball harakatlari", "Последние движения баллов", "Recent points activity"),
     ("loyalty.no_ledger", "Ball harakatlari hali yo‘q", "Движений по баллам пока нет", "No points activity yet"),

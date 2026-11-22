@@ -514,22 +514,22 @@ pub fn Contacts() -> Element {
                                 },
                             }
                         }
-                        div { class: "row", style: "flex: 1 1 480px; gap: 8px",
-                        select { class: "select", style: "flex: 1 1 0; min-width: 0",
+                        div { class: "chips", style: "flex: 1 1 480px; gap: 8px; padding-bottom: 0",
+                        select { class: "select", style: "width: auto; flex: 0 0 auto",
                             onchange: move |e| branch.set(e.value().parse().unwrap_or(0)),
                             option { value: "0", selected: branch() == 0, {t("common.all_branches")} }
                             for (bid, bname) in branches {
                                 option { key: "{bid}", value: "{bid}", selected: branch() == bid, "{bname}" }
                             }
                         }
-                        select { class: "select", style: "flex: 1 1 0; min-width: 0",
+                        select { class: "select", style: "width: auto; flex: 0 0 auto",
                             onchange: move |e| tier.set(e.value()),
                             option { value: "", selected: tier().is_empty(), {t("contacts.all_tiers")} }
                             for tr_ in Tier::ALL.iter().copied() {
                                 option { key: "{tr_.slug()}", value: "{tr_.slug()}", selected: tier() == tr_.slug(), {t(tr_.key())} }
                             }
                         }
-                        select { class: "select", style: "flex: 1 1 0; min-width: 0",
+                        select { class: "select", style: "width: auto; flex: 0 0 auto",
                             onchange: move |e| sort.set(e.value()),
                             option { value: "ltv", selected: sort_v == "ltv", {t("contacts.sort_ltv")} }
                             option { value: "last", selected: sort_v == "last", {t("contacts.sort_last")} }
@@ -866,6 +866,7 @@ enum Dialog {
     Reserve(Option<Id>),
     Regimen,
     Archive,
+    Edit,
 }
 
 #[component]
@@ -907,7 +908,7 @@ fn Customer360(id: Id) -> Element {
             db.settings.privacy_mode,
         )
     };
-    let name = c.name();
+    let name = c.name().trim().to_string();
     let rfm = if c.orders > 0 { Some(analytics::rfm(&c, today).segment) } else { None };
     let risk = analytics::churn_risk(&c, today);
     let since = t("contacts.since").replace("{d}", &fmt::date(c.created, today, l));
@@ -973,6 +974,7 @@ fn Customer360(id: Id) -> Element {
                                 if let Some(s) = rfm {
                                     Badge { text: t(s.key()), tone: s.tone(), dot: true }
                                 }
+                                button { class: "icon-btn sm", title: t("contacts.edit_profile"), onclick: move |_| dialog.set(Some(Dialog::Edit)), Icon { name: "pen-line", size: 15 } }
                             }
                             div { class: "row wrap small muted", style: "gap: 6px 16px",
                                 a { href: "{tel}", class: "row gap-4 num", style: "color: var(--c-text); font-weight: 600", Icon { name: "phone", size: 14, class: "subtle" } "{ph}" }
@@ -1112,6 +1114,7 @@ fn Customer360(id: Id) -> Element {
                 Some(Dialog::Reserve(p)) => rsx! { ReserveModal { id, product: p, onclose: move |_| dialog.set(None) } },
                 Some(Dialog::Regimen) => rsx! { RegimenModal { id, onclose: move |_| dialog.set(None) } },
                 Some(Dialog::Archive) => rsx! { ArchiveModal { id, onclose: move |_| dialog.set(None) } },
+                Some(Dialog::Edit) => rsx! { EditModal { id, onclose: move |_| dialog.set(None) } },
                 None => rsx! {},
             }
         }
@@ -1151,7 +1154,7 @@ fn OverviewTab(id: Id, on_tab: EventHandler<&'static str>, on_dialog: EventHandl
     };
     let summary = match (c.orders > 0).then(|| analytics::rfm(&c, today).segment) {
         Some(seg) => polish_summary(summary, seg, l),
-        None => summary,
+        None => t("contacts.ai_new").replace("{d}", &fmt::date(c.created, today, l)),
     };
     let ai_note = if connected { t("contacts.ai_cloud") } else { t("contacts.ai_local") };
     let ai_chip = if connected { "Claude Haiku".to_string() } else { t("contacts.ai_on_device") };
@@ -1206,7 +1209,9 @@ fn OverviewTab(id: Id, on_tab: EventHandler<&'static str>, on_dialog: EventHandl
                         for (i, a) in actions.iter().cloned().enumerate() {
                             {
                                 let is_done = done().contains(&a.text);
-                                let (label, icon): (String, &'static str) = match a.kind {
+                                // A medicine that already ran out: the advice is to call, so the button calls.
+                                let kind: &'static str = if a.kind == "remind" && a.tone == "danger" { "call" } else { a.kind };
+                                let (label, icon): (String, &'static str) = match kind {
                                     "remind" => (t("contacts.nba_remind"), "send"),
                                     "reserve" => (t("contacts.reserve"), "package-check"),
                                     "bonus" => (t("contacts.nba_bonus"), "gift"),
@@ -1215,7 +1220,6 @@ fn OverviewTab(id: Id, on_tab: EventHandler<&'static str>, on_dialog: EventHandl
                                     "upgrade" => (t("contacts.nba_upgrade"), "send"),
                                     _ => (t("contacts.nba_consent"), "shield-check"),
                                 };
-                                let kind = a.kind;
                                 let text = a.text.clone();
                                 rsx! {
                                     div { key: "{i}", class: "list-row",
@@ -1261,6 +1265,7 @@ fn OverviewTab(id: Id, on_tab: EventHandler<&'static str>, on_dialog: EventHandl
             }
 
             div { class: "stack gap-16",
+                UpcomingTasks { id, on_dialog }
                 div { class: "card",
                     div { class: "card-head", div { class: "card-title", Icon { name: "id-card", size: 16, class: "subtle" } {t("contacts.about")} } }
                     div { class: "card-body", KeyValues { items: about } }
@@ -1307,6 +1312,58 @@ fn OverviewTab(id: Id, on_tab: EventHandler<&'static str>, on_dialog: EventHandl
                                     Avatar { name: fname.clone(), size: "sm" }
                                     div { class: "meta", span { class: "title small", "{fname}" } span { class: "sub", {t("contacts.friend")} } }
                                 }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[component]
+fn UpcomingTasks(id: Id, on_dialog: EventHandler<Dialog>) -> Element {
+    let now = now();
+    let l = lang();
+    let tasks: Vec<(Id, String, NaiveDateTime, ActivityKind, Priority)> = {
+        let db = DB.read();
+        let mut v: Vec<&Activity> = db.activities.iter().filter(|a| a.customer_id == Some(id) && !a.done).collect();
+        v.sort_by_key(|a| a.due);
+        v.into_iter().take(5).map(|a| (a.id, a.title.clone(), a.due, a.kind, a.priority)).collect()
+    };
+    rsx! {
+        div { class: "card",
+            div { class: "card-head",
+                div { class: "card-title", Icon { name: "calendar-check", size: 16, class: "tone-accent" } {t("contacts.upcoming")} }
+                button { class: "btn ghost sm", onclick: move |_| on_dialog.call(Dialog::Task), Icon { name: "plus", size: 14 } {t("common.task")} }
+            }
+            div { class: "list", style: "margin-top: 6px",
+                if tasks.is_empty() {
+                    div { class: "list-row small muted", {t("contacts.no_upcoming")} }
+                }
+                for (aid, title, due, kind, prio) in tasks {
+                    {
+                        let when = fmt::relative(due, now, l);
+                        let when_cls = if due < now { "tone-danger strong" } else { "" };
+                        let icon = crm::db::activity_icon(kind);
+                        let urgent = matches!(prio, Priority::High | Priority::Urgent);
+                        let ptone: &'static str = if prio == Priority::Urgent { "danger" } else { "warning" };
+                        rsx! {
+                            div { key: "{aid}", class: "list-row",
+                                button {
+                                    class: "check-circle",
+                                    title: t("common.done"),
+                                    onclick: move |_| {
+                                        mutate(|db| db.complete_activity(aid, crate::state::now()));
+                                        toast(t("contacts.task_done"), "check", "success");
+                                    },
+                                    Icon { name: "check", size: 13 }
+                                }
+                                div { class: "meta",
+                                    span { class: "title small truncate", "{title}" }
+                                    span { class: "sub row gap-4", Icon { name: icon, size: 12 } span { class: when_cls, "{when}" } }
+                                }
+                                if urgent { Badge { text: t(prio.key()), tone: ptone } }
                             }
                         }
                     }
@@ -2511,6 +2568,140 @@ fn RegimenModal(id: Id, onclose: EventHandler<()>) -> Element {
 }
 
 #[component]
+fn EditModal(id: Id, onclose: EventHandler<()>) -> Element {
+    let init = use_hook(move || DB.peek().customer(id).cloned());
+    let (branches, staff) = {
+        let db = DB.read();
+        (
+            db.branches.iter().map(|b| (b.id, b.name.clone())).collect::<Vec<_>>(),
+            db.staff.iter().filter(|s| s.active).map(|s| (s.id, s.name.clone())).collect::<Vec<_>>(),
+        )
+    };
+    let c0 = init.clone();
+    let mut first = use_signal(move || c0.as_ref().map(|c| c.first_name.clone()).unwrap_or_default());
+    let c1 = init.clone();
+    let mut last = use_signal(move || c1.as_ref().map(|c| c.last_name.clone()).unwrap_or_default());
+    let c2 = init.clone();
+    let mut phone_v = use_signal(move || c2.as_ref().map(|c| crm::fmt::phone(&c.phone)).unwrap_or_default());
+    let c3 = init.clone();
+    let mut tg = use_signal(move || c3.as_ref().and_then(|c| c.telegram.clone()).unwrap_or_default());
+    let c4 = init.clone();
+    let mut birth = use_signal(move || c4.as_ref().and_then(|c| c.birth_date).map(|d| d.format("%Y-%m-%d").to_string()).unwrap_or_default());
+    let c5 = init.clone();
+    let mut gender = use_signal(move || c5.as_ref().map(|c| c.gender).unwrap_or(Gender::Female));
+    let c6 = init.clone();
+    let mut branch = use_signal(move || c6.as_ref().map(|c| c.home_branch).unwrap_or(0));
+    let c7 = init.clone();
+    let mut owner = use_signal(move || c7.as_ref().and_then(|c| c.owner_id).unwrap_or(0));
+    let c8 = init.clone();
+    let mut district = use_signal(move || c8.as_ref().map(|c| c.district.clone()).unwrap_or_default());
+    let digits: String = phone_v().chars().filter(|c| c.is_ascii_digit()).collect();
+    let dup = if digits.len() >= 12 { DB.read().customers.iter().find(|x| x.phone == digits && x.id != id).map(|x| x.name()) } else { None };
+    let birth_ok = birth().trim().is_empty() || NaiveDate::parse_from_str(birth().trim(), "%Y-%m-%d").is_ok();
+    let valid = !first().trim().is_empty() && digits.len() >= 12 && dup.is_none() && birth_ok;
+    let save = move |_| {
+        let digits: String = phone_v().chars().filter(|c| c.is_ascii_digit()).collect();
+        let raw = tg().trim().to_string();
+        let handle = if raw.is_empty() {
+            None
+        } else if raw.starts_with('@') {
+            Some(raw)
+        } else {
+            Some(format!("@{raw}"))
+        };
+        let bd = NaiveDate::parse_from_str(birth().trim(), "%Y-%m-%d").ok();
+        let (f, l, g, b, o, d) = (first().trim().to_string(), last().trim().to_string(), gender(), branch(), owner(), district().trim().to_string());
+        let log = format!("{}: {f} {l}", t("contacts.edit_profile"));
+        mutate(|db| {
+            if let Some(c) = db.customer_mut(id) {
+                c.first_name = f;
+                c.last_name = l;
+                c.phone = digits;
+                c.telegram = handle;
+                c.birth_date = bd;
+                c.gender = g;
+                c.home_branch = b;
+                c.owner_id = if o == 0 { None } else { Some(o) };
+                c.district = d;
+            }
+            db.log(crate::state::now(), log, false);
+        });
+        toast(t("common.saved"), "user-check", "success");
+        onclose.call(());
+    };
+    rsx! {
+        Modal { title: t("contacts.edit_profile"), onclose: move |_| onclose.call(()),
+            div { class: "modal-body",
+                div { class: "grid-2",
+                    div { class: "field",
+                        label { class: "label", {t("quick.first_name")} }
+                        input { class: "input", value: "{first}", oninput: move |e| first.set(e.value()) }
+                    }
+                    div { class: "field",
+                        label { class: "label", {t("quick.last_name")} }
+                        input { class: "input", value: "{last}", oninput: move |e| last.set(e.value()) }
+                    }
+                }
+                div { class: "grid-2",
+                    div { class: "field",
+                        label { class: "label", {t("common.phone")} }
+                        input { class: "input num", r#type: "tel", value: "{phone_v}", oninput: move |e| phone_v.set(e.value()) }
+                        if let Some(n) = dup.clone() {
+                            div { class: "hint tone-warning row gap-4", Icon { name: "triangle-alert", size: 13 } {t("quick.duplicate")} " {n}" }
+                        }
+                    }
+                    div { class: "field",
+                        label { class: "label", "Telegram" }
+                        input { class: "input", value: "{tg}", placeholder: "@username", oninput: move |e| tg.set(e.value()) }
+                    }
+                }
+                div { class: "grid-2",
+                    div { class: "field",
+                        label { class: "label", {t("contacts.birthday")} }
+                        input { class: "input", r#type: "date", value: "{birth}", oninput: move |e| birth.set(e.value()) }
+                    }
+                    div { class: "field",
+                        label { class: "label", {t("field.gender")} }
+                        Segmented {
+                            options: Gender::ALL.iter().map(|g| (g.slug().to_string(), t(g.key()))).collect(),
+                            value: gender().slug().to_string(),
+                            onchange: move |v: String| gender.set(Gender::from_slug(&v).unwrap_or(Gender::Female)),
+                        }
+                    }
+                }
+                div { class: "grid-2",
+                    div { class: "field",
+                        label { class: "label", {t("common.branch")} }
+                        select { class: "select", onchange: move |e| branch.set(e.value().parse().unwrap_or(0)),
+                            for (bid, bname) in branches {
+                                option { key: "{bid}", value: "{bid}", selected: bid == branch(), "{bname}" }
+                            }
+                        }
+                    }
+                    div { class: "field",
+                        label { class: "label", {t("common.owner")} }
+                        select { class: "select", onchange: move |e| owner.set(e.value().parse().unwrap_or(0)),
+                            option { value: "0", selected: owner() == 0, {t("common.unassigned")} }
+                            for (sid, sname) in staff {
+                                option { key: "{sid}", value: "{sid}", selected: sid == owner(), "{sname}" }
+                            }
+                        }
+                    }
+                }
+                div { class: "field",
+                    label { class: "label", {t("contacts.district")} }
+                    input { class: "input", value: "{district}", oninput: move |e| district.set(e.value()) }
+                }
+            }
+            div { class: "modal-foot",
+                button { class: "btn ghost", onclick: move |_| onclose.call(()), {t("common.cancel")} }
+                button { class: "btn primary", disabled: !valid, onclick: save, Icon { name: "check", size: 16 } {t("common.save")} }
+            }
+        }
+    }
+}
+
+#[component]
 fn ArchiveModal(id: Id, onclose: EventHandler<()>) -> Element {
     let name = DB.read().customer_name(Some(id));
     let text = t("contacts.archive_confirm").replace("{name}", &name);
@@ -2583,6 +2774,7 @@ pub const STRINGS: &[Entry] = &[
     ("contacts.not_found_text", "Ehtimol, havola eskirgan.", "Возможно, ссылка устарела.", "The link may be out of date."),
     ("contacts.since", "Ro‘yxatdan o‘tgan: {d}", "Клиент с {d}", "Customer since {d}"),
     ("contacts.add_tag", "Teg", "Тег", "Tag"),
+    ("contacts.edit_profile", "Ma’lumotlarni tahrirlash", "Изменить данные", "Edit details"),
     ("contacts.give_bonus", "Bonus berish", "Начислить бонус", "Give bonus"),
     ("contacts.reserve", "Bron qilish", "Забронировать", "Reserve"),
     ("contacts.call_logged", "Qo‘ng‘iroq jurnalga yozildi", "Звонок записан в историю", "Call logged"),
@@ -2605,6 +2797,7 @@ pub const STRINGS: &[Entry] = &[
     ("contacts.tab_care", "Xizmat", "Сервис", "Care"),
     ("contacts.tab_consent", "Rozilik va ma’lumotlar", "Согласия и данные", "Consent & data"),
     ("contacts.ai_summary", "AI xulosa", "AI-сводка", "AI summary"),
+    ("contacts.ai_new", "Ro‘yxatdan o‘tgan: {d}. Hali xarid qilmagan. Birinchi tashrifda sodiqlik kartasi afzalliklarini ayting va doimiy ichadigan dorilari haqida so‘rang.", "Клиент с {d}, покупок пока нет. При первом визите расскажите о карте лояльности и спросите о постоянных лекарствах.", "Customer since {d}, no purchases yet. On the first visit, explain the loyalty card and ask about regular medicines."),
     ("contacts.ai_on_device", "Qurilmada", "На устройстве", "On device"),
     ("contacts.ai_local", "Bu qurilmada xaridlar tarixidan hisoblandi. Daybook ulansa, matnni Daybook AI (Claude Haiku) yozadi.", "Посчитано на этом устройстве по истории покупок. При подключении Daybook текст пишет Daybook AI (Claude Haiku).", "Computed on this device from the purchase history. With Daybook connected, Daybook AI (Claude Haiku) writes it."),
     ("contacts.ai_cloud", "Daybook AI (Claude Haiku) yozdi, ma’lumotlar sizning Daybook serveringizda qayta ishlanadi.", "Написано Daybook AI (Claude Haiku) на вашем сервере Daybook.", "Written by Daybook AI (Claude Haiku) on your Daybook server."),
@@ -2620,6 +2813,9 @@ pub const STRINGS: &[Entry] = &[
     ("contacts.bonus_given", "Bonus ballar berildi", "Бонусные баллы начислены", "Bonus points added"),
     ("contacts.consent_saved", "Rozilik saqlandi", "Согласие сохранено", "Consent saved"),
     ("contacts.recent", "So‘nggi voqealar", "Последние события", "Recent activity"),
+    ("contacts.upcoming", "Rejadagi ishlar", "Запланировано", "Upcoming"),
+    ("contacts.no_upcoming", "Rejalashtirilgan ish yo‘q", "Ничего не запланировано", "Nothing planned"),
+    ("contacts.task_done", "Vazifa bajarildi", "Задача выполнена", "Task done"),
     ("contacts.full_timeline", "To‘liq tarix", "Вся история", "Full timeline"),
     ("contacts.about", "Ma’lumotlar", "Сведения", "About"),
     ("contacts.birthday", "Tug‘ilgan kun", "День рождения", "Birthday"),

@@ -100,7 +100,6 @@ pub fn Segments() -> Element {
         let today = crate::state::today();
         let l = crate::state::lang();
         let branches: Vec<(Id, String)> = db.branches.iter().map(|b| (b.id, b.name.clone())).collect();
-        let joiner = if l == Lang::Ru { " · " } else { " · " };
         db.segments
             .iter()
             .map(|s| {
@@ -110,7 +109,6 @@ pub fn Segments() -> Element {
                 let sample: Vec<String> = members.iter().take(5).filter_map(|id| db.customer(*id)).map(|c| c.name()).collect();
                 let word = if s.match_all { crm::i18n::pick(l, " va ", " и ", " and ") } else { crm::i18n::pick(l, " yoki ", " или ", " or ") };
                 let rules: Vec<String> = s.rules.iter().map(|r| rule_text(r, &branches, l)).collect();
-                let _ = joiner;
                 SegCard {
                     id: s.id,
                     name: s.name.clone(),
@@ -501,7 +499,8 @@ fn RuleRow(index: usize, rule: Rule, branches: Vec<(Id, String)>, first_branch: 
     let value = rule.value.clone();
     let mk = move |f: Field, o: Op, v: String| Rule { field: f, op: o, value: v };
     rsx! {
-        div { class: "row wrap", style: "gap: 8px; padding: 10px; border: 1px solid var(--c-border); border-radius: 12px; background: var(--c-surface)",
+        div { class: "row top", style: "gap: 8px; padding: 10px; border: 1px solid var(--c-border); border-radius: 12px; background: var(--c-surface)",
+            div { class: "row wrap grow", style: "gap: 8px",
             select {
                 class: "select sm",
                 style: "flex: 1 1 200px; width: auto; min-width: 0",
@@ -559,6 +558,7 @@ fn RuleRow(index: usize, rule: Rule, branches: Vec<(Id, String)>, first_branch: 
                         input { class: "input sm", style: "flex: 1 1 130px; width: auto; min-width: 0", value: "{value}", oninput: move |e| onchange.call((index, mk(field, op, e.value()))) }
                     },
                 }
+            }
             }
             button { class: "icon-btn sm", title: t("common.delete"), onclick: move |_| onremove.call(index), Icon { name: "x", size: 15 } }
         }

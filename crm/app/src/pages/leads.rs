@@ -344,11 +344,7 @@ pub fn Leads() -> Element {
     let today = now.date();
     let l = lang();
 
-    let (all, staff_count) = {
-        let db = DB.read();
-        (db.leads.clone(), db.staff.len())
-    };
-    let _ = staff_count;
+    let all: Vec<Lead> = DB.read().leads.clone();
     let count_of = |s: LeadStatus| all.iter().filter(|x| x.status == s).count();
     let new_today = all.iter().filter(|x| x.at.date() == today).count();
     let waiting_new = all.iter().filter(|x| x.status == LeadStatus::New).count();

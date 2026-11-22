@@ -93,6 +93,7 @@ pub fn Companies() -> Element {
     let mut query = use_signal(String::new);
     let mut kind = use_signal(|| None::<OrgKind>);
     let mut view = use_signal(|| "grid".to_string());
+    let mut creating = use_signal(|| false);
     let rows = use_memo(move || {
         let db = DB.read();
         let mut v: Vec<CoRow> = db
@@ -164,6 +165,10 @@ pub fn Companies() -> Element {
                     options: vec![("grid".into(), t("companies.cards")), ("table".into(), t("companies.table"))],
                     value: view_v.clone(),
                     onchange: move |v| view.set(v),
+                }
+                button { class: "btn", onclick: move |_| creating.set(true),
+                    Icon { name: "plus", size: 16 }
+                    span { class: "label-text", {t("companies.new")} }
                 }
                 button { class: "btn primary", onclick: move |_| UI.write().quick_add = Some(QuickAdd::Deal),
                     Icon { name: "square-kanban", size: 16 }
@@ -240,6 +245,9 @@ pub fn Companies() -> Element {
                     }
                 }
             }
+            if creating() {
+                CompanyModal { id: None, onclose: move |_| creating.set(false) }
+            }
         }
     }
 }
@@ -292,7 +300,11 @@ fn CompanyCard(r: CoRow) -> Element {
                     span { class: "muted", {t("companies.receivable")} }
                     span { class: "num", b { "{recv}" } span { class: "muted", " {limit}" } }
                 }
-                Progress { pct, tone, thin: true }
+                if r.limit > 0 {
+                    Progress { pct, tone, thin: true }
+                } else {
+                    div { style: "height: 5px; border-radius: 99px; background: repeating-linear-gradient(90deg, var(--c-surface-3) 0 6px, transparent 6px 10px)" }
+                }
             }
             div { class: "row between", style: "margin-top: 2px",
                 div { class: "row gap-8 small muted",
@@ -341,7 +353,7 @@ fn CompanyTr(r: CoRow) -> Element {
             td { class: "m-hide",
                 div { class: "stack", style: "gap: 4px",
                     span { class: "small num", b { "{recv}" } span { class: "muted", " / {limit}" } }
-                    Progress { pct, tone, thin: true }
+                    if r.limit > 0 { Progress { pct, tone, thin: true } }
                 }
             }
             td { class: "num m-hide", Badge { text: format!("{}", r.health), tone: htone } }
@@ -377,6 +389,7 @@ struct DealLine {
 #[component]
 fn CompanyPage(id: Id) -> Element {
     let mut note = use_signal(String::new);
+    let mut editing = use_signal(|| false);
     let now = now();
     let today = now.date();
     let l = lang();
@@ -398,7 +411,7 @@ fn CompanyPage(id: Id) -> Element {
             .filter(|d| d.company_id == Some(id))
             .map(|d| {
                 let (stage, hue) = db.stage(d.stage_id).map(|(_, s)| (s.name.clone(), s.hue)).unwrap_or_default();
-                DealLine { id: d.id, title: d.title.clone(), stage, hue, value: db.deal_value(d), status: d.status, close: d.expected_close }
+                DealLine { id: d.id, title: d.title.clone(), stage, hue, value: db.deal_value(d), status: d.status, close: d.closed_at.map(|c| c.date()).unwrap_or(d.expected_close) }
             })
             .collect();
         deals.sort_by(|a, b| (a.status != DealStatus::Open).cmp(&(b.status != DealStatus::Open)).then(b.value.cmp(&a.value)));
@@ -517,16 +530,27 @@ fn CompanyPage(id: Id) -> Element {
                         div { class: "row wrap gap-8",
                             h1 { style: "font-size: 24px; font-weight: 700; letter-spacing: -0.02em", "{co.name}" }
                             Badge { text: t(co.kind.key()), tone: ktone }
+                            button { class: "icon-btn sm", title: t("companies.edit"), onclick: move |_| editing.set(true), Icon { name: "pen-line", size: 15 } }
                             for tg in co.tags.iter().cloned() {
                                 span { key: "{tg}", class: "tag", "{tg}" }
                             }
                         }
                         div { class: "row wrap small muted", style: "gap: 6px 16px",
-                            span { class: "row gap-4 num", Icon { name: "hash", size: 14, class: "subtle" } {t("companies.tin")} " {co.tin}" }
-                            span { class: "row gap-4", Icon { name: "map-pin", size: 14, class: "subtle" } "{co.address}" }
-                            a { href: "{tel}", class: "row gap-4 num strong", Icon { name: "phone", size: 14, class: "subtle" } "{phone_s}" }
-                            a { href: "{mail}", class: "row gap-4", Icon { name: "mail", size: 14, class: "subtle" } "{co.email}" }
-                            span { class: "row gap-4", Icon { name: "users", size: 14, class: "subtle" } "{employees}" }
+                            if !co.tin.is_empty() {
+                                span { class: "row gap-4 num", Icon { name: "hash", size: 14, class: "subtle" } {t("companies.tin")} " {co.tin}" }
+                            }
+                            if !co.address.is_empty() {
+                                span { class: "row gap-4", Icon { name: "map-pin", size: 14, class: "subtle" } "{co.address}" }
+                            }
+                            if !co.phone.is_empty() {
+                                a { href: "{tel}", class: "row gap-4 num strong", Icon { name: "phone", size: 14, class: "subtle" } "{phone_s}" }
+                            }
+                            if !co.email.is_empty() {
+                                a { href: "{mail}", class: "row gap-4", Icon { name: "mail", size: 14, class: "subtle" } "{co.email}" }
+                            }
+                            if co.employees > 0 {
+                                span { class: "row gap-4", Icon { name: "users", size: 14, class: "subtle" } "{employees}" }
+                            }
                             if let Some((oname, ohue)) = owner.clone() {
                                 span { class: "row gap-4", Avatar { name: oname.clone(), hue: ohue, size: "xs" } "{oname}" }
                             }
@@ -543,7 +567,7 @@ fn CompanyPage(id: Id) -> Element {
                 div { class: "card kpi",
                     div { class: "kpi-label", span { class: "icon-wrap ic warning", Icon { name: "receipt", size: 15 } } span { class: "truncate", {t("companies.receivable")} } }
                     div { class: "kpi-value", "{recv}" }
-                    Progress { pct, tone: utone, thin: true }
+                    if co.credit_limit > 0 { Progress { pct, tone: utone, thin: true } }
                     div { class: "kpi-foot", span { class: "truncate", "{limit_line}" } }
                 }
                 Kpi { label: t("companies.open_deals"), value: money_short(open_value), icon: "square-kanban", tone: "info",
@@ -661,6 +685,9 @@ fn CompanyPage(id: Id) -> Element {
                     div { class: "card",
                         div { class: "card-head", div { class: "card-title", Icon { name: "contact", size: 16, class: "subtle" } {t("companies.people")} } }
                         div { class: "list", style: "margin-top: 6px",
+                            if co.contacts.is_empty() {
+                                div { class: "list-row small muted", {t("companies.no_people")} }
+                            }
                             for (k, p) in co.contacts.iter().cloned().enumerate() {
                                 {
                                     let tel = fmt::tel_href(&p.phone);
@@ -750,6 +777,189 @@ fn CompanyPage(id: Id) -> Element {
                     }
                 }
             }
+            if editing() {
+                CompanyModal { id: Some(id), onclose: move |_| editing.set(false) }
+            }
+        }
+    }
+}
+
+#[component]
+fn CompanyModal(id: Option<Id>, onclose: EventHandler<()>) -> Element {
+    let init = use_hook(move || id.and_then(|i| DB.peek().company(i).cloned()));
+    let staff: Vec<(Id, String)> = DB
+        .read()
+        .staff
+        .iter()
+        .filter(|s| s.active && matches!(s.role, Role::SalesRep | Role::Manager | Role::Owner))
+        .map(|s| (s.id, s.name.clone()))
+        .collect();
+    let me = DB.peek().settings.me;
+    let i0 = init.clone();
+    let mut name = use_signal(move || i0.as_ref().map(|c| c.name.clone()).unwrap_or_default());
+    let i1 = init.clone();
+    let mut kind = use_signal(move || i1.as_ref().map(|c| c.kind).unwrap_or(OrgKind::Clinic));
+    let i2 = init.clone();
+    let mut tin = use_signal(move || i2.as_ref().map(|c| c.tin.clone()).unwrap_or_default());
+    let i3 = init.clone();
+    let mut address = use_signal(move || i3.as_ref().map(|c| c.address.clone()).unwrap_or_default());
+    let i4 = init.clone();
+    let mut phone_v = use_signal(move || i4.as_ref().map(|c| crm::fmt::phone(&c.phone)).unwrap_or_else(|| "+998 ".into()));
+    let i5 = init.clone();
+    let mut email = use_signal(move || i5.as_ref().map(|c| c.email.clone()).unwrap_or_default());
+    let i6 = init.clone();
+    let mut limit = use_signal(move || i6.as_ref().map(|c| c.credit_limit.to_string()).unwrap_or_else(|| "20000000".into()));
+    let i7 = init.clone();
+    let mut terms = use_signal(move || i7.as_ref().map(|c| c.terms_days.to_string()).unwrap_or_else(|| "30".into()));
+    let i8 = init.clone();
+    let mut owner = use_signal(move || i8.as_ref().and_then(|c| c.owner_id).unwrap_or(me));
+    let tin_dup = {
+        let v = tin().trim().to_string();
+        if v.len() >= 9 { DB.read().companies.iter().find(|c| c.tin == v && Some(c.id) != id).map(|c| c.name.clone()) } else { None }
+    };
+    let lim: i64 = limit().chars().filter(|c| c.is_ascii_digit()).collect::<String>().parse().unwrap_or(0);
+    let valid = !name().trim().is_empty() && tin_dup.is_none();
+    let title = if id.is_some() { t("companies.edit") } else { t("companies.new") };
+    let save = move |_| {
+        let nm = name().trim().to_string();
+        if nm.is_empty() {
+            return;
+        }
+        let lim: i64 = limit().chars().filter(|c| c.is_ascii_digit()).collect::<String>().parse().unwrap_or(0);
+        let days: u16 = terms().chars().filter(|c| c.is_ascii_digit()).collect::<String>().parse().unwrap_or(30);
+        let ph = {
+            let d: String = phone_v().chars().filter(|c| c.is_ascii_digit()).collect();
+            if d.len() <= 3 {
+                String::new()
+            } else {
+                phone_v().trim().to_string()
+            }
+        };
+        let (k, tn, ad, em, ow) = (kind(), tin().trim().to_string(), address().trim().to_string(), email().trim().to_string(), owner());
+        let today = crate::state::today();
+        let log = format!("{}: {nm}", if id.is_some() { t("companies.edit") } else { t("companies.new") });
+        let mut target = 0;
+        mutate(|db| {
+            match id {
+                Some(cid) => {
+                    target = cid;
+                    if let Some(c) = db.company_mut(cid) {
+                        c.name = nm;
+                        c.kind = k;
+                        c.tin = tn;
+                        c.address = ad;
+                        c.phone = ph;
+                        c.email = em;
+                        c.credit_limit = lim;
+                        c.terms_days = days;
+                        c.owner_id = if ow == 0 { None } else { Some(ow) };
+                    }
+                }
+                None => {
+                    let cid = db.new_id();
+                    target = cid;
+                    db.companies.push(Company {
+                        id: cid,
+                        name: nm,
+                        kind: k,
+                        tin: tn,
+                        district: String::new(),
+                        address: ad,
+                        phone: ph,
+                        email: em,
+                        owner_id: if ow == 0 { None } else { Some(ow) },
+                        credit_limit: lim,
+                        terms_days: days,
+                        receivable: 0,
+                        tags: vec![],
+                        created: today,
+                        employees: 0,
+                        contacts: vec![],
+                        notes: String::new(),
+                        health: 70,
+                        daybook_id: None,
+                    });
+                }
+            }
+            db.log(crate::state::now(), log, false);
+        });
+        toast(t("common.saved"), "building-2", "success");
+        onclose.call(());
+        if id.is_none() {
+            go(&format!("/companies/{target}"));
+        }
+    };
+    rsx! {
+        Modal { title, onclose: move |_| onclose.call(()),
+            div { class: "modal-body",
+                div { class: "field",
+                    label { class: "label", {t("companies.name")} }
+                    input {
+                        class: "input",
+                        value: "{name}",
+                        placeholder: t("companies.name_hint"),
+                        oninput: move |e| name.set(e.value()),
+                        onmounted: move |e| async move {
+                            let _ = e.set_focus(true).await;
+                        },
+                    }
+                }
+                div { class: "grid-2",
+                    div { class: "field",
+                        label { class: "label", {t("companies.kind")} }
+                        select { class: "select", onchange: move |e| kind.set(OrgKind::from_slug(&e.value()).unwrap_or(OrgKind::Clinic)),
+                            for k in OrgKind::ALL.iter().copied() {
+                                option { key: "{k.slug()}", value: "{k.slug()}", selected: k == kind(), {t(k.key())} }
+                            }
+                        }
+                    }
+                    div { class: "field",
+                        label { class: "label", {t("companies.tin")} }
+                        input { class: "input num", inputmode: "numeric", value: "{tin}", oninput: move |e| tin.set(e.value()) }
+                        if let Some(n) = tin_dup.clone() {
+                            div { class: "hint tone-warning row gap-4", Icon { name: "triangle-alert", size: 13 } {t("companies.tin_taken")} " {n}" }
+                        }
+                    }
+                }
+                div { class: "field",
+                    label { class: "label", {t("companies.address")} }
+                    input { class: "input", value: "{address}", oninput: move |e| address.set(e.value()) }
+                }
+                div { class: "grid-2",
+                    div { class: "field",
+                        label { class: "label", {t("common.phone")} }
+                        input { class: "input num", r#type: "tel", value: "{phone_v}", oninput: move |e| phone_v.set(e.value()) }
+                    }
+                    div { class: "field",
+                        label { class: "label", "E-mail" }
+                        input { class: "input", r#type: "email", value: "{email}", oninput: move |e| email.set(e.value()) }
+                    }
+                }
+                div { class: "grid-2",
+                    div { class: "field",
+                        label { class: "label", {t("companies.credit_limit")} }
+                        input { class: "input num", inputmode: "numeric", value: "{limit}", oninput: move |e| limit.set(e.value()) }
+                        span { class: "hint", "{money_short(lim)}" }
+                    }
+                    div { class: "field",
+                        label { class: "label", {t("companies.terms")} }
+                        input { class: "input num", inputmode: "numeric", value: "{terms}", oninput: move |e| terms.set(e.value()) }
+                    }
+                }
+                div { class: "field",
+                    label { class: "label", {t("common.owner")} }
+                    select { class: "select", onchange: move |e| owner.set(e.value().parse().unwrap_or(0)),
+                        option { value: "0", selected: owner() == 0, {t("common.unassigned")} }
+                        for (sid, sname) in staff {
+                            option { key: "{sid}", value: "{sid}", selected: sid == owner(), "{sname}" }
+                        }
+                    }
+                }
+            }
+            div { class: "modal-foot",
+                button { class: "btn ghost", onclick: move |_| onclose.call(()), {t("common.cancel")} }
+                button { class: "btn primary", disabled: !valid, onclick: save, Icon { name: "check", size: 16 } {t("common.save")} }
+            }
         }
     }
 }
@@ -795,4 +1005,13 @@ pub const STRINGS: &[Entry] = &[
     ("companies.show_covered", "Mijozlar ro‘yxatida ko‘rish", "Показать в списке клиентов", "Show in customers"),
     ("companies.note_placeholder", "Tashkilot haqida izoh…", "Заметка об организации…", "A note about this company…"),
     ("companies.not_found", "Tashkilot topilmadi", "Организация не найдена", "Company not found"),
+    ("companies.new", "Yangi tashkilot", "Новая организация", "New company"),
+    ("companies.no_people", "Kontakt shaxslar hali qo‘shilmagan", "Контактных лиц пока нет", "No contact persons yet"),
+    ("companies.edit", "Tashkilotni tahrirlash", "Изменить организацию", "Edit company"),
+    ("companies.name", "Tashkilot nomi", "Название организации", "Company name"),
+    ("companies.name_hint", "Masalan: Shifo Nur klinikasi", "Например: клиника «Шифо Нур»", "e.g. Shifo Nur clinic"),
+    ("companies.address", "Manzil", "Адрес", "Address"),
+    ("companies.credit_limit", "Kredit limiti, so‘m", "Кредитный лимит, сум", "Credit limit, so‘m"),
+    ("companies.terms", "To‘lov muddati, kun", "Отсрочка платежа, дней", "Payment terms, days"),
+    ("companies.tin_taken", "Bu STIR allaqachon bor:", "Этот ИНН уже есть:", "This TIN already belongs to"),
 ];
