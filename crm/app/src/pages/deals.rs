@@ -155,6 +155,7 @@ pub fn Deals() -> Element {
     let menu = use_signal(|| None::<Id>);
     let sort = use_signal(|| ("value".to_string(), true));
     let mut status_f = use_signal(|| "open".to_string());
+    let mut cold = use_signal(|| false);
 
     let cards = use_memo(move || {
         let db = DB.read();
@@ -185,9 +186,11 @@ pub fn Deals() -> Element {
     }
     owners.sort_by(|a, b| a.1.cmp(&b.1));
 
+    let cold_n = all.iter().filter(|c| c.rotting).count();
     let ql = q().trim().to_lowercase();
     let shown: Vec<Card> = all
         .iter()
+        .filter(|c| !cold() || c.rotting)
         .filter(|c| owner() == 0 || c.owner_id == owner())
         .filter(|c| ql.is_empty() || c.title.to_lowercase().contains(&ql) || c.org.to_lowercase().contains(&ql))
         .cloned()
@@ -268,6 +271,13 @@ pub fn Deals() -> Element {
                         option { value: "0", selected: owner() == 0, {t("deals.all_owners")} }
                         for (id, name) in owners {
                             option { key: "{id}", value: "{id}", selected: id == owner(), "{name}" }
+                        }
+                    }
+                    if cold_n > 0 {
+                        button { class: if cold() { "chip on" } else { "chip" }, onclick: move |_| cold.toggle(),
+                            Icon { name: "flame", size: 14 }
+                            {t("deals.going_cold")}
+                            span { class: "count", "{cold_n}" }
                         }
                     }
                     if view() == "list" {
@@ -1787,6 +1797,7 @@ pub const STRINGS: &[Entry] = &[
     ("deals.foot_rate", "90 kunda yopilgan: {n}", "закрыто за 90 дней: {n}", "{n} closed in 90 days"),
     ("deals.search", "Bitim yoki tashkilot…", "Сделка или организация…", "Deal or organisation…"),
     ("deals.all_owners", "Barcha mas’ullar", "Все ответственные", "All owners"),
+    ("deals.going_cold", "To‘xtab qolganlar", "Без движения", "Going cold"),
     ("deals.add_here", "Bitim qo‘shish", "Добавить сделку", "Add a deal"),
     ("deals.moved", "Bitim ko‘chirildi", "Сделка перенесена", "Deal moved"),
     ("deals.won_toast", "Bitim yutildi", "Сделка выиграна", "Deal won"),

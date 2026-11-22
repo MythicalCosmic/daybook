@@ -257,6 +257,8 @@ pub fn Waitlist() -> Element {
                             let n = col.len();
                             let value: Money = col.iter().map(|i| i.w.value).sum();
                             let label = t(st.key());
+                            let ids: Vec<Id> = col.iter().map(|i| i.w.id).collect();
+                            let notify_label = t("waitlist.notify_all").replace("{n}", &n.to_string());
                             rsx! {
                                 div { class: "kanban-col", key: "{st.slug()}", style: "flex: 1 0 min(84vw, max(200px, calc(1100px - 100vw))); min-width: 0",
                                     div { class: "kanban-head",
@@ -270,6 +272,12 @@ pub fn Waitlist() -> Element {
                                     }
                                     for it in col {
                                         WaitCard { key: "{it.w.id}", item: it }
+                                    }
+                                    if st == WaitStatus::Arrived && n > 1 {
+                                        button { class: "btn primary sm", onclick: move |_| notify_all(&ids),
+                                            Icon { name: "send", size: 14 }
+                                            "{notify_label}"
+                                        }
                                     }
                                 }
                             }
@@ -400,6 +408,49 @@ fn advance(id: Id, to: WaitStatus) {
         WaitStatus::Cancelled => toast(t("waitlist.toast_cancelled"), "circle-x", ""),
         WaitStatus::Waiting => {}
     }
+}
+
+/// Tells every customer whose medicine has arrived, in one go.
+fn notify_all(ids: &[Id]) {
+    let mut n = 0usize;
+    mutate(|db| {
+        let now = now();
+        let me = db.settings.me;
+        for id in ids {
+            let Some(w) = db.wait_item(*id).cloned() else { continue };
+            if w.status != WaitStatus::Arrived {
+                continue;
+            }
+            let (tg, sms) = db.customer(w.customer_id).map(|c| (c.consent.telegram, c.consent.sms)).unwrap_or((false, false));
+            db.add_activity(Activity {
+                id: 0,
+                kind: ActivityKind::Message,
+                title: format!("{} keldi", w.product_name),
+                notes: String::new(),
+                due: now,
+                done: true,
+                done_at: Some(now),
+                owner_id: me,
+                customer_id: Some(w.customer_id),
+                company_id: None,
+                deal_id: None,
+                ticket_id: None,
+                priority: Priority::Normal,
+                outcome: Some(if !tg && sms { "SMS" } else { "Telegram" }.into()),
+                duration_min: 1,
+                daybook_task: None,
+            });
+            if let Some(x) = db.wait_item_mut(*id) {
+                x.status = WaitStatus::Notified;
+                x.notified_at = Some(now);
+            }
+            n += 1;
+        }
+        if n > 0 {
+            db.log(now, format!("Defektura: {n} ta mijozga xabar"), false);
+        }
+    });
+    toast(t("waitlist.notified_all").replace("{n}", &n.to_string()), "send", "success");
 }
 
 #[component]
@@ -756,6 +807,8 @@ pub const STRINGS: &[Entry] = &[
     ("waitlist.toast_picked", "Mijoz olib ketdi", "Клиент забрал заказ", "Picked up by the customer"),
     ("waitlist.toast_cancelled", "So‘rov bekor qilindi", "Заявка отменена", "Request cancelled"),
     ("waitlist.toast_added", "Defekturaga yozildi", "Добавлено в дефектуру", "Added to the waitlist"),
+    ("waitlist.notify_all", "Hammasiga xabar berish ({n})", "Уведомить всех ({n})", "Notify all ({n})"),
+    ("waitlist.notified_all", "{n} ta mijozga xabar yuborildi", "Уведомлено клиентов: {n}", "{n} customers notified"),
     ("waitlist.notified_ago", "xabar berildi: {t}", "уведомлён: {t}", "notified {t}"),
     ("waitlist.in_stock_now", "Omborga keldi: {n} dona", "Уже в наличии: {n} шт.", "In stock now: {n}"),
     ("waitlist.empty_col", "Bo‘sh", "Пусто", "Empty"),

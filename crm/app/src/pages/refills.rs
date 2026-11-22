@@ -6,7 +6,7 @@ use std::collections::{HashMap, HashSet};
 use chrono::{Datelike, Duration, NaiveDateTime};
 use crm::analytics::{self, RefillDue};
 use crm::fmt;
-use crm::i18n::Entry;
+use crm::i18n::{Entry, Lang};
 use crm::model::*;
 use dioxus::prelude::*;
 
@@ -190,6 +190,10 @@ pub fn Refills() -> Element {
         .map(|(name, n, _)| (name.clone(), *n as f64, format!("{} {}", n, t("refills.packs"))))
         .collect();
 
+    let packs_total: usize = needed.iter().map(|x| x.1).sum();
+    let packs_text = t("refills.packs_total").replace("{n}", &packs_total.to_string()).replace("{v}", &money_short(needed.iter().map(|x| x.2).sum()));
+    // the reminder the next customer gets, shown as it looks on their phone
+    let preview: Option<Row> = base.iter().find(|x| x.r.days_left >= 0 && x.telegram).cloned();
     let due_pairs: Vec<(Id, Id)> =
         base.iter().filter(|x| x.r.days_left >= 0 && x.r.days_left <= lead_days).map(|x| (x.r.customer_id, x.r.product_id)).collect();
     let no_due = due_pairs.is_empty();
@@ -405,13 +409,38 @@ pub fn Refills() -> Element {
                 }
             }
 
-            if !needed_items.is_empty() {
-                div { class: "card",
-                    div { class: "card-head",
-                        div { class: "card-title", Icon { name: "pill-bottle", size: 16, class: "subtle" } {t("refills.most_needed")} }
-                        span { class: "xs muted", {t("refills.kpi_value_foot")} }
+            if !needed_items.is_empty() || preview.is_some() {
+                div { class: "grid-2",
+                    div { class: "card",
+                        div { class: "card-head",
+                            div { class: "card-title", Icon { name: "pill-bottle", size: 16, class: "subtle" } {t("refills.most_needed")} }
+                            span { class: "xs muted", {t("refills.kpi_value_foot")} }
+                        }
+                        div { class: "card-body",
+                            if needed_items.is_empty() {
+                                Empty { icon: "circle-check", title: t("refills.empty") }
+                            } else {
+                                HBars { items: needed_items }
+                            }
+                        }
+                        if packs_total > 0 {
+                            div { class: "card-foot",
+                                span { class: "small muted", "{packs_text}" }
+                                button {
+                                    class: "btn soft sm",
+                                    onclick: move |_| {
+                                        mutate(|db| db.log(crate::state::now(), format!("Daybook xarid so‘rovi: dori radari, {packs_total} qadoq"), false));
+                                        toast(t("products.purchasing_sent"), "send", "success");
+                                    },
+                                    Icon { name: "send", size: 14 }
+                                    {t("products.to_purchasing")}
+                                }
+                            }
+                        }
                     }
-                    div { class: "card-body", HBars { items: needed_items } }
+                    if let Some(p) = preview {
+                        TelegramPreview { row: p }
+                    }
                 }
             }
         }
@@ -472,6 +501,9 @@ fn RefillItem(row: Row) -> Element {
                     div { class: "row gap-8 wrap only-mobile", style: "margin-top: 4px",
                         Badge { text: due_text.clone(), tone, dot: true }
                         span { class: "xs {stock_cls}", "{stock_text}" }
+                        if let Some(h) = held.clone() {
+                            span { class: "badge success sm", Icon { name: "package-check", size: 12 } "{h}" }
+                        }
                     }
                 }
             }
@@ -491,15 +523,15 @@ fn RefillItem(row: Row) -> Element {
                     span { style: "width: 6px; height: 6px; border-radius: 99px; background: currentColor; display: inline-block" }
                     "{stock_text}"
                 }
+                if let Some(h) = held {
+                    span { class: "badge success sm", Icon { name: "package-check", size: 12 } "{h}" }
+                }
             }
             div { class: "hide-mobile stack gap-4", style: "width: 170px",
                 span { class: "xs subtle upper", {t("refills.last_call")} }
                 span { class: outcome_cls, "{outcome}" }
             }
-            div { class: "row gap-4", style: "margin-left: auto",
-                if let Some(h) = held {
-                    span { class: "badge success sm", Icon { name: "package-check", size: 12 } "{h}" }
-                }
+            div { class: "row gap-4", style: "margin-left: auto; min-width: 214px; justify-content: flex-end",
                 if row.reachable {
                     button {
                         class: remind_cls,
@@ -536,6 +568,66 @@ fn RefillItem(row: Row) -> Element {
                     onclick: move |_| snooze(cid, pid),
                     Icon { name: "alarm-clock", size: 15 }
                 }
+            }
+        }
+    }
+}
+
+const TG_BUTTON: &str = "flex: 1; text-align: center; padding: 8px 6px; border-radius: 10px; background: rgb(255 255 255 / .78); color: #2b79c2; font-size: 12.5px; font-weight: 650";
+
+/// The refill reminder exactly as the customer reads it in Telegram, in their own language.
+#[component]
+fn TelegramPreview(row: Row) -> Element {
+    let today = today();
+    let (first, clang, company) = {
+        let db = DB.read();
+        let c = db.customer(row.r.customer_id);
+        (c.map(|c| c.first_name.clone()).unwrap_or_default(), c.map(|c| c.lang).unwrap_or(Lang::Uz), db.settings.company_name.clone())
+    };
+    let when = fmt::due_in(row.r.due, today, clang);
+    let product = row.product.clone();
+    let branch = row.branch.clone();
+    let uz_msg = format!("Assalomu alaykum, {first}! {product} {when} tugaydi. {company} {branch} filialida siz uchun qadoq tayyor. Bron qilib qo‘yaylikmi?");
+    let (msg, b1, b2): (String, String, String) = match clang {
+        Lang::Ru => (
+            format!("Здравствуйте, {first}! {product} закончится {when}. В аптеке {company} ({branch}) для вас уже готова упаковка. Забронировать?"),
+            "Забронировать".into(),
+            "Доставить домой".into(),
+        ),
+        Lang::En => (
+            format!("Hello {first}! Your {product} runs out {when}. A pack is waiting for you at {company} {branch}. Shall we hold it?"),
+            "Hold it for me".into(),
+            "Deliver it".into(),
+        ),
+        Lang::UzCyrl => (crm::i18n::to_cyrillic(&uz_msg), crm::i18n::to_cyrillic("Bron qilish"), crm::i18n::to_cyrillic("Uyga yetkazish")),
+        Lang::Uz => (uz_msg.clone(), "Bron qilish".into(), "Uyga yetkazish".into()),
+    };
+    let lang_name = clang.native_name();
+    rsx! {
+        div { class: "card",
+            div { class: "card-head",
+                div { class: "card-title", Icon { name: "send", size: 16, class: "tone-info" } {t("refills.preview_title")} }
+                span { class: "badge info", Icon { name: "languages", size: 12 } "{lang_name}" }
+            }
+            div { class: "card-body stack gap-12", style: "align-items: center",
+                div { class: "phone-mock",
+                    div { class: "phone-screen", style: "min-height: 360px",
+                        div { class: "row gap-8", style: "padding-bottom: 10px; border-bottom: 1px solid rgb(0 0 0 / .07); color: #1c1916",
+                            div { class: "brand-mark", style: "width: 30px; height: 30px; border-radius: 99px", Icon { name: "heart-pulse", size: 15 } }
+                            div {
+                                div { class: "small strong", "{company}" }
+                                div { class: "xs", style: "opacity: .55", "Telegram bot" }
+                            }
+                        }
+                        span { class: "spacer" }
+                        div { class: "tg-bubble", "{msg}" }
+                        div { class: "row gap-4", style: "width: 92%",
+                            span { style: TG_BUTTON, "{b1}" }
+                            span { style: TG_BUTTON, "{b2}" }
+                        }
+                    }
+                }
+                div { class: "xs muted center", style: "max-width: 340px", {t("refills.preview_hint")} }
             }
         }
     }
@@ -730,8 +822,11 @@ pub const STRINGS: &[Entry] = &[
     ("refills.reminded_today", "Bugun eslatilgan mijozlar", "Напомнили сегодня", "Reminded today"),
     ("refills.auto_note", "Avtomatlashtirish dori tugashidan {n} kun oldin Telegramda o‘zi eslatadi. Bu yerda esa qo‘lda nazorat qilasiz.", "Автоматизация сама напоминает в Telegram за {n} дн. до конца лекарства. Здесь вы контролируете вручную.", "An automation reminds on Telegram {n} days before a medicine runs out. The radar is for hands-on follow-up."),
     ("refills.open_automation", "Sozlash", "Настроить", "Set up"),
+    ("refills.preview_title", "Mijozga boradigan xabar", "Что получит клиент", "What the customer receives"),
+    ("refills.preview_hint", "Mijozning o‘z tilida: avtomatlashtirish yoki «Eslatish» tugmasi yuboradi", "На языке клиента: отправит автоматизация или кнопка «Напомнить»", "In the customer’s own language, sent by the automation or the Remind button"),
     ("refills.most_needed", "Eng ko‘p kerak bo‘ladigan dorilar", "Самые нужные лекарства", "Most needed medicines"),
     ("refills.packs", "qadoq", "уп.", "packs"),
+    ("refills.packs_total", "Jami {n} qadoq · {v}", "Всего {n} уп. · {v}", "{n} packs in total · {v}"),
     ("refills.empty", "Bu filtrlar bo‘yicha hech kimning dorisi tugamayapti", "По этим фильтрам ни у кого не заканчиваются лекарства", "No one runs out of medicine with these filters"),
     ("refills.empty_text", "Boshqa kun, kasallik yoki filialni tanlang.", "Выберите другой день, заболевание или филиал.", "Pick another day, condition or branch."),
     ("refills.show_more", "Yana {n} ta ko‘rsatish", "Показать ещё {n}", "Show {n} more"),
