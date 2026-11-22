@@ -168,6 +168,17 @@ pub fn Products() -> Element {
         t("products.demo_banner")
     };
     let more_label = t("products.show_more").replace("{n}", &hidden.to_string());
+    // catalogue health at a glance
+    let stock_value: Money = all.iter().map(|r| r.price * r.total as Money).sum();
+    let packs: u32 = all.iter().map(|r| r.total).sum();
+    let gaps = all.iter().map(|r| r.stock.iter().filter(|s| s.1 == 0).count()).sum::<usize>();
+    let gap_products = all.iter().filter(|r| r.stock.iter().any(|s| s.1 == 0)).count();
+    let expiring_rows: Vec<&Row> = all.iter().filter(|r| r.days_to_expiry < 120).collect();
+    let expiry_value: Money = expiring_rows.iter().map(|r| r.price * r.total as Money).sum();
+    let waiting_total: usize = all.iter().map(|r| r.waiting).sum();
+    let packs_foot = t("products.kpi_value_foot").replace("{n}", &fmt::num(packs as i64));
+    let gaps_foot = t("products.kpi_gaps_foot").replace("{n}", &gap_products.to_string());
+    let expiry_foot = t("products.kpi_expiry_foot").replace("{n}", &expiring_rows.len().to_string());
     let headers: Vec<(&'static str, String, &'static str)> = vec![
         ("name", t("common.product"), ""),
         ("category", t("products.col_category"), "m-hide"),
@@ -180,6 +191,19 @@ pub fn Products() -> Element {
     rsx! {
         div { class: "page",
             PageHeader { title: t("nav.products"), subtitle }
+
+            div { class: "grid-4",
+                Kpi { label: t("products.kpi_value"), value: money_short(stock_value), icon: "warehouse", foot: packs_foot }
+                Kpi { label: t("products.kpi_gaps"), value: fmt::num(gaps as i64), icon: "package", tone: "warning", foot: gaps_foot,
+                    onclick: move |_| low.set(true),
+                }
+                Kpi { label: t("products.kpi_expiry"), value: money_short(expiry_value), icon: "calendar-x", tone: "danger", foot: expiry_foot,
+                    onclick: move |_| expiring.set(true),
+                }
+                Kpi { label: t("products.kpi_waiting"), value: fmt::num(waiting_total as i64), icon: "hourglass", tone: "info", foot: t("products.kpi_waiting_foot"),
+                    onclick: move |_| go("/waitlist"),
+                }
+            }
 
             div { class: "card tinted", style: "padding: 12px 16px",
                 div { class: "row gap-12 wrap",
@@ -647,6 +671,14 @@ fn ProductDrawer(id: Id, onclose: EventHandler<()>) -> Element {
 
 pub const STRINGS: &[Entry] = &[
     ("products.sub", "{n} ta mahsulot · {m} ta filialdagi qoldiq", "Товаров: {n} · остатки в {m} филиалах", "{n} products · stock across {m} branches"),
+    ("products.kpi_value", "Javondagi tovar qiymati", "Товар на полках", "Stock at retail value"),
+    ("products.kpi_value_foot", "{n} qadoq 6 ta filialda", "{n} уп. в 6 филиалах", "{n} packs in 6 branches"),
+    ("products.kpi_gaps", "Javondagi bo‘shliqlar", "Пустые полки", "Shelf gaps"),
+    ("products.kpi_gaps_foot", "{n} ta mahsulot biror filialda yo‘q", "товаров нет хотя бы в одном филиале: {n}", "{n} products missing in a branch"),
+    ("products.kpi_expiry", "Muddati yaqin tovar", "Скоро истекает", "Expiry risk"),
+    ("products.kpi_expiry_foot", "{n} ta mahsulot 120 kun ichida", "товаров в течение 120 дней: {n}", "{n} products within 120 days"),
+    ("products.kpi_waiting", "Defekturada kutmoqda", "Ждут в дефектуре", "Customers waiting"),
+    ("products.kpi_waiting_foot", "katalogdagi dorilar uchun", "по товарам каталога", "for catalogue products"),
     ("products.synced", "Daybook omboridan sinxronlanadi", "Синхронизируется со складом Daybook", "Synced from Daybook stock"),
     ("products.last_sync", "oxirgi sinxronlash: {t}", "последняя синхронизация: {t}", "last sync {t}"),
     ("products.demo_banner", "Demo katalog. Daybook ulansa, mahsulotlar va qoldiqlar uning omboridan avtomatik keladi.", "Демо-каталог. После подключения Daybook товары и остатки подтянутся с его склада.", "Demo catalogue. Once Daybook is connected, products and stock come straight from its warehouse."),

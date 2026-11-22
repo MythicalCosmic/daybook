@@ -449,6 +449,7 @@ pub fn Refills() -> Element {
 
 #[component]
 fn RefillItem(row: Row) -> Element {
+    let mut open = use_signal(|| false);
     let l = lang();
     let today = today();
     let r = row.r.clone();
@@ -485,6 +486,11 @@ fn RefillItem(row: Row) -> Element {
     let call_cls = if row.call_planned { "icon-btn sm bordered tone-success" } else { "icon-btn sm bordered" };
     let reserve_title = t("refills.reserve");
     let snooze_title = t("refills.snooze");
+    let details_title = t("common.details");
+    let chevron: &'static str = if open() { "chevron-up" } else { "chevron-down" };
+    // privacy mode hides health data on screen
+    let private = DB.read().settings.privacy_mode;
+    let health_cls = if private { "hide-mobile stack gap-4 mask" } else { "hide-mobile stack gap-4" };
     rsx! {
         div { class: "list-row", style: "flex-wrap: wrap; row-gap: 10px",
             div { class: "row gap-12 grow", style: "min-width: 200px; flex-basis: 220px; cursor: pointer", onclick: move |_| go(&format!("/contacts/{cid}")),
@@ -507,7 +513,7 @@ fn RefillItem(row: Row) -> Element {
                     }
                 }
             }
-            div { class: "hide-mobile stack gap-4", style: "width: 150px; align-items: flex-start",
+            div { class: health_cls, style: "width: 150px; align-items: flex-start",
                 Badge { text: condition, tone: "info" }
                 if !row.dose.is_empty() {
                     span { class: "xs subtle truncate", style: "max-width: 100%", "{row.dose}" }
@@ -531,7 +537,7 @@ fn RefillItem(row: Row) -> Element {
                 span { class: "xs subtle upper", {t("refills.last_call")} }
                 span { class: outcome_cls, "{outcome}" }
             }
-            div { class: "row gap-4", style: "margin-left: auto; min-width: 206px; justify-content: flex-end",
+            div { class: "row gap-4", style: "margin-left: auto; min-width: 240px; justify-content: flex-end",
                 if row.reachable {
                     button {
                         class: remind_cls,
@@ -567,6 +573,99 @@ fn RefillItem(row: Row) -> Element {
                     title: "{snooze_title}",
                     onclick: move |_| snooze(cid, pid),
                     Icon { name: "alarm-clock", size: 15 }
+                }
+                button { class: "icon-btn sm", title: "{details_title}", onclick: move |_| open.toggle(), Icon { name: chevron, size: 16 } }
+            }
+            if open() {
+                RefillDetails { cid, pid }
+            }
+        }
+    }
+}
+
+/// What a pharmacist checks before calling: the regimen, recent purchases of this medicine,
+/// how to reach the customer and their allergies.
+#[component]
+fn RefillDetails(cid: Id, pid: Id) -> Element {
+    let l = lang();
+    let now = now();
+    let today = now.date();
+    let (regimen, buys, tel, tg, allergies, private) = {
+        let db = DB.read();
+        let c = db.customer(cid);
+        let regimen = c.and_then(|c| c.regimens.iter().find(|g| g.product_id == pid).cloned());
+        let mut buys: Vec<(NaiveDateTime, String, u32)> = db
+            .purchases
+            .iter()
+            .filter(|p| p.customer_id == cid)
+            .filter_map(|p| {
+                let q: u32 = p.items.iter().filter(|i| i.product_id == pid).map(|i| i.qty).sum();
+                if q > 0 { Some((p.at, db.branch_name(Some(p.branch_id)), q)) } else { None }
+            })
+            .collect();
+        buys.sort_by(|a, b| b.0.cmp(&a.0));
+        buys.truncate(4);
+        (
+            regimen,
+            buys,
+            c.map(|c| c.phone.clone()).unwrap_or_default(),
+            c.and_then(|c| c.telegram.clone()),
+            c.map(|c| c.allergies.join(", ")).unwrap_or_default(),
+            db.settings.privacy_mode,
+        )
+    };
+    let tel_text = phone(&tel);
+    let href = crm::fmt::tel_href(&tel);
+    let mask = if private { "mask" } else { "" };
+    rsx! {
+        div { class: "grid-3", style: "flex-basis: 100%; gap: 10px; padding: 12px; border-radius: 12px; background: var(--c-surface-2)",
+            div { class: "stack gap-4 {mask}",
+                span { class: "xs subtle upper", {t("refills.d_regimen")} }
+                if let Some(g) = regimen.clone() {
+                    {
+                        let pack = t("refills.d_pack").replace("{n}", &g.pack_days.to_string());
+                        let last = fmt::date(g.last_bought, today, l);
+                        let next = fmt::due_in(g.next_due(), today, l);
+                        rsx! {
+                            span { class: "small strong", "{g.dose}" }
+                            span { class: "small muted", "{pack}" }
+                            span { class: "small", {t("refills.d_last")} ": " b { "{last}" } }
+                            span { class: "small", {t("refills.d_next")} ": " b { "{next}" } }
+                        }
+                    }
+                }
+            }
+            div { class: "stack gap-4",
+                span { class: "xs subtle upper", {t("refills.d_history")} }
+                if buys.is_empty() {
+                    span { class: "small muted", {t("refills.d_none")} }
+                }
+                for (i, (at, branch, q)) in buys.into_iter().enumerate() {
+                    {
+                        let when = fmt::relative(at, now, l);
+                        rsx! {
+                            span { key: "{i}", class: "small row gap-8",
+                                Icon { name: "shopping-bag", size: 12, class: "subtle" }
+                                span { class: "grow truncate", "{when} · {branch}" }
+                                span { class: "num muted", "×{q}" }
+                            }
+                        }
+                    }
+                }
+            }
+            div { class: "stack gap-8",
+                span { class: "xs subtle upper", {t("refills.d_contact")} }
+                div { class: "row gap-8 wrap",
+                    a { class: "btn sm", href: "{href}", Icon { name: "phone", size: 14 } span { class: "num", "{tel_text}" } }
+                    if let Some(h) = tg {
+                        span { class: "badge info", Icon { name: "send", size: 12 } "{h}" }
+                    }
+                }
+                if !allergies.is_empty() {
+                    div { class: "callout danger {mask}", style: "padding: 8px 10px",
+                        Icon { name: "triangle-alert", size: 14 }
+                        span { class: "small", {t("tickets.allergies")} ": {allergies}" }
+                    }
                 }
             }
         }
@@ -824,6 +923,13 @@ pub const STRINGS: &[Entry] = &[
     ("refills.open_automation", "Sozlash", "Настроить", "Set up"),
     ("refills.preview_title", "Mijozga boradigan xabar", "Что получит клиент", "What the customer receives"),
     ("refills.preview_hint", "Mijozning o‘z tilida: avtomatlashtirish yoki «Eslatish» tugmasi yuboradi", "На языке клиента: отправит автоматизация или кнопка «Напомнить»", "In the customer’s own language, sent by the automation or the Remind button"),
+    ("refills.d_regimen", "Davolanish tartibi", "Схема приёма", "Regimen"),
+    ("refills.d_pack", "Bir qadoq {n} kunga yetadi", "Упаковки хватает на {n} дн.", "One pack lasts {n} days"),
+    ("refills.d_last", "Oxirgi xarid", "Последняя покупка", "Last bought"),
+    ("refills.d_next", "Tugaydi", "Закончится", "Runs out"),
+    ("refills.d_history", "Shu dorining xaridlari", "Покупки этого лекарства", "Purchases of this medicine"),
+    ("refills.d_none", "Xarid yozilmagan", "Покупок нет", "No purchases recorded"),
+    ("refills.d_contact", "Aloqa", "Связь", "Contact"),
     ("refills.most_needed", "Eng ko‘p kerak bo‘ladigan dorilar", "Самые нужные лекарства", "Most needed medicines"),
     ("refills.packs", "qadoq", "уп.", "packs"),
     ("refills.packs_total", "Jami {n} qadoq · {v}", "Всего {n} уп. · {v}", "{n} packs in total · {v}"),
