@@ -1242,6 +1242,34 @@ fn CustomerMini(cid: u32) -> Element {
     let health = c.consent.health_data;
     let mask = if privacy { "mask" } else { "" };
     let sub_line = format!("{branch} · {last_visit}");
+    let task_title = format!("{}: {}", name, t("inbox.callback_title"));
+    let callback = move |_| {
+        let now = crate::state::now();
+        let title = task_title.clone();
+        let due = (now.date() + Duration::days(1)).and_hms_opt(10, 0, 0).unwrap_or(now);
+        mutate(move |db| {
+            let me = db.settings.me;
+            db.add_activity(Activity {
+                id: 0,
+                kind: ActivityKind::Call,
+                title,
+                notes: String::new(),
+                due,
+                done: false,
+                done_at: None,
+                owner_id: me,
+                customer_id: Some(cid),
+                company_id: None,
+                deal_id: None,
+                ticket_id: None,
+                priority: Priority::Normal,
+                outcome: None,
+                duration_min: 5,
+                daybook_task: None,
+            });
+        });
+        toast(t("inbox.callback_saved"), "phone-call", "success");
+    };
     rsx! {
         div { class: "stack gap-16", style: "padding: 18px",
             div { class: "stack gap-8", style: "align-items: center; text-align: center",
@@ -1312,9 +1340,15 @@ fn CustomerMini(cid: u32) -> Element {
                     }
                 }
             }
-            button { class: "btn block", onclick: move |_| go(&format!("/contacts/{cid}")),
-                Icon { name: "contact", size: 16 }
-                {t("inbox.open_customer")}
+            div { class: "grid-2", style: "gap: 8px",
+                button { class: "btn sm", onclick: callback,
+                    Icon { name: "phone-call", size: 14 }
+                    {t("inbox.callback")}
+                }
+                button { class: "btn sm", onclick: move |_| go(&format!("/contacts/{cid}")),
+                    Icon { name: "contact", size: 14 }
+                    {t("inbox.open_customer")}
+                }
             }
         }
     }
@@ -1615,7 +1649,10 @@ pub const STRINGS: &[Entry] = &[
     ("inbox.last_purchases", "Oxirgi xaridlar", "Последние покупки", "Recent purchases"),
     ("inbox.open_tickets", "Ochiq murojaatlar", "Открытые обращения", "Open tickets"),
     ("inbox.no_open_tickets", "Ochiq murojaat yo‘q", "Открытых обращений нет", "No open tickets"),
-    ("inbox.open_customer", "Mijoz kartasini ochish", "Открыть карточку клиента", "Open customer"),
+    ("inbox.open_customer", "Mijoz kartasi", "Карточка клиента", "Customer card"),
+    ("inbox.callback", "Ertaga qo‘ng‘iroq", "Перезвонить завтра", "Call tomorrow"),
+    ("inbox.callback_title", "qayta qo‘ng‘iroq", "перезвонить", "call back"),
+    ("inbox.callback_saved", "Ertaga 10:00 ga qo‘ng‘iroq vazifasi qo‘shildi", "Задача перезвонить завтра в 10:00 добавлена", "Call-back task added for tomorrow 10:00"),
     ("inbox.lead_info", "Lid haqida", "О лиде", "About the lead"),
     ("inbox.interest", "Qiziqish", "Интерес", "Interest"),
     ("inbox.estimate", "Taxminiy summa", "Оценка суммы", "Estimate"),

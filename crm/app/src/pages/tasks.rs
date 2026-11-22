@@ -109,6 +109,155 @@ fn send_to_daybook(id: Id) {
     toast(format!("{} · #{pseudo}", t("tasks.sent_daybook")), "send-horizontal", "success");
 }
 
+
+/// The task open in the detail drawer (shared by Tasks and Calendar).
+static OPEN_TASK: GlobalSignal<Option<Id>> = Signal::global(|| None);
+
+const OUTCOMES: [&str; 4] = ["tasks.out_reserved", "tasks.out_reminded", "tasks.out_no_answer", "tasks.out_callback"];
+
+#[component]
+fn TaskDrawer(id: u32) -> Element {
+    let src = DB.peek().activity(id).cloned();
+    let mut title = use_signal(|| src.as_ref().map(|a| a.title.clone()).unwrap_or_default());
+    let mut kind = use_signal(|| src.as_ref().map(|a| a.kind).unwrap_or(ActivityKind::Task));
+    let mut due = use_signal(|| src.as_ref().map(|a| a.due.format("%Y-%m-%dT%H:%M").to_string()).unwrap_or_default());
+    let mut priority = use_signal(|| src.as_ref().map(|a| a.priority).unwrap_or(Priority::Normal));
+    let mut owner = use_signal(|| src.as_ref().map(|a| a.owner_id).unwrap_or(0));
+    let mut notes = use_signal(|| src.as_ref().map(|a| a.notes.clone()).unwrap_or_default());
+    let mut outcome = use_signal(|| src.as_ref().and_then(|a| a.outcome.clone()).unwrap_or_default());
+    if src.is_none() {
+        return rsx! {};
+    }
+    let (done, daybook, rel, staff, created_line) = {
+        let db = DB.read();
+        let a = db.activity(id);
+        let staff: Vec<(Id, String)> = db.staff.iter().filter(|s| s.active).map(|s| (s.id, s.name.clone())).collect();
+        let line = a.map(|a| format!("{} · {}", t(a.kind.key()), db.staff_name(Some(a.owner_id)))).unwrap_or_default();
+        (a.map(|a| a.done).unwrap_or(false), a.and_then(|a| a.daybook_task), a.and_then(|a| related(&db, a)), staff, line)
+    };
+    let close = move || *OPEN_TASK.write() = None;
+    let save = move |_| {
+        let when = NaiveDateTime::parse_from_str(&due(), "%Y-%m-%dT%H:%M").ok();
+        let (ti, k, p, o, n, out) = (title().trim().to_string(), kind(), priority(), owner(), notes(), outcome().trim().to_string());
+        mutate(move |db| {
+            if let Some(a) = db.activity_mut(id) {
+                if !ti.is_empty() {
+                    a.title = ti;
+                }
+                a.kind = k;
+                a.priority = p;
+                if o != 0 {
+                    a.owner_id = o;
+                }
+                a.notes = n;
+                a.outcome = if out.is_empty() { None } else { Some(out) };
+                if let Some(w) = when {
+                    a.due = w;
+                }
+            }
+        });
+        toast(t("common.saved"), "save", "success");
+        *OPEN_TASK.write() = None;
+    };
+    let icon = crm::db::activity_icon(kind());
+    let head = title();
+    let done_label = if done { t("tasks.reopen") } else { t("tasks.mark_done") };
+    let done_icon: &'static str = if done { "rotate-ccw" } else { "circle-check" };
+    let outcome_chips: Vec<String> = OUTCOMES.iter().map(|k| t(k)).collect();
+    rsx! {
+        Drawer { title: head, icon: Some(icon), onclose: move |_| close(),
+            div { class: "drawer-body",
+                div { class: "row wrap gap-8",
+                    if done { Badge { text: t("common.done"), tone: "success", icon: Some("check") } } else { Badge { text: t("common.open"), tone: "accent", dot: true } }
+                    if daybook.is_some() { Badge { text: "Daybook", tone: "info", icon: Some("link-2") } }
+                    span { class: "xs muted", "{created_line}" }
+                }
+                div { class: "field",
+                    label { class: "label", {t("tasks.title")} }
+                    input { class: "input", value: "{title}", oninput: move |e| title.set(e.value()) }
+                }
+                div { class: "grid-2",
+                    div { class: "field",
+                        label { class: "label", {t("tasks.kind")} }
+                        select { class: "select", onchange: move |e| kind.set(ActivityKind::from_slug(&e.value()).unwrap_or(ActivityKind::Task)),
+                            for k in ActivityKind::ALL.iter().copied() {
+                                option { key: "{k.slug()}", value: "{k.slug()}", selected: k == kind(), {t(k.key())} }
+                            }
+                        }
+                    }
+                    div { class: "field",
+                        label { class: "label", {t("tasks.priority")} }
+                        select { class: "select", onchange: move |e| priority.set(Priority::from_slug(&e.value()).unwrap_or(Priority::Normal)),
+                            for p in Priority::ALL.iter().copied() {
+                                option { key: "{p.slug()}", value: "{p.slug()}", selected: p == priority(), {t(p.key())} }
+                            }
+                        }
+                    }
+                    div { class: "field",
+                        label { class: "label", {t("tasks.due")} }
+                        input { class: "input", r#type: "datetime-local", value: "{due}", oninput: move |e| due.set(e.value()) }
+                    }
+                    div { class: "field",
+                        label { class: "label", {t("common.owner")} }
+                        select { class: "select", onchange: move |e| owner.set(e.value().parse().unwrap_or(0)),
+                            for (sid, name) in staff {
+                                option { key: "{sid}", value: "{sid}", selected: sid == owner(), "{name}" }
+                            }
+                        }
+                    }
+                }
+                if let Some((label, route, ricon)) = rel {
+                    div { class: "row gap-12", style: "padding: 12px 14px; border-radius: 12px; border: 1px solid var(--c-border)",
+                        IconTile { icon: ricon, tone: "info", size: "sm" }
+                        span { class: "grow strong small truncate", "{label}" }
+                        button {
+                            class: "btn sm",
+                            onclick: move |_| {
+                                *OPEN_TASK.write() = None;
+                                go(&route);
+                            },
+                            {t("common.see")}
+                            Icon { name: "arrow-right", size: 14 }
+                        }
+                    }
+                }
+                div { class: "field",
+                    label { class: "label", {t("common.notes")} }
+                    textarea { class: "textarea", rows: "3", value: "{notes}", placeholder: t("tasks.notes_hint"), oninput: move |e| notes.set(e.value()) }
+                }
+                div { class: "field",
+                    label { class: "label", {t("tasks.outcome")} }
+                    input { class: "input", value: "{outcome}", placeholder: t("tasks.outcome_hint"), oninput: move |e| outcome.set(e.value()) }
+                    div { class: "row wrap gap-4", style: "margin-top: 4px",
+                        for (k, chip) in outcome_chips.into_iter().enumerate() {
+                            button { key: "{k}", class: "chip", style: "height: 26px; font-size: 12px", onclick: move |_| outcome.set(chip.clone()), "{chip}" }
+                        }
+                    }
+                }
+            }
+            div { class: "drawer-foot", style: "justify-content: space-between",
+                button {
+                    class: "btn ghost danger",
+                    onclick: move |_| {
+                        mutate(|db| db.activities.retain(|a| a.id != id));
+                        toast(t("tasks.deleted"), "trash-2", "");
+                        *OPEN_TASK.write() = None;
+                    },
+                    Icon { name: "trash-2", size: 16 }
+                    span { class: "hide-mobile", {t("common.delete")} }
+                }
+                div { class: "row gap-8",
+                    if daybook.is_none() && !done {
+                        button { class: "btn hide-mobile", onclick: move |_| send_to_daybook(id), Icon { name: "send-horizontal", size: 16 } "Daybook" }
+                    }
+                    button { class: "btn", onclick: move |_| toggle_done(id), Icon { name: done_icon, size: 16 } "{done_label}" }
+                    button { class: "btn primary", onclick: save, Icon { name: "check", size: 16 } {t("common.save")} }
+                }
+            }
+        }
+    }
+}
+
 // ---------------------------------------------------------------- one row (tasks and agenda)
 
 #[component]
@@ -136,8 +285,16 @@ fn ActivityRow(r: TaskRow, #[props(default)] compact: bool) -> Element {
     let kind_label = t(r.kind.key());
     let daybook_label = t("tasks.send_daybook");
     rsx! {
-        div { class: "list-row",
-            button { class: check_cls, title: "{kind_label}", onclick: move |_| toggle_done(id), Icon { name: "check", size: 13 } }
+        div { class: "list-row click", onclick: move |_| *OPEN_TASK.write() = Some(id),
+            button {
+                class: check_cls,
+                title: "{kind_label}",
+                onclick: move |e| {
+                    e.stop_propagation();
+                    toggle_done(id);
+                },
+                Icon { name: "check", size: 13 }
+            }
             span { class: "hide-mobile", IconTile { icon, tone, size: "sm" } }
             div { class: "meta",
                 span { class: "title small", style: "{title_style}", "{r.title}" }
@@ -164,7 +321,15 @@ fn ActivityRow(r: TaskRow, #[props(default)] compact: bool) -> Element {
             if r.daybook.is_some() {
                 span { class: "hide-mobile", Badge { text: "Daybook", tone: "info", icon: Some("link-2") } }
             } else if !r.done {
-                button { class: "icon-btn sm hide-mobile", title: "{daybook_label}", onclick: move |_| send_to_daybook(id), Icon { name: "send-horizontal", size: 15 } }
+                button {
+                    class: "icon-btn sm hide-mobile",
+                    title: "{daybook_label}",
+                    onclick: move |e| {
+                        e.stop_propagation();
+                        send_to_daybook(id);
+                    },
+                    Icon { name: "send-horizontal", size: 15 }
+                }
             }
             Avatar { name: r.owner.clone(), hue: Some(r.owner_hue), size: "xs" }
         }
@@ -443,6 +608,9 @@ pub fn Tasks() -> Element {
             }
             div { class: "callout", Icon { name: "link-2", size: 16 } span { {t("tasks.daybook_note")} } }
         }
+        if let Some(open) = OPEN_TASK() {
+            TaskDrawer { key: "{open}", id: open }
+        }
     }
 }
 
@@ -665,6 +833,9 @@ pub fn Calendar() -> Element {
                 span { span { class: "sw", style: "background: var(--c-primary)" } {t("activity.task")} }
             }
         }
+        if let Some(open) = OPEN_TASK() {
+            TaskDrawer { key: "{open}", id: open }
+        }
     }
 }
 
@@ -702,4 +873,18 @@ pub const STRINGS: &[Entry] = &[
     ("tasks.cal_week", "Hafta", "Неделя", "Week"),
     ("tasks.cal_free", "Bu kunga reja yo‘q", "На этот день ничего не запланировано", "Nothing planned for this day"),
     ("tasks.prev", "Oldingi", "Назад", "Previous"),
+    ("tasks.title", "Vazifa", "Задача", "Task"),
+    ("tasks.kind", "Turi", "Тип", "Type"),
+    ("tasks.priority", "Muhimlik", "Приоритет", "Priority"),
+    ("tasks.due", "Muddat", "Срок", "Due"),
+    ("tasks.notes_hint", "Qo‘shimcha ma’lumot, masalan: ertalab qo‘ng‘iroq qilmang", "Подробности, например: не звонить утром", "Details, e.g. don’t call in the morning"),
+    ("tasks.outcome", "Natija", "Результат", "Outcome"),
+    ("tasks.outcome_hint", "Nima bo‘ldi? Masalan: bron qilindi", "Чем закончилось? Например: забронировано", "What happened? For example: reserved"),
+    ("tasks.out_reserved", "Bron qilindi", "Забронировано", "Reserved"),
+    ("tasks.out_reminded", "Eslatildi, ertaga keladi", "Напомнили, придёт завтра", "Reminded, coming tomorrow"),
+    ("tasks.out_no_answer", "Javob bermadi", "Не ответил", "No answer"),
+    ("tasks.out_callback", "Qayta qo‘ng‘iroq so‘radi", "Просил перезвонить", "Asked for a call back"),
+    ("tasks.mark_done", "Bajarildi deb belgilash", "Отметить выполненной", "Mark done"),
+    ("tasks.reopen", "Qayta ochish", "Открыть снова", "Reopen"),
+    ("tasks.deleted", "Vazifa o‘chirildi", "Задача удалена", "Task deleted"),
 ];

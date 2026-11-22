@@ -158,13 +158,13 @@ pub fn Automations() -> Element {
             (
                 refill.map(|a| a.id),
                 "repeat",
-                t("auto.hero_refill"),
+                t("automations.hero_refill"),
                 refill
-                    .map(|a| t("auto.hero_refill_stat").replace("{n}", &fmt::num(a.runs as i64)).replace("{p}", &fmt::pct(a.conversions as f64 / a.runs.max(1) as f64 * 100.0, l)))
+                    .map(|a| t("automations.hero_refill_stat").replace("{n}", &fmt::num(a.runs as i64)).replace("{p}", &fmt::pct(a.conversions as f64 / a.runs.max(1) as f64 * 100.0, l)))
                     .unwrap_or_default(),
             ),
-            (day3.map(|a| a.id), "pill", t("auto.hero_day3"), day3.map(|a| t("auto.hero_day3_stat").replace("{n}", &fmt::num(a.runs as i64))).unwrap_or_default()),
-            (adverse.map(|a| a.id), "triangle-alert", t("auto.hero_adverse"), t("auto.hero_adverse_stat")),
+            (day3.map(|a| a.id), "pill", t("automations.hero_day3"), day3.map(|a| t("automations.hero_day3_stat").replace("{n}", &fmt::num(a.runs as i64))).unwrap_or_default()),
+            (adverse.map(|a| a.id), "triangle-alert", t("automations.hero_adverse"), t("automations.hero_adverse_stat")),
         ]
     };
     let best: Vec<(String, f64, String)> = {
@@ -177,18 +177,18 @@ pub fn Automations() -> Element {
     };
     let filters = vec![
         ("all".to_string(), format!("{} · {}", t("common.all"), all.len())),
-        ("on".to_string(), format!("{} · {}", t("auto.on"), active)),
-        ("off".to_string(), format!("{} · {}", t("auto.off"), all.len() - active)),
+        ("on".to_string(), format!("{} · {}", t("automations.on"), active)),
+        ("off".to_string(), format!("{} · {}", t("automations.off"), all.len() - active)),
     ];
 
     rsx! {
         div { class: "page",
             PageHeader { title: t("nav.automations"), subtitle,
-                button { class: "btn", onclick: move |_| library.set(true), Icon { name: "folder-open", size: 16 } span { class: "label-text", {t("auto.library")} } }
+                button { class: "btn", onclick: move |_| library.set(true), Icon { name: "folder-open", size: 16 } span { class: "label-text", {t("automations.library")} } }
                 button {
                     class: "btn primary",
                     onclick: move |_| {
-                        let name = t("auto.blank_name");
+                        let name = t("automations.blank_name");
                         let mut id = 0;
                         mutate(|db| {
                             let blank = Automation {
@@ -210,15 +210,15 @@ pub fn Automations() -> Element {
                         selected.set(Some(id));
                     },
                     Icon { name: "plus", size: 16 }
-                    span { class: "label-text", {t("auto.new")} }
+                    span { class: "label-text", {t("automations.new")} }
                 }
             }
             div { class: "card hero", style: "padding: 22px",
                 div { class: "stack gap-16",
                     div { class: "stack gap-8",
-                        span { class: "badge", style: "align-self: flex-start; background: rgb(255 255 255 / .16); color: #fff", Icon { name: "sparkles", size: 12 } {t("auto.hero_badge")} }
-                        h2 { class: "display", style: "font-size: 24px; line-height: 1.15", {t("auto.hero_title")} }
-                        p { class: "muted", style: "max-width: 640px", {t("auto.hero_text")} }
+                        span { class: "badge", style: "align-self: flex-start; background: rgb(255 255 255 / .16); color: #fff", Icon { name: "sparkles", size: 12 } {t("automations.hero_badge")} }
+                        h2 { class: "display", style: "font-size: 24px; line-height: 1.15", {t("automations.hero_title")} }
+                        p { class: "muted", style: "max-width: 640px", {t("automations.hero_text")} }
                     }
                     div { class: "grid-3", style: "gap: 12px",
                         for (aid, icon, title, stat) in hero_items {
@@ -238,17 +238,17 @@ pub fn Automations() -> Element {
                 }
             }
             div { class: "grid-4",
-                Kpi { label: t("auto.active"), value: format!("{active}/{}", all.len()), icon: "workflow", foot: t("auto.active_foot") }
-                Kpi { label: t("auto.runs"), value: fmt::num(runs as i64), icon: "play", tone: "info", foot: t("auto.runs_foot") }
-                Kpi { label: t("auto.results"), value: fmt::num(conv as i64), icon: "circle-check", tone: "success", foot: format!("{} {}", fmt::pct(conv_rate, l), t("auto.of_runs")) }
-                Kpi { label: t("auto.saved"), value: format!("≈ {} {}", fmt::num(hours), t("auto.hours")), icon: "timer", tone: "warning", foot: t("auto.saved_foot") }
+                Kpi { label: t("automations.active"), value: format!("{active}/{}", all.len()), icon: "workflow", foot: t("automations.active_foot") }
+                Kpi { label: t("automations.runs"), value: fmt::num(runs as i64), icon: "play", tone: "info", foot: t("automations.runs_foot") }
+                Kpi { label: t("automations.results"), value: fmt::num(conv as i64), icon: "circle-check", tone: "success", foot: format!("{} {}", fmt::pct(conv_rate, l), t("automations.of_runs")) }
+                Kpi { label: t("automations.saved"), value: format!("≈ {} {}", fmt::num(hours), t("automations.hours")), icon: "timer", tone: "warning", foot: t("automations.saved_foot") }
             }
             div { class: "section-head",
-                div { class: "section-title", {t("auto.recipes")} }
+                div { class: "section-title", {t("automations.recipes")} }
                 Segmented { options: filters, value: filter(), onchange: move |v: String| filter.set(v) }
             }
             if shown.is_empty() {
-                div { class: "card", Empty { icon: "workflow", title: t("auto.empty"), text: t("auto.empty_text") } }
+                div { class: "card", Empty { icon: "workflow", title: t("automations.empty"), text: t("automations.empty_text") } }
             }
             div { class: "grid-3",
                 for a in shown {
@@ -258,7 +258,7 @@ pub fn Automations() -> Element {
             div { class: "grid-main",
                 RunLog {}
                 div { class: "card",
-                    div { class: "card-head", div { class: "card-title", Icon { name: "trophy", size: 16, class: "tone-warning" } {t("auto.best")} } }
+                    div { class: "card-head", div { class: "card-title", Icon { name: "trophy", size: 16, class: "tone-warning" } {t("automations.best")} } }
                     div { class: "card-body", HBars { items: best, color: "var(--c-chart-2)" } }
                 }
             }
@@ -289,15 +289,15 @@ fn RecipeCard(a: Automation, onopen: EventHandler<u32>) -> Element {
     let trig = t(a.trigger.key());
     let detail = trigger_detail(&DB.read(), &a.trigger);
     let trig_line = if detail.is_empty() { trig } else { format!("{trig} · {detail}") };
-    let steps = format!("{} {}", a.actions.len(), t("auto.steps"));
+    let steps = format!("{} {}", a.actions.len(), t("automations.steps"));
     let rate = if a.runs > 0 { fmt::pct(a.conversions as f64 / a.runs as f64 * 100.0, l) } else { "—".into() };
-    let last = a.last_run.map(|r| fmt::relative(r, now, l)).unwrap_or_else(|| t("auto.never"));
+    let last = a.last_run.map(|r| fmt::relative(r, now, l)).unwrap_or_else(|| t("automations.never"));
     let enabled = a.enabled;
     let body_style = if enabled { "" } else { "opacity: .62" };
     let stats = vec![
-        (t("auto.runs_short"), fmt::num(a.runs as i64)),
-        (t("auto.results_short"), fmt::num(a.conversions as i64)),
-        (t("auto.rate"), rate),
+        (t("automations.runs_short"), fmt::num(a.runs as i64)),
+        (t("automations.results_short"), fmt::num(a.conversions as i64)),
+        (t("automations.rate"), rate),
     ];
     let name = a.name.clone();
     rsx! {
@@ -307,7 +307,7 @@ fn RecipeCard(a: Automation, onopen: EventHandler<u32>) -> Element {
                 div {
                     class: "row gap-8",
                     onclick: move |e| e.stop_propagation(),
-                    span { class: if enabled { "xs strong tone-success" } else { "xs strong subtle" }, if enabled { {t("auto.on")} } else { {t("auto.off")} } }
+                    span { class: if enabled { "xs strong tone-success" } else { "xs strong subtle" }, if enabled { {t("automations.on")} } else { {t("automations.off")} } }
                     Switch {
                         on: enabled,
                         onchange: move |v: bool| {
@@ -316,7 +316,7 @@ fn RecipeCard(a: Automation, onopen: EventHandler<u32>) -> Element {
                                     x.enabled = v;
                                 }
                             });
-                            toast(if v { t("auto.enabled_toast") } else { t("auto.disabled_toast") }, "workflow", if v { "success" } else { "" });
+                            toast(if v { t("automations.enabled_toast") } else { t("automations.disabled_toast") }, "workflow", if v { "success" } else { "" });
                         },
                     }
                 }
@@ -369,14 +369,14 @@ fn RunLog() -> Element {
             let product = c.regimens.first().map(|r| db.product(r.product_id).map(|p| p.generic.clone()).unwrap_or_default()).unwrap_or_default();
             let what = if recipe == "refill" && !product.is_empty() { format!("{} · {}", a.name, product) } else { a.name.clone() };
             let (key, tone, icon): (&'static str, &'static str, &'static str) = match recipe.as_str() {
-                "refill" => [("auto.out_reserved", "success", "package-check"), ("auto.out_read", "info", "check-check"), ("auto.out_tomorrow", "accent", "calendar"), ("auto.out_waiting", "", "clock")][k % 4],
-                "birthday" => ("auto.out_bonus", "success", "gift"),
-                "winback" => [("auto.out_sent", "info", "send"), ("auto.out_returned", "success", "shopping-bag")][k % 2],
-                "day3" => ("auto.out_feels_good", "success", "smile"),
-                "waitlist" => ("auto.out_reserved", "success", "package-check"),
-                "adverse" => ("auto.out_adverse", "danger", "triangle-alert"),
-                "lead" | "deal" | "nps" => ("auto.out_task", "accent", "square-check"),
-                _ => ("auto.out_sent", "info", "send"),
+                "refill" => [("automations.out_reserved", "success", "package-check"), ("automations.out_read", "info", "check-check"), ("automations.out_tomorrow", "accent", "calendar"), ("automations.out_waiting", "", "clock")][k % 4],
+                "birthday" => ("automations.out_bonus", "success", "gift"),
+                "winback" => [("automations.out_sent", "info", "send"), ("automations.out_returned", "success", "shopping-bag")][k % 2],
+                "day3" => ("automations.out_feels_good", "success", "smile"),
+                "waitlist" => ("automations.out_reserved", "success", "package-check"),
+                "adverse" => ("automations.out_adverse", "danger", "triangle-alert"),
+                "lead" | "deal" | "nps" => ("automations.out_task", "accent", "square-check"),
+                _ => ("automations.out_sent", "info", "send"),
             };
             let at = now - Duration::minutes(7 + k as i64 * 23 + (k as i64 / 4) * 40);
             out.push((c.id, c.name(), c.home_branch as u16, what, at, key, tone, icon));
@@ -387,11 +387,11 @@ fn RunLog() -> Element {
     rsx! {
         div { class: "card",
             div { class: "card-head",
-                div { class: "card-title", Icon { name: "history", size: 16, class: "subtle" } {t("auto.log")} }
-                span { class: "badge success", span { class: "dot" } {t("auto.live")} }
+                div { class: "card-title", Icon { name: "history", size: 16, class: "subtle" } {t("automations.log")} }
+                span { class: "badge success", span { class: "dot" } {t("automations.live")} }
             }
             div { class: "list", style: "margin-top: 8px",
-                if list.is_empty() { Empty { icon: "history", title: t("auto.log_empty") } }
+                if list.is_empty() { Empty { icon: "history", title: t("automations.log_empty") } }
                 for (k, (cid, name, _, what, at, key, tone, icon)) in list.into_iter().enumerate() {
                     {
                         let when = fmt::relative(at, now, l);
@@ -442,17 +442,17 @@ fn EditorDrawer(id: u32, onclose: EventHandler<()>) -> Element {
     let stats = format!(
         "{} {} · {} {} · {}",
         fmt::num(src.runs as i64),
-        t("auto.runs_short").to_lowercase(),
+        t("automations.runs_short").to_lowercase(),
         fmt::num(src.conversions as i64),
-        t("auto.results_short").to_lowercase(),
-        src.last_run.map(|r| fmt::relative(r, now, l)).unwrap_or_else(|| t("auto.never"))
+        t("automations.results_short").to_lowercase(),
+        src.last_run.map(|r| fmt::relative(r, now, l)).unwrap_or_else(|| t("automations.never"))
     );
     let acts = actions();
-    let title = if name().trim().is_empty() { t("auto.blank_name") } else { name() };
+    let title = if name().trim().is_empty() { t("automations.blank_name") } else { name() };
     let icon = tr_now.icon();
     let sel_key = tr_now.key();
     let tr_label = t(tr_now.key());
-    let if_label = t("auto.if");
+    let if_label = t("automations.if");
     let add_opts: Vec<(usize, &'static str, String)> = action_options().iter().enumerate().map(|(i, a)| (i, a.icon(), t(a.key()))).collect();
 
     let save = move |_| {
@@ -476,7 +476,7 @@ fn EditorDrawer(id: u32, onclose: EventHandler<()>) -> Element {
             let who = db.customers.iter().find(|c| !c.regimens.is_empty() && c.consent.telegram).map(|c| c.name()).unwrap_or_default();
             (who, actions.peek().len())
         };
-        toast(format!("{}: {} · {} {}", t("auto.test_done"), who, steps, t("auto.steps")), "play", "success");
+        toast(format!("{}: {} · {} {}", t("automations.test_done"), who, steps, t("automations.steps")), "play", "success");
     };
 
     rsx! {
@@ -484,18 +484,18 @@ fn EditorDrawer(id: u32, onclose: EventHandler<()>) -> Element {
             div { class: "drawer-body",
                 div { class: "field",
                     label { class: "label", {t("common.name")} }
-                    input { class: "input", value: "{name}", placeholder: t("auto.blank_name"), oninput: move |e| name.set(e.value()) }
+                    input { class: "input", value: "{name}", placeholder: t("automations.blank_name"), oninput: move |e| name.set(e.value()) }
                 }
                 div { class: "row between", style: "padding: 12px 14px; border-radius: 12px; background: var(--c-surface-2)",
                     div { class: "stack", style: "gap: 2px",
-                        span { class: "strong small", if enabled() { {t("auto.on")} } else { {t("auto.off")} } }
+                        span { class: "strong small", if enabled() { {t("automations.on")} } else { {t("automations.off")} } }
                         span { class: "xs muted", "{stats}" }
                     }
                     Switch { on: enabled(), onchange: move |v: bool| enabled.set(v) }
                 }
                 div { class: "grid-2",
                     div { class: "field",
-                        label { class: "label", {t("auto.trigger")} }
+                        label { class: "label", {t("automations.trigger")} }
                         select {
                             class: "select",
                             onchange: move |e| {
@@ -512,7 +512,7 @@ fn EditorDrawer(id: u32, onclose: EventHandler<()>) -> Element {
                     }
                     if let Some(d) = days {
                         div { class: "field",
-                            label { class: "label", {t("auto.days")} }
+                            label { class: "label", {t("automations.days")} }
                             input {
                                 class: "input num",
                                 r#type: "number",
@@ -528,7 +528,7 @@ fn EditorDrawer(id: u32, onclose: EventHandler<()>) -> Element {
                     }
                     if let Trigger::DealStage { stage_id } = tr_now.clone() {
                         div { class: "field",
-                            label { class: "label", {t("auto.stage")} }
+                            label { class: "label", {t("automations.stage")} }
                             select { class: "select", onchange: move |e| trigger.set(Trigger::DealStage { stage_id: e.value().parse().unwrap_or(0) }),
                                 for (sid, sname) in stages {
                                     option { key: "{sid}", value: "{sid}", selected: sid == stage_id, "{sname}" }
@@ -537,12 +537,12 @@ fn EditorDrawer(id: u32, onclose: EventHandler<()>) -> Element {
                         }
                     }
                 }
-                div { class: "upper subtle", {t("auto.flow")} }
+                div { class: "upper subtle", {t("automations.flow")} }
                 div { class: "flow",
                     div { class: "flow-node trigger",
                         IconTile { icon, tone: "accent" }
                         div { class: "stack", style: "gap: 2px; min-width: 0",
-                            span { class: "xs upper subtle", {t("auto.when")} }
+                            span { class: "xs upper subtle", {t("automations.when")} }
                             span { class: "strong", "{tr_label}" }
                             if !detail.is_empty() { span { class: "small muted", "{detail}" } }
                         }
@@ -567,7 +567,7 @@ fn EditorDrawer(id: u32, onclose: EventHandler<()>) -> Element {
                     }
                     div { class: "flow-link" }
                     div { class: "popover-anchor",
-                        button { class: "btn soft sm", onclick: move |_| add_menu.toggle(), Icon { name: "plus", size: 14 } {t("auto.add_step")} }
+                        button { class: "btn soft sm", onclick: move |_| add_menu.toggle(), Icon { name: "plus", size: 14 } {t("automations.add_step")} }
                         if add_menu() {
                             div { style: "position: fixed; inset: 0; z-index: 39", onclick: move |_| add_menu.set(false) }
                             div { class: "menu", style: "bottom: 38px; left: 0",
@@ -595,14 +595,14 @@ fn EditorDrawer(id: u32, onclose: EventHandler<()>) -> Element {
                     class: "btn ghost danger",
                     onclick: move |_| {
                         mutate(|db| db.automations.retain(|a| a.id != id));
-                        toast(t("auto.deleted"), "trash-2", "");
+                        toast(t("automations.deleted"), "trash-2", "");
                         onclose.call(());
                     },
                     Icon { name: "trash-2", size: 16 }
                     span { class: "hide-mobile", {t("common.delete")} }
                 }
                 div { class: "row gap-8",
-                    button { class: "btn", onclick: test, Icon { name: "play", size: 16 } {t("auto.test")} }
+                    button { class: "btn", onclick: test, Icon { name: "play", size: 16 } {t("automations.test")} }
                     button { class: "btn primary", onclick: save, Icon { name: "check", size: 16 } {t("common.save")} }
                 }
             }
@@ -621,7 +621,7 @@ fn ActionNode(idx: usize, a: Action, actions: Signal<Vec<Action>>) -> Element {
         Action::CreateTask { role, due_days, .. } => Some(format!("{} · {}", t(role.key()), due_text(*due_days))),
         Action::GiveBonus { points } => Some(format!("+{} {}", fmt::num(*points), t("common.points"))),
         Action::Wait { days } => Some(fmt::days(*days as i64, lang())),
-        Action::ReserveStock => Some(t("auto.reserve_text")),
+        Action::ReserveStock => Some(t("automations.reserve_text")),
         Action::MoveDeal { stage_id } => DB.read().stage(*stage_id).map(|(_, s)| s.name.clone()),
         _ => None,
     };
@@ -631,7 +631,7 @@ fn ActionNode(idx: usize, a: Action, actions: Signal<Vec<Action>>) -> Element {
         _ => None,
     };
     let rows = if matches!(a, Action::SendTelegram { .. } | Action::SendSms { .. }) { "3" } else { "1" };
-    let placeholder = t("auto.text_hint");
+    let placeholder = t("automations.text_hint");
     rsx! {
         div { class: "flow-node", style: "align-items: flex-start",
             IconTile { icon, tone, size: "sm" }
@@ -705,15 +705,15 @@ fn ActionNode(idx: usize, a: Action, actions: Signal<Vec<Action>>) -> Element {
 fn Library(onclose: EventHandler<()>, onpick: EventHandler<u32>) -> Element {
     let recipes: Vec<(Id, String, String, &'static str, &'static str)> =
         DB.read().automations.iter().filter(|a| a.recipe.is_some()).map(|a| (a.id, a.name.clone(), a.description.clone(), a.trigger.icon(), recipe_tone(a.recipe.as_deref()))).collect();
-    let use_label = t("auto.use");
-    let copy_suffix = t("auto.copy");
-    let first_name = t("auto.first_name");
-    let first_desc = t("auto.first_desc");
-    let blank_name = t("auto.blank_name");
+    let use_label = t("automations.use");
+    let copy_suffix = t("automations.copy");
+    let first_name = t("automations.first_name");
+    let first_desc = t("automations.first_desc");
+    let blank_name = t("automations.blank_name");
     rsx! {
-        Modal { title: t("auto.library"), wide: true, onclose: move |_| onclose.call(()),
+        Modal { title: t("automations.library"), wide: true, onclose: move |_| onclose.call(()),
             div { class: "modal-body",
-                p { class: "muted small", {t("auto.library_text")} }
+                p { class: "muted small", {t("automations.library_text")} }
                 div { class: "grid-2", style: "gap: 10px",
                     {
                         let fname = first_name.clone();
@@ -778,7 +778,7 @@ fn Library(onclose: EventHandler<()>, onpick: EventHandler<u32>) -> Element {
                                 span { class: "ic muted", Icon { name: "plus", size: 17 } }
                                 div { class: "grow stack", style: "gap: 2px",
                                     span { class: "strong", "{blank_name}" }
-                                    span { class: "small muted", {t("auto.blank_desc")} }
+                                    span { class: "small muted", {t("automations.blank_desc")} }
                                 }
                             }
                         }
@@ -804,7 +804,7 @@ fn Library(onclose: EventHandler<()>, onpick: EventHandler<u32>) -> Element {
                                                 }
                                             });
                                             if id != 0 {
-                                                toast(t("auto.created"), "copy", "success");
+                                                toast(t("automations.created"), "copy", "success");
                                                 onpick.call(id);
                                             }
                                         },
@@ -825,70 +825,70 @@ fn Library(onclose: EventHandler<()>, onpick: EventHandler<u32>) -> Element {
 }
 
 pub const STRINGS: &[Entry] = &[
-    ("auto.new", "Yangi ssenariy", "Новый сценарий", "New automation"),
-    ("auto.library", "Retseptlar kutubxonasi", "Библиотека сценариев", "Recipe library"),
-    ("auto.library_text", "Tayyor dorixona ssenariylari: nusxa oling, matnni moslang va yoqing.", "Готовые аптечные сценарии: скопируйте, поправьте текст и включите.", "Ready-made pharmacy recipes: copy one, adjust the text and switch it on."),
-    ("auto.hero_badge", "Faqat Daybook’da", "Только в Daybook", "Only in Daybook"),
-    ("auto.hero_title", "Boshqa CRMlarda yo‘q dorixona retseptlari", "Аптечные сценарии, которых нет в других CRM", "Pharmacy recipes nobody else ships"),
-    ("auto.hero_text", "Doimiy dori tugashidan oldin eslatadi, antibiotik kursini kuzatadi va nojo‘ya ta’sirni 4 soat ichida provizorga yetkazadi. Hammasi o‘zi ishlaydi.", "Напомнит до того, как закончится постоянный препарат, проследит за курсом антибиотика и передаст нежелательную реакцию провизору за 4 часа. Всё работает само.", "It reminds people before their regular medicine runs out, follows up on antibiotic courses and gets an adverse reaction to a pharmacist within 4 hours. All on its own."),
-    ("auto.hero_refill", "Dori tugashidan oldin eslatma", "Напоминание до конца лекарства", "Refill reminder"),
-    ("auto.hero_refill_stat", "{n} marta ishladi · {p} bron yoki xarid", "{n} запусков · {p} бронь или покупка", "{n} runs · {p} reserved or bought"),
-    ("auto.hero_day3", "Antibiotikdan keyin 3-kun", "3-й день после антибиотика", "Day-3 antibiotic check-in"),
-    ("auto.hero_day3_stat", "{n} mijozdan holi so‘raldi: kursni oxirigacha ichishga yordam beradi", "{n} клиентов опрошены: помогает пройти курс до конца", "{n} customers checked on: helps them finish the course"),
-    ("auto.hero_adverse", "Nojo‘ya ta’sir: 4 soatlik qoida", "Нежелательная реакция: правило 4 часов", "Adverse reaction: the 4-hour rule"),
-    ("auto.hero_adverse_stat", "Provizorga vazifa, mudirga xabar va farmakonazorat shakli darhol", "Задача провизору, сигнал заведующему и форма фармаконадзора сразу", "A task for the pharmacist, a manager alert and the pharmacovigilance form at once"),
-    ("auto.active", "Yoqilgan ssenariylar", "Включённые сценарии", "Active automations"),
-    ("auto.active_foot", "24/7 ishlaydi", "работают 24/7", "running 24/7"),
-    ("auto.runs", "Ishga tushishlar", "Запуски", "Runs"),
-    ("auto.runs_foot", "shu oy, barcha filiallarda", "за месяц по всем филиалам", "this month, every branch"),
-    ("auto.results", "Natijalar", "Результаты", "Results"),
-    ("auto.of_runs", "ishga tushishlardan", "от запусков", "of runs"),
-    ("auto.saved", "Tejalgan vaqt", "Сэкономлено времени", "Time saved"),
-    ("auto.hours", "soat", "ч", "h"),
-    ("auto.saved_foot", "har bir ishga ≈ 3 daqiqa qo‘l mehnati", "≈ 3 минуты ручной работы на запуск", "≈ 3 minutes of manual work per run"),
-    ("auto.recipes", "Ssenariylar", "Сценарии", "Recipes"),
-    ("auto.on", "Yoqilgan", "Вкл.", "On"),
-    ("auto.off", "O‘chiq", "Выкл.", "Off"),
-    ("auto.enabled_toast", "Ssenariy yoqildi", "Сценарий включён", "Automation switched on"),
-    ("auto.disabled_toast", "Ssenariy o‘chirildi", "Сценарий выключен", "Automation switched off"),
-    ("auto.steps", "qadam", "шагов", "steps"),
-    ("auto.runs_short", "Ishladi", "Запуски", "Runs"),
-    ("auto.results_short", "Natija", "Результат", "Results"),
-    ("auto.rate", "Konversiya", "Конверсия", "Conversion"),
-    ("auto.never", "hali ishlamagan", "ещё не запускался", "not run yet"),
-    ("auto.empty", "Ssenariy yo‘q", "Сценариев нет", "No automations"),
-    ("auto.empty_text", "Kutubxonadan tayyor retseptni oling yoki noldan boshlang.", "Возьмите готовый рецепт из библиотеки или начните с нуля.", "Take a recipe from the library or start from scratch."),
-    ("auto.best", "Eng samarali ssenariylar", "Самые результативные", "Best performers"),
-    ("auto.log", "Oxirgi ishga tushishlar", "Последние запуски", "Recent runs"),
-    ("auto.live", "jonli", "в реальном времени", "live"),
-    ("auto.log_empty", "Hali ishga tushish yo‘q", "Запусков пока нет", "No runs yet"),
-    ("auto.out_reserved", "Bron qilindi", "Забронировано", "Reserved"),
-    ("auto.out_read", "O‘qildi", "Прочитано", "Read"),
-    ("auto.out_tomorrow", "Ertaga olib ketadi", "Заберёт завтра", "Picking up tomorrow"),
-    ("auto.out_waiting", "Javob kutilmoqda", "Ждём ответа", "Awaiting reply"),
-    ("auto.out_bonus", "25 000 ball berildi", "Начислено 25 000 баллов", "25,000 points given"),
-    ("auto.out_sent", "Xabar yuborildi", "Сообщение отправлено", "Message sent"),
-    ("auto.out_returned", "Qaytib keldi: xarid", "Вернулся: покупка", "Came back: purchase"),
-    ("auto.out_feels_good", "Javob: o‘zini yaxshi his qilyapti", "Ответ: чувствует себя хорошо", "Reply: feeling well"),
-    ("auto.out_adverse", "Provizorga vazifa · 4 soat", "Задача провизору · 4 ч", "Pharmacist task · 4 h"),
-    ("auto.out_task", "Vazifa yaratildi", "Задача создана", "Task created"),
-    ("auto.trigger", "Ishga tushiruvchi", "Триггер", "Trigger"),
-    ("auto.days", "Kunlar", "Дней", "Days"),
-    ("auto.stage", "Bosqich", "Этап", "Stage"),
-    ("auto.flow", "Ish tartibi", "Порядок действий", "Flow"),
-    ("auto.when", "Qachon", "Когда", "When"),
-    ("auto.if", "Agar", "Если", "If"),
-    ("auto.add_step", "Qadam qo‘shish", "Добавить шаг", "Add a step"),
-    ("auto.text_hint", "Matn: {ism}, {dori}, {filial} o‘zgaruvchilari ishlaydi", "Текст: работают переменные {ism}, {dori}, {filial}", "Text: {ism}, {dori} and {filial} work here"),
-    ("auto.reserve_text", "Mijozning filialida 1 qadoq ajratiladi", "В филиале клиента откладывается 1 упаковка", "One pack is held at the customer’s branch"),
-    ("auto.test", "Sinab ko‘rish", "Тестовый запуск", "Test run"),
-    ("auto.test_done", "Sinov o‘tdi, hech kimga yuborilmadi", "Тест пройден, никому не отправлено", "Test passed, nothing was sent"),
-    ("auto.deleted", "Ssenariy o‘chirildi", "Сценарий удалён", "Automation deleted"),
-    ("auto.use", "Ishlatish", "Использовать", "Use"),
-    ("auto.copy", "nusxa", "копия", "copy"),
-    ("auto.created", "Retseptdan ssenariy yaratildi", "Сценарий создан из рецепта", "Automation created from the recipe"),
-    ("auto.first_name", "Birinchi xarid: xush kelibsiz", "Первая покупка: добро пожаловать", "First purchase: welcome"),
-    ("auto.first_desc", "Telegram tabrigi va 10 000 bonus ball: ikkinchi xaridga undaydi", "Приветствие в Telegram и 10 000 баллов: подталкивает ко второй покупке", "A Telegram welcome and 10,000 points: nudges the second purchase"),
-    ("auto.blank_name", "Yangi ssenariy", "Новый сценарий", "New automation"),
-    ("auto.blank_desc", "Bitta ishga tushiruvchi va bitta qadam bilan noldan boshlash", "С нуля: один триггер и один шаг", "From scratch: one trigger and one step"),
+    ("automations.new", "Yangi ssenariy", "Новый сценарий", "New automation"),
+    ("automations.library", "Retseptlar kutubxonasi", "Библиотека сценариев", "Recipe library"),
+    ("automations.library_text", "Tayyor dorixona ssenariylari: nusxa oling, matnni moslang va yoqing.", "Готовые аптечные сценарии: скопируйте, поправьте текст и включите.", "Ready-made pharmacy recipes: copy one, adjust the text and switch it on."),
+    ("automations.hero_badge", "Faqat Daybook’da", "Только в Daybook", "Only in Daybook"),
+    ("automations.hero_title", "Boshqa CRMlarda yo‘q dorixona retseptlari", "Аптечные сценарии, которых нет в других CRM", "Pharmacy recipes nobody else ships"),
+    ("automations.hero_text", "Doimiy dori tugashidan oldin eslatadi, antibiotik kursini kuzatadi va nojo‘ya ta’sirni 4 soat ichida provizorga yetkazadi. Hammasi o‘zi ishlaydi.", "Напомнит до того, как закончится постоянный препарат, проследит за курсом антибиотика и передаст нежелательную реакцию провизору за 4 часа. Всё работает само.", "It reminds people before their regular medicine runs out, follows up on antibiotic courses and gets an adverse reaction to a pharmacist within 4 hours. All on its own."),
+    ("automations.hero_refill", "Dori tugashidan oldin eslatma", "Напоминание до конца лекарства", "Refill reminder"),
+    ("automations.hero_refill_stat", "{n} marta ishladi · {p} bron yoki xarid", "{n} запусков · {p} бронь или покупка", "{n} runs · {p} reserved or bought"),
+    ("automations.hero_day3", "Antibiotikdan keyin 3-kun", "3-й день после антибиотика", "Day-3 antibiotic check-in"),
+    ("automations.hero_day3_stat", "{n} mijozdan holi so‘raldi: kursni oxirigacha ichishga yordam beradi", "{n} клиентов опрошены: помогает пройти курс до конца", "{n} customers checked on: helps them finish the course"),
+    ("automations.hero_adverse", "Nojo‘ya ta’sir: 4 soatlik qoida", "Нежелательная реакция: правило 4 часов", "Adverse reaction: the 4-hour rule"),
+    ("automations.hero_adverse_stat", "Provizorga vazifa, mudirga xabar va farmakonazorat shakli darhol", "Задача провизору, сигнал заведующему и форма фармаконадзора сразу", "A task for the pharmacist, a manager alert and the pharmacovigilance form at once"),
+    ("automations.active", "Yoqilgan ssenariylar", "Включённые сценарии", "Active automations"),
+    ("automations.active_foot", "24/7 ishlaydi", "работают 24/7", "running 24/7"),
+    ("automations.runs", "Ishga tushishlar", "Запуски", "Runs"),
+    ("automations.runs_foot", "shu oy, barcha filiallarda", "за месяц по всем филиалам", "this month, every branch"),
+    ("automations.results", "Natijalar", "Результаты", "Results"),
+    ("automations.of_runs", "ishga tushishlardan", "от запусков", "of runs"),
+    ("automations.saved", "Tejalgan vaqt", "Сэкономлено времени", "Time saved"),
+    ("automations.hours", "soat", "ч", "h"),
+    ("automations.saved_foot", "har bir ishga ≈ 3 daqiqa qo‘l mehnati", "≈ 3 минуты ручной работы на запуск", "≈ 3 minutes of manual work per run"),
+    ("automations.recipes", "Ssenariylar", "Сценарии", "Recipes"),
+    ("automations.on", "Yoqilgan", "Вкл.", "On"),
+    ("automations.off", "O‘chiq", "Выкл.", "Off"),
+    ("automations.enabled_toast", "Ssenariy yoqildi", "Сценарий включён", "Automation switched on"),
+    ("automations.disabled_toast", "Ssenariy o‘chirildi", "Сценарий выключен", "Automation switched off"),
+    ("automations.steps", "qadam", "шагов", "steps"),
+    ("automations.runs_short", "Ishladi", "Запуски", "Runs"),
+    ("automations.results_short", "Natija", "Результат", "Results"),
+    ("automations.rate", "Konversiya", "Конверсия", "Conversion"),
+    ("automations.never", "hali ishlamagan", "ещё не запускался", "not run yet"),
+    ("automations.empty", "Ssenariy yo‘q", "Сценариев нет", "No automations"),
+    ("automations.empty_text", "Kutubxonadan tayyor retseptni oling yoki noldan boshlang.", "Возьмите готовый рецепт из библиотеки или начните с нуля.", "Take a recipe from the library or start from scratch."),
+    ("automations.best", "Eng samarali ssenariylar", "Самые результативные", "Best performers"),
+    ("automations.log", "Oxirgi ishga tushishlar", "Последние запуски", "Recent runs"),
+    ("automations.live", "jonli", "в реальном времени", "live"),
+    ("automations.log_empty", "Hali ishga tushish yo‘q", "Запусков пока нет", "No runs yet"),
+    ("automations.out_reserved", "Bron qilindi", "Забронировано", "Reserved"),
+    ("automations.out_read", "O‘qildi", "Прочитано", "Read"),
+    ("automations.out_tomorrow", "Ertaga olib ketadi", "Заберёт завтра", "Picking up tomorrow"),
+    ("automations.out_waiting", "Javob kutilmoqda", "Ждём ответа", "Awaiting reply"),
+    ("automations.out_bonus", "25 000 ball berildi", "Начислено 25 000 баллов", "25,000 points given"),
+    ("automations.out_sent", "Xabar yuborildi", "Сообщение отправлено", "Message sent"),
+    ("automations.out_returned", "Qaytib keldi: xarid", "Вернулся: покупка", "Came back: purchase"),
+    ("automations.out_feels_good", "Javob: o‘zini yaxshi his qilyapti", "Ответ: чувствует себя хорошо", "Reply: feeling well"),
+    ("automations.out_adverse", "Provizorga vazifa · 4 soat", "Задача провизору · 4 ч", "Pharmacist task · 4 h"),
+    ("automations.out_task", "Vazifa yaratildi", "Задача создана", "Task created"),
+    ("automations.trigger", "Ishga tushiruvchi", "Триггер", "Trigger"),
+    ("automations.days", "Kunlar", "Дней", "Days"),
+    ("automations.stage", "Bosqich", "Этап", "Stage"),
+    ("automations.flow", "Ish tartibi", "Порядок действий", "Flow"),
+    ("automations.when", "Qachon", "Когда", "When"),
+    ("automations.if", "Agar", "Если", "If"),
+    ("automations.add_step", "Qadam qo‘shish", "Добавить шаг", "Add a step"),
+    ("automations.text_hint", "Matn: {ism}, {dori}, {filial} o‘zgaruvchilari ishlaydi", "Текст: работают переменные {ism}, {dori}, {filial}", "Text: {ism}, {dori} and {filial} work here"),
+    ("automations.reserve_text", "Mijozning filialida 1 qadoq ajratiladi", "В филиале клиента откладывается 1 упаковка", "One pack is held at the customer’s branch"),
+    ("automations.test", "Sinab ko‘rish", "Тестовый запуск", "Test run"),
+    ("automations.test_done", "Sinov o‘tdi, hech kimga yuborilmadi", "Тест пройден, никому не отправлено", "Test passed, nothing was sent"),
+    ("automations.deleted", "Ssenariy o‘chirildi", "Сценарий удалён", "Automation deleted"),
+    ("automations.use", "Ishlatish", "Использовать", "Use"),
+    ("automations.copy", "nusxa", "копия", "copy"),
+    ("automations.created", "Retseptdan ssenariy yaratildi", "Сценарий создан из рецепта", "Automation created from the recipe"),
+    ("automations.first_name", "Birinchi xarid: xush kelibsiz", "Первая покупка: добро пожаловать", "First purchase: welcome"),
+    ("automations.first_desc", "Telegram tabrigi va 10 000 bonus ball: ikkinchi xaridga undaydi", "Приветствие в Telegram и 10 000 баллов: подталкивает ко второй покупке", "A Telegram welcome and 10,000 points: nudges the second purchase"),
+    ("automations.blank_name", "Yangi ssenariy", "Новый сценарий", "New automation"),
+    ("automations.blank_desc", "Bitta ishga tushiruvchi va bitta qadam bilan noldan boshlash", "С нуля: один триггер и один шаг", "From scratch: one trigger and one step"),
 ];
