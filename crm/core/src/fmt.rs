@@ -122,6 +122,8 @@ pub fn delta_pct(v: f64, lang: Lang) -> String {
 const MONTHS_UZ: [&str; 12] = [
     "yanvar", "fevral", "mart", "aprel", "may", "iyun", "iyul", "avgust", "sentabr", "oktabr", "noyabr", "dekabr",
 ];
+/// Short Uzbek months that stay distinct (iyun and iyul both start with "Iyu").
+const MONTHS_UZ_SHORT: [&str; 12] = ["Yan", "Fev", "Mar", "Apr", "May", "Iyn", "Iyl", "Avg", "Sen", "Okt", "Noy", "Dek"];
 const MONTHS_RU_GEN: [&str; 12] = [
     "января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря",
 ];
@@ -158,8 +160,8 @@ pub fn month_name(m: u32, lang: Lang) -> String {
 pub fn month_short(m: u32, lang: Lang) -> String {
     let i = (m.clamp(1, 12) - 1) as usize;
     match lang {
-        Lang::Uz => cap(&MONTHS_UZ[i].chars().take(3).collect::<String>()),
-        Lang::UzCyrl => to_cyrillic(&cap(&MONTHS_UZ[i].chars().take(3).collect::<String>())),
+        Lang::Uz => MONTHS_UZ_SHORT[i].to_string(),
+        Lang::UzCyrl => to_cyrillic(MONTHS_UZ_SHORT[i]),
         Lang::Ru => MONTHS_RU_SHORT[i].to_string(),
         Lang::En => MONTHS_EN[i][..3].to_string(),
     }

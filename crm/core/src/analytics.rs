@@ -269,6 +269,22 @@ keyed_enum!(RfmSegment, "rfm", {
 });
 
 impl RfmSegment {
+    /// The segment name in a language (the same texts as the `rfm.*` translation keys).
+    pub fn label(self, lang: Lang) -> String {
+        let (uz, ru, en) = match self {
+            RfmSegment::Champions => ("Chempionlar", "Чемпионы", "Champions"),
+            RfmSegment::Loyal => ("Sodiq mijozlar", "Лояльные", "Loyal"),
+            RfmSegment::CantLose => ("Yo‘qotib bo‘lmaydi", "Нельзя потерять", "Can’t lose"),
+            RfmSegment::NewCustomers => ("Yangi mijozlar", "Новые", "New"),
+            RfmSegment::Promising => ("Umidli", "Перспективные", "Promising"),
+            RfmSegment::NeedAttention => ("E’tibor kerak", "Требуют внимания", "Need attention"),
+            RfmSegment::AtRisk => ("Xavf ostida", "В зоне риска", "At risk"),
+            RfmSegment::Hibernating => ("Uyquda", "Спящие", "Hibernating"),
+            RfmSegment::Lost => ("Yo‘qotilgan", "Потерянные", "Lost"),
+        };
+        pick(lang, uz, ru, en).into_owned()
+    }
+
     pub fn tone(self) -> &'static str {
         match self {
             RfmSegment::Champions | RfmSegment::Loyal => "success",
@@ -947,7 +963,7 @@ pub fn customer_summary(db: &Db, customer_id: Id, now: NaiveDateTime, lang: Lang
             if conds.is_empty() { String::new() } else { format!("Постоянная терапия ({}). ", conds.len()) },
             fmt::days(since, lang),
             db.branch_name(Some(c.home_branch)),
-            r.segment.slug()
+            r.segment.label(lang)
         ),
         Lang::En => format!(
             "Customer since {}, {} purchases worth {}. Buys most: {}. {}Last visit {} ago, usually at {}. RFM: {}.",
@@ -958,7 +974,7 @@ pub fn customer_summary(db: &Db, customer_id: Id, now: NaiveDateTime, lang: Lang
             if conds.is_empty() { String::new() } else { format!("On {} regular therapies. ", c.regimens.len()) },
             fmt::days(since, lang),
             db.branch_name(Some(c.home_branch)),
-            r.segment.slug()
+            r.segment.label(lang)
         ),
         _ => uz(
             lang,
@@ -971,7 +987,7 @@ pub fn customer_summary(db: &Db, customer_id: Id, now: NaiveDateTime, lang: Lang
                 if conds.is_empty() { String::new() } else { format!("{} ta doimiy davolanish. ", c.regimens.len()) },
                 fmt::days(since, Lang::Uz),
                 db.branch_name(Some(c.home_branch)),
-                r.segment.slug()
+                r.segment.label(Lang::Uz)
             ),
         ),
     }
