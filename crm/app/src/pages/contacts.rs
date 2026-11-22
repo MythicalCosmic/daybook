@@ -1051,7 +1051,7 @@ fn Customer360(id: Id) -> Element {
                             }
                         }
                     }
-                    div { class: "row wrap gap-8", style: "margin-top: 16px",
+                    div { class: "chips", style: "margin-top: 16px; gap: 8px",
                         button { class: "btn sm primary", onclick: move |_| log_call(id), Icon { name: "phone-call", size: 15 } {t("common.call")} }
                         button { class: "btn sm", onclick: move |_| open_message(id), Icon { name: "message-circle", size: 15 } {t("common.write")} }
                         button { class: "btn sm", onclick: move |_| dialog.set(Some(Dialog::Task)), Icon { name: "square-check", size: 15 } {t("common.task")} }
@@ -1060,13 +1060,13 @@ fn Customer360(id: Id) -> Element {
                         button { class: "btn sm", onclick: move |_| dialog.set(Some(Dialog::Reserve(None))), Icon { name: "package-check", size: 15 } {t("contacts.reserve")} }
                     }
                 }
-                div { style: "display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--c-border); border-top: 1px solid var(--c-border)",
+                div { style: "display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); border-top: 1px solid var(--c-border); overflow: hidden",
                     StatCell { label: t("contacts.ltv"), value: ltv, sub: fmt::plural(c.orders as i64, l, "xarid|покупка|покупки|покупок|purchase|purchases") }
                     StatCell { label: t("contacts.orders"), value: fmt::num(c.orders as i64), sub: c.first_purchase.map(|d| format!("{} {}", t("contacts.first"), fmt::date(d, today, l))).unwrap_or_default() }
                     StatCell { label: t("contacts.avg_basket"), value: avg }
                     StatCell { label: t("contacts.points_value"), value: points_money, sub: points_n }
                     StatCell { label: t("contacts.last_purchase"), value: last, sub: last_sub }
-                    div { class: "row gap-12", style: "background: var(--c-surface); padding: 12px 18px",
+                    div { class: "row gap-12", style: "background: var(--c-surface); padding: 12px 18px; box-shadow: -1px -1px 0 var(--c-border)",
                         Ring { pct: risk as f64, size: 46, stroke: 5, color: rcolor,
                             span { class: "num strong", style: "font-size: 12px", "{risk}" }
                         }
@@ -1121,7 +1121,7 @@ fn Customer360(id: Id) -> Element {
 #[component]
 fn StatCell(#[props(into)] label: String, #[props(into)] value: String, #[props(default, into)] sub: String) -> Element {
     rsx! {
-        div { class: "stack", style: "gap: 3px; background: var(--c-surface); padding: 14px 18px; min-width: 0",
+        div { class: "stack", style: "gap: 3px; background: var(--c-surface); padding: 14px 18px; min-width: 0; box-shadow: -1px -1px 0 var(--c-border)",
             span { class: "xs muted strong truncate", "{label}" }
             span { class: "num truncate", style: "font-size: 19px; font-weight: 700; letter-spacing: -0.01em", "{value}" }
             if !sub.is_empty() { span { class: "xs subtle truncate", "{sub}" } }
@@ -1625,6 +1625,7 @@ fn MedicinesTab(id: Id, on_dialog: EventHandler<Dialog>) -> Element {
                         let pid = r.product_id;
                         let remind = r.remind;
                         let pack_line = format!("{} {} / {}", t("contacts.pack"), used, fmt::days(r.pack_days as i64, l));
+                        let due_label = if left < 0 { t("contacts.ran_out") } else { t("contacts.next_due") };
                         rsx! {
                             div { key: "{i}-{pid}", class: "card pad stack gap-12",
                                 div { class: "row top gap-12",
@@ -1637,7 +1638,7 @@ fn MedicinesTab(id: Id, on_dialog: EventHandler<Dialog>) -> Element {
                                         }
                                     }
                                     div { class: "stack gap-4", style: "align-items: flex-end; gap: 2px",
-                                        span { class: "xs muted", {t("contacts.next_due")} }
+                                        span { class: "xs muted", "{due_label}" }
                                         Badge { text: due, tone }
                                     }
                                 }
@@ -1785,6 +1786,13 @@ fn LoyaltyTab(id: Id, cashback: String, on_dialog: EventHandler<Dialog>) -> Elem
     let tier_name = t(c.tier.key());
     let points = fmt::num(c.points);
     let points_money = money(c.points);
+    let benefits: Vec<(&'static str, String, String)> = vec![
+        ("percent", t("contacts.cashback"), format!("{}%", settings.cashback(c.tier))),
+        ("cake", t("contacts.b_birthday"), money(settings.birthday_bonus)),
+        ("shopping-bag", t("contacts.b_redeem"), format!("{}%", settings.max_redeem_pct)),
+        ("hourglass", t("contacts.b_expiry"), fmt::days(settings.expiry_days as i64, l)),
+        ("file-check", t("contacts.b_rx"), if settings.exclude_rx { t("contacts.b_rx_no") } else { t("common.yes") }),
+    ];
     rsx! {
         div { class: "grid-2", style: "align-items: start",
             div { class: "stack gap-16",
@@ -1811,6 +1819,18 @@ fn LoyaltyTab(id: Id, cashback: String, on_dialog: EventHandler<Dialog>) -> Elem
                     Progress { pct: progress }
                     div { class: "row gap-8", style: "margin-top: 6px",
                         button { class: "btn soft sm", onclick: move |_| on_dialog.call(Dialog::Bonus), Icon { name: "gift", size: 14 } {t("contacts.give_bonus")} }
+                    }
+                }
+                div { class: "card",
+                    div { class: "card-head", div { class: "card-title", Icon { name: "crown", size: 16, class: "subtle" } {t("contacts.benefits")} " · {tier_name}" } }
+                    div { class: "list", style: "margin-top: 6px",
+                        for (icon, label, value) in benefits {
+                            div { key: "{icon}", class: "list-row", style: "padding-top: 9px; padding-bottom: 9px",
+                                span { class: "ic muted sm", Icon { name: icon, size: 14 } }
+                                span { class: "grow small", "{label}" }
+                                span { class: "small strong num", "{value}" }
+                            }
+                        }
                     }
                 }
             }
@@ -2623,6 +2643,13 @@ pub const STRINGS: &[Entry] = &[
     ("contacts.no_regimens", "Doimiy dorilar kiritilmagan", "Постоянных лекарств нет", "No regular medicines yet"),
     ("contacts.no_regimens_text", "Doimiy dori qo‘shsangiz, radar qadoq tugashini hisoblab, vaqtida eslatadi.", "Добавьте постоянное лекарство, и радар посчитает, когда закончится упаковка.", "Add a regular medicine and the radar works out when the pack runs out."),
     ("contacts.next_due", "Tugaydi", "Закончится", "Runs out"),
+    ("contacts.ran_out", "Tugagan", "Закончилось", "Ran out"),
+    ("contacts.benefits", "Daraja imtiyozlari", "Привилегии уровня", "Tier benefits"),
+    ("contacts.b_birthday", "Tug‘ilgan kun bonusi", "Бонус на день рождения", "Birthday bonus"),
+    ("contacts.b_redeem", "Chekni ball bilan to‘lash, gacha", "Оплата баллами, до", "Pay with points, up to"),
+    ("contacts.b_expiry", "Ballar amal qiladi", "Баллы действуют", "Points last"),
+    ("contacts.b_rx", "Retseptli dorilar", "Рецептурные препараты", "Prescription medicines"),
+    ("contacts.b_rx_no", "ball berilmaydi", "без баллов", "earn no points"),
     ("contacts.pack", "Qadoq:", "Упаковка:", "Pack:"),
     ("contacts.last_bought", "Oxirgi marta olingan", "Последняя покупка", "Last bought"),
     ("contacts.remind", "Eslatma", "Напоминание", "Reminder"),

@@ -507,16 +507,16 @@ fn LeadCard(lead: Lead, staff: Vec<(Id, String, u16)>, onopen: EventHandler<Id>)
                     span { class: "num strong small", "{lead.score}" }
                 }
             }
-            div { class: "row between gap-8", onclick: move |e| e.stop_propagation(),
+            div { class: "row wrap", style: "gap: 8px", onclick: move |e| e.stop_propagation(),
                 if let Some((_, oname, ohue)) = owner {
-                    div { class: "row gap-8 small muted", style: "min-width: 0",
+                    div { class: "row gap-8 small muted", style: "min-width: 0; flex: 1 1 120px",
                         Avatar { name: oname.clone(), hue: ohue, size: "xs" }
                         span { class: "truncate", "{oname}" }
                     }
                 } else {
                     select {
                         class: "select sm",
-                        style: "width: auto; max-width: 170px",
+                        style: "flex: 1 1 120px; max-width: 180px; min-width: 0",
                         onchange: move |e| assign(id, e.value().parse().unwrap_or(0)),
                         option { value: "0", selected: true, {t("common.assign")} "…" }
                         for (sid, sname, _) in staff.iter().cloned() {
@@ -525,7 +525,7 @@ fn LeadCard(lead: Lead, staff: Vec<(Id, String, u16)>, onopen: EventHandler<Id>)
                     }
                 }
                 if open_status {
-                    div { class: "row gap-4",
+                    div { class: "row gap-4", style: "margin-left: auto",
                         button { class: "icon-btn sm", title: t("leads.junk"), onclick: move |_| set_status(id, LeadStatus::Junk), Icon { name: "trash-2", size: 15 } }
                         if lead.status == LeadStatus::New {
                             button { class: "btn sm", onclick: move |_| set_status(id, LeadStatus::Contacted), Icon { name: "phone-outgoing", size: 14 } {t("leads.contacted")} }
