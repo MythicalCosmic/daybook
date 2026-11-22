@@ -182,12 +182,21 @@ pub fn Campaigns() -> Element {
     let all: Vec<Campaign> = DB.read().campaigns.clone();
     let counts: Vec<(CampaignStatus, usize)> = CampaignStatus::ALL.iter().map(|s| (*s, all.iter().filter(|c| c.status == *s).count())).filter(|x| x.1 > 0).collect();
     let q = query().trim().to_lowercase();
-    let shown: Vec<Campaign> = all
+    let mut shown: Vec<Campaign> = all
         .iter()
         .filter(|c| status().map_or(true, |s| c.status == s))
         .filter(|c| q.is_empty() || c.name.to_lowercase().contains(&q) || c.message.to_lowercase().contains(&q))
         .cloned()
         .collect();
+    // Live work first (sending, scheduled, drafts), then the rest, newest first.
+    let rank = |s: CampaignStatus| match s {
+        CampaignStatus::Running => 0,
+        CampaignStatus::Scheduled => 1,
+        CampaignStatus::Draft => 2,
+        CampaignStatus::Paused => 3,
+        CampaignStatus::Done => 4,
+    };
+    shown.sort_by(|a, b| rank(a.status).cmp(&rank(b.status)).then(b.scheduled.unwrap_or(b.created).cmp(&a.scheduled.unwrap_or(a.created))));
     let running = all.iter().filter(|c| c.status == CampaignStatus::Running).count();
     let scheduled = all.iter().filter(|c| c.status == CampaignStatus::Scheduled).count();
     let subtitle = match l {
