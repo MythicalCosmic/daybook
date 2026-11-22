@@ -894,6 +894,7 @@ dependencies = [
  "daybook-crm-core",
  "dioxus",
  "dirs",
+ "futures-channel",
  "js-sys",
  "qrcode",
  "serde",
@@ -5614,7 +5615,6 @@ dependencies = [
  "serde",
  "serde_json",
  "ureq-proto",
- "url",
  "utf8-zero",
  "webpki-roots",
 ]

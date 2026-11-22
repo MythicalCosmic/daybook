@@ -1,0 +1,20 @@
+[application]
+name = "daybook-crm"
+
+[web.app]
+title = "Daybook CRM"
+
+[bundle]
+identifier = "uz.daybook.crm"
+publisher = "Daybook"
+icon = [
+  "assets/icons/icon-32.png",
+  "assets/icons/icon-128.png",
+  "assets/icons/icon-256.png",
+  "assets/icons/icon-512.png",
+  "assets/icons/icon.ico",
+]
+short_description = "Daybook CRM for pharmacies"
+long_description = "Customers, refills, waitlist, deals, inbox, campaigns and loyalty for pharmacy chains. Works offline and connects to Daybook."
+copyright = "Daybook"
+category = "Business"
