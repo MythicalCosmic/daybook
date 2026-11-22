@@ -116,7 +116,7 @@ pub fn Waitlist() -> Element {
     by_branch.truncate(3);
     let branch_max = by_branch.first().map(|b| b.1).unwrap_or(1).max(1);
     let hero_text = t("waitlist.hero_text").replace("{n}", &waiting_people.to_string());
-    let waiting_foot = t("waitlist.kpi_waiting_foot").replace("{n}", &waiting_people.to_string());
+    let waiting_foot = t("waitlist.kpi_waiting_foot").replace("{n}", &fmt::plural(waiting_people as i64, l, "ta mijoz|клиент|клиента|клиентов|customer|customers"));
     let conv_foot = t("waitlist.kpi_conv_foot").replace("{n}", &picked.to_string()).replace("{m}", &all.len().to_string());
     let avg_wait_text = fmt::days(avg_wait, l);
     let is_board = view() == "board";
@@ -166,7 +166,7 @@ pub fn Waitlist() -> Element {
                             }
                         }
                     }
-                    div { class: "grid-3", style: "gap: 10px; margin-top: auto",
+                    div { class: "grid-3", style: "gap: 10px; margin-top: auto; grid-template-columns: repeat(3, minmax(0, 1fr))",
                         div { style: "padding: 10px 12px; border-radius: 12px; background: rgb(255 255 255 / .1)",
                             div { class: "xs muted", {t("waitlist.hero_lost")} }
                             div { class: "strong num", "{money_short(lost_value)}" }
@@ -258,7 +258,7 @@ pub fn Waitlist() -> Element {
                             let value: Money = col.iter().map(|i| i.w.value).sum();
                             let label = t(st.key());
                             rsx! {
-                                div { class: "kanban-col", key: "{st.slug()}", style: "flex: 1 0 200px; min-width: 0",
+                                div { class: "kanban-col", key: "{st.slug()}", style: "flex: 1 0 min(84vw, max(200px, calc(1100px - 100vw))); min-width: 0",
                                     div { class: "kanban-head",
                                         span { style: "width: 8px; height: 8px; border-radius: 99px; background: {color}; flex: 0 0 8px" }
                                         span { class: "strong small truncate", "{label}" }
@@ -301,10 +301,10 @@ pub fn Waitlist() -> Element {
                     }
                 }
             }
+        }
 
-            if adding() {
-                NewRequest { onclose: move |_| adding.set(false) }
-            }
+        if adding() {
+            NewRequest { onclose: move |_| adding.set(false) }
         }
     }
 }
@@ -702,7 +702,7 @@ pub const STRINGS: &[Entry] = &[
     ("waitlist.board", "Doska", "Доска", "Board"),
     ("waitlist.list", "Ro‘yxat", "Список", "List"),
     ("waitlist.kpi_waiting", "Kutilayotgan so‘rovlar", "Ждут поступления", "Waiting requests"),
-    ("waitlist.kpi_waiting_foot", "{n} ta mijoz kutmoqda", "ждут клиентов: {n}", "{n} customers waiting"),
+    ("waitlist.kpi_waiting_foot", "{n} kutmoqda", "ждут: {n}", "{n} waiting"),
     ("waitlist.kpi_value", "Kutilayotgan talab", "Спрос в ожидании", "Demand waiting"),
     ("waitlist.kpi_value_foot", "keltirilmasa, savdo yo‘qoladi", "потерянные продажи, если не привезти", "lost sales if not fixed"),
     ("waitlist.kpi_arrived", "Keldi, xabar berilmagan", "Поступило, клиент не знает", "Arrived, not notified"),

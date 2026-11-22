@@ -92,6 +92,11 @@ fn card_of(db: &crm::Db, d: &Deal, now: NaiveDateTime) -> Card {
     }
 }
 
+/// "3 deals" with the right plural in every language.
+fn deals_n(n: usize) -> String {
+    fmt::plural(n as i64, lang(), "ta bitim|сделка|сделки|сделок|deal|deals")
+}
+
 fn status_tone(s: DealStatus) -> &'static str {
     match s {
         DealStatus::Open => "info",
@@ -201,10 +206,10 @@ pub fn Deals() -> Element {
     let lost90 = shown.iter().filter(|c| c.status == DealStatus::Lost).filter(recent).count();
     let win_rate = if won90 + lost90 == 0 { 0.0 } else { won90 as f64 / (won90 + lost90) as f64 * 100.0 };
     let kk = k();
-    let foot_open = t("deals.foot_open").replace("{n}", &open.len().to_string());
-    let foot_weighted = if rotting > 0 { t("deals.foot_rotting").replace("{n}", &rotting.to_string()) } else { t("deals.foot_weighted") };
-    let foot_won = t("deals.foot_won").replace("{n}", &won_month.len().to_string()).replace("{v}", &money_short(kk.won_mtd));
-    let foot_rate = t("deals.foot_rate").replace("{n}", &(won90 + lost90).to_string());
+    let foot_open = t("deals.foot_open").replace("{n}", &deals_n(open.len()));
+    let foot_weighted = if rotting > 0 { t("deals.foot_rotting").replace("{n}", &deals_n(rotting)) } else { t("deals.foot_weighted") };
+    let foot_won = t("deals.foot_won").replace("{n}", &deals_n(won_month.len())).replace("{v}", &money_short(kk.won_mtd));
+    let foot_rate = t("deals.foot_rate").replace("{n}", &deals_n(won90 + lost90));
     let weighted_tone: &'static str = if rotting > 0 { "warning" } else { "accent" };
 
     let stage_opts: Vec<(Id, String, u16)> = stages.iter().map(|s| (s.id, s.name.clone(), s.hue)).collect();
@@ -212,8 +217,8 @@ pub fn Deals() -> Element {
     let is_drag = dragging().is_some();
     let won_over = over() == Some(WON_ZONE);
     let lost_over = over() == Some(LOST_ZONE);
-    let lost90_text = t("deals.zone_lost_text").replace("{n}", &lost90.to_string());
-    let won_text = t("deals.zone_won_text").replace("{n}", &won_month.len().to_string()).replace("{v}", &money_short(won_value));
+    let lost90_text = t("deals.zone_lost_text").replace("{n}", &deals_n(lost90));
+    let won_text = t("deals.zone_won_text").replace("{n}", &deals_n(won_month.len())).replace("{v}", &money_short(won_value));
 
     rsx! {
         div { class: "page",
@@ -386,13 +391,13 @@ pub fn Deals() -> Element {
             } else {
                 Forecast { pipeline: pid }
             }
+        }
 
-            if let Some(id) = losing() {
-                LostModal { id, onclose: move |_| losing.set(None) }
-            }
-            if let Some(stage) = adding() {
-                QuickDeal { stage, pipeline: pid, onclose: move |_| adding.set(None) }
-            }
+        if let Some(id) = losing() {
+            LostModal { id, onclose: move |_| losing.set(None) }
+        }
+        if let Some(stage) = adding() {
+            QuickDeal { stage, pipeline: pid, onclose: move |_| adding.set(None) }
         }
     }
 }
@@ -639,7 +644,7 @@ fn DealTable(cards: Vec<Card>, sort: Signal<(String, bool)>) -> Element {
                     }
                 }
                 div { class: "card-foot",
-                    span { class: "small muted", {t("deals.count").replace("{n}", &n.to_string())} }
+                    span { class: "small muted", {deals_n(n)} }
                     span { class: "strong num", "{money(total)}" }
                 }
             }
@@ -1141,8 +1146,11 @@ pub fn DealDetail(id: u32) -> Element {
                                     "st"
                                 };
                                 let sid = s.id;
+                                let name_cls = if s.id == d.stage_id { "truncate" } else { "truncate hide-mobile" };
                                 rsx! {
-                                    div { key: "{sid}", class: cls, title: "{s.name} · {s.probability}%", onclick: move |_| move_to(id, sid), "{s.name}" }
+                                    div { key: "{sid}", class: cls, title: "{s.name} · {s.probability}%", onclick: move |_| move_to(id, sid),
+                                        span { class: name_cls, "{s.name}" }
+                                    }
                                 }
                             }
                         }
@@ -1191,10 +1199,10 @@ pub fn DealDetail(id: u32) -> Element {
                     DealQuotes { id }
                 }
             }
+        }
 
-            if losing() {
-                LostModal { id, onclose: move |_| losing.set(false) }
-            }
+        if losing() {
+            LostModal { id, onclose: move |_| losing.set(false) }
         }
     }
 }
@@ -1339,7 +1347,7 @@ fn LinesEditor(id: Id) -> Element {
                 }
             }
             div { class: "card-foot", style: "flex-wrap: wrap",
-                select { class: "select sm", style: "flex: 1 1 240px; width: auto", onchange: move |e| pick.set(e.value().parse().unwrap_or(0)),
+                select { class: "select sm", style: "flex: 1 1 240px; width: auto; min-width: 0", onchange: move |e| pick.set(e.value().parse().unwrap_or(0)),
                     option { value: "0", selected: pick() == 0, {t("deals.pick_product")} }
                     for (pid, name, p) in products {
                         option { key: "{pid}", value: "{pid}", selected: pid == pick(), "{name} · {money_short(p)}" }
@@ -1466,7 +1474,7 @@ fn DealActivities(id: Id) -> Element {
                         option { key: "{k.slug()}", value: "{k.slug()}", selected: k == kind(), {t(k.key())} }
                     }
                 }
-                input { class: "input sm", style: "flex: 1 1 200px; width: auto", value: "{title}", placeholder: t("deals.activity_hint"), oninput: move |e| title.set(e.value()) }
+                input { class: "input sm", style: "flex: 1 1 200px; width: auto; min-width: 0", value: "{title}", placeholder: t("deals.activity_hint"), oninput: move |e| title.set(e.value()) }
                 input { class: "input sm", style: "width: auto", r#type: "datetime-local", value: "{due}", oninput: move |e| due.set(e.value()) }
                 button { class: "btn soft sm", disabled: !valid, onclick: add, Icon { name: "plus", size: 14 } {t("common.add")} }
             }
@@ -1582,7 +1590,7 @@ fn OrgCard(id: Id) -> Element {
                         }
                         Badge { text: format!("{}", c.health), tone: health_tone, icon: "heart-pulse" }
                     }
-                    div { class: "grid-3", style: "gap: 8px",
+                    div { class: "grid-3", style: "gap: 8px; grid-template-columns: repeat(3, minmax(0, 1fr))",
                         div { style: "padding: 8px 10px; border-radius: 10px; background: var(--c-surface-2)",
                             div { class: "xs muted", {t("deals.receivable")} }
                             div { class: "small strong num", "{receivable}" }
@@ -1769,14 +1777,14 @@ pub const STRINGS: &[Entry] = &[
     ("deals.view_list", "Ro‘yxat", "Список", "List"),
     ("deals.view_forecast", "Prognoz", "Прогноз", "Forecast"),
     ("deals.open_value", "Ochiq bitimlar", "Открытые сделки", "Open pipeline"),
-    ("deals.foot_open", "{n} ta ochiq bitim", "открытых сделок: {n}", "{n} open deals"),
+    ("deals.foot_open", "{n} ochiq", "открыто: {n}", "{n} open"),
     ("deals.weighted", "Ehtimol bilan", "Взвешенная сумма", "Weighted value"),
     ("deals.foot_weighted", "bosqich ehtimoli bo‘yicha", "с учётом вероятности этапа", "by stage probability"),
-    ("deals.foot_rotting", "{n} ta bitim to‘xtab qoldi", "без движения: {n}", "{n} deals going cold"),
+    ("deals.foot_rotting", "{n} to‘xtab qoldi", "без движения: {n}", "{n} going cold"),
     ("deals.won_month", "Shu oy yutildi", "Выиграно за месяц", "Won this month"),
-    ("deals.foot_won", "{n} ta bitim · jami {v}", "сделок: {n} · всего {v}", "{n} deals · {v} company-wide"),
+    ("deals.foot_won", "{n} · hammasi {v}", "{n} · всего {v}", "{n} · {v} company-wide"),
     ("deals.win_rate", "Yutish darajasi", "Доля побед", "Win rate"),
-    ("deals.foot_rate", "90 kunda yopilgan {n} ta bitim", "закрыто за 90 дней: {n}", "{n} deals closed in 90 days"),
+    ("deals.foot_rate", "90 kunda yopilgan: {n}", "закрыто за 90 дней: {n}", "{n} closed in 90 days"),
     ("deals.search", "Bitim yoki tashkilot…", "Сделка или организация…", "Deal or organisation…"),
     ("deals.all_owners", "Barcha mas’ullar", "Все ответственные", "All owners"),
     ("deals.add_here", "Bitim qo‘shish", "Добавить сделку", "Add a deal"),
@@ -1790,14 +1798,13 @@ pub const STRINGS: &[Entry] = &[
     ("deals.mark_won", "Yutildi", "Выиграна", "Mark won"),
     ("deals.mark_lost", "Boy berildi", "Проиграна", "Mark lost"),
     ("deals.zone_won", "Yutildi: shu yerga tashlang", "Выиграна: перетащите сюда", "Won: drop here"),
-    ("deals.zone_won_text", "Shu oy {n} ta bitim, {v}", "В этом месяце: {n}, {v}", "{n} this month, {v}"),
+    ("deals.zone_won_text", "Shu oy: {n}, {v}", "В этом месяце: {n}, {v}", "{n} this month, {v}"),
     ("deals.zone_lost", "Boy berildi: shu yerga tashlang", "Проиграна: перетащите сюда", "Lost: drop here"),
-    ("deals.zone_lost_text", "90 kunda {n} ta; sababi so‘raladi", "За 90 дней: {n}; спросим причину", "{n} in 90 days; we’ll ask why"),
+    ("deals.zone_lost_text", "90 kunda: {n}; sababi so‘raladi", "За 90 дней: {n}; спросим причину", "{n} in 90 days; we’ll ask why"),
     ("deals.stage", "Bosqich", "Этап", "Stage"),
     ("deals.probability", "Ehtimol", "Вероятность", "Probability"),
     ("deals.expected_close", "Kutilgan yopilish", "Ожидаемое закрытие", "Expected close"),
     ("deals.activity", "Faollik", "Активность", "Activity"),
-    ("deals.count", "{n} ta bitim", "Сделок: {n}", "{n} deals"),
     ("deals.no_results_text", "Qidiruv yoki filtrni o‘zgartiring.", "Измените поиск или фильтр.", "Change the search or filter."),
     ("deals.forecast_title", "4 oylik prognoz", "Прогноз на 4 месяца", "4-month forecast"),
     ("deals.forecast_hint", "Kutilgan yopilish oyi bo‘yicha: ehtimol bilan va eng yaxshi holatda", "По месяцу закрытия: взвешенно и в лучшем случае", "By expected close month: weighted and best case"),

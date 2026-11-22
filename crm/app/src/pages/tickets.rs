@@ -127,7 +127,9 @@ pub fn Tickets() -> Element {
     let csat = if csats.is_empty() { 0.0 } else { csats.iter().map(|x| *x as f64).sum::<f64>() / csats.len() as f64 };
     let csat_text = if l == Lang::En { format!("{csat:.1} / 5") } else { format!("{csat:.1} / 5").replace('.', ",") };
     let adverse_open = all.iter().filter(|r| r.tk.is_open() && r.tk.kind == TicketKind::AdverseReaction).count();
-    let breached_foot = if adverse_open > 0 { t("tickets.adverse_open").replace("{n}", &adverse_open.to_string()) } else { t("tickets.breached_foot") };
+    let breached_foot = if adverse_open > 0 {
+        t("tickets.adverse_open").replace("{n}", &fmt::plural(adverse_open as i64, l, "ta nojo‘ya ta’sir|реакция|реакции|реакций|adverse reaction|adverse reactions"))
+    } else { t("tickets.breached_foot") };
 
     let ql = q().trim().to_lowercase();
     let base: Vec<&Row> = all
@@ -160,7 +162,7 @@ pub fn Tickets() -> Element {
                     onclick: move |_| status.set("open".into()),
                 }
                 Kpi { label: t("tickets.kpi_resolution"), value: avg_text, icon: "timer", tone: "info", foot: t("tickets.kpi_resolution_foot") }
-                Kpi { label: t("tickets.kpi_csat"), value: csat_text, icon: "star", tone: "success", foot: t("tickets.kpi_csat_foot").replace("{n}", &csats.len().to_string()) }
+                Kpi { label: t("tickets.kpi_csat"), value: csat_text, icon: "star", tone: "success", foot: fmt::plural(csats.len() as i64, l, "ta baho|оценка|оценки|оценок|rating|ratings") }
             }
 
             div { class: "toolbar",
@@ -453,10 +455,10 @@ pub fn TicketDetail(id: u32) -> Element {
                     TicketTasks { id }
                 }
             }
+        }
 
-            if resolving() {
-                ResolveModal { id, onclose: move |_| resolving.set(false) }
-            }
+        if resolving() {
+            ResolveModal { id, onclose: move |_| resolving.set(false) }
         }
     }
 }
@@ -985,11 +987,10 @@ pub const STRINGS: &[Entry] = &[
     ("tickets.kpi_open_foot", "hal qilinmagan", "ещё не решены", "not resolved yet"),
     ("tickets.kpi_breached", "Muddati o‘tgan", "Просрочено", "Past SLA"),
     ("tickets.breached_foot", "SLA buzilgan", "нарушен SLA", "SLA breached"),
-    ("tickets.adverse_open", "{n} ta nojo‘ya ta’sir ochiq", "открытых реакций: {n}", "{n} adverse reactions open"),
+    ("tickets.adverse_open", "{n} ochiq", "открыто: {n}", "{n} open"),
     ("tickets.kpi_resolution", "O‘rtacha hal qilish", "Среднее время решения", "Avg resolution"),
     ("tickets.kpi_resolution_foot", "yopilgan murojaatlar bo‘yicha", "по решённым обращениям", "across resolved tickets"),
     ("tickets.kpi_csat", "Mijoz bahosi", "Оценка клиентов", "Customer rating"),
-    ("tickets.kpi_csat_foot", "{n} ta baho", "оценок: {n}", "{n} ratings"),
     ("tickets.search", "Raqam, mavzu yoki mijoz…", "Номер, тема или клиент…", "Number, subject or customer…"),
     ("tickets.only_open", "Faqat ochiqlar", "Только открытые", "Open only"),
     ("tickets.all_statuses", "Barcha holatlar", "Все статусы", "All statuses"),

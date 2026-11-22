@@ -278,10 +278,10 @@ pub fn Products() -> Element {
                     }
                 }
             }
+        }
 
-            if let Some(id) = sel() {
-                ProductDrawer { key: "{id}", id, onclose: move |_| sel.set(None) }
-            }
+        if let Some(id) = sel() {
+            ProductDrawer { key: "{id}", id, onclose: move |_| sel.set(None) }
         }
     }
 }
@@ -344,7 +344,10 @@ fn ProductRow(row: Row, stock_max: u32, onopen: EventHandler<Id>) -> Element {
                 }
             }
             td { class: "m-hide",
-                div { class: "row gap-12 small",
+                if row.regular == 0 && row.waiting == 0 {
+                    span { class: "subtle", "—" }
+                }
+                div { class: if row.regular == 0 && row.waiting == 0 { "hide" } else { "row gap-12 small" },
                     span { class: "row gap-4", title: "{regular_title}",
                         Icon { name: "repeat", size: 13, class: "subtle" }
                         span { class: "num", "{row.regular}" }
@@ -506,7 +509,7 @@ fn ProductDrawer(id: Id, onclose: EventHandler<()>) -> Element {
                     div { class: "callout {exp_tone}", Icon { name: "calendar-x", size: 16 } span { "{exp_text}" } }
                 }
 
-                div { class: "grid-3", style: "gap: 10px",
+                div { class: "grid-3", style: "gap: 8px; grid-template-columns: repeat(3, minmax(0, 1fr))",
                     div { style: "padding: 12px; border-radius: 12px; background: var(--c-surface-2)",
                         div { class: "xs muted", {t("products.sold_30")} }
                         div { class: "strong num", style: "font-size: 18px", "{sold_text}" }

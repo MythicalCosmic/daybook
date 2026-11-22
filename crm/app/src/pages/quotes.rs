@@ -12,6 +12,8 @@ use crate::routes::Route;
 use crate::state::*;
 use crate::ui::*;
 
+const DOCS: &str = "ta hujjat|документ|документа|документов|document|documents";
+
 /// The seller's tax id on documents (the demo company's).
 const SELLER_TIN: &str = "307 845 219";
 
@@ -115,14 +117,14 @@ pub fn Quotes() -> Element {
 
             div { class: "grid-4",
                 Kpi { label: t("quotes.kpi_outstanding"), value: money_short(outstanding_sum), icon: "hourglass", tone: "info",
-                    foot: t("quotes.kpi_docs").replace("{n}", &outstanding.len().to_string()),
+                    foot: fmt::plural(outstanding.len() as i64, l, DOCS),
                 }
                 Kpi { label: t("quotes.kpi_overdue"), value: money_short(overdue_sum), icon: "triangle-alert", tone: "danger",
-                    foot: t("quotes.kpi_orgs").replace("{n}", &overdue_orgs.to_string()),
+                    foot: fmt::plural(overdue_orgs as i64, l, "ta tashkilot|организация|организации|организаций|organisation|organisations"),
                     onclick: move |_| status.set(Some(QuoteStatus::Overdue)),
                 }
                 Kpi { label: t("quotes.kpi_paid"), value: money_short(paid_sum), icon: "banknote", tone: "success",
-                    foot: t("quotes.kpi_payments").replace("{n}", &paid.len().to_string()),
+                    foot: fmt::plural(paid.len() as i64, l, "ta to‘lov|платёж|платежа|платежей|payment|payments"),
                 }
                 Kpi { label: t("quotes.kpi_accept"), value: fmt::pct(accept, l), icon: "handshake", foot: t("quotes.kpi_accept_foot") }
             }
@@ -208,7 +210,7 @@ pub fn Quotes() -> Element {
                         }
                     }
                     div { class: "card-foot",
-                        span { class: "small muted", {t("quotes.count").replace("{n}", &shown_n.to_string())} }
+                        span { class: "small muted", {fmt::plural(shown_n as i64, l, DOCS)} }
                         span { class: "strong num", "{money(shown_sum)}" }
                     }
                 }
@@ -505,7 +507,7 @@ pub fn QuoteDetail(id: u32) -> Element {
                     div { class: "stack gap-4", style: "padding: 14px 16px; border-radius: 12px; border: 1px dashed var(--c-border-strong)",
                         span { class: "xs muted upper", {t("quotes.terms")} }
                         span { class: "small", "{terms}" }
-                        if !qt.notes.is_empty() {
+                        if !qt.notes.is_empty() && !qt.notes.starts_with("To‘lov:") {
                             span { class: "small muted", "{qt.notes}" }
                         }
                     }
@@ -648,18 +650,14 @@ pub const STRINGS: &[Entry] = &[
     ("quotes.sub", "Tashkilotlar uchun tijorat takliflari va hisob-fakturalar", "Коммерческие предложения и счета для организаций", "Quotes and invoices for organisations"),
     ("quotes.from_deal", "Bitimdan taklif", "КП из сделки", "Quote from a deal"),
     ("quotes.kpi_outstanding", "To‘lov kutilmoqda", "Ожидаем оплату", "Outstanding"),
-    ("quotes.kpi_docs", "{n} ta hujjat", "документов: {n}", "{n} documents"),
     ("quotes.kpi_overdue", "Muddati o‘tgan hisoblar", "Просроченные счета", "Overdue invoices"),
-    ("quotes.kpi_orgs", "{n} ta tashkilot", "организаций: {n}", "{n} organisations"),
     ("quotes.kpi_paid", "Shu oy to‘landi", "Оплачено в этом месяце", "Paid this month"),
-    ("quotes.kpi_payments", "{n} ta to‘lov", "платежей: {n}", "{n} payments"),
     ("quotes.kpi_accept", "Qabul qilinish", "Принимают", "Acceptance rate"),
     ("quotes.kpi_accept_foot", "yuborilgan takliflardan", "из отправленных КП", "of quotes sent"),
     ("quotes.search", "Raqam yoki tashkilot…", "Номер или организация…", "Number or organisation…"),
     ("quotes.number", "Raqam", "Номер", "Number"),
     ("quotes.issued", "Berilgan", "Выставлен", "Issued"),
     ("quotes.valid", "Amal qiladi / muddat", "Действует / срок", "Valid / due"),
-    ("quotes.count", "{n} ta hujjat", "Документов: {n}", "{n} documents"),
     ("quotes.empty", "Bunday hujjatlar yo‘q", "Таких документов нет", "No documents here"),
     ("quotes.empty_text", "Bitim sahifasida mahsulotlardan taklif yarating.", "Создайте КП из товаров на странице сделки.", "Create a quote from a deal’s products."),
     ("quotes.not_found", "Hujjat topilmadi", "Документ не найден", "Document not found"),
