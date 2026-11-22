@@ -169,15 +169,15 @@ pub fn Waitlist() -> Element {
                     div { class: "grid-3", style: "gap: 10px; margin-top: auto; grid-template-columns: repeat(3, minmax(0, 1fr))",
                         div { style: "padding: 10px 12px; border-radius: 12px; background: rgb(255 255 255 / .1)",
                             div { class: "xs muted", {t("waitlist.hero_lost")} }
-                            div { class: "strong num", "{money_short(lost_value)}" }
+                            div { class: "strong num nowrap", style: "font-size: clamp(12px, 3.3vw, 14px)", "{money_short(lost_value)}" }
                         }
                         div { style: "padding: 10px 12px; border-radius: 12px; background: rgb(255 255 255 / .1)",
                             div { class: "xs muted", {t("waitlist.hero_saved")} }
-                            div { class: "strong num", "{money_short(saved_value)}" }
+                            div { class: "strong num nowrap", style: "font-size: clamp(12px, 3.3vw, 14px)", "{money_short(saved_value)}" }
                         }
                         div { style: "padding: 10px 12px; border-radius: 12px; background: rgb(255 255 255 / .1)",
                             div { class: "xs muted", {t("waitlist.hero_wait")} }
-                            div { class: "strong num", "{avg_wait_text}" }
+                            div { class: "strong num nowrap", style: "font-size: clamp(12px, 3.3vw, 14px)", "{avg_wait_text}" }
                         }
                     }
                 }

@@ -419,7 +419,9 @@ pub fn TicketDetail(id: u32) -> Element {
             div { class: "grid-main",
                 div { class: "stack gap-16",
                     if adverse {
-                        PharmacovigilanceCard { id }
+                        for k in [id] {
+                            PharmacovigilanceCard { key: "pv-{k}", id: k }
+                        }
                     }
                     div { class: "card",
                         div { class: "card-head",
@@ -431,9 +433,13 @@ pub fn TicketDetail(id: u32) -> Element {
                         }
                     }
                     if tk.product_id.is_some() {
-                        BatchCard { id }
+                        for k in [id] {
+                            BatchCard { key: "batch-{k}", id: k }
+                        }
                     }
-                    CommentsCard { id }
+                    for k in [id] {
+                        CommentsCard { key: "thread-{k}", id: k }
+                    }
                 }
                 div { class: "stack gap-16",
                     TicketCustomer { id }

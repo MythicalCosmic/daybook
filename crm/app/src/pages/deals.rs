@@ -1198,15 +1198,19 @@ pub fn DealDetail(id: u32) -> Element {
             }
 
             div { class: "grid-main",
-                div { class: "stack gap-16",
-                    LinesEditor { id }
-                    DealActivities { id }
-                    DealNotes { id }
+                for k in [id] {
+                    div { key: "main-{k}", class: "stack gap-16",
+                        LinesEditor { id: k }
+                        DealActivities { id: k }
+                        DealNotes { id: k }
+                    }
                 }
-                div { class: "stack gap-16",
-                    OrgCard { id }
-                    DealInfo { id }
-                    DealQuotes { id }
+                for k in [id] {
+                    div { key: "side-{k}", class: "stack gap-16",
+                        OrgCard { id: k }
+                        DealInfo { id: k }
+                        DealQuotes { id: k }
+                    }
                 }
             }
         }
