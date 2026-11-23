@@ -51,7 +51,7 @@ const copied = ref<"code" | "command" | null>(null);
 
 const branches = computed(() => company.current?.branches ?? []);
 const agents = useAgents(computed(() => open.value && step.value !== "form"), computed(() => open.value));
-const cameras = useCameras(null, computed(() => step.value === "paired"));
+const cameras = useCameras(null, computed(() => step.value === "paired"), computed(() => open.value && step.value === "paired"));
 const arrived = computed(() => (cameras.data.value ?? []).filter((camera) => camera.agent_id === box.value?.id));
 
 /** The person typed a name or picked a branch: the defaults no longer move. */
@@ -202,7 +202,7 @@ const dialogTitle = computed(() => (step.value === "paired" && box.value ? t("vi
       <div>
         <p class="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted"><Terminal :size="13" />{{ t("vision.pair.command") }}</p>
         <div class="flex items-center gap-2 rounded-[10px] border border-line bg-[#171411] py-1.5 pl-3 pr-1.5 text-[#f3ece1]">
-          <code class="min-w-0 flex-1 overflow-x-auto whitespace-nowrap py-1 font-mono text-[13px]">{{ code.command }}</code>
+          <code class="min-w-0 flex-1 overflow-x-auto whitespace-nowrap py-1 font-mono text-[13px] max-sm:whitespace-normal max-sm:break-all">{{ code.command }}</code>
           <button type="button" class="pressable grid size-8 shrink-0 place-items-center rounded-[7px] text-white/70 hover:bg-white/10 hover:text-white" :aria-label="copied === 'command' ? t('common.copied') : t('common.copy')" @click="copy('command')">
             <Check v-if="copied === 'command'" :size="15" class="text-[#7fd6aa]" />
             <Copy v-else :size="15" />

@@ -123,13 +123,15 @@ export function useLive(branch: MaybeRefOrGetter<number | null>, enabled: MaybeR
   });
 }
 
-export function useCameras(branch: MaybeRefOrGetter<number | null> = null, enabled: MaybeRefOrGetter<boolean> = true) {
+/** The cameras; polled every 2 s while a just-paired box's cameras are arriving. */
+export function useCameras(branch: MaybeRefOrGetter<number | null> = null, enabled: MaybeRefOrGetter<boolean> = true, poll: MaybeRefOrGetter<boolean> = false) {
   const companyId = useCompanyId();
   return useQuery({
     queryKey: computed(() => visionKeys.cameras(companyId.value, toValue(branch))),
     queryFn: ({ signal }) => listCameras(companyId.value, toValue(branch), signal),
     enabled: computed(() => companyId.value > 0 && toValue(enabled)),
     placeholderData: keepPreviousData,
+    refetchInterval: computed(() => (toValue(poll) ? 2_000 : false)),
   });
 }
 
