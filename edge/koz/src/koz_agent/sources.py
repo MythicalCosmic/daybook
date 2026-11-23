@@ -27,6 +27,7 @@ log = logging.getLogger(__name__)
 
 KEY = re.compile(r"^[a-z0-9:_-]{1,64}$")
 RECONNECT_S = (1, 2, 5, 10, 30, 60)
+AUTH_CHECK_AFTER = 3  # failed opens before asking the NVR whether the login is still right
 
 
 def slug(name: str, limit: int = 40) -> str:
@@ -139,6 +140,10 @@ class CaptureSource(Source):
         """Called when a read fails; return True to keep the same capture."""
         return False
 
+    def login_ok(self) -> bool:
+        """Asked after a few failed opens: False means the login is wrong, so stop for good."""
+        return True
+
     def _run(self) -> None:
         attempt = 0
         while not self._stop.is_set():
@@ -147,8 +152,12 @@ class CaptureSource(Source):
                 self.error = "cannot open the stream"
                 log.warning("%s: cannot open %s", self.key, self.display_target)
                 cap.release()
-                pause = RECONNECT_S[min(attempt, len(RECONNECT_S) - 1)]
                 attempt += 1
+                if attempt % AUTH_CHECK_AFTER == 0 and not self.login_ok():
+                    self.error = "wrong NVR login"
+                    log.error("%s: wrong NVR login; not trying again", self.key)
+                    return
+                pause = RECONNECT_S[min(attempt - 1, len(RECONNECT_S) - 1)]
                 if self._stop.wait(pause):
                     break
                 continue
@@ -189,13 +198,29 @@ class RtspSource(CaptureSource):
 
 
 class NvrSource(CaptureSource):
-    """One NVR channel's sub-stream (``…/Streaming/Channels/<ch>02``)."""
+    """One NVR channel's sub-stream (``…/Streaming/Channels/<ch>02``).
+
+    Hikvision counts failed RTSP logins too, so after a few failed opens the login is checked
+    once over ISAPI (``login_check``); a wrong login stops the stream for good."""
 
     kind = "nvr"
 
-    def __init__(self, key: str, name: str, url: str, channel: int, **kwargs) -> None:
+    def __init__(
+        self,
+        key: str,
+        name: str,
+        url: str,
+        channel: int,
+        *,
+        login_check: Callable[[], bool] | None = None,
+        **kwargs,
+    ) -> None:
         super().__init__(key, name, url, **kwargs)
         self.channel = channel
+        self._login_check = login_check
+
+    def login_ok(self) -> bool:
+        return self._login_check() if self._login_check is not None else True
 
 
 class FileSource(CaptureSource):

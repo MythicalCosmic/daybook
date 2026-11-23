@@ -264,16 +264,65 @@ def _refresh_channels(settings, nvr) -> list[dict] | None:
 # --- run ----------------------------------------------------------------------------------
 
 
-def _build_sources(settings, clock, store, args):
-    from .settings import Settings  # noqa: F401  (typing aid)
+class NvrLink:
+    """One NVR as the running agent sees it: its settings, password and a single ISAPI client.
+    The client remembers a wrong login, so after one 401 nothing tries that NVR again."""
+
+    def __init__(self, nvr, password: str, settings, settings_path: Path) -> None:
+        from .nvr import NvrClient
+
+        self.nvr = nvr
+        self.password = password
+        self.client = NvrClient(nvr.host, nvr.user, password, port=nvr.port)
+        self._settings = settings
+        self._settings_path = settings_path
+        self._lock = threading.Lock()
+        self._offset: int | None = None
+
+    def failed(self) -> None:
+        """A 401: remember it on disk until `koz-agent nvr set` is run again."""
+        with self._lock:
+            if not self.nvr.auth_failed_at:
+                self.nvr.auth_failed_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+                self._settings.save(self._settings_path)
+                log.error(
+                    "%s: wrong NVR login; run `koz-agent nvr set %s`", self.nvr.host, self.nvr.host
+                )
+
+    def login_ok(self) -> bool:
+        from .nvr import NvrAuthError, NvrError
+
+        try:
+            self.client.time()
+            return True
+        except NvrAuthError:
+            self.failed()
+            return False
+        except NvrError:
+            return True  # unreachable is not a login problem: the stream keeps retrying
+
+    def offset(self) -> int:
+        from .nvr import NvrAuthError, parse_offset
+
+        if self.nvr.time != "auto":
+            return parse_offset(self.nvr.time)
+        if self._offset is None:
+            try:
+                self._offset = self.client.time().offset_s
+            except NvrAuthError:
+                self.failed()
+                raise
+        return self._offset
+
+
+def _build_sources(settings, clock, store, args, settings_path: Path):
+    from .nvr import live_url
     from .sources import FileSource, NvrSource, RtspSource, WebcamSource, make_sim_sources
 
     if args.scene:
         start = int(clock.time()) - max(0.0, args.at)
         return make_sim_sources(args.scene, args.seed, clock, threaded=True, start=start), {}
-    sources, nvr_of = [], {}
-    from .nvr import live_url
-
+    sources, links = [], {}
     for index, nvr in enumerate(settings.nvrs):
         if nvr.auth_failed_at:
             log.error(
@@ -286,13 +335,19 @@ def _build_sources(settings, clock, store, args):
             continue
         channels = _refresh_channels(settings, nvr) or nvr.channels
         if nvr.auth_failed_at:
+            settings.save(settings_path)
             continue
+        link = NvrLink(nvr, password, settings, settings_path)
         prefix = "nvr" if index == 0 else f"nvr{index + 1}"
         for ch in channels:
             key = f"{prefix}:{ch['id']}"
             url = live_url(nvr.host, int(ch["id"]), nvr.user, password, port=nvr.rtsp_port)
-            sources.append(NvrSource(key, ch["name"], url, int(ch["id"]), clock=clock))
-            nvr_of[key] = (nvr, password)
+            sources.append(
+                NvrSource(
+                    key, ch["name"], url, int(ch["id"]), clock=clock, login_check=link.login_ok
+                )
+            )
+            links[key] = link
     for source in settings.sources:
         if source.kind == "rtsp":
             url = store.get(source.secret_name)
@@ -310,7 +365,7 @@ def _build_sources(settings, clock, store, args):
                     clock=clock,
                 )
             )
-    return sources, nvr_of
+    return sources, links
 
 
 def cmd_run(args) -> int:
@@ -336,7 +391,7 @@ def cmd_run(args) -> int:
     settings = Settings.load(paths["settings"])
     store = _store()
     clock = SystemClock()
-    sources, nvr_of = _build_sources(settings, clock, store, args)
+    sources, nvr_of = _build_sources(settings, clock, store, args, paths["settings"])
     if not sources:
         _print(
             "No cameras. Add an NVR (`koz-agent nvr set <host>`) or a source, or try "
@@ -426,52 +481,39 @@ def cmd_run(args) -> int:
     return 0
 
 
-def _nvr_callbacks(nvr_of: dict, ffmpeg: str | None, encoder: str | None):
-    from .nvr import NvrAuthError, NvrClient, NvrError, parse_offset, playback_url
+def _nvr_callbacks(links: dict, ffmpeg: str | None, encoder: str | None):
+    from .nvr import NvrAuthError, NvrError, playback_url
     from .recorder import ClipError, cut_nvr_clip
 
-    offsets: dict[str, int] = {}
-
-    def offset_for(nvr, password) -> int:
-        if nvr.time != "auto":
-            return parse_offset(nvr.time)
-        if nvr.host not in offsets:
-            client = NvrClient(nvr.host, nvr.user, password, port=nvr.port)
-            try:
-                offsets[nvr.host] = client.time().offset_s
-            finally:
-                client.close()
-        return offsets[nvr.host]
-
     def nvr_clip(cam, start: float, end: float):
-        nvr, password = nvr_of[cam.key]
+        link = links[cam.key]
         if not ffmpeg or not encoder:
             raise ClipError("nvr_error", "no H.264 encoder on this PC")
+        if link.nvr.auth_failed_at:
+            raise ClipError("nvr_error", "wrong NVR login")
         try:
-            offset = offset_for(nvr, password)
-        except NvrAuthError as exc:
-            raise ClipError("nvr_error", str(exc)) from exc
-        except NvrError as exc:
+            offset = link.offset()
+        except NvrError as exc:  # NvrAuthError included
             raise ClipError("nvr_error", str(exc)) from exc
         url = playback_url(
-            nvr.host,
+            link.nvr.host,
             cam.source.channel,
             start,
             end,
-            nvr.user,
-            password,
+            link.nvr.user,
+            link.password,
             offset_s=offset,
-            port=nvr.rtsp_port,
+            port=link.nvr.rtsp_port,
         )
         return cut_nvr_clip(ffmpeg, encoder, url, min(60.0, end - start))
 
     def nvr_snapshot(cam) -> bytes | None:
-        nvr, password = nvr_of[cam.key]
-        client = NvrClient(nvr.host, nvr.user, password, port=nvr.port)
+        link = links[cam.key]
         try:
-            return client.snapshot(cam.source.channel)
-        finally:
-            client.close()
+            return link.client.snapshot(cam.source.channel)
+        except NvrAuthError:
+            link.failed()
+            raise
 
     return nvr_clip, nvr_snapshot
 
