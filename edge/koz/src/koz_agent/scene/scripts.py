@@ -79,9 +79,9 @@ SCRIPTS: dict[str, Script] = {
         patience=(240, 420),
         phases=((0, "calm"), (120, "break"), (270, "calm")),
     ),
-    # Calm → rush → break, every 8 minutes. A wave comes in while one pharmacist is alone and
-    # the queue reaches 5–6; the second opens Kassa 2 and it clears. Later Kassa 2 closes and the
-    # only pharmacist left steps away for 2.5 minutes while customers wait.
+    # Calm → rush → break, every 8 minutes. A wave comes in at 0:30 while one pharmacist is
+    # alone and the queue reaches 5–6; at 3:20 the second opens Kassa 2 and it clears. At 4:50
+    # Kassa 2 closes, and from 5:20 to 7:30 the only pharmacist left is away while customers wait.
     "demo": Script(
         name="demo",
         loop_s=480,

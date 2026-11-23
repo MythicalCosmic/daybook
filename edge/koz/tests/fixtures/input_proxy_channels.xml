@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Written from Hikvision's ISAPI documentation (GET /ISAPI/ContentMgmt/InputProxy/channels);
+     no device was contacted. Channels are listed out of order on purpose. -->
+<InputProxyChannelList version="2.0" xmlns="http://www.hikvision.com/ver20/XMLSchema">
+<InputProxyChannel version="2.0" xmlns="http://www.hikvision.com/ver20/XMLSchema">
+<id>1</id>
+<name>Kassa 1</name>
+<sourceInputPortDescriptor>
+<proxyProtocol>HIKVISION</proxyProtocol>
+<addressingFormatType>ipaddress</addressingFormatType>
+<ipAddress>192.168.254.2</ipAddress>
+<managePortNo>8000</managePortNo>
+<srcInputPort>1</srcInputPort>
+<userName>admin</userName>
+<streamType>auto</streamType>
+<deviceID></deviceID>
+</sourceInputPortDescriptor>
+<enableAnr>false</enableAnr>
+<enableTiming>true</enableTiming>
+</InputProxyChannel>
+<InputProxyChannel version="2.0" xmlns="http://www.hikvision.com/ver20/XMLSchema">
+<id>3</id>
+<name>Kirish</name>
+<sourceInputPortDescriptor>
+<proxyProtocol>HIKVISION</proxyProtocol>
+<addressingFormatType>ipaddress</addressingFormatType>
+<ipAddress>192.168.254.4</ipAddress>
+<managePortNo>8000</managePortNo>
+<srcInputPort>1</srcInputPort>
+<userName>admin</userName>
+<streamType>auto</streamType>
+</sourceInputPortDescriptor>
+<enableAnr>false</enableAnr>
+</InputProxyChannel>
+<InputProxyChannel version="2.0" xmlns="http://www.hikvision.com/ver20/XMLSchema">
+<id>2</id>
+<name>Zal</name>
+<sourceInputPortDescriptor>
+<proxyProtocol>ONVIF</proxyProtocol>
+<addressingFormatType>ipaddress</addressingFormatType>
+<ipAddress>192.168.254.3</ipAddress>
+<managePortNo>80</managePortNo>
+<srcInputPort>1</srcInputPort>
+<userName>admin</userName>
+</sourceInputPortDescriptor>
+</InputProxyChannel>
+</InputProxyChannelList>

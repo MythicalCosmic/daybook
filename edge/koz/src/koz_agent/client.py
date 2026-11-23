@@ -204,14 +204,11 @@ class DaybookClient:
         return self._json(self._request("POST", "stats/", json_body={"minutes": minutes}))
 
     def event(self, event: dict, image: bytes | None = None) -> dict:
-        files = {"image": ("alert.jpg", image, "image/jpeg")} if image else None
-        response = self._request(
-            "POST",
-            "events/",
-            data={"event": json.dumps(event, separators=(",", ":"))},
-            files=files,
-        )
-        return self._json(response)
+        # always multipart (contract §5.8), even without a photo: a part with no file name
+        files: dict = {"event": (None, json.dumps(event, separators=(",", ":")))}
+        if image:
+            files["image"] = ("alert.jpg", image, "image/jpeg")
+        return self._json(self._request("POST", "events/", files=files))
 
     def jobs(self) -> dict:
         return self._json(self._request("GET", "jobs/"))
