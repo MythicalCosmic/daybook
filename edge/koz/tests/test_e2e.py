@@ -152,6 +152,9 @@ def test_entries_come_from_the_door(run):
     entered = sum(r["entered"] for (k, _m), r in stats.items() if k == "sim:door")
     exited = sum(r["exited"] for (k, _m), r in stats.items() if k == "sim:door")
     assert entered >= 12 and exited >= 8
+    # the shop starts all but empty, so more came in than left (16 and 13 for this seed); a line
+    # side read the wrong way round would swap the two
+    assert entered > exited
     assert sum(r["entered"] for (k, _m), r in stats.items() if k == "sim:counter") == 0
 
 

@@ -49,7 +49,7 @@ _ZONES: dict[str, list[dict]] = {
         },
     ],
     "sim:door": [
-        {"id": "l1", "kind": "line", "points": [[0.22, 0.64], [0.78, 0.64]], "in": "left"},
+        {"id": "l1", "kind": "line", "points": [[0.22, 0.64], [0.78, 0.64]], "in": "right"},
         {
             "id": "f1",
             "kind": "floor",

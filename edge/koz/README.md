@@ -141,6 +141,6 @@ status page, and an end-to-end run: both sim cameras on the demo scene against a
 downloaded model skip themselves when those are missing. No test opens a webcam or contacts a
 device.
 
-The side of an entrance line (§4) is computed in image coordinates exactly as written: for the
-directed line A→B, `left` is where (B − A) × (P − A) > 0. On the screen (y down) that is the side
-to the right of the arrow; for a line drawn left to right, `left` is below it.
+The side of an entrance line (§4) is named as people see the picture: walking from A to B, `left`
+is your left hand. Image y grows downwards, so `left` is where (B − A) × (P − A) < 0; for a line
+drawn left to right, `left` is the side above it. The dashboard's zone editor draws the same arrow.

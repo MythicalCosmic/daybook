@@ -130,11 +130,11 @@ def draw_zones(
             )
             dx, dy = bx - ax, by - ay
             length = max(1.0, (dx * dx + dy * dy) ** 0.5)
-            # the in side: "left" is the positive cross product in image coordinates
+            # the in side as people see it: walking A→B, "left" is your left hand (y grows down)
             nx, ny = (
-                (-dy / length, dx / length)
+                (dy / length, -dx / length)
                 if zone.inside == "left"
-                else (dy / length, -dx / length)
+                else (-dy / length, dx / length)
             )
             mx, my = (ax + bx) / 2, (ay + by) / 2
             tip = (mx + nx * 34 * scale, my + ny * 34 * scale)

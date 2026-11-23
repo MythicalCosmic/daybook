@@ -1,9 +1,10 @@
 """Plane geometry for zones and tracks. Points are ``(x, y)`` with y pointing down (image
 coordinates); boxes are ``(x1, y1, x2, y2)`` unless a name says ``xywh``.
 
-The side of a directed line A→B is the sign of the cross product (B − A) × (P − A), computed in
-image coordinates exactly as written: positive is ``left``, negative is ``right``. On the screen
-(y down) that means: for a line drawn from left to right, ``left`` is the side **below** it.
+The side of a directed line A→B is named as people see the picture (docs/KOZ.md §4): walking from
+A to B, ``left`` is your left hand. Image y grows downwards, so ``left`` is where the cross product
+(B − A) × (P − A) is **negative** and ``right`` where it is positive: for a line drawn from left to
+right, ``left`` is the side above it. The dashboard's zone editor uses the same rule.
 """
 
 from __future__ import annotations
@@ -81,7 +82,8 @@ def cross(a: Point, b: Point, p: Point) -> float:
 
 
 def side_of_line(p: Point, a: Point, b: Point, margin: float = 0.0) -> int:
-    """+1 (``left``), −1 (``right``) or 0 when within ``margin`` (a distance) of the line."""
+    """The sign of the cross product: +1 (``right``), −1 (``left``) or 0 when within ``margin``
+    (a distance) of the line."""
     length = ((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2) ** 0.5
     if length == 0:
         return 0
@@ -94,8 +96,8 @@ def side_of_line(p: Point, a: Point, b: Point, margin: float = 0.0) -> int:
 
 
 def side_sign(name: str) -> int:
-    """``left`` → +1, ``right`` → −1 (see the module docstring)."""
-    return 1 if name == "left" else -1
+    """The :func:`side_of_line` sign of a named side: ``left`` → −1, ``right`` → +1."""
+    return -1 if name == "left" else 1
 
 
 def segments_intersect(p1: Point, p2: Point, q1: Point, q2: Point) -> bool:

@@ -41,10 +41,12 @@ def test_point_in_polygon_square_and_concave():
 def test_side_of_line_in_image_coordinates():
     a, b = (0.1, 0.6), (0.9, 0.6)  # drawn left to right
     below, above = (0.5, 0.8), (0.5, 0.4)
-    assert side_of_line(below, a, b) == 1  # "left" of A→B in image coordinates (y down)
+    assert side_of_line(below, a, b) == 1  # a positive cross product (y down)
     assert side_of_line(above, a, b) == -1
     assert side_of_line((0.5, 0.601), a, b, margin=0.01) == 0
-    assert side_sign("left") == 1 and side_sign("right") == -1
+    # walking A→B on the screen, your left hand points up: "left" is above this line
+    assert side_sign("left") == side_of_line(above, a, b)
+    assert side_sign("right") == side_of_line(below, a, b)
     # reversing the line swaps the sides
     assert side_of_line(below, b, a) == -1
 

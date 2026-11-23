@@ -49,7 +49,7 @@ def test_track_survives_a_short_miss_and_is_dropped_later():
     assert tracker.update([person(405, 400)], 4.0)[0].id == 2
 
 
-LINE = [{"id": "l1", "kind": "line", "points": [[0.2, 0.5], [0.8, 0.5]], "in": "left"}]
+LINE = [{"id": "l1", "kind": "line", "points": [[0.2, 0.5], [0.8, 0.5]], "in": "right"}]
 
 
 def walk(analyzer, xs_ys, start=0.0, step=0.5):
@@ -63,14 +63,14 @@ def test_crossing_into_the_in_side_counts_entered_then_exited():
     analyzer = CameraAnalyzer(ZoneSet.from_json(LINE))
     down = [(0.5, y) for y in (0.30, 0.38, 0.46, 0.54, 0.62, 0.70)]
     results = walk(analyzer, down)
-    assert sum(r.entered for r in results) == 1  # below the line is "left" → inside
+    assert sum(r.entered for r in results) == 1  # below a left-to-right line is "right" → inside
     assert sum(r.exited for r in results) == 0
     back = walk(analyzer, list(reversed(down)), start=10.0)
     assert sum(r.exited for r in back) == 1 and sum(r.entered for r in back) == 0
 
 
-def test_in_right_flips_the_direction():
-    zones = [dict(LINE[0], **{"in": "right"})]
+def test_in_left_flips_the_direction():
+    zones = [dict(LINE[0], **{"in": "left"})]
     analyzer = CameraAnalyzer(ZoneSet.from_json(zones))
     results = walk(analyzer, [(0.5, y) for y in (0.3, 0.4, 0.6, 0.7)])
     assert sum(r.exited for r in results) == 1 and sum(r.entered for r in results) == 0
