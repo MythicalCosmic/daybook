@@ -270,7 +270,9 @@ export function simulateCounter(seed: number, shape: QueueShape = "zigzag"): Sce
         walkX(p, STAFF_OUT);
       }
       if (p.serving && p.serving.served !== null && t >= p.serving.served + p.serving.service) {
+        // Served: no longer waiting, even while walking out across the queue zone.
         p.serving.state = "leaving";
+        p.serving.enteredZone = null;
         p.serving = null;
       }
     }
@@ -305,9 +307,8 @@ export function simulateCounter(seed: number, shape: QueueShape = "zigzag"): Sce
     for (const c of customers) {
       if (c.state === "served" && c.window !== null) walk(c, windows[c.window]!);
       if (c.state === "leaving" && walk(c, EXIT, 165)) c.state = "gone";
-      const inZone = c.arrive <= t && c.state !== "gone" && pointInPolygon([c.x, Math.min(c.y, 0.999)], queue);
+      const inZone = c.arrive <= t && c.state !== "gone" && c.state !== "leaving" && pointInPolygon([c.x, Math.min(c.y, 0.999)], queue);
       if (inZone && c.enteredZone === null) c.enteredZone = t;
-      if (!inZone && c.state === "leaving") c.enteredZone = null;
     }
 
     const bodies: Body[] = [];
