@@ -1,0 +1,47 @@
+[project]
+name = "koz-agent"
+version = "0.1.0"
+description = "Daybook Ko‘z: the pharmacy PC agent that turns its cameras into a sensor for Daybook"
+readme = "README.md"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    "httpx>=0.27,<1",
+    "imageio-ffmpeg>=0.5",
+    "numpy>=2.0",
+    "onnxruntime>=1.20",
+    "opencv-python-headless>=4.10",
+]
+
+[project.scripts]
+koz-agent = "koz_agent.cli:main"
+
+[dependency-groups]
+dev = ["pytest>=8.3"]
+
+[build-system]
+requires = ["uv_build>=0.13.0,<0.14"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "koz_agent"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+markers = [
+    "ffmpeg: needs the ffmpeg binary of imageio-ffmpeg and a working H.264 encoder",
+    "model: needs the downloaded YOLOX-tiny model",
+]
+
+# The root of the repo lints with its own config (Python 3.14, Django); the agent targets 3.12+.
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP", "SIM", "RUF"]
+ignore = ["RUF001", "RUF012"]
+allowed-confusables = ["‘", "’"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["koz_agent"]
