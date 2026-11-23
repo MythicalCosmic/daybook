@@ -72,7 +72,11 @@ A camera has up to 8 zones, stored as a JSON list on the camera:
 - `queue`: where customers stand waiting at the counter. Polygon, 3–24 points.
 - `staff`: behind the counter, where pharmacists stand. Polygon.
 - `line`: an entrance line, exactly 2 points A→B. `in` is `left` or `right`: the side of the
-  directed line A→B (in image coordinates) that is inside the pharmacy. A person whose track
+  directed line A→B that is inside the pharmacy, **named as people see the picture**: walking
+  from A to B, `left` is your left hand. Because y grows downwards, `left` is where
+  (B − A) × (P − A) = (bx − ax)(py − ay) − (by − ay)(px − ax) is **negative** and `right` where it
+  is positive. Example: for A = (0.10, 0.60) → B = (0.90, 0.62), drawn left to right, `left` is the
+  side above the line. The zone editor's arrow points to the `in` side. A person whose track
   crosses from outside to inside counts as `entered`, the other way as `exited`.
 - `floor`: an area for counting people (occupancy).
 - `mask`: blacked out in every picture the agent sends (snapshots, live frames, alert photos),
