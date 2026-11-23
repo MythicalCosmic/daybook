@@ -96,20 +96,44 @@ export const FLOOR_ZONES: Zone[] = [{ id: "f1", kind: "floor", points: [[0.04, 0
 // ─── The counter ────────────────────────────────────────────────────────────
 
 /** Where the first customer of each window stands, and where the rest line up behind. */
-const WINDOWS: Point[] = [
-  [0.4, 0.705],
-  [0.62, 0.705],
-];
-/** The line zig-zags back toward the camera, so every waiting customer stays visible. */
-const SLOTS: Point[] = [
-  [0.5, 0.79],
-  [0.33, 0.83],
-  [0.66, 0.87],
-  [0.42, 0.925],
-  [0.6, 0.975],
-  [0.3, 0.995],
-  [0.5, 1.07],
-];
+/** How customers line up: a zig-zag across the floor, or a tight column toward the camera. */
+export type QueueShape = "zigzag" | "column";
+
+const WINDOWS: Record<QueueShape, Point[]> = {
+  zigzag: [
+    [0.4, 0.705],
+    [0.62, 0.705],
+  ],
+  column: [
+    [0.58, 0.705],
+    [0.74, 0.705],
+  ],
+};
+/**
+ * Where the waiting customers stand. The zig-zag keeps everyone visible; the column is how a real
+ * queue looks from a camera above and behind it (the agent's own scene): one behind the other
+ * toward the camera, each box overlapping the next by about half.
+ */
+const SLOTS: Record<QueueShape, Point[]> = {
+  zigzag: [
+    [0.5, 0.79],
+    [0.33, 0.83],
+    [0.66, 0.87],
+    [0.42, 0.925],
+    [0.6, 0.975],
+    [0.3, 0.995],
+    [0.5, 1.07],
+  ],
+  column: [
+    [0.535, 0.765],
+    [0.49, 0.815],
+    [0.445, 0.865],
+    [0.4, 0.915],
+    [0.355, 0.965],
+    [0.31, 1.0],
+    [0.265, 1.06],
+  ],
+};
 const ENTRY: Point = [0.02, 1.16];
 const EXIT: Point = [1.08, 0.86];
 const STAFF_Y = 0.5;
@@ -202,7 +226,9 @@ function counterHeight(y: number): number {
   return Math.min(0.5, 0.31 + Math.max(0, y - 0.7) * 0.52);
 }
 
-export function simulateCounter(seed: number): Scene {
+export function simulateCounter(seed: number, shape: QueueShape = "zigzag"): Scene {
+  const windows = WINDOWS[shape];
+  const slots = SLOTS[shape];
   const random = rng(seed);
   const customers: Customer[] = arrivals(random).map(({ at, pace }, index) => ({
     id: index + 1,
@@ -218,7 +244,7 @@ export function simulateCounter(seed: number): Scene {
     look: Math.floor(random() * 1000),
   }));
   const pharmacists: Pharmacist[] = [
-    { id: 901, window: 0, shifts: [[0, 290], [392, CYCLE + 1]], x: 0.4, present: true, serving: null, look: 11 },
+    { id: 901, window: 0, shifts: [[0, 290], [392, CYCLE + 1]], x: windows[0]![0], present: true, serving: null, look: 11 },
     { id: 902, window: 1, shifts: [[186, 282], [397, 414]], x: STAFF_OUT, present: false, serving: null, look: 23 },
   ];
   const queue = COUNTER_ZONES.find((zone) => zone.id === "q1")!.points;
@@ -233,7 +259,7 @@ export function simulateCounter(seed: number): Scene {
 
     // Pharmacists come to the counter, serve, and step away once their customer is done.
     for (const p of pharmacists) {
-      const home = WINDOWS[p.window]![0];
+      const home = windows[p.window]![0];
       if (onShift(p)) {
         walkX(p, p.serving ? home : home + Math.sin(t / 5 + p.id) * 0.04);
         p.present = Math.abs(p.x - home) <= 0.06;
@@ -263,7 +289,7 @@ export function simulateCounter(seed: number): Scene {
     let slot = 0;
     for (const c of waiting) {
       if (c.window !== null) {
-        const reached = walk(c, WINDOWS[c.window]!);
+        const reached = walk(c, windows[c.window]!);
         const server = pharmacists.find((p) => p.window === c.window)!;
         if (reached && server.present && !server.serving) {
           c.state = "served";
@@ -272,12 +298,12 @@ export function simulateCounter(seed: number): Scene {
           server.serving = c;
         }
       } else {
-        walk(c, SLOTS[Math.min(slot, SLOTS.length - 1)]!);
+        walk(c, slots[Math.min(slot, slots.length - 1)]!);
         slot++;
       }
     }
     for (const c of customers) {
-      if (c.state === "served" && c.window !== null) walk(c, WINDOWS[c.window]!);
+      if (c.state === "served" && c.window !== null) walk(c, windows[c.window]!);
       if (c.state === "leaving" && walk(c, EXIT, 165)) c.state = "gone";
       const inZone = c.arrive <= t && c.state !== "gone" && pointInPolygon([c.x, Math.min(c.y, 0.999)], queue);
       if (inZone && c.enteredZone === null) c.enteredZone = t;

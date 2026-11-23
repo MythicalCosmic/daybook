@@ -4,7 +4,7 @@
  * here and switching company never shows another company's cameras.
  *
  * In fixture mode (mode.ts, dev server only) every call is answered by `./fixtures` instead of the
- * network; the branch that imports them is dropped from a build.
+ * network; the branch that imports them is dropped from a build, chunk and all.
  */
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
 import { computed, toValue, type MaybeRefOrGetter } from "vue";
@@ -14,7 +14,6 @@ import { moduleKey, qk } from "@/api/keys";
 import type { Page } from "@/api/types";
 import { useCompanyId } from "@/stores/company";
 
-import { FIXTURES } from "./mode";
 import type { Agent, Alert, AlertParams, Camera, CameraPatch, Clip, ClipRequest, Frame, Live, Overview, Pairing, ReviewItem, VisionSettings } from "./types";
 
 export const MODULE = "vision";
@@ -28,9 +27,13 @@ export interface CallOptions {
   toast?: boolean;
 }
 
-/** One Ko‘z call: the network, or the fixtures in fixture mode. */
+/**
+ * One Ko‘z call: the network, or the fixtures in fixture mode. The guard is written out here, not
+ * imported, so a build sees `false && …` in this very module and drops the import with its chunk
+ * (as main.ts does for the dev mock).
+ */
 export async function call<T>(companyId: number, rest: string, options: CallOptions = {}): Promise<T> {
-  if (FIXTURES) {
+  if (import.meta.env.DEV && import.meta.env.VITE_VISION_FIXTURES === "1") {
     const { answer } = await import("./fixtures");
     return answer<T>(companyId, rest, options);
   }

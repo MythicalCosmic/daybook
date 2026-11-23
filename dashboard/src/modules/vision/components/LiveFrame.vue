@@ -4,15 +4,19 @@
  * screen, the zones drawn softly with their names and the entrance line's arrow, and a rounded
  * box on every person in their role's colour. Between pictures the boxes glide (matched by track)
  * and the pictures cross-fade, so twice a second reads as movement; the label pills
- * ("Mijoz · 0:45", "Farmatsevt") keep ticking every second. The box draws nothing on the JPEG:
- * everything on top is drawn here.
+ * ("Mijoz · 0:45", "Farmatsevt") keep ticking every second and are laid out so they never cover
+ * each other (lib/labels.ts: the longest wait first and in its place, the others moved the least,
+ * with a leader, shortened or left out when the queue is too tight). The box draws nothing on the
+ * JPEG: everything on top is drawn here.
  */
 import { CameraOff, Cctv, Lock, RefreshCw } from "@lucide/vue";
+import { useResizeObserver } from "@vueuse/core";
 import { computed, onBeforeUnmount, ref, shallowRef, useId, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import { useSecondClock } from "../lib/clock";
 import { insideArrow, labelAnchor } from "../lib/geometry";
+import { layoutPills, memoryOf, type PillInput, type PillMemory, type Rect } from "../lib/labels";
 import { ROLE_COLOR, WAIT_COLOR, ZONE_COLOR } from "../lib/look";
 import { formatClock, glideDuration, interpolate, tickingWait, waitLevel, type DrawnPerson } from "../lib/tracks";
 import { useFramePoll } from "../lib/useFramePoll";
@@ -140,13 +144,10 @@ const people = computed(() =>
       y,
       w,
       h,
+      wait,
       opacity: person.opacity,
       color: ROLE_COLOR[person.role],
-      text: person.role === "staff" ? t("vision.person.staff") : wait !== null ? `${t("vision.person.customer")} · ${formatClock(wait)}` : t("vision.person.customer"),
       waitColor: wait !== null ? WAIT_COLOR[level] : null,
-      inside: y < 0.075,
-      /** Near the right edge the pill hangs from the box's right side, inside the picture. */
-      right: x + w > 0.82,
       staff: person.role === "staff",
     };
   }),
@@ -171,6 +172,99 @@ function midpoint(zone: Zone): [number, number] {
   return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
 }
 
+// ─── Label pills, laid out in pixels so they never overlap ─────────────────
+
+const root = ref<HTMLElement | null>(null);
+const size = ref({ w: 960, h: 540 });
+useResizeObserver(root, (entries) => {
+  const box = entries[0]?.contentRect;
+  if (box && box.width > 0 && box.height > 0) size.value = { w: box.width, h: box.height };
+});
+
+const font = computed(() => (props.compact ? 10 : 11.5));
+const pillHeight = computed(() => (props.compact ? 16 : 21));
+/** Padding, the role dot and the space after it. */
+const chrome = computed(() => (props.compact ? 12 + 6 + 5 : 16 + 6 + 6));
+
+let measure: CanvasRenderingContext2D | null | undefined;
+const measured = new Map<string, number>();
+// Widths measured before Figtree arrived were the fallback font's: measure again once it has.
+void (typeof document !== "undefined" ? document.fonts?.ready : undefined)?.then(() => measured.clear());
+/** A text's width; digits all count as "0" (they are tabular), so a ticking wait never resizes its pill. */
+function textWidth(text: string): number {
+  const shape = text.replace(/[0-9]/g, "0");
+  const key = `${font.value}|${shape}`;
+  let width = measured.get(key);
+  if (width === undefined) {
+    if (measure === undefined) {
+      try {
+        measure = document.createElement("canvas").getContext("2d");
+      } catch {
+        measure = null;
+      }
+    }
+    if (measure) {
+      measure.font = `600 ${font.value}px "Figtree Variable", Figtree, system-ui, sans-serif`;
+      width = measure.measureText(shape).width;
+    } else width = shape.length * font.value * 0.56;
+    measured.set(key, width);
+  }
+  return Math.ceil(width + 3);
+}
+
+/** Zone name tags are fixed: pills keep clear of them. */
+const tagRects = computed<Rect[]>(() => {
+  if (!props.zonesVisible || props.compact) return [];
+  return shapes.value
+    .filter((shape) => shape.zone.kind !== "mask")
+    .map((shape) => {
+      const w = textWidth(t(`vision.zone.${shape.zone.kind}`)) + 22;
+      const x = shape.tag[0] * size.value.w;
+      const y = shape.tag[1] * size.value.h;
+      return shape.zone.kind === "line" ? { x: x - w / 2, y: y + 10, w, h: 20 } : { x: x + 6, y: y + 6, w, h: 20 };
+    });
+});
+
+interface PillLook {
+  full: string;
+  short: string;
+  color: string;
+  waitColor: string | null;
+  opacity: number;
+  wait: number | null;
+}
+
+let memory: Map<number, PillMemory> = new Map();
+const pills = computed(() => {
+  if (!props.labels || !front.value) return [];
+  const { w: W, h: H } = size.value;
+  const items: PillInput[] = [];
+  const looks = new Map<number, PillLook>();
+  for (const person of people.value) {
+    // A person fading out no longer claims room.
+    if (person.opacity < 0.35) continue;
+    const full = person.staff ? t("vision.person.staff") : person.wait !== null ? `${t("vision.person.customer")} · ${formatClock(person.wait)}` : t("vision.person.customer");
+    const short = person.wait !== null ? formatClock(person.wait) : full;
+    looks.set(person.key, { full, short, color: person.color, waitColor: person.waitColor, opacity: person.opacity, wait: person.wait });
+    items.push({
+      key: person.key,
+      box: { x: person.x * W, y: person.y * H, w: person.w * W, h: person.h * H },
+      width: textWidth(full) + chrome.value,
+      shortWidth: textWidth(short) + chrome.value,
+      height: pillHeight.value,
+      // The longest wait first, then the other waits, then customers, then pharmacists.
+      priority: person.wait !== null ? 10_000 + person.wait : person.staff ? 10 : 100,
+    });
+  }
+  const placements = layoutPills(items, size.value, memory, { obstacles: tagRects.value, gap: props.compact ? 2 : 3 });
+  memory = memoryOf(placements);
+  const longest = Math.max(-1, ...[...looks.values()].map((look) => look.wait ?? -1));
+  return placements.map((placement) => {
+    const look = looks.get(placement.key)!;
+    return { ...placement, ...look, text: placement.form === "full" ? look.full : look.short, longest: look.wait !== null && look.wait === longest && longest > 0 };
+  });
+});
+
 const state = computed<"offline" | "denied" | "connecting" | "waiting" | "error" | null>(() => {
   if (!props.online) return "offline";
   if (!props.canVideo || poll.status.value === "denied") return "denied";
@@ -183,6 +277,7 @@ const state = computed<"offline" | "denied" | "connecting" | "waiting" | "error"
 
 <template>
   <div
+    ref="root"
     class="koz-frame relative isolate overflow-hidden bg-[#0f0d0b] text-[#f6efe4]"
     :style="{ aspectRatio: aspect, borderRadius: rounded }"
     role="img"
@@ -293,21 +388,27 @@ const state = computed<"offline" | "denied" | "connecting" | "waiting" | "error"
       </template>
     </div>
 
-    <!-- The label pills follow their boxes. -->
+    <!-- The label pills, never on each other, with a leader when moved away from their box. -->
     <div v-if="front && labels" class="pointer-events-none absolute inset-0" aria-hidden="true">
+      <svg class="absolute inset-0 size-full" :viewBox="`0 0 ${size.w} ${size.h}`" preserveAspectRatio="none">
+        <template v-for="pill in pills" :key="`leader-${pill.key}`">
+          <g v-if="pill.leader" :opacity="pill.opacity" data-leader>
+            <line :x1="pill.leader.x1" :y1="pill.leader.y1" :x2="pill.leader.x2" :y2="pill.leader.y2" stroke="rgba(10,8,6,0.6)" stroke-width="3.5" stroke-linecap="round" />
+            <line :x1="pill.leader.x1" :y1="pill.leader.y1" :x2="pill.leader.x2" :y2="pill.leader.y2" stroke="rgba(255,255,255,0.92)" stroke-width="1.5" stroke-linecap="round" />
+            <circle :cx="pill.leader.x2" :cy="pill.leader.y2" r="3.25" :fill="pill.waitColor ?? pill.color" stroke="rgba(10,8,6,0.7)" stroke-width="1.5" />
+          </g>
+        </template>
+      </svg>
       <span
-        v-for="person in people"
-        :key="person.key"
-        :class="['koz-pill absolute inline-flex items-center gap-1.5 whitespace-nowrap rounded-full font-semibold tabular-nums', compact ? 'px-1.5 py-px text-[10px]' : 'px-2 py-0.5 text-[11.5px]']"
-        :style="{
-          left: `${(person.right ? person.x + person.w : person.x) * 100}%`,
-          top: `${person.y * 100}%`,
-          opacity: person.opacity,
-          transform: `translate(${person.right ? '-100%' : '0'}, ${person.inside ? '4px' : 'calc(-100% - 5px)'})`,
-        }"
+        v-for="pill in pills"
+        :key="pill.key"
+        :class="['koz-pill absolute inline-flex items-center justify-center gap-1.5 overflow-hidden whitespace-nowrap rounded-full font-semibold tabular-nums', compact ? 'text-[10px]' : 'text-[11.5px]']"
+        :style="{ left: `${pill.x}px`, top: `${pill.y}px`, width: `${pill.w}px`, height: `${pill.h}px`, opacity: pill.opacity, '--ring': pill.waitColor ?? pill.color }"
+        :data-longest="pill.longest || undefined"
+        :data-form="pill.form"
       >
-        <span class="size-1.5 shrink-0 rounded-full" :style="{ background: person.color }" />
-        <span :style="person.waitColor ? { color: person.waitColor } : undefined">{{ person.text }}</span>
+        <span class="size-1.5 shrink-0 rounded-full" :style="{ background: pill.color }" />
+        <span :style="pill.waitColor ? { color: pill.waitColor } : undefined">{{ pill.text }}</span>
       </span>
     </div>
 
@@ -334,12 +435,19 @@ const state = computed<"offline" | "denied" | "connecting" | "waiting" | "error"
 }
 .koz-pill,
 .koz-tag {
-  background: rgb(16 13 10 / 0.7);
+  background: rgb(16 13 10 / 0.72);
   color: #fbf6ee;
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.35);
   will-change: left, top;
+}
+/* The longest wait reads first: a thin ring in its colour. */
+.koz-pill[data-longest] {
+  background: rgb(16 13 10 / 0.86);
+  box-shadow:
+    0 0 0 1.5px var(--ring),
+    0 2px 8px rgb(0 0 0 / 0.45);
 }
 .koz-tag {
   background: rgb(16 13 10 / 0.55);

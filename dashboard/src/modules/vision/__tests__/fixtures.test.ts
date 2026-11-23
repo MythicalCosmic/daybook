@@ -53,6 +53,22 @@ describe("the fixture pharmacy", () => {
     expect(framePeople(scene, bodiesAt(scene, 200), 4).every((person) => !people.some((before) => before.track === person.track))).toBe(true);
   });
 
+  it("has a till whose queue stands in a tight column, boxes overlapping like the agent's scene", () => {
+    const column = simulateCounter(100, "column");
+    const queueZone = COUNTER_ZONES.find((zone) => zone.kind === "queue")!;
+    const rush = column.incidents.find((incident) => incident.kind === "queue")!;
+    const people = framePeople(column, bodiesAt(column, rush.start + 10), 1)
+      .filter((person) => person.role === "customer" && pointInPolygon([footPoint(person.box)[0], Math.min(footPoint(person.box)[1], 0.999)], queueZone.points))
+      .sort((a, b) => a.box[1] - b.box[1]);
+    expect(people.length).toBeGreaterThanOrEqual(3);
+    // Each box covers a good part of the next one, sideways.
+    for (let i = 1; i < people.length; i++) {
+      const [a, b] = [people[i - 1]!.box, people[i]!.box];
+      const shared = Math.min(a[0] + a[2], b[0] + b[2]) - Math.max(a[0], b[0]);
+      expect(shared / Math.min(a[2], b[2])).toBeGreaterThan(0.3);
+    }
+  });
+
   it("walks the counter's customers through the entrance before and after", () => {
     const entrance = simulateEntrance(scene, 9);
     expect(Math.max(...entrance.stats.map((s) => s.people))).toBeGreaterThan(0);

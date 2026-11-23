@@ -50,7 +50,8 @@ const sites = new Map<number, Site>();
 export function site(variant: number): Site {
   let found = sites.get(variant);
   if (!found) {
-    const counter = simulateCounter(7 + variant * 31);
+    // The second till's camera sees its queue as a tight column, like the agent's own scene.
+    const counter = simulateCounter(7 + variant * 31, variant === 3 ? "column" : "zigzag");
     found = {
       variant,
       offset: variant * 190,
