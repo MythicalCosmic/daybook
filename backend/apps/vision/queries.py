@@ -283,7 +283,11 @@ def live_page(company, *, branch_ids, user, now: datetime | None = None) -> dict
     from apps.vision import analytics
 
     now = now or timezone.now()
-    rows = list(cameras(company, branch_ids=branch_ids).filter(agent__removed_at__isnull=True))
+    rows = list(
+        cameras(company, branch_ids=branch_ids)
+        .filter(agent__removed_at__isnull=True)
+        .select_related("branch__company")
+    )
     reports = live.reports(camera.pk for camera in rows if not camera.agent.demo)
     found = []
     for camera in rows:

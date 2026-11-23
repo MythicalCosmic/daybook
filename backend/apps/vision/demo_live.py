@@ -10,7 +10,8 @@ so two people looking at once see the same thing, and nothing is stored.
 from __future__ import annotations
 
 import hashlib
-from datetime import datetime, time, timedelta
+import math
+from datetime import UTC, datetime, time, timedelta
 from itertools import pairwise
 
 from apps.attendance import clock
@@ -109,5 +110,30 @@ def branch_today(branch, now: datetime) -> tuple[int, int]:
 
 
 def frame(camera, now: datetime | None = None) -> dict | None:
-    """A live frame of a demo camera: its drawn scene with the people of `camera_report`."""
-    return None
+    """A live frame of a demo camera: its drawn scene with the people of `camera_report`, the
+    same for everyone watching in the same half second (kept 2 s in the cache)."""
+    from django.core.cache import cache
+    from django.utils import timezone
+
+    from apps.vision import demo_art
+
+    now = now or timezone.now()
+    key = f"vision:demo-frame:{camera.pk}:{int(now.timestamp() * 2)}"
+    found = cache.get(key)
+    if found is not None:
+        return found
+    scene = demo_art.scene_of(camera.role)
+    sway = math.sin(now.timestamp() / 2.5)
+    people = demo_art.people_for(
+        camera.role, camera_report(camera, now), seed=camera.pk, drift=sway
+    )
+    image = demo_art.render(scene, people, size=(960, 540), seed=camera.pk, zones=camera.zones)
+    found = {
+        "at": now.astimezone(UTC).isoformat(timespec="milliseconds").replace("+00:00", "Z"),
+        "w": 960,
+        "h": 540,
+        "people": demo_art.frame_people(people, scene),
+        "jpeg": demo_art.encode(image, quality=78),
+    }
+    cache.set(key, found, 2)
+    return found
