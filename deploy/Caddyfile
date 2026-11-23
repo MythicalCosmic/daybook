@@ -20,8 +20,35 @@
 	}
 }
 
+# Ko‘z boxes (apps/vision/device_api.py, docs/KOZ.md §5), over HTTPS only. Their calls are small
+# JSON or a picture of at most 1.5 MB, except a video receipt: an MP4 of at most 40 MB with its
+# poster, so this path alone takes 48 MB (the Face ID path keeps its 8 MB, the rest its 100 MB).
+# The body is buffered, so a slow pharmacy uplink holds Caddy, not a gunicorn thread. Matched
+# before the Face ID path: Caddy tries the longer path first.
+(koz) {
+	handle /api/v1/devices/koz/* {
+		request_body {
+			max_size 48MB
+		}
+		reverse_proxy backend:8000 {
+			request_buffers 48MB
+			header_up Host {$DOMAIN}
+		}
+	}
+}
+
+# Plain HTTP never carries a box's token: refused, not redirected (a redirected POST would send
+# it again in the clear).
+(koz_https_only) {
+	handle /api/v1/devices/koz/* {
+		respond "HTTPS only" 403
+	}
+}
+
 # HTTPS for the whole site; Caddy gets and renews the certificate for {$DOMAIN} by itself.
 {$DOMAIN} {
+	# Ko‘z boxes call here.
+	import koz
 	# Face ID terminals post their events here (and over plain HTTP, below).
 	import devices
 
@@ -97,6 +124,7 @@
 # count it as delivered, and the scan would be lost. Only the device path; the rest goes to the
 # site's name.
 https:// {
+	import koz
 	import devices
 	handle {
 		redir https://{$DOMAIN}{uri} permanent
@@ -106,6 +134,7 @@ https:// {
 # Plain HTTP for the site's name: Face ID terminals whose firmware offers no HTTPS post here;
 # everything else goes to HTTPS (as Caddy does by itself for sites without this block).
 http://{$DOMAIN} {
+	import koz_https_only
 	import devices
 	handle {
 		redir https://{host}{uri} permanent
@@ -115,6 +144,7 @@ http://{$DOMAIN} {
 # The server's bare address over plain HTTP, for terminals that take an IP address rather than
 # a name: only the device path, handed to Django under the site's name; the rest to HTTPS.
 :80 {
+	import koz_https_only
 	import devices
 	handle {
 		redir https://{$DOMAIN}{uri} permanent
