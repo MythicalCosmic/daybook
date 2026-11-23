@@ -64,3 +64,31 @@ def copy_to(alert: Alert, member, *, reason: str = "on_shift", bot: str = "emplo
         chat_id=member.user.telegram_id,
         message_id=next(_message_ids),
     )
+
+
+def stat(camera: Camera, minute, **values):
+    """One minute of a camera's numbers (zeros unless given)."""
+    from apps.vision.models import MinuteStat
+
+    fields = {"frames": 120}
+    fields.update(values)
+    return MinuteStat.objects.create(company=camera.company, camera=camera, minute=minute, **fields)
+
+
+def sale(branch, *, at, register=None, total=55_000, **fields):
+    """A receipt as the dashboard would book it (no money moves in these tests)."""
+    from decimal import Decimal
+
+    from apps.sales.models import Sale
+
+    values = {"kind": Sale.Kind.SALE, "source": Sale.Source.DASHBOARD}
+    values.update(fields)
+    return Sale.objects.create(
+        company=branch.company,
+        branch=branch,
+        register=register,
+        sold_at=at,
+        business_day=at.date(),
+        total=Decimal(total),
+        **values,
+    )

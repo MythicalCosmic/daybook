@@ -75,9 +75,9 @@ def _stats(cameras: list[Camera], start: datetime, end: datetime, zone) -> dict:
         .annotate(hour=ExtractHour("minute", tzinfo=zone), role=F("camera__role"))
         .values("hour", "role")
         .annotate(
-            entered=Sum("entered"),
-            queue_max=Max("queue_max"),
-            wait_max=Max("wait_max_s"),
+            came=Sum("entered"),
+            queue_peak=Max("queue_max"),
+            wait_peak=Max("wait_max_s"),
             wait_sum=Sum("wait_max_s", filter=Q(queue_max__gt=0)),
             waits=Count("pk", filter=Q(queue_max__gt=0)),
             unattended=Count("pk", filter=Q(queue_max__gt=0, staff_seconds=0)),
@@ -182,10 +182,10 @@ def day_numbers(company, *, branch_ids, day: date, now: datetime, until: datetim
         hours.append(
             {
                 "hour": hour,
-                "visitors": (door.get("entered") or 0) if has_entrance else None,
+                "visitors": (door.get("came") or 0) if has_entrance else None,
                 "receipts": receipts.get(hour, 0) if receipts is not None else None,
-                "queue_max": counter.get("queue_max") or 0,
-                "wait_max_s": counter.get("wait_max") or 0,
+                "queue_max": counter.get("queue_peak") or 0,
+                "wait_max_s": counter.get("wait_peak") or 0,
                 "staff_avg": round((counter.get("staff_sum") or 0) / minutes, 1)
                 if minutes
                 else None,

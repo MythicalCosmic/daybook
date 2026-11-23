@@ -812,7 +812,8 @@ def prune(now: datetime | None = None) -> dict:
         for alert in old.exclude(photo=""):
             _delete_file(alert.photo)
         Clip.objects.filter(alert__in=old).update(alert=None)
-        counts["alerts"] += old.delete()[0]
+        counts["alerts"] += old.count()
+        old.delete()
     AlertEvent.objects.filter(received_at__lt=now - STATS_KEEP).delete()
     return counts
 
