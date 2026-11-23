@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Some firmware writes localTime without an offset; the POSIX timeZone then decides. -->
+<Time version="2.0" xmlns="http://www.hikvision.com/ver20/XMLSchema">
+<timeMode>manual</timeMode>
+<localTime>2026-11-23T21:31:05</localTime>
+<timeZone>CST-5:00:00</timeZone>
+</Time>

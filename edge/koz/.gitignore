@@ -1,0 +1,5 @@
+# Models, recordings and local runs never go into git.
+*.onnx
+*.ts
+*.mp4
+/data/

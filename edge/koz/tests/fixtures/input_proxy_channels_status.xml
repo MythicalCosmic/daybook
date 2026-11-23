@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Written from Hikvision's ISAPI documentation (GET /ISAPI/ContentMgmt/InputProxy/channels/status). -->
+<InputProxyChannelStatusList version="2.0" xmlns="http://www.hikvision.com/ver20/XMLSchema">
+<InputProxyChannelStatus version="2.0" xmlns="http://www.hikvision.com/ver20/XMLSchema">
+<id>1</id>
+<sourceInputPortDescriptor><proxyProtocol>HIKVISION</proxyProtocol><ipAddress>192.168.254.2</ipAddress></sourceInputPortDescriptor>
+<online>true</online>
+<chanDetectResult>connect</chanDetectResult>
+</InputProxyChannelStatus>
+<InputProxyChannelStatus version="2.0" xmlns="http://www.hikvision.com/ver20/XMLSchema">
+<id>2</id>
+<online>false</online>
+<chanDetectResult>netUnreachable</chanDetectResult>
+</InputProxyChannelStatus>
+<InputProxyChannelStatus version="2.0" xmlns="http://www.hikvision.com/ver20/XMLSchema">
+<id>3</id>
+<online>true</online>
+</InputProxyChannelStatus>
+</InputProxyChannelStatusList>

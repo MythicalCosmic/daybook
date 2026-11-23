@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Written from Hikvision's ISAPI documentation (GET /ISAPI/System/time). -->
+<Time version="2.0" xmlns="http://www.hikvision.com/ver20/XMLSchema">
+<timeMode>NTP</timeMode>
+<localTime>2026-11-23T21:31:05+05:00</localTime>
+<timeZone>CST-5:00:00</timeZone>
+</Time>
