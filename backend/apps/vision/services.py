@@ -421,12 +421,12 @@ def receive_live(agent: Agent, report: dict, now: datetime | None = None) -> dic
         cameras={camera_id: values["online"] for camera_id, values in reports.items()},
         now=now,
     )
-    expire_offers(now, agent=agent)
     watched = live.watched(camera.pk for camera in cameras.values())
+    body = queries.config(agent, now)
     return {
-        "config_version": queries.config(agent, now)["config_version"],
+        "config_version": body["config_version"],
         "watch": sorted(camera.key for camera in cameras.values() if camera.pk in watched),
-        "jobs": queries.pending_jobs(agent, now),
+        "jobs": queries.pending_jobs(agent, now, snapshots=body["snapshot_requested"]),
         "server_time": queries.iso(now),
     }
 

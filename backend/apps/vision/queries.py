@@ -22,8 +22,6 @@ from apps.vision.models import Agent, Alert, Camera, Clip
 
 # A snapshot someone asked for is asked of the box for this long.
 SNAPSHOT_ASK = timedelta(minutes=10)
-# No live report for this long: the camera's numbers are stale (§6.2).
-STALE_AFTER = timedelta(seconds=live.LIVE_TTL)
 # Links to files live this long (the dashboard asks again when it needs them later).
 LINK_TTL = 600
 
@@ -129,10 +127,13 @@ def config_version(body: dict) -> str:
     return hashlib.sha256(text.encode()).hexdigest()[:8]
 
 
-def pending_jobs(agent: Agent, now: datetime) -> int:
-    """How many things the box should fetch from jobs/ now (§5.5)."""
+def pending_jobs(agent: Agent, now: datetime, *, snapshots: list[str] | None = None) -> int:
+    """How many things the box should fetch from jobs/ now (§5.5); `snapshots`, when the caller
+    has them, saves reading the cameras again."""
     clips = Clip.objects.filter(camera__agent=agent, state=Clip.State.PENDING).count()
-    return clips + len(snapshot_keys(agent, now))
+    if snapshots is None:
+        snapshots = snapshot_keys(agent, now)
+    return clips + len(snapshots)
 
 
 # Owner shapes (§6) ---------------------------------------------------------------------------

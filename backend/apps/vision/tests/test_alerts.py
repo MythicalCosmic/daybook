@@ -485,3 +485,21 @@ def test_switching_koz_off_stops_the_announcements(device, cameras, on_shift, ev
 
     assert tasks.announce_alert(alert.pk) == 0
     assert outbox.sent == []
+
+
+def test_a_dry_run_sends_nothing_and_keeps_who_would_hear(
+    device, cameras, on_shift, evening, run, settings, caplog
+):
+    """With TELEGRAM_DRY_RUN (local runs) the texts are only logged: every copy is still kept,
+    without a message id, and nothing is edited later."""
+    settings.TELEGRAM_DRY_RUN = True
+    started = event(at=START, started_at=START)
+
+    with caplog.at_level("INFO", logger="apps.notifications.telegram"):
+        run(post_event, device, started)
+        run(post_event, device, event(incident_id=started["incident_id"], phase="end"))
+
+    copies = AlertMessage.objects.filter(alert__incident_id=started["incident_id"])
+    assert copies.count() == 5
+    assert not copies.filter(message_id__isnull=False).exists()
+    assert "Queue · Kassa 1 (Chilonzor)" in caplog.text

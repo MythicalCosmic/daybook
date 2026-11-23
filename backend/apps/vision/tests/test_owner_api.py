@@ -455,3 +455,17 @@ def test_the_live_page(owner_api, people, cameras, device, freeze):
     assert door["stale"] is True and door["people"] is None
     assert len(body["open_alerts"]) == 1
     assert body["today"] == {"visitors": 0, "receipts": None}
+
+
+def test_a_client_asking_for_a_jpeg_gets_the_snapshot(owner_api, people, cameras, device):
+    company = cameras.counter.company
+    url = owner_url(company, f"cameras/{cameras.door.pk}/snapshot/")
+    device.post(f"{DEVICE}cameras/nvr:1/snapshot/", {"image": upload(jpeg(1280, 720))})
+
+    shown = owner_api(people.manager).get(url, HTTP_ACCEPT="image/jpeg")
+    missing = owner_api(people.manager).get(
+        owner_url(company, f"cameras/{cameras.floor.pk}/snapshot/"), HTTP_ACCEPT="image/jpeg"
+    )
+
+    assert shown.status_code == 200 and shown.content.startswith(b"\xff\xd8")
+    assert missing.status_code == 404

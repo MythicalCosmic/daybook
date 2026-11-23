@@ -33,6 +33,7 @@ from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_sche
 from rest_framework import mixins, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.negotiation import BaseContentNegotiation
 from rest_framework.response import Response
 
 from apps.attendance import clock
@@ -71,6 +72,17 @@ MANAGE = Perm.VISION_MANAGE
 SNAPSHOT = AnyOf(Perm.VISION_VIDEO, Perm.VISION_MANAGE)
 BRANCH = OpenApiParameter("branch", int, description="One branch (in the caller's scope).")
 DAY = OpenApiParameter("day", OpenApiTypes.DATE, description="YYYY-MM-DD; today by default.")
+
+
+class AnyAccept(BaseContentNegotiation):
+    """The snapshot answers a client asking for `image/jpeg` too (its bytes go out as they are,
+    refusals as JSON)."""
+
+    def select_parser(self, request, parsers):
+        return parsers[0] if parsers else None
+
+    def select_renderer(self, request, renderers, format_suffix=None):
+        return renderers[0], renderers[0].media_type
 
 
 class VisionOn:
@@ -217,7 +229,7 @@ class CameraViewSet(VisionOn, Scope, OwnerViewSet):
     @extend_schema(
         methods=["POST"], request=None, responses={202: VisionSnapshotRequestedSerializer}
     )
-    @action(detail=True, methods=["get", "post"])
+    @action(detail=True, methods=["get", "post"], content_negotiation_class=AnyAccept)
     def snapshot(self, request, company_id, pk=None):
         camera = self.camera(pk)
         if request.method == "POST":
