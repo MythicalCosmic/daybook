@@ -145,6 +145,8 @@
   "settings.module.learning.body": "Video darslar va kurslar, muddatli majburiy o‘qitish, testlar, kun savoli va kimga yordam kerakligini ko‘rsatadigan ustoz.",
   "settings.module.face_id.title": "Yuz orqali kirish (Face ID)",
   "settings.module.face_id.body": "Xodimlar eshigidagi yuzni taniydigan terminallar: har bir skanerlash surati bilan, Telegramda kim kelgani, Davomat uchun kelish va ketish.",
+  "settings.module.vision.title": "Ko‘z (kamera tahlili)",
+  "settings.module.vision.body": "Dorixona kameralari sensor sifatida: soatlar bo‘yicha tashrif va konversiya, navbat va bo‘sh kassa haqida Telegramda suratli ogohlantirish, jonli ko‘rinish va har bir sotuv videosi. Yuz tanish yo‘q.",
   "settings.branches.description": "Har bir dorixona, ombor yoki ofis. Xodimlar filial doirasi ichida kelganini belgilaydi, yangi vazifalar ular ishlaydigan filialga tegishli bo‘ladi.",
   "settings.branches.emptyTitle": "Hali filial yo‘q",
   "settings.branches.emptyBody": "Birinchi filialni manzili va kelish doirasi bilan qo‘shing.",

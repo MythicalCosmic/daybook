@@ -134,9 +134,9 @@ describe("permissions", () => {
   it("are unique codenames covering the plan's §5 and §13 additions", () => {
     expect(new Set(PERMS).size).toBe(PERMS.length);
     for (const perm of PERMS) expect(perm).toMatch(/^[a-z_]+\.[a-z_]+$/);
-    // 14 existing + 29 from §5 + 12 from §13 + 2 for pharmacy stock (§14.5) + 3 for learning.
-    expect(PERMS).toHaveLength(14 + 29 + 12 + 2 + 3);
-    for (const perm of ["dashboard.access", "sales.invoices", "hr.hiring", "payroll.finalize", "projects.view_all", "hr.terminate", "agenda.manage", "crm.manage", "stock.operate", "stock.controlled"]) {
+    // 14 existing + 29 from §5 + 12 from §13 + 2 for pharmacy stock (§14.5) + 3 for learning + 3 for Ko‘z.
+    expect(PERMS).toHaveLength(14 + 29 + 12 + 2 + 3 + 3);
+    for (const perm of ["dashboard.access", "sales.invoices", "hr.hiring", "payroll.finalize", "projects.view_all", "hr.terminate", "agenda.manage", "crm.manage", "stock.operate", "stock.controlled", "vision.view", "vision.video", "vision.manage"]) {
       expect(PERMS).toContain(perm);
     }
   });

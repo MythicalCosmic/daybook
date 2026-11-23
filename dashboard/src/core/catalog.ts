@@ -386,7 +386,24 @@ export const CATALOG: readonly CatalogEntry[] = [
   { id: "agenda", group: "comms", order: 30, pkg: "Q", hotkey: "c", pages: [{ id: "calendar", to: "calendar" }] },
   { id: "knowledge", group: "comms", order: 40, pkg: "Q", hotkey: "k", pages: [{ id: "spaces", to: "knowledge" }] },
 
-  // Insights
+  // Insights. Ko‘z first (docs/KOZ.md): the cameras as a sensor, visitors, queues and alerts.
+  {
+    id: "vision",
+    group: "insights",
+    order: 5,
+    pkg: "Ko‘z C",
+    perm: "vision.view",
+    feature: "vision",
+    hotkey: "v",
+    pages: [
+      { id: "overview", to: "vision" },
+      { id: "live", to: "vision/live" },
+      { id: "alerts", to: "vision/alerts" },
+      { id: "review", to: "vision/review", perm: "vision.video" },
+      { id: "cameras", to: "vision/cameras", perm: "vision.manage" },
+      { id: "settings", to: "vision/settings" },
+    ],
+  },
   {
     id: "reports",
     group: "insights",

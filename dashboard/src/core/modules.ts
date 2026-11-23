@@ -161,6 +161,8 @@ export const EXTENSION_POINTS = [
   /** Egasi paneli's header, before its own buttons: finance's "Prepare a report" for a bank (context: companyId; v12). */
   "cockpit.header.actions",
   "sales.shift.detail",
+  /** A receipt's row in Sales › Receipts, beside Void: Ko‘z's "Video" of the till at that moment (context: entry). */
+  "sales.entry.actions",
   "payroll.run.toolbar",
   /** Above the roster grid: HR's pharmacist coverage gaps for the week (context: companyId, branchId, week; §14.5). */
   "attendance.roster.coverage",

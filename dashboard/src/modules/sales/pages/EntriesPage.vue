@@ -8,6 +8,7 @@ import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 import DataTable from "@/components/DataTable.vue";
+import ExtensionSlot from "@/components/ExtensionSlot.vue";
 import FilterBar from "@/components/FilterBar.vue";
 import { useUrlFilters, type FilterDef } from "@/components/filters";
 import IconButton from "@/components/IconButton.vue";
@@ -117,6 +118,7 @@ const shiftMode = computed(() => options.data.value?.settings.mode === "shift_to
         <span :class="['font-semibold tabular-nums', row.kind === 'refund' ? 'text-warning' : 'text-fg']">{{ row.kind === "refund" ? "−" : "" }}<MoneyText :value="row.total" /></span>
       </template>
       <template #cell-actions="{ row }">
+        <ExtensionSlot name="sales.entry.actions" as="none" :context="{ entry: row }" />
         <IconButton v-if="!row.voided_at" :icon="Ban" :label="t('sales.cash.void')" size="sm" @click.stop="askVoid(row)" />
       </template>
       <!-- Phones: the same status and Void as the table, so a voided receipt never reads as a sale. -->
@@ -130,6 +132,7 @@ const shiftMode = computed(() => options.data.value?.settings.mode === "shift_to
           </div>
           <div class="flex shrink-0 items-center gap-1">
             <span :class="['text-sm font-semibold tabular-nums', row.voided_at ? 'text-subtle line-through' : row.kind === 'refund' ? 'text-warning' : 'text-fg']">{{ row.kind === "refund" ? "−" : "" }}<MoneyText :value="row.total" /></span>
+            <ExtensionSlot name="sales.entry.actions" as="none" :context="{ entry: row }" />
             <IconButton v-if="canManage && !row.voided_at" :icon="Ban" :label="t('sales.cash.void')" @click.stop="askVoid(row)" />
           </div>
         </div>

@@ -75,6 +75,17 @@ export const STUB_TITLES: Record<string, { title: Triple; pages: Record<string, 
       reviews: ["Reviews", "Оценка", "Baholash"],
     },
   },
+  vision: {
+    title: ["Ko‘z", "Ko‘z", "Ko‘z"],
+    pages: {
+      overview: ["Overview", "Обзор", "Umumiy"],
+      live: ["Live", "Прямой эфир", "Jonli"],
+      alerts: ["Alerts", "Тревоги", "Ogohlantirishlar"],
+      review: ["Worth a look", "Стоит проверить", "Ko‘rib chiqing"],
+      cameras: ["Cameras and boxes", "Камеры и боксы", "Kameralar va qutilar"],
+      settings: ["Settings", "Настройки", "Sozlamalar"],
+    },
+  },
   faceid: {
     title: ["Face ID", "Face ID", "Yuz orqali kirish"],
     pages: {
