@@ -39,6 +39,7 @@ def test_lists_every_module_with_its_switch(company, owner, owner_api):
         "assets",
         "learning",
         "face_id",
+        "vision",
     ]
     assert not any(module["enabled"] for module in data["modules"])
 

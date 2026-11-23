@@ -401,6 +401,9 @@ FEATURE_APPS: dict[str, tuple[str, ...]] = {
     Feature.ASSETS: ("assets",),
     Feature.FACE_ID: ("faceid",),
     Feature.LEARNING: ("learning", "ai"),  # ai: the tutor comes on with AI on
+    # Ko‘z needs no other module: receipts need sales and staff numbers attendance, and without
+    # them those numbers are null (docs/KOZ.md §2).
+    Feature.VISION: ("vision",),
 }
 
 

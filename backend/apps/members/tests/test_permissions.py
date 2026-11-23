@@ -107,13 +107,17 @@ ADDITIONS = {
     "learning.view": {"Manager"},
     "learning.manage": {"Manager"},
     "recognition.manage": set(),
+    # Ko‘z (docs/KOZ.md §2): the managers who run the pharmacy see it, watch it and set it up.
+    "vision.view": {"Manager"},
+    "vision.video": {"Manager"},
+    "vision.manage": {"Manager"},
 }
 
 
 def test_the_registry_has_every_new_permission():
     assert len(OWNER_CONSOLE) == 29
     assert set(OWNER_CONSOLE) | set(ADDITIONS) <= set(Perm.values)
-    assert len(Perm.values) == 14 + 29 + 17
+    assert len(Perm.values) == 14 + 29 + 20
 
 
 @pytest.mark.parametrize("code", [*OWNER_CONSOLE, *ADDITIONS])

@@ -130,15 +130,25 @@ class Perm(models.TextChoices):
     CRM_VIEW = "crm.view", _("See CRM deals")
     CRM_MANAGE = "crm.manage", _("Manage CRM deals and pipelines")
 
+    # Ko‘z, the cameras as a sensor (docs/KOZ.md §2)
+    VISION_VIEW = (
+        "vision.view",
+        _("See Ko‘z: visitors, queues, conversion and alerts with photos"),
+    )
+    VISION_VIDEO = "vision.video", _("Watch the cameras live and open video receipts")
+    VISION_MANAGE = "vision.manage", _("Set up Ko‘z boxes, cameras, zones and alert rules")
+
 
 # The roles every new company starts with. Existing companies got theirs through migrations
 # that only add (members/0005 creates Cashier and Accountant; members/0008 gives each role still
 # named like one of these its Phase 2 permissions; members/0009 creates Pharmacist where the
 # name is free; members/0016 gives `stock.operate` to every role that runs a till; members/0017
-# gives `learning.view` and `learning.manage` to every role that manages routines). A
+# gives `learning.view` and `learning.manage` to every role that manages routines; members/0018
+# gives the three `vision.*` codes to every role that manages routines too). A
 # permission added here later needs a migration of its own for existing companies
 # (members/tests/test_phase2_role_migration.py, test_pharmacist_role_migration.py,
-# test_stock_operate_migration.py, test_learning_migration.py). Pharmacist is for a pharmacy's
+# test_stock_operate_migration.py, test_learning_migration.py, test_vision_migration.py).
+# Pharmacist is for a pharmacy's
 # qualified staff, who sell at the counter, run its till and look after its stock
 # (docs/PLAN-OWNER.md §14.3, §14.5).
 DEFAULT_ROLES = (
@@ -174,6 +184,9 @@ DEFAULT_ROLES = (
             Perm.REVIEWS_MANAGE,
             Perm.LEARNING_VIEW,
             Perm.LEARNING_MANAGE,
+            Perm.VISION_VIEW,
+            Perm.VISION_VIDEO,
+            Perm.VISION_MANAGE,
         ],
     },
     {

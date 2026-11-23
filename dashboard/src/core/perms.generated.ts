@@ -61,6 +61,9 @@ export const PERMS = [
   "agenda.manage",
   "crm.view",
   "crm.manage",
+  "vision.view",
+  "vision.video",
+  "vision.manage",
 ] as const;
 
 export type Perm = (typeof PERMS)[number];
