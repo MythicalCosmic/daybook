@@ -106,6 +106,9 @@ def test_the_frozen_lists_cover_todays_default_roles():
         "stock.operate",  # members/0016 gives it to every role that runs a till
         "learning.view",  # members/0017 gives both to every role that manages routines
         "learning.manage",
+        "vision.view",  # members/0018 gives the three to every role that manages routines
+        "vision.video",
+        "vision.manage",
     }
     today = {
         definition["name"]: [str(perm) for perm in definition.get("permissions", ())]
