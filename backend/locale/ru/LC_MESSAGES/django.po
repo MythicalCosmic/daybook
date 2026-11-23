@@ -31526,3 +31526,490 @@ msgstr "В этом списке нет такой записи."
 #: backend/apps/learning/study_lists.py
 msgid "Only a line that still stands can be corrected."
 msgstr "Исправить можно только действующую запись."
+
+#: backend/apps/companies/models.py
+msgid "Ko‘z (camera insights)"
+msgstr "Ko‘z (аналитика камер)"
+
+#: backend/apps/members/permissions.py
+msgid "See Ko‘z: visitors, queues, conversion and alerts with photos"
+msgstr "Просмотр Ko‘z: посетители, очереди, конверсия и оповещения с фото"
+
+#: backend/apps/members/permissions.py
+msgid "Watch the cameras live and open video receipts"
+msgstr "Смотреть камеры в реальном времени и открывать видеочеки"
+
+#: backend/apps/members/permissions.py
+msgid "Set up Ko‘z boxes, cameras, zones and alert rules"
+msgstr "Настраивать Ko‘z-боксы, камеры, зоны и правила оповещений"
+
+#: backend/apps/vision/audit_actions.py
+msgid "Changed the Ko‘z settings"
+msgstr "Изменил настройки Ko‘z"
+
+#: backend/apps/vision/audit_actions.py
+msgid "Added a Ko‘z box"
+msgstr "Добавил Ko‘z-бокс"
+
+#: backend/apps/vision/audit_actions.py
+msgid "Made a pairing code for a Ko‘z box"
+msgstr "Создал код подключения Ko‘z-бокса"
+
+#: backend/apps/vision/audit_actions.py
+msgid "Paired a Ko‘z box"
+msgstr "Подключил Ko‘z-бокс"
+
+#: backend/apps/vision/audit_actions.py
+msgid "Removed a Ko‘z box"
+msgstr "Удалил Ko‘z-бокс"
+
+#: backend/apps/vision/audit_actions.py
+msgid "Changed a Ko‘z camera"
+msgstr "Изменил камеру Ko‘z"
+
+#: backend/apps/vision/audit_actions.py
+msgid "Changed the zones of a Ko‘z camera"
+msgstr "Изменил зоны камеры Ko‘z"
+
+#: backend/apps/vision/audit_actions.py
+msgid "Asked for a video receipt"
+msgstr "Запросил видеочек"
+
+#: backend/apps/vision/audit_actions.py
+msgid "Watched a camera live"
+msgstr "Смотрел камеру в реальном времени"
+
+#: backend/apps/vision/bot_messages.py
+#, python-format
+msgid "%(m)s min %(s)s s"
+msgstr "%(m)s мин %(s)s с"
+
+#: backend/apps/vision/bot_messages.py
+#, python-format
+msgid "%(s)s s"
+msgstr "%(s)s с"
+
+#: backend/apps/vision/bot_messages.py
+#, python-format
+msgid "Queue · %(camera)s (%(branch)s)"
+msgstr "Очередь · %(camera)s (%(branch)s)"
+
+#: backend/apps/vision/bot_messages.py
+#, python-format
+msgid "Nobody at the counter · %(camera)s (%(branch)s)"
+msgstr "На кассе никого · %(camera)s (%(branch)s)"
+
+#: backend/apps/vision/bot_messages.py
+#, python-format
+msgid "Ko‘z box back online · %(branch)s"
+msgstr "Ko‘z-бокс снова на связи · %(branch)s"
+
+#: backend/apps/vision/bot_messages.py
+#, python-format
+msgid "Ko‘z box offline · %(branch)s (for %(minutes)s min)"
+msgstr "Ko‘z-бокс не на связи · %(branch)s (уже %(minutes)s мин)"
+
+#: backend/apps/vision/bot_messages.py
+#, python-format
+msgid "Box: %(name)s"
+msgstr "Бокс: %(name)s"
+
+#: backend/apps/vision/bot_messages.py
+#, python-format
+msgid "Last report: %(time)s"
+msgstr "Последний отчёт: %(time)s"
+
+#: backend/apps/vision/bot_messages.py
+#, python-format
+msgid "%(count)s customer has been waiting %(wait)s."
+msgid_plural "%(count)s customers have been waiting %(wait)s."
+msgstr[0] "%(count)s покупатель ждёт уже %(wait)s."
+msgstr[1] "%(count)s покупателя ждут уже %(wait)s."
+msgstr[2] "%(count)s покупателей ждут уже %(wait)s."
+msgstr[3] "%(count)s покупателей ждут уже %(wait)s."
+
+#: backend/apps/vision/bot_messages.py
+#, python-format
+msgid "%(count)s customer waiting, the longest %(wait)s."
+msgid_plural "%(count)s customers waiting, the longest %(wait)s."
+msgstr[0] "%(count)s покупатель ждёт, дольше всех %(wait)s."
+msgstr[1] "%(count)s покупателя ждут, дольше всех %(wait)s."
+msgstr[2] "%(count)s покупателей ждут, дольше всех %(wait)s."
+msgstr[3] "%(count)s покупателей ждут, дольше всех %(wait)s."
+
+#: backend/apps/vision/bot_messages.py
+#, python-format
+msgid "At the counter: %(count)s pharmacist"
+msgid_plural "At the counter: %(count)s pharmacists"
+msgstr[0] "На кассе: %(count)s фармацевт"
+msgstr[1] "На кассе: %(count)s фармацевта"
+msgstr[2] "На кассе: %(count)s фармацевтов"
+msgstr[3] "На кассе: %(count)s фармацевтов"
+
+#: backend/apps/vision/bot_messages.py backend/apps/vision/models.py
+msgid "Nobody at the counter"
+msgstr "На кассе никого нет"
+
+#: backend/apps/vision/bot_messages.py
+#, python-format
+msgid "%(name)s is going · %(time)s"
+msgstr "%(name)s идёт · %(time)s"
+
+#: backend/apps/vision/bot_messages.py
+msgid "Closed: no news from the box for 2 hours"
+msgstr "Закрыто: от бокса 2 часа не было вестей"
+
+#: backend/apps/vision/bot_messages.py
+msgid "Closed: the box was removed"
+msgstr "Закрыто: бокс удалён"
+
+#: backend/apps/vision/bot_messages.py
+#, python-format
+msgid "Offline: %(duration)s"
+msgstr "Без связи: %(duration)s"
+
+#: backend/apps/vision/bot_messages.py
+#, python-format
+msgid "Queue over · lasted %(duration)s · at most %(peak)s people"
+msgstr "Очередь закончилась · длилась %(duration)s · максимум %(peak)s чел."
+
+#: backend/apps/vision/bot_messages.py
+#, python-format
+msgid "A pharmacist came to the counter · lasted %(duration)s"
+msgstr "К кассе подошёл фармацевт · длилось %(duration)s"
+
+#: backend/apps/vision/bot_messages.py
+#, python-format
+msgid "The customers left · lasted %(duration)s"
+msgstr "Покупатели ушли · длилось %(duration)s"
+
+#: backend/apps/vision/bot_messages.py
+msgid "I'll go"
+msgstr "Я подойду"
+
+#: backend/apps/vision/device_api.py
+msgid "This box isn't paired any more. Pair it again."
+msgstr "Этот бокс больше не подключён. Подключите его заново."
+
+#: backend/apps/vision/device_api.py
+msgid "Too many tries. Wait a few minutes and try again."
+msgstr "Слишком много попыток. Подождите несколько минут и попробуйте снова."
+
+#: backend/apps/vision/device_api.py
+msgid "Ko‘z is switched off for this company."
+msgstr "В этой компании Ko‘z выключен."
+
+#: backend/apps/vision/device_api.py
+#, python-format
+msgid "%(field)s must be JSON."
+msgstr "%(field)s должно быть в формате JSON."
+
+#: backend/apps/vision/device_api.py
+#, python-format
+msgid "Send at most %(count)d minutes a call."
+msgstr "Отправляйте не больше %(count)d минут за раз."
+
+#: backend/apps/vision/device_serializers.py
+msgid "Send each camera once."
+msgstr "Отправляйте каждую камеру один раз."
+
+#: backend/apps/vision/insights.py
+#, python-format
+msgid "%(start)s–%(end)s: %(visitors)s people came in, %(receipts)s bought. The queue reached %(queue)s and %(left)s people left without buying."
+msgstr "%(start)s–%(end)s: зашли %(visitors)s чел., купили %(receipts)s. Очередь доходила до %(queue)s чел., и %(left)s чел. ушли без покупки."
+
+#: backend/apps/vision/insights.py
+#, python-format
+msgid "%(start)s–%(end)s: %(people)s people were checked in, yet customers waited %(minutes)s min with nobody at the counter."
+msgstr "%(start)s–%(end)s: на смене были %(people)s чел., но покупатели %(minutes)s мин ждали у пустой кассы."
+
+#: backend/apps/vision/insights.py
+#, python-format
+msgid "Customers waited with nobody at the counter for %(minutes)s min today, most at %(start)s–%(end)s."
+msgstr "Сегодня покупатели %(minutes)s мин ждали у пустой кассы, больше всего %(start)s–%(end)s."
+
+#: backend/apps/vision/insights.py
+#, python-format
+msgid "The longest wait was %(wait)s, at %(start)s–%(end)s."
+msgstr "Дольше всего ждали %(wait)s, %(start)s–%(end)s."
+
+#: backend/apps/vision/insights.py
+#, python-format
+msgid "Conversion %(now)s, the same day a week ago %(before)s."
+msgstr "Конверсия %(now)s, неделю назад в этот день %(before)s."
+
+#: backend/apps/vision/models.py
+msgid "Ko‘z settings"
+msgstr "Настройки Ko‘z"
+
+#: backend/apps/vision/models.py
+msgid "Counter"
+msgstr "Касса"
+
+#: backend/apps/vision/models.py
+msgid "Entrance"
+msgstr "Вход"
+
+#: backend/apps/vision/models.py
+msgid "Sales floor"
+msgstr "Торговый зал"
+
+#: backend/apps/vision/models.py
+msgid "Storeroom"
+msgstr "Склад"
+
+#: backend/apps/vision/models.py
+msgid "Recorder channel"
+msgstr "Канал регистратора"
+
+#: backend/apps/vision/models.py
+msgid "RTSP stream"
+msgstr "RTSP-поток"
+
+#: backend/apps/vision/models.py
+msgid "Webcam"
+msgstr "Веб-камера"
+
+#: backend/apps/vision/models.py
+msgid "Video file"
+msgstr "Видеофайл"
+
+#: backend/apps/vision/models.py
+msgid "Generated scene"
+msgstr "Сгенерированная сцена"
+
+#: backend/apps/vision/models.py
+msgid "Queue"
+msgstr "Очередь"
+
+#: backend/apps/vision/models.py
+msgctxt "vision alert"
+msgid "Open"
+msgstr "Открыто"
+
+#: backend/apps/vision/models.py
+msgid "Ko‘z box offline"
+msgstr "Ko‘z-бокс не на связи"
+
+#: backend/apps/vision/models.py
+msgid "No news for two hours"
+msgstr "Два часа без вестей"
+
+#: backend/apps/vision/models.py
+msgid "Back online"
+msgstr "Снова на связи"
+
+#: backend/apps/vision/models.py
+msgid "Box removed"
+msgstr "Бокс удалён"
+
+#: backend/apps/vision/models.py
+msgid "Waiting for the box"
+msgstr "Ждёт бокс"
+
+#: backend/apps/vision/models.py
+msgid "The box is cutting it"
+msgstr "Бокс нарезает видео"
+
+#: backend/apps/vision/models.py
+msgid "A sale"
+msgstr "Продажа"
+
+#: backend/apps/vision/models.py
+msgid "An alert"
+msgstr "Оповещение"
+
+#: backend/apps/vision/models.py
+msgid "A moment someone picked"
+msgstr "Выбранный момент"
+
+#: backend/apps/vision/models.py
+msgid "This moment wasn't recorded."
+msgstr "Этот момент не записан."
+
+#: backend/apps/vision/models.py
+msgid "The camera was offline then."
+msgstr "Камера тогда была не на связи."
+
+#: backend/apps/vision/models.py
+msgid "The recorder didn't give the video."
+msgstr "Регистратор не отдал видео."
+
+#: backend/apps/vision/models.py
+msgid "The recording of that moment is already gone."
+msgstr "Запись этого момента уже не сохранилась."
+
+#: backend/apps/vision/models.py
+msgid "The Ko‘z box didn't send the video."
+msgstr "Ko‘z-бокс не прислал видео."
+
+#: backend/apps/vision/models.py
+msgid "The box's own recorder"
+msgstr "Собственная запись бокса"
+
+#: backend/apps/vision/models.py
+msgid "The recorder (NVR)"
+msgstr "Регистратор (NVR)"
+
+#: backend/apps/vision/serializers.py
+msgid "Pick a sale, or a camera and a moment."
+msgstr "Выберите продажу или камеру и момент."
+
+#: backend/apps/vision/serializers.py
+msgid "A clip is 1 to 60 seconds long."
+msgstr "Длина видео от 1 до 60 секунд."
+
+#: backend/apps/vision/services.py
+msgid "Give the box a name."
+msgstr "Дайте боксу название."
+
+#: backend/apps/vision/services.py
+msgid "This box was removed."
+msgstr "Этот бокс удалён."
+
+#: backend/apps/vision/services.py
+msgid "Couldn't make a code. Try again."
+msgstr "Не удалось создать код. Попробуйте ещё раз."
+
+#: backend/apps/vision/services.py
+msgid "This code is wrong or no longer valid. Make a new one in Daybook."
+msgstr "Этот код неверный или устарел. Создайте новый в Daybook."
+
+#: backend/apps/vision/services.py
+msgid "Give the camera a name."
+msgstr "Дайте камере название."
+
+#: backend/apps/vision/services.py
+msgid "Pick a till of this camera's branch."
+msgstr "Выберите кассу филиала этой камеры."
+
+#: backend/apps/vision/services.py
+#, python-format
+msgid "This box has no camera %(key)s."
+msgstr "У этого бокса нет камеры %(key)s."
+
+#: backend/apps/vision/services.py
+msgid "Send the picture as a JPEG."
+msgstr "Отправьте снимок в формате JPEG."
+
+#: backend/apps/vision/services.py
+#, python-format
+msgid "The picture is too big (%(kb)d KB at most)."
+msgstr "Снимок слишком большой (не больше %(kb)d КБ)."
+
+#: backend/apps/vision/services.py
+#, python-format
+msgid "A live frame is at most %(kb)d KB."
+msgstr "Живой кадр не больше %(kb)d КБ."
+
+#: backend/apps/vision/services.py
+#, python-format
+msgid "A live frame is at most %(px)d pixels wide."
+msgstr "Ширина живого кадра не больше %(px)d пикселей."
+
+#: backend/apps/vision/services.py
+msgid "There's nothing to go to here."
+msgstr "Здесь некуда подходить."
+
+#: backend/apps/vision/services.py
+msgid "It's over already: nobody needs to go."
+msgstr "Уже всё закончилось: подходить не нужно."
+
+#: backend/apps/vision/services.py
+#, python-format
+msgid "%(name)s is already going."
+msgstr "%(name)s уже идёт."
+
+#: backend/apps/vision/services.py
+msgid "Thank you: everyone sees you're going."
+msgstr "Спасибо: все видят, что вы идёте."
+
+#: backend/apps/vision/services.py
+msgid "The clip must end after it starts."
+msgstr "Видео должно заканчиваться после начала."
+
+#: backend/apps/vision/services.py
+msgid "A clip is at most 60 seconds."
+msgstr "Видео не длиннее 60 секунд."
+
+#: backend/apps/vision/services.py
+msgid "That moment hasn't happened yet."
+msgstr "Этот момент ещё не наступил."
+
+#: backend/apps/vision/services.py
+msgid "No camera films this till. Map a counter camera to it in Ko‘z."
+msgstr "Эту кассу не снимает ни одна камера. Привяжите к ней камеру кассы в Ko‘z."
+
+#: backend/apps/vision/services.py
+msgid "This alert has no camera."
+msgstr "У этого оповещения нет камеры."
+
+#: backend/apps/vision/services.py
+msgid "This box has no such clip."
+msgstr "У этого бокса нет такого видео."
+
+#: backend/apps/vision/services.py
+msgid "Send the video as an MP4 file."
+msgstr "Отправьте видео в формате MP4."
+
+#: backend/apps/vision/services.py
+#, python-format
+msgid "A clip is at most %(mb)d MB."
+msgstr "Видео не больше %(mb)d МБ."
+
+#: backend/apps/vision/zones.py
+msgid "Zones must be a list."
+msgstr "Зоны должны быть списком."
+
+#: backend/apps/vision/zones.py
+#, python-format
+msgid "A camera has at most %(count)d zones."
+msgstr "У камеры может быть не больше %(count)d зон."
+
+#: backend/apps/vision/zones.py
+msgid "Each zone needs an id, a kind and its points."
+msgstr "У каждой зоны должны быть идентификатор, вид и точки."
+
+#: backend/apps/vision/zones.py
+msgid "A zone's id is 1 to 16 small letters, digits, dashes or underscores."
+msgstr "Идентификатор зоны: от 1 до 16 строчных букв, цифр, дефисов или подчёркиваний."
+
+#: backend/apps/vision/zones.py
+#, python-format
+msgid "Two zones are called %(id)s: give each its own id."
+msgstr "Две зоны называются %(id)s: дайте каждой свой идентификатор."
+
+#: backend/apps/vision/zones.py
+#, python-format
+msgid "Zone %(id)s has a kind we don't know."
+msgstr "Неизвестный вид зоны %(id)s."
+
+#: backend/apps/vision/zones.py
+#, python-format
+msgid "The entrance line %(id)s needs exactly two points."
+msgstr "У линии входа %(id)s должно быть ровно две точки."
+
+#: backend/apps/vision/zones.py
+#, python-format
+msgid "Say which side of the line %(id)s is inside the pharmacy."
+msgstr "Укажите, какая сторона линии %(id)s находится внутри аптеки."
+
+#: backend/apps/vision/zones.py
+#, python-format
+msgid "Zone %(id)s needs 3 to 24 points."
+msgstr "У зоны %(id)s должно быть от 3 до 24 точек."
+
+#: backend/apps/vision/zones.py
+#, python-format
+msgid "Zone %(id)s has no points."
+msgstr "У зоны %(id)s нет точек."
+
+#: backend/apps/vision/zones.py
+#, python-format
+msgid "Each point of zone %(id)s is a pair of numbers."
+msgstr "Каждая точка зоны %(id)s: пара чисел."
+
+#: backend/apps/vision/zones.py
+#, python-format
+msgid "Every point of zone %(id)s must lie inside the picture."
+msgstr "Все точки зоны %(id)s должны быть внутри кадра."

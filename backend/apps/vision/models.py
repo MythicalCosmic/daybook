@@ -14,6 +14,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
+from django.utils.translation import pgettext_lazy
 
 from apps.companies.models import Branch, Company, TenantModel
 from apps.core.models import TimeStampedModel
@@ -226,7 +227,7 @@ class Alert(TenantModel):
         AGENT_OFFLINE = "agent_offline", _("Ko‘z box offline")
 
     class State(models.TextChoices):
-        OPEN = "open", _("Open")
+        OPEN = "open", pgettext_lazy("vision alert", "Open")
         RESOLVED = "resolved", _("Resolved")
 
     class Ending(models.TextChoices):

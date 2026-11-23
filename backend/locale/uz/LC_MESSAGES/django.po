@@ -31516,3 +31516,481 @@ msgstr "Bu ro‘yxatda bunday yozuv yo‘q."
 #: backend/apps/learning/study_lists.py
 msgid "Only a line that still stands can be corrected."
 msgstr "Faqat amaldagi yozuvni tuzatish mumkin."
+
+#: backend/apps/companies/models.py
+msgid "Ko‘z (camera insights)"
+msgstr "Ko‘z (kamera tahlili)"
+
+#: backend/apps/members/permissions.py
+msgid "See Ko‘z: visitors, queues, conversion and alerts with photos"
+msgstr "Ko‘zni ko‘rish: tashrif buyuruvchilar, navbatlar, konversiya va suratli ogohlantirishlar"
+
+#: backend/apps/members/permissions.py
+msgid "Watch the cameras live and open video receipts"
+msgstr "Kameralarni jonli kuzatish va videocheklarni ochish"
+
+#: backend/apps/members/permissions.py
+msgid "Set up Ko‘z boxes, cameras, zones and alert rules"
+msgstr "Ko‘z qutilari, kameralar, zonalar va ogohlantirish qoidalarini sozlash"
+
+#: backend/apps/vision/audit_actions.py
+msgid "Changed the Ko‘z settings"
+msgstr "Ko‘z sozlamalarini o‘zgartirdi"
+
+#: backend/apps/vision/audit_actions.py
+msgid "Added a Ko‘z box"
+msgstr "Ko‘z qutisini qo‘shdi"
+
+#: backend/apps/vision/audit_actions.py
+msgid "Made a pairing code for a Ko‘z box"
+msgstr "Ko‘z qutisi uchun ulash kodini yaratdi"
+
+#: backend/apps/vision/audit_actions.py
+msgid "Paired a Ko‘z box"
+msgstr "Ko‘z qutisini uladi"
+
+#: backend/apps/vision/audit_actions.py
+msgid "Removed a Ko‘z box"
+msgstr "Ko‘z qutisini olib tashladi"
+
+#: backend/apps/vision/audit_actions.py
+msgid "Changed a Ko‘z camera"
+msgstr "Ko‘z kamerasini o‘zgartirdi"
+
+#: backend/apps/vision/audit_actions.py
+msgid "Changed the zones of a Ko‘z camera"
+msgstr "Ko‘z kamerasining zonalarini o‘zgartirdi"
+
+#: backend/apps/vision/audit_actions.py
+msgid "Asked for a video receipt"
+msgstr "Videochek so‘radi"
+
+#: backend/apps/vision/audit_actions.py
+msgid "Watched a camera live"
+msgstr "Kamerani jonli kuzatdi"
+
+#: backend/apps/vision/bot_messages.py
+#, python-format
+msgid "%(m)s min %(s)s s"
+msgstr "%(m)s daq %(s)s s"
+
+#: backend/apps/vision/bot_messages.py
+#, python-format
+msgid "%(s)s s"
+msgstr "%(s)s s"
+
+#: backend/apps/vision/bot_messages.py
+#, python-format
+msgid "Queue · %(camera)s (%(branch)s)"
+msgstr "Navbat · %(camera)s (%(branch)s)"
+
+#: backend/apps/vision/bot_messages.py
+#, python-format
+msgid "Nobody at the counter · %(camera)s (%(branch)s)"
+msgstr "Kassada hech kim yo‘q · %(camera)s (%(branch)s)"
+
+#: backend/apps/vision/bot_messages.py
+#, python-format
+msgid "Ko‘z box back online · %(branch)s"
+msgstr "Ko‘z qutisi yana aloqada · %(branch)s"
+
+#: backend/apps/vision/bot_messages.py
+#, python-format
+msgid "Ko‘z box offline · %(branch)s (for %(minutes)s min)"
+msgstr "Ko‘z qutisi aloqada emas · %(branch)s (%(minutes)s daqiqadan beri)"
+
+#: backend/apps/vision/bot_messages.py
+#, python-format
+msgid "Box: %(name)s"
+msgstr "Quti: %(name)s"
+
+#: backend/apps/vision/bot_messages.py
+#, python-format
+msgid "Last report: %(time)s"
+msgstr "Oxirgi xabar: %(time)s"
+
+#: backend/apps/vision/bot_messages.py
+#, python-format
+msgid "%(count)s customer has been waiting %(wait)s."
+msgid_plural "%(count)s customers have been waiting %(wait)s."
+msgstr[0] "%(count)s mijoz %(wait)s kutmoqda."
+
+#: backend/apps/vision/bot_messages.py
+#, python-format
+msgid "%(count)s customer waiting, the longest %(wait)s."
+msgid_plural "%(count)s customers waiting, the longest %(wait)s."
+msgstr[0] "%(count)s mijoz kutmoqda, eng uzog‘i %(wait)s."
+
+#: backend/apps/vision/bot_messages.py
+#, python-format
+msgid "At the counter: %(count)s pharmacist"
+msgid_plural "At the counter: %(count)s pharmacists"
+msgstr[0] "Kassada: %(count)s farmatsevt"
+
+#: backend/apps/vision/bot_messages.py backend/apps/vision/models.py
+msgid "Nobody at the counter"
+msgstr "Kassada hech kim yo‘q"
+
+#: backend/apps/vision/bot_messages.py
+#, python-format
+msgid "%(name)s is going · %(time)s"
+msgstr "%(name)s boryapti · %(time)s"
+
+#: backend/apps/vision/bot_messages.py
+msgid "Closed: no news from the box for 2 hours"
+msgstr "Yopildi: qutidan 2 soat davomida xabar kelmadi"
+
+#: backend/apps/vision/bot_messages.py
+msgid "Closed: the box was removed"
+msgstr "Yopildi: quti olib tashlandi"
+
+#: backend/apps/vision/bot_messages.py
+#, python-format
+msgid "Offline: %(duration)s"
+msgstr "Aloqasiz: %(duration)s"
+
+#: backend/apps/vision/bot_messages.py
+#, python-format
+msgid "Queue over · lasted %(duration)s · at most %(peak)s people"
+msgstr "Navbat tugadi · %(duration)s davom etdi · eng ko‘p %(peak)s kishi"
+
+#: backend/apps/vision/bot_messages.py
+#, python-format
+msgid "A pharmacist came to the counter · lasted %(duration)s"
+msgstr "Kassaga farmatsevt keldi · %(duration)s davom etdi"
+
+#: backend/apps/vision/bot_messages.py
+#, python-format
+msgid "The customers left · lasted %(duration)s"
+msgstr "Mijozlar ketib qoldi · %(duration)s davom etdi"
+
+#: backend/apps/vision/bot_messages.py
+msgid "I'll go"
+msgstr "Men boraman"
+
+#: backend/apps/vision/device_api.py
+msgid "This box isn't paired any more. Pair it again."
+msgstr "Bu quti endi ulanmagan. Uni qaytadan ulang."
+
+#: backend/apps/vision/device_api.py
+msgid "Too many tries. Wait a few minutes and try again."
+msgstr "Urinishlar juda ko‘p. Bir necha daqiqa kutib, qaytadan urinib ko‘ring."
+
+#: backend/apps/vision/device_api.py
+msgid "Ko‘z is switched off for this company."
+msgstr "Bu kompaniyada Ko‘z o‘chirilgan."
+
+#: backend/apps/vision/device_api.py
+#, python-format
+msgid "%(field)s must be JSON."
+msgstr "%(field)s JSON bo‘lishi kerak."
+
+#: backend/apps/vision/device_api.py
+#, python-format
+msgid "Send at most %(count)d minutes a call."
+msgstr "Bir so‘rovda ko‘pi bilan %(count)d daqiqa yuboring."
+
+#: backend/apps/vision/device_serializers.py
+msgid "Send each camera once."
+msgstr "Har bir kamerani bir marta yuboring."
+
+#: backend/apps/vision/insights.py
+#, python-format
+msgid "%(start)s–%(end)s: %(visitors)s people came in, %(receipts)s bought. The queue reached %(queue)s and %(left)s people left without buying."
+msgstr "%(start)s–%(end)s: %(visitors)s kishi kirdi, %(receipts)s kishi xarid qildi. Navbat %(queue)s kishigacha yetdi va %(left)s kishi xarid qilmay ketdi."
+
+#: backend/apps/vision/insights.py
+#, python-format
+msgid "%(start)s–%(end)s: %(people)s people were checked in, yet customers waited %(minutes)s min with nobody at the counter."
+msgstr "%(start)s–%(end)s: %(people)s kishi ishda edi, lekin mijozlar %(minutes)s daqiqa kassada hech kimsiz kutishdi."
+
+#: backend/apps/vision/insights.py
+#, python-format
+msgid "Customers waited with nobody at the counter for %(minutes)s min today, most at %(start)s–%(end)s."
+msgstr "Bugun mijozlar kassada hech kim yo‘qligida %(minutes)s daqiqa kutishdi, eng ko‘pi %(start)s–%(end)s oralig‘ida."
+
+#: backend/apps/vision/insights.py
+#, python-format
+msgid "The longest wait was %(wait)s, at %(start)s–%(end)s."
+msgstr "Eng uzoq kutish: %(wait)s, %(start)s–%(end)s."
+
+#: backend/apps/vision/insights.py
+#, python-format
+msgid "Conversion %(now)s, the same day a week ago %(before)s."
+msgstr "Konversiya %(now)s, o‘tgan haftaning shu kunida %(before)s edi."
+
+#: backend/apps/vision/models.py
+msgid "Ko‘z settings"
+msgstr "Ko‘z sozlamalari"
+
+#: backend/apps/vision/models.py
+msgid "Counter"
+msgstr "Kassa"
+
+#: backend/apps/vision/models.py
+msgid "Entrance"
+msgstr "Kirish"
+
+#: backend/apps/vision/models.py
+msgid "Sales floor"
+msgstr "Savdo zali"
+
+#: backend/apps/vision/models.py
+msgid "Storeroom"
+msgstr "Ombor"
+
+#: backend/apps/vision/models.py
+msgid "Recorder channel"
+msgstr "Registrator kanali"
+
+#: backend/apps/vision/models.py
+msgid "RTSP stream"
+msgstr "RTSP oqimi"
+
+#: backend/apps/vision/models.py
+msgid "Webcam"
+msgstr "Veb-kamera"
+
+#: backend/apps/vision/models.py
+msgid "Video file"
+msgstr "Video fayl"
+
+#: backend/apps/vision/models.py
+msgid "Generated scene"
+msgstr "Sun’iy sahna"
+
+#: backend/apps/vision/models.py
+msgid "Queue"
+msgstr "Navbat"
+
+#: backend/apps/vision/models.py
+msgctxt "vision alert"
+msgid "Open"
+msgstr "Ochiq"
+
+#: backend/apps/vision/models.py
+msgid "Ko‘z box offline"
+msgstr "Ko‘z qutisi aloqada emas"
+
+#: backend/apps/vision/models.py
+msgid "No news for two hours"
+msgstr "Ikki soat xabar yo‘q"
+
+#: backend/apps/vision/models.py
+msgid "Back online"
+msgstr "Yana aloqada"
+
+#: backend/apps/vision/models.py
+msgid "Box removed"
+msgstr "Quti olib tashlandi"
+
+#: backend/apps/vision/models.py
+msgid "Waiting for the box"
+msgstr "Qutini kutmoqda"
+
+#: backend/apps/vision/models.py
+msgid "The box is cutting it"
+msgstr "Quti videoni kesmoqda"
+
+#: backend/apps/vision/models.py
+msgid "A sale"
+msgstr "Sotuv"
+
+#: backend/apps/vision/models.py
+msgid "An alert"
+msgstr "Ogohlantirish"
+
+#: backend/apps/vision/models.py
+msgid "A moment someone picked"
+msgstr "Tanlangan lahza"
+
+#: backend/apps/vision/models.py
+msgid "This moment wasn't recorded."
+msgstr "Bu lahza yozib olinmagan."
+
+#: backend/apps/vision/models.py
+msgid "The camera was offline then."
+msgstr "O‘sha paytda kamera aloqada emas edi."
+
+#: backend/apps/vision/models.py
+msgid "The recorder didn't give the video."
+msgstr "Registrator videoni bermadi."
+
+#: backend/apps/vision/models.py
+msgid "The recording of that moment is already gone."
+msgstr "O‘sha lahzaning yozuvi allaqachon o‘chib ketgan."
+
+#: backend/apps/vision/models.py
+msgid "The Ko‘z box didn't send the video."
+msgstr "Ko‘z qutisi videoni yubormadi."
+
+#: backend/apps/vision/models.py
+msgid "The box's own recorder"
+msgstr "Qutining o‘z yozuvi"
+
+#: backend/apps/vision/models.py
+msgid "The recorder (NVR)"
+msgstr "Registrator (NVR)"
+
+#: backend/apps/vision/serializers.py
+msgid "Pick a sale, or a camera and a moment."
+msgstr "Sotuvni yoki kamera va lahzani tanlang."
+
+#: backend/apps/vision/serializers.py
+msgid "A clip is 1 to 60 seconds long."
+msgstr "Video uzunligi 1–60 soniya."
+
+#: backend/apps/vision/services.py
+msgid "Give the box a name."
+msgstr "Qutiga nom bering."
+
+#: backend/apps/vision/services.py
+msgid "This box was removed."
+msgstr "Bu quti olib tashlangan."
+
+#: backend/apps/vision/services.py
+msgid "Couldn't make a code. Try again."
+msgstr "Kod yaratib bo‘lmadi. Qaytadan urinib ko‘ring."
+
+#: backend/apps/vision/services.py
+msgid "This code is wrong or no longer valid. Make a new one in Daybook."
+msgstr "Bu kod noto‘g‘ri yoki eskirgan. Daybookda yangisini yarating."
+
+#: backend/apps/vision/services.py
+msgid "Give the camera a name."
+msgstr "Kameraga nom bering."
+
+#: backend/apps/vision/services.py
+msgid "Pick a till of this camera's branch."
+msgstr "Shu kamera filialining kassasini tanlang."
+
+#: backend/apps/vision/services.py
+#, python-format
+msgid "This box has no camera %(key)s."
+msgstr "Bu qutida %(key)s kamerasi yo‘q."
+
+#: backend/apps/vision/services.py
+msgid "Send the picture as a JPEG."
+msgstr "Rasmni JPEG ko‘rinishida yuboring."
+
+#: backend/apps/vision/services.py
+#, python-format
+msgid "The picture is too big (%(kb)d KB at most)."
+msgstr "Rasm juda katta (ko‘pi bilan %(kb)d KB)."
+
+#: backend/apps/vision/services.py
+#, python-format
+msgid "A live frame is at most %(kb)d KB."
+msgstr "Jonli kadr ko‘pi bilan %(kb)d KB bo‘ladi."
+
+#: backend/apps/vision/services.py
+#, python-format
+msgid "A live frame is at most %(px)d pixels wide."
+msgstr "Jonli kadrning eni ko‘pi bilan %(px)d piksel."
+
+#: backend/apps/vision/services.py
+msgid "There's nothing to go to here."
+msgstr "Bu yerda borish kerak bo‘lgan joy yo‘q."
+
+#: backend/apps/vision/services.py
+msgid "It's over already: nobody needs to go."
+msgstr "Bu allaqachon tugadi: hech kim borishi shart emas."
+
+#: backend/apps/vision/services.py
+#, python-format
+msgid "%(name)s is already going."
+msgstr "%(name)s allaqachon boryapti."
+
+#: backend/apps/vision/services.py
+msgid "Thank you: everyone sees you're going."
+msgstr "Rahmat: hamma sizning borayotganingizni ko‘radi."
+
+#: backend/apps/vision/services.py
+msgid "The clip must end after it starts."
+msgstr "Video boshlanganidan keyin tugashi kerak."
+
+#: backend/apps/vision/services.py
+msgid "A clip is at most 60 seconds."
+msgstr "Video ko‘pi bilan 60 soniya."
+
+#: backend/apps/vision/services.py
+msgid "That moment hasn't happened yet."
+msgstr "Bu lahza hali kelmagan."
+
+#: backend/apps/vision/services.py
+msgid "No camera films this till. Map a counter camera to it in Ko‘z."
+msgstr "Bu kassani hech qaysi kamera ko‘rmaydi. Ko‘zda unga kassa kamerasini biriktiring."
+
+#: backend/apps/vision/services.py
+msgid "This alert has no camera."
+msgstr "Bu ogohlantirishning kamerasi yo‘q."
+
+#: backend/apps/vision/services.py
+msgid "This box has no such clip."
+msgstr "Bu qutida bunday video yo‘q."
+
+#: backend/apps/vision/services.py
+msgid "Send the video as an MP4 file."
+msgstr "Videoni MP4 fayl ko‘rinishida yuboring."
+
+#: backend/apps/vision/services.py
+#, python-format
+msgid "A clip is at most %(mb)d MB."
+msgstr "Video ko‘pi bilan %(mb)d MB bo‘ladi."
+
+#: backend/apps/vision/zones.py
+msgid "Zones must be a list."
+msgstr "Zonalar ro‘yxat bo‘lishi kerak."
+
+#: backend/apps/vision/zones.py
+#, python-format
+msgid "A camera has at most %(count)d zones."
+msgstr "Kamerada ko‘pi bilan %(count)d ta zona bo‘ladi."
+
+#: backend/apps/vision/zones.py
+msgid "Each zone needs an id, a kind and its points."
+msgstr "Har bir zonaning identifikatori, turi va nuqtalari bo‘lishi kerak."
+
+#: backend/apps/vision/zones.py
+msgid "A zone's id is 1 to 16 small letters, digits, dashes or underscores."
+msgstr "Zona identifikatori 1–16 ta kichik harf, raqam, chiziqcha yoki pastki chiziqdan iborat."
+
+#: backend/apps/vision/zones.py
+#, python-format
+msgid "Two zones are called %(id)s: give each its own id."
+msgstr "Ikki zonaning nomi %(id)s: har biriga alohida identifikator bering."
+
+#: backend/apps/vision/zones.py
+#, python-format
+msgid "Zone %(id)s has a kind we don't know."
+msgstr "%(id)s zonasining turi noma’lum."
+
+#: backend/apps/vision/zones.py
+#, python-format
+msgid "The entrance line %(id)s needs exactly two points."
+msgstr "%(id)s kirish chizig‘ida aynan ikkita nuqta bo‘lishi kerak."
+
+#: backend/apps/vision/zones.py
+#, python-format
+msgid "Say which side of the line %(id)s is inside the pharmacy."
+msgstr "%(id)s chizig‘ining qaysi tomoni dorixona ichida ekanini ko‘rsating."
+
+#: backend/apps/vision/zones.py
+#, python-format
+msgid "Zone %(id)s needs 3 to 24 points."
+msgstr "%(id)s zonasida 3–24 ta nuqta bo‘lishi kerak."
+
+#: backend/apps/vision/zones.py
+#, python-format
+msgid "Zone %(id)s has no points."
+msgstr "%(id)s zonasida nuqtalar yo‘q."
+
+#: backend/apps/vision/zones.py
+#, python-format
+msgid "Each point of zone %(id)s is a pair of numbers."
+msgstr "%(id)s zonasining har bir nuqtasi ikki sondan iborat bo‘ladi."
+
+#: backend/apps/vision/zones.py
+#, python-format
+msgid "Every point of zone %(id)s must lie inside the picture."
+msgstr "%(id)s zonasining barcha nuqtalari rasm ichida bo‘lishi kerak."
