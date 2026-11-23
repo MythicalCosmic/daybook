@@ -28,9 +28,9 @@ from ..geometry import Box
 from .art import draw_person
 from .world import (
     COUNTER_TOP,
-    H,
     MAX_SLOTS,
     TILL_X,
+    H,
     W,
     World,
     counter_scale,
@@ -40,8 +40,19 @@ from .world import (
 
 WALL = hexc("#EEF3F0")
 PASTELS = (
-    "#A8DCC8", "#A9CCEB", "#F6C6A8", "#C9B8E8", "#F3E2A0", "#F2A9A9", "#8FD0CB", "#BFD8B0",
-    "#F7F7F2", "#FFD7B5", "#B8E0F0", "#E6C8DC", "#D4E8B8",
+    "#A8DCC8",
+    "#A9CCEB",
+    "#F6C6A8",
+    "#C9B8E8",
+    "#F3E2A0",
+    "#F2A9A9",
+    "#8FD0CB",
+    "#BFD8B0",
+    "#F7F7F2",
+    "#FFD7B5",
+    "#B8E0F0",
+    "#E6C8DC",
+    "#D4E8B8",
 )
 ACCENTS = ("#2E9C8A", "#3C7DC4", "#E07A5F", "#7A5CC4", "#D4A72C", "#D9534F", "#2FA36B")
 GREEN = hexc("#2FA36B")
@@ -70,11 +81,20 @@ def _item(img, rng: random.Random, x: float, bottom: float, w: float, h: float) 
     accent = hexc(rng.choice(ACCENTS))
     if kind < 0.72:
         rounded_rect(img, x, bottom - h, x + w, bottom, 1.5, color)
-        rounded_rect(img, x, bottom - h, x + w, bottom - h + max(2, h * 0.12), 0, shade(color, 1.35))
+        rounded_rect(
+            img, x, bottom - h, x + w, bottom - h + max(2, h * 0.12), 0, shade(color, 1.35)
+        )
         rounded_rect(img, x + w - max(2, w * 0.18), bottom - h, x + w, bottom, 0, shade(color, 0.9))
         if w >= 15 and rng.random() < 0.6:
-            rounded_rect(img, x + 2, bottom - h * 0.58, x + w - max(3, w * 0.22), bottom - h * 0.3,
-                         1, (252, 252, 250))
+            rounded_rect(
+                img,
+                x + 2,
+                bottom - h * 0.58,
+                x + w - max(3, w * 0.22),
+                bottom - h * 0.3,
+                1,
+                (252, 252, 250),
+            )
             if rng.random() < 0.5:
                 cx, cyy, a = x + w * 0.38, bottom - h * 0.44, max(1.5, h * 0.06)
                 rounded_rect(img, cx - a, cyy - a / 2.4, cx + a, cyy + a / 2.4, 0, accent)
@@ -84,12 +104,28 @@ def _item(img, rng: random.Random, x: float, bottom: float, w: float, h: float) 
         body = hexc(rng.choice(("#C98B4B", "#F4F4F0", "#E9EEF2", "#B5653A")))
         cap = accent if rng.random() < 0.6 else (245, 245, 245)
         rounded_rect(img, x, bottom - h * 0.78, x + w, bottom, w * 0.3, body)
-        rounded_rect(img, x + w * 0.28, bottom - h * 0.9, x + w * 0.72, bottom - h * 0.76, 0,
-                     shade(body, 0.92))
+        rounded_rect(
+            img,
+            x + w * 0.28,
+            bottom - h * 0.9,
+            x + w * 0.72,
+            bottom - h * 0.76,
+            0,
+            shade(body, 0.92),
+        )
         rounded_rect(img, x + w * 0.22, bottom - h, x + w * 0.78, bottom - h * 0.88, 1.5, cap)
-        rounded_rect(img, x + 1, bottom - h * 0.55, x + w - 1, bottom - h * 0.28, 0, (250, 250, 250))
-        rounded_rect(img, x + w * 0.15, bottom - h * 0.72, x + w * 0.3, bottom - h * 0.12, 0,
-                     shade(body, 1.25))
+        rounded_rect(
+            img, x + 1, bottom - h * 0.55, x + w - 1, bottom - h * 0.28, 0, (250, 250, 250)
+        )
+        rounded_rect(
+            img,
+            x + w * 0.15,
+            bottom - h * 0.72,
+            x + w * 0.3,
+            bottom - h * 0.12,
+            0,
+            shade(body, 1.25),
+        )
     else:
         rounded_rect(img, x, bottom - h * 0.6, x + w, bottom, 3, color)
         rounded_rect(img, x - 1, bottom - h * 0.72, x + w + 1, bottom - h * 0.56, 2, accent)
@@ -216,8 +252,12 @@ def _counter_background() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         mask[marks.any(axis=2)] = 255
 
     # counter top, front panel and kick plate
-    top = [(COUNTER_X1, COUNTER_TOP), (COUNTER_X2, COUNTER_TOP), (COUNTER_X2, 266),
-           (COUNTER_X1, 266)]
+    top = [
+        (COUNTER_X1, COUNTER_TOP),
+        (COUNTER_X2, COUNTER_TOP),
+        (COUNTER_X2, 266),
+        (COUNTER_X1, 266),
+    ]
     both(poly, top, hexc("#EFE3D3"))
     both(rounded_rect, COUNTER_X1, 262, COUNTER_X2, 268, 0, hexc("#FAF4EC"))
     both(rounded_rect, COUNTER_X1, 268, COUNTER_X2, 338, 0, hexc("#82C9B9"))
@@ -247,7 +287,7 @@ def _counter_background() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     # a little stand of vitamins between the tills, sanitizer and a plant
     both(rounded_rect, 452, 214, 508, 250, 3, hexc("#FFFFFF"))
     stand_rng = random.Random(11)
-    for row, y in enumerate((232, 248)):
+    for y in (232, 248):
         x = 457
         while x < 500:
             w = stand_rng.uniform(8, 13)
@@ -293,6 +333,7 @@ def _door_background() -> np.ndarray:
     rounded_rect(img, DOOR_X1 - 10, DOOR_Y1 - 18, DOOR_X2 + 10, DOOR_Y1 - 15, 0, hexc("#D3DADF"))
     rounded_rect(img, DOOR_X1, DOOR_Y1 - 3, DOOR_X2, DOOR_Y1, 0, hexc("#A9B3BA"))
     _sign(img, 480, 3, dark=True)
+
     def tint(layer, _ox, _oy):
         layer[:] = hexc("#BFD9E8")
 
@@ -330,8 +371,14 @@ def _door_background() -> np.ndarray:
     # a plant in the corner
     rounded_rect(img, 46, 470, 112, 540, 8, hexc("#C8775A"))
     rounded_rect(img, 40, 464, 118, 478, 5, hexc("#B5664B"))
-    for angle, dx, dy in ((-40, -18, -26), (-10, -6, -40), (20, 8, -42), (45, 20, -28),
-                          (-70, -26, -8), (70, 28, -10)):
+    for angle, dx, dy in (
+        (-40, -18, -26),
+        (-10, -6, -40),
+        (20, 8, -42),
+        (45, 20, -28),
+        (-70, -26, -8),
+        (70, 28, -10),
+    ):
         ellipse(img, (79 + dx, 452 + dy), (9, 28), hexc("#5E9E6E" if dx < 0 else "#78B485"), angle)
     return _vignette(img, 0.09)
 
@@ -350,12 +397,21 @@ def _door_panels(img: np.ndarray, opened: float) -> None:
 
         def glass(layer, ox, oy, x1=x1, x2=x2):
             layer[:] = hexc("#C6DEEB")
-            poly(layer, [(x1 - ox + 18, 0), (x1 - ox + 34, 0), (x1 - ox + 4, DOOR_Y2 - oy),
-                         (x1 - ox - 12, DOOR_Y2 - oy)], hexc("#F4FAFD"))
+            poly(
+                layer,
+                [
+                    (x1 - ox + 18, 0),
+                    (x1 - ox + 34, 0),
+                    (x1 - ox + 4, DOOR_Y2 - oy),
+                    (x1 - ox - 12, DOOR_Y2 - oy),
+                ],
+                hexc("#F4FAFD"),
+            )
 
         blend_region(img, x1, DOOR_Y1, x2, DOOR_Y2, glass, 0.38)
-        polyline(img, [(x1, DOOR_Y1), (x2, DOOR_Y1), (x2, DOOR_Y2), (x1, DOOR_Y2)],
-                 hexc("#97A3AB"), 3)
+        polyline(
+            img, [(x1, DOOR_Y1), (x2, DOOR_Y1), (x2, DOOR_Y2), (x1, DOOR_Y2)], hexc("#97A3AB"), 3
+        )
         hx = x2 - 12 if side < 0 else x1 + 12
         rounded_rect(img, hx - 2, 120, hx + 2, 176, 2, hexc("#7E8A93"))
 
@@ -378,15 +434,26 @@ def _clock(img: np.ndarray, t_wall: float) -> None:
     for i in range(12):
         a = i / 12 * 2 * math.pi
         inner = r - (5 if i % 3 == 0 else 3)
-        cv2.line(img, (round(cx + math.sin(a) * inner), round(cy - math.cos(a) * inner)),
-                 (round(cx + math.sin(a) * (r - 1)), round(cy - math.cos(a) * (r - 1))),
-                 hexc("#8E9AA2"), 1, cv2.LINE_AA)
+        cv2.line(
+            img,
+            (round(cx + math.sin(a) * inner), round(cy - math.cos(a) * inner)),
+            (round(cx + math.sin(a) * (r - 1)), round(cy - math.cos(a) * (r - 1))),
+            hexc("#8E9AA2"),
+            1,
+            cv2.LINE_AA,
+        )
     minutes = lt.tm_min + lt.tm_sec / 60
     hours = (lt.tm_hour % 12) + minutes / 60
     for value, length, width in ((hours / 12, r * 0.55, 3), (minutes / 60, r * 0.8, 2)):
         a = value * 2 * math.pi
-        cv2.line(img, (cx, cy), (round(cx + math.sin(a) * length), round(cy - math.cos(a) * length)),
-                 hexc("#3C464E"), width, cv2.LINE_AA)
+        cv2.line(
+            img,
+            (cx, cy),
+            (round(cx + math.sin(a) * length), round(cy - math.cos(a) * length)),
+            hexc("#3C464E"),
+            width,
+            cv2.LINE_AA,
+        )
     circle(img, (cx, cy), 2.5, hexc("#E07A5F"))
 
 

@@ -35,5 +35,7 @@ def h264():
 
 def pytest_report_header(config):
     ffmpeg, encoder = encoder_or_none()
-    return [f"koz: ffmpeg {os.path.basename(ffmpeg) if ffmpeg else 'none'}, "
-            f"H.264 encoder {encoder or 'none'}"]
+    return [
+        f"koz: ffmpeg {os.path.basename(ffmpeg) if ffmpeg else 'none'}, "
+        f"H.264 encoder {encoder or 'none'}"
+    ]

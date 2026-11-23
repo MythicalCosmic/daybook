@@ -158,13 +158,27 @@ class Agent:
         self.started_at = clock.time()
         self.net_state = "unpaired" if client is None else "starting"
         self.net_error: str | None = None
-        self.counters = {"frames_sent": 0, "snapshots_sent": 0, "events_sent": 0,
-                         "minutes_sent": 0, "clips_sent": 0, "clips_failed": 0, "lives_sent": 0}
+        self.counters = {
+            "frames_sent": 0,
+            "snapshots_sent": 0,
+            "events_sent": 0,
+            "minutes_sent": 0,
+            "clips_sent": 0,
+            "clips_failed": 0,
+            "lives_sent": 0,
+        }
         self.server_skew_s: float | None = None
         self.cpu = CpuMeter()
         self._cpu_value = 0
-        self._next = {"live": 0.0, "inventory": 0.0, "config": 0.0, "stats": 0.0,
-                      "housekeeping": 0.0, "purge": 0.0}
+        self._cpu_at = -1e9
+        self._next = {
+            "live": 0.0,
+            "inventory": 0.0,
+            "config": 0.0,
+            "stats": 0.0,
+            "housekeeping": 0.0,
+            "purge": 0.0,
+        }
         self._need_inventory = True
         self._need_config = True
         self._offline_until = 0.0
@@ -176,8 +190,9 @@ class Agent:
                 self._set_cam_config(self.cams[key], cfg, clock.time())
         if client is not None and config_cache is not None and config_cache.exists():
             try:
-                self.apply_config(json.loads(config_cache.read_text(encoding="utf-8")),
-                                  from_cache=True)
+                self.apply_config(
+                    json.loads(config_cache.read_text(encoding="utf-8")), from_cache=True
+                )
             except (OSError, ValueError) as exc:
                 log.warning("cannot read the cached config: %s", exc)
         self._apply_rules()
@@ -193,13 +208,12 @@ class Agent:
         with self.lock:
             self.rules = Rules.from_dict(cfg.get("rules"))
             self.agent_info = cfg.get("agent") or self.agent_info
-            known = {
-                c.get("key"): c for c in cfg.get("cameras") or [] if isinstance(c, dict)
-            }
+            known = {c.get("key"): c for c in cfg.get("cameras") or [] if isinstance(c, dict)}
             for key, cam in self.cams.items():
                 data = known.get(key)
-                self._set_cam_config(cam, CameraConfig.from_server(data) if data else
-                                     CameraConfig(), now)
+                self._set_cam_config(
+                    cam, CameraConfig.from_server(data) if data else CameraConfig(), now
+                )
             for key in cfg.get("snapshot_requested") or []:
                 self._snapshot_soon(key, now)
             self.config_version = cfg.get("config_version")
@@ -231,15 +245,17 @@ class Agent:
             cam.incidents.rules = self.rules
         if self.recorder is not None:
             keys = {k for k, c in enabled.items() if c.cfg.role == "counter"}
-            self.recorder.set_cameras(keys if self.rules.record_counter else set(),
-                                      self.rules.record_hours)
+            self.recorder.set_cameras(
+                keys if self.rules.record_counter else set(), self.rules.record_hours
+            )
 
     def _snapshot_soon(self, key: str, now: float) -> None:
         cam = self.cams.get(key)
         if cam is not None:
             due = now + SNAPSHOT_SOON_S
-            cam.snapshot_due_at = due if cam.snapshot_due_at is None else min(cam.snapshot_due_at,
-                                                                              due)
+            cam.snapshot_due_at = (
+                due if cam.snapshot_due_at is None else min(cam.snapshot_due_at, due)
+            )
 
     # --- analysis -------------------------------------------------------------------------
 
@@ -294,17 +310,45 @@ class Agent:
             image = None
             if event["phase"] == "start" and ctx is not None and self.rules.alert_photo:
                 frame, result = ctx
-                image = alert_photo(frame.image, result, cam.zones, kind=event["kind"],
-                                    privacy_blur=self.rules.privacy_blur, lang=self.lang)
+                image = alert_photo(
+                    frame.image,
+                    result,
+                    cam.zones,
+                    kind=event["kind"],
+                    privacy_blur=self.rules.privacy_blur,
+                    lang=self.lang,
+                )
             if self.client is not None and self.outbox is not None:
                 self.outbox.put_event(event, image, created=now)
             self.events_log.appendleft(
-                {**{k: event[k] for k in ("kind", "phase", "key", "at", "queue", "wait_s",
-                                          "staff", "peak_queue", "peak_wait_s")},
-                 "camera": cam.name, "photo": image is not None}
+                {
+                    **{
+                        k: event[k]
+                        for k in (
+                            "kind",
+                            "phase",
+                            "key",
+                            "at",
+                            "queue",
+                            "wait_s",
+                            "staff",
+                            "peak_queue",
+                            "peak_wait_s",
+                        )
+                    },
+                    "camera": cam.name,
+                    "photo": image is not None,
+                }
             )
-            log.info("%s %s on %s (queue %s, wait %s s, staff %s)", event["kind"],
-                     event["phase"], cam.key, event["queue"], event["wait_s"], event["staff"])
+            log.info(
+                "%s %s on %s (queue %s, wait %s s, staff %s)",
+                event["kind"],
+                event["phase"],
+                cam.key,
+                event["queue"],
+                event["wait_s"],
+                event["staff"],
+            )
 
     def housekeeping(self, now: float) -> None:
         with self.lock:
@@ -354,9 +398,9 @@ class Agent:
         if now < self._offline_until:
             return min(1.0, self._offline_until - now)
         try:
-            if self._need_inventory or now >= self._next["inventory"]:
-                if not self._send_inventory(now):
-                    return 0.5
+            due = self._need_inventory or now >= self._next["inventory"]
+            if due and not self._send_inventory(now):
+                return 0.5
             if self._need_config or now >= self._next["config"]:
                 self._fetch_config(now)
             if now >= self._next["live"]:
@@ -383,8 +427,10 @@ class Agent:
         return 0.1 if self.watch else 0.5
 
     def _send_inventory(self, now: float) -> bool:
-        if self._need_inventory and now - self.started_at < 15.0 and any(
-            cam.source.latest() is None for cam in self.cams.values()
+        if (
+            self._need_inventory
+            and now - self.started_at < 15.0
+            and any(cam.source.latest() is None for cam in self.cams.values())
         ):
             return False  # wait a moment for the cameras to give their size
         reply = self.client.cameras([cam.source.describe() for cam in self.cams.values()])
@@ -410,16 +456,18 @@ class Agent:
                 result = cam.fresh_result(now) if cam.cfg.enabled else None
                 fps = cam.fps(now) if cam.cfg.enabled else 0.0
                 total_fps += fps
-                cameras.append({
-                    "key": cam.key,
-                    "online": cam.source.online,
-                    "fps": fps,
-                    "people": result.people_count if result else 0,
-                    "queue": result.queue if result else 0,
-                    "staff": result.staff if result else 0,
-                    "wait_s": result.wait_s if result else 0,
-                    "error": cam.error or cam.source.error,
-                })
+                cameras.append(
+                    {
+                        "key": cam.key,
+                        "online": cam.source.online,
+                        "fps": fps,
+                        "people": result.people_count if result else 0,
+                        "queue": result.queue if result else 0,
+                        "staff": result.staff if result else 0,
+                        "wait_s": result.wait_s if result else 0,
+                        "error": cam.error or cam.source.error,
+                    }
+                )
         return {
             "at": iso(now),
             "agent": {"version": __version__, "fps": round(total_fps, 1), "cpu": self._cpu_value},
@@ -481,10 +529,10 @@ class Agent:
                     if frame is None or frame.seq == cam.frame_sent_seq:
                         continue
                 zones = cam.zones
-            jpeg, w, h = self._jpeg(apply_masks(frame.image, zones), FRAME_MAX_BYTES,
-                                    FRAME_MAX_WIDTH)
-            meta = {"at": iso_ms(frame.t), "w": w, "h": h,
-                    "people": [p.to_meta() for p in people]}
+            jpeg, w, h = self._jpeg(
+                apply_masks(frame.image, zones), FRAME_MAX_BYTES, FRAME_MAX_WIDTH
+            )
+            meta = {"at": iso_ms(frame.t), "w": w, "h": h, "people": [p.to_meta() for p in people]}
             self.client.frame(key, jpeg, meta)
             cam.last_frame_sent_at = now
             cam.frame_sent_seq = frame.seq
@@ -511,13 +559,21 @@ class Agent:
 
                 image = cv2.imdecode(np.frombuffer(data, np.uint8), cv2.IMREAD_COLOR)
                 if image is not None:
-                    return encode_jpeg(apply_masks(image, cam.zones), max_bytes=SNAPSHOT_MAX_BYTES,
-                                       max_width=1920, quality=88)
+                    return encode_jpeg(
+                        apply_masks(image, cam.zones),
+                        max_bytes=SNAPSHOT_MAX_BYTES,
+                        max_width=1920,
+                        quality=88,
+                    )
         frame = cam.source.latest()
         if frame is None:
             return None
-        return encode_jpeg(apply_masks(frame.image, cam.zones), max_bytes=SNAPSHOT_MAX_BYTES,
-                           max_width=1920, quality=88)
+        return encode_jpeg(
+            apply_masks(frame.image, cam.zones),
+            max_bytes=SNAPSHOT_MAX_BYTES,
+            max_width=1920,
+            quality=88,
+        )
 
     def _send_snapshots(self, now: float) -> None:
         for cam in self.cams.values():
@@ -540,8 +596,9 @@ class Agent:
             except (OfflineError, RevokedError):
                 raise
             except DaybookError as exc:
-                log.warning("Daybook refused event %s (%s); dropping it", event.get("event_id"),
-                            exc)
+                log.warning(
+                    "Daybook refused event %s (%s); dropping it", event.get("event_id"), exc
+                )
             self.outbox.delete([item_id])
             self.counters["events_sent"] += 1
 
@@ -575,8 +632,11 @@ class Agent:
             return 0
         now = self.clock.time()
         with self.lock:
-            due = [(cid, job) for cid, job in sorted(self.pending_clips.items())
-                   if now >= job["end"] + CLIP_GRACE_S]
+            due = [
+                (cid, job)
+                for cid, job in sorted(self.pending_clips.items())
+                if now >= job["end"] + CLIP_GRACE_S
+            ]
             for cid, _job in due:
                 del self.pending_clips[cid]
         answered = 0
@@ -595,9 +655,16 @@ class Agent:
                 self.client.clip(cid, clip.video, clip.poster, clip.meta)
                 self.counters["clips_sent"] += 1
                 answered += 1
-                self.events_log.appendleft({"kind": "clip", "phase": "ready", "key": job["key"],
-                                            "at": iso(now), "camera": self.cams[job["key"]].name,
-                                            "duration_s": clip.meta["duration_s"]})
+                self.events_log.appendleft(
+                    {
+                        "kind": "clip",
+                        "phase": "ready",
+                        "key": job["key"],
+                        "at": iso(now),
+                        "camera": self.cams[job["key"]].name,
+                        "duration_s": clip.meta["duration_s"],
+                    }
+                )
             except DaybookError as exc:  # Daybook offers it again after 5 minutes
                 log.warning("cannot upload clip %s: %s", cid, exc)
         return answered
@@ -635,29 +702,31 @@ class Agent:
             for cam in self.cams.values():
                 result = cam.fresh_result(now) if cam.cfg.enabled else None
                 size = cam.source.size
-                cameras.append({
-                    "key": cam.key,
-                    "name": cam.name,
-                    "source": cam.source.kind,
-                    "role": cam.cfg.role,
-                    "enabled": cam.cfg.enabled,
-                    "online": cam.source.online,
-                    "fps": cam.fps(now),
-                    "fps_in": cam.source.fps_in,
-                    "w": size[0] if size else None,
-                    "h": size[1] if size else None,
-                    "people": result.people_count if result else None,
-                    "queue": result.queue if result else None,
-                    "staff": result.staff if result else None,
-                    "wait_s": result.wait_s if result else None,
-                    "entered_today": cam.entered_today,
-                    "exited_today": cam.exited_today,
-                    "zones": len(cam.zones.all),
-                    "watched": cam.key in self.watch,
-                    "recording": bool(self.recorder and cam.key in self.recorder.wanted),
-                    "error": cam.error or cam.source.error,
-                    "open": cam.incidents.open_incidents(),
-                })
+                cameras.append(
+                    {
+                        "key": cam.key,
+                        "name": cam.name,
+                        "source": cam.source.kind,
+                        "role": cam.cfg.role,
+                        "enabled": cam.cfg.enabled,
+                        "online": cam.source.online,
+                        "fps": cam.fps(now),
+                        "fps_in": cam.source.fps_in,
+                        "w": size[0] if size else None,
+                        "h": size[1] if size else None,
+                        "people": result.people_count if result else None,
+                        "queue": result.queue if result else None,
+                        "staff": result.staff if result else None,
+                        "wait_s": result.wait_s if result else None,
+                        "entered_today": cam.entered_today,
+                        "exited_today": cam.exited_today,
+                        "zones": len(cam.zones.all),
+                        "watched": cam.key in self.watch,
+                        "recording": bool(self.recorder and cam.key in self.recorder.wanted),
+                        "error": cam.error or cam.source.error,
+                        "open": cam.incidents.open_incidents(),
+                    }
+                )
             open_count = sum(len(c["open"]) for c in cameras)
             entrance = [c for c in cameras if c["role"] == "entrance"]
             totals = {
@@ -687,12 +756,19 @@ class Agent:
                 },
                 "detector": self.detector_name,
                 "encoder": self.encoder,
-                "cpu": self._cpu_value if self.client else self.cpu.sample(),
+                "cpu": self._cpu_now(now),
                 "rules": asdict(self.rules),
                 "cameras": cameras,
                 "totals": totals,
                 "events": list(self.events_log)[:12],
             }
+
+    def _cpu_now(self, now: float) -> int:
+        """The live report samples the CPU every 5 s; without a server, the page does."""
+        if self.client is None and now - self._cpu_at >= 5.0:
+            self._cpu_at = now
+            self._cpu_value = self.cpu.sample()
+        return self._cpu_value
 
     def preview_jpeg(self, key: str, *, max_width: int = 960) -> bytes | None:
         cam = self.cams.get(key)
@@ -706,8 +782,9 @@ class Agent:
             zones = cam.zones
             blur = self.rules.privacy_blur
         shift = min(1.0, max(0.0, frame.t - result.t)) if result is not None else 0.0
-        image = preview(frame.image, result, zones, privacy_blur=blur, lang=self.lang,
-                        shift_s=shift)
+        image = preview(
+            frame.image, result, zones, privacy_blur=blur, lang=self.lang, shift_s=shift
+        )
         return encode_jpeg(image, max_bytes=700_000, max_width=max_width, quality=82)
 
     # --- running for real -----------------------------------------------------------------
@@ -715,11 +792,16 @@ class Agent:
     def start(self) -> None:
         for cam in self.cams.values():
             cam.source.start()
-        loops = [("analysis", self.tick, 0.05), ("recorder", self.record_tick, 0.5),
-                 ("network", self.net_tick, 1.0), ("clips", self.clip_tick, 1.0)]
+        loops = [
+            ("analysis", self.tick, 0.05),
+            ("recorder", self.record_tick, 0.5),
+            ("network", self.net_tick, 1.0),
+            ("clips", self.clip_tick, 1.0),
+        ]
         for name, step, cap in loops:
-            thread = threading.Thread(target=self._loop, args=(name, step, cap),
-                                      name=f"koz-{name}", daemon=True)
+            thread = threading.Thread(
+                target=self._loop, args=(name, step, cap), name=f"koz-{name}", daemon=True
+            )
             thread.start()
             self._threads.append(thread)
 

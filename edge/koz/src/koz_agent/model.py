@@ -62,19 +62,21 @@ def ensure_model(
     part = path.with_suffix(".part")
     digest = hashlib.sha256()
     log.info("downloading the YOLOX-tiny model from %s", MODEL_URL)
-    with httpx.Client(transport=transport, follow_redirects=True, timeout=60.0) as client:
-        with client.stream("GET", MODEL_URL) as response:
-            if response.status_code != 200:
-                raise ModelError(f"model download failed: HTTP {response.status_code}")
-            total = int(response.headers.get("content-length") or 0) or None
-            done = 0
-            with part.open("wb") as fh:
-                for chunk in response.iter_bytes(1 << 16):
-                    fh.write(chunk)
-                    digest.update(chunk)
-                    done += len(chunk)
-                    if progress:
-                        progress(done, total)
+    with (
+        httpx.Client(transport=transport, follow_redirects=True, timeout=60.0) as client,
+        client.stream("GET", MODEL_URL) as response,
+    ):
+        if response.status_code != 200:
+            raise ModelError(f"model download failed: HTTP {response.status_code}")
+        total = int(response.headers.get("content-length") or 0) or None
+        done = 0
+        with part.open("wb") as fh:
+            for chunk in response.iter_bytes(1 << 16):
+                fh.write(chunk)
+                digest.update(chunk)
+                done += len(chunk)
+                if progress:
+                    progress(done, total)
     got = digest.hexdigest()
     if want and got != want:
         part.unlink(missing_ok=True)

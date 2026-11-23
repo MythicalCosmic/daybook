@@ -144,10 +144,13 @@ def _credentials(user: str, password: str) -> str:
     return f"{quote(user, safe='')}:{quote(password, safe='')}@"
 
 
-def live_url(host: str, channel: int, user: str, password: str, *, port: int = 554,
-             stream: int = 2) -> str:
+def live_url(
+    host: str, channel: int, user: str, password: str, *, port: int = 554, stream: int = 2
+) -> str:
     """The RTSP URL of a channel's sub-stream (``stream=2``) or main stream (``stream=1``)."""
-    return f"rtsp://{_credentials(user, password)}{host}:{port}/Streaming/Channels/{channel}0{stream}"
+    return (
+        f"rtsp://{_credentials(user, password)}{host}:{port}/Streaming/Channels/{channel}0{stream}"
+    )
 
 
 def hik_time(t_utc: float, offset_s: int) -> str:

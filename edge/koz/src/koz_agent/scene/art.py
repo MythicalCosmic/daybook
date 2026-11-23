@@ -13,7 +13,16 @@ from .world import BASE_HEIGHT, Actor
 GREEN = hexc("#2FA36B")
 TEAL = hexc("#2E9C8A")
 COAT_SHADE = hexc("#DCE3EA")
-BOX_COLORS = ("#7CC6B6", "#7FB2E0", "#F2A97E", "#B49BE0", "#E8C766", "#EE8E8E", "#6FC1BC", "#9DC98A")
+BOX_COLORS = (
+    "#7CC6B6",
+    "#7FB2E0",
+    "#F2A97E",
+    "#B49BE0",
+    "#E8C766",
+    "#EE8E8E",
+    "#6FC1BC",
+    "#9DC98A",
+)
 
 
 def figure_height(actor: Actor, scale: float) -> float:
@@ -76,15 +85,43 @@ def draw_person(img: np.ndarray, actor: Actor, scale: float) -> tuple[float, flo
     poly(img, shade_band, coat_dark if not staff else shade(COAT_SHADE, 1.04))
     if staff:
         if toward:
-            poly(img, [(fx - 0.055 * H, sh_y - 0.004 * H), (fx + 0.055 * H, sh_y - 0.004 * H),
-                       (fx, sh_y + 0.12 * H)], TEAL)
+            poly(
+                img,
+                [
+                    (fx - 0.055 * H, sh_y - 0.004 * H),
+                    (fx + 0.055 * H, sh_y - 0.004 * H),
+                    (fx, sh_y + 0.12 * H),
+                ],
+                TEAL,
+            )
             for side in (-1, 1):
-                poly(img, [(fx + side * 0.055 * H, sh_y), (fx + side * 0.012 * H, sh_y + 0.13 * H),
-                           (fx + side * 0.09 * H, sh_y + 0.07 * H)], COAT_SHADE)
-            rounded_rect(img, fx + 0.07 * H, sh_y + 0.085 * H, fx + 0.135 * H, sh_y + 0.112 * H,
-                         0.006 * H, TEAL)
-            rounded_rect(img, fx - 0.135 * H, sh_y + 0.19 * H, fx - 0.07 * H, sh_y + 0.20 * H,
-                         0.004 * H, hexc("#C3CCD5"))
+                poly(
+                    img,
+                    [
+                        (fx + side * 0.055 * H, sh_y),
+                        (fx + side * 0.012 * H, sh_y + 0.13 * H),
+                        (fx + side * 0.09 * H, sh_y + 0.07 * H),
+                    ],
+                    COAT_SHADE,
+                )
+            rounded_rect(
+                img,
+                fx + 0.07 * H,
+                sh_y + 0.085 * H,
+                fx + 0.135 * H,
+                sh_y + 0.112 * H,
+                0.006 * H,
+                TEAL,
+            )
+            rounded_rect(
+                img,
+                fx - 0.135 * H,
+                sh_y + 0.19 * H,
+                fx - 0.07 * H,
+                sh_y + 0.20 * H,
+                0.004 * H,
+                hexc("#C3CCD5"),
+            )
         else:
             capsule(img, (fx, sh_y + 0.06 * H), (fx, hem_y - 0.03 * H), 0.008 * H, COAT_SHADE)
     else:
@@ -149,8 +186,13 @@ def _head(img, actor: Actor, fx, cy, r, skin, hair, toward: bool) -> float:
         if toward:
             ellipse(img, (fx, cy + r * 0.12), (r * 0.62, r * 0.76), skin)
         else:
-            ellipse(img, (fx - r * 0.35, cy - r * 0.45), (r * 0.32, r * 0.16), shade(hat_color, 1.18),
-                    angle=-30)
+            ellipse(
+                img,
+                (fx - r * 0.35, cy - r * 0.45),
+                (r * 0.32, r * 0.16),
+                shade(hat_color, 1.18),
+                angle=-30,
+            )
         return cy - r * 1.12
 
     for side in (-1, 1):
@@ -158,14 +200,30 @@ def _head(img, actor: Actor, fx, cy, r, skin, hair, toward: bool) -> float:
     if toward:
         circle(img, (fx, cy), r, skin)
         ellipse(img, (fx, cy - r * 0.05), (r * 1.04, r * 1.0), hair, start=180, end=360)
-        poly(img, [(fx - r * 1.02, cy - r * 0.1), (fx - r * 0.2, cy - r * 0.35),
-                   (fx - r * 0.95, cy + r * 0.35)], hair)
-        poly(img, [(fx + r * 1.02, cy - r * 0.1), (fx + r * 0.4, cy - r * 0.42),
-                   (fx + r * 0.98, cy + r * 0.25)], hair)
+        poly(
+            img,
+            [
+                (fx - r * 1.02, cy - r * 0.1),
+                (fx - r * 0.2, cy - r * 0.35),
+                (fx - r * 0.95, cy + r * 0.35),
+            ],
+            hair,
+        )
+        poly(
+            img,
+            [
+                (fx + r * 1.02, cy - r * 0.1),
+                (fx + r * 0.4, cy - r * 0.42),
+                (fx + r * 0.98, cy + r * 0.25),
+            ],
+            hair,
+        )
     else:
         circle(img, (fx, cy - r * 0.02), r * 1.0, hair)
     if hat is None or hat == "bun":
-        ellipse(img, (fx - r * 0.38, cy - r * 0.5), (r * 0.34, r * 0.17), shade(hair, 1.22), angle=-28)
+        ellipse(
+            img, (fx - r * 0.38, cy - r * 0.5), (r * 0.34, r * 0.17), shade(hair, 1.22), angle=-28
+        )
     if hat == "bun":
         circle(img, (fx + r * 0.1, cy - r * 1.02), r * 0.42, hair)
         top = cy - r * 1.44
@@ -178,17 +236,34 @@ def _head(img, actor: Actor, fx, cy, r, skin, hair, toward: bool) -> float:
         ]
         poly(img, cap, hat_color)
         band = (226, 226, 222)
-        cv2.line(img, (round(fx - r * 0.84), round(cy - r * 0.42)),
-                 (round(fx + r * 0.84), round(cy - r * 0.42)), band, max(1, round(r * 0.1)),
-                 cv2.LINE_AA)
+        cv2.line(
+            img,
+            (round(fx - r * 0.84), round(cy - r * 0.42)),
+            (round(fx + r * 0.84), round(cy - r * 0.42)),
+            band,
+            max(1, round(r * 0.1)),
+            cv2.LINE_AA,
+        )
         for dx in (-0.42, 0.42):
-            ellipse(img, (fx + r * dx, cy - r * 0.72), (r * 0.07, r * 0.16), band,
-                    angle=35 if dx < 0 else -35)
+            ellipse(
+                img,
+                (fx + r * dx, cy - r * 0.72),
+                (r * 0.07, r * 0.16),
+                band,
+                angle=35 if dx < 0 else -35,
+            )
         top = cy - r * 1.05
     elif hat == "knit":
         ellipse(img, (fx, cy - r * 0.12), (r * 1.08, r * 1.0), hat_color, start=180, end=360)
-        rounded_rect(img, fx - r * 1.08, cy - r * 0.3, fx + r * 1.08, cy - r * 0.02, r * 0.12,
-                     shade(hat_color, 1.25))
+        rounded_rect(
+            img,
+            fx - r * 1.08,
+            cy - r * 0.3,
+            fx + r * 1.08,
+            cy - r * 0.02,
+            r * 0.12,
+            shade(hat_color, 1.25),
+        )
         circle(img, (fx, cy - r * 1.18), r * 0.28, shade(hat_color, 1.35))
         top = cy - r * 1.46
     return top

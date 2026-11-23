@@ -238,25 +238,25 @@ const ICONS = {
 const params = new URLSearchParams(location.search);
 const STILL = params.has("still");
 const TV = params.has("tv");
-let lang = null, state = null, tvIndex = 0, tvTurn = 0;
-try { lang = params.get("lang") || localStorage.getItem("koz.lang"); } catch (e) {}
+let lang = "uz", state = null, tvIndex = 0, tvTurn = 0, chosen = null;
+try { chosen = params.get("lang") || localStorage.getItem("koz.lang"); } catch (e) {}
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const t = (k) => (T[lang] || T.uz)[k] || T.uz[k] || k;
 const mmss = (s) => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
 const fmtNum = (v) => v == null ? "—" : String(v);
-const clockOf = (iso) => { const d = new Date(iso); return isNaN(d) ? "" : d.toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"}); };
+const clockOf = (iso) => { const d = new Date(iso); return isNaN(d) ? "" : d.toLocaleTimeString([], {hour: "2-digit", minute: "2-digit", hourCycle: "h23"}); };
 
-function setLang(l) {
+function setLang(l, remember) {
   lang = T[l] ? l : "uz";
-  try { localStorage.setItem("koz.lang", lang); } catch (e) {}
+  if (remember) { chosen = lang; try { localStorage.setItem("koz.lang", lang); } catch (e) {} }
   document.documentElement.lang = lang;
   document.querySelectorAll("[data-t]").forEach((el) => { el.textContent = t(el.dataset.t); });
   document.querySelectorAll("#langs button").forEach((b) => b.classList.toggle("on", b.dataset.l === lang));
   if (state) render(state);
 }
-document.querySelectorAll("#langs button").forEach((b) => b.addEventListener("click", () => setLang(b.dataset.l)));
+document.querySelectorAll("#langs button").forEach((b) => b.addEventListener("click", () => setLang(b.dataset.l, true)));
 
 function picUrl(key) {
   return (STILL ? "/frame/" + encodeURIComponent(key) + ".jpg?t=" + Date.now() : "/mjpeg/" + encodeURIComponent(key));
@@ -400,7 +400,7 @@ function renderTv(s) {
   if (img.dataset.key !== c.key || STILL) { img.dataset.key = c.key; img.src = picUrl(c.key); }
   $("tvName").textContent = c.name;
   const now = new Date();
-  $("tvClock").textContent = now.toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"});
+  $("tvClock").textContent = now.toLocaleTimeString([], {hour: "2-digit", minute: "2-digit", hourCycle: "h23"});
   $("tvWhere").textContent = [(s.agent && s.agent.branch && s.agent.branch.name) || "", (s.agent && s.agent.name) || "Ko‘z"].filter(Boolean).join(" · ");
   $("tvQueue").textContent = fmtNum(c.queue);
   $("tvWait").textContent = c.wait_s == null ? "—" : mmss(c.wait_s);
@@ -420,13 +420,13 @@ async function poll() {
     const r = await fetch("/api/status", {cache: "no-store"});
     if (r.ok) {
       const s = await r.json();
-      if (!lang) { lang = s.lang; setLang(lang); }
+      if (!chosen && s.lang && s.lang !== lang) setLang(s.lang, false);
       render(s);
     }
   } catch (e) { /* the agent restarts: try again */ }
   setTimeout(poll, 1500);
 }
-setLang(lang || "uz");
+setLang(chosen || "uz", false);
 if (TV) document.body.classList.add("tv");
 poll();
 </script>

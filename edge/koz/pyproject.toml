@@ -41,7 +41,8 @@ target-version = "py312"
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "B", "UP", "SIM", "RUF"]
 ignore = ["RUF001", "RUF012"]
-allowed-confusables = ["‘", "’"]
+# Uzbek writes o‘ and g‘ with ‘ and the apostrophe with ’; prose uses – for ranges, − and ×.
+allowed-confusables = ["‘", "’", "–", "−", "×"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["koz_agent"]

@@ -35,7 +35,10 @@ def test_channels_from_the_channel_list():
 
 def test_channel_status():
     assert parse_channel_status(fixture("input_proxy_channels_status.xml")) == {
-        1: True, 2: False, 3: True}
+        1: True,
+        2: False,
+        3: True,
+    }
 
 
 @pytest.mark.parametrize(
@@ -67,15 +70,19 @@ def test_offset_settings():
 def test_live_url_is_the_sub_stream_with_escaped_credentials():
     url = live_url("192.168.0.250", 3, "admin", "p@ss:w/rd#1")
     assert url == "rtsp://admin:p%40ss%3Aw%2Frd%231@192.168.0.250:554/Streaming/Channels/302"
-    assert live_url("10.0.0.5", 12, "u", "p", port=8554, stream=1).endswith(":8554/Streaming/Channels/1201")
+    assert live_url("10.0.0.5", 12, "u", "p", port=8554, stream=1).endswith(
+        ":8554/Streaming/Channels/1201"
+    )
 
 
 def test_playback_url_uses_the_nvr_local_time():
     start = parse_iso("2026-11-23T16:30:50Z")
     end = parse_iso("2026-11-23T16:31:10Z")
     url = playback_url("192.168.0.250", 3, start, end, "admin", "secret", offset_s=5 * 3600)
-    assert url == ("rtsp://admin:secret@192.168.0.250:554/Streaming/tracks/301"
-                   "?starttime=20261123T213050Z&endtime=20261123T213110Z")
+    assert url == (
+        "rtsp://admin:secret@192.168.0.250:554/Streaming/tracks/301"
+        "?starttime=20261123T213050Z&endtime=20261123T213110Z"
+    )
     assert hik_time(start, 0) == "20261123T163050Z"
 
 

@@ -55,8 +55,13 @@ class Settings:
         if not path.exists():
             return cls()
         data = json.loads(path.read_text(encoding="utf-8"))
-        settings = cls(**{k: v for k, v in data.items() if k not in ("nvrs", "sources")
-                          and k in cls.__dataclass_fields__})
+        settings = cls(
+            **{
+                k: v
+                for k, v in data.items()
+                if k not in ("nvrs", "sources") and k in cls.__dataclass_fields__
+            }
+        )
         settings.nvrs = [NvrSettings(**n) for n in data.get("nvrs") or []]
         settings.sources = [SourceSettings(**s) for s in data.get("sources") or []]
         return settings

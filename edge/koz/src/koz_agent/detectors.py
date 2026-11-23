@@ -183,7 +183,12 @@ class YoloxDetector:
         raw = self.session.run(None, {self.input_name: tensor})[0]
         h, w = image.shape[:2]
         result = postprocess(
-            raw, ratio, w, h, size=self.size, score_threshold=self.score_threshold,
+            raw,
+            ratio,
+            w,
+            h,
+            size=self.size,
+            score_threshold=self.score_threshold,
             nms_threshold=self.nms_threshold,
         )
         self.last_ms = (time.perf_counter() - started) * 1000.0

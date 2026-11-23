@@ -65,7 +65,10 @@ class IncidentEngine:
         self.queue_enabled = is_counter and has_queue
         self.unattended_enabled = is_counter and has_queue and has_staff
         events = []
-        for kind, enabled in (("queue", self.queue_enabled), ("unattended", self.unattended_enabled)):
+        for kind, enabled in (
+            ("queue", self.queue_enabled),
+            ("unattended", self.unattended_enabled),
+        ):
             rule = self._rules[kind]
             if not enabled:
                 if rule.open:

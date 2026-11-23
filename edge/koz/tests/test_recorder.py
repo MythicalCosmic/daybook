@@ -101,7 +101,7 @@ def test_encoders_are_read_from_ffmpeg_output():
 def numbered_frame(i: int) -> np.ndarray:
     image = np.zeros((240, 320, 3), np.uint8)
     image[:, :] = ((i * 37) % 255, (i * 91) % 255, (i * 53) % 255)
-    image[100:140, (i * 7) % 280:(i * 7) % 280 + 40] = 255
+    image[100:140, (i * 7) % 280 : (i * 7) % 280 + 40] = 255
     return image
 
 
@@ -109,7 +109,7 @@ def test_record_across_a_minute_and_cut_a_clip(tmp_path, h264):
     ffmpeg, encoder = h264
     rec = CameraRecorder("sim:counter", tmp_path / "rec", ffmpeg, encoder, fps=4.0)
     start = T0 + 52.0
-    for i in range(int(16 * 4)):  # 16 s at 4 fps: 8 s before the minute, 8 s after
+    for i in range(16 * 4):  # 16 s at 4 fps: 8 s before the minute, 8 s after
         rec.push(numbered_frame(i), start + i / 4)
     rec.close()
     segments = rec.segments()

@@ -54,8 +54,12 @@ class FakeDaybook:
         self.lock = threading.RLock()
         self.codes: set[str] = set()
         self.tokens: set[str] = set()
-        self.agent = {"id": 4, "name": "Asosiy qutisi", "branch": {"id": 1, "name": "Asosiy"},
-                      "timezone": "Asia/Tashkent"}
+        self.agent = {
+            "id": 4,
+            "name": "Asosiy qutisi",
+            "branch": {"id": 1, "name": "Asosiy"},
+            "timezone": "Asia/Tashkent",
+        }
         self.company = {"id": 1, "name": "Demo dorixona"}
         self.rules = asdict(Rules())
         self.cameras: dict[str, dict] = {}
@@ -108,14 +112,23 @@ class FakeDaybook:
     def request_clip(self, key: str, start: float, end: float) -> int:
         with self.lock:
             self._ids += 1
-            self.clips[self._ids] = {"id": self._ids, "key": key, "start": iso(start),
-                                     "end": iso(end), "state": "pending"}
+            self.clips[self._ids] = {
+                "id": self._ids,
+                "key": key,
+                "start": iso(start),
+                "end": iso(end),
+                "state": "pending",
+            }
             return self._ids
 
     def config_version(self) -> str:
         with self.lock:
-            data = {"rules": self.rules, "agent": self.agent,
-                    "cameras": self._config_cameras(), "snap": sorted(self.snapshot_requested)}
+            data = {
+                "rules": self.rules,
+                "agent": self.agent,
+                "cameras": self._config_cameras(),
+                "snap": sorted(self.snapshot_requested),
+            }
         return hashlib.sha256(json.dumps(data, sort_keys=True).encode()).hexdigest()[:6]
 
     def _config_cameras(self) -> list[dict]:
@@ -126,15 +139,16 @@ class FakeDaybook:
 
     def handle(self, method: str, path: str, headers: dict, body: bytes) -> tuple[int, dict | None]:
         with self.lock:
-            status, reply = self._handle(method, path, {k.lower(): v for k, v in headers.items()},
-                                         body)
+            status, reply = self._handle(
+                method, path, {k.lower(): v for k, v in headers.items()}, body
+            )
             self.requests.append((method, path, status))
             return status, reply
 
     def _handle(self, method: str, path: str, headers: dict, body: bytes):
         if not path.startswith(PREFIX):
             return 404, {"detail": "not found", "code": "not_found"}
-        route = unquote(path[len(PREFIX):])
+        route = unquote(path[len(PREFIX) :])
         if self.fail_next > 0:
             self.fail_next -= 1
             return 503, {"detail": "try again", "code": "unavailable"}
@@ -146,8 +160,12 @@ class FakeDaybook:
             token = "koz_" + secrets.token_urlsafe(30)[:40]
             self.tokens = {token}
             self.hosts.append(data.get("host") or {})
-            agent = {"id": self.agent["id"], "name": self.agent["name"], "company": self.company,
-                     "branch": self.agent["branch"]}
+            agent = {
+                "id": self.agent["id"],
+                "name": self.agent["name"],
+                "company": self.company,
+                "branch": self.agent["branch"],
+            }
             return 200, {"token": token, "agent": agent, "server_time": iso(self.clock.time())}
         auth = headers.get("authorization", "")
         if not auth.startswith("Bearer ") or auth[7:] not in self.tokens:
@@ -156,10 +174,13 @@ class FakeDaybook:
         content_type = headers.get("content-type", "")
 
         if route == "config/" and method == "GET":
-            return 200, {"config_version": self.config_version(), "agent": self.agent,
-                         "rules": {k: v for k, v in self.rules.items()},
-                         "cameras": self._config_cameras(),
-                         "snapshot_requested": sorted(self.snapshot_requested)}
+            return 200, {
+                "config_version": self.config_version(),
+                "agent": self.agent,
+                "rules": {k: v for k, v in self.rules.items()},
+                "cameras": self._config_cameras(),
+                "snapshot_requested": sorted(self.snapshot_requested),
+            }
         if route == "cameras/" and method == "POST":
             items = json.loads(body).get("cameras") or []
             seen = set()
@@ -170,8 +191,13 @@ class FakeDaybook:
                 if camera is None:
                     self._ids += 1
                     camera = self.cameras[key] = {
-                        "id": self._ids, "key": key, "name": item.get("name") or key,
-                        "role": "other", "enabled": False, "zones": [], "register_id": None,
+                        "id": self._ids,
+                        "key": key,
+                        "name": item.get("name") or key,
+                        "role": "other",
+                        "enabled": False,
+                        "zones": [],
+                        "register_id": None,
                         "renamed": False,
                     }
                     if self.auto_setup:
@@ -199,10 +225,12 @@ class FakeDaybook:
             data = json.loads(body)
             self.lives.append({"at": now, "payload": data})
             pending = sum(1 for c in self.clips.values() if c["state"] == "pending")
-            return 200, {"config_version": self.config_version(),
-                         "watch": sorted(k for k in self.watch(now) if k in self.cameras),
-                         "jobs": pending + len(self.job_snapshots),
-                         "server_time": iso(now)}
+            return 200, {
+                "config_version": self.config_version(),
+                "watch": sorted(k for k in self.watch(now) if k in self.cameras),
+                "jobs": pending + len(self.job_snapshots),
+                "server_time": iso(now),
+            }
         match = re.fullmatch(r"frames/([a-z0-9:_-]+)/", route)
         if match and method == "POST":
             fields = parse_multipart(content_type, body)
@@ -210,8 +238,7 @@ class FakeDaybook:
             meta = json.loads(fields.get("meta", (None, b"{}"))[1] or b"{}")
             if not image.startswith(b"\xff\xd8") or len(image) > 400_000:
                 return 422, {"detail": "a JPEG up to 400 KB", "code": "bad_image"}
-            self.frames.append({"key": match.group(1), "at": now, "meta": meta,
-                                "size": len(image)})
+            self.frames.append({"key": match.group(1), "at": now, "meta": meta, "size": len(image)})
             return 204, None
         if route == "stats/" and method == "POST":
             self.stat_calls += 1
@@ -233,15 +260,20 @@ class FakeDaybook:
             image = fields.get("image", (None, b""))[1]
             if event["event_id"] in self.event_ids:
                 alert = self.alerts.get(event["incident_id"])
-                return 200, {"alert_id": alert["id"] if alert else None,
-                             "state": alert["state"] if alert else None}
+                return 200, {
+                    "alert_id": alert["id"] if alert else None,
+                    "state": alert["state"] if alert else None,
+                }
             self.event_ids.add(event["event_id"])
             self.events.append({**event, "image": image or None, "received_at": now})
             alert = self.alerts.get(event["incident_id"])
             if event["phase"] == "start":
                 self._ids += 1
-                alert = self.alerts[event["incident_id"]] = {"id": self._ids, "state": "open",
-                                                             "kind": event["kind"]}
+                alert = self.alerts[event["incident_id"]] = {
+                    "id": self._ids,
+                    "state": "open",
+                    "kind": event["kind"],
+                }
             elif alert is None:
                 return 200, {"alert_id": None}
             if event["phase"] == "end":
@@ -268,8 +300,12 @@ class FakeDaybook:
             video = fields.get("video", (None, b""))[1]
             if len(video) > 40 * 1024 * 1024:
                 return 413, {"detail": "an MP4 up to 40 MB", "code": "too_big"}
-            clip.update(state="ready", video=video, poster=fields.get("poster", (None, b""))[1],
-                        meta=json.loads(fields.get("meta", (None, b"{}"))[1] or b"{}"))
+            clip.update(
+                state="ready",
+                video=video,
+                poster=fields.get("poster", (None, b""))[1],
+                meta=json.loads(fields.get("meta", (None, b"{}"))[1] or b"{}"),
+            )
             return 204, None
         return 404, {"detail": "not found", "code": "not_found"}
 
@@ -286,8 +322,9 @@ class FakeDaybook:
         def handler(request: httpx.Request) -> httpx.Response:
             if self.down:
                 raise httpx.ConnectError("the network is down", request=request)
-            status, reply = self.handle(request.method, request.url.path, dict(request.headers),
-                                        request.read())
+            status, reply = self.handle(
+                request.method, request.url.path, dict(request.headers), request.read()
+            )
             if reply is None:
                 return httpx.Response(status)
             return httpx.Response(status, json=reply)
@@ -301,8 +338,9 @@ class FakeDaybook:
             def _do(self) -> None:
                 length = int(self.headers.get("Content-Length") or 0)
                 body = self.rfile.read(length) if length else b""
-                status, reply = fake.handle(self.command, urlsplit(self.path).path,
-                                            dict(self.headers), body)
+                status, reply = fake.handle(
+                    self.command, urlsplit(self.path).path, dict(self.headers), body
+                )
                 payload = b"" if reply is None else json.dumps(reply).encode()
                 self.send_response(status)
                 if reply is not None:

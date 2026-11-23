@@ -1,6 +1,7 @@
 """The whole agent: two sim cameras on the demo scene against a fake Daybook, for 10 minutes of
 scene time on a fake clock (contract §5)."""
 
+import itertools
 import random
 from collections import defaultdict
 
@@ -32,10 +33,16 @@ def run(tmp_path_factory):
     transport = fake.transport()
 
     pairing = DaybookClient("https://daybook.test", clock=clock, transport=transport)
-    reply = pairing.pair("KOZ-7F3K-92QD", {"hostname": "KASSA-PC", "os": "Windows 11",
-                                           "version": "0.1.0"})
-    client = DaybookClient("https://daybook.test", reply["token"], clock=clock,
-                           transport=transport, rng=random.Random(5))
+    reply = pairing.pair(
+        "KOZ-7F3K-92QD", {"hostname": "KASSA-PC", "os": "Windows 11", "version": "0.1.0"}
+    )
+    client = DaybookClient(
+        "https://daybook.test",
+        reply["token"],
+        clock=clock,
+        transport=transport,
+        rng=random.Random(5),
+    )
     ffmpeg, encoder = encoder_or_none()
     recorder = Recorder(tmp / "recordings", clock, ffmpeg=ffmpeg, encoder=encoder, fps=2.0)
     agent = Agent(
@@ -51,14 +58,15 @@ def run(tmp_path_factory):
     fake.watch = lambda t: {"sim:counter"} if WATCH[0] <= t < WATCH[1] else set()
 
     configured_at = clip_id = snapshot_asked_at = None
-    for i in range(int(MINUTES * 60 / STEP)):
+    for _ in range(int(MINUTES * 60 / STEP)):
         clock.advance(STEP)
         now = clock.time()
         if configured_at is None and fake.cameras:
             # the owner sets the cameras up in the dashboard after they appear
             for key, suggestion in suggest_zones().items():
-                fake.set_camera(key, role=suggestion["role"], zones=suggestion["zones"],
-                                enabled=True)
+                fake.set_camera(
+                    key, role=suggestion["role"], zones=suggestion["zones"], enabled=True
+                )
             configured_at = now
         if snapshot_asked_at is None and now >= T0 + 300:
             fake.request_snapshot("sim:door")
@@ -75,8 +83,14 @@ def run(tmp_path_factory):
     agent._next["stats"] = 0.0
     agent.net_tick()
     recorder.close()
-    return {"fake": fake, "agent": agent, "clip_id": clip_id, "encoder": encoder,
-            "configured_at": configured_at, "snapshot_asked_at": snapshot_asked_at}
+    return {
+        "fake": fake,
+        "agent": agent,
+        "clip_id": clip_id,
+        "encoder": encoder,
+        "configured_at": configured_at,
+        "snapshot_asked_at": snapshot_asked_at,
+    }
 
 
 def test_pairing_and_setup(run):
@@ -93,7 +107,7 @@ def test_pairing_and_setup(run):
 def test_live_every_five_seconds(run):
     lives = [live for live in run["fake"].lives if live["at"] <= T0 + MINUTES * 60]
     assert 115 <= len(lives) <= 121
-    gaps = [b["at"] - a["at"] for a, b in zip(lives, lives[1:], strict=False)]
+    gaps = [b["at"] - a["at"] for a, b in itertools.pairwise(lives)]
     assert min(gaps) >= 4.9 and max(gaps) <= 5.3
     last = lives[-1]["payload"]
     assert last["agent"]["version"] == "0.1.0" and isinstance(last["agent"]["cpu"], int)
@@ -108,8 +122,19 @@ def test_minute_stats_each_minute(run):
         minutes = sorted(m for k, m in stats if k == key)
         assert minutes == [iso(T0 + 60 * i) for i in range(MINUTES)], key
     row = stats[("sim:counter", iso(T0 + 240))]
-    assert set(row) == {"key", "minute", "frames", "people_avg", "people_max", "entered", "exited",
-                        "queue_avg", "queue_max", "wait_max_s", "staff_seconds"}
+    assert set(row) == {
+        "key",
+        "minute",
+        "frames",
+        "people_avg",
+        "people_max",
+        "entered",
+        "exited",
+        "queue_avg",
+        "queue_max",
+        "wait_max_s",
+        "staff_seconds",
+    }
     assert 110 <= row["frames"] <= 121  # 2 fps
     assert 0 <= row["staff_seconds"] <= 60
     # the rush: the queue reaches 5–6 people, the longest wait passes two minutes
@@ -140,8 +165,13 @@ def _incidents(events):
 def test_queue_incident_start_update_end_with_a_photo(run):
     incidents = _incidents(run["fake"].events)
     queue = [v for (kind, _i), v in incidents.items() if kind == "queue"]
-    complete = [v for v in queue if [e["phase"] for e in v][:1] == ["start"]
-                and "update" in [e["phase"] for e in v] and v[-1]["phase"] == "end"]
+    complete = [
+        v
+        for v in queue
+        if [e["phase"] for e in v][:1] == ["start"]
+        and "update" in [e["phase"] for e in v]
+        and v[-1]["phase"] == "end"
+    ]
     assert complete, [[e["phase"] for e in v] for v in queue]
     first = complete[0]
     start, end = first[0], first[-1]
@@ -151,7 +181,7 @@ def test_queue_incident_start_update_end_with_a_photo(run):
     assert end["peak_queue"] >= start["queue"] and end["peak_wait_s"] >= 120
     assert len({e["event_id"] for e in first}) == len(first)
     updates = [parse_iso(e["at"]) for e in first if e["phase"] == "update"]
-    assert all(b - a >= 60 for a, b in zip(updates, updates[1:], strict=False))
+    assert all(b - a >= 60 for a, b in itertools.pairwise(updates))
     # Daybook saw it open and then resolved
     alert = run["fake"].alerts[start["incident_id"]]
     assert alert["state"] == "resolved"

@@ -28,8 +28,14 @@ def client_with(handler, **kwargs):
         seen.append(request)
         return handler(request)
 
-    client = DaybookClient("https://daybook.test/", TOKEN, clock=clock,
-                           transport=httpx.MockTransport(wrapped), rng=random.Random(3), **kwargs)
+    client = DaybookClient(
+        "https://daybook.test/",
+        TOKEN,
+        clock=clock,
+        transport=httpx.MockTransport(wrapped),
+        rng=random.Random(3),
+        **kwargs,
+    )
     return client, clock, seen
 
 
@@ -40,8 +46,13 @@ def test_token_header_and_paths():
     assert seen[0].headers["authorization"] == f"Bearer {TOKEN}"
     assert seen[0].headers["user-agent"].startswith("koz-agent/")
     client.pair("KOZ-7F3K-92QD", {"hostname": "KASSA-PC"})
-    assert seen[1].url.path == "/api/v1/devices/koz/pair/" and "authorization" not in seen[1].headers
-    assert json.loads(seen[1].content) == {"code": "KOZ-7F3K-92QD", "host": {"hostname": "KASSA-PC"}}
+    assert (
+        seen[1].url.path == "/api/v1/devices/koz/pair/" and "authorization" not in seen[1].headers
+    )
+    assert json.loads(seen[1].content) == {
+        "code": "KOZ-7F3K-92QD",
+        "host": {"hostname": "KASSA-PC"},
+    }
     client.frame("sim:counter", b"\xff\xd8jpeg", {"at": "t"})
     assert seen[2].url.path == "/api/v1/devices/koz/frames/sim:counter/"
 
@@ -54,8 +65,9 @@ def test_retries_5xx_with_exponential_backoff_and_jitter():
     waited = clock.time() - T0
     assert 0.25 + 0.5 <= waited < 0.75 + 1.5  # 0.5 s then 1 s, each ×0.5–1.5
     delays = [client.backoff(a) for a in range(8)]
-    assert all(0.5 * min(8.0, 0.5 * 2**a) <= d < 1.5 * min(8.0, 0.5 * 2**a)
-               for a, d in enumerate(delays))
+    assert all(
+        0.5 * min(8.0, 0.5 * 2**a) <= d < 1.5 * min(8.0, 0.5 * 2**a) for a, d in enumerate(delays)
+    )
 
 
 def test_network_errors_become_offline_after_the_retries():
@@ -70,7 +82,8 @@ def test_network_errors_become_offline_after_the_retries():
 
 def test_client_errors_are_not_retried():
     client, _clock, seen = client_with(
-        lambda r: httpx.Response(422, json={"detail": "bad zones", "code": "invalid"}))
+        lambda r: httpx.Response(422, json={"detail": "bad zones", "code": "invalid"})
+    )
     with pytest.raises(DaybookError) as caught:
         client.cameras([])
     assert caught.value.status == 422 and caught.value.code == "invalid" and len(seen) == 1
@@ -157,13 +170,18 @@ def test_agent_keeps_stats_and_events_while_offline(tmp_path):
     clock = FakeClock(T0)
     fake = FakeDaybook(clock, auto_setup=True)
     fake.tokens = {TOKEN}
-    client = DaybookClient("https://daybook.test", TOKEN, clock=clock, transport=fake.transport(),
-                           rng=random.Random(1))
-    agent = Agent(clock=clock, sources=make_sim_sources("break", 2, clock, threaded=False, start=T0),
-                  detector_for=lambda _s: SimDetector(), client=client,
-                  outbox=Outbox(tmp_path / "outbox.sqlite3"))
+    client = DaybookClient(
+        "https://daybook.test", TOKEN, clock=clock, transport=fake.transport(), rng=random.Random(1)
+    )
+    agent = Agent(
+        clock=clock,
+        sources=make_sim_sources("break", 2, clock, threaded=False, start=T0),
+        detector_for=lambda _s: SimDetector(),
+        client=client,
+        outbox=Outbox(tmp_path / "outbox.sqlite3"),
+    )
     states = set()
-    for i in range(int(420 / 0.1)):
+    for _ in range(int(420 / 0.1)):
         clock.advance(0.1)
         now = clock.time()
         fake.down = T0 + 60 <= now < T0 + 240

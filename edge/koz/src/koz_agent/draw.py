@@ -70,8 +70,15 @@ def ellipse(
     thickness: int = -1,
 ) -> None:
     cv2.ellipse(
-        img, ipt(c), (max(1, round(axes[0])), max(1, round(axes[1]))), angle, start, end, color,
-        thickness, AA,
+        img,
+        ipt(c),
+        (max(1, round(axes[0])), max(1, round(axes[1]))),
+        angle,
+        start,
+        end,
+        color,
+        thickness,
+        AA,
     )
 
 
@@ -207,8 +214,9 @@ def text(
     scale = size / 30.0
     thickness = 2 if weight >= 600 else 1
     ascii_value = value.encode("ascii", "replace").decode()
-    cv2.putText(img, ascii_value, ipt((x, org[1])), cv2.FONT_HERSHEY_SIMPLEX, scale, color,
-                thickness, AA)
+    cv2.putText(
+        img, ascii_value, ipt((x, org[1])), cv2.FONT_HERSHEY_SIMPLEX, scale, color, thickness, AA
+    )
     return w
 
 
@@ -231,9 +239,14 @@ def pill(
         rounded_rect(img, x1, y1, x2, y2, (y2 - y1) / 2, bg)
     else:
         blend_region(
-            img, x1 - 1, y1 - 1, x2 + 2, y2 + 2,
-            lambda layer, ox, oy: rounded_rect(layer, x1 - ox, y1 - oy, x2 - ox, y2 - oy,
-                                               (y2 - y1) / 2, bg),
+            img,
+            x1 - 1,
+            y1 - 1,
+            x2 + 2,
+            y2 + 2,
+            lambda layer, ox, oy: rounded_rect(
+                layer, x1 - ox, y1 - oy, x2 - ox, y2 - oy, (y2 - y1) / 2, bg
+            ),
             alpha,
         )
     text(img, value, (x1 + pad[0], y1 + pad[1] + h), fg, size, weight)

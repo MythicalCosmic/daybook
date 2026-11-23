@@ -124,12 +124,18 @@ def test_model_download_checks_the_pinned_sha256(tmp_path):
         ensure_model(tmp_path, transport=fake_model_server(b"not the model", calls))
     assert not model_file(tmp_path).exists() and calls == [MODEL_URL]
     body = b"a stand-in model"
-    path = ensure_model(tmp_path, expected=hashlib.sha256(body).hexdigest(),
-                        transport=fake_model_server(body, calls))
+    path = ensure_model(
+        tmp_path,
+        expected=hashlib.sha256(body).hexdigest(),
+        transport=fake_model_server(body, calls),
+    )
     assert path.read_bytes() == body
     # present and right: no second download
-    ensure_model(tmp_path, expected=hashlib.sha256(body).hexdigest(),
-                 transport=fake_model_server(body, calls))
+    ensure_model(
+        tmp_path,
+        expected=hashlib.sha256(body).hexdigest(),
+        transport=fake_model_server(body, calls),
+    )
     assert len(calls) == 2
     assert len(MODEL_SHA256) == 64
 

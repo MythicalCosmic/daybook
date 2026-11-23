@@ -16,6 +16,7 @@ A clip for ``[start, end]`` concatenates the segments that cover it, cuts the wi
 
 from __future__ import annotations
 
+import itertools
 import logging
 import math
 import os
@@ -68,7 +69,10 @@ def parse_encoders(text: str) -> set[str]:
 
 def listed_encoders(ffmpeg: str) -> set[str]:
     result = subprocess.run(
-        [ffmpeg, "-hide_banner", "-encoders"], capture_output=True, text=True, timeout=30,
+        [ffmpeg, "-hide_banner", "-encoders"],
+        capture_output=True,
+        text=True,
+        timeout=30,
         creationflags=NO_WINDOW,
     )
     return parse_encoders(result.stdout)
@@ -77,22 +81,76 @@ def listed_encoders(ffmpeg: str) -> set[str]:
 def encoder_args(name: str, fps: float, *, clip: bool = False) -> list[str]:
     gop = str(max(1, round(fps)))
     if name == "h264_mf":
-        return ["-c:v", "h264_mf", "-pix_fmt", "nv12", "-rate_control", "quality",
-                "-quality", "62" if clip else "55", "-scenario", "camera_record", "-g", gop]
+        return [
+            "-c:v",
+            "h264_mf",
+            "-pix_fmt",
+            "nv12",
+            "-rate_control",
+            "quality",
+            "-quality",
+            "62" if clip else "55",
+            "-scenario",
+            "camera_record",
+            "-g",
+            gop,
+        ]
     if name == "libopenh264":
-        return ["-c:v", "libopenh264", "-pix_fmt", "yuv420p", "-b:v",
-                "1500k" if clip else "900k", "-g", gop]
-    return ["-c:v", "libx264", "-preset", "veryfast", "-tune", "zerolatency", "-crf",
-            "25" if clip else "27", "-maxrate", "3M", "-bufsize", "6M", "-pix_fmt", "yuv420p",
-            "-g", gop, "-keyint_min", gop, "-sc_threshold", "0"]
+        return [
+            "-c:v",
+            "libopenh264",
+            "-pix_fmt",
+            "yuv420p",
+            "-b:v",
+            "1500k" if clip else "900k",
+            "-g",
+            gop,
+        ]
+    return [
+        "-c:v",
+        "libx264",
+        "-preset",
+        "veryfast",
+        "-tune",
+        "zerolatency",
+        "-crf",
+        "25" if clip else "27",
+        "-maxrate",
+        "3M",
+        "-bufsize",
+        "6M",
+        "-pix_fmt",
+        "yuv420p",
+        "-g",
+        gop,
+        "-keyint_min",
+        gop,
+        "-sc_threshold",
+        "0",
+    ]
 
 
 def probe_encoder(ffmpeg: str, name: str) -> bool:
     with tempfile.TemporaryDirectory(prefix="koz-probe-") as folder:
         out = Path(folder) / "probe.ts"
-        cmd = [ffmpeg, "-hide_banner", "-loglevel", "error", "-y", "-f", "lavfi", "-i",
-               "testsrc=size=320x240:rate=5", "-frames:v", "10", "-an",
-               *encoder_args(name, 5), "-f", "mpegts", str(out)]
+        cmd = [
+            ffmpeg,
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-f",
+            "lavfi",
+            "-i",
+            "testsrc=size=320x240:rate=5",
+            "-frames:v",
+            "10",
+            "-an",
+            *encoder_args(name, 5),
+            "-f",
+            "mpegts",
+            str(out),
+        ]
         try:
             result = subprocess.run(cmd, capture_output=True, timeout=60, creationflags=NO_WINDOW)
         except (OSError, subprocess.TimeoutExpired):
@@ -150,7 +208,7 @@ def frames_due(start: float, t: float, fps: float) -> int:
     """How many frames a constant-rate stream that began at ``start`` holds by time ``t``."""
     if t < start:
         return 0
-    return int(math.floor((t - start) * fps + 1e-6)) + 1
+    return math.floor((t - start) * fps + 1e-6) + 1
 
 
 @dataclass(frozen=True)
@@ -181,7 +239,7 @@ def plan_clip(
         raise ClipError("not_recorded", "no recording for this time")
     if chosen[0].start > start + tolerance_s or chosen[-1].end < end - tolerance_s:
         raise ClipError("not_recorded", "the recording does not cover the whole window")
-    for a, b in zip(chosen, chosen[1:], strict=False):
+    for a, b in itertools.pairwise(chosen):
         if b.start - a.end > max_gap_s:
             raise ClipError("not_recorded", "the recording has a gap in this window")
     first = chosen[0]
@@ -206,8 +264,12 @@ class Clip:
 
     @property
     def meta(self) -> dict:
-        return {"duration_s": round(self.duration_s, 1), "source": self.source, "w": self.w,
-                "h": self.h}
+        return {
+            "duration_s": round(self.duration_s, 1),
+            "source": self.source,
+            "w": self.w,
+            "h": self.h,
+        }
 
 
 def _concat_line(path: Path) -> str:
@@ -220,9 +282,28 @@ def cut_clip(ffmpeg: str, encoder: str, plan: ClipPlan, *, fps: float = 8.0) -> 
         lines = "".join(_concat_line(s.path) for s in plan.segments)
         listing.write_text("ffconcat version 1.0\n" + lines, encoding="utf-8")
         out = Path(folder) / "clip.mp4"
-        cmd = [ffmpeg, "-hide_banner", "-loglevel", "error", "-y", "-f", "concat", "-safe", "0",
-               "-i", str(listing), "-ss", f"{plan.offset:.3f}", "-t", f"{plan.duration:.3f}", "-an",
-               *encoder_args(encoder, fps, clip=True), "-movflags", "+faststart", str(out)]
+        cmd = [
+            ffmpeg,
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-f",
+            "concat",
+            "-safe",
+            "0",
+            "-i",
+            str(listing),
+            "-ss",
+            f"{plan.offset:.3f}",
+            "-t",
+            f"{plan.duration:.3f}",
+            "-an",
+            *encoder_args(encoder, fps, clip=True),
+            "-movflags",
+            "+faststart",
+            str(out),
+        ]
         _run(cmd, timeout=180)
         w, h = _probe_size(ffmpeg, out)
         poster = _poster(ffmpeg, out, plan.duration)
@@ -233,9 +314,26 @@ def cut_nvr_clip(ffmpeg: str, encoder: str, url: str, duration: float) -> Clip:
     """Fetch a window from the NVR's playback stream and re-encode it to H.264 (≤ 1280 px)."""
     with tempfile.TemporaryDirectory(prefix="koz-nvr-") as folder:
         out = Path(folder) / "clip.mp4"
-        cmd = [ffmpeg, "-hide_banner", "-loglevel", "error", "-y", "-rtsp_transport", "tcp",
-               "-i", url, "-t", f"{duration:.3f}", "-an", "-vf", "scale='min(1280,iw)':-2",
-               *encoder_args(encoder, 12, clip=True), "-movflags", "+faststart", str(out)]
+        cmd = [
+            ffmpeg,
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-rtsp_transport",
+            "tcp",
+            "-i",
+            url,
+            "-t",
+            f"{duration:.3f}",
+            "-an",
+            "-vf",
+            "scale='min(1280,iw)':-2",
+            *encoder_args(encoder, 12, clip=True),
+            "-movflags",
+            "+faststart",
+            str(out),
+        ]
         _run(cmd, timeout=duration + 90)
         size = _probe_size(ffmpeg, out)
         poster = _poster(ffmpeg, out, duration)
@@ -250,22 +348,44 @@ def _run(cmd: list[str], timeout: float) -> None:
     if result.returncode != 0:
         from .logutil import redact
 
-        message = redact(result.stderr.decode("utf-8", "replace").strip().splitlines()[-1:][0]
-                         if result.stderr.strip() else f"exit {result.returncode}")
+        message = redact(
+            result.stderr.decode("utf-8", "replace").strip().splitlines()[-1:][0]
+            if result.stderr.strip()
+            else f"exit {result.returncode}"
+        )
         raise ClipError("not_recorded", f"ffmpeg failed: {message[:200]}")
 
 
 def _poster(ffmpeg: str, video: Path, duration: float) -> bytes:
     poster = video.with_name("poster.jpg")
-    cmd = [ffmpeg, "-hide_banner", "-loglevel", "error", "-y", "-ss", f"{max(0.0, duration / 2):.3f}",
-           "-i", str(video), "-frames:v", "1", "-q:v", "4", str(poster)]
+    cmd = [
+        ffmpeg,
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-y",
+        "-ss",
+        f"{max(0.0, duration / 2):.3f}",
+        "-i",
+        str(video),
+        "-frames:v",
+        "1",
+        "-q:v",
+        "4",
+        str(poster),
+    ]
     _run(cmd, timeout=60)
     return poster.read_bytes()
 
 
 def _probe_size(ffmpeg: str, video: Path) -> tuple[int, int]:
-    result = subprocess.run([ffmpeg, "-hide_banner", "-i", str(video)], capture_output=True,
-                            text=True, timeout=30, creationflags=NO_WINDOW)
+    result = subprocess.run(
+        [ffmpeg, "-hide_banner", "-i", str(video)],
+        capture_output=True,
+        text=True,
+        timeout=30,
+        creationflags=NO_WINDOW,
+    )
     match = re.search(r"Video:.*?(\d{2,5})x(\d{2,5})", result.stderr)
     return (int(match.group(1)), int(match.group(2))) if match else (0, 0)
 
@@ -323,9 +443,8 @@ class CameraRecorder:
             h, w = image.shape[:2]
             if self._proc is not None and (t >= self._end or (w, h) != self.size):
                 self._close()
-            if self._proc is None:
-                if not self._open(t, w, h):
-                    return
+            if self._proc is None and not self._open(t, w, h):
+                return
             due = frames_due(self._start, t, self.fps)
             if due - self._written > 3 * self.fps:  # a long pause: start a new segment instead
                 self._close()
@@ -349,13 +468,37 @@ class CameraRecorder:
         self._written = 0
         self.size = (w, h)
         self._part = self.folder / f"{round(t * 1000)}.part.ts"
-        cmd = [self.ffmpeg, "-hide_banner", "-loglevel", "error", "-y", "-f", "rawvideo",
-               "-pix_fmt", "bgr24", "-s", f"{w}x{h}", "-r", f"{self.fps:g}", "-i", "-", "-an",
-               *encoder_args(self.encoder, self.fps), "-f", "mpegts", str(self._part)]
+        cmd = [
+            self.ffmpeg,
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-f",
+            "rawvideo",
+            "-pix_fmt",
+            "bgr24",
+            "-s",
+            f"{w}x{h}",
+            "-r",
+            f"{self.fps:g}",
+            "-i",
+            "-",
+            "-an",
+            *encoder_args(self.encoder, self.fps),
+            "-f",
+            "mpegts",
+            str(self._part),
+        ]
         try:
             log_file = (self.folder / "ffmpeg.log").open("ab")
-            self._proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL,
-                                          stderr=log_file, creationflags=NO_WINDOW)
+            self._proc = subprocess.Popen(
+                cmd,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.DEVNULL,
+                stderr=log_file,
+                creationflags=NO_WINDOW,
+            )
             log_file.close()
         except OSError as exc:
             self.error = f"cannot start ffmpeg: {exc}"
@@ -412,8 +555,15 @@ class CameraRecorder:
 class Recorder:
     """All recorded cameras. Thread-safe."""
 
-    def __init__(self, root: Path, clock: Clock, *, ffmpeg: str | None = None,
-                 encoder: str | None = None, fps: float = 6.0) -> None:
+    def __init__(
+        self,
+        root: Path,
+        clock: Clock,
+        *,
+        ffmpeg: str | None = None,
+        encoder: str | None = None,
+        fps: float = 6.0,
+    ) -> None:
         self.root = Path(root)
         self.clock = clock
         self.ffmpeg = ffmpeg

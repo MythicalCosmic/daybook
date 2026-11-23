@@ -1,11 +1,11 @@
 """``koz-agent``: the command line of the Ko‘z box (contract §10).
 
-    koz-agent pair https://daybook.example KOZ-7F3K-92QD   # once, stores the token locally
-    koz-agent nvr set 192.168.0.250                        # asks for the NVR user and password
-    koz-agent sources                                      # NVR channels, RTSP sources, scenes
-    koz-agent run                                          # the service; status page on :8737
-    koz-agent run --scene rush                             # the generated scene, no cameras needed
-    koz-agent selftest                                     # model, speed, server reachability
+koz-agent pair https://daybook.example KOZ-7F3K-92QD   # once, stores the token locally
+koz-agent nvr set 192.168.0.250                        # asks for the NVR user and password
+koz-agent sources                                      # NVR channels, RTSP sources, scenes
+koz-agent run                                          # the service; status page on :8737
+koz-agent run --scene rush                             # the generated scene, no cameras needed
+koz-agent selftest                                     # model, speed, server reachability
 """
 
 from __future__ import annotations
@@ -55,8 +55,11 @@ def _host_info() -> dict:
             release = "11" if build >= 22000 else release
         except ValueError:
             pass
-    return {"hostname": socket.gethostname(), "os": f"{system} {release}".strip(),
-            "version": __version__}
+    return {
+        "hostname": socket.gethostname(),
+        "os": f"{system} {release}".strip(),
+        "version": __version__,
+    }
 
 
 def _print(text: str = "") -> None:
@@ -121,8 +124,10 @@ def cmd_nvr(args) -> int:
             _print("No NVR yet. Add one with `koz-agent nvr set <host>`.")
         for nvr in settings.nvrs:
             state = "wrong login — run `nvr set` again" if nvr.auth_failed_at else "ok"
-            _print(f"{nvr.host}:{nvr.port}  user {nvr.user}  time {nvr.time}  "
-                   f"{len(nvr.channels)} channels  {state}")
+            _print(
+                f"{nvr.host}:{nvr.port}  user {nvr.user}  time {nvr.time}  "
+                f"{len(nvr.channels)} channels  {state}"
+            )
         return 0
     if args.nvr_cmd == "remove":
         settings.nvrs = [n for n in settings.nvrs if n.host != args.host]
@@ -138,7 +143,7 @@ def cmd_nvr(args) -> int:
         except ValueError:
             _print("--time is auto, utc or an offset such as +05:00")
             return 2
-    default_user = (settings.nvr(args.host).user if settings.nvr(args.host) else "admin")
+    default_user = settings.nvr(args.host).user if settings.nvr(args.host) else "admin"
     user = args.user or input(f"NVR user [{default_user}]: ").strip() or default_user
     password = getpass.getpass("NVR password (not shown): ")
     if not password:
@@ -154,15 +159,19 @@ def cmd_nvr(args) -> int:
         _print("Hikvision locks an account after a few wrong logins, so check it before retrying.")
         return 2
     except NvrError as exc:
-        _print(f"Could not check the login now ({exc}). Saved anyway; the agent will try when it runs.")
+        _print(
+            f"Could not check the login now ({exc}). Saved anyway; the agent will try when it runs."
+        )
         channels = None
     finally:
         client.close()
     if channels is not None:
         nvr.channels = [{"id": c.id, "name": c.name} for c in channels]
-        _print(f"Login OK. {len(channels)} channels: " +
-               ", ".join(f"{c.id} {c.name}" for c in channels[:12]) +
-               (" …" if len(channels) > 12 else ""))
+        _print(
+            f"Login OK. {len(channels)} channels: "
+            + ", ".join(f"{c.id} {c.name}" for c in channels[:12])
+            + (" …" if len(channels) > 12 else "")
+        )
     nvr.auth_failed_at = None
     if settings.nvr(args.host) is None:
         settings.nvrs.append(nvr)
@@ -260,14 +269,16 @@ def _build_sources(settings, clock, store, args):
     from .sources import FileSource, NvrSource, RtspSource, WebcamSource, make_sim_sources
 
     if args.scene:
-        return make_sim_sources(args.scene, args.seed, clock, threaded=True), {}
+        start = int(clock.time()) - max(0.0, args.at)
+        return make_sim_sources(args.scene, args.seed, clock, threaded=True, start=start), {}
     sources, nvr_of = [], {}
     from .nvr import live_url
 
     for index, nvr in enumerate(settings.nvrs):
         if nvr.auth_failed_at:
-            log.error("%s: wrong NVR login; run `koz-agent nvr set %s` (not retrying)", nvr.host,
-                      nvr.host)
+            log.error(
+                "%s: wrong NVR login; run `koz-agent nvr set %s` (not retrying)", nvr.host, nvr.host
+            )
             continue
         password = store.get(nvr.secret_name)
         if not password:
@@ -290,8 +301,15 @@ def _build_sources(settings, clock, store, args):
         elif source.kind == "file":
             sources.append(FileSource(source.key, source.name, source.target, clock=clock))
         elif source.kind == "webcam":
-            sources.append(WebcamSource(source.key, source.name, int(source.target or 0),
-                                        allow=settings.allow_webcam, clock=clock))
+            sources.append(
+                WebcamSource(
+                    source.key,
+                    source.name,
+                    int(source.target or 0),
+                    allow=settings.allow_webcam,
+                    clock=clock,
+                )
+            )
     return sources, nvr_of
 
 
@@ -320,8 +338,10 @@ def cmd_run(args) -> int:
     clock = SystemClock()
     sources, nvr_of = _build_sources(settings, clock, store, args)
     if not sources:
-        _print("No cameras. Add an NVR (`koz-agent nvr set <host>`) or a source, or try "
-               "`koz-agent run --scene demo`.")
+        _print(
+            "No cameras. Add an NVR (`koz-agent nvr set <host>`) or a source, or try "
+            "`koz-agent run --scene demo`."
+        )
         return 2
 
     detector_name = args.detector or ("sim" if args.scene else settings.detector)
@@ -346,8 +366,9 @@ def cmd_run(args) -> int:
     outbox = Outbox(paths["outbox"]) if client else None
     ffmpeg = ffmpeg_exe()
     encoder = pick_encoder(ffmpeg)
-    recorder = Recorder(paths["recordings"], clock, ffmpeg=ffmpeg, encoder=encoder,
-                        fps=settings.record_fps)
+    recorder = Recorder(
+        paths["recordings"], clock, ffmpeg=ffmpeg, encoder=encoder, fps=settings.record_fps
+    )
     defaults = {
         key: CameraConfig(name=s["name"], role=s["role"], enabled=True, zones=s["zones"])
         for key, s in suggest_zones().items()
@@ -358,10 +379,20 @@ def cmd_run(args) -> int:
         nvr_clip, nvr_snapshot = _nvr_callbacks(nvr_of, ffmpeg, encoder)
 
     agent = Agent(
-        clock=clock, sources=sources, detector_for=detector_for, client=client, outbox=outbox,
-        recorder=recorder, defaults=defaults, max_inferences_per_s=settings.max_inferences_per_s,
-        lang=args.lang or settings.language, config_cache=paths["config"], nvr_clip=nvr_clip,
-        nvr_snapshot=nvr_snapshot, detector_name=detector_name, encoder=encoder,
+        clock=clock,
+        sources=sources,
+        detector_for=detector_for,
+        client=client,
+        outbox=outbox,
+        recorder=recorder,
+        defaults=defaults,
+        max_inferences_per_s=settings.max_inferences_per_s,
+        lang=args.lang or settings.language,
+        config_cache=paths["config"],
+        nvr_clip=nvr_clip,
+        nvr_snapshot=nvr_snapshot,
+        detector_name=detector_name,
+        encoder=encoder,
     )
     status = StatusServer(agent, port=args.port or settings.status_port)
     try:
@@ -372,8 +403,10 @@ def cmd_run(args) -> int:
     agent.start()
     what = f"scene {args.scene}" if args.scene else f"{len(sources)} cameras"
     server = settings.server if client else "not paired (local only)"
-    _print(f"Ko‘z agent {__version__} · {what} · detector {detector_name} · "
-           f"encoder {encoder or 'none'}")
+    _print(
+        f"Ko‘z agent {__version__} · {what} · detector {detector_name} · "
+        f"encoder {encoder or 'none'}"
+    )
     _print(f"Daybook: {server}")
     _print(f"Status page: http://127.0.0.1:{port}   (Ctrl+C to stop)")
     stop = threading.Event()
@@ -420,8 +453,16 @@ def _nvr_callbacks(nvr_of: dict, ffmpeg: str | None, encoder: str | None):
             raise ClipError("nvr_error", str(exc)) from exc
         except NvrError as exc:
             raise ClipError("nvr_error", str(exc)) from exc
-        url = playback_url(nvr.host, cam.source.channel, start, end, nvr.user, password,
-                           offset_s=offset, port=nvr.rtsp_port)
+        url = playback_url(
+            nvr.host,
+            cam.source.channel,
+            start,
+            end,
+            nvr.user,
+            password,
+            offset_s=offset,
+            port=nvr.rtsp_port,
+        )
         return cut_nvr_clip(ffmpeg, encoder, url, min(60.0, end - start))
 
     def nvr_snapshot(cam) -> bytes | None:
@@ -449,13 +490,19 @@ def cmd_selftest(args) -> int:
 
     paths = _paths()
     ok = True
-    _print(f"Ko‘z agent {__version__} on {platform.system()} {platform.release()}, "
-           f"Python {platform.python_version()}")
+    _print(
+        f"Ko‘z agent {__version__} on {platform.system()} {platform.release()}, "
+        f"Python {platform.python_version()}"
+    )
     _print(f"Data folder: {paths['root']}")
 
+    shown = [-1]
+
     def progress(done: int, total: int | None) -> None:
-        if total:
-            sys.stdout.write(f"\r  downloading the model… {done * 100 // total}%")
+        percent = done * 100 // total if total else -1
+        if percent // 10 != shown[0] // 10 or percent == 100:
+            shown[0] = percent
+            sys.stdout.write(f"\r  downloading the model… {percent}%")
             sys.stdout.flush()
 
     try:
@@ -464,8 +511,10 @@ def cmd_selftest(args) -> int:
         took = time.perf_counter() - started
         if took > 2:
             _print("")
-        _print(f"Model: {model.name} ({model.stat().st_size / 1e6:.1f} MB), "
-               f"SHA-256 {MODEL_SHA256[:12]}… ok")
+        _print(
+            f"Model: {model.name} ({model.stat().st_size / 1e6:.1f} MB), "
+            f"SHA-256 {MODEL_SHA256[:12]}… ok"
+        )
         load_started = time.perf_counter()
         detector = YoloxDetector(model)
         load_ms = (time.perf_counter() - load_started) * 1000
@@ -474,9 +523,11 @@ def cmd_selftest(args) -> int:
         detector.detect_image(blank)
         first_ms = (time.perf_counter() - first_started) * 1000
         median_ms = detector.benchmark(blank, runs=args.runs, warmup=1)
-        _print(f"Inference (YOLOX-tiny 416×416, CPU, 2 threads) on a blank 960×540 frame: "
-               f"{median_ms:.1f} ms median of {args.runs} (first {first_ms:.0f} ms, "
-               f"load {load_ms:.0f} ms) → up to {1000 / median_ms:.0f} frames/s")
+        _print(
+            f"Inference (YOLOX-tiny 416×416, CPU, 2 threads) on a blank 960×540 frame: "
+            f"{median_ms:.1f} ms median of {args.runs} (first {first_ms:.0f} ms, "
+            f"load {load_ms:.0f} ms) → up to {1000 / median_ms:.0f} frames/s"
+        )
     except (ModelError, OSError) as exc:
         ok = False
         _print(f"Model: FAILED — {exc}")
@@ -486,8 +537,10 @@ def cmd_selftest(args) -> int:
         listed = listed_encoders(ffmpeg)
         have = [n for n in ("h264_mf", "libopenh264", "libx264") if n in listed]
         chosen = pick_encoder(ffmpeg)
-        _print(f"ffmpeg: {Path(ffmpeg).name}; H.264 encoders in this build: "
-               f"{', '.join(have) or 'none'}; recorder uses: {chosen or 'none (no recording)'}")
+        _print(
+            f"ffmpeg: {Path(ffmpeg).name}; H.264 encoders in this build: "
+            f"{', '.join(have) or 'none'}; recorder uses: {chosen or 'none (no recording)'}"
+        )
     else:
         _print("ffmpeg: not available on this platform (no recording)")
 
@@ -530,14 +583,18 @@ def cmd_devserver(args) -> int:
     url = f"http://127.0.0.1:{server.server_address[1]}"
     _print(f"Fake Daybook on {url} (device API only, in memory)")
     _print(f"Pair a box with:  koz-agent pair {url} {code}")
+    started = time.monotonic()
     try:
-        while True:
+        while not args.duration or time.monotonic() - started < args.duration:
             time.sleep(5)
-            _print(f"  cameras {len(fake.cameras)} · live reports {len(fake.lives)} · "
-                   f"stat rows {len(fake.stats)} · events {len(fake.events)} · "
-                   f"snapshots {len(fake.snapshots)}")
+            _print(
+                f"  cameras {len(fake.cameras)} · live reports {len(fake.lives)} · "
+                f"stat rows {len(fake.stats)} · events {len(fake.events)} · "
+                f"snapshots {len(fake.snapshots)}"
+            )
     except KeyboardInterrupt:
-        server.shutdown()
+        pass
+    server.shutdown()
     return 0
 
 
@@ -565,16 +622,20 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--port", type=int, default=80, help="ISAPI (HTTP) port, default 80")
     s.add_argument("--rtsp-port", type=int, default=554)
     s.add_argument("--user", help="the NVR user (asked when left out)")
-    s.add_argument("--time", default="auto",
-                   help="how the NVR reads playback times: auto (its own zone), utc, or +05:00")
+    s.add_argument(
+        "--time",
+        default="auto",
+        help="how the NVR reads playback times: auto (its own zone), utc, or +05:00",
+    )
     nvr_sub.add_parser("list", help="the NVRs this box knows")
     r = nvr_sub.add_parser("remove", help="forget an NVR and its password")
     r.add_argument("host")
     p.set_defaults(func=cmd_nvr)
 
     p = sub.add_parser("sources", help="NVR channels, RTSP sources and scenes")
-    p.add_argument("--suggest-zones", action="store_true",
-                   help="print zone JSON that fits the generated scene")
+    p.add_argument(
+        "--suggest-zones", action="store_true", help="print zone JSON that fits the generated scene"
+    )
     p.add_argument("--refresh", action="store_true", help="ask the NVRs for their channels now")
     src_sub = p.add_subparsers(dest="src_cmd")
     a = src_sub.add_parser("add", help="add an RTSP stream or a video file")
@@ -588,6 +649,13 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("run", help="the service, with the status page on :8737")
     p.add_argument("--scene", choices=SCENES, help="the generated scene instead of cameras")
     p.add_argument("--seed", type=int, default=1)
+    p.add_argument(
+        "--at",
+        type=float,
+        default=0.0,
+        metavar="SECONDS",
+        help="start the scene this many seconds into its loop (e.g. 150: the rush)",
+    )
     p.add_argument("--detector", choices=("yolox", "sim"))
     p.add_argument("--port", type=int, help="status page port (default 8737)")
     p.add_argument("--lang", choices=("uz", "ru", "en"))
@@ -603,8 +671,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("devserver", help="a fake Daybook for trying a box locally")
     p.add_argument("--port", type=int, default=8780)
-    p.add_argument("--auto-setup", action="store_true",
-                   help="enable scene cameras with their suggested zones as they arrive")
+    p.add_argument(
+        "--auto-setup",
+        action="store_true",
+        help="enable scene cameras with their suggested zones as they arrive",
+    )
+    p.add_argument("--duration", type=float, default=0, help=argparse.SUPPRESS)
     p.set_defaults(func=cmd_devserver)
     return parser
 
@@ -625,8 +697,10 @@ def zones_json(suggestion: dict) -> str:
     keys = list(suggestion)
     for i, key in enumerate(keys):
         cam = suggestion[key]
-        lines.append(f'  "{key}": {{"name": {json.dumps(cam["name"], ensure_ascii=False)}, '
-                     f'"role": "{cam["role"]}", "zones": [')
+        lines.append(
+            f'  "{key}": {{"name": {json.dumps(cam["name"], ensure_ascii=False)}, '
+            f'"role": "{cam["role"]}", "zones": ['
+        )
         for j, zone in enumerate(cam["zones"]):
             comma = "," if j < len(cam["zones"]) - 1 else ""
             lines.append("    " + json.dumps(zone, ensure_ascii=False) + comma)

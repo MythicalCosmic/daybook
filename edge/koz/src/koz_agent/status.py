@@ -34,8 +34,9 @@ def page_html() -> str:
 
 
 class StatusServer:
-    def __init__(self, agent, *, host: str = "127.0.0.1", port: int = 8737,
-                 mjpeg_fps: float = 6.0) -> None:
+    def __init__(
+        self, agent, *, host: str = "127.0.0.1", port: int = 8737, mjpeg_fps: float = 6.0
+    ) -> None:
         self.agent = agent
         self.host = host
         self.port = port
@@ -54,7 +55,9 @@ class StatusServer:
 
             def _allowed(self) -> bool:
                 host = (self.headers.get("Host") or "").lower()
-                name = host.rsplit(":", 1)[0] if not host.startswith("[") else host.split("]")[0] + "]"
+                name = (
+                    host.rsplit(":", 1)[0] if not host.startswith("[") else host.split("]")[0] + "]"
+                )
                 return name in ("127.0.0.1", "localhost", "[::1]")
 
             def _send(self, code: int, body: bytes, content_type: str) -> None:
@@ -91,13 +94,13 @@ class StatusServer:
                     elif path == "/favicon.svg":
                         self._send(200, FAVICON.encode(), "image/svg+xml")
                     elif path.startswith("/frame/") and path.endswith(".jpg"):
-                        jpeg = status.agent.preview_jpeg(path[len("/frame/"):-4])
+                        jpeg = status.agent.preview_jpeg(path[len("/frame/") : -4])
                         if jpeg is None:
                             self._send(404, b"no picture yet", "text/plain")
                         else:
                             self._send(200, jpeg, "image/jpeg")
                     elif path.startswith("/mjpeg/"):
-                        self._mjpeg(path[len("/mjpeg/"):])
+                        self._mjpeg(path[len("/mjpeg/") :])
                     else:
                         self._send(404, b"not found", "text/plain")
                 except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
@@ -121,7 +124,10 @@ class StatusServer:
                     if jpeg:
                         self.wfile.write(
                             b"--kozframe\r\nContent-Type: image/jpeg\r\nContent-Length: "
-                            + str(len(jpeg)).encode() + b"\r\n\r\n" + jpeg + b"\r\n"
+                            + str(len(jpeg)).encode()
+                            + b"\r\n\r\n"
+                            + jpeg
+                            + b"\r\n"
                         )
                         self.wfile.flush()
                     status._stop.wait(max(0.02, period - (time.monotonic() - started)))

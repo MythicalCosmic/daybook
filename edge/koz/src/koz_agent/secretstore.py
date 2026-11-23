@@ -34,12 +34,22 @@ def _dpapi(data: bytes, *, protect: bool) -> bytes:
     flags = 0x1  # CRYPTPROTECT_UI_FORBIDDEN
     if protect:
         ok = crypt32.CryptProtectData(
-            ctypes.byref(source), "koz", ctypes.byref(entropy), None, None, flags,
+            ctypes.byref(source),
+            "koz",
+            ctypes.byref(entropy),
+            None,
+            None,
+            flags,
             ctypes.byref(out),
         )
     else:
         ok = crypt32.CryptUnprotectData(
-            ctypes.byref(source), None, ctypes.byref(entropy), None, None, flags,
+            ctypes.byref(source),
+            None,
+            ctypes.byref(entropy),
+            None,
+            None,
+            flags,
             ctypes.byref(out),
         )
     if not ok:

@@ -115,8 +115,20 @@ def test_queue_starts_after_5_s_and_ends_after_clear():
     start = events[0]
     assert start["kind"] == "queue" and start["at"] == start["started_at"]
     assert start["queue"] == 4 and start["peak_queue"] == 4 and start["wait_s"] == 131
-    assert set(start) == {"event_id", "incident_id", "kind", "phase", "key", "at", "started_at",
-                          "queue", "wait_s", "staff", "peak_queue", "peak_wait_s"}
+    assert set(start) == {
+        "event_id",
+        "incident_id",
+        "kind",
+        "phase",
+        "key",
+        "at",
+        "started_at",
+        "queue",
+        "wait_s",
+        "staff",
+        "peak_queue",
+        "peak_wait_s",
+    }
     # a dip shorter than clear_after_s does not end it
     assert run(eng, T0 + 10, 10, queue=2, wait=140, staff=1) == []
     events = run(eng, T0 + 20, 20, queue=6, wait=200, staff=1)

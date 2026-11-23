@@ -59,7 +59,9 @@ def test_segments_intersect():
 
 
 def test_zone_validation_follows_the_contract():
-    line = parse_zone({"id": "l1", "kind": "line", "points": [[0.1, 0.6], [0.9, 0.62]], "in": "left"})
+    line = parse_zone(
+        {"id": "l1", "kind": "line", "points": [[0.1, 0.6], [0.9, 0.62]], "in": "left"}
+    )
     assert line.inside == "left"
     with pytest.raises(ZoneError):
         parse_zone({"id": "L1", "kind": "queue", "points": SQUARE})  # upper case id

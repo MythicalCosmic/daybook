@@ -6,8 +6,16 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from .frames import Detection
-from .geometry import Box, Point, clip_box, extend_segment, foot_point, segments_intersect
-from .geometry import side_of_line, side_sign
+from .geometry import (
+    Box,
+    Point,
+    clip_box,
+    extend_segment,
+    foot_point,
+    segments_intersect,
+    side_of_line,
+    side_sign,
+)
 from .tracker import Tracker
 from .zones import ZoneSet
 

@@ -102,17 +102,44 @@ class Actor:
 
 
 STAFF_LOOKS = (
-    Look(skin="#E8B48E", hair="#2B211C", coat="#FAFBFC", trousers="#3A4150", shoes="#2A2A2E",
-         hat="bun", height=0.97, width=0.96),
-    Look(skin="#D49C76", hair="#1E1A18", coat="#FAFBFC", trousers="#2E3440", shoes="#26262A",
-         height=1.04, width=1.04),
+    Look(
+        skin="#E8B48E",
+        hair="#2B211C",
+        coat="#FAFBFC",
+        trousers="#3A4150",
+        shoes="#2A2A2E",
+        hat="bun",
+        height=0.97,
+        width=0.96,
+    ),
+    Look(
+        skin="#D49C76",
+        hair="#1E1A18",
+        coat="#FAFBFC",
+        trousers="#2E3440",
+        shoes="#26262A",
+        height=1.04,
+        width=1.04,
+    ),
 )
 
 SKINS = ("#F2CBA8", "#E8B48E", "#D9A07A", "#C68A63", "#F5D5BC", "#E2A985")
 HAIRS = ("#2A2420", "#3B2B22", "#4E3A2C", "#1E1C1B", "#6B4F3A", "#8F8F8F", "#B9B4AC")
 COATS = (
-    "#3E4C6D", "#7B3F4A", "#6F7650", "#C9A04A", "#4B5058", "#B08A62", "#3F7F7C", "#6B4F72",
-    "#8D939B", "#2F5D50", "#C06C5A", "#5A6E8C", "#9C6B4E", "#47566B",
+    "#3E4C6D",
+    "#7B3F4A",
+    "#6F7650",
+    "#C9A04A",
+    "#4B5058",
+    "#B08A62",
+    "#3F7F7C",
+    "#6B4F72",
+    "#8D939B",
+    "#2F5D50",
+    "#C06C5A",
+    "#5A6E8C",
+    "#9C6B4E",
+    "#47566B",
 )
 TROUSERS = ("#2E3340", "#3A3A3A", "#4A4F5C", "#5B4B3D", "#2B3A4A", "#3D3A47")
 SCARVES = ("#C46A6A", "#6A8FC4", "#D9B26A", "#8E6AC4", "#5DA38A", "#E39B7B", "#7C8FA8")
@@ -140,9 +167,11 @@ class World:
         for till, look in enumerate(STAFF_LOOKS):
             present = self._should_be_present(till, 0.0)
             actor = self._new_actor(
-                "staff", look,
+                "staff",
+                look,
                 view="counter" if present else None,
-                x=TILL_X[till], y=STAFF_Y,
+                x=TILL_X[till],
+                y=STAFF_Y,
                 state="at_till" if present else "away",
             )
             actor.home = till
@@ -160,7 +189,7 @@ class World:
     # --- the clock ------------------------------------------------------------------------
 
     def advance_to(self, t: float) -> None:
-        target = int(math.floor(t / DT + 1e-9))
+        target = math.floor(t / DT + 1e-9)
         while self.steps < target:
             self.step()
 
@@ -233,7 +262,7 @@ class World:
         loop_start = self.t - loop_t
         at = loop_t
         for _ in range(2 * len(script.arrivals) + 2):
-            index, (start, end, low, high) = script.arrival_window(at)
+            _index, (_start, end, low, high) = script.arrival_window(at)
             if high > 0:
                 candidate = at + self.rng.uniform(low, high)
                 if candidate < end:
@@ -271,7 +300,8 @@ class World:
     def _till_open(self, till: int) -> bool:
         staff = self.staff[till]
         return staff.state in ("at_till", "fetch", "fetch_back") or (
-            staff.state == "from_back" and self._should_be_present(till, self.t % self.script.loop_s)
+            staff.state == "from_back"
+            and self._should_be_present(till, self.t % self.script.loop_s)
         )
 
     def _close_till(self, till: int) -> None:
@@ -326,7 +356,11 @@ class World:
                 continue  # away: the service waits
             staff.service_left -= DT
             done = staff.service_total - staff.service_left
-            if not staff.fetch_done and staff.state == "at_till" and done > 0.25 * staff.service_total:
+            if (
+                not staff.fetch_done
+                and staff.state == "at_till"
+                and done > 0.25 * staff.service_total
+            ):
                 staff.state = "fetch"
                 staff.facing = "away"
                 offset = 70.0 if till == 0 else -70.0
@@ -455,9 +489,7 @@ class World:
             actor.path = [(506 + 12 * j, 330.0), (DOOR_OUTSIDE[0] + 10 * j, DOOR_OUTSIDE[1] - 4)]
 
     def _door(self) -> None:
-        near = any(
-            a.view == "door" and a.y < DOOR_THRESHOLD_Y + 120 for a in self.actors.values()
-        )
+        near = any(a.view == "door" and a.y < DOOR_THRESHOLD_Y + 120 for a in self.actors.values())
         target = 1.0 if near else 0.0
         speed = 2.2 * DT
         if self.door_open < target:

@@ -17,11 +17,11 @@ from collections.abc import Callable
 # OpenCV's FFmpeg reads RTSP over TCP: no smeared frames from lost UDP packets.
 os.environ.setdefault("OPENCV_FFMPEG_CAPTURE_OPTIONS", "rtsp_transport;tcp")
 
-import cv2  # noqa: E402
+import cv2
 
-from .clock import Clock, SystemClock  # noqa: E402
-from .frames import Frame  # noqa: E402
-from .logutil import mask_url  # noqa: E402
+from .clock import Clock, SystemClock
+from .frames import Frame
+from .logutil import mask_url
 
 log = logging.getLogger(__name__)
 

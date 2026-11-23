@@ -173,7 +173,9 @@ class DaybookClient:
     # --- the endpoints (contract §5.1–5.10) -----------------------------------------------
 
     def pair(self, code: str, host: dict) -> dict:
-        response = self._request("POST", "pair/", auth=False, json_body={"code": code, "host": host})
+        response = self._request(
+            "POST", "pair/", auth=False, json_body={"code": code, "host": host}
+        )
         return self._json(response)
 
     def config(self) -> dict:

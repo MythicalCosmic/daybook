@@ -1,5 +1,6 @@
 """The inference budget, secrets, settings and the local status page."""
 
+import itertools
 import json
 import os
 import sys
@@ -46,7 +47,7 @@ def test_the_budget_caps_all_cameras_and_shares_it_fairly():
     picks = drive(scheduler, 20)
     assert len(picks) <= 6 * 20 + 1
     times = [t for t, _k in picks]
-    assert min(b - a for a, b in zip(times, times[1:], strict=False)) >= 1 / 6 - 1e-6
+    assert min(b - a for a, b in itertools.pairwise(times)) >= 1 / 6 - 1e-6
     counts = Counter(k for _t, k in picks)
     assert max(counts.values()) - min(counts.values()) <= 2
 
@@ -85,10 +86,16 @@ def test_settings_round_trip(tmp_path):
 @pytest.fixture
 def status_page():
     clock = FakeClock(T0 + 30)
-    defaults = {key: CameraConfig(name=s["name"], role=s["role"], enabled=True, zones=s["zones"])
-                for key, s in suggest_zones().items()}
-    agent = Agent(clock=clock, sources=make_sim_sources("demo", 1, clock, threaded=False, start=T0),
-                  detector_for=lambda _s: SimDetector(), defaults=defaults)
+    defaults = {
+        key: CameraConfig(name=s["name"], role=s["role"], enabled=True, zones=s["zones"])
+        for key, s in suggest_zones().items()
+    }
+    agent = Agent(
+        clock=clock,
+        sources=make_sim_sources("demo", 1, clock, threaded=False, start=T0),
+        detector_for=lambda _s: SimDetector(),
+        defaults=defaults,
+    )
     for _ in range(20):
         clock.advance(0.5)
         agent.tick()
