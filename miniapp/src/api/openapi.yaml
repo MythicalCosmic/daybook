@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: 911 Trello API
-  version: 0.8.2
+  version: 0.8.3
   description: API for the employee mini app and the owner dashboard.
 paths:
   /api/v1/auth/telegram/:
@@ -7920,6 +7920,7 @@ components:
       - assets
       - learning
       - face_id
+      - vision
       type: string
       description: |-
         * `finance` - Finance
@@ -7933,6 +7934,7 @@ components:
         * `assets` - Assets and equipment
         * `learning` - Training and quizzes
         * `face_id` - Face ID terminals
+        * `vision` - Ko‘z (camera insights)
     Company:
       type: object
       properties:
@@ -14433,6 +14435,9 @@ components:
       - agenda.manage
       - crm.view
       - crm.manage
+      - vision.view
+      - vision.video
+      - vision.manage
       type: string
       description: |-
         * `members.view` - View members
@@ -14495,6 +14500,9 @@ components:
         * `agenda.manage` - Add company events to the calendar
         * `crm.view` - See CRM deals
         * `crm.manage` - Manage CRM deals and pipelines
+        * `vision.view` - See Ko‘z: visitors, queues, conversion and alerts with photos
+        * `vision.video` - Watch the cameras live and open video receipts
+        * `vision.manage` - Set up Ko‘z boxes, cameras, zones and alert rules
     PersonCard:
       type: object
       properties:

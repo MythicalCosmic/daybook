@@ -36283,6 +36283,599 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedDavomatRoleList'
           description: ''
+  /api/v1/owner/companies/{company_id}/vision/agents/:
+    get:
+      operationId: companies_vision_agents_list
+      description: 404 while the company's Ko‘z is off; Ko‘z's refusals as `{"detail",
+        "code"}`.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VisionAgent'
+          description: ''
+    post:
+      operationId: companies_vision_agents_create
+      description: 404 while the company's Ko‘z is off; Ko‘z's refusals as `{"detail",
+        "code"}`.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VisionAgentWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/VisionAgentWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VisionAgentWriteRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisionAgentCreated'
+          description: ''
+  /api/v1/owner/companies/{company_id}/vision/agents/{id}/:
+    delete:
+      operationId: companies_vision_agents_destroy
+      description: 404 while the company's Ko‘z is off; Ko‘z's refusals as `{"detail",
+        "code"}`.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/vision/agents/{id}/pairing/:
+    post:
+      operationId: companies_vision_agents_pairing_create
+      description: 404 while the company's Ko‘z is off; Ko‘z's refusals as `{"detail",
+        "code"}`.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisionPairing'
+          description: ''
+  /api/v1/owner/companies/{company_id}/vision/alerts/:
+    get:
+      operationId: companies_vision_alerts_list
+      description: 404 while the company's Ko‘z is off; Ko‘z's refusals as `{"detail",
+        "code"}`.
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: One branch (in the caller's scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: from
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: kind
+        schema:
+          type: string
+          enum:
+          - agent_offline
+          - queue
+          - unattended
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: state
+        schema:
+          type: string
+          enum:
+          - open
+          - resolved
+      - in: query
+        name: to
+        schema:
+          type: string
+          format: date
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedVisionAlertList'
+          description: ''
+  /api/v1/owner/companies/{company_id}/vision/alerts/{id}/:
+    get:
+      operationId: companies_vision_alerts_retrieve
+      description: 404 while the company's Ko‘z is off; Ko‘z's refusals as `{"detail",
+        "code"}`.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisionAlert'
+          description: ''
+  /api/v1/owner/companies/{company_id}/vision/alerts/{id}/clip/:
+    post:
+      operationId: companies_vision_alerts_clip_create
+      description: 404 while the company's Ko‘z is off; Ko‘z's refusals as `{"detail",
+        "code"}`.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisionClip'
+          description: ''
+  /api/v1/owner/companies/{company_id}/vision/cameras/:
+    get:
+      operationId: companies_vision_cameras_list
+      description: 404 while the company's Ko‘z is off; Ko‘z's refusals as `{"detail",
+        "code"}`.
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: One branch (in the caller's scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VisionCamera'
+          description: ''
+  /api/v1/owner/companies/{company_id}/vision/cameras/{id}/:
+    patch:
+      operationId: companies_vision_cameras_partial_update
+      description: 404 while the company's Ko‘z is off; Ko‘z's refusals as `{"detail",
+        "code"}`.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedVisionCameraWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedVisionCameraWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedVisionCameraWriteRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisionCamera'
+          description: ''
+  /api/v1/owner/companies/{company_id}/vision/cameras/{id}/frame/:
+    get:
+      operationId: companies_vision_cameras_frame_retrieve
+      description: 404 while the company's Ko‘z is off; Ko‘z's refusals as `{"detail",
+        "code"}`.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisionFrame'
+          description: ''
+        '204':
+          description: No fresh frame yet.
+  /api/v1/owner/companies/{company_id}/vision/cameras/{id}/snapshot/:
+    get:
+      operationId: companies_vision_cameras_snapshot_retrieve
+      description: 404 while the company's Ko‘z is off; Ko‘z's refusals as `{"detail",
+        "code"}`.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+          description: ''
+        '404':
+          description: No snapshot yet.
+    post:
+      operationId: companies_vision_cameras_snapshot_create
+      description: 404 while the company's Ko‘z is off; Ko‘z's refusals as `{"detail",
+        "code"}`.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisionSnapshotRequested'
+          description: ''
+  /api/v1/owner/companies/{company_id}/vision/clips/:
+    post:
+      operationId: companies_vision_clips_create
+      description: 404 while the company's Ko‘z is off; Ko‘z's refusals as `{"detail",
+        "code"}`.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VisionClipRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/VisionClipRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VisionClipRequestRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisionClip'
+          description: ''
+  /api/v1/owner/companies/{company_id}/vision/clips/{id}/:
+    get:
+      operationId: companies_vision_clips_retrieve
+      description: 404 while the company's Ko‘z is off; Ko‘z's refusals as `{"detail",
+        "code"}`.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisionClip'
+          description: ''
+  /api/v1/owner/companies/{company_id}/vision/live/:
+    get:
+      operationId: companies_vision_live_retrieve
+      description: 404 while the company's Ko‘z is off; Ko‘z's refusals as `{"detail",
+        "code"}`.
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: One branch (in the caller's scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisionLive'
+          description: ''
+  /api/v1/owner/companies/{company_id}/vision/overview/:
+    get:
+      operationId: companies_vision_overview_retrieve
+      description: 404 while the company's Ko‘z is off; Ko‘z's refusals as `{"detail",
+        "code"}`.
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: One branch (in the caller's scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: day
+        schema:
+          type: string
+          format: date
+        description: YYYY-MM-DD; today by default.
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisionOverview'
+          description: ''
+  /api/v1/owner/companies/{company_id}/vision/review/:
+    get:
+      operationId: companies_vision_review_retrieve
+      description: 404 while the company's Ko‘z is off; Ko‘z's refusals as `{"detail",
+        "code"}`.
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: One branch (in the caller's scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: day
+        schema:
+          type: string
+          format: date
+        description: YYYY-MM-DD; today by default.
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisionReview'
+          description: ''
+  /api/v1/owner/companies/{company_id}/vision/settings/:
+    get:
+      operationId: companies_vision_settings_retrieve
+      description: 404 while the company's Ko‘z is off; Ko‘z's refusals as `{"detail",
+        "code"}`.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisionSettings'
+          description: ''
+    patch:
+      operationId: companies_vision_settings_partial_update
+      description: 404 while the company's Ko‘z is off; Ko‘z's refusals as `{"detail",
+        "code"}`.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedVisionSettingsWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedVisionSettingsWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedVisionSettingsWriteRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisionSettings'
+          description: ''
   /api/v1/owner/companies/new/:
     get:
       operationId: companies_new_retrieve
@@ -43396,6 +43989,7 @@ components:
       - assets
       - learning
       - face_id
+      - vision
       type: string
       description: |-
         * `finance` - Finance
@@ -43409,6 +44003,7 @@ components:
         * `assets` - Assets and equipment
         * `learning` - Training and quizzes
         * `face_id` - Face ID terminals
+        * `vision` - Ko‘z (camera insights)
     CompaniesInviteCompany:
       type: object
       properties:
@@ -44534,6 +45129,11 @@ components:
       description: |-
         * `draft` - Draft
         * `active` - Active
+    ConversionNoteEnum:
+      enum:
+      - entrance_undercount
+      type: string
+      description: '* `entrance_undercount` - entrance_undercount'
     CopyPart:
       type: object
       properties:
@@ -52418,6 +53018,14 @@ components:
       required:
       - file
       - profile_id
+    InEnum:
+      enum:
+      - left
+      - right
+      type: string
+      description: |-
+        * `left` - left
+        * `right` - right
     InboxActionResult:
       type: object
       properties:
@@ -57351,6 +57959,11 @@ components:
       - current
       - title
       - version
+    LabelEnum:
+      enum:
+      - same_weekday_last_week
+      type: string
+      description: '* `same_weekday_last_week` - same_weekday_last_week'
     LanguageEnum:
       enum:
       - uz
@@ -66991,6 +67604,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Transfer'
+    PaginatedVisionAlertList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/VisionAlert'
     PartnerRowInputRequest:
       type: object
       properties:
@@ -70533,6 +71169,79 @@ components:
           format: decimal
           pattern: ^-?\d{0,3}(?:\.\d{0,1})?$
           nullable: true
+    PatchedVisionCameraWriteRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        role:
+          $ref: '#/components/schemas/VisionCameraRoleEnum'
+        enabled:
+          type: boolean
+        zones:
+          description: Up to 8 zones (docs/KOZ.md §4).
+        register_id:
+          type: integer
+          nullable: true
+    PatchedVisionSettingsWriteRequest:
+      type: object
+      properties:
+        queue_people:
+          type: integer
+          maximum: 20
+          minimum: 1
+        queue_wait_s:
+          type: integer
+          maximum: 1800
+          minimum: 15
+        unattended_s:
+          type: integer
+          maximum: 1800
+          minimum: 15
+        clear_after_s:
+          type: integer
+          maximum: 120
+          minimum: 5
+        cooldown_s:
+          type: integer
+          maximum: 3600
+          minimum: 0
+        analysis_fps:
+          type: integer
+          maximum: 5
+          minimum: 1
+        live_fps:
+          type: integer
+          maximum: 4
+          minimum: 1
+        privacy_blur:
+          type: boolean
+        alert_photo:
+          type: boolean
+        record_counter:
+          type: boolean
+        record_hours:
+          type: integer
+          maximum: 168
+          minimum: 1
+        notify_on_shift:
+          type: boolean
+        notify_managers:
+          type: boolean
+        stats_keep_days:
+          type: integer
+          maximum: 800
+          minimum: 30
+        photos_keep_days:
+          type: integer
+          maximum: 365
+          minimum: 1
+        clips_keep_days:
+          type: integer
+          maximum: 365
+          minimum: 1
     Payables:
       type: object
       properties:
@@ -72185,6 +72894,9 @@ components:
       - agenda.manage
       - crm.view
       - crm.manage
+      - vision.view
+      - vision.video
+      - vision.manage
       type: string
       description: |-
         * `members.view` - View members
@@ -72247,6 +72959,9 @@ components:
         * `agenda.manage` - Add company events to the calendar
         * `crm.view` - See CRM deals
         * `crm.manage` - Manage CRM deals and pipelines
+        * `vision.view` - See Ko‘z: visitors, queues, conversion and alerts with photos
+        * `vision.video` - Watch the cameras live and open video receipts
+        * `vision.manage` - Set up Ko‘z boxes, cameras, zones and alert rules
     PersonCard:
       type: object
       properties:
@@ -82055,6 +82770,923 @@ components:
           type: string
           default: ''
           maxLength: 2000
+    VisionAgent:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        branch:
+          $ref: '#/components/schemas/VisionRef'
+        online:
+          type: boolean
+        last_seen_at:
+          type: string
+          format: date-time
+          nullable: true
+        version:
+          type: string
+          nullable: true
+        host:
+          allOf:
+          - $ref: '#/components/schemas/VisionHost'
+          nullable: true
+        paired:
+          type: boolean
+        cameras:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+      required:
+      - branch
+      - cameras
+      - created_at
+      - host
+      - id
+      - last_seen_at
+      - name
+      - online
+      - paired
+      - version
+    VisionAgentBrief:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        branch_id:
+          type: integer
+        online:
+          type: boolean
+        last_seen_at:
+          type: string
+          format: date-time
+          nullable: true
+        version:
+          type: string
+          nullable: true
+      required:
+      - branch_id
+      - id
+      - last_seen_at
+      - name
+      - online
+      - version
+    VisionAgentCreated:
+      type: object
+      properties:
+        agent:
+          $ref: '#/components/schemas/VisionAgent'
+        pairing:
+          $ref: '#/components/schemas/VisionPairing'
+      required:
+      - agent
+      - pairing
+    VisionAgentWriteRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        branch_id:
+          type: integer
+      required:
+      - branch_id
+      - name
+    VisionAlert:
+      type: object
+      properties:
+        id:
+          type: integer
+        kind:
+          $ref: '#/components/schemas/VisionAlertKindEnum'
+        state:
+          $ref: '#/components/schemas/VisionAlertStateEnum'
+        branch:
+          $ref: '#/components/schemas/VisionRef'
+        camera:
+          allOf:
+          - $ref: '#/components/schemas/VisionRef'
+          nullable: true
+        started_at:
+          type: string
+          format: date-time
+        resolved_at:
+          type: string
+          format: date-time
+          nullable: true
+        duration_s:
+          type: integer
+          nullable: true
+        peak_queue:
+          type: integer
+        peak_wait_s:
+          type: integer
+        acknowledged_by:
+          allOf:
+          - $ref: '#/components/schemas/VisionRef'
+          nullable: true
+        acknowledged_at:
+          type: string
+          format: date-time
+          nullable: true
+        photo_url:
+          type: string
+          nullable: true
+          description: Signed link, 10 minutes.
+        clip:
+          allOf:
+          - $ref: '#/components/schemas/VisionClipState'
+          nullable: true
+      required:
+      - acknowledged_at
+      - acknowledged_by
+      - branch
+      - camera
+      - clip
+      - duration_s
+      - id
+      - kind
+      - peak_queue
+      - peak_wait_s
+      - photo_url
+      - resolved_at
+      - started_at
+      - state
+    VisionAlertKindEnum:
+      enum:
+      - queue
+      - unattended
+      - agent_offline
+      type: string
+      description: |-
+        * `queue` - Queue
+        * `unattended` - Nobody at the counter
+        * `agent_offline` - Ko‘z box offline
+    VisionAlertStateEnum:
+      enum:
+      - open
+      - resolved
+      type: string
+      description: |-
+        * `open` - Open
+        * `resolved` - Resolved
+    VisionCamera:
+      type: object
+      properties:
+        id:
+          type: integer
+        key:
+          type: string
+        name:
+          type: string
+        role:
+          $ref: '#/components/schemas/VisionCameraRoleEnum'
+        enabled:
+          type: boolean
+        branch:
+          $ref: '#/components/schemas/VisionRef'
+        agent_id:
+          type: integer
+        source:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/VisionCameraSourceEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        channel:
+          type: integer
+          nullable: true
+        w:
+          type: integer
+          nullable: true
+        h:
+          type: integer
+          nullable: true
+        online:
+          type: boolean
+        last_seen_at:
+          type: string
+          format: date-time
+          nullable: true
+        zones:
+          type: array
+          items:
+            $ref: '#/components/schemas/VisionZone'
+        register:
+          allOf:
+          - $ref: '#/components/schemas/VisionRef'
+          nullable: true
+        snapshot_url:
+          type: string
+          nullable: true
+          description: Signed link, 10 minutes.
+        snapshot_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - agent_id
+      - branch
+      - channel
+      - enabled
+      - h
+      - id
+      - key
+      - last_seen_at
+      - name
+      - online
+      - register
+      - role
+      - snapshot_at
+      - snapshot_url
+      - source
+      - w
+      - zones
+    VisionCameraRoleEnum:
+      enum:
+      - counter
+      - entrance
+      - floor
+      - storeroom
+      - other
+      type: string
+      description: |-
+        * `counter` - Counter
+        * `entrance` - Entrance
+        * `floor` - Sales floor
+        * `storeroom` - Storeroom
+        * `other` - Other
+    VisionCameraSourceEnum:
+      enum:
+      - nvr
+      - rtsp
+      - webcam
+      - file
+      - sim
+      type: string
+      description: |-
+        * `nvr` - Recorder channel
+        * `rtsp` - RTSP stream
+        * `webcam` - Webcam
+        * `file` - Video file
+        * `sim` - Generated scene
+    VisionClip:
+      type: object
+      properties:
+        id:
+          type: integer
+        state:
+          $ref: '#/components/schemas/VisionClipStateEnum'
+        reason:
+          $ref: '#/components/schemas/VisionClipReasonEnum'
+        camera:
+          $ref: '#/components/schemas/VisionRef'
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        sale_id:
+          type: integer
+          nullable: true
+        alert_id:
+          type: integer
+          nullable: true
+        video_url:
+          type: string
+          nullable: true
+        poster_url:
+          type: string
+          nullable: true
+        duration_s:
+          type: number
+          format: double
+          nullable: true
+        failure:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/VisionClipFailureEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        failure_text:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+      required:
+      - alert_id
+      - camera
+      - created_at
+      - duration_s
+      - end
+      - failure
+      - failure_text
+      - id
+      - poster_url
+      - reason
+      - sale_id
+      - start
+      - state
+      - video_url
+    VisionClipFailureEnum:
+      enum:
+      - not_recorded
+      - camera_offline
+      - nvr_error
+      - too_old
+      - agent_timeout
+      type: string
+      description: |-
+        * `not_recorded` - This moment wasn't recorded.
+        * `camera_offline` - The camera was offline then.
+        * `nvr_error` - The recorder didn't give the video.
+        * `too_old` - The recording of that moment is already gone.
+        * `agent_timeout` - The Ko‘z box didn't send the video.
+    VisionClipReasonEnum:
+      enum:
+      - sale
+      - alert
+      - manual
+      type: string
+      description: |-
+        * `sale` - A sale
+        * `alert` - An alert
+        * `manual` - A moment someone picked
+    VisionClipRequestRequest:
+      type: object
+      description: '`{sale_id}`, or `{camera_id, at, before_s, after_s}` (60 s at
+        most in all).'
+      properties:
+        sale_id:
+          type: integer
+        camera_id:
+          type: integer
+        at:
+          type: string
+          format: date-time
+        before_s:
+          type: integer
+          maximum: 60
+          minimum: 0
+          default: 10
+        after_s:
+          type: integer
+          maximum: 60
+          minimum: 0
+          default: 5
+    VisionClipState:
+      type: object
+      properties:
+        id:
+          type: integer
+        state:
+          $ref: '#/components/schemas/VisionClipStateEnum'
+      required:
+      - id
+      - state
+    VisionClipStateEnum:
+      enum:
+      - pending
+      - fetching
+      - ready
+      - failed
+      type: string
+      description: |-
+        * `pending` - Waiting for the box
+        * `fetching` - The box is cutting it
+        * `ready` - Ready
+        * `failed` - Failed
+    VisionCompare:
+      type: object
+      properties:
+        visitors:
+          type: integer
+          nullable: true
+        receipts:
+          type: integer
+          nullable: true
+        conversion:
+          type: number
+          format: double
+          nullable: true
+        label:
+          $ref: '#/components/schemas/LabelEnum'
+      required:
+      - conversion
+      - label
+      - receipts
+      - visitors
+    VisionFrame:
+      type: object
+      properties:
+        at:
+          type: string
+        w:
+          type: integer
+        h:
+          type: integer
+        people:
+          type: array
+          items:
+            $ref: '#/components/schemas/VisionPerson'
+        image_b64:
+          type: string
+          description: The JPEG, base64.
+      required:
+      - at
+      - h
+      - image_b64
+      - people
+      - w
+    VisionHost:
+      type: object
+      properties:
+        hostname:
+          type: string
+        os:
+          type: string
+      required:
+      - hostname
+      - os
+    VisionHour:
+      type: object
+      properties:
+        hour:
+          type: integer
+          maximum: 23
+          minimum: 0
+        visitors:
+          type: integer
+          nullable: true
+        receipts:
+          type: integer
+          nullable: true
+        queue_max:
+          type: integer
+        wait_max_s:
+          type: integer
+        staff_avg:
+          type: number
+          format: double
+          nullable: true
+        staff_checked_in:
+          type: integer
+          nullable: true
+        unattended_minutes:
+          type: integer
+      required:
+      - hour
+      - queue_max
+      - receipts
+      - staff_avg
+      - staff_checked_in
+      - unattended_minutes
+      - visitors
+      - wait_max_s
+    VisionInsight:
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/VisionInsightKindEnum'
+        severity:
+          $ref: '#/components/schemas/VisionInsightSeverityEnum'
+        hour:
+          type: integer
+          nullable: true
+        text:
+          type: string
+      required:
+      - hour
+      - kind
+      - severity
+      - text
+    VisionInsightKindEnum:
+      enum:
+      - lost_peak
+      - long_wait
+      - unattended
+      - staff_gap
+      - good_day
+      type: string
+      description: |-
+        * `lost_peak` - Lost Peak
+        * `long_wait` - Long Wait
+        * `unattended` - Unattended
+        * `staff_gap` - Staff Gap
+        * `good_day` - Good Day
+    VisionInsightSeverityEnum:
+      enum:
+      - info
+      - warn
+      - bad
+      - good
+      type: string
+      description: |-
+        * `info` - Info
+        * `warn` - Warn
+        * `bad` - Bad
+        * `good` - Good
+    VisionLive:
+      type: object
+      properties:
+        at:
+          type: string
+          format: date-time
+        today:
+          $ref: '#/components/schemas/VisionToday'
+        cameras:
+          type: array
+          items:
+            $ref: '#/components/schemas/VisionLiveCamera'
+        open_alerts:
+          type: array
+          items:
+            $ref: '#/components/schemas/VisionAlert'
+      required:
+      - at
+      - cameras
+      - open_alerts
+      - today
+    VisionLiveCamera:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        role:
+          $ref: '#/components/schemas/VisionCameraRoleEnum'
+        branch_id:
+          type: integer
+        online:
+          type: boolean
+        stale:
+          type: boolean
+          description: No live report for 30 s.
+        people:
+          type: integer
+          nullable: true
+        queue:
+          type: integer
+          nullable: true
+        staff:
+          type: integer
+          nullable: true
+        wait_s:
+          type: integer
+          nullable: true
+        fps:
+          type: number
+          format: double
+          nullable: true
+      required:
+      - branch_id
+      - fps
+      - id
+      - name
+      - online
+      - people
+      - queue
+      - role
+      - staff
+      - stale
+      - wait_s
+    VisionOverview:
+      type: object
+      properties:
+        day:
+          type: string
+          format: date
+        branch:
+          allOf:
+          - $ref: '#/components/schemas/VisionRef'
+          nullable: true
+        setup:
+          $ref: '#/components/schemas/VisionSetup'
+        agents:
+          type: array
+          items:
+            $ref: '#/components/schemas/VisionAgentBrief'
+        totals:
+          $ref: '#/components/schemas/VisionTotals'
+        hours:
+          type: array
+          items:
+            $ref: '#/components/schemas/VisionHour'
+        insights:
+          type: array
+          items:
+            $ref: '#/components/schemas/VisionInsight'
+        open_alerts:
+          type: array
+          items:
+            $ref: '#/components/schemas/VisionAlert'
+      required:
+      - agents
+      - branch
+      - day
+      - hours
+      - insights
+      - open_alerts
+      - setup
+      - totals
+    VisionPairing:
+      type: object
+      properties:
+        code:
+          type: string
+          description: 'Shown once: KOZ-XXXX-XXXX, valid 15 minutes.'
+        expires_at:
+          type: string
+          format: date-time
+        command:
+          type: string
+          description: The line to run on the box's PC.
+      required:
+      - code
+      - command
+      - expires_at
+    VisionPerson:
+      type: object
+      properties:
+        track:
+          type: integer
+        box:
+          type: array
+          items:
+            type: number
+            format: double
+          maxItems: 4
+          minItems: 4
+        role:
+          $ref: '#/components/schemas/VisionPersonRoleEnum'
+        zone:
+          type: string
+          nullable: true
+        wait_s:
+          type: integer
+          nullable: true
+      required:
+      - box
+      - role
+      - track
+      - wait_s
+      - zone
+    VisionPersonRoleEnum:
+      enum:
+      - staff
+      - customer
+      type: string
+      description: |-
+        * `staff` - staff
+        * `customer` - customer
+    VisionRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
+    VisionReview:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/VisionReviewItem'
+      required:
+      - items
+    VisionReviewItem:
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/VisionReviewKindEnum'
+        at:
+          type: string
+          format: date-time
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        sale_id:
+          type: integer
+          nullable: true
+        cash_movement_id:
+          type: integer
+          nullable: true
+        cashier:
+          allOf:
+          - $ref: '#/components/schemas/VisionRef'
+          nullable: true
+        camera:
+          allOf:
+          - $ref: '#/components/schemas/VisionRef'
+          nullable: true
+        queue_max:
+          type: integer
+        clip:
+          allOf:
+          - $ref: '#/components/schemas/VisionClipState'
+          nullable: true
+      required:
+      - amount
+      - at
+      - camera
+      - cash_movement_id
+      - cashier
+      - clip
+      - kind
+      - queue_max
+      - sale_id
+    VisionReviewKindEnum:
+      enum:
+      - void
+      - payout
+      type: string
+      description: |-
+        * `void` - void
+        * `payout` - payout
+    VisionSettings:
+      type: object
+      properties:
+        queue_people:
+          type: integer
+          maximum: 20
+          minimum: 1
+        queue_wait_s:
+          type: integer
+          maximum: 1800
+          minimum: 15
+        unattended_s:
+          type: integer
+          maximum: 1800
+          minimum: 15
+        clear_after_s:
+          type: integer
+          maximum: 120
+          minimum: 5
+        cooldown_s:
+          type: integer
+          maximum: 3600
+          minimum: 0
+        analysis_fps:
+          type: integer
+          maximum: 5
+          minimum: 1
+        live_fps:
+          type: integer
+          maximum: 4
+          minimum: 1
+        privacy_blur:
+          type: boolean
+        alert_photo:
+          type: boolean
+        record_counter:
+          type: boolean
+        record_hours:
+          type: integer
+          maximum: 168
+          minimum: 1
+        notify_on_shift:
+          type: boolean
+        notify_managers:
+          type: boolean
+        stats_keep_days:
+          type: integer
+          maximum: 800
+          minimum: 30
+        photos_keep_days:
+          type: integer
+          maximum: 365
+          minimum: 1
+        clips_keep_days:
+          type: integer
+          maximum: 365
+          minimum: 1
+    VisionSetup:
+      type: object
+      properties:
+        agents:
+          type: integer
+        cameras:
+          type: integer
+          description: Cameras switched on.
+        entrance:
+          type: boolean
+        counter:
+          type: boolean
+      required:
+      - agents
+      - cameras
+      - counter
+      - entrance
+    VisionSnapshotRequested:
+      type: object
+      properties:
+        snapshot_requested_at:
+          type: string
+          format: date-time
+      required:
+      - snapshot_requested_at
+    VisionToday:
+      type: object
+      properties:
+        visitors:
+          type: integer
+          nullable: true
+        receipts:
+          type: integer
+          nullable: true
+      required:
+      - receipts
+      - visitors
+    VisionTotals:
+      type: object
+      properties:
+        visitors:
+          type: integer
+          nullable: true
+        receipts:
+          type: integer
+          nullable: true
+        conversion:
+          type: number
+          format: double
+          nullable: true
+        conversion_note:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/ConversionNoteEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        left:
+          type: integer
+          nullable: true
+        wait_avg_s:
+          type: integer
+          nullable: true
+        wait_max_s:
+          type: integer
+        alerts:
+          type: integer
+        unattended_minutes:
+          type: integer
+        compare:
+          $ref: '#/components/schemas/VisionCompare'
+      required:
+      - alerts
+      - compare
+      - conversion
+      - conversion_note
+      - left
+      - receipts
+      - unattended_minutes
+      - visitors
+      - wait_avg_s
+      - wait_max_s
+    VisionZone:
+      type: object
+      properties:
+        id:
+          type: string
+        kind:
+          $ref: '#/components/schemas/VisionZoneKindEnum'
+        points:
+          type: array
+          items:
+            type: array
+            items:
+              type: number
+              format: double
+            maxItems: 2
+            minItems: 2
+        in:
+          $ref: '#/components/schemas/InEnum'
+      required:
+      - id
+      - kind
+      - points
+    VisionZoneKindEnum:
+      enum:
+      - queue
+      - staff
+      - floor
+      - mask
+      - line
+      type: string
+      description: |-
+        * `queue` - queue
+        * `staff` - staff
+        * `floor` - floor
+        * `mask` - mask
+        * `line` - line
     WeekdayEnum:
       enum:
       - 0

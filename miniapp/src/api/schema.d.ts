@@ -3670,7 +3670,7 @@ export interface components {
          *     * `face_id` - Face ID terminals
          * @enum {string}
          */
-        CompaniesFeatureEnum: "finance" | "sales" | "stock" | "attendance" | "hr" | "payroll" | "ai" | "recognition" | "assets" | "learning" | "face_id";
+        CompaniesFeatureEnum: "finance" | "sales" | "stock" | "attendance" | "hr" | "payroll" | "ai" | "recognition" | "assets" | "learning" | "face_id" | "vision";
         Company: {
             readonly id: number;
             readonly name: string;
@@ -6333,7 +6333,7 @@ export interface components {
          *     * `crm.manage` - Manage CRM deals and pipelines
          * @enum {string}
          */
-        PermissionsEnum: "members.view" | "members.approve" | "members.manage" | "roles.manage" | "positions.manage" | "tasks.view_all" | "tasks.assign" | "tasks.templates" | "tasks.confirm" | "reminders.configure" | "groups.manage" | "reports.view" | "time_off.approve" | "announcements.send" | "dashboard.access" | "company.settings" | "audit.view" | "data.export" | "branches.all" | "sales.view" | "sales.operate" | "sales.manage" | "sales.invoices" | "stock.manage" | "stock.operate" | "stock.controlled" | "finance.view" | "finance.record" | "finance.manage" | "finance.approve" | "finance.claim" | "hr.view" | "hr.manage" | "hr.sensitive" | "hr.hiring" | "attendance.view" | "attendance.manage" | "time_off.manage" | "payroll.view" | "payroll.propose" | "payroll.manage" | "payroll.finalize" | "payroll.pay" | "ai.use" | "ai.configure" | "projects.view_all" | "projects.manage" | "projects.time_view" | "hr.discipline" | "hr.suspend" | "hr.terminate" | "assets.manage" | "reviews.manage" | "knowledge.manage" | "learning.view" | "learning.manage" | "recognition.manage" | "agenda.manage" | "crm.view" | "crm.manage";
+        PermissionsEnum: "members.view" | "members.approve" | "members.manage" | "roles.manage" | "positions.manage" | "tasks.view_all" | "tasks.assign" | "tasks.templates" | "tasks.confirm" | "reminders.configure" | "groups.manage" | "reports.view" | "time_off.approve" | "announcements.send" | "dashboard.access" | "company.settings" | "audit.view" | "data.export" | "branches.all" | "sales.view" | "sales.operate" | "sales.manage" | "sales.invoices" | "stock.manage" | "stock.operate" | "stock.controlled" | "finance.view" | "finance.record" | "finance.manage" | "finance.approve" | "finance.claim" | "hr.view" | "hr.manage" | "hr.sensitive" | "hr.hiring" | "attendance.view" | "attendance.manage" | "time_off.manage" | "payroll.view" | "payroll.propose" | "payroll.manage" | "payroll.finalize" | "payroll.pay" | "ai.use" | "ai.configure" | "projects.view_all" | "projects.manage" | "projects.time_view" | "hr.discipline" | "hr.suspend" | "hr.terminate" | "assets.manage" | "reviews.manage" | "knowledge.manage" | "learning.view" | "learning.manage" | "recognition.manage" | "agenda.manage" | "crm.view" | "crm.manage" | "vision.view" | "vision.video" | "vision.manage";
         PersonCard: {
             id: number;
             name: string;
