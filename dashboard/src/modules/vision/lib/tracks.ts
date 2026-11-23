@@ -3,11 +3,12 @@
  * the boxes glide from where they were to where the new frame puts them instead of jumping: people
  * are matched by `track`, a box that is in both frames moves, a new one fades in where it appears
  * and one that left fades out where it was last seen. Waits keep ticking every second between
- * frames, counted from when the frame arrived (the browser's clock, never the server's).
+ * frames, counted from when the frame arrived (the browser's clock, never the server's), and read
+ * as of the page's one-second clock, so every wait on the page turns over at the same moment.
  */
 import { easeOutCubic } from "@/lib/useTween";
 
-import type { FramePerson } from "../types";
+import type { FramePerson, Live } from "../types";
 
 export type Box = [number, number, number, number];
 
@@ -70,13 +71,80 @@ export function glideDuration(interval: number | null): number {
 }
 
 /**
- * A wait that keeps counting between reports: the seconds the report said, plus the whole seconds
- * since it arrived. Null stays null (not in a queue zone). Never below the reported value.
+ * A wait that keeps counting between reports, as of `now` (the page clock's last tick): the
+ * seconds the report said plus the time since it arrived, in whole seconds. A report that came in
+ * just after the tick reads what the wait was at the tick, so two reports of one wait (a frame and
+ * the live numbers) read the same. Null stays null (not in a queue zone).
  */
 export function tickingWait(waitS: number | null | undefined, receivedAt: number, now: number): number | null {
   if (waitS === null || waitS === undefined || !Number.isFinite(waitS)) return null;
-  const elapsed = Math.max(0, Math.floor((now - receivedAt) / 1000));
-  return Math.max(0, Math.floor(waitS)) + elapsed;
+  // In whole milliseconds first, so 140.9 s + 0.1 s is 141 and never 140.99999.
+  return Math.max(0, Math.floor(Math.round(waitS * 1000 + now - receivedAt) / 1000));
+}
+
+/** When a wait began (`Date.now()` time), and when it was last reported. */
+export interface WaitStart {
+  start: number;
+  seen: number;
+}
+export type WaitStarts = ReadonlyMap<number, WaitStart>;
+
+/** Two reports of one wait further apart than this are a new wait (the agent started over). */
+const SAME_WAIT_MS = 1_500;
+/** How long a wait is kept for someone the reports stopped showing (a box fading out). */
+const KEEP_WAIT_MS = 5_000;
+
+/**
+ * When each wait began, by track (or camera), kept steady from one report to the next. A report
+ * gives whole seconds and arrives after the network, so counting back from its arrival puts the
+ * start up to a second late: the earliest estimate wins, and one more than 1.5 s away is a new
+ * wait. Without it, a wait read from alternate reports would step back a second now and then. A
+ * reading without a wait ends that wait; one missing from the report is kept for 5 s.
+ */
+export function steadyStarts(previous: WaitStarts, readings: readonly { key: number; wait: number | null | undefined }[], at: number): Map<number, WaitStart> {
+  const next = new Map<number, WaitStart>();
+  for (const [key, entry] of previous) if (at - entry.seen < KEEP_WAIT_MS) next.set(key, entry);
+  for (const { key, wait } of readings) {
+    if (wait === null || wait === undefined || !Number.isFinite(wait)) {
+      next.delete(key);
+      continue;
+    }
+    const estimate = Math.round(at - Math.max(0, wait) * 1000);
+    const before = next.get(key);
+    const start = before && Math.abs(before.start - estimate) <= SAME_WAIT_MS ? Math.min(before.start, estimate) : estimate;
+    next.set(key, { start, seen: at });
+  }
+  return next;
+}
+
+/** The whole seconds waited by `now` (the page clock's last tick); null without a start. */
+export function waitedBy(start: number | null | undefined, now: number): number | null {
+  if (start === null || start === undefined || !Number.isFinite(start)) return null;
+  return Math.max(0, Math.floor((now - start) / 1000));
+}
+
+/**
+ * The live report with each camera's longest wait read the freshest way: from its frames while
+ * they arrive (`frames`, by camera: when the longest wait began, null when nobody waits), else
+ * from the report itself, steady from one report to the next. Each `wait_s` is then the wait as
+ * of `at`, which may be below zero for a wait that began after the report came, so
+ * `tickingWait(wait_s, at, now)` reads the same second as the pill of the one waiting.
+ */
+export function freshReport(data: Live, at: number, previous: WaitStarts, frames: ReadonlyMap<number, number | null>): { report: Live; starts: Map<number, WaitStart> } {
+  const starts = steadyStarts(
+    previous,
+    data.cameras.map((camera) => ({ key: camera.id, wait: camera.wait_s })),
+    at,
+  );
+  const cameras = data.cameras.map((camera) => {
+    const seen = frames.get(camera.id);
+    if (typeof seen === "number") return { ...camera, wait_s: (at - seen) / 1000 };
+    // The pictures show nobody waiting: the report's wait is from before they left.
+    if (seen === null) return camera.wait_s === null ? camera : { ...camera, wait_s: 0 };
+    const start = camera.wait_s === null ? undefined : starts.get(camera.id)?.start;
+    return start === undefined ? camera : { ...camera, wait_s: (at - start) / 1000 };
+  });
+  return { report: { ...data, cameras }, starts };
 }
 
 /** "0:45", "12:03", "1:02:03": a wait on a label pill or a counter. */

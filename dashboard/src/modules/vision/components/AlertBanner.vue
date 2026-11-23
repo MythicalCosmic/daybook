@@ -70,14 +70,14 @@ const shown = computed(() =>
     >
       <span class="koz-banner-sweep pointer-events-none absolute inset-0" aria-hidden="true" />
       <span class="koz-banner-icon relative grid shrink-0 place-items-center rounded-full" aria-hidden="true">
-        <Hand v-if="item.alert.kind === 'unattended'" :size="size === 'tv' ? 26 : 18" />
-        <UsersRound v-else :size="size === 'tv' ? 26 : 18" />
+        <Hand v-if="item.alert.kind === 'unattended'" :size="18" class="koz-banner-glyph" />
+        <UsersRound v-else :size="18" class="koz-banner-glyph" />
       </span>
       <div class="relative min-w-0 flex-1">
         <h3 class="koz-banner-title truncate font-semibold">{{ item.title }}</h3>
         <p class="koz-banner-body truncate">{{ item.body }}</p>
       </div>
-      <div class="relative flex shrink-0 flex-wrap items-center gap-2">
+      <div class="relative flex min-w-0 flex-wrap items-center gap-2 max-sm:w-full sm:shrink-0">
         <span v-if="item.alert.acknowledged_by" class="koz-banner-chip inline-flex max-w-[16rem] items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold">
           <Check :size="13" class="shrink-0" /><span class="truncate">{{ t("vision.banner.going", { name: item.alert.acknowledged_by.name }) }}</span>
         </span>
@@ -161,23 +161,34 @@ const shown = computed(() =>
 .koz-banner-dot {
   background: var(--tone);
 }
-.koz-banner[data-size="tv"] {
-  padding: 1.25rem 1.5rem;
-  border-radius: 22px;
+/* The TV's banner is read from across the room; on a phone it stays the page's size. */
+@media (min-width: 768px) {
+  .koz-banner[data-size="tv"] {
+    padding: 1.25rem 1.5rem;
+    border-radius: 22px;
+  }
+  .koz-banner[data-size="tv"] .koz-banner-icon {
+    width: 3.5rem;
+    height: 3.5rem;
+  }
+  .koz-banner[data-size="tv"] .koz-banner-glyph {
+    width: 26px;
+    height: 26px;
+  }
+  .koz-banner[data-size="tv"] .koz-banner-title {
+    font-size: 1.75rem;
+  }
+  .koz-banner[data-size="tv"] .koz-banner-body {
+    font-size: 1.25rem;
+  }
+  .koz-banner[data-size="tv"] .koz-banner-timer {
+    font-size: 1.5rem;
+    padding: 0.4rem 1rem;
+  }
 }
-.koz-banner[data-size="tv"] .koz-banner-icon {
-  width: 3.5rem;
-  height: 3.5rem;
-}
-.koz-banner[data-size="tv"] .koz-banner-title {
-  font-size: 1.75rem;
-}
+.koz-banner[data-size="tv"] .koz-banner-title,
 .koz-banner[data-size="tv"] .koz-banner-body {
-  font-size: 1.25rem;
-}
-.koz-banner[data-size="tv"] .koz-banner-timer {
-  font-size: 1.5rem;
-  padding: 0.4rem 1rem;
+  white-space: normal;
 }
 .koz-banner-enter-active,
 .koz-banner-leave-active {

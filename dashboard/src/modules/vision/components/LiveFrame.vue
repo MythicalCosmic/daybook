@@ -15,10 +15,11 @@ import { computed, onBeforeUnmount, ref, shallowRef, useId, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import { useSecondClock } from "../lib/clock";
+import { useFrameWaits } from "../lib/frameWaits";
 import { insideArrow, labelAnchor } from "../lib/geometry";
-import { layoutPills, memoryOf, type PillInput, type PillMemory, type Rect } from "../lib/labels";
+import { layoutPills, memoryOf, overlaps, type PillInput, type PillMemory, type Rect } from "../lib/labels";
 import { ROLE_COLOR, WAIT_COLOR, ZONE_COLOR } from "../lib/look";
-import { formatClock, glideDuration, interpolate, tickingWait, waitLevel, type DrawnPerson } from "../lib/tracks";
+import { formatClock, glideDuration, interpolate, steadyStarts, waitedBy, waitLevel, type DrawnPerson, type WaitStarts } from "../lib/tracks";
 import { useFramePoll } from "../lib/useFramePoll";
 import type { FramePerson, Zone } from "../types";
 
@@ -80,6 +81,10 @@ const front = ref<string | null>(null);
 const back = ref<string | null>(null);
 const progress = ref(1);
 const drawn = shallowRef<DrawnPerson[]>([]);
+/** When each customer's queue wait began, by track: steady across frames (lib/tracks.ts). */
+const starts = shallowRef<WaitStarts>(new Map());
+/** When the frame those were last read from arrived. */
+const startsAt = ref(0);
 let from: FramePerson[] = [];
 let to: FramePerson[] = [];
 let frame = 0;
@@ -100,6 +105,7 @@ watch(
     if (!next) {
       front.value = back.value = null;
       drawn.value = [];
+      starts.value = new Map();
       from = to = [];
       return;
     }
@@ -114,6 +120,12 @@ watch(
     }
     if (poll.frame.value !== next) return;
     if (next.w > 0 && next.h > 0) aspect.value = next.w / next.h;
+    starts.value = steadyStarts(
+      starts.value,
+      next.people.filter((person) => person.role === "customer").map((person) => ({ key: person.track, wait: person.wait_s })),
+      poll.receivedAt.value,
+    );
+    startsAt.value = poll.receivedAt.value;
     cancelAnimationFrame(frame);
     from = drawn.value.filter((person) => person.state !== "left");
     to = next.people;
@@ -133,10 +145,33 @@ watch(
 );
 onBeforeUnmount(() => cancelAnimationFrame(frame));
 
+// The page's numbers read this camera's longest wait from these frames while they arrive
+// (lib/frameWaits.ts): the same second as its pill.
+const frameWaits = useFrameWaits();
+const longestStart = computed<number | null | undefined>(() => {
+  if (!front.value || !poll.active.value) return undefined;
+  let first: number | null = null;
+  for (const entry of starts.value.values()) if (entry.seen === startsAt.value && (first === null || entry.start < first)) first = entry.start;
+  return first;
+});
+if (frameWaits) {
+  watch(
+    [longestStart, () => props.cameraId],
+    ([start, id], previous) => {
+      const before = previous?.[1];
+      if (before !== undefined && before !== id) frameWaits.delete(before);
+      if (start === undefined) frameWaits.delete(id);
+      else frameWaits.set(id, start);
+    },
+    { immediate: true },
+  );
+  onBeforeUnmount(() => frameWaits.delete(props.cameraId));
+}
+
 const people = computed(() =>
   drawn.value.map((person) => {
     const [x, y, w, h] = person.box;
-    const wait = person.role === "customer" ? tickingWait(person.wait_s, poll.receivedAt.value, clock.value) : null;
+    const wait = person.role === "customer" ? waitedBy(starts.value.get(person.track)?.start, clock.value) : null;
     const level = waitLevel(wait, props.queueWaitS);
     return {
       key: person.track,
@@ -176,10 +211,41 @@ function midpoint(zone: Zone): [number, number] {
 
 const root = ref<HTMLElement | null>(null);
 const size = ref({ w: 960, h: 540 });
+/** The chips the slot puts on the picture (name, live mark, numbers): pills keep clear of them. */
+const reserved = shallowRef<Rect[]>([]);
+function measureReserved(): void {
+  const el = root.value;
+  if (!el) return;
+  const origin = el.getBoundingClientRect();
+  const nodes = [...el.querySelectorAll<HTMLElement>("[data-reserve]"), ...[...el.querySelectorAll<HTMLElement>("[data-reserve-children]")].flatMap((node) => [...node.children] as HTMLElement[])];
+  const next = nodes
+    .map((node) => node.getBoundingClientRect())
+    .filter((box) => box.width > 0 && box.height > 0)
+    .map((box) => ({ x: Math.round(box.left - origin.left - 2), y: Math.round(box.top - origin.top - 2), w: Math.round(box.width + 4), h: Math.round(box.height + 4) }));
+  const same = next.length === reserved.value.length && next.every((r, i) => {
+    const before = reserved.value[i]!;
+    return r.x === before.x && r.y === before.y && r.w === before.w && r.h === before.h;
+  });
+  if (!same) reserved.value = next;
+}
 useResizeObserver(root, (entries) => {
   const box = entries[0]?.contentRect;
   if (box && box.width > 0 && box.height > 0) size.value = { w: box.width, h: box.height };
+  measureReserved();
 });
+// The chips' words change with the numbers (a queue of 3, then 12): measure again now and then.
+let reserveTimer: ReturnType<typeof setInterval> | undefined;
+watch(
+  () => !!front.value,
+  (shown) => {
+    clearInterval(reserveTimer);
+    if (!shown) return;
+    requestAnimationFrame(measureReserved);
+    reserveTimer = setInterval(measureReserved, 2000);
+  },
+  { immediate: true },
+);
+onBeforeUnmount(() => clearInterval(reserveTimer));
 
 const font = computed(() => (props.compact ? 10 : 11.5));
 const pillHeight = computed(() => (props.compact ? 16 : 21));
@@ -212,18 +278,27 @@ function textWidth(text: string): number {
   return Math.ceil(width + 3);
 }
 
-/** Zone name tags are fixed: pills keep clear of them. */
-const tagRects = computed<Rect[]>(() => {
+/**
+ * Zone name tags, in pixels: at the zone's top left (a line's middle), hanging leftwards near the
+ * right edge so they stay inside the picture, and left out where a chip of the slot sits. Pills
+ * keep clear of them.
+ */
+const tags = computed(() => {
   if (!props.zonesVisible || props.compact) return [];
   return shapes.value
     .filter((shape) => shape.zone.kind !== "mask")
     .map((shape) => {
       const w = textWidth(t(`vision.zone.${shape.zone.kind}`)) + 22;
-      const x = shape.tag[0] * size.value.w;
-      const y = shape.tag[1] * size.value.h;
-      return shape.zone.kind === "line" ? { x: x - w / 2, y: y + 10, w, h: 20 } : { x: x + 6, y: y + 6, w, h: 20 };
-    });
+      const ax = shape.tag[0] * size.value.w;
+      const ay = shape.tag[1] * size.value.h;
+      let rect: Rect = shape.zone.kind === "line" ? { x: ax - w / 2, y: ay + 10, w, h: 20 } : { x: ax + 6, y: ay + 6, w, h: 20 };
+      if (rect.x + rect.w > size.value.w - 6) rect = { ...rect, x: size.value.w - 6 - rect.w };
+      if (rect.x < 6) rect = { ...rect, x: 6 };
+      return { key: shape.zone.id, kind: shape.zone.kind, color: shape.color, rect };
+    })
+    .filter((tag) => !reserved.value.some((chip) => overlaps(tag.rect, chip)));
 });
+const tagRects = computed<Rect[]>(() => tags.value.map((tag) => tag.rect));
 
 interface PillLook {
   full: string;
@@ -256,7 +331,7 @@ const pills = computed(() => {
       priority: person.wait !== null ? 10_000 + person.wait : person.staff ? 10 : 100,
     });
   }
-  const placements = layoutPills(items, size.value, memory, { obstacles: tagRects.value, gap: props.compact ? 2 : 3 });
+  const placements = layoutPills(items, size.value, memory, { obstacles: [...reserved.value, ...tagRects.value], gap: props.compact ? 2 : 3 });
   memory = memoryOf(placements);
   const longest = Math.max(-1, ...[...looks.values()].map((look) => look.wait ?? -1));
   return placements.map((placement) => {
@@ -375,17 +450,16 @@ const state = computed<"offline" | "denied" | "connecting" | "waiting" | "error"
     </svg>
 
     <!-- Zone names: HTML, so they stay crisp at any size. -->
-    <div v-if="front && zonesVisible && !compact" class="pointer-events-none absolute inset-0" aria-hidden="true">
-      <template v-for="shape in shapes" :key="shape.zone.id">
-        <span
-          v-if="shape.zone.kind !== 'mask'"
-          class="koz-tag absolute inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold"
-          :style="{ left: `${shape.tag[0] * 100}%`, top: `${shape.tag[1] * 100}%`, '--tag': shape.color }"
-          :data-line="shape.zone.kind === 'line' || undefined"
-        >
-          <span class="size-1.5 rounded-full" :style="{ background: shape.color }" />{{ t(`vision.zone.${shape.zone.kind}`) }}
-        </span>
-      </template>
+    <div v-if="front && tags.length" class="pointer-events-none absolute inset-0" aria-hidden="true">
+      <span
+        v-for="tag in tags"
+        :key="tag.key"
+        class="koz-tag absolute inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2 text-[11px] font-semibold"
+        :style="{ left: `${tag.rect.x}px`, top: `${tag.rect.y}px`, height: `${tag.rect.h}px`, '--tag': tag.color }"
+        :data-line="tag.kind === 'line' || undefined"
+      >
+        <span class="size-1.5 rounded-full" :style="{ background: tag.color }" />{{ t(`vision.zone.${tag.kind}`) }}
+      </span>
     </div>
 
     <!-- The label pills, never on each other, with a leader when moved away from their box. -->
@@ -452,10 +526,8 @@ const state = computed<"offline" | "denied" | "connecting" | "waiting" | "error"
 .koz-tag {
   background: rgb(16 13 10 / 0.55);
   color: color-mix(in srgb, var(--tag) 70%, #ffffff);
-  transform: translate(6px, 6px);
 }
 .koz-tag[data-line] {
-  transform: translate(-50%, 10px);
   color: #ffffff;
 }
 .koz-state {

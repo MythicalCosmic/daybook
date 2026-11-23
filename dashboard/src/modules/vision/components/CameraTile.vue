@@ -104,18 +104,18 @@ function open(event?: Event): void {
     >
       <!-- On-screen display: name and role, the live mark, the numbers. -->
       <div class="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-2.5" :class="size === 'focus' && 'p-3.5'">
-        <span class="koz-glass inline-flex min-w-0 items-center gap-2 rounded-full py-1 pl-2.5 pr-3">
+        <span class="koz-glass inline-flex min-w-0 items-center gap-2 rounded-full py-1 pl-2.5 pr-3" data-reserve>
           <span :class="['truncate font-semibold text-white', size === 'focus' ? 'text-sm' : 'text-xs']">{{ camera.name }}</span>
           <span v-if="size !== 'rail'" class="shrink-0 text-[11px] font-medium text-white/60">{{ t(`vision.role.${camera.role}`) }}</span>
         </span>
-        <span v-if="camera.online && !camera.stale && canVideo" class="koz-glass inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-1 text-[10.5px] font-bold uppercase tracking-[0.06em] text-white">
+        <span v-if="camera.online && !camera.stale && canVideo" class="koz-glass inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-1 text-[10.5px] font-bold uppercase tracking-[0.06em] text-white" data-reserve>
           <span class="koz-rec size-1.5 rounded-full bg-[#ff5a4e]" />{{ t("vision.live.onAir") }}
         </span>
       </div>
       <div v-if="camera.online && size !== 'rail' && !analysed" class="pointer-events-none absolute inset-x-0 bottom-0 p-2.5">
-        <span class="koz-glass inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold text-white/80">{{ t("vision.camera.notAnalysed") }}</span>
+        <span class="koz-glass inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold text-white/80" data-reserve>{{ t("vision.camera.notAnalysed") }}</span>
       </div>
-      <div v-else-if="camera.online && size !== 'rail' && camera.people !== null" class="pointer-events-none absolute inset-x-0 bottom-0 flex flex-wrap items-end gap-1.5 p-2.5" :class="size === 'focus' && 'p-3.5'">
+      <div v-else-if="camera.online && size !== 'rail' && camera.people !== null" class="pointer-events-none absolute inset-x-0 bottom-0 flex flex-wrap items-end gap-1.5 p-2.5" :class="size === 'focus' && 'p-3.5'" data-reserve-children>
         <span class="koz-glass inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold tabular-nums text-white">
           <Users :size="13" class="text-white/70" />{{ fmt.number(camera.people) }}
         </span>

@@ -140,10 +140,10 @@ onBeforeUnmount(() => {
       tabindex="-1"
       :data-idle="idle || undefined"
     >
-      <header class="flex shrink-0 items-center gap-4 px-5 pb-3 pt-4 md:px-10 md:pt-7">
+      <header class="flex shrink-0 items-center gap-4 px-5 pb-3 pt-4 md:px-10 md:pt-6">
         <span class="grid size-11 shrink-0 place-items-center rounded-[14px] bg-primary text-on-primary md:size-14"><Cctv :size="26" /></span>
         <div class="min-w-0 flex-1">
-          <p class="truncate text-sm font-semibold uppercase tracking-[0.14em] text-muted md:text-md">{{ t("vision.title") }} · {{ t("vision.subtitle") }}</p>
+          <p class="truncate text-sm font-semibold uppercase tracking-[0.14em] text-muted max-sm:hidden md:text-md">{{ t("vision.title") }} · {{ t("vision.subtitle") }}</p>
           <h1 class="koz-tv-branch truncate font-semibold">{{ branchName }}</h1>
         </div>
         <div class="text-right">
@@ -160,7 +160,7 @@ onBeforeUnmount(() => {
 
       <div class="px-5 md:px-10"><AlertBanner :alerts="alerts" :cameras="live?.cameras ?? []" :live-at="liveAt" size="tv" :actions="false" /></div>
 
-      <main class="grid min-h-0 flex-1 gap-5 px-5 pb-6 pt-4 md:gap-7 md:px-10 md:pb-10 xl:grid-cols-[minmax(0,1fr)_minmax(360px,30vw)]">
+      <main class="grid min-h-0 flex-1 gap-5 px-5 pb-6 pt-4 md:gap-6 md:px-10 md:pb-8 xl:grid-cols-[minmax(0,1fr)_minmax(360px,30vw)]">
         <section class="flex min-w-0 flex-col gap-3" :aria-label="current?.name ?? t('vision.tv.noCamera')">
           <div class="relative min-h-0">
             <Transition name="koz-tv-cam" mode="out-in">
@@ -176,8 +176,8 @@ onBeforeUnmount(() => {
                 rounded="22px"
                 class="koz-tv-frame"
               >
-                <div class="pointer-events-none absolute left-0 top-0 p-4">
-                  <span class="koz-tv-glass inline-flex items-center gap-2.5 rounded-full px-4 py-2 text-lg font-semibold text-white">
+                <div class="pointer-events-none absolute left-0 top-0 p-3 md:p-4">
+                  <span class="koz-tv-glass inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold text-white md:gap-2.5 md:px-4 md:py-2 md:text-lg" data-reserve>
                     <span class="koz-tv-rec size-2.5 rounded-full bg-[#ff5a4e]" />{{ current.name }}
                   </span>
                 </div>
@@ -190,6 +190,13 @@ onBeforeUnmount(() => {
               <div :key="cycle" class="koz-tv-bar h-full rounded-full bg-primary" :style="{ animationDuration: `${ROTATE_MS}ms` }" />
             </div>
             <span class="shrink-0 text-base text-muted md:text-lg">{{ t("vision.tv.next", { name: next.name }) }}</span>
+          </div>
+          <div v-if="insight" class="koz-tv-insight mt-1 flex gap-4 rounded-[22px] border border-line bg-surface p-5 md:p-6" :data-severity="insight.severity">
+            <span class="grid size-11 shrink-0 place-items-center rounded-[13px] bg-accent-soft text-accent-fg"><Lightbulb :size="22" /></span>
+            <div class="min-w-0">
+              <p class="text-sm font-semibold uppercase tracking-[0.1em] text-muted">{{ t("vision.tv.latest") }}</p>
+              <p class="koz-tv-clamp mt-1 text-lg leading-snug text-fg md:text-xl">{{ insight.text }}</p>
+            </div>
           </div>
         </section>
 
@@ -214,13 +221,6 @@ onBeforeUnmount(() => {
             </div>
           </div>
           <LiveCounters :live="live" :live-at="liveAt" :queue-people="queuePeople" :queue-wait-s="queueWaitS" size="tv" :omit="['visitors']" class="koz-tv-counters" />
-          <div v-if="insight" class="koz-tv-insight flex gap-4 rounded-[22px] border border-line bg-surface p-5 md:p-6" :data-severity="insight.severity">
-            <span class="grid size-11 shrink-0 place-items-center rounded-[13px] bg-accent-soft text-accent-fg"><Lightbulb :size="22" /></span>
-            <div class="min-w-0">
-              <p class="text-sm font-semibold uppercase tracking-[0.1em] text-muted">{{ t("vision.tv.latest") }}</p>
-              <p class="koz-tv-clamp mt-1 text-lg leading-snug text-fg md:text-xl">{{ insight.text }}</p>
-            </div>
-          </div>
         </aside>
       </main>
       <p class="koz-tv-hint pointer-events-none fixed bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-surface/80 px-3 py-1 text-xs text-muted backdrop-blur">{{ t("vision.tv.hint") }}</p>
@@ -246,12 +246,12 @@ onBeforeUnmount(() => {
   transition: opacity 0.4s ease;
 }
 .koz-tv-branch {
-  font-size: clamp(1.5rem, 3.2vw, 2.75rem);
+  font-size: clamp(1.25rem, 3.2vw, 2.75rem);
   line-height: 1.1;
   letter-spacing: -0.02em;
 }
 .koz-tv-clock {
-  font-size: clamp(2rem, 5vw, 4.25rem);
+  font-size: clamp(1.6rem, 5vw, 4.25rem);
   line-height: 1;
   letter-spacing: -0.03em;
 }
@@ -277,8 +277,10 @@ onBeforeUnmount(() => {
   color: var(--c-text);
   background: var(--c-surface-3);
 }
+/* As large as the screen allows, never stretched: the width follows the height left for it. */
 .koz-tv-frame {
-  max-height: calc(100dvh - 15rem);
+  width: 100%;
+  max-width: calc((100dvh - 21rem) * 16 / 9);
   margin-inline: auto;
   box-shadow: 0 30px 80px -30px rgb(0 0 0 / 0.8);
 }

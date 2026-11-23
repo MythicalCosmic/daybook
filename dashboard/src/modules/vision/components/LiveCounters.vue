@@ -45,7 +45,8 @@ const longest = computed(() => {
   const waits = counters.value.map((camera) => camera.wait_s).filter((value): value is number => typeof value === "number");
   return waits.length ? Math.max(...waits) : hasCounter.value ? 0 : null;
 });
-const wait = computed(() => (longest.value === null ? null : longest.value > 0 ? tickingWait(longest.value, props.liveAt, clock.value) : 0));
+// 0: nobody waits. Below zero: a wait that began after the report came (read from the pictures).
+const wait = computed(() => (longest.value === null ? null : longest.value !== 0 ? tickingWait(longest.value, props.liveAt, clock.value) : 0));
 const level = computed(() => waitLevel(wait.value, props.queueWaitS));
 const visitors = computed(() => props.live?.today.visitors ?? null);
 const receipts = computed(() => props.live?.today.receipts ?? null);
@@ -144,7 +145,7 @@ const allTiles = computed(() => [
           <span v-if="tile.id === 'visitors' && bump" :key="bump.key" class="koz-bump absolute -top-1 ml-1.5 text-sm font-bold text-success">+{{ bump.n }}</span>
         </Transition>
       </p>
-      <p class="mt-1 truncate text-xs text-muted" :title="tile.sub">{{ tile.sub }}</p>
+      <p class="mt-1 line-clamp-2 text-xs text-muted sm:truncate" :title="tile.sub">{{ tile.sub }}</p>
     </div>
   </div>
 </template>

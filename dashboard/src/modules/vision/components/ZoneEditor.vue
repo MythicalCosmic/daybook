@@ -428,7 +428,12 @@ async function newSnapshot(): Promise<void> {
           <template v-for="shape in shapes" :key="`tag-${shape.zone.id}:${shape.index}`">
             <span
               class="koz-tag absolute inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold"
-              :style="{ left: `${shape.tag[0] * 100}%`, top: `${shape.tag[1] * 100}%`, '--tag': shape.zone.kind === 'mask' ? '#cfcfcf' : shape.color }"
+              :style="{
+                left: `${shape.tag[0] * 100}%`,
+                top: `${shape.tag[1] * 100}%`,
+                '--tag': shape.zone.kind === 'mask' ? '#cfcfcf' : shape.color,
+                '--shift': shape.zone.kind === 'line' ? '-50%' : shape.tag[0] > 0.72 ? 'calc(-100% + 6px)' : '6px',
+              }"
               :data-line="shape.zone.kind === 'line' || undefined"
             >
               <span class="size-1.5 rounded-full" :style="{ background: shape.zone.kind === 'mask' ? '#9a9a9a' : shape.color }" />{{ t(`vision.zone.${shape.zone.kind}`) }} · {{ shape.zone.id }}
@@ -498,12 +503,12 @@ async function newSnapshot(): Promise<void> {
 .koz-tag {
   background: rgb(16 13 10 / 0.6);
   color: color-mix(in srgb, var(--tag) 70%, #ffffff);
-  transform: translate(6px, 6px);
+  transform: translate(var(--shift, 6px), 6px);
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
 }
 .koz-tag[data-line] {
-  transform: translate(-50%, 10px);
+  transform: translate(var(--shift, -50%), 10px);
   color: #ffffff;
 }
 .koz-glass {

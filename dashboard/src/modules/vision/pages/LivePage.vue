@@ -33,7 +33,9 @@ import LiveCounters from "../components/LiveCounters.vue";
 import TvMode from "../components/TvMode.vue";
 import { bySeverity } from "../lib/overview";
 import { DEFAULT_RULES, ROLE_ORDER } from "../lib/rules";
-import type { Alert, CameraRole, ClipRequest, LiveCamera, Zone } from "../types";
+import { provideFrameWaits } from "../lib/frameWaits";
+import { freshReport, type WaitStarts } from "../lib/tracks";
+import type { Alert, CameraRole, ClipRequest, Live, LiveCamera, Zone } from "../types";
 
 const { t } = useI18n();
 const company = useCompanyStore();
@@ -57,6 +59,18 @@ const branchOptions = computed(() => (withCameras.value.length ? withCameras.val
 
 const live = useLive(branch, computed(() => branch.value !== null));
 const liveAt = computed(() => live.dataUpdatedAt.value || Date.now());
+// Each camera's longest wait from its pictures while they arrive, else steady from the report
+// (lib/tracks.ts `freshReport`): the tiles, the counters and the banner read the same second as
+// the pill of the one waiting.
+const frameWaits = provideFrameWaits();
+let liveStarts: WaitStarts = new Map();
+const report = computed<Live | null>(() => {
+  const data = live.data.value;
+  if (!data) return null;
+  const read = freshReport(data, liveAt.value, liveStarts, frameWaits);
+  liveStarts = read.starts;
+  return read.report;
+});
 
 const view = useRouteState("view", rs.enum(["wall", "focus"] as const, "wall"));
 const focusId = useRouteState("camera", rs.optionalNumber());
@@ -67,7 +81,7 @@ const zonesOf = (id: number): Zone[] => (allCameras.data.value ?? []).find((came
 const enabledOf = (id: number): boolean => (allCameras.data.value ?? []).find((camera) => camera.id === id)?.enabled ?? true;
 
 const cameras = computed<LiveCamera[]>(() =>
-  [...(live.data.value?.cameras ?? [])]
+  [...(report.value?.cameras ?? [])]
     .filter((camera) => camera.branch_id === branch.value || branch.value === null)
     .sort(
       (a, b) =>
@@ -79,7 +93,7 @@ const cameras = computed<LiveCamera[]>(() =>
 );
 const focused = computed(() => cameras.value.find((camera) => camera.id === focusId.value) ?? cameras.value.find((camera) => camera.role === "counter") ?? cameras.value[0] ?? null);
 const rail = computed(() => cameras.value.filter((camera) => camera.id !== focused.value?.id));
-const alerts = computed<Alert[]>(() => live.data.value?.open_alerts ?? []);
+const alerts = computed<Alert[]>(() => report.value?.open_alerts ?? []);
 const streaming = computed(() => live.isSuccess.value && !live.isError.value && cameras.value.some((camera) => camera.online && !camera.stale));
 
 function openCamera(id: number): void {
@@ -148,7 +162,7 @@ const empty = computed(() => !loading.value && !live.isError.value && !(allCamer
     <template v-else>
       <AlertBanner :alerts="alerts" :cameras="cameras" :live-at="liveAt" :can-video="canVideo" @look="openCamera" @video="video" />
 
-      <LiveCounters :live="live.data.value ?? null" :live-at="liveAt" :queue-people="rules.queue_people" :queue-wait-s="rules.queue_wait_s" :loading="loading" />
+      <LiveCounters :live="report" :live-at="liveAt" :queue-people="rules.queue_people" :queue-wait-s="rules.queue_wait_s" :loading="loading" />
 
       <!-- First load: the wall's own shape. -->
       <div v-if="loading" class="grid gap-3 md:grid-cols-2">
@@ -197,7 +211,7 @@ const empty = computed(() => !loading.value && !live.isError.value && !(allCamer
             <CameraTile
               :camera="camera"
               :zones="zonesOf(camera.id)"
-          :analysed="enabledOf(camera.id)"
+              :analysed="enabledOf(camera.id)"
               :enabled="!tv"
               :can-video="canVideo"
               :queue-people="rules.queue_people"
@@ -223,7 +237,7 @@ const empty = computed(() => !loading.value && !live.isError.value && !(allCamer
     <TvMode
       v-if="tv"
       :branch-name="branchName"
-      :live="live.data.value ?? null"
+      :live="report"
       :live-at="liveAt"
       :zones-of="zonesOf"
       :queue-people="rules.queue_people"
