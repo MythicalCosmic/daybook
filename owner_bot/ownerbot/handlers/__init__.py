@@ -10,6 +10,7 @@ from ownerbot.handlers.signin import router as signin_router
 from ownerbot.handlers.start import fallback_router
 from ownerbot.handlers.start import router as start_router
 from ownerbot.handlers.today import router as today_router
+from ownerbot.handlers.vision import router as vision_router
 from ownerbot.handlers.voice import router as voice_router
 
 
@@ -21,6 +22,7 @@ def register_all_handlers(dp: Dispatcher) -> None:
     # home message for anything else said outside a conversation.
     dp.include_routers(
         inbox_actions_router,
+        vision_router,
         signin_router,
         start_router,
         language_router,

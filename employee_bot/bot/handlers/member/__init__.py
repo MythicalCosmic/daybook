@@ -14,6 +14,7 @@ from bot.handlers.features.payroll import router as payroll_router
 from bot.handlers.features.projects import router as projects_router
 from bot.handlers.features.recognition import router as recognition_router
 from bot.handlers.features.sales import router as sales_router
+from bot.handlers.features.vision import router as vision_router
 from bot.handlers.member.announcements import router as announcements_router
 from bot.handlers.member.app import router as app_router
 from bot.handlers.member.home import router as home_router
@@ -39,6 +40,7 @@ FEATURE_ROUTERS = [
     learning_router,
     agenda_router,
     crm_router,
+    vision_router,
 ]
 
 # Everything included here is for approved members only.

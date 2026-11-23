@@ -30,6 +30,7 @@ AREAS = [
     "learning",
     "agenda",
     "crm",
+    "vision",
 ]
 
 
