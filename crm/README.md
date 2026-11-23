@@ -48,6 +48,7 @@ docker run -d --name crm-build --cpus 5 -v "${PWD}:/src" -v crm-cargo-registry:/
 Until a Mac build is signed, iPhone users can open the web build in Safari and use **Share → Add to Home Screen**. The page carries the app icon and full-screen meta tags.
 
 Notes:
+- Android: `dx bundle --android` regenerates the Gradle project each time. Run `tools/package-android.sh` afterwards: it sets the name "Daybook CRM" and the launcher icon, then rebuilds the APK (debug-signed, so it installs directly; a Play Store release needs a release key). If `cargo` is wrapped, as with the queue below, export `CC_aarch64_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android24-clang` so `ring` finds the NDK compiler.
 - The Windows build is cross-compiled with MinGW. It loads WebView2 through `WebView2Loader.dll`, which the installer and the portable zip ship next to the exe. WebView2 is built into Windows 11; the installer offers Microsoft's download page if it's missing.
 - The installer is per-user (`%LOCALAPPDATA%\Programs\Daybook CRM`), so it needs no admin rights. Customer data lives in `%LOCALAPPDATA%\Daybook CRM` and survives reinstalling.
 - Inside the container, heavy cargo commands queue behind one lock (`tools/cargo-queue.sh`), so parallel builds don't overheat a laptop.
