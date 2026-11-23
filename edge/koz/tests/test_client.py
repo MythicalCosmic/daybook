@@ -203,3 +203,41 @@ def test_agent_keeps_stats_and_events_while_offline(tmp_path):
     assert ("unattended", "start") in phases and ("unattended", "end") in phases
     starts = [e for e in fake.events if e["phase"] == "start"]
     assert all(e["image"] for e in starts if e["kind"] == "unattended")
+
+
+def test_a_paired_scene_box_with_no_config_yet_still_analyses(tmp_path):
+    """Daybook was never reached: the scene runs on its own zones and keeps its minutes."""
+    from koz_agent.agent import CameraConfig
+    from koz_agent.scene import suggest_zones
+
+    clock = FakeClock(T0)
+    fake = FakeDaybook(clock)
+    fake.down = True
+    client = DaybookClient(
+        "https://daybook.test",
+        TOKEN,
+        clock=clock,
+        transport=fake.transport(),
+        rng=random.Random(1),
+    )
+    defaults = {
+        key: CameraConfig(name=s["name"], role=s["role"], enabled=True, zones=s["zones"])
+        for key, s in suggest_zones().items()
+    }
+    agent = Agent(
+        clock=clock,
+        sources=make_sim_sources("demo", 1, clock, threaded=False, start=T0),
+        detector_for=lambda _s: SimDetector(),
+        client=client,
+        outbox=Outbox(tmp_path / "outbox.sqlite3"),
+        defaults=defaults,
+        config_cache=tmp_path / "config.json",
+    )
+    while clock.time() < T0 + 70:
+        clock.advance(0.1)
+        agent.tick()
+        agent.net_tick()
+    assert agent.net_state == "offline"
+    counter = next(c for c in agent.status()["cameras"] if c["key"] == "sim:counter")
+    assert counter["enabled"] and counter["people"] is not None and counter["fps"] > 0
+    assert agent.outbox.count("stats") >= 2  # minute 13:00 of both cameras, waiting on disk

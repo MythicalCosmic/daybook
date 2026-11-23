@@ -185,16 +185,21 @@ class Agent:
         self._stop = threading.Event()
         self._threads: list[threading.Thread] = []
 
-        for key, cfg in self.defaults.items():
-            if key in self.cams and client is None:
-                self._set_cam_config(self.cams[key], cfg, clock.time())
+        cached = False
         if client is not None and config_cache is not None and config_cache.exists():
             try:
                 self.apply_config(
                     json.loads(config_cache.read_text(encoding="utf-8")), from_cache=True
                 )
+                cached = True
             except (OSError, ValueError) as exc:
                 log.warning("cannot read the cached config: %s", exc)
+        if not cached:
+            # Until Daybook has sent a config, the generated scene uses its own zones (real
+            # cameras stay off: only the owner can switch them on).
+            for key, cfg in self.defaults.items():
+                if key in self.cams:
+                    self._set_cam_config(self.cams[key], cfg, clock.time())
         self._apply_rules()
 
     # --- configuration --------------------------------------------------------------------
