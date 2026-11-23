@@ -167,7 +167,7 @@ export function worldFor(companyId: number): World {
         version: "0.1.0",
         host: index === 0 ? { hostname: "KASSA-PC", os: "Windows 11" } : { hostname: "dorixona-2", os: "Ubuntu 24.04" },
         paired: true,
-        cameras: index === 0 ? 5 : 3,
+        cameras: index === 0 ? 6 : 3,
         created_at: isoAgo((14 - index * 3) * 86_400),
         variant: index,
         pairing: null,
@@ -181,6 +181,8 @@ export function worldFor(companyId: number): World {
       );
       if (index === 0) {
         world!.cameras.push(
+          // A second till, so TV mode has counter cameras to cycle through.
+          camera(base + 5, "nvr:6", "Kassa 2", "counter", branch, agentId, 3),
           camera(base + 3, "nvr:4", "Ombor", "storeroom", branch, agentId, index),
           camera(base + 4, "nvr:5", "Kamera 5", "other", branch, agentId, index, { snapshot_at: isoAgo(25 * 60) }),
         );

@@ -145,6 +145,8 @@ const people = computed(() =>
       text: person.role === "staff" ? t("vision.person.staff") : wait !== null ? `${t("vision.person.customer")} · ${formatClock(wait)}` : t("vision.person.customer"),
       waitColor: wait !== null ? WAIT_COLOR[level] : null,
       inside: y < 0.075,
+      /** Near the right edge the pill hangs from the box's right side, inside the picture. */
+      right: x + w > 0.82,
       staff: person.role === "staff",
     };
   }),
@@ -298,10 +300,10 @@ const state = computed<"offline" | "denied" | "connecting" | "waiting" | "error"
         :key="person.key"
         :class="['koz-pill absolute inline-flex items-center gap-1.5 whitespace-nowrap rounded-full font-semibold tabular-nums', compact ? 'px-1.5 py-px text-[10px]' : 'px-2 py-0.5 text-[11.5px]']"
         :style="{
-          left: `${person.x * 100}%`,
+          left: `${(person.right ? person.x + person.w : person.x) * 100}%`,
           top: `${person.y * 100}%`,
           opacity: person.opacity,
-          transform: person.inside ? 'translate(4px, 4px)' : 'translate(0, calc(-100% - 5px))',
+          transform: `translate(${person.right ? '-100%' : '0'}, ${person.inside ? '4px' : 'calc(-100% - 5px)'})`,
         }"
       >
         <span class="size-1.5 shrink-0 rounded-full" :style="{ background: person.color }" />

@@ -161,6 +161,7 @@ const empty = computed(() => !loading.value && !live.isError.value && !(allCamer
           :key="camera.id"
           :camera="camera"
           :zones="zonesOf(camera.id)"
+          :analysed="enabledOf(camera.id)"
           :enabled="!tv"
           :can-video="canVideo"
           :queue-people="rules.queue_people"
@@ -177,6 +178,7 @@ const empty = computed(() => !loading.value && !live.isError.value && !(allCamer
           :key="focused.id"
           :camera="focused"
           :zones="zonesOf(focused.id)"
+          :analysed="enabledOf(focused.id)"
           :enabled="!tv"
           :can-video="canVideo"
           :queue-people="rules.queue_people"
@@ -195,6 +197,7 @@ const empty = computed(() => !loading.value && !live.isError.value && !(allCamer
             <CameraTile
               :camera="camera"
               :zones="zonesOf(camera.id)"
+          :analysed="enabledOf(camera.id)"
               :enabled="!tv"
               :can-video="canVideo"
               :queue-people="rules.queue_people"

@@ -28,7 +28,7 @@ export const PERMISSION_AREAS: ReadonlyArray<{ id: PermissionAreaId; perms: read
   },
   { id: "finance", perms: ["finance.view", "finance.record", "finance.claim", "finance.approve", "finance.manage"] },
   { id: "comms", perms: ["announcements.send", "groups.manage", "knowledge.manage", "agenda.manage"] },
-  { id: "insights", perms: ["reports.view", "ai.use", "ai.configure"] },
+  { id: "insights", perms: ["reports.view", "ai.use", "ai.configure", "vision.view", "vision.video", "vision.manage"] },
 ];
 
 /** Prefix → area, for permissions not listed above yet. */
@@ -62,6 +62,7 @@ const BY_PREFIX: Record<string, PermissionAreaId> = {
   agenda: "comms",
   reports: "insights",
   ai: "insights",
+  vision: "insights",
 };
 
 const PLACE = new Map<string, { area: PermissionAreaId; index: number }>();

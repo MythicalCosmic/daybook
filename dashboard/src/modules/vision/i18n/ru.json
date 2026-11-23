@@ -393,7 +393,6 @@
   "vision.settings.off": "Выкл.",
   "vision.unit.people": "чел.",
   "vision.unit.s": "с",
-  "vision.unit.min": "мин",
   "vision.unit.h": "ч",
   "vision.unit.days": "дн.",
   "vision.unit.fps": "в секунду",
@@ -411,5 +410,6 @@
   "vision.hours.hour": "Час",
   "vision.hours.waitSeconds": "Самое долгое ожидание, с",
   "vision.hours.unattendedMinutes": "Никого за кассой, мин",
-  "vision.pair.defaultName": "Бокс: {branch}"
+  "vision.pair.defaultName": "Бокс: {branch}",
+  "vision.camera.notAnalysed": "Не анализируется"
 }

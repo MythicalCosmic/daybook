@@ -393,7 +393,6 @@
   "vision.settings.off": "O‘chirilgan",
   "vision.unit.people": "kishi",
   "vision.unit.s": "s",
-  "vision.unit.min": "daq",
   "vision.unit.h": "soat",
   "vision.unit.days": "kun",
   "vision.unit.fps": "soniyasiga",
@@ -411,5 +410,6 @@
   "vision.hours.hour": "Soat",
   "vision.hours.waitSeconds": "Eng uzoq kutish, s",
   "vision.hours.unattendedMinutes": "Kassada hech kim yo‘q, daq",
-  "vision.pair.defaultName": "{branch} qutisi"
+  "vision.pair.defaultName": "{branch} qutisi",
+  "vision.camera.notAnalysed": "Tahlil qilinmaydi"
 }

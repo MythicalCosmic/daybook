@@ -103,7 +103,8 @@ The host renders `<ExtensionSlot name="…" :context="…" />`; other modules fi
 `extensions`. Points: `shell.panel`, `shell.topbar.end`, `shell.nav.top`, `shell.company.create`,
 `overview.hero`, `tasks.toolbar`, `tasks.drawer.actions`, `people.profile.actions`,
 `comms.composer.tools`, `finance.quickadd.receipt`, `finance.transactions.toolbar`,
-`sales.shift.detail`, `payroll.run.toolbar`. A component that throws only hides itself. The host's
+`sales.shift.detail`, `sales.entry.actions` (a receipt's row: Ko‘z's Video), `payroll.run.toolbar`.
+A component that throws only hides itself. The host's
 attributes go on the slot's wrapper (`class="px-3 pt-2 empty:hidden"`: no gap when nothing renders);
 with `as="none"` each extension's root gets them.
 
@@ -201,6 +202,17 @@ module replaces its placeholder automatically. The mock answers in the W0 serial
 covers the shell's endpoints, the inbox, branches today, the stream, exports, audit history,
 people, positions and saved views. For your own endpoints, work against
 the real backend (`API_PORT`) or ask W0 for mock data.
+
+Ko‘z (`modules/vision`) has fixtures of its own: `VITE_VISION_FIXTURES=1` on the dev server answers
+every `vision/` call from `modules/vision/fixtures` (a drawn pharmacy that moves with the clock:
+frames, a queue that builds into an alert and clears, an empty counter, pairing, clips recorded
+from the canvas), while everything else still talks to the backend. `?koz_at=<seconds>` on the
+first load starts the seven-minute cycle at a moment (`196` the queue alert, `385` the empty
+counter). Like the mock it is behind `import.meta.env.DEV` and never reaches a build.
+
+```bash
+VITE_VISION_FIXTURES=1 DEV_PORT=28274 API_PORT=28000 npx vite
+```
 
 ### Budgets (plan §6.5)
 

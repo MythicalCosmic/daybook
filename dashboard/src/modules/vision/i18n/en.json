@@ -393,7 +393,6 @@
   "vision.settings.off": "Off",
   "vision.unit.people": "people",
   "vision.unit.s": "s",
-  "vision.unit.min": "min",
   "vision.unit.h": "h",
   "vision.unit.days": "days",
   "vision.unit.fps": "a second",
@@ -411,5 +410,6 @@
   "vision.hours.hour": "Hour",
   "vision.hours.waitSeconds": "Longest wait, s",
   "vision.hours.unattendedMinutes": "Nobody at the counter, min",
-  "vision.pair.defaultName": "{branch} box"
+  "vision.pair.defaultName": "{branch} box",
+  "vision.camera.notAnalysed": "Not analysed"
 }

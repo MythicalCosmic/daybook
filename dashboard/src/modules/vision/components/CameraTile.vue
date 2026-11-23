@@ -29,9 +29,12 @@ const props = withDefaults(
     liveAt: number;
     size?: "wall" | "rail" | "focus";
     selected?: boolean;
+    /** Ask for pictures (off while TV mode covers the page). */
     enabled?: boolean;
+    /** Ko‘z counts on this camera (its switch in Cameras and boxes). */
+    analysed?: boolean;
   }>(),
-  { size: "wall", selected: false, enabled: true },
+  { size: "wall", selected: false, enabled: true, analysed: true },
 );
 
 const emit = defineEmits<{ open: [id: number] }>();
@@ -109,7 +112,10 @@ function open(event?: Event): void {
           <span class="koz-rec size-1.5 rounded-full bg-[#ff5a4e]" />{{ t("vision.live.onAir") }}
         </span>
       </div>
-      <div v-if="camera.online && size !== 'rail' && camera.people !== null" class="pointer-events-none absolute inset-x-0 bottom-0 flex flex-wrap items-end gap-1.5 p-2.5" :class="size === 'focus' && 'p-3.5'">
+      <div v-if="camera.online && size !== 'rail' && !analysed" class="pointer-events-none absolute inset-x-0 bottom-0 p-2.5">
+        <span class="koz-glass inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold text-white/80">{{ t("vision.camera.notAnalysed") }}</span>
+      </div>
+      <div v-else-if="camera.online && size !== 'rail' && camera.people !== null" class="pointer-events-none absolute inset-x-0 bottom-0 flex flex-wrap items-end gap-1.5 p-2.5" :class="size === 'focus' && 'p-3.5'">
         <span class="koz-glass inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold tabular-nums text-white">
           <Users :size="13" class="text-white/70" />{{ fmt.number(camera.people) }}
         </span>
