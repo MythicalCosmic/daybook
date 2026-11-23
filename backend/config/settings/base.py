@@ -80,6 +80,9 @@ INSTALLED_APPS = [
     "apps.goals",
     # The Davomat edition (docs/DAVOMAT.md): after attendance and faceid, whose services it uses.
     "apps.davomat",
+    # Ko‘z, the cameras as a sensor (docs/KOZ.md): after sales and attendance, whose receipts and
+    # check-ins it joins with what the cameras see (and whose demos its demo agrees with).
+    "apps.vision",
 ]
 
 AUTH_USER_MODEL = "accounts.User"

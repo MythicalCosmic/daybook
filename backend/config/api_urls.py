@@ -82,6 +82,7 @@ OWNER_APPS = (
     "davomat",
     "goals",
     "contracts",
+    "vision",
 )
 
 
@@ -135,6 +136,8 @@ urlpatterns = [
     ),
     # Private files
     path("files/<str:token>/", private_file, name="private-file"),
+    # Ko‘z boxes (docs/KOZ.md §5): a bearer token of their own, no session.
+    path("devices/koz/", include("apps.vision.device_urls")),
     # Devices that post events (Face ID terminals): their own code in the path, no session.
     path("devices/", include("apps.faceid.device_urls")),
 ]
