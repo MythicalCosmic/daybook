@@ -21,6 +21,7 @@ import UiButton from "@/components/UiButton.vue";
 import { useConfirm } from "@/components/useConfirm";
 import { useDataTable } from "@/components/useDataTable";
 import { toast } from "@/components/useToast";
+import { hasExtension } from "@/core/extensions";
 import { rs, useRouteState } from "@/lib/useRouteState";
 import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore } from "@/stores/company";
@@ -36,6 +37,8 @@ const company = useCompanyStore();
 const confirm = useConfirm();
 const options = useOptions();
 const canManage = computed(() => company.can("sales.manage"));
+/** Another module's buttons beside Void (Ko‘z's Video, `sales.entry.actions`). */
+const videoSlot = computed(() => hasExtension("sales.entry.actions", company.current));
 
 const defs = computed<FilterDef[]>(() => [
   { key: "branch", label: t("sales.filter.branch"), type: "multi", icon: Building2, options: (options.data.value?.branches ?? []).map((b) => ({ value: String(b.id), label: b.name })) },
@@ -55,7 +58,7 @@ const columns = computed<TableColumn<Entry>[]>(() => [
   { id: "payments", header: t("sales.entries.payments"), width: 200 },
   { id: "source", header: t("sales.entries.source"), width: 140 },
   { id: "total", header: t("sales.col.amount"), numeric: true, width: 150, csv: (row) => row.total },
-  ...(canManage.value ? [{ id: "actions", header: "", width: 56, hideable: false, align: "end" as const }] : []),
+  ...(canManage.value || videoSlot.value ? [{ id: "actions", header: "", width: videoSlot.value ? 88 : 56, hideable: false, align: "end" as const }] : []),
 ]);
 
 const voidEntry = useSalesMutation((cid, vars: { id: number; reason: string }) => salesApi.voidEntry(cid, vars.id, vars.reason));
@@ -118,8 +121,10 @@ const shiftMode = computed(() => options.data.value?.settings.mode === "shift_to
         <span :class="['font-semibold tabular-nums', row.kind === 'refund' ? 'text-warning' : 'text-fg']">{{ row.kind === "refund" ? "−" : "" }}<MoneyText :value="row.total" /></span>
       </template>
       <template #cell-actions="{ row }">
-        <ExtensionSlot name="sales.entry.actions" as="none" :context="{ entry: row }" />
-        <IconButton v-if="!row.voided_at" :icon="Ban" :label="t('sales.cash.void')" size="sm" @click.stop="askVoid(row)" />
+        <span class="inline-flex items-center gap-0.5">
+          <ExtensionSlot name="sales.entry.actions" as="none" :context="{ entry: row }" />
+          <IconButton v-if="canManage && !row.voided_at" :icon="Ban" :label="t('sales.cash.void')" size="sm" @click.stop="askVoid(row)" />
+        </span>
       </template>
       <!-- Phones: the same status and Void as the table, so a voided receipt never reads as a sale. -->
       <template #card="{ row }">
